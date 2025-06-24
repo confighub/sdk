@@ -113,13 +113,11 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	var output any
 	var outputType api.OutputType
 	for functionIndex, invocation := range functionInvocation.FunctionInvocations {
-		invalid := false
 		f, existed := fh.functionMap[invocation.FunctionName]
 		if !existed {
 			invocationInfo := fmt.Sprintf("invoke %s: function does not exist", invocation.FunctionName)
 			log.Info(invocationInfo)
 			messages = append(messages, invocationInfo)
-			invalid = true
 			success = false
 			if functionInvocation.StopOnError {
 				break
@@ -137,295 +135,16 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			invocationInfo += fmt.Sprintf(" %v", arg.Value)
 		}
 
-		// TODO: Factor out argument validation so that we can use it in cub
-
-		nargs := len(invocation.Arguments)
-		if nargs < f.RequiredParameters {
-			invocationInfo += ": insufficient arguments"
+		arguments, validationErr := ValidateAndBuildArguments(&invocation, &f.FunctionSignature, functionInvocation.CastStringArgsToScalars)
+		if validationErr != nil {
+			invocationInfo += ": " + validationErr.Error()
 			log.Info(invocationInfo)
-			usage := fmt.Sprintf("insufficient arguments: got %d, expected %d:", nargs, f.RequiredParameters)
-			for _, arg := range f.Parameters {
-				usage += fmt.Sprintf(" %s (reqd: %v),", arg.ParameterName, arg.Required)
-			}
-			messages = append(messages, usage)
-			invalid = true
-			success = false
-			if functionInvocation.StopOnError {
-				break
-			}
-		}
-
-		varargsParameterName := ""
-		if f.VarArgs {
-			varargsParameterName = f.Parameters[len(f.Parameters)-1].ParameterName
-		} else {
-			if nargs > len(f.Parameters) {
-				invocationInfo += ": too many arguments"
-				log.Info(invocationInfo)
-				usage := fmt.Sprintf("too many arguments: got %d, expected %d:", nargs, len(f.Parameters))
-				for _, arg := range f.Parameters {
-					usage += fmt.Sprintf(" %s (reqd: %v),", arg.ParameterName, arg.Required)
-				}
-				messages = append(messages, usage)
-				invalid = true
-				success = false
-				if functionInvocation.StopOnError {
-					break
-				} else {
-					continue
-				}
-			}
-		}
-
-		parameterMap := map[string]int{}
-		for i, parameter := range f.Parameters {
-			parameterMap[parameter.ParameterName] = i
-		}
-
-		// TODO: check that once we've seen the first vararg value, no other arguments appear afterward
-
-		isInOrder := true
-		mustBeInOrder := false
-		argumentMap := map[string]int{}
-	argLoop:
-		for i, arg := range invocation.Arguments {
-			parameterIndex := i
-			if f.VarArgs && parameterIndex >= len(f.Parameters) {
-				parameterIndex = len(f.Parameters) - 1
-			}
-			argumentName := arg.ParameterName
-			if arg.ParameterName == "" {
-				// If any argument does not include the parameter name, they must occur in order
-				mustBeInOrder = true
-				// If the arguments are not in order already, that will trigger an error.
-				// If they are, add this argument to the arg map. It should not have appeared already,
-				// unless it's the last parameter of a varargs function.
-				if isInOrder {
-					parameterName := f.Parameters[parameterIndex].ParameterName
-					_, present := argumentMap[parameterName]
-					if present {
-						if !f.VarArgs || parameterName != varargsParameterName {
-							// This really shouldn't happen
-							invocationInfo += ": repeated parameter"
-							message := fmt.Sprintf("argument %s is not a varargs parameter of function %s", parameterName, invocation.FunctionName)
-							messages = append(messages, message)
-							invalid = true
-							break argLoop
-						}
-					} else {
-						argumentName = parameterName
-						invocation.Arguments[i].ParameterName = parameterName
-						argumentMap[parameterName] = i
-					}
-				}
-			} else {
-				var ok bool
-				parameterIndex, ok = parameterMap[argumentName]
-				if !ok {
-					invocationInfo += ": invalid parameter"
-					message := fmt.Sprintf("argument %s is not a valid parameter of function %s", arg.ParameterName, invocation.FunctionName)
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				}
-				if parameterIndex != i && (!f.VarArgs || i != len(f.Parameters)-1) {
-					isInOrder = false
-				}
-
-				_, present := argumentMap[argumentName]
-				if present {
-					if f.VarArgs {
-						if argumentName != varargsParameterName {
-							invocationInfo += ": repeated parameter"
-							message := fmt.Sprintf("argument %s appears multiple times but is not the last argument of function %s", argumentName, invocation.FunctionName)
-							messages = append(messages, message)
-							invalid = true
-							break argLoop
-						}
-					} else {
-						invocationInfo += ": repeated parameter"
-						message := fmt.Sprintf("argument %s appears multiple times but function %s is not varargs", argumentName, invocation.FunctionName)
-						messages = append(messages, message)
-						invalid = true
-						break argLoop
-					}
-				} else {
-					argumentMap[argumentName] = i
-				}
-			}
-
-			// Verify that the argument value type is correct, or cast them if requested
-			parameter := f.Parameters[parameterIndex]
-			switch v := arg.Value.(type) {
-			case string:
-				switch parameter.DataType {
-				case api.DataTypeInt:
-					if functionInvocation.CastStringArgsToScalars {
-						intVal, err := strconv.Atoi(v)
-						if err != nil {
-							// TODO: improve the error message
-							invalid = true
-						}
-						invocation.Arguments[i].Value = intVal
-						if !validateIntArg(intVal, parameter.ValueConstraints) {
-							invocationInfo += ": argument value out of range"
-							message := fmt.Sprintf("argument %s value %d is out of range %s", argumentName, intVal, intConstraintString(parameter.ValueConstraints))
-							messages = append(messages, message)
-							invalid = true
-							break argLoop
-						}
-					} else {
-						invalid = true
-					}
-				case api.DataTypeBool:
-					if functionInvocation.CastStringArgsToScalars {
-						boolVal, err := strconv.ParseBool(v)
-						if err != nil {
-							// TODO: improve the error message
-							invalid = true
-						}
-						invocation.Arguments[i].Value = boolVal
-					} else {
-						invalid = true
-					}
-				default:
-					if !api.DataTypeIsSerializedAsString(parameter.DataType) {
-						invalid = true
-					} else {
-						if parameter.ValueConstraints.Regexp != "" {
-							r, err := regexp.Compile(parameter.ValueConstraints.Regexp)
-							if err != nil {
-								message := fmt.Sprintf("validation regexp %s for argument %s is invalid", parameter.ValueConstraints.Regexp, argumentName)
-								messages = append(messages, message)
-								// not fatal
-							} else if !r.MatchString(v) {
-								invocationInfo += ": value failed validation"
-								message := fmt.Sprintf("value %s for argument %s failed to match %s", v, argumentName, parameter.ValueConstraints.Regexp)
-								messages = append(messages, message)
-								invalid = true
-								break argLoop
-							}
-						} else if parameter.DataType == api.DataTypeEnum && len(parameter.ValueConstraints.EnumValues) > 0 {
-							validValue := false
-							for _, enumValue := range parameter.ValueConstraints.EnumValues {
-								if v == enumValue {
-									validValue = true
-									break
-								}
-							}
-							if !validValue {
-								invocationInfo += ": value not in enum"
-								message := fmt.Sprintf("value %s for argument %s is not in enum values %v", v, argumentName, parameter.ValueConstraints.EnumValues)
-								messages = append(messages, message)
-								invalid = true
-								break argLoop
-							}
-						}
-					}
-				}
-
-				if invalid {
-					invocationInfo += ": invalid argument type"
-					message := fmt.Sprintf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
-					messages = append(messages, message)
-					break argLoop
-				}
-			// Integers are "Numbers" in JSON, which are deserialized as float64 in Go.
-			// We treat all numbers as integers currently. We can't fallthrough in a type switch.
-			case float64:
-				if parameter.DataType != api.DataTypeInt {
-					invocationInfo += ": invalid argument type"
-					message := fmt.Sprintf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeInt)
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				}
-				invocation.Arguments[i].Value = int(v)
-				if !validateIntArg(int(v), parameter.ValueConstraints) {
-					invocationInfo += ": argument value out of range"
-					message := fmt.Sprintf("argument %s value %d is out of range %s", argumentName, int(v), intConstraintString(parameter.ValueConstraints))
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				}
-			case int:
-				if parameter.DataType != api.DataTypeInt {
-					invocationInfo += ": invalid argument type"
-					message := fmt.Sprintf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeInt)
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				} else if !validateIntArg(v, parameter.ValueConstraints) {
-					invocationInfo += ": argument value out of range"
-					message := fmt.Sprintf("argument %s value %d is out of range %s", argumentName, v, intConstraintString(parameter.ValueConstraints))
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				}
-			case bool:
-				if parameter.DataType != api.DataTypeBool {
-					invocationInfo += ": invalid argument type"
-					message := fmt.Sprintf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeBool)
-					messages = append(messages, message)
-					invalid = true
-					break argLoop
-				}
-			default:
-				invocationInfo += ": invalid argument type"
-				message := fmt.Sprintf("argument %s type %T is not of a supported type", argumentName, v)
-				messages = append(messages, message)
-				invalid = true
-				break argLoop
-			}
-		}
-		if !isInOrder {
-			if mustBeInOrder {
-				invocationInfo += ": mix of out-of-order named and unnamed arguments"
-				message := fmt.Sprintf("mix of out-of-order named and unnamed arguments for function %s", invocation.FunctionName)
-				messages = append(messages, message)
-				invalid = true
-			}
-
-			// Check that all required parameters are present
-			if f.RequiredParameters != len(f.Parameters) {
-				for _, parameter := range f.Parameters {
-					if parameter.Required {
-						_, present := argumentMap[parameter.ParameterName]
-						if !present {
-							invocationInfo += ": missing required parameter"
-							message := fmt.Sprintf("missing required parameter %s for function %s", parameter.ParameterName, invocation.FunctionName)
-							messages = append(messages, message)
-							invalid = true
-						}
-					}
-				}
-			}
-		}
-
-		if invalid {
-			log.Info(invocationInfo)
+			messages = append(messages, validationErr.Error())
 			success = false
 			if functionInvocation.StopOnError {
 				break
 			} else {
 				continue
-			}
-		}
-
-		// Build in-order argument list
-		var arguments []api.FunctionArgument
-		if isInOrder {
-			arguments = invocation.Arguments
-		} else {
-			for _, parameter := range f.Parameters {
-				i, present := argumentMap[parameter.ParameterName]
-				if present {
-					arguments = append(arguments, invocation.Arguments[i])
-				}
-			}
-			if f.VarArgs && len(arguments) < nargs {
-				// The tail of the argument list should all be varargs
-				arguments = append(arguments, invocation.Arguments[len(arguments):]...)
 			}
 		}
 
@@ -557,6 +276,194 @@ func intConstraintString(constraints api.ValueConstraints) string {
 		max = fmt.Sprintf("%d", *constraints.Max)
 	}
 	return fmt.Sprintf("[%s,%s]", min, max)
+}
+
+// ValidateAndBuildArguments validates function arguments and builds an in-order argument list.
+// It returns the validated arguments or an error if validation fails.
+func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.FunctionSignature, castStringArgsToScalars bool) ([]api.FunctionArgument, error) {
+	nargs := len(invocation.Arguments)
+	if nargs < f.RequiredParameters {
+		usage := fmt.Sprintf("insufficient arguments: got %d, expected %d:", nargs, f.RequiredParameters)
+		for _, arg := range f.Parameters {
+			usage += fmt.Sprintf(" %s (reqd: %v),", arg.ParameterName, arg.Required)
+		}
+		return nil, errors.New(usage)
+	}
+
+	varargsParameterName := ""
+	if f.VarArgs {
+		varargsParameterName = f.Parameters[len(f.Parameters)-1].ParameterName
+	} else {
+		if nargs > len(f.Parameters) {
+			usage := fmt.Sprintf("too many arguments: got %d, expected %d:", nargs, len(f.Parameters))
+			for _, arg := range f.Parameters {
+				usage += fmt.Sprintf(" %s (reqd: %v),", arg.ParameterName, arg.Required)
+			}
+			return nil, errors.New(usage)
+		}
+	}
+
+	parameterMap := map[string]int{}
+	for i, parameter := range f.Parameters {
+		parameterMap[parameter.ParameterName] = i
+	}
+
+	isInOrder := true
+	mustBeInOrder := false
+	argumentMap := map[string]int{}
+	for i, arg := range invocation.Arguments {
+		parameterIndex := i
+		if f.VarArgs && parameterIndex >= len(f.Parameters) {
+			parameterIndex = len(f.Parameters) - 1
+		}
+		argumentName := arg.ParameterName
+		if arg.ParameterName == "" {
+			mustBeInOrder = true
+			if isInOrder {
+				parameterName := f.Parameters[parameterIndex].ParameterName
+				_, present := argumentMap[parameterName]
+				if present {
+					if !f.VarArgs || parameterName != varargsParameterName {
+						return nil, fmt.Errorf("argument %s is not a varargs parameter of function %s", parameterName, invocation.FunctionName)
+					}
+				} else {
+					argumentName = parameterName
+					invocation.Arguments[i].ParameterName = parameterName
+					argumentMap[parameterName] = i
+				}
+			}
+		} else {
+			var ok bool
+			parameterIndex, ok = parameterMap[argumentName]
+			if !ok {
+				return nil, fmt.Errorf("argument %s is not a valid parameter of function %s", arg.ParameterName, invocation.FunctionName)
+			}
+			if parameterIndex != i && (!f.VarArgs || i != len(f.Parameters)-1) {
+				isInOrder = false
+			}
+
+			_, present := argumentMap[argumentName]
+			if present {
+				if f.VarArgs {
+					if argumentName != varargsParameterName {
+						return nil, fmt.Errorf("argument %s appears multiple times but is not the last argument of function %s", argumentName, invocation.FunctionName)
+					}
+				} else {
+					return nil, fmt.Errorf("argument %s appears multiple times but function %s is not varargs", argumentName, invocation.FunctionName)
+				}
+			} else {
+				argumentMap[argumentName] = i
+			}
+		}
+
+		parameter := f.Parameters[parameterIndex]
+		switch v := arg.Value.(type) {
+		case string:
+			switch parameter.DataType {
+			case api.DataTypeInt:
+				if castStringArgsToScalars {
+					intVal, err := strconv.Atoi(v)
+					if err != nil {
+						return nil, fmt.Errorf("cannot convert argument %s value %s to int: %w", argumentName, v, err)
+					}
+					invocation.Arguments[i].Value = intVal
+					if !validateIntArg(intVal, parameter.ValueConstraints) {
+						return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, intVal, intConstraintString(parameter.ValueConstraints))
+					}
+				} else {
+					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
+				}
+			case api.DataTypeBool:
+				if castStringArgsToScalars {
+					boolVal, err := strconv.ParseBool(v)
+					if err != nil {
+						return nil, fmt.Errorf("cannot convert argument %s value %s to bool: %w", argumentName, v, err)
+					}
+					invocation.Arguments[i].Value = boolVal
+				} else {
+					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
+				}
+			default:
+				if !api.DataTypeIsSerializedAsString(parameter.DataType) {
+					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
+				} else {
+					if parameter.ValueConstraints.Regexp != "" {
+						r, err := regexp.Compile(parameter.ValueConstraints.Regexp)
+						if err != nil {
+							return nil, fmt.Errorf("validation regexp %s for argument %s is invalid", parameter.ValueConstraints.Regexp, argumentName)
+						} else if !r.MatchString(v) {
+							return nil, fmt.Errorf("value %s for argument %s failed to match %s", v, argumentName, parameter.ValueConstraints.Regexp)
+						}
+					} else if parameter.DataType == api.DataTypeEnum && len(parameter.ValueConstraints.EnumValues) > 0 {
+						validValue := false
+						for _, enumValue := range parameter.ValueConstraints.EnumValues {
+							if v == enumValue {
+								validValue = true
+								break
+							}
+						}
+						if !validValue {
+							return nil, fmt.Errorf("value %s for argument %s is not in enum values %v", v, argumentName, parameter.ValueConstraints.EnumValues)
+						}
+					}
+				}
+			}
+		case float64:
+			if parameter.DataType != api.DataTypeInt {
+				return nil, fmt.Errorf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeInt)
+			}
+			invocation.Arguments[i].Value = int(v)
+			if !validateIntArg(int(v), parameter.ValueConstraints) {
+				return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, int(v), intConstraintString(parameter.ValueConstraints))
+			}
+		case int:
+			if parameter.DataType != api.DataTypeInt {
+				return nil, fmt.Errorf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeInt)
+			} else if !validateIntArg(v, parameter.ValueConstraints) {
+				return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, v, intConstraintString(parameter.ValueConstraints))
+			}
+		case bool:
+			if parameter.DataType != api.DataTypeBool {
+				return nil, fmt.Errorf("argument %s data type %s is not of type %s", argumentName, parameter.DataType, api.DataTypeBool)
+			}
+		default:
+			return nil, fmt.Errorf("argument %s type %T is not of a supported type", argumentName, v)
+		}
+	}
+
+	if !isInOrder {
+		if mustBeInOrder {
+			return nil, fmt.Errorf("mix of out-of-order named and unnamed arguments for function %s", invocation.FunctionName)
+		}
+
+		if f.RequiredParameters != len(f.Parameters) {
+			for _, parameter := range f.Parameters {
+				if parameter.Required {
+					_, present := argumentMap[parameter.ParameterName]
+					if !present {
+						return nil, fmt.Errorf("missing required parameter %s for function %s", parameter.ParameterName, invocation.FunctionName)
+					}
+				}
+			}
+		}
+	}
+
+	var arguments []api.FunctionArgument
+	if isInOrder {
+		arguments = invocation.Arguments
+	} else {
+		for _, parameter := range f.Parameters {
+			i, present := argumentMap[parameter.ParameterName]
+			if present {
+				arguments = append(arguments, invocation.Arguments[i])
+			}
+		}
+		if f.VarArgs && len(arguments) < nargs {
+			arguments = append(arguments, invocation.Arguments[len(arguments):]...)
+		}
+	}
+
+	return arguments, nil
 }
 
 func (fh *FunctionHandler) ListCore() map[string]*FunctionRegistration {
