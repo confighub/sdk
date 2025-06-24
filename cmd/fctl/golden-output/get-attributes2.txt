@@ -226,6 +226,22 @@ OUTPUT
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.name",
+    "AttributeName": "container-name",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-container-name",
+        "Arguments": null
+      }
+    },
+    "Value": "nginx"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
     "Path": "spec.template.spec.containers.1.image",
     "AttributeName": "container-image",
     "DataType": "string",
@@ -316,5 +332,21 @@ OUTPUT
       ]
     },
     "Value": "otel/opentelemetry-collector"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.1.name",
+    "AttributeName": "container-name",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-container-name",
+        "Arguments": null
+      }
+    },
+    "Value": "otel-sidecar"
   }
 ]

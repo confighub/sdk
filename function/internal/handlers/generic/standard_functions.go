@@ -1975,8 +1975,8 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, function
 	// Find the resource to upsert from the resource list
 	var resourceToUpsert *api.Resource
 	for i := range resourceList {
-		if resourceList[i].ResourceType == targetResourceType && 
-		   resourceProvider.RemoveScopeFromResourceName(resourceList[i].ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
+		if resourceList[i].ResourceType == targetResourceType &&
+			resourceProvider.RemoveScopeFromResourceName(resourceList[i].ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
 			resourceToUpsert = &resourceList[i]
 			break
 		}
@@ -1995,8 +1995,8 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, function
 	// Use VisitResources to find the existing resource and track its position
 	foundIndex := -1
 	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		if resourceInfo.ResourceType == targetResourceType && 
-		   resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
+		if resourceInfo.ResourceType == targetResourceType &&
+			resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
 			foundIndex = index
 		}
 		return output, []error{}
@@ -2025,8 +2025,8 @@ func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, function
 	// Use VisitResources to find the existing resource and track its position
 	foundIndex := -1
 	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		if resourceInfo.ResourceType == targetResourceType && 
-		   resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
+		if resourceInfo.ResourceType == targetResourceType &&
+			resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
 			foundIndex = index
 		}
 		return output, []error{}
@@ -2062,10 +2062,14 @@ func RegisterPathSetterAndGetter(
 	description string,
 	attributeName api.AttributeName,
 	resourceProvider yamlkit.ResourceProvider,
+	addSetter bool,
 ) {
 	resourceTypes := yamlkit.ResourceTypesForAttribute(attributeName, resourceProvider)
-	setterParameters := make([]api.FunctionParameter, len(parameters))
-	valueParameter := len(setterParameters) - 1
+	numSetterParameters := len(parameters)
+	// Note that there should be at least one parameter to describe the output.
+	numGetterParameters := len(parameters) - 1
+	valueParameter := numGetterParameters
+	setterParameters := make([]api.FunctionParameter, numSetterParameters)
 	for i := range setterParameters {
 		setterParameters[i] = parameters[i]
 		// All but the last parameter are path parameters
@@ -2085,7 +2089,7 @@ func RegisterPathSetterAndGetter(
 		AttributeName:         attributeName,
 		AffectedResourceTypes: resourceTypes,
 	}
-	getterParameters := make([]api.FunctionParameter, len(parameters)-1)
+	getterParameters := make([]api.FunctionParameter, numGetterParameters)
 	for i := range getterParameters {
 		getterParameters[i] = parameters[i]
 		// All parameters are path parameters
@@ -2139,16 +2143,17 @@ func RegisterPathSetterAndGetter(
 		log.Error("unsupported setter/getter data type " + string(dataType))
 		return
 	}
-	fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
-		FunctionSignature: *setterSignature,
-		Function:          setterFunction,
-	})
+	if addSetter {
+		fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
+			FunctionSignature: *setterSignature,
+			Function:          setterFunction,
+		})
+	}
 	fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
 		FunctionSignature: *getterSignature,
 		Function:          getterFunction,
 	})
 }
-
 
 func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called

@@ -34,6 +34,7 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-annotation confighub.com
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-label app nginx > ${DIR}/set-label.txt
 #The env var key/value pairs end up in a random order due to map ordering
 #${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env nginx SUCCESS=true HOPE=true > ${DIR}/set-env.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-name > ${DIR}/get-container-name.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image nginx "mynginx:stable" > ${DIR}/set-image.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-image nginx > ${DIR}/get-image.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-uri nginx example.myreg.com/nginx > ${DIR}/set-image-uri.txt

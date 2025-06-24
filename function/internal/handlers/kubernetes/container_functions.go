@@ -35,6 +35,20 @@ func convertToFullRegexp(regexp string) string {
 }
 
 func registerContainerFunctions(fh handler.FunctionRegistry) {
+	// Even though there's no setter, this parameter is used for the output description.
+	containerNameParameters := []api.FunctionParameter{
+		{
+			ParameterName:    "container-name",
+			Required:         true,
+			Description:      "Name of the container to ", // verb will be appended
+			DataType:         api.DataTypeString,
+			Example:          "cert-manager-controller",
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+		},
+	}
+	generic.RegisterPathSetterAndGetter(fh, "container-name", containerNameParameters,
+		" the container name", api.AttributeNameContainerName, k8skit.K8sResourceProvider, false)
+
 	imageParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "container-name",
@@ -54,7 +68,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image", imageParameters,
-		" the image for a container", api.AttributeNameContainerImage, k8skit.K8sResourceProvider)
+		" the image for a container", api.AttributeNameContainerImage, k8skit.K8sResourceProvider, true)
 	setImageHandler = fh.GetHandlerImplementation("set-image") // for testing
 	imageURIParameters := []api.FunctionParameter{
 		{
@@ -75,7 +89,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image-uri", imageURIParameters,
-		" the image repository URI for a container", api.AttributeNameContainerRepositoryURI, k8skit.K8sResourceProvider)
+		" the image repository URI for a container", api.AttributeNameContainerRepositoryURI, k8skit.K8sResourceProvider, true)
 	setImageUriHandler = fh.GetHandlerImplementation("set-image-uri") // for testing
 	imageReferenceParameters := []api.FunctionParameter{
 		{
@@ -96,7 +110,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image-reference", imageReferenceParameters,
-		" the image reference for a container", api.AttributeNameContainerImageReference, k8skit.K8sResourceProvider)
+		" the image reference for a container", api.AttributeNameContainerImageReference, k8skit.K8sResourceProvider, true)
 	setImageReferenceHandler = fh.GetHandlerImplementation("set-image-reference") // for testing
 	resourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImages, k8skit.K8sResourceProvider)
 	fh.RegisterFunction("set-image-reference-by-uri", &handler.FunctionRegistration{
@@ -144,7 +158,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
-		" the replicas for workload controllers", attributeNameReplicas, k8skit.K8sResourceProvider)
+		" the replicas for workload controllers", attributeNameReplicas, k8skit.K8sResourceProvider, true)
 	resourceTypes = yamlkit.ResourceTypesForPathMap(resourceTypeToContainersPaths)
 	fh.RegisterFunction("set-env", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -203,7 +217,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "env-var", envVarParameters,
-		" an environment variable for a container", attributeNameEnvValue, k8skit.K8sResourceProvider)
+		" an environment variable for a container", attributeNameEnvValue, k8skit.K8sResourceProvider, true)
 	resourceTypes = yamlkit.ResourceTypesForAttribute(attributeNameContainerResources, k8skit.K8sResourceProvider)
 	minFactor := 0
 	maxFactor := 10
@@ -321,7 +335,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname", hostnameParameters,
-		" the hostname", api.AttributeNameHostname, k8skit.K8sResourceProvider)
+		" the hostname", api.AttributeNameHostname, k8skit.K8sResourceProvider, true)
 	subdomainParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "subdomain",
@@ -333,7 +347,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname-subdomain", subdomainParameters,
-		" the subdomain", api.AttributeNameSubdomain, k8skit.K8sResourceProvider)
+		" the subdomain", api.AttributeNameSubdomain, k8skit.K8sResourceProvider, true)
 	domainParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "domain",
@@ -345,7 +359,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname-domain", domainParameters,
-		" the domain name", api.AttributeNameDomain, k8skit.K8sResourceProvider)
+		" the domain name", api.AttributeNameDomain, k8skit.K8sResourceProvider, true)
 }
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -487,6 +501,37 @@ func initContainerFunctions() {
 		for _, pathPrefix := range containerPaths {
 			var attributePath api.UnresolvedPath
 			var pathInfo *api.PathVisitorInfo
+
+			containerNameGetterFunctionInvocation := &api.FunctionInvocation{
+				FunctionName: "get-container-name",
+				// Arguments will be added during traversal
+			}
+
+			// All container names
+			attributePath = api.UnresolvedPath(pathPrefix + ".*.name")
+			pathInfo = &api.PathVisitorInfo{
+				Path:          attributePath,
+				AttributeName: api.AttributeNameContainerName,
+				DataType:      api.DataTypeString,
+			}
+			yamlkit.RegisterPathsByAttributeName(
+				k8skit.K8sResourceProvider,
+				api.AttributeNameContainerName,
+				resourceType,
+				api.PathToVisitorInfoType{attributePath: pathInfo},
+				containerNameGetterFunctionInvocation,
+				nil, // no setter
+				true,
+			)
+			yamlkit.RegisterPathsByAttributeName(
+				k8skit.K8sResourceProvider,
+				api.AttributeNameGeneral,
+				resourceType,
+				api.PathToVisitorInfoType{attributePath: pathInfo},
+				containerNameGetterFunctionInvocation,
+				nil, // no setter
+				true,
+			)
 
 			imageGetterFunctionInvocation := &api.FunctionInvocation{
 				FunctionName: "get-image",
@@ -1355,7 +1400,7 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 						if err != nil {
 							multiErrs = append(multiErrs, err)
 						}
-						
+
 						// Set capabilities.drop to ALL if not already present
 						if !containerDoc.ExistsP("securityContext.capabilities.drop") {
 							_, err = containerDoc.Set([]interface{}{"ALL"}, "securityContext", "capabilities", "drop")

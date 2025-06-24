@@ -266,6 +266,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -321,6 +332,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.initContainers.*.image": {
         "Path": "spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -375,6 +397,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "apps/v1/Deployment": {
@@ -535,6 +568,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -590,6 +634,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.initContainers.*.image": {
         "Path": "spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -644,6 +699,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "apps/v1/ReplicaSet": {
@@ -804,6 +870,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -859,6 +936,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.initContainers.*.image": {
         "Path": "spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -913,6 +1001,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "apps/v1/StatefulSet": {
@@ -1073,6 +1172,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1128,6 +1238,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.initContainers.*.image": {
         "Path": "spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1182,6 +1303,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "batch/v1/CronJob": {
@@ -1240,6 +1372,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.jobTemplate.spec.template.spec.containers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.jobTemplate.spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.jobTemplate.spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1295,6 +1438,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.jobTemplate.spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.jobTemplate.spec.template.spec.initContainers.*.image": {
         "Path": "spec.jobTemplate.spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1349,6 +1503,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.jobTemplate.spec.template.spec.initContainers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "batch/v1/Job": {
@@ -1407,6 +1572,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.ephemeralContainers.*.image": {
         "Path": "spec.template.spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1462,6 +1638,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.template.spec.initContainers.*.image": {
         "Path": "spec.template.spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1516,6 +1703,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "helm.toolkit.fluxcd.io/v2/HelmRelease": {
@@ -1739,6 +1937,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.containers.*.name": {
+        "Path": "spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.ephemeralContainers.*.image": {
         "Path": "spec.ephemeralContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1794,6 +2003,17 @@
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
       },
+      "spec.ephemeralContainers.*.name": {
+        "Path": "spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
       "spec.initContainers.*.image": {
         "Path": "spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
@@ -1848,6 +2068,17 @@
         },
         "EmbeddedAccessorType": "Regexp",
         "EmbeddedAccessorConfig": "^(?P\u003curi\u003e(?:(?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*(?:\\:[0-9]+)?)/)?(?:[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*(?:\\/[a-z0-9]+(?:(?:\\.|_|__|-+)[a-z0-9]+)*)*))(?P\u003creference\u003e\\:(?:[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127})|@(?:[a-z0-9]+(?:[+._-][a-z0-9]+)*\\:[a-zA-Z0-9=_-]+))?$"
+      },
+      "spec.initContainers.*.name": {
+        "Path": "spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     },
     "v1/Service": {
@@ -2819,6 +3050,253 @@
         "Path": "spec.initContainers.*?name:container-name.image",
         "AttributeName": "container-image",
         "DataType": "string"
+      }
+    }
+  },
+  "container-name": {
+    "apps/v1/DaemonSet": {
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "apps/v1/Deployment": {
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "apps/v1/ReplicaSet": {
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "apps/v1/StatefulSet": {
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "batch/v1/CronJob": {
+      "spec.jobTemplate.spec.template.spec.containers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.jobTemplate.spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.jobTemplate.spec.template.spec.initContainers.*.name": {
+        "Path": "spec.jobTemplate.spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "batch/v1/Job": {
+      "spec.template.spec.containers.*.name": {
+        "Path": "spec.template.spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.ephemeralContainers.*.name": {
+        "Path": "spec.template.spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.template.spec.initContainers.*.name": {
+        "Path": "spec.template.spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      }
+    },
+    "v1/Pod": {
+      "spec.containers.*.name": {
+        "Path": "spec.containers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.ephemeralContainers.*.name": {
+        "Path": "spec.ephemeralContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
+      },
+      "spec.initContainers.*.name": {
+        "Path": "spec.initContainers.*.name",
+        "AttributeName": "container-name",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-container-name",
+            "Arguments": null
+          }
+        }
       }
     }
   },

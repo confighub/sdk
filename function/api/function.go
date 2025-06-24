@@ -146,6 +146,7 @@ const (
 	AttributeNameNeededValue             = AttributeName("needed-value")
 	AttributeNameProvidedValue           = AttributeName("provided-value")
 	AttributeNameResourceName            = AttributeName("resource-name")
+	AttributeNameContainerName           = AttributeName("container-name")
 	AttributeNameContainerImage          = AttributeName("container-image")
 	AttributeNameContainerImages         = AttributeName("container-images")
 	AttributeNameContainerRepositoryURI  = AttributeName("container-repository-uri")
