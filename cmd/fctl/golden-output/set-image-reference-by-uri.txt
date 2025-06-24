@@ -1,0 +1,130 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+apiVersion: v1
+kind: Service
+metadata:
+  name: confighub-api
+  namespace: confighub-prod
+  labels:
+    app: confighub
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: boothub.confighub.net
+spec:
+  type: ClusterIP
+  ports:
+  - name: confighub-api
+    port: 9090
+  selector:
+    app: confighub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: confighub-bridgeworker
+  namespace: confighub-prod
+  labels:
+    app: confighub
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: boothub.confighub.net
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
+spec:
+  type: ClusterIP
+  ports:
+  - name: confighub-bridgeworker
+    port: 9091
+  selector:
+    app: confighub
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confighub
+  namespace: confighub-prod
+  labels:
+    app: confighub
+spec:
+  selector:
+    matchLabels:
+      app: confighub
+  template:
+    metadata:
+      labels:
+        app: confighub
+        app.kubernetes.io/name: confighub
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      imagePullSecrets:
+      - name: ghcr-secret
+      initContainers:
+      - name: write-spicedb-schema
+        image: ghcr.io/confighubai/confighub:testbuild
+        command: ["/srv/app/confighub"]
+        args: ["spicedb", "write-schema"]
+        envFrom:
+        - configMapRef:
+            name: confighub-env
+        - secretRef:
+            name: confighub-secret-env
+      - name: confighub-db-init
+        image: ghcr.io/confighubai/confighub:testbuild
+        command: ["/srv/app/confighub"]
+        args: ["db", "init"]
+        envFrom:
+        - configMapRef:
+            name: confighub-env
+        - secretRef:
+            name: confighub-secret-env
+      - name: confighub-db-migrate
+        image: ghcr.io/confighubai/confighub:testbuild
+        command: ["/srv/app/confighub"]
+        args: ["db", "migrate"]
+        envFrom:
+        - configMapRef:
+            name: confighub-env
+        - secretRef:
+            name: confighub-secret-env
+      containers:
+      - name: confighub
+        image: ghcr.io/confighubai/confighub:testbuild
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: confighub-env
+        - secretRef:
+            name: confighub-secret-env
+        ports:
+        - containerPort: 9090
+          name: http
+          protocol: TCP
+        - containerPort: 9091
+          name: bridgeworker
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9090
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9090
+        startupProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9090
+          initialDelaySeconds: 5
+          failureThreshold: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 500m
+          limits:
+            memory: 512Gi
+            cpu: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

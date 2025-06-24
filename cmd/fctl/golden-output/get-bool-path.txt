@@ -1,0 +1,15 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.paused",
+    "AttributeName": "attribute-value",
+    "DataType": "bool",
+    "Value": false
+  }
+]

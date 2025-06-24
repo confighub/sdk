@@ -1,0 +1,16 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: replaceme
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080

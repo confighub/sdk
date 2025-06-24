@@ -1,0 +1,15 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "database.ssl.enabled",
+    "AttributeName": "attribute-value",
+    "DataType": "bool",
+    "Value": true
+  }
+]

@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  MYVAR: myvalue
+kind: ConfigMap
+metadata:
+  name: myconfig
+  namespace: replaceme

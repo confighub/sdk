@@ -1,0 +1,107 @@
+[
+  {
+    "Resource": {
+      "ResourceName": "foobar/myservice",
+      "ResourceType": "v1/Service"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "metadata.namespace": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "foobar\n"
+      }
+    }
+  },
+  {
+    "Resource": {
+      "ResourceName": "foobar/mydep",
+      "ResourceType": "apps/v1/Deployment"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "metadata.namespace": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "foobar\n"
+      },
+      "spec.template.spec.containers.0.envFrom.0.configMapRef.name": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "myconfig\n"
+      },
+      "spec.template.spec.serviceAccountName": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "mysa\n"
+      }
+    }
+  },
+  {
+    "Resource": {
+      "ResourceName": "foobar/myconfig",
+      "ResourceType": "v1/ConfigMap"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "metadata.namespace": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "foobar\n"
+      }
+    }
+  },
+  {
+    "Resource": {
+      "ResourceName": "foobar/mysa",
+      "ResourceType": "v1/ServiceAccount"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "metadata.namespace": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "foobar\n"
+      }
+    }
+  },
+  {
+    "Resource": {
+      "ResourceName": "/foobar",
+      "ResourceType": "v1/Namespace"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "None",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {}
+  }
+]

@@ -1,0 +1,19 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: myrb
+  namespace: myns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: robot-role
+subjects:
+- kind: ServiceAccount
+  name: robot-sa
+  namespace: myns
+- kind: ServiceAccount
+  name: my-sa
+  namespace: myns

@@ -1,0 +1,10 @@
+SUCCESS    true    
+OUTPUT
+------
+{
+  "Passed": false,
+  "Index": 0,
+  "Details": [
+    "resource example/mydep failed validation expression r.kind != \"Deployment\" || r.spec.replicas \u003e 5"
+  ]
+}

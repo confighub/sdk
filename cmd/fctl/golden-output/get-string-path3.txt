@@ -1,0 +1,35 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image-uri",
+        "Arguments": [
+          {
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-uri",
+          "Arguments": [
+            {
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "nginx"
+  }
+]

@@ -1,0 +1,26 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "/foobar",
+    "ResourceNameWithoutScope": "foobar",
+    "ResourceType": "v1/Namespace",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-resources-of-type",
+        "Arguments": [
+          {
+            "ParameterName": "resource-type",
+            "Value": "v1/Namespace"
+          }
+        ]
+      }
+    },
+    "Value": "foobar"
+  }
+]

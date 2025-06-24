@@ -1,0 +1,28 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "example"
+  }
+]

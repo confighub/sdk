@@ -1,0 +1,98 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "replaceme/replaceme",
+    "ResourceNameWithoutScope": "replaceme",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  },
+  {
+    "ResourceName": "replaceme/replaceme",
+    "ResourceNameWithoutScope": "replaceme",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.envFrom.0.configMapRef.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/ConfigMap"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  },
+  {
+    "ResourceName": "replaceme/replaceme",
+    "ResourceNameWithoutScope": "replaceme",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-uri",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "main"
+            }
+          ]
+        }
+      ],
+      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
+    },
+    "Value": "replaceme"
+  },
+  {
+    "ResourceName": "replaceme/replaceme",
+    "ResourceNameWithoutScope": "replaceme",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.serviceAccountName",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/ServiceAccount"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  }
+]

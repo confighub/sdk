@@ -1,0 +1,74 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/myrb",
+    "ResourceNameWithoutScope": "myrb",
+    "ResourceType": "rbac.authorization.k8s.io/v1/RoleBinding",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "example"
+  },
+  {
+    "ResourceName": "example/myrb",
+    "ResourceNameWithoutScope": "myrb",
+    "ResourceType": "rbac.authorization.k8s.io/v1/RoleBinding",
+    "ResourceCategory": "Resource",
+    "Path": "subjects.0.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "somens"
+  },
+  {
+    "ResourceName": "example/myrb",
+    "ResourceNameWithoutScope": "myrb",
+    "ResourceType": "rbac.authorization.k8s.io/v1/RoleBinding",
+    "ResourceCategory": "Resource",
+    "Path": "subjects.1.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "somens"
+  }
+]

@@ -1,0 +1,18 @@
+[
+    {
+        "FunctionName": "cel-validate",
+        "Arguments": [
+            {
+                "Value": "r.spec.replicas > 5"
+            }
+        ]
+    },
+    {
+        "FunctionName": "set-replicas",
+        "Arguments": [
+            {
+                "Value": "5"
+            }
+        ]
+    }
+]

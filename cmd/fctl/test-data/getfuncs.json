@@ -1,0 +1,13 @@
+[
+    {
+        "FunctionName": "get-image",
+        "Arguments": [
+            {
+                "Value": "nginx"
+            }
+        ]
+    },
+    {
+        "FunctionName": "get-replicas"
+    }
+]

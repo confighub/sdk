@@ -1,0 +1,26 @@
+[
+  {
+    "ResourceName": "",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.template.spec.containers.0.image#uri",
+    "AttributeName": "repository-uri",
+    "DataType": "string",
+    "Value": "nginx"
+  },
+  {
+    "ResourceName": "",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.replicas",
+    "AttributeName": "replicas",
+    "DataType": "int",
+    "Value": 5
+  },
+  {
+    "ResourceName": "",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.paused",
+    "AttributeName": "paused",
+    "DataType": "bool",
+    "Value": true
+  }
+]

@@ -1,0 +1,61 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "nginx:latest"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.replicas",
+    "AttributeName": "replicas",
+    "DataType": "int",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-replicas",
+        "Arguments": null
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-replicas",
+          "Arguments": null
+        }
+      ],
+      "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
+    },
+    "Value": 3,
+    "Comment": "# Line comment on replicas"
+  }
+]

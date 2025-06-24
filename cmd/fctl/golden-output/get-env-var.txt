@@ -1,0 +1,45 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.env.1.value",
+    "AttributeName": "env-value",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-env-var",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          },
+          {
+            "ParameterName": "env-var",
+            "Value": "HOPE"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-env-var",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            },
+            {
+              "ParameterName": "env-var",
+              "Value": "HOPE"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "false"
+  }
+]

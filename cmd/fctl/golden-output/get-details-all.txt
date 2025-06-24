@@ -1,0 +1,91 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "replaceme/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.replicas",
+    "AttributeName": "replicas",
+    "DataType": "int",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-replicas",
+        "Arguments": null
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-replicas",
+          "Arguments": null
+        }
+      ],
+      "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
+    },
+    "Value": 1
+  },
+  {
+    "ResourceName": "replaceme/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#reference",
+    "AttributeName": "container-image-reference",
+    "DataType": "string",
+    "Info": {
+      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
+    },
+    "Value": ":latest"
+  },
+  {
+    "ResourceName": "replaceme/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-uri",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "main"
+            }
+          ]
+        }
+      ],
+      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
+    },
+    "Value": "replaceme"
+  },
+  {
+    "ResourceName": "replaceme/myservice",
+    "ResourceNameWithoutScope": "myservice",
+    "ResourceType": "v1/Service",
+    "ResourceCategory": "Resource",
+    "Path": "spec.ports.0.port",
+    "AttributeName": "port",
+    "DataType": "int",
+    "Info": {
+      "Description": "The port that will be exposed by this service."
+    },
+    "Value": 80
+  },
+  {
+    "ResourceName": "replaceme/myservice",
+    "ResourceNameWithoutScope": "myservice",
+    "ResourceType": "v1/Service",
+    "ResourceCategory": "Resource",
+    "Path": "spec.ports.0.targetPort",
+    "AttributeName": "target-port",
+    "DataType": "int",
+    "Info": {
+      "Description": "Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod's container ports. If this is not specified, the value of the 'port' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the 'port' field. More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service"
+    },
+    "Value": 8080
+  }
+]

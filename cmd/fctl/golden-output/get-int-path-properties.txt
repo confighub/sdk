@@ -1,0 +1,15 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "database.port",
+    "AttributeName": "attribute-value",
+    "DataType": "int",
+    "Value": 5432
+  }
+]

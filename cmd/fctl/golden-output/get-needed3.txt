@@ -1,0 +1,51 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "replaceme/headlamp",
+    "ResourceNameWithoutScope": "headlamp",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  },
+  {
+    "ResourceName": "replaceme/headlamp",
+    "ResourceNameWithoutScope": "headlamp",
+    "ResourceType": "v1/Service",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  }
+]

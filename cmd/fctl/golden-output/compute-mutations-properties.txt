@@ -1,0 +1,39 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "Resource": {
+      "ResourceName": "MyApplicationConfig",
+      "ResourceNameWithoutScope": "MyApplicationConfig",
+      "ResourceType": "SimpleApp",
+      "ResourceCategory": "AppConfig"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "database.host": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "example.com\n"
+      },
+      "database.port": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "5433\n"
+      }
+    },
+    "Aliases": {
+      "MyApplicationConfig": {}
+    },
+    "AliasesWithoutScopes": {
+      "MyApplicationConfig": {}
+    }
+  }
+]

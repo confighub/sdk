@@ -1,0 +1,320 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.labels.app",
+    "AttributeName": "app-label",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-default-names",
+          "Arguments": null
+        }
+      ],
+      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+    },
+    "Value": "mydep"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-default-names",
+          "Arguments": null
+        }
+      ],
+      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+    },
+    "Value": "mydep"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/Namespace"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "example"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.replicas",
+    "AttributeName": "replicas",
+    "DataType": "int",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-replicas",
+        "Arguments": null
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-replicas",
+          "Arguments": null
+        }
+      ],
+      "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
+    },
+    "Value": 3,
+    "Comment": "# Line comment on replicas"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.selector.matchLabels.app",
+    "AttributeName": "app-label",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-default-names",
+          "Arguments": null
+        }
+      ],
+      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+    },
+    "Value": "mydep"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.metadata.labels.app",
+    "AttributeName": "app-label",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-default-names",
+          "Arguments": null
+        }
+      ],
+      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+    },
+    "Value": "mydep"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "nginx:latest"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#reference",
+    "AttributeName": "container-image-reference",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image-reference",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-reference",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": ":latest"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image-uri",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-uri",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "nginx"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.1.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "otel-sidecar"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "otel-sidecar"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "otel/opentelemetry-collector:latest-amd64"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.1.image#reference",
+    "AttributeName": "container-image-reference",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image-reference",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "otel-sidecar"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-reference",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "otel-sidecar"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": ":latest-amd64"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.1.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image-uri",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "otel-sidecar"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image-uri",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "otel-sidecar"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "otel/opentelemetry-collector"
+  }
+]

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: myservice
+  namespace: replaceme
+spec:
+  type: ClusterIP
+  selector:
+    app: replaceme
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: replaceme
+  name: mydep
+  namespace: replaceme
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: replaceme
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: replaceme
+    spec:
+      serviceAccountName: replaceme
+      containers:
+      - image: replaceme:latest
+        name: main
+        ports:
+        - containerPort: 8080
+        resources: {}
+        env:
+        - value: replaceme
+          name: DATABASE_HOST
+        - value: replaceme
+          name: DATABASE_PORT
+        - value: replaceme
+          name: DATABASE_NAME
+        - value: replaceme
+          name: DATABASE_USER
+        - value: replaceme
+          name: DATABASE_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: replaceme
+---
+apiVersion: v1
+data:
+  MYVAR: myvalue
+kind: ConfigMap
+metadata:
+  name: myconfig
+  namespace: replaceme
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysa
+  namespace: replaceme
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: foobar
+spec: {}

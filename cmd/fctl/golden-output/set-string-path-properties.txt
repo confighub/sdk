@@ -1,0 +1,12 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+app.features.0=authentication
+app.features.1=logging
+app.name=MyApplication
+app.version=1.0.0
+configHub.configName=MyApplicationConfig
+configHub.configSchema=SimpleApp
+database.host=postgres.local.cubby.bz
+database.port=5432
+database.ssl.enabled=true

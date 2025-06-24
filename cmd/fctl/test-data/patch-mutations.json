@@ -1,0 +1,28 @@
+[
+  {
+    "Resource": {
+      "ResourceName": "example/mydep",
+      "ResourceType": "apps/v1/Deployment"
+    },
+    "ResourceMutationInfo": {
+      "MutationType": "Update",
+      "Index": 0,
+      "Predicate": true,
+      "Value": ""
+    },
+    "PathMutationMap": {
+      "spec.replicas": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "10\n"
+      },
+      "spec.template.spec.containers.0.resources": {
+        "MutationType": "Update",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "requests:\n  cpu: 100m\n  memory: 128Mi\nlimits:\n  cpu: 250m\n  memory: 256Mi\n"
+      }
+    }
+  }
+]

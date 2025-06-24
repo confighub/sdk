@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mydep
+  annotations:
+    confighub.com/key: something
+  name: mydep
+  namespace: myns
+spec:
+  replicas: 3
+  paused: false
+  selector:
+    matchLabels:
+      app: mydep
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: mydep
+    spec:
+      dnsPolicy: ClusterFirst
+      containers:
+      - image: nginx:latest
+        name: nginx
+        ports:
+        - containerPort: 8080
+        resources: {}
+      - image: otel/opentelemetry-collector:latest-amd64
+        name: otel-sidecar
+        ports:
+        - containerPort: 4318

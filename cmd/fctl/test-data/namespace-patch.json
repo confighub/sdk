@@ -1,0 +1,14 @@
+{                                      
+  "v1/Namespace#/foobar": {            
+    "Patches": [                       
+      {                                
+        "op": "add",                   
+        "path": "/metadata/labels",    
+        "value": {                     
+          "labelkey": "labelvalue"     
+        }                              
+      }                                
+    ]                                  
+  }                                    
+}                                      
+

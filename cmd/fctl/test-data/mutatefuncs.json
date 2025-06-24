@@ -1,0 +1,32 @@
+[
+    {
+        "FunctionName": "set-namespace",
+        "Arguments": [
+            {
+                "Value": "myns"
+            }
+        ]
+    },
+    {
+        "FunctionName": "set-annotation",
+        "Arguments": [
+            {
+                "Value": "confighub.com/key"
+            },
+            {
+                "Value": "changed"
+            }
+        ]
+    },
+    {
+        "FunctionName": "set-image-uri",
+        "Arguments": [
+            {
+                "Value": "nginx"
+            },
+            {
+                "Value": "example.myreg.com/nginx"
+            }
+        ]
+    }
+]

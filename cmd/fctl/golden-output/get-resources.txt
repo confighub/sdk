@@ -1,0 +1,12 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "ResourceBody": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mydep\n  annotations:\n    confighub.com/key: something\n  name: mydep\n  namespace: example\nspec:\n  replicas: 3 # Line comment on replicas\n  paused: false\n  selector:\n    matchLabels:\n      app: mydep\n  strategy: {}\n  template:\n    metadata:\n      labels:\n        app: mydep\n    spec:\n      dnsPolicy: ClusterFirst\n      containers:\n      - image: nginx:latest\n        name: nginx\n        ports:\n        - containerPort: 8080\n        resources: {}\n      - image: otel/opentelemetry-collector:latest-amd64\n        name: otel-sidecar\n        ports:\n        - containerPort: 4318\n"
+  }
+]

@@ -1,0 +1,18 @@
+[
+    {
+        "FunctionName": "cel-validate",
+        "Arguments": [
+            {
+                "Value": "r.spec.paused == false"
+            }
+        ]
+    },
+    {
+        "FunctionName": "cel-validate",
+        "Arguments": [
+            {
+                "Value": "r.spec.replicas < 5"
+            }
+        ]
+    }
+]

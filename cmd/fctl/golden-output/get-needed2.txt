@@ -1,0 +1,55 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "/myscaler",
+    "ResourceNameWithoutScope": "myscaler",
+    "ResourceType": "autoscaling/v2/HorizontalPodAutoscaler",
+    "ResourceCategory": "Resource",
+    "Path": "spec.scaleTargetRef.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Info": {
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "apps/v1/Deployment"
+            }
+          ]
+        },
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "v1/ReplicationController"
+            }
+          ]
+        },
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "apps/v1/ReplicaSet"
+            }
+          ]
+        },
+        {
+          "FunctionName": "set-references-of-type",
+          "Arguments": [
+            {
+              "ParameterName": "resource-type",
+              "Value": "apps/v1/StatefulSet"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "replaceme"
+  }
+]
