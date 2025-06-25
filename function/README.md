@@ -40,6 +40,8 @@ The Kubernetes API and cloud APIs contain a number of associative lists, such as
 
 `ResolveAssociativePaths` can also bind map keys to parameters, using `.@<map key>:<parameter name>`, for a specific key, or `.*@:<parameter name>` for any key.
 
+`ResolveAssociativePaths` supports path existence checking using the `.|` syntax. When a path segment is prefixed with `|`, the path resolution requires that the preceding path exists up to that point, but allows the current segment to be created if it doesn't exist. For example, `spec.template.spec.containers.0.|securityContext` will resolve if the `containers.0` path exists, regardless of whether `securityContext` exists. This is useful for conditional operations where you want to ensure a parent structure exists before creating or modifying child elements.
+
 ### Resource traversal
 
 Kubernetes resources are currently stored in Units as lists of YAML documents. Kubernetes functions mostly work the same as functions on any arbitrary YAML. k8skit implements an interface to enable extracting the resource type and name from each document:

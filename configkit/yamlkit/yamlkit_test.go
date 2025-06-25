@@ -54,7 +54,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=example-container.env.?name=EXAMPLE_ENV.value"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=example-container.env.?name=EXAMPLE_ENV.value"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.env.0.value"), results[0].Path)
@@ -77,7 +77,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=container-two.image"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=container-two.image"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[0].Path)
@@ -96,7 +96,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.ports.?name=http.port"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.ports.?name=http.port"), "", false)
 	assert.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -113,7 +113,7 @@ items:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("items.?name=duplicate-item.value"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("items.?name=duplicate-item.value"), "", false)
 	assert.NoError(t, err)
 	// Expecting the first occurrence
 	assert.Equal(t, len(results), 1)
@@ -130,7 +130,7 @@ data: {}
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("data.?key=nonexistent"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("data.?key=nonexistent"), "", false)
 	assert.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -153,7 +153,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 	c := docs[0].Path("spec.template.spec.containers")
-	results, err := ResolveAssociativePaths(c, api.UnresolvedPath("?name=container-two.image"), "")
+	results, err := ResolveAssociativePaths(c, api.UnresolvedPath("?name=container-two.image"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("1.image"), results[0].Path)
@@ -182,7 +182,7 @@ subjects:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*.namespace"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*.namespace"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 2)
 	assert.Equal(t, api.ResolvedPath("subjects.0.namespace"), results[0].Path)
@@ -206,7 +206,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:containerName=container-two.image"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:containerName=container-two.image"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[0].Path)
@@ -234,7 +234,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*?name:containerName.image"), "")
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*?name:containerName.image"), "", false)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 2)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
@@ -249,4 +249,102 @@ spec:
 	stringValue, ok = results[1].PathArguments[0].Value.(string)
 	assert.True(t, ok)
 	assert.Equal(t, stringValue, "container-two")
+}
+
+func TestResolveAssociativePaths_UpsertMode(t *testing.T) {
+	// YAML fixture without securityContext
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+      - name: redis  
+        image: redis:5.0
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Test 1: Upsert with wildcard should resolve paths even when target doesn't exist
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.securityContext.runAsNonRoot"), results[1].Path)
+
+	// Test 2: Upsert with associative match should resolve path even when target doesn't exist  
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
+
+	// Test 3: Non-upsert mode should not resolve non-existent paths
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", false)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+}
+
+func TestResolveAssociativePaths_PrecedingPathExistenceCheck(t *testing.T) {
+	// YAML fixture with existing securityContext
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        securityContext:
+          runAsUser: 1000
+      - name: redis  
+        image: redis:5.0
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Test 1: "|" syntax should resolve when preceding path exists, even if current segment doesn't exist
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|newField"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.newField"), results[0].Path)
+
+	// Test 2: "|" syntax should also work when current segment exists
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|securityContext"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext"), results[0].Path)
+
+	// Test 3: "|" syntax should not resolve when preceding path doesn't exist
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.nonexistent.0.|field"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+}
+
+func TestResolveAssociativePaths_UpsertWithResolvedSegments(t *testing.T) {
+	// YAML fixture
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Test: Upsert should handle paths that have both search expressions and resolved segments
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
 }

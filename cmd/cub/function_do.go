@@ -119,19 +119,45 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	return req
 }
 
+func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
+	var funcArgs []goclientnew.FunctionArgument
+	namedArgMode := false
+	
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--") && strings.Contains(arg, "=") {
+			// This is a named argument
+			namedArgMode = true
+			parts := strings.SplitN(arg, "=", 2)
+			paramName := strings.TrimPrefix(parts[0], "--")
+			value := parts[1]
+			
+			funcArgs = append(funcArgs, goclientnew.FunctionArgument{
+				ParameterName: &paramName,
+				Value:         &goclientnew.FunctionArgument_Value{},
+			})
+			funcArgs[len(funcArgs)-1].Value.FromFunctionArgumentValue0(value)
+			
+		} else if namedArgMode {
+			// Once we've seen a named argument, all subsequent arguments must be named
+			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
+		} else {
+			// This is a positional argument - no ParameterName
+			funcArgs = append(funcArgs, goclientnew.FunctionArgument{
+				Value: &goclientnew.FunctionArgument_Value{},
+			})
+			funcArgs[len(funcArgs)-1].Value.FromFunctionArgumentValue0(arg)
+		}
+	}
+
+	return funcArgs
+}
+
 func initializeFunctionInvocation(functionName string, args []string) *goclientnew.FunctionInvocation {
-	newArgList := make([]goclientnew.FunctionArgument, len(args))
-	functionInvocation := &goclientnew.FunctionInvocation{
+	funcArgs := parseFunctionArguments(args)
+	return &goclientnew.FunctionInvocation{
 		FunctionName: functionName,
-		Arguments:    newArgList,
+		Arguments:    funcArgs,
 	}
-	for i, invokeArg := range args {
-		args := functionInvocation.Arguments
-		args[i] = goclientnew.FunctionArgument{Value: &goclientnew.FunctionArgument_Value{}}
-		args[i].Value.FromFunctionArgumentValue0(invokeArg)
-		functionInvocation.Arguments = args
-	}
-	return functionInvocation
 }
 
 func initializeFunctionInvocationsRequest(cmdArgs []string) *goclientnew.FunctionInvocationsRequest {

@@ -47,7 +47,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-name", containerNameParameters,
-		" the container name", api.AttributeNameContainerName, k8skit.K8sResourceProvider, false)
+		" the container name", api.AttributeNameContainerName, k8skit.K8sResourceProvider, false, false)
 
 	imageParameters := []api.FunctionParameter{
 		{
@@ -68,7 +68,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image", imageParameters,
-		" the image for a container", api.AttributeNameContainerImage, k8skit.K8sResourceProvider, true)
+		" the image for a container", api.AttributeNameContainerImage, k8skit.K8sResourceProvider, true, false)
 	setImageHandler = fh.GetHandlerImplementation("set-image") // for testing
 	imageURIParameters := []api.FunctionParameter{
 		{
@@ -89,7 +89,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image-uri", imageURIParameters,
-		" the image repository URI for a container", api.AttributeNameContainerRepositoryURI, k8skit.K8sResourceProvider, true)
+		" the image repository URI for a container", api.AttributeNameContainerRepositoryURI, k8skit.K8sResourceProvider, true, false)
 	setImageUriHandler = fh.GetHandlerImplementation("set-image-uri") // for testing
 	imageReferenceParameters := []api.FunctionParameter{
 		{
@@ -110,7 +110,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "image-reference", imageReferenceParameters,
-		" the image reference for a container", api.AttributeNameContainerImageReference, k8skit.K8sResourceProvider, true)
+		" the image reference for a container", api.AttributeNameContainerImageReference, k8skit.K8sResourceProvider, true, false)
 	setImageReferenceHandler = fh.GetHandlerImplementation("set-image-reference") // for testing
 	resourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImages, k8skit.K8sResourceProvider)
 	fh.RegisterFunction("set-image-reference-by-uri", &handler.FunctionRegistration{
@@ -158,7 +158,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
-		" the replicas for workload controllers", attributeNameReplicas, k8skit.K8sResourceProvider, true)
+		" the replicas for workload controllers", attributeNameReplicas, k8skit.K8sResourceProvider, true, false)
 	resourceTypes = yamlkit.ResourceTypesForPathMap(resourceTypeToContainersPaths)
 	fh.RegisterFunction("set-env", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -217,7 +217,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "env-var", envVarParameters,
-		" an environment variable for a container", attributeNameEnvValue, k8skit.K8sResourceProvider, true)
+		" an environment variable for a container", attributeNameEnvValue, k8skit.K8sResourceProvider, true, false)
 	resourceTypes = yamlkit.ResourceTypesForAttribute(attributeNameContainerResources, k8skit.K8sResourceProvider)
 	minFactor := 0
 	maxFactor := 10
@@ -335,7 +335,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname", hostnameParameters,
-		" the hostname", api.AttributeNameHostname, k8skit.K8sResourceProvider, true)
+		" the hostname", api.AttributeNameHostname, k8skit.K8sResourceProvider, true, false)
 	subdomainParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "subdomain",
@@ -347,7 +347,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname-subdomain", subdomainParameters,
-		" the subdomain", api.AttributeNameSubdomain, k8skit.K8sResourceProvider, true)
+		" the subdomain", api.AttributeNameSubdomain, k8skit.K8sResourceProvider, true, false)
 	domainParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "domain",
@@ -359,7 +359,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname-domain", domainParameters,
-		" the domain name", api.AttributeNameDomain, k8skit.K8sResourceProvider, true)
+		" the domain name", api.AttributeNameDomain, k8skit.K8sResourceProvider, true, false)
 }
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -943,7 +943,7 @@ func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Contain
 		}
 		return newImage
 	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{}, k8skit.K8sResourceProvider, updater)
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{}, k8skit.K8sResourceProvider, updater, false)
 	return parsedData, nil, err
 }
 
@@ -991,7 +991,7 @@ func k8sFnSetEnv(_ *api.FunctionContext, parsedData gaby.Container, args []api.F
 		for _, containersPath := range containersPaths {
 			var resolvedContainersPaths []yamlkit.ResolvedPathInfo
 			unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
-			resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "")
+			resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
 			if err != nil {
 				continue // skip problematic path
 			}
@@ -1050,7 +1050,7 @@ func k8sFnSetEnv(_ *api.FunctionContext, parsedData gaby.Container, args []api.F
 					}
 					if v == "" {
 						var pairPaths []yamlkit.ResolvedPathInfo
-						pairPaths, err = yamlkit.ResolveAssociativePaths(envs, api.UnresolvedPath("?name="+k), "")
+						pairPaths, err = yamlkit.ResolveAssociativePaths(envs, api.UnresolvedPath("?name="+k), "", false)
 						if err != nil || len(pairPaths) == 0 {
 							// Not found shouldn't be an error
 							continue
@@ -1269,7 +1269,8 @@ func k8sFnSetContainerResources(_ *api.FunctionContext, parsedData gaby.Containe
 	}
 
 	resourceTypeToResourcesPaths := yamlkit.GetPathRegistryForAttributeName(k8skit.K8sResourceProvider, attributeNameContainerResources)
-	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, k8skit.K8sResourceProvider, updater)
+	// TODO: consider setting upsert to true
+	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, k8skit.K8sResourceProvider, updater, false)
 	return parsedData, nil, err
 }
 

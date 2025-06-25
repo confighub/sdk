@@ -120,6 +120,12 @@ export const ApiInfoSchema = {
             description: 'Service revision identifier for support cases.',
             readOnly: true,
             'x-go-type-skip-optional-pointer': true
+        },
+        WorkerPort: {
+            type: 'string',
+            description: 'Port number for the worker to connect to the server.',
+            readOnly: true,
+            'x-go-type-skip-optional-pointer': true
         }
     },
     description: 'Information provided to clients by the server.'
@@ -845,6 +851,14 @@ export const FunctionParameterSchema = {
         Description: {
             type: 'string',
             description: 'Description of the parameter',
+            'x-go-type-skip-optional-pointer': true
+        },
+        EnumValues: {
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            description: 'List of valid enum values; applies to enum parameters',
             'x-go-type-skip-optional-pointer': true
         },
         Example: {

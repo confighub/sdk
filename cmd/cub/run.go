@@ -111,24 +111,67 @@ func RegisterFunctionsAsCobraCommands() {
 					}
 
 					var funcParams []goclientnew.FunctionArgument
-					for _, param := range cmdDef.Parameters {
-						p := param.ParameterName
-						value := goclientnew.FunctionArgument_Value{}
-						switch param.DataType {
-						case "int":
-							v, _ := cmd.Flags().GetInt(p)
-							value.FromFunctionArgumentValue1(int64(v))
-						case "bool":
-							v, _ := cmd.Flags().GetBool(p)
-							value.FromFunctionArgumentValue2(v)
-						default:
-							v, _ := cmd.Flags().GetString(p)
-							value.FromFunctionArgumentValue0(v)
+					
+					// Handle positional arguments first
+					for i, param := range cmdDef.Parameters {
+						if i < len(args) {
+							// Use positional argument
+							value := goclientnew.FunctionArgument_Value{}
+							value.FromFunctionArgumentValue0(args[i])
+							funcParams = append(funcParams, goclientnew.FunctionArgument{
+								ParameterName: &param.ParameterName,
+								Value:         &value,
+							})
+						} else {
+							// Use flag value
+							p := param.ParameterName
+							value := goclientnew.FunctionArgument_Value{}
+							var hasValue bool
+							switch param.DataType {
+							case "int":
+								v, _ := cmd.Flags().GetInt(p)
+								if v != 0 || cmd.Flags().Changed(p) {
+									value.FromFunctionArgumentValue1(int64(v))
+									hasValue = true
+								}
+							case "bool":
+								v, _ := cmd.Flags().GetBool(p)
+								if v || cmd.Flags().Changed(p) {
+									value.FromFunctionArgumentValue2(v)
+									hasValue = true
+								}
+							default:
+								v, _ := cmd.Flags().GetString(p)
+								if v != "" || cmd.Flags().Changed(p) {
+									value.FromFunctionArgumentValue0(v)
+									hasValue = true
+								}
+							}
+							
+							// Only add argument if value was provided or parameter is required
+							if hasValue || param.Required {
+								if !hasValue && param.Required {
+									return fmt.Errorf("required parameter '%s' not provided", param.ParameterName)
+								}
+								funcParams = append(funcParams, goclientnew.FunctionArgument{
+									ParameterName: &param.ParameterName,
+									Value:         &value,
+								})
+							}
 						}
-						funcParams = append(funcParams, goclientnew.FunctionArgument{
-							ParameterName: &param.ParameterName,
-							Value:         &value,
-						})
+					}
+					
+					// Handle VarArgs - any extra positional arguments beyond the parameter count
+					if cmdDef.VarArgs && len(args) > len(cmdDef.Parameters) {
+						lastParam := cmdDef.Parameters[len(cmdDef.Parameters)-1]
+						for i := len(cmdDef.Parameters); i < len(args); i++ {
+							value := goclientnew.FunctionArgument_Value{}
+							value.FromFunctionArgumentValue0(args[i])
+							funcParams = append(funcParams, goclientnew.FunctionArgument{
+								ParameterName: &lastParam.ParameterName,
+								Value:         &value,
+							})
+						}
 					}
 					newBody.FunctionInvocations = &[]goclientnew.FunctionInvocation{
 						{
@@ -207,10 +250,7 @@ func RegisterFunctionsAsCobraCommands() {
 					cmd.Flags().String(param.ParameterName, "", desc)
 				}
 
-				// Mark required flags
-				if param.Required {
-					_ = cmd.MarkFlagRequired(param.ParameterName)
-				}
+				// Don't mark flags as required since parameters can be provided positionally
 			}
 			commands[cmdDef.FunctionName] = cmd
 			runCmd.AddCommand(cmd)

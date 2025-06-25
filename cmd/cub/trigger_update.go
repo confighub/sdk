@@ -12,9 +12,15 @@ import (
 var triggerUpdateCmd = &cobra.Command{
 	Use:   "update <slug or id> <event> <config type> <function> [<arg1> ...]",
 	Short: "Update a trigger",
-	Long:  `Update a trigger.`,
-	Args:  cobra.MinimumNArgs(4),
-	RunE:  triggerUpdateCmdRun,
+	Long: `Update a trigger.
+
+Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
+Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
+
+Example with named arguments:
+  cub trigger update --space my-space my-trigger Mutation Kubernetes/YAML -- set-annotation --key=cloned --value=true`,
+	Args: cobra.MinimumNArgs(4),
+	RunE: triggerUpdateCmdRun,
 }
 
 var disableTrigger bool
@@ -82,13 +88,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentTrigger.ToolchainType = args[2]
 	currentTrigger.FunctionName = args[3]
 	invokeArgs := args[4:]
-	newArgs := make([]goclientnew.FunctionArgument, 0, len(invokeArgs))
-	// Note: This assumes all the string args will be cast to appropriate scalar data types
-	for _, invokeArg := range invokeArgs {
-		funcArgValue := &goclientnew.FunctionArgument_Value{}
-		funcArgValue.FromFunctionArgumentValue0(invokeArg)
-		newArgs = append(newArgs, goclientnew.FunctionArgument{Value: funcArgValue})
-	}
+	newArgs := parseFunctionArguments(invokeArgs)
 	currentTrigger.Arguments = newArgs
 	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.TriggerID, *currentTrigger)
 	if IsAPIError(err, triggerRes) {

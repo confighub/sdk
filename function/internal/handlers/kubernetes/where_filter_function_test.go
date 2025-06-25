@@ -220,17 +220,17 @@ spec:
 	}{
 		{
 			name:           "Find containers with runAsNonRoot=true",
-			expression:     "spec.template.spec.containers.*|securityContext.runAsNonRoot = true",
+			expression:     "spec.template.spec.containers.*.|securityContext.runAsNonRoot = true",
 			expectedResult: api.ValidationResultTrue,
 		},
 		{
 			name:           "Find containers without runAsNonRoot set to true",
-			expression:     "spec.template.spec.containers.*|securityContext.runAsNonRoot != true",
+			expression:     "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true",
 			expectedResult: api.ValidationResultTrue,
 		},
 		{
 			name:           "Find containers with runAsNonRoot=false (should not match any)",
-			expression:     "spec.template.spec.containers.*|securityContext.runAsNonRoot = false",
+			expression:     "spec.template.spec.containers.*.|securityContext.runAsNonRoot = false",
 			expectedResult: api.ValidationResultFalse,
 		},
 	}
@@ -273,13 +273,13 @@ spec:
 	assert.NoError(t, err)
 
 	// Test that != evaluates to true for missing properties
-	args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*|securityContext.runAsNonRoot != true"})
+	args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true"})
 	_, result, err := k8sFnResourceWhereMatch(&fakeContext, docs, args, []byte{})
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultTrue, result)
 
 	// Test that = evaluates to false for missing properties
-	args = stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*|securityContext.runAsNonRoot = false"})
+	args = stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*.|securityContext.runAsNonRoot = false"})
 	_, result, err = k8sFnResourceWhereMatch(&fakeContext, docs, args, []byte{})
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultFalse, result)

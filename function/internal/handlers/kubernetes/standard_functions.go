@@ -581,7 +581,7 @@ var pathAssociativeMatchRegexpString = "\\?" + pathMapSegmentRegexpString + "(?:
 var pathSegmentRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + "|" + pathWildcardSegmentRegexpString + "|" + pathAssociativeMatchRegexpString + ")"
 // Path segment without patterns (for right side of split)
 var pathSegmentWithoutPatternsRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + ")"
-var pathRegexpString = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
+var pathRegexpString = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
 var pathNameRegexp = regexp.MustCompile(pathRegexpString)
 var whitespaceRegexpString = "^[ \t][ \t]*"
 var whitespaceRegexp = regexp.MustCompile(whitespaceRegexpString)
@@ -627,9 +627,9 @@ type relationalExpression struct {
 	Literal  string
 	DataType api.DataType
 	// New fields for split path feature
-	VisitorPath string // Left side of | for visitor
-	SubPath     string // Right side of | for property check
-	IsSplitPath bool   // Whether this uses the | syntax
+	VisitorPath string // Left side of .| for visitor
+	SubPath     string // Right side of .| for property check
+	IsSplitPath bool   // Whether this uses the .|syntax
 }
 
 func parseAndValidateBinaryExpression(decodedQueryString string) (string, *relationalExpression, error) {
@@ -644,9 +644,9 @@ func parseAndValidateBinaryExpression(decodedQueryString string) (string, *relat
 	path := decodedQueryString[pos[0]:pos[1]]
 	decodedQueryString = skipWhitespace(decodedQueryString[pos[1]:])
 
-	// Check for split path syntax using | separator
-	if strings.Contains(path, "|") {
-		parts := strings.SplitN(path, "|", 2)
+	// Check for split path syntax using .| separator
+	if strings.Contains(path, ".|") {
+		parts := strings.SplitN(path, ".|", 2)
 		if len(parts) != 2 {
 			return decodedQueryString, &expression, fmt.Errorf("invalid split path syntax at `%s`", path)
 		}
@@ -801,11 +801,11 @@ func evaluateBoolRelationalExpression(expr *relationalExpression, pathValue bool
 	return false
 }
 
-// evaluateSplitPathExpression handles the split path syntax with | separator for Kubernetes
+// evaluateSplitPathExpression handles the split path syntax with .| separator for Kubernetes
 func evaluateSplitPathExpression(expression *relationalExpression, gvk string, parsedData gaby.Container) (map[string]bool, error) {
 	matchingResources := map[string]bool{}
 	
-	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of |)
+	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of .|)
 	resourceTypeToPaths := generic.GetVisitorMapForPath(k8skit.K8sResourceProvider, api.ResourceType(gvk), api.UnresolvedPath(expression.VisitorPath))
 	
 	// Custom visitor function that checks the subpath
@@ -863,7 +863,7 @@ func evaluateSplitPathExpression(expression *relationalExpression, gvk string, p
 		return output, nil
 	}
 	
-	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, matchingResources, k8skit.K8sResourceProvider, visitor)
+	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, matchingResources, k8skit.K8sResourceProvider, visitor, false)
 	if err != nil {
 		return nil, err
 	}
@@ -916,7 +916,7 @@ func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData ga
 		// If there are errors finding any paths, that's not a match.
 
 		if expression.IsSplitPath {
-			// Handle split path syntax with | separator
+			// Handle split path syntax with .| separator
 			matchingResourcesForExpression, err := evaluateSplitPathExpression(expression, gvk, parsedData)
 			if err != nil {
 				multiErrs = append(multiErrs, err)

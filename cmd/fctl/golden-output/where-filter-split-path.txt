@@ -1,0 +1,7 @@
+SUCCESS    true    
+OUTPUT
+------
+{
+  "Passed": true,
+  "Index": 0
+}

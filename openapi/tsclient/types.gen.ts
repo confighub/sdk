@@ -98,6 +98,10 @@ export type ApiInfo = {
      * Service revision identifier for support cases.
      */
     readonly Revision?: string;
+    /**
+     * Port number for the worker to connect to the server.
+     */
+    readonly WorkerPort?: string;
 };
 
 /**
@@ -478,6 +482,10 @@ export type FunctionParameter = {
      * Description of the parameter
      */
     Description?: string;
+    /**
+     * List of valid enum values; applies to enum parameters
+     */
+    EnumValues?: Array<string>;
     /**
      * Example value
      */

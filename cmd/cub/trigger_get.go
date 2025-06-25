@@ -58,6 +58,30 @@ func triggerGetCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func formatFunctionArgumentValue(value *goclientnew.FunctionArgument_Value) string {
+	if value == nil {
+		return "<nil>"
+	}
+
+	// Try string first (most common)
+	if strVal, err := value.AsFunctionArgumentValue0(); err == nil {
+		return fmt.Sprintf("%q", strVal)
+	}
+
+	// Try int64
+	if intVal, err := value.AsFunctionArgumentValue1(); err == nil {
+		return strconv.FormatInt(intVal, 10)
+	}
+
+	// Try bool
+	if boolVal, err := value.AsFunctionArgumentValue2(); err == nil {
+		return strconv.FormatBool(boolVal)
+	}
+
+	// Fallback: return the raw JSON
+	return fmt.Sprintf("%v", value)
+}
+
 func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
 	view := tableView()
 	view.Append([]string{"ID", triggerDetails.TriggerID.String()})
@@ -79,7 +103,11 @@ func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
 	view.Append([]string{"Toolchain Type", (triggerDetails.ToolchainType)})
 	view.Append([]string{"Function Name", (triggerDetails.FunctionName)})
 	for i := range triggerDetails.Arguments {
-		view.Append([]string{fmt.Sprintf("Argument %d", i), fmt.Sprintf("%v", triggerDetails.Arguments[i].Value)})
+		argLabel := fmt.Sprintf("Argument %d", i)
+		if triggerDetails.Arguments[i].ParameterName != nil {
+			argLabel = fmt.Sprintf("Argument %d (%s)", i, *triggerDetails.Arguments[i].ParameterName)
+		}
+		view.Append([]string{argLabel, formatFunctionArgumentValue(triggerDetails.Arguments[i].Value)})
 	}
 	view.Render()
 }

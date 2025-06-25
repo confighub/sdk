@@ -18,7 +18,67 @@ import (
 	// TODO: the API mechanism will change when we decide/build the "real" webhook model.
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/client"
+	"github.com/confighub/sdk/workerapi"
 )
+
+func parseArguments(args []string) []api.FunctionArgument {
+	var funcArgs []api.FunctionArgument
+	namedArgMode := false
+	
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--") && strings.Contains(arg, "=") {
+			// This is a named argument
+			namedArgMode = true
+			parts := strings.SplitN(arg, "=", 2)
+			paramName := strings.TrimPrefix(parts[0], "--")
+			value := parts[1]
+			
+			funcArgs = append(funcArgs, api.FunctionArgument{
+				ParameterName: paramName,
+				Value:         value,
+			})
+			
+		} else if namedArgMode {
+			// Once we've seen a named argument, all subsequent arguments must be named
+			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
+		} else {
+			// This is a positional argument - no ParameterName
+			funcArgs = append(funcArgs, api.FunctionArgument{
+				Value: arg,
+			})
+		}
+	}
+
+	return funcArgs
+}
+
+func InvokeFunction(
+	transportConfig *client.TransportConfig,
+	toolchain workerapi.ToolchainType,
+	data []byte,
+	functionContext *api.FunctionContext,
+	functionName string,
+	args ...string,
+) (*api.FunctionInvocationResponse, error) {
+
+	// TODO: just rely on server validation?
+	if !regexp.MustCompile(`^[a-z0-9-_]*$`).MatchString(functionName) {
+		return nil, fmt.Errorf("function name '%s' contains invalid characters", functionName)
+	}
+	
+	funcArgs := parseArguments(args)
+	functions := []api.FunctionInvocation{{FunctionName: functionName, Arguments: funcArgs}}
+	
+	return client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
+		ConfigData:               data,
+		FunctionContext:          *functionContext,
+		FunctionInvocations:      functions,
+		CastStringArgsToScalars:  true,
+		NumFilters:               0,
+		StopOnError:              false,
+		CombineValidationResults: true,
+	})
+}
 
 func fakeFunctionContext(displayName string) *api.FunctionContext {
 	// Ensure these IDs are deterministic for testing.
@@ -62,7 +122,7 @@ func newDoCommand() *cobra.Command {
 			functionName := args[2]
 			invokeArgs := args[3:]
 
-			respMsg, err := client.InvokeFunction(transportConfig, toolchain, content, fakeFunctionContext(unitName), functionName, invokeArgs...)
+			respMsg, err := InvokeFunction(transportConfig, toolchain, content, fakeFunctionContext(unitName), functionName, invokeArgs...)
 			failOnError(err)
 			outputFunctionInvocationResponse(content, respMsg)
 		},

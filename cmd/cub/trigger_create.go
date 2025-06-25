@@ -29,6 +29,9 @@ Example Functions:
   - set-annotation: Set annotations on resources
   - ensure-context: Ensure context annotations are present
 
+Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
+Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
+
 Examples:
   # Create a trigger to validate replicas > 1 for Deployments
   cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1'
@@ -49,7 +52,10 @@ Examples:
   cub trigger create --space my-space --json rename PostClone Kubernetes/YAML set-default-names
 
   # Create a trigger to add a "cloned=true" annotation after cloning
-  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML set-annotation cloned true`,
+  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML set-annotation cloned true
+
+  # Using named arguments for clarity (note the "--" separator)
+  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML -- set-annotation --key=cloned --value=true`,
 	Args: cobra.MinimumNArgs(4),
 	RunE: triggerCreateCmdRun,
 }
@@ -99,14 +105,7 @@ func triggerCreateCmdRun(cmd *cobra.Command, args []string) error {
 	newBody.ToolchainType = args[2]
 	newBody.FunctionName = args[3]
 	invokeArgs := args[4:]
-	newArgs := make([]goclientnew.FunctionArgument, 0, len(invokeArgs))
-
-	// Note: This assumes all the string args will be cast to appropriate scalar data types
-	for _, invokeArg := range invokeArgs {
-		funcArgValue := &goclientnew.FunctionArgument_Value{}
-		funcArgValue.FromFunctionArgumentValue0(invokeArg)
-		newArgs = append(newArgs, goclientnew.FunctionArgument{Value: funcArgValue})
-	}
+	newArgs := parseFunctionArguments(invokeArgs)
 	newBody.Arguments = newArgs
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, newBody)
 	if IsAPIError(err, triggerRes) {

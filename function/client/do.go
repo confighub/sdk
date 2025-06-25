@@ -7,10 +7,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -19,33 +17,6 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
-func InvokeFunction(
-	transportConfig *TransportConfig,
-	toolchain workerapi.ToolchainType,
-	data []byte,
-	functionContext *api.FunctionContext,
-	functionName string,
-	args ...string,
-) (*api.FunctionInvocationResponse, error) {
-
-	// TODO: just rely on server validation?
-	if !regexp.MustCompile(`^[a-z0-9-_]*$`).MatchString(functionName) {
-		return nil, fmt.Errorf("function name '%s' contains invalid characters", functionName)
-	}
-	functions := []api.FunctionInvocation{{FunctionName: functionName, Arguments: make([]api.FunctionArgument, len(args))}}
-	for i, invokeArg := range args {
-		functions[0].Arguments[i].Value = invokeArg
-	}
-	return InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
-		ConfigData:               data,
-		FunctionContext:          *functionContext,
-		FunctionInvocations:      functions,
-		CastStringArgsToScalars:  true,
-		NumFilters:               0,
-		StopOnError:              false,
-		CombineValidationResults: true,
-	})
-}
 
 func InvokeFunctions(
 	transportConfig *TransportConfig,

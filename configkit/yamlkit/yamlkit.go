@@ -81,9 +81,9 @@ func YamlSafePathGetDoc(
 	}
 	if !doc.ExistsP(resolvedPathString) {
 		if notFoundOk {
-			return doc, false, nil
+			return nil, false, nil
 		} else {
-			return doc, false, fmt.Errorf("%s not found", resolvedPathString)
+			return nil, false, fmt.Errorf("%s not found", resolvedPathString)
 		}
 	}
 	subdoc := doc.Path(resolvedPathString)
@@ -279,6 +279,7 @@ func ResolveAssociativePaths(
 	doc *gaby.YamlDoc,
 	unresolvedPath api.UnresolvedPath,
 	resolvedPath api.ResolvedPath,
+	upsert bool,
 ) ([]ResolvedPathInfo, error) {
 
 	path := string(unresolvedPath)
@@ -456,7 +457,12 @@ func ResolveAssociativePaths(
 			// Regular segment. Assume it matches the constraint, if any.
 			parameterName := ""
 			parameterValue := ""
-			if strings.HasPrefix(segment, "@") {
+			mustExist := false
+			
+			if strings.HasPrefix(segment, "|") {
+				// Handle "|" syntax - path needs to exist up to this point
+				segment = strings.TrimPrefix(segment, "|")
+			} else if strings.HasPrefix(segment, "@") {
 				keyName := strings.TrimPrefix(segment, "@")
 				keyNameParts := strings.Split(keyName, ":")
 				switch len(keyNameParts) {
@@ -469,12 +475,13 @@ func ResolveAssociativePaths(
 					return []ResolvedPathInfo{}, fmt.Errorf("invalid map parameter expression '%s'", segment)
 				}
 				segment = keyNameParts[0]
+				mustExist = true
 				// log.Infof("segment %s parameterValue %s parameterName %s", segment, parameterValue, parameterName)
 			}
 
 			// This segment traversal doesn't need to have dots escaped
 			currentNode := workList[0].ParentNode.S(segment)
-			if currentNode == nil {
+			if currentNode == nil && (mustExist || !upsert) {
 				// Possibly we went down an errant path
 				// Dequeue and continue
 				workList = workList[1:]
@@ -488,6 +495,28 @@ func ResolveAssociativePaths(
 			}
 			workList[0].ParentNode = currentNode
 			workList[0].CurrentSegmentIndex++
+			
+			// Handle upsert mode: if all remaining segments are resolved, append them and mark as complete
+			if upsert {
+				allRemainingResolved := true
+				for i := workList[0].CurrentSegmentIndex; i < len(segments); i++ {
+					if !PathIsResolved(segments[i]) {
+						allRemainingResolved = false
+						break
+					}
+				}
+				if allRemainingResolved {
+					// Append all remaining segments to ResolvedSegments
+					for i := workList[0].CurrentSegmentIndex; i < len(segments); i++ {
+						workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, EscapeDotsInPathSegment(segments[i]))
+					}
+					// Set CurrentSegmentIndex to len(segments) so path will be resolved on next iteration
+					workList[0].CurrentSegmentIndex = len(segments)
+				} else if currentNode == nil {
+					// If currentNode is nil and not all remaining segments are resolved, dequeue
+					workList = workList[1:]
+				}
+			}
 		}
 	}
 
@@ -896,15 +925,33 @@ func VisitPaths[T api.Scalar](
 	output any,
 	resourceProvider ResourceProvider,
 	visitor VisitorFunc[T],
+	upsert bool,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		if currentDoc == nil {
+			// Handle nil currentDoc in upsert mode by providing default values
+			var defaultValue T
+			switch any(defaultValue).(type) {
+			case string:
+				// PlaceHolderBlockApplyString is not passed because some functions may want to set that as a value
+				return visitor(doc, output, context, any("").(T))
+			case int:
+				// Use negative value to distinguish from 0
+				return visitor(doc, output, context, any(-PlaceHolderBlockApplyInt).(T))
+			case bool:
+				// Use false since there's not a better option
+				return visitor(doc, output, context, any(false).(T))
+			default:
+				return output, fmt.Errorf("unsupported type %T for upsert with nil currentDoc at path %s", defaultValue, string(context.Path))
+			}
+		}
 		currentValue, ok := currentDoc.Data().(T)
 		if ok {
 			return visitor(doc, output, context, currentValue)
 		}
 		return output, fmt.Errorf("value %v at path %s cannot be converted to %T", currentDoc.Data(), string(context.Path), currentValue)
 	}
-	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor)
+	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert)
 }
 
 // VisitorFuncAnyType defines the signature of functions invoked by the visitor functions.
@@ -920,11 +967,12 @@ func VisitPathsAnyType(
 	output any,
 	resourceProvider ResourceProvider,
 	visitor VisitorFuncAnyType,
+	upsert bool,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		return visitor(doc, output, context, currentDoc.Data())
 	}
-	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor)
+	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert)
 }
 
 // VisitorFuncDoc defines the signature of functions invoked by the visitor function.
@@ -940,6 +988,7 @@ func VisitPathsDoc(
 	output any,
 	resourceProvider ResourceProvider,
 	visitor VisitorFuncDoc,
+	upsert bool,
 ) (any, error) {
 
 	resourceVisitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
@@ -981,7 +1030,9 @@ func VisitPathsDoc(
 				embeddedPath = strings.Join(unresolvedPathSegments[1:], "#")
 			}
 			pathConstraint := strings.Split(string(unresolvedPathInfo.ResolvedPath), "#")
-			resolvedPaths, err := ResolveAssociativePaths(doc, api.UnresolvedPath(unresolvedPathSegments[0]), api.ResolvedPath(pathConstraint[0]))
+			// If there's an embedded accessor (#), upsert should be passed as false to ResolveAssociativePaths
+			resolveUpsert := upsert && embeddedPath == ""
+			resolvedPaths, err := ResolveAssociativePaths(doc, api.UnresolvedPath(unresolvedPathSegments[0]), api.ResolvedPath(pathConstraint[0]), resolveUpsert)
 			if err != nil {
 				// Don't report the error. Not found is expected.
 				continue // Skip if an error
@@ -989,10 +1040,11 @@ func VisitPathsDoc(
 			for _, resolvedPath := range resolvedPaths {
 				// log.Infof("resolved path %s args %v in resource %s of type %s", resolvedPath.Path, resolvedPath.PathArguments, string(resourceName), string(resourceType))
 				currentDoc, found, err := YamlSafePathGetDoc(doc, resolvedPath.Path, true)
-				if err != nil || !found {
+				if err != nil || (!found && !upsert) {
 					// Don't report the error. Not found is expected.
-					continue // Skip if not found or an error
+					continue // Skip if not found or an error, unless in upsert mode
 				}
+				// In upsert mode, currentDoc will already be nil if !found
 				context := VisitorContext{
 					AttributeInfo: api.AttributeInfo{
 						AttributeIdentifier: api.AttributeIdentifier{
@@ -1041,18 +1093,19 @@ func UpdatePathsFunction[T api.Scalar](
 	keys []any,
 	resourceProvider ResourceProvider,
 	updater func(T) T,
+	upsert bool,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue T) (any, error) {
 		originalValue := currentValue
 		newValue := updater(currentValue)
 		var err error
-		if newValue != originalValue {
+		if newValue != originalValue || upsert {
 			_, err = doc.SetP(newValue, string(context.Path))
 		}
 		return output, err
 	}
-	_, err := VisitPaths[T](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor)
+	_, err := VisitPaths[T](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert)
 	return err
 }
 
@@ -1064,12 +1117,13 @@ func UpdatePathsValue[T api.Scalar](
 	keys []any,
 	resourceProvider ResourceProvider,
 	newValue T,
+	upsert bool,
 ) error {
 
 	updater := func(_ T) T {
 		return newValue
 	}
-	err := UpdatePathsFunction[T](parsedData, resourceTypeToPaths, keys, resourceProvider, updater)
+	err := UpdatePathsFunction[T](parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert)
 	return err
 }
 
@@ -1081,18 +1135,19 @@ func UpdatePathsFunctionDoc(
 	keys []any,
 	resourceProvider ResourceProvider,
 	updater func(*gaby.YamlDoc) *gaby.YamlDoc,
+	upsert bool,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		originalDoc := currentDoc
 		newDoc := updater(currentDoc)
 		var err error
-		if newDoc.String() != originalDoc.String() {
+		if upsert || (originalDoc != nil && newDoc.String() != originalDoc.String()) {
 			_, err = doc.SetDocP(newDoc, string(context.Path))
 		}
 		return output, err
 	}
-	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor)
+	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert)
 	return err
 }
 
@@ -1228,7 +1283,7 @@ func GetPathsAnyType(
 		return visitorValues, nil
 	}
 	values := []api.AttributeValue{}
-	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor)
+	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor, false)
 	if err != nil {
 		return values, err
 	}
@@ -1306,6 +1361,7 @@ func UpdateStringPathsFunction(
 	keys []any,
 	resourceProvider ResourceProvider,
 	updater func(string) string,
+	upsert bool,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue string) (any, error) {
@@ -1327,12 +1383,12 @@ func UpdateStringPathsFunction(
 			newValue = replacedValue
 		}
 		var err error
-		if newValue != originalValue {
+		if newValue != originalValue || upsert {
 			_, err = doc.SetP(newValue, string(context.Path))
 		}
 		return output, err
 	}
-	_, err := VisitPaths[string](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor)
+	_, err := VisitPaths[string](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert)
 	return err
 }
 
@@ -1345,12 +1401,13 @@ func UpdateStringPaths(
 	keys []any,
 	resourceProvider ResourceProvider,
 	newValue string,
+	upsert bool,
 ) error {
 
 	updater := func(_ string) string {
 		return newValue
 	}
-	err := UpdateStringPathsFunction(parsedData, resourceTypeToPaths, keys, resourceProvider, updater)
+	err := UpdateStringPathsFunction(parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert)
 	return err
 }
 
