@@ -6,7 +6,6 @@ package kubernetes
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -567,166 +566,9 @@ func k8sFnNoPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []
 	return parsedData, result, nil
 }
 
-// There's an extended implementation of where-filter to support resource Quantity
+// Kubernetes-specific resource quantity handling
 
-// Path expressions support embedded accessors and escaped dots.
-// They also support wildcards and associative matches.
-// Kubernetes annotations and labels permit slashes
-var parameterNameRegexpString = "(?:[A-Za-z][A-Za-z0-9_\\-]{0,127})"
-var pathMapSegmentRegexpString = "(?:[A-Za-z](?:[A-Za-z0-9/_\\-]|(?:\\~[12])){0,127})"
-var pathMapSegmentBoundtoParameterRegexpString = "(?:@" + pathMapSegmentRegexpString + "\\:" + parameterNameRegexpString + ")"
-var pathIndexSegmentRegexpString = "(?:[0-9][0-9]{0,9})"
-var pathWildcardSegmentRegexpString = "\\*(?:(?:\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?)|(?:@\\:" + parameterNameRegexpString + "))?"
-var pathAssociativeMatchRegexpString = "\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?=[^.][^.]*"
-var pathSegmentRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + "|" + pathWildcardSegmentRegexpString + "|" + pathAssociativeMatchRegexpString + ")"
-// Path segment without patterns (for right side of split)
-var pathSegmentWithoutPatternsRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + ")"
-var pathRegexpString = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
-var pathNameRegexp = regexp.MustCompile(pathRegexpString)
-var whitespaceRegexpString = "^[ \t][ \t]*"
-var whitespaceRegexp = regexp.MustCompile(whitespaceRegexpString)
-var relationalOperatorRegexpString = "^(<=|>=|<|>|=|\\!=)"
-var relationalOperatorRegexp = regexp.MustCompile(relationalOperatorRegexpString)
-var logicalOperatorRegexpString = "^AND"
-var logicalOperatorRegexp = regexp.MustCompile(logicalOperatorRegexpString)
-var booleanLiteralRegexpString = "^(true|false)"
-var booleanLiteralRegexp = regexp.MustCompile(booleanLiteralRegexpString)
-var integerLiteralRegexpString = "^[0-9][0-9]{0,9}"
-var integerLiteralRegexp = regexp.MustCompile(integerLiteralRegexpString)
-var stringLiteralRegexpString = `^'[^'"\\]{0,255}'`
-var stringLiteralRegexp = regexp.MustCompile(stringLiteralRegexpString)
-
-const andOperator = "AND"
-
-func parseLiteral(decodedQueryString string) (string, string, api.DataType, error) {
-	pos := integerLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeInt, nil
-	}
-	pos = booleanLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeBool, nil
-	}
-	pos = stringLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeString, nil
-	}
-
-	return decodedQueryString, "", api.DataTypeNone, fmt.Errorf("no operand found at `%s`", decodedQueryString)
-}
-
-type relationalExpression struct {
-	Path     string
-	Operator string
-	Literal  string
-	DataType api.DataType
-	// New fields for split path feature
-	VisitorPath string // Left side of .| for visitor
-	SubPath     string // Right side of .| for property check
-	IsSplitPath bool   // Whether this uses the .|syntax
-}
-
-func parseAndValidateBinaryExpression(decodedQueryString string) (string, *relationalExpression, error) {
-	var expression relationalExpression
-
-	// Whitespace should have been skipped already
-	// For now, first operand is always a path name
-	pos := pathNameRegexp.FindStringIndex(decodedQueryString)
-	if pos == nil {
-		return decodedQueryString, &expression, fmt.Errorf("invalid path at `%s`", decodedQueryString)
-	}
-	path := decodedQueryString[pos[0]:pos[1]]
-	decodedQueryString = skipWhitespace(decodedQueryString[pos[1]:])
-
-	// Check for split path syntax using .| separator
-	if strings.Contains(path, ".|") {
-		parts := strings.SplitN(path, ".|", 2)
-		if len(parts) != 2 {
-			return decodedQueryString, &expression, fmt.Errorf("invalid split path syntax at `%s`", path)
-		}
-		expression.VisitorPath = parts[0]
-		expression.SubPath = parts[1]
-		expression.IsSplitPath = true
-		expression.Path = path // Keep original path for compatibility
-	} else {
-		expression.Path = path
-		expression.IsSplitPath = false
-	}
-
-	// Get the operator
-	pos = relationalOperatorRegexp.FindStringIndex(decodedQueryString)
-	if pos == nil {
-		return decodedQueryString, &expression, fmt.Errorf("invalid operator at `%s`", decodedQueryString)
-	}
-	// Operator should be a valid SQL operator
-	operator := decodedQueryString[pos[0]:pos[1]]
-	decodedQueryString = skipWhitespace(decodedQueryString[pos[1]:])
-
-	// Second operand must be a literal
-	var literal string
-	var dataType api.DataType
-	var err error
-	decodedQueryString, literal, dataType, err = parseLiteral(decodedQueryString)
-	if err != nil {
-		return decodedQueryString, &expression, err
-	}
-	if dataType == api.DataTypeBool && (operator != "=" && operator != "!=") {
-		return decodedQueryString, &expression, fmt.Errorf("invalid boolean operator `%s`", operator)
-	}
-
-	expression.Path = path
-	expression.Operator = operator
-	expression.Literal = literal
-	expression.DataType = dataType
-	return decodedQueryString, &expression, nil
-}
-
-func skipWhitespace(decodedQueryString string) string {
-	pos := whitespaceRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		return decodedQueryString[pos[1]:]
-	}
-	return decodedQueryString
-}
-
-func getLogicalOperator(decodedQueryString string) (string, string) {
-	pos := logicalOperatorRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		return decodedQueryString[pos[1]:], decodedQueryString[pos[0]:pos[1]]
-	}
-	return decodedQueryString, ""
-}
-
-func parseAndValidateWhereFilter(queryString string) ([]*relationalExpression, error) {
-	expressions := []*relationalExpression{}
-
-	decodedQueryString := skipWhitespace(queryString)
-	for decodedQueryString != "" {
-		var expression *relationalExpression
-		var err error
-		decodedQueryString, expression, err = parseAndValidateBinaryExpression(decodedQueryString)
-		if err != nil {
-			return expressions, err
-		}
-		expressions = append(expressions, expression)
-		decodedQueryString = skipWhitespace(decodedQueryString)
-		var operator string
-		decodedQueryString, operator = getLogicalOperator(decodedQueryString)
-		if operator == andOperator {
-			decodedQueryString = skipWhitespace(decodedQueryString)
-		}
-	}
-
-	return expressions, nil
-}
-
-func evaluateResourceQuantityRelationalExpression(expr *relationalExpression, pathQuantity quantity.Quantity) bool {
+func evaluateResourceQuantityRelationalExpression(expr *generic.RelationalExpression, pathQuantity quantity.Quantity) bool {
 	stringLiteral := strings.Trim(expr.Literal, "'")
 	exprQuantity, err := quantity.ParseQuantity(stringLiteral)
 	if err != nil {
@@ -749,277 +591,30 @@ func evaluateResourceQuantityRelationalExpression(expr *relationalExpression, pa
 	return false
 }
 
-func evaluateStringRelationalExpression(expr *relationalExpression, pathValue string) bool {
-	stringLiteral := strings.Trim(expr.Literal, "'")
-	switch expr.Operator {
-	case "=":
-		return pathValue == stringLiteral
-	case "!=":
-		return pathValue != stringLiteral
-	case "<":
-		return pathValue < stringLiteral
-	case "<=":
-		return pathValue <= stringLiteral
-	case ">":
-		return pathValue > stringLiteral
-	case ">=":
-		return pathValue >= stringLiteral
-	}
-	return false
-}
-
-func evaluateIntRelationalExpression(expr *relationalExpression, pathValue int) bool {
-	intLiteral, err := strconv.Atoi(expr.Literal)
-	if err != nil {
-		return false
-	}
-	switch expr.Operator {
-	case "=":
-		return pathValue == intLiteral
-	case "!=":
-		return pathValue != intLiteral
-	case "<":
-		return pathValue < intLiteral
-	case "<=":
-		return pathValue <= intLiteral
-	case ">":
-		return pathValue > intLiteral
-	case ">=":
-		return pathValue >= intLiteral
-	}
-	return false
-}
-
-func evaluateBoolRelationalExpression(expr *relationalExpression, pathValue bool) bool {
-	boolLiteral := expr.Literal == "true"
-	switch expr.Operator {
-	case "=":
-		return pathValue == boolLiteral
-	case "!=":
-		return pathValue != boolLiteral
-	}
-	return false
-}
-
-// evaluateSplitPathExpression handles the split path syntax with .| separator for Kubernetes
-func evaluateSplitPathExpression(expression *relationalExpression, gvk string, parsedData gaby.Container) (map[string]bool, error) {
-	matchingResources := map[string]bool{}
-	
-	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of .|)
-	resourceTypeToPaths := generic.GetVisitorMapForPath(k8skit.K8sResourceProvider, api.ResourceType(gvk), api.UnresolvedPath(expression.VisitorPath))
-	
-	// Custom visitor function that checks the subpath
-	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		// Try to get the value at the subpath within this subobject
-		value, found, err := yamlkit.YamlSafePathGetValueAnyType(currentDoc, api.ResolvedPath(expression.SubPath), true)
-		
-		var matches bool
-		if err != nil {
-			return output, err
-		}
-		
-		if !found {
-			// Property not present - handle special case for != operator
-			if expression.Operator == "!=" {
-				matches = true // != always evaluates to true for missing properties
-			} else {
-				matches = false // Other operators evaluate to false for missing properties
-			}
-		} else {
-			// Property is present - evaluate normally
-			switch expression.DataType {
-			case api.DataTypeString:
-				if stringValue, ok := value.(string); ok {
-					if resourcesPathRegexp.MatchString(expression.SubPath) {
-						resourceQuantity, err := quantity.ParseQuantity(stringValue)
-						if err != nil {
-							return output, fmt.Errorf("invalid resource quantity %s", stringValue)
-						}
-						matches = evaluateResourceQuantityRelationalExpression(expression, resourceQuantity)
-					} else {
-						matches = evaluateStringRelationalExpression(expression, stringValue)
-					}
-				}
-			case api.DataTypeInt:
-				if intValue, ok := value.(int); ok {
-					matches = evaluateIntRelationalExpression(expression, intValue)
-				} else if floatValue, ok := value.(float64); ok {
-					// Handle JSON numbers that parse as float64
-					matches = evaluateIntRelationalExpression(expression, int(floatValue))
-				}
-			case api.DataTypeBool:
-				if boolValue, ok := value.(bool); ok {
-					matches = evaluateBoolRelationalExpression(expression, boolValue)
-				}
-			}
-		}
-		
-		if matches {
-			if existingOutput, ok := output.(map[string]bool); ok {
-				existingOutput[string(context.ResourceName)] = true
-			}
-		}
-		
-		return output, nil
-	}
-	
-	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, matchingResources, k8skit.K8sResourceProvider, visitor, false)
-	if err != nil {
-		return nil, err
-	}
-	
-	return matchingResources, nil
-}
 
 var resourcesPathRegexpString = "\\.resources\\.(requests|limits)\\.[a-z]+$"
 var resourcesPathRegexp = regexp.MustCompile(resourcesPathRegexpString)
 
-func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-	gvk := args[0].Value.(string)
-	whereExpr := args[1].Value.(string)
-
-	// Allow blank whereExpr: filter by gvk only
-	if strings.TrimSpace(whereExpr) == "" {
-		_, categoryTypeMap, err := k8skit.K8sResourceProvider.ResourceAndCategoryTypeMaps(parsedData)
-		if err != nil {
-			return parsedData, api.ValidationResultFalse, err
-		}
-		for categoryType, names := range categoryTypeMap {
-			// Ignore the category for now.
-			if categoryType.ResourceType == api.ResourceType(gvk) && len(names) > 0 {
-				return parsedData, api.ValidationResultTrue, nil
-			}
-		}
-		return parsedData, api.ValidationResultFalse, nil
-	}
-
-	expressions, err := parseAndValidateWhereFilter(whereExpr)
+// evaluateResourceQuantityComparison wraps resource quantity parsing and comparison
+func evaluateResourceQuantityComparison(expr *generic.RelationalExpression, value string) (bool, error) {
+	resourceQuantity, err := quantity.ParseQuantity(value)
 	if err != nil {
-		return parsedData, api.ValidationResultFalse, err
+		return false, fmt.Errorf("invalid resource quantity %s: %w", value, err)
 	}
-	// Visit and evaluate.
-	// If we allow wildcards, then theoretically the evaluation could be combinatoric to compare
-	// every combination of matching paths. Luckily because we support only conjunctions, which
-	// are commutative, we don't need to compare every combination. We can compare them independently
-	// in any order. If any expression evaluates to false for a path that exists, then the resource
-	// is not a match. However, if any resource does match, then the config Unit should match.
-	// We could provide another function that accepts multiple expressions and applies a top-level
-	// disjunction to them to allow for selection (e.g., based on resource type) and validation.
-	// With exactly 2 expressions we could pass validation if !match_expr || validate_expr.
-	var multiErrs []error
-	var output any
-	matchingResources := map[string]bool{}
-	for i, expression := range expressions {
-		// The visitor functions visit all resources of the specified type.
-		// We need to keep track of which resources have matched.
-		// If no paths are found for a resource, that's not a match.
-		// If there are errors finding any paths, that's not a match.
+	return evaluateResourceQuantityRelationalExpression(expr, resourceQuantity), nil
+}
 
-		if expression.IsSplitPath {
-			// Handle split path syntax with .| separator
-			matchingResourcesForExpression, err := evaluateSplitPathExpression(expression, gvk, parsedData)
-			if err != nil {
-				multiErrs = append(multiErrs, err)
-				matchingResources = nil
-				break
-			}
-			if i == 0 {
-				matchingResources = matchingResourcesForExpression
-			} else {
-				for resourceName, _ := range matchingResources {
-					_, matched := matchingResourcesForExpression[resourceName]
-					if !matched {
-						delete(matchingResources, resourceName)
-					}
-				}
-			}
-		} else {
-			// Handle original path syntax
-			getterArgs := make([]api.FunctionArgument, 2)
-			getterArgs[0].Value = gvk
-			getterArgs[1].Value = expression.Path
-			switch expression.DataType {
-			case api.DataTypeString:
-				_, output, err = generic.GenericFnGetStringPath(k8skit.K8sResourceProvider, functionContext, parsedData, getterArgs, liveState)
-			case api.DataTypeInt:
-				_, output, err = generic.GenericFnGetIntPath(k8skit.K8sResourceProvider, functionContext, parsedData, getterArgs, liveState)
-			case api.DataTypeBool:
-				_, output, err = generic.GenericFnGetBoolPath(k8skit.K8sResourceProvider, functionContext, parsedData, getterArgs, liveState)
-			default:
-				err = fmt.Errorf("unsupported data type %s", expression.DataType)
-			}
-			if err != nil {
-				multiErrs = append(multiErrs, err)
-				matchingResources = nil
-				break
-			}
+func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+	// Create custom comparator for Kubernetes resource quantities
+	customComparators := []generic.CustomStringComparator{
+		{
+			PathRegexp: resourcesPathRegexp,
+			Evaluator:  evaluateResourceQuantityComparison,
+		},
+	}
 
-			matchingResourcesForExpression := map[string]bool{}
-			attribValues, ok := output.(api.AttributeValueList)
-			if !ok {
-				log.Errorf("couldn't convert output to api.AttributeValueList")
-				multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-				continue
-			}
-			for _, attribValue := range attribValues {
-				//fmt.Printf("path: %s\n", attribValue.Path)
-				var found bool
-				switch expression.DataType {
-				case api.DataTypeString:
-					stringValue, ok := attribValue.Value.(string)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						if resourcesPathRegexp.MatchString(expression.Path) {
-							resourceQuantity, err := quantity.ParseQuantity(stringValue)
-							if err != nil {
-								multiErrs = append(multiErrs, fmt.Errorf("invalid resource quantity %s", stringValue))
-								continue
-							}
-							found = evaluateResourceQuantityRelationalExpression(expression, resourceQuantity)
-						} else {
-							found = evaluateStringRelationalExpression(expression, stringValue)
-						}
-					}
-				case api.DataTypeInt:
-					intValue, ok := attribValue.Value.(int)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						found = evaluateIntRelationalExpression(expression, intValue)
-					}
-				case api.DataTypeBool:
-					boolValue, ok := attribValue.Value.(bool)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						found = evaluateBoolRelationalExpression(expression, boolValue)
-					}
-				}
-				if found {
-					matchingResourcesForExpression[string(attribValue.ResourceName)] = true
-				}
-			}
-			if i == 0 {
-				matchingResources = matchingResourcesForExpression
-			} else {
-				for resourceName, _ := range matchingResources {
-					_, matched := matchingResourcesForExpression[resourceName]
-					if !matched {
-						delete(matchingResources, resourceName)
-					}
-				}
-			}
-		}
-	}
-	if len(multiErrs) != 0 {
-		err = errors.Join(multiErrs...)
-		return parsedData, api.ValidationResultFalse, err
-	}
-	if len(matchingResources) > 0 {
-		return parsedData, api.ValidationResultTrue, nil
-	}
-	return parsedData, api.ValidationResultFalse, nil
+	// Use the extensible generic function with the Kubernetes-specific resource quantity comparator
+	return generic.GenericFnResourceWhereMatchWithComparators(k8skit.K8sResourceProvider, customComparators, functionContext, parsedData, args, liveState)
 }
 
 func k8sFnValidate(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {

@@ -28,6 +28,12 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
+// CustomStringComparator allows injecting custom string comparison logic for specific path patterns
+type CustomStringComparator struct {
+	PathRegexp *regexp.Regexp
+	Evaluator  func(expr *RelationalExpression, value string) (bool, error)
+}
+
 func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	fh.RegisterFunction("compute-mutations", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -1381,7 +1387,7 @@ func parseLiteral(decodedQueryString string) (string, string, api.DataType, erro
 	return decodedQueryString, "", api.DataTypeNone, fmt.Errorf("no operand found at `%s`", decodedQueryString)
 }
 
-type relationalExpression struct {
+type RelationalExpression struct {
 	Path     string
 	Operator string
 	Literal  string
@@ -1392,8 +1398,8 @@ type relationalExpression struct {
 	IsSplitPath bool   // Whether this uses the .|syntax
 }
 
-func parseAndValidateBinaryExpression(decodedQueryString string) (string, *relationalExpression, error) {
-	var expression relationalExpression
+func parseAndValidateBinaryExpression(decodedQueryString string) (string, *RelationalExpression, error) {
+	var expression RelationalExpression
 
 	// Whitespace should have been skipped already
 	// For now, first operand is always a path name
@@ -1463,12 +1469,12 @@ func getLogicalOperator(decodedQueryString string) (string, string) {
 	return decodedQueryString, ""
 }
 
-func parseAndValidateWhereFilter(queryString string) ([]*relationalExpression, error) {
-	expressions := []*relationalExpression{}
+func parseAndValidateWhereFilter(queryString string) ([]*RelationalExpression, error) {
+	expressions := []*RelationalExpression{}
 
 	decodedQueryString := skipWhitespace(queryString)
 	for decodedQueryString != "" {
-		var expression *relationalExpression
+		var expression *RelationalExpression
 		var err error
 		decodedQueryString, expression, err = parseAndValidateBinaryExpression(decodedQueryString)
 		if err != nil {
@@ -1486,26 +1492,68 @@ func parseAndValidateWhereFilter(queryString string) ([]*relationalExpression, e
 	return expressions, nil
 }
 
-func evaluateStringRelationalExpression(expr *relationalExpression, pathValue string) bool {
+func evaluateStringRelationalExpression(expr *RelationalExpression, pathValue string) (bool, error) {
+	return evaluateStringRelationalExpressionWithComparators(expr, pathValue, nil)
+}
+
+func evaluateStringRelationalExpressionWithComparators(expr *RelationalExpression, pathValue string, customComparators []CustomStringComparator) (bool, error) {
+	// Check if any custom comparators match this path
+	for _, comparator := range customComparators {
+		if comparator.PathRegexp.MatchString(expr.Path) {
+			return comparator.Evaluator(expr, pathValue)
+		}
+	}
+
+	// Default string comparison logic
 	stringLiteral := strings.Trim(expr.Literal, "'")
 	switch expr.Operator {
 	case "=":
-		return pathValue == stringLiteral
+		return pathValue == stringLiteral, nil
 	case "!=":
-		return pathValue != stringLiteral
+		return pathValue != stringLiteral, nil
 	case "<":
-		return pathValue < stringLiteral
+		return pathValue < stringLiteral, nil
 	case "<=":
-		return pathValue <= stringLiteral
+		return pathValue <= stringLiteral, nil
 	case ">":
-		return pathValue > stringLiteral
+		return pathValue > stringLiteral, nil
 	case ">=":
-		return pathValue >= stringLiteral
+		return pathValue >= stringLiteral, nil
 	}
-	return false
+	return false, nil
 }
 
-func evaluateIntRelationalExpression(expr *relationalExpression, pathValue int) bool {
+// evaluateExpressionForValue evaluates a relational expression against a value of any type
+// Returns (matched, error) where error indicates type conversion failure
+func evaluateExpressionForValue(expr *RelationalExpression, value any, customComparators []CustomStringComparator) (bool, error) {
+	switch expr.DataType {
+	case api.DataTypeString:
+		stringValue, ok := value.(string)
+		if !ok {
+			return false, fmt.Errorf("internal error: expected string but got %T", value)
+		}
+		return evaluateStringRelationalExpressionWithComparators(expr, stringValue, customComparators)
+	case api.DataTypeInt:
+		if intValue, ok := value.(int); ok {
+			return evaluateIntRelationalExpression(expr, intValue), nil
+		} else if floatValue, ok := value.(float64); ok {
+			// Handle JSON numbers that parse as float64
+			return evaluateIntRelationalExpression(expr, int(floatValue)), nil
+		} else {
+			return false, fmt.Errorf("internal error: expected int but got %T", value)
+		}
+	case api.DataTypeBool:
+		boolValue, ok := value.(bool)
+		if !ok {
+			return false, fmt.Errorf("internal error: expected bool but got %T", value)
+		}
+		return evaluateBoolRelationalExpression(expr, boolValue), nil
+	default:
+		return false, fmt.Errorf("unsupported data type %s", expr.DataType)
+	}
+}
+
+func evaluateIntRelationalExpression(expr *RelationalExpression, pathValue int) bool {
 	intLiteral, err := strconv.Atoi(expr.Literal)
 	if err != nil {
 		return false
@@ -1527,7 +1575,7 @@ func evaluateIntRelationalExpression(expr *relationalExpression, pathValue int) 
 	return false
 }
 
-func evaluateBoolRelationalExpression(expr *relationalExpression, pathValue bool) bool {
+func evaluateBoolRelationalExpression(expr *RelationalExpression, pathValue bool) bool {
 	boolLiteral := expr.Literal == "true"
 	switch expr.Operator {
 	case "=":
@@ -1539,7 +1587,11 @@ func evaluateBoolRelationalExpression(expr *relationalExpression, pathValue bool
 }
 
 // evaluateSplitPathExpression handles the split path syntax with | separator
-func evaluateSplitPathExpression(expression *relationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (map[string]bool, error) {
+func evaluateSplitPathExpression(expression *RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (map[string]bool, error) {
+	return evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, nil)
+}
+
+func evaluateSplitPathExpressionWithComparators(expression *RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []CustomStringComparator) (map[string]bool, error) {
 	matchingResources := map[string]bool{}
 
 	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of |)
@@ -1564,22 +1616,10 @@ func evaluateSplitPathExpression(expression *relationalExpression, resourceType 
 			}
 		} else {
 			// Property is present - evaluate normally
-			switch expression.DataType {
-			case api.DataTypeString:
-				if stringValue, ok := value.(string); ok {
-					matches = evaluateStringRelationalExpression(expression, stringValue)
-				}
-			case api.DataTypeInt:
-				if intValue, ok := value.(int); ok {
-					matches = evaluateIntRelationalExpression(expression, intValue)
-				} else if floatValue, ok := value.(float64); ok {
-					// Handle JSON numbers that parse as float64
-					matches = evaluateIntRelationalExpression(expression, int(floatValue))
-				}
-			case api.DataTypeBool:
-				if boolValue, ok := value.(bool); ok {
-					matches = evaluateBoolRelationalExpression(expression, boolValue)
-				}
+			var err error
+			matches, err = evaluateExpressionForValue(expression, value, customComparators)
+			if err != nil {
+				return output, err
 			}
 		}
 
@@ -1601,6 +1641,10 @@ func evaluateSplitPathExpression(expression *relationalExpression, resourceType 
 }
 
 func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, functionContext, parsedData, args, liveState)
+}
+
+func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	whereExpr := args[1].Value.(string)
 
@@ -1643,7 +1687,7 @@ func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, func
 
 		if expression.IsSplitPath {
 			// Handle split path syntax with .| separator
-			matchingResourcesForExpression, err := evaluateSplitPathExpression(expression, resourceType, resourceProvider, parsedData)
+			matchingResourcesForExpression, err := evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, customComparators)
 			if err != nil {
 				multiErrs = append(multiErrs, err)
 				matchingResources = nil
@@ -1689,31 +1733,10 @@ func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, func
 			}
 			for _, attribValue := range attribValues {
 				//fmt.Printf("path: %s\n", attribValue.Path)
-				var found bool
-				switch expression.DataType {
-				case api.DataTypeString:
-					stringValue, ok := attribValue.Value.(string)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						found = evaluateStringRelationalExpression(expression, stringValue)
-					}
-				case api.DataTypeInt:
-					intValue, ok := attribValue.Value.(int)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						found = evaluateIntRelationalExpression(expression, intValue)
-					}
-				case api.DataTypeBool:
-					boolValue, ok := attribValue.Value.(bool)
-					if !ok {
-						multiErrs = append(multiErrs, fmt.Errorf("internal error"))
-					} else {
-						found = evaluateBoolRelationalExpression(expression, boolValue)
-					}
-				}
-				if found {
+				found, err := evaluateExpressionForValue(expression, attribValue.Value, customComparators)
+				if err != nil {
+					multiErrs = append(multiErrs, err)
+				} else if found {
 					matchingResourcesForExpression[string(attribValue.ResourceName)] = true
 				}
 			}
