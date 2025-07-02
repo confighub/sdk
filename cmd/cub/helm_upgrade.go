@@ -62,6 +62,7 @@ var helmUpgradeArgs struct {
 	releaseName    string
 	updateCRDs     bool
 	usePlaceholder bool // Use replaceme placeholder for rendering
+	skipCRDs       bool // Skip CRDs from crds/ directory only (mirrors helm upgrade --skip-crds)
 }
 
 func init() {
@@ -73,6 +74,7 @@ func init() {
 	helmUpgradeCmd.Flags().StringVar(&helmUpgradeArgs.namespace, "namespace", "default", "namespace to install the release into (only used for metadata if not actually installing)")
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.updateCRDs, "update-crds", false, "update CRDs unit if it exists")
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.usePlaceholder, "use-placeholder", true, "use replaceme placeholder")
+	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm upgrade --skip-crds'")
 
 	// Compose command hierarchy
 	helmCmd.AddCommand(helmUpgradeCmd)
@@ -144,8 +146,8 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		userSuppliedValues = chartutil.CoalesceTables(userSuppliedValues, currentFileValues)
 	}
 
-	// always set installCRDs=true to render CRDs
-	helmUpgradeArgs.set = append(helmUpgradeArgs.set, "installCRDs=true")
+	// Removed forced installCRDs=true to allow user control over CRD installation
+	// Users can now set installCRDs=false or use --skip-crds flag as needed
 
 	// From --set flags
 	for _, val := range helmUpgradeArgs.set {
@@ -176,16 +178,19 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 
 	// 4.5. Extract CRDs from the chart's crds/ directory
 	// Many charts package CRDs separately in a crds/ directory that aren't processed as templates
+	// --skip-crds flag only affects these CRDs, not templated CRDs
 	var crdContent strings.Builder
-	crdFiles := chrt.CRDObjects()
-	if len(crdFiles) > 0 {
-		for _, crdFile := range crdFiles {
-			if crdContent.Len() > 0 {
-				crdContent.WriteString("---\n")
+	if !helmUpgradeArgs.skipCRDs {
+		crdFiles := chrt.CRDObjects()
+		if len(crdFiles) > 0 {
+			for _, crdFile := range crdFiles {
+				if crdContent.Len() > 0 {
+					crdContent.WriteString("---\n")
+				}
+				crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
+				crdContent.WriteString(string(crdFile.File.Data))
+				crdContent.WriteString("\n")
 			}
-			crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
-			crdContent.WriteString(string(crdFile.File.Data))
-			crdContent.WriteString("\n")
 		}
 	}
 
@@ -202,6 +207,8 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		} else {
 			splitResult.CRDs = crdContent.String()
 		}
+	} else if helmUpgradeArgs.skipCRDs && chrt.CRDObjects() != nil && len(chrt.CRDObjects()) > 0 {
+		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
 	}
 
 	// 6. Check if base unit exists

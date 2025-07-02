@@ -1,0 +1,69 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.0.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "nginx"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "nginx"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "nginx:latest"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.1.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Info": {
+      "GetterInvocation": {
+        "FunctionName": "get-image",
+        "Arguments": [
+          {
+            "ParameterName": "container-name",
+            "Value": "otel-sidecar"
+          }
+        ]
+      },
+      "SetterInvocations": [
+        {
+          "FunctionName": "set-image",
+          "Arguments": [
+            {
+              "ParameterName": "container-name",
+              "Value": "otel-sidecar"
+            }
+          ]
+        }
+      ]
+    },
+    "Value": "otel/opentelemetry-collector:latest-amd64"
+  }
+]

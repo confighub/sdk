@@ -595,6 +595,28 @@ func evaluateResourceQuantityRelationalExpression(expr *generic.RelationalExpres
 var resourcesPathRegexpString = "\\.resources\\.(requests|limits)\\.[a-z]+$"
 var resourcesPathRegexp = regexp.MustCompile(resourcesPathRegexpString)
 
+// ResourceQuantityComparison implements CustomStringComparator for Kubernetes resource quantities
+type ResourceQuantityComparison struct {
+	pathRegexp *regexp.Regexp
+}
+
+// NewResourceQuantityComparison creates a new ResourceQuantityComparison instance
+func NewResourceQuantityComparison() *ResourceQuantityComparison {
+	return &ResourceQuantityComparison{
+		pathRegexp: resourcesPathRegexp,
+	}
+}
+
+// MatchesPath implements CustomStringComparator.MatchesPath
+func (r *ResourceQuantityComparison) MatchesPath(path string) bool {
+	return r.pathRegexp.MatchString(path)
+}
+
+// Evaluate implements CustomStringComparator.Evaluate
+func (r *ResourceQuantityComparison) Evaluate(expr *generic.RelationalExpression, value string) (bool, error) {
+	return evaluateResourceQuantityComparison(expr, value)
+}
+
 // evaluateResourceQuantityComparison wraps resource quantity parsing and comparison
 func evaluateResourceQuantityComparison(expr *generic.RelationalExpression, value string) (bool, error) {
 	resourceQuantity, err := quantity.ParseQuantity(value)
@@ -607,10 +629,7 @@ func evaluateResourceQuantityComparison(expr *generic.RelationalExpression, valu
 func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 	// Create custom comparator for Kubernetes resource quantities
 	customComparators := []generic.CustomStringComparator{
-		{
-			PathRegexp: resourcesPathRegexp,
-			Evaluator:  evaluateResourceQuantityComparison,
-		},
+		NewResourceQuantityComparison(),
 	}
 
 	// Use the extensible generic function with the Kubernetes-specific resource quantity comparator

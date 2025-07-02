@@ -70,6 +70,8 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	// Cert Manager
 	api.ResourceType("cert-manager.io/v1/ClusterIssuer"): {},
 	// FluxCD: none
+	// Trident
+	api.ResourceType("trident.netapp.io/v1/TridentConfigurator"): {},
 }
 
 // K8sNamespacedResourceTypes contains all known namespaced resource types

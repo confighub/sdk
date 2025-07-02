@@ -184,19 +184,6 @@ type BridgeWorker struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
-// BridgeWorkerExtended defines model for BridgeWorkerExtended.
-type BridgeWorkerExtended struct {
-	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-	// to be applied. Bridge workers are responsible for executing configuration changes on
-	// remote targets and reporting status back to ConfigHub.
-	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive configuration actions.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty"`
-}
-
 // BridgeWorkerInfo defines model for BridgeWorkerInfo.
 type BridgeWorkerInfo struct {
 	// SupportedConfigTypes Configuration types supported by the BridgeWorker
@@ -270,7 +257,8 @@ type ExtendedBridgeWorker struct {
 	Organization *Organization `json:"Organization,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
-	Space *Space `json:"Space,omitempty"`
+	Space       *Space `json:"Space,omitempty"`
+	TargetCount int64  `json:"TargetCount,omitempty"`
 }
 
 // ExtendedLink defines model for ExtendedLink.
@@ -729,9 +717,22 @@ type FunctionWorkerInfo struct {
 	SupportedFunctions map[string]map[string]FunctionSignature `json:"SupportedFunctions"`
 }
 
+// ImportFilter defines model for ImportFilter.
+type ImportFilter struct {
+	Operator string   `json:"Operator,omitempty"`
+	Type     string   `json:"Type,omitempty"`
+	Values   []string `json:"Values,omitempty"`
+}
+
+// ImportOptions defines model for ImportOptions.
+type ImportOptions map[string]interface{}
+
 // ImportRequest defines model for ImportRequest.
 type ImportRequest struct {
+	Filters          []ImportFilter    `json:"Filters,omitempty"`
+	Options          *ImportOptions    `json:"Options,omitempty"`
 	ResourceInfoList *ResourceInfoList `json:"ResourceInfoList,omitempty"`
+	Where            string            `json:"Where,omitempty"`
 }
 
 // Link Link connects two config Units in a dependency / producer-consumer relationship.
@@ -1636,6 +1637,9 @@ type ListAllBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Summary Include summary information in the response
+	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
 }
 
 // InvokeFunctionsOnOrgParams defines parameters for InvokeFunctionsOnOrg.

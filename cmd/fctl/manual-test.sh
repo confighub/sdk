@@ -31,12 +31,14 @@ ${FCTL} do test-data/rolebinding.yaml "MyRB" set-namespace myns > ${DIR}/set-nam
 ${FCTL} do test-data/rolebinding.yaml "MyRB" get-namespace > ${DIR}/get-namespace2.txt
 ${FCTL} do test-data/rolebinding.yaml "MyRB" get-needed-namespaces > ${DIR}/get-needed-namespaces.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-annotation confighub.com/key changed > ${DIR}/set-annotation.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" set-annotation confighub.com/upsert-test new-value > ${DIR}/set-annotation-upsert.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-label app nginx > ${DIR}/set-label.txt
 #The env var key/value pairs end up in a random order due to map ordering
 #${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env nginx SUCCESS=true HOPE=true > ${DIR}/set-env.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-name > ${DIR}/get-container-name.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image nginx "mynginx:stable" > ${DIR}/set-image.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-image nginx > ${DIR}/get-image.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-image "*" > ${DIR}/get-image-wildcard.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-uri nginx example.myreg.com/nginx > ${DIR}/set-image-uri.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-reference nginx ":v17.5.2" > ${DIR}/set-image-reference.txt
 ${FCTL} do test-data/confighub.yaml "confighub" set-image-reference-by-uri ghcr.io/confighubai/confighub ":testbuild" > ${DIR}/set-image-reference-by-uri.txt

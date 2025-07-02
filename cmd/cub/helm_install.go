@@ -76,6 +76,7 @@ var helmInstallArgs struct {
 	releaseName    string
 	clone          bool // Support clone as downstream
 	usePlaceholder bool // Use replaceme placeholder for rendering
+	skipCRDs       bool // Skip CRDs from crds/ directory only (mirrors helm install --skip-crds)
 }
 
 func init() {
@@ -87,6 +88,7 @@ func init() {
 	helmInstallCmd.Flags().StringVar(&helmInstallArgs.namespace, "namespace", "default", "namespace to install the release into (only used for metadata if not actually installing)")
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.clone, "clone", true, "clone as downstream unit")
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.usePlaceholder, "use-placeholder", true, "use replaceme placeholder")
+	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm install --skip-crds'")
 
 	// Compose command hierarchy
 	helmCmd.AddCommand(helmInstallCmd) // helmCmd here refers to the package-level variable
@@ -274,8 +276,8 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		userSuppliedValues = chartutil.CoalesceTables(userSuppliedValues, currentFileValues)
 	}
 
-	// always set installCRDs=true to render CRDs
-	helmInstallArgs.set = append(helmInstallArgs.set, "installCRDs=true")
+	// Removed forced installCRDs=true to allow user control over CRD installation
+	// Users can now set installCRDs=false or use --skip-crds flag as needed
 	// also make sure to set the chart's values to crds.create=true
 	// helmInstallArgs.set = append(helmInstallArgs.set, "crds.create=true")
 	// some charts may have a different key for CRDs
@@ -309,16 +311,19 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 	// 4.5. Extract CRDs from the chart's crds/ directory
 	// Many charts package CRDs separately in a crds/ directory that aren't processed as templates
+	// --skip-crds flag only affects these CRDs, not templated CRDs
 	var crdContent strings.Builder
-	crdFiles := chrt.CRDObjects()
-	if len(crdFiles) > 0 {
-		for _, crdFile := range crdFiles {
-			if crdContent.Len() > 0 {
-				crdContent.WriteString("---\n")
+	if !helmInstallArgs.skipCRDs {
+		crdFiles := chrt.CRDObjects()
+		if len(crdFiles) > 0 {
+			for _, crdFile := range crdFiles {
+				if crdContent.Len() > 0 {
+					crdContent.WriteString("---\n")
+				}
+				crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
+				crdContent.WriteString(string(crdFile.File.Data))
+				crdContent.WriteString("\n")
 			}
-			crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
-			crdContent.WriteString(string(crdFile.File.Data))
-			crdContent.WriteString("\n")
 		}
 	}
 
@@ -335,6 +340,8 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		} else {
 			splitResult.CRDs = crdContent.String()
 		}
+	} else if helmInstallArgs.skipCRDs && chrt.CRDObjects() != nil && len(chrt.CRDObjects()) > 0 {
+		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
 	}
 
 	// Create the unit for the namespace if specified

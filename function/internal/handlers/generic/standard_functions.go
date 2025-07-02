@@ -29,9 +29,11 @@ import (
 )
 
 // CustomStringComparator allows injecting custom string comparison logic for specific path patterns
-type CustomStringComparator struct {
-	PathRegexp *regexp.Regexp
-	Evaluator  func(expr *RelationalExpression, value string) (bool, error)
+type CustomStringComparator interface {
+	// MatchesPath returns true if this comparator should handle the given path
+	MatchesPath(path string) bool
+	// Evaluate performs the comparison and returns the result
+	Evaluate(expr *RelationalExpression, value string) (bool, error)
 }
 
 func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
@@ -968,7 +970,7 @@ func GetVisitorMapForPath(resourceProvider yamlkit.ResourceProvider, rt api.Reso
 		visitorInfo = &specificVisitorInfo
 		// Path may be overridden below
 	}
-	if yamlkit.PathIsResolved(string(path)) {
+	if yamlkit.PathIsResolved(string(path), true) {
 		visitorInfo.ResolvedPath = api.ResolvedPath(path)
 	} else {
 		visitorInfo.Path = path
@@ -1499,8 +1501,8 @@ func evaluateStringRelationalExpression(expr *RelationalExpression, pathValue st
 func evaluateStringRelationalExpressionWithComparators(expr *RelationalExpression, pathValue string, customComparators []CustomStringComparator) (bool, error) {
 	// Check if any custom comparators match this path
 	for _, comparator := range customComparators {
-		if comparator.PathRegexp.MatchString(expr.Path) {
-			return comparator.Evaluator(expr, pathValue)
+		if comparator.MatchesPath(expr.Path) {
+			return comparator.Evaluate(expr, pathValue)
 		}
 	}
 

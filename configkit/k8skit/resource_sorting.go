@@ -134,6 +134,11 @@ func (g *dependencyGraph) topologicalSort() ([]resourceDoc, error) {
 		return nil, fmt.Errorf("circular dependency detected in resources")
 	}
 
+	// Reverse the result to get dependency order (dependencies first)
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+
 	return result, nil
 }
 
@@ -211,17 +216,20 @@ func sortResourcesWithDependencies(docs []resourceDoc) ([]resourceDoc, error) {
 		return docs, nil
 	}
 
+	// First sort by priority to ensure correct base order
+	prioritySorted := sortResourcesByPriority(docs)
+
 	// Create dependency graph
 	graph := newDependencyGraph()
 
 	// Add all documents as vertices
-	for i := range docs {
-		key := getResourceKey(docs[i])
-		graph.addVertex(key, &docs[i])
+	for i := range prioritySorted {
+		key := getResourceKey(prioritySorted[i])
+		graph.addVertex(key, &prioritySorted[i])
 	}
 
 	// Add implicit dependencies
-	graph.addNamespaceEdges(docs)
+	graph.addNamespaceEdges(prioritySorted)
 	// skip CRDs edge compute since CRDs will be in a separate unit
 	// graph.addCRDEdges(docs)
 
@@ -229,12 +237,11 @@ func sortResourcesWithDependencies(docs []resourceDoc) ([]resourceDoc, error) {
 	sorted, err := graph.topologicalSort()
 	if err != nil {
 		// Fall back to simple priority-based sorting if there are circular dependencies
-		return sortResourcesByPriority(docs), nil
+		return prioritySorted, nil
 	}
 
-	// Additional sorting within the topologically sorted order by priority and name
-	// Group by priority and sort within groups
-	return stabilizeSortByPriority(sorted), nil
+	// Return the topologically sorted result
+	return sorted, nil
 }
 
 // sortResourcesByPriority sorts resources by priority only (fallback method)

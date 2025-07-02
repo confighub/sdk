@@ -11,6 +11,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/fluxcd/pkg/ssa"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -310,4 +311,297 @@ func createExpectedObject(t *testing.T, apiVersion, kind string, metadata map[st
 			"spec":       spec,
 		},
 	}
+}
+
+func createTestConfigMap(name, namespace, env string) *unstructured.Unstructured {
+	cm := &unstructured.Unstructured{}
+	cm.SetAPIVersion("v1")
+	cm.SetKind("ConfigMap")
+	cm.SetName(name)
+	cm.SetNamespace(namespace)
+	cm.Object["data"] = map[string]interface{}{
+		"env": env,
+	}
+	return cm
+}
+
+func createTestPod(name, namespace string) *unstructured.Unstructured {
+	pod := &unstructured.Unstructured{}
+	pod.SetAPIVersion("v1")
+	pod.SetKind("Pod")
+	pod.SetName(name)
+	pod.SetNamespace(namespace)
+	pod.Object["spec"] = map[string]interface{}{
+		"containers": []interface{}{
+			map[string]interface{}{
+				"name":  "test",
+				"image": "nginx",
+			},
+		},
+	}
+	return pod
+}
+
+func createTestSecret(name, namespace string) *unstructured.Unstructured {
+	secret := &unstructured.Unstructured{}
+	secret.SetAPIVersion("v1")
+	secret.SetKind("Secret")
+	secret.SetName(name)
+	secret.SetNamespace(namespace)
+	secret.Object["data"] = map[string]interface{}{
+		"key": "dmFsdWU=", // base64 encoded "value"
+	}
+	return secret
+}
+
+func createTestNode(name string) *unstructured.Unstructured {
+	node := &unstructured.Unstructured{}
+	node.SetAPIVersion("v1")
+	node.SetKind("Node")
+	node.SetName(name)
+	// Nodes are cluster-scoped, no namespace
+	return node
+}
+
+func createTestClusterRole(name string) *unstructured.Unstructured {
+	cr := &unstructured.Unstructured{}
+	cr.SetAPIVersion("rbac.authorization.k8s.io/v1")
+	cr.SetKind("ClusterRole")
+	cr.SetName(name)
+	// ClusterRoles are cluster-scoped, no namespace
+	return cr
+}
+
+func createTestDeployment(name, namespace string, replicas int64) *unstructured.Unstructured {
+	deployment := &unstructured.Unstructured{}
+	deployment.SetAPIVersion("apps/v1")
+	deployment.SetKind("Deployment")
+	deployment.SetName(name)
+	deployment.SetNamespace(namespace)
+	deployment.Object["spec"] = map[string]interface{}{
+		"replicas": replicas,
+		"template": map[string]interface{}{
+			"spec": map[string]interface{}{
+				"containers": []interface{}{
+					map[string]interface{}{
+						"name":  "test",
+						"image": "nginx",
+					},
+				},
+			},
+		},
+	}
+	return deployment
+}
+
+func createTestService(name, namespace, serviceType string, port int64) *unstructured.Unstructured {
+	service := &unstructured.Unstructured{}
+	service.SetAPIVersion("v1")
+	service.SetKind("Service")
+	service.SetName(name)
+	service.SetNamespace(namespace)
+	service.Object["spec"] = map[string]interface{}{
+		"type": serviceType,
+		"ports": []interface{}{
+			map[string]interface{}{
+				"port": port,
+			},
+		},
+	}
+	return service
+}
+
+// Helper functions for creating test specs
+func createTestDeploymentSpec(replicas int64, containerName, image string) map[string]interface{} {
+	return map[string]interface{}{
+		"replicas": replicas,
+		"template": map[string]interface{}{
+			"spec": map[string]interface{}{
+				"containers": []interface{}{
+					map[string]interface{}{
+						"name":  containerName,
+						"image": image,
+					},
+				},
+			},
+		},
+	}
+}
+
+func createTestServiceSpec(serviceType string, port int64) map[string]interface{} {
+	return map[string]interface{}{
+		"type": serviceType,
+		"ports": []interface{}{
+			map[string]interface{}{
+				"port": port,
+			},
+		},
+	}
+}
+
+// Helper functions for creating virtual and administrative resources that should be excluded
+
+func createTestSubjectAccessReview(name, namespace string) *unstructured.Unstructured {
+	sar := &unstructured.Unstructured{}
+	sar.SetAPIVersion("authorization.k8s.io/v1")
+	sar.SetKind("SubjectAccessReview")
+	sar.SetName(name)
+	sar.SetNamespace(namespace)
+	return sar
+}
+
+func createTestTokenReview(name string) *unstructured.Unstructured {
+	tr := &unstructured.Unstructured{}
+	tr.SetAPIVersion("authentication.k8s.io/v1")
+	tr.SetKind("TokenReview")
+	tr.SetName(name)
+	// TokenReview is cluster-scoped
+	return tr
+}
+
+func createTestBinding(name, namespace string) *unstructured.Unstructured {
+	binding := &unstructured.Unstructured{}
+	binding.SetAPIVersion("v1")
+	binding.SetKind("Binding")
+	binding.SetName(name)
+	binding.SetNamespace(namespace)
+	return binding
+}
+
+func createTestAPIService(name string) *unstructured.Unstructured {
+	apiService := &unstructured.Unstructured{}
+	apiService.SetAPIVersion("apiregistration.k8s.io/v1")
+	apiService.SetKind("APIService")
+	apiService.SetName(name)
+	// APIService is cluster-scoped
+	return apiService
+}
+
+func createTestCertificateSigningRequest(name string) *unstructured.Unstructured {
+	csr := &unstructured.Unstructured{}
+	csr.SetAPIVersion("certificates.k8s.io/v1")
+	csr.SetKind("CertificateSigningRequest")
+	csr.SetName(name)
+	// CSR is cluster-scoped
+	return csr
+}
+
+func createStandardTestPayload(targetParams, data []byte) api.BridgeWorkerPayload {
+	return api.BridgeWorkerPayload{
+		TargetParams: targetParams,
+		Data:         data,
+	}
+}
+
+// Helper functions for mock setup
+func setupApplyOperationMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, applyErr, waitErr error) {
+	t.Helper()
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
+
+	if applyErr != nil {
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "Failed to apply resources")
+	} else {
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "resources successfully")
+	}
+
+	setupMockApplyAllStaged(t, mockManager, applyErr)
+	if waitErr != nil {
+		setupMockWait(t, mockManager, waitErr)
+	}
+}
+
+func setupWatchOperationMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, waitErr error) {
+	t.Helper()
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
+
+	if waitErr != nil {
+		if waitErr == context.DeadlineExceeded {
+			setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Failed to wait for resources")
+		} else {
+			setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyWaitFailed, "Failed to wait for resources")
+		}
+	} else {
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "resources successfully")
+	}
+
+	setupMockWait(t, mockManager, waitErr)
+}
+
+func setupMockClientGet(t *testing.T, mockClient *MockK8sClient, namespace, name string, returnErr error) {
+	t.Helper()
+	mockClient.On("Get",
+		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
+		client.ObjectKey{Namespace: namespace, Name: name},
+		mock.MatchedBy(func(obj client.Object) bool {
+			u, ok := obj.(*unstructured.Unstructured)
+			return ok && u.GetName() == name && u.GetNamespace() == namespace
+		}), mock.Anything,
+	).Return(returnErr)
+}
+
+func setupFullApplyTest(t *testing.T, applyErr, waitErr error) (*MockBridgeWorkerContext, *MockResourceManager, *MockK8sClient, func()) {
+	t.Helper()
+	mockCtx := setupMockContext(t)
+	mockManager, mockClient := setupMockResourceManager(t)
+
+	setupApplyOperationMocks(t, mockCtx, mockManager, applyErr, waitErr)
+	setupMockClientGet(t, mockClient, testNamespace, testName, nil)
+	mockManager.On("Client").Return(mockClient)
+
+	restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
+	return mockCtx, mockManager, mockClient, restoreFunc
+}
+
+func assertStandardApplyResults(t *testing.T, err error, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, expectedError bool, expectedStatusCalls, expectedApplyCalls int) {
+	t.Helper()
+	if expectedError {
+		assert.Error(t, err)
+	} else {
+		assert.NoError(t, err)
+	}
+	mockCtx.AssertNumberOfCalls(t, "SendStatus", expectedStatusCalls)
+	mockManager.AssertNumberOfCalls(t, "ApplyAllStaged", expectedApplyCalls)
+}
+
+// Helper functions for import tests
+func setupImportStatusMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, expectedCalls int) {
+	t.Helper()
+	switch expectedCalls {
+	case 4: // Standard import flow
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Fetching resources from Kubernetes cluster...")
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Found")
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to unstructured format...")
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to YAML format...")
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultImportCompleted, "Imported")
+	case 6: // Legacy resource info list flow
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Parsing provided resource information...")
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Found")
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to unstructured format...")
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Retrieving live state of resources...")
+		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to YAML format...")
+		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultImportCompleted, "Imported")
+	}
+}
+
+func setupMockGetResourcesWithParams(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+	t.Helper()
+	mockClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		list := args.Get(1).(*unstructured.UnstructuredList)
+		list.Items = []unstructured.Unstructured{*testConfigMap}
+	})
+}
+
+func setupMockGetAllClusterResources(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+	t.Helper()
+	setupMockGetResourcesWithParams(t, mockClient, mockManager)
+}
+
+func setupMockGetLiveObjects(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+	t.Helper()
+	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		obj := args.Get(2).(*unstructured.Unstructured)
+		obj.Object = testConfigMap.Object
+	})
+	mockManager.On("Client").Return(mockClient)
 }

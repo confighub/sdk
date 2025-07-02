@@ -28,6 +28,7 @@ var setImageHandler, setImageUriHandler, setImageReferenceHandler, setImageRefer
 // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/validation/validation.go
 
 const dns1123LabelRegexpString = "[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?"
+const containerNameRegexpString = "\\*|[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?"
 const envVarRegexpString = "[-._a-zA-Z][-._a-zA-Z0-9]*"
 
 func convertToFullRegexp(regexp string) string {
@@ -43,7 +44,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Description:      "Name of the container to ", // verb will be appended
 			DataType:         api.DataTypeString,
 			Example:          "cert-manager-controller",
-			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-name", containerNameParameters,
@@ -56,7 +57,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Description:      "Name of the container whose image to ", // verb will be appended
 			DataType:         api.DataTypeString,
 			Example:          "cert-manager-controller",
-			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 		},
 		{
 			ParameterName:    "container-image",
@@ -77,7 +78,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Description:      "Name of the container whose URI to ", // verb will be appended
 			DataType:         api.DataTypeString,
 			Example:          "cert-manager-controller",
-			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 		},
 		{
 			ParameterName:    "repository-uri",
@@ -98,7 +99,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Description:      "Name of the container whose reference to ", // verb will be appended
 			DataType:         api.DataTypeString,
 			Example:          "cert-manager-controller",
-			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 		},
 		{
 			ParameterName:    "image-reference",
@@ -170,7 +171,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 					Description:      "Name of the container whose env vars to update",
 					DataType:         api.DataTypeString,
 					Example:          "main",
-					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 				},
 				{
 					ParameterName:    "env-key-value",
@@ -199,7 +200,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Description:      "Name of the container whose env var to ", // verb will be appended
 			DataType:         api.DataTypeString,
 			Example:          "main",
-			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 		}, {
 			ParameterName:    "env-var",
 			Required:         true,
@@ -231,7 +232,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 					Description:      "Name of the container whose resources to set",
 					DataType:         api.DataTypeString,
 					Example:          "main",
-					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 				}, {
 					ParameterName:    "operation",
 					Required:         true,

@@ -1732,6 +1732,22 @@ func NewListAllBridgeWorkersRequest(server string, params *ListAllBridgeWorkersP
 
 		}
 
+		if params.Summary != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary", runtime.ParamLocationQuery, *params.Summary); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -6552,8 +6568,8 @@ type ClientWithResponsesInterface interface {
 type ListAllBridgeWorkersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]BridgeWorker
-	JSONDefault  *[]BridgeWorker
+	JSON200      *[]ExtendedBridgeWorker
+	JSONDefault  *[]ExtendedBridgeWorker
 }
 
 // Status returns HTTPResponse.Status
@@ -7327,13 +7343,13 @@ func (r UpdateBridgeWorkerResponse) StatusCode() int {
 type GetBridgeWorkerExtendedResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *BridgeWorkerExtended
+	JSON200      *ExtendedBridgeWorker
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
-	JSONDefault  *BridgeWorkerExtended
+	JSONDefault  *ExtendedBridgeWorker
 }
 
 // Status returns HTTPResponse.Status
@@ -9902,14 +9918,14 @@ func ParseListAllBridgeWorkersResponse(rsp *http.Response) (*ListAllBridgeWorker
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []BridgeWorker
+		var dest []ExtendedBridgeWorker
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest []BridgeWorker
+		var dest []ExtendedBridgeWorker
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -11743,7 +11759,7 @@ func ParseGetBridgeWorkerExtendedResponse(rsp *http.Response) (*GetBridgeWorkerE
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest BridgeWorkerExtended
+		var dest ExtendedBridgeWorker
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -11785,7 +11801,7 @@ func ParseGetBridgeWorkerExtendedResponse(rsp *http.Response) (*GetBridgeWorkerE
 		response.JSON500 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest BridgeWorkerExtended
+		var dest ExtendedBridgeWorker
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

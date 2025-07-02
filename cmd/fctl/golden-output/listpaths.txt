@@ -82,6 +82,7 @@
           "rbac.authorization.k8s.io/v1/ClusterRoleBinding": {},
           "storage.k8s.io/v1/CSIDriver": {},
           "storage.k8s.io/v1/StorageClass": {},
+          "trident.netapp.io/v1/TridentConfigurator": {},
           "v1/Namespace": {}
         }
       }
@@ -5586,6 +5587,7 @@
           "rbac.authorization.k8s.io/v1/ClusterRoleBinding": {},
           "storage.k8s.io/v1/CSIDriver": {},
           "storage.k8s.io/v1/StorageClass": {},
+          "trident.netapp.io/v1/TridentConfigurator": {},
           "v1/Namespace": {}
         }
       }
@@ -5759,6 +5761,7 @@
           "rbac.authorization.k8s.io/v1/ClusterRoleBinding": {},
           "storage.k8s.io/v1/CSIDriver": {},
           "storage.k8s.io/v1/StorageClass": {},
+          "trident.netapp.io/v1/TridentConfigurator": {},
           "v1/Namespace": {}
         }
       }
@@ -9647,6 +9650,7 @@
           "rbac.authorization.k8s.io/v1/ClusterRoleBinding": {},
           "storage.k8s.io/v1/CSIDriver": {},
           "storage.k8s.io/v1/StorageClass": {},
+          "trident.netapp.io/v1/TridentConfigurator": {},
           "v1/Namespace": {}
         }
       }

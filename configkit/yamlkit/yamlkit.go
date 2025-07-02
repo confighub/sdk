@@ -268,8 +268,33 @@ func JoinPathSegments(segments []string) string {
 	return strings.Join(segments, ".")
 }
 
-func PathIsResolved(path string) bool {
-	return !strings.ContainsAny(path, "?*@|")
+func PathIsResolved(path string, includeAt bool) bool {
+	if includeAt {
+		return !strings.ContainsAny(path, "?*@|")
+	}
+	return !strings.ContainsAny(path, "?*|")
+}
+
+// parseParameterInfo parses a @ prefixed segment to extract parameter value and name
+// Returns (segment, parameterValue, parameterName, error)
+func parseParameterInfo(segment string) (string, string, string, error) {
+	if !strings.HasPrefix(segment, "@") {
+		return segment, "", "", nil
+	}
+
+	keyName := strings.TrimPrefix(segment, "@")
+	keyNameParts := strings.Split(keyName, ":")
+	switch len(keyNameParts) {
+	case 1:
+		// No parameter name
+		return keyNameParts[0], "", "", nil
+	case 2:
+		parameterValue := keyNameParts[0]
+		parameterName := keyNameParts[1]
+		return parameterValue, parameterValue, parameterName, nil
+	default:
+		return "", "", "", fmt.Errorf("invalid map parameter expression '%s'", segment)
+	}
 }
 
 // ResolveAssociativePaths resolves an associative path with associative lookups (?) and wildcards (*, *?, *@)
@@ -286,7 +311,7 @@ func ResolveAssociativePaths(
 	if path == "" {
 		return []ResolvedPathInfo{}, fmt.Errorf("path cannot be empty")
 	}
-	if PathIsResolved(path) {
+	if PathIsResolved(path, true) {
 		return []ResolvedPathInfo{{Path: api.ResolvedPath(path)}}, nil
 	}
 	// DotPathToSlice converts escaped dots back to unescaped dots, so we need to convert
@@ -324,6 +349,13 @@ func ResolveAssociativePaths(
 		if workList[0].CurrentSegmentIndex < len(constraintSegments) {
 			constraintSegment = constraintSegments[workList[0].CurrentSegmentIndex]
 		}
+		
+		// Transform associative lookup with wildcard value to wildcard form
+		// Convert ?key=* to *?key
+		if strings.HasPrefix(segment, "?") && strings.HasSuffix(segment, "=*") {
+			segment = "*" + strings.TrimSuffix(segment, "=*")
+		}
+		
 		switch {
 		case strings.HasPrefix(segment, "*"):
 			// Gaby Search supports wildcards, at least for array sequence nodes,
@@ -455,33 +487,22 @@ func ResolveAssociativePaths(
 
 		default:
 			// Regular segment. Assume it matches the constraint, if any.
-			parameterName := ""
-			parameterValue := ""
-			mustExist := false
-			
+			var parameterName, parameterValue string
+			var err error
+
 			if strings.HasPrefix(segment, "|") {
 				// Handle "|" syntax - path needs to exist up to this point
 				segment = strings.TrimPrefix(segment, "|")
-			} else if strings.HasPrefix(segment, "@") {
-				keyName := strings.TrimPrefix(segment, "@")
-				keyNameParts := strings.Split(keyName, ":")
-				switch len(keyNameParts) {
-				case 1:
-					// No parameter name
-				case 2:
-					parameterValue = keyNameParts[0]
-					parameterName = keyNameParts[1]
-				default:
-					return []ResolvedPathInfo{}, fmt.Errorf("invalid map parameter expression '%s'", segment)
-				}
-				segment = keyNameParts[0]
-				mustExist = true
-				// log.Infof("segment %s parameterValue %s parameterName %s", segment, parameterValue, parameterName)
+			}
+
+			segment, parameterValue, parameterName, err = parseParameterInfo(segment)
+			if err != nil {
+				return []ResolvedPathInfo{}, err
 			}
 
 			// This segment traversal doesn't need to have dots escaped
 			currentNode := workList[0].ParentNode.S(segment)
-			if currentNode == nil && (mustExist || !upsert) {
+			if currentNode == nil && !upsert {
 				// Possibly we went down an errant path
 				// Dequeue and continue
 				workList = workList[1:]
@@ -495,20 +516,30 @@ func ResolveAssociativePaths(
 			}
 			workList[0].ParentNode = currentNode
 			workList[0].CurrentSegmentIndex++
-			
+
 			// Handle upsert mode: if all remaining segments are resolved, append them and mark as complete
 			if upsert {
 				allRemainingResolved := true
 				for i := workList[0].CurrentSegmentIndex; i < len(segments); i++ {
-					if !PathIsResolved(segments[i]) {
+					if !PathIsResolved(segments[i], false) {
 						allRemainingResolved = false
 						break
 					}
 				}
 				if allRemainingResolved {
+					// TODO: Confirm that constraint segments match, if present
 					// Append all remaining segments to ResolvedSegments
 					for i := workList[0].CurrentSegmentIndex; i < len(segments); i++ {
-						workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, EscapeDotsInPathSegment(segments[i]))
+						remainingSegment := segments[i]
+						// Handle @ prefixed segments by extracting parameters and adding them to PathArguments
+						segmentProcessed, parameterValue, parameterName, err := parseParameterInfo(remainingSegment)
+						if err != nil {
+							return []ResolvedPathInfo{}, err
+						}
+						workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, EscapeDotsInPathSegment(segmentProcessed))
+						if parameterName != "" {
+							workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: parameterValue})
+						}
 					}
 					// Set CurrentSegmentIndex to len(segments) so path will be resolved on next iteration
 					workList[0].CurrentSegmentIndex = len(segments)
@@ -1209,7 +1240,7 @@ func GetPaths[T api.Scalar](
 		// Invalid; strings supported in a dedicated function
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
-	
+
 	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, false)
 }
 
@@ -1246,12 +1277,12 @@ func GetPathsAnyType(
 			// Invalid; strings supported in a dedicated function
 			return output, fmt.Errorf("type %T not supported", v)
 		}
-		
+
 		// Apply type filtering based on dataType parameter
 		if dataType != api.DataTypeNone && dataType != currentDataType {
 			return output, fmt.Errorf("value %v at path %s is of type %s but expected %s", currentValue, string(context.Path), currentDataType, dataType)
 		}
-		
+
 		// Apply needed values filtering if requested
 		if neededValuesOnly {
 			switch currentDataType {
@@ -1267,7 +1298,7 @@ func GetPathsAnyType(
 				// No placeholder for bool
 			}
 		}
-		
+
 		attr.DataType = currentDataType
 
 		visitorValues, ok := output.([]api.AttributeValue)
@@ -1321,7 +1352,7 @@ func GetNeededPaths[T api.Scalar](
 		// Invalid; strings supported in a dedicated function
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
-	
+
 	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, true)
 }
 

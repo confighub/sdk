@@ -85,7 +85,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "annotation", annotationParameters,
-		" an annotation", AttributeNameAnnotationValue, k8skit.K8sResourceProvider, true, false)
+		" an annotation", AttributeNameAnnotationValue, k8skit.K8sResourceProvider, true, true)
 
 	labelParameters := []api.FunctionParameter{
 		{
@@ -102,7 +102,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry) {
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "label", labelParameters,
-		" a label", AttributeNameLabelValue, k8skit.K8sResourceProvider, true, false)
+		" a label", AttributeNameLabelValue, k8skit.K8sResourceProvider, true, true)
 }
 
 const AttributeNameNamespaceNameReference = api.AttributeName("namespace-name-reference")

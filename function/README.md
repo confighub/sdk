@@ -20,11 +20,11 @@ Currently the function executor is written in Go, and all of the functions we've
 
 We provide a Go library, called ConfigKit, to assist with authoring functions using common patterns. The library is here:
 
-- https://github.com/confighubai/public/tree/main/pkg/configkit
+- https://github.com/confighub/sdk/tree/main/configkit
 
 That library is built upon another Go library that provides traversal of and access to YAML configuration elements, here:
 
-- https://github.com/confighubai/public/tree/main/third_party/gaby
+- https://github.com/confighub/sdk/tree/main/third_party/gaby
 
 YAML paths in gaby and yamlkit are dot-separated, including for array indices. For example:
 
@@ -32,11 +32,23 @@ YAML paths in gaby and yamlkit are dot-separated, including for array indices. F
 spec.template.spec.containers.0.image
 ```
 
-Use `yamlkit.EscapeDotsInPathSegment` to escape map keys, such as Kubernetes annotations, which may have dots in them and `gaby.DotPathToSlice` to split a path into path segments to traverse them with gaby. Dots are escaped with `~1`.
+Use `yamlkit.EscapeDotsInPathSegment` to escape map keys, such as Kubernetes annotations, which may have dots in them and `gaby.DotPathToSlice` to split a path into path segments to traverse them with gaby. Dots are escaped with `~1`. Functions you are likely to use include:
+
+- YamlDoc.ExistsP(path string): Returns true if the specified path exists within the YAML document. Path segments containing dots must be escaped when in this form.
+- YamlDoc.Path(path string): Returns the YAML document at the specified path if it exists.
+- YamlDoc.SetP(value any, path string): Sets the value at the specified path, creating intermediate objects as necessary.
+- YamlDoc.DeleteP(path string): Deletes the element at the specified path.
+- YamlDoc.ChildrenMap(): Returns a map of YAML documents if the YAML document is an object.
+- YamlDoc.Children(): Returns a slice of YAML documents if the YAML document is an array or object.
+- YamlDoc.Data(): Returns the parsed data value. Useful for getting primitive leaf values.
+- YamlDoc.Bytes(): Marshals the YAML document.
+- ParseYAML(): Unmarshals a YAML document into a YamlDoc.
+
+gaby is layered on top of the [kustomize kyaml library](https://github.com/kubernetes-sigs/kustomize/tree/master/kyaml), so it preserves field order and comments.
 
 The Kubernetes API and cloud APIs contain a number of associative lists, such as container lists and environment variable lists, where the keys identifying the array elements are map elements of the array element, such as `name`. yamlkit has a function for resolving associative paths to array index syntax, `ResolveAssociativePaths`. The syntax for an associative list path lookup is `.?<map key>:<parameter name>=<map value>`, as in `spec.template.spec.containers.?name:container-name=%s.image` (using a Sprintf placeholder). The `:<parameter name>` is optional, but is used to match corresponding values.
 
-`ResolveAssociativePaths` also supports wildcards. `*` is the simplest form of wildcard. As with associative matches, matched segments may be bound to parameter names. The syntax is `.*?<map key>:<getter parameter name>`, as in `spec.template.spec.containers.*?name:container-name`.
+`ResolveAssociativePaths` also supports wildcards. `*` is the simplest form of wildcard. As with associative matches, matched segments may be bound to parameter names. The syntax is `.*?<map key>:<getter parameter name>`, as in `spec.template.spec.containers.*?name:container-name`. When the value substituted into an associative list lookup is `*`, `ResolveAssociativePaths` automatically converts the path expression into the wildcard form.
 
 `ResolveAssociativePaths` can also bind map keys to parameters, using `.@<map key>:<parameter name>`, for a specific key, or `.*@:<parameter name>` for any key.
 
@@ -44,77 +56,76 @@ The Kubernetes API and cloud APIs contain a number of associative lists, such as
 
 ### Resource traversal
 
-Kubernetes resources are currently stored in Units as lists of YAML documents. Kubernetes functions mostly work the same as functions on any arbitrary YAML. k8skit implements an interface to enable extracting the resource type and name from each document:
-https://github.com/confighubai/public/blob/main/pkg/configkit/k8skit/k8skit.go#L42
+Kubernetes resources are currently stored in Units as lists of YAML documents. Kubernetes functions mostly work the same as functions on any arbitrary YAML. k8skit implements an interface to enable extracting the resource type and name from each document, `K8sResourceProvider`.
+
+https://github.com/confighub/sdk/tree/main/configkit/k8skit
 
 The resource type is in the format group/version/kind. The resource name is in the format namespace/name, where the namespace segment is empty if the namespace isn't present, including in the case of cluster-scoped resources.
 
-An example of a function that iterates over resources is `record-resource-names`, here:
-https://github.com/confighubai/public/blob/main/plugin/functions/internal/handlers/kubernetes/standard_functions.go#L2511
+The yamlkit function VisitResources iterates over resources in a unit.
+
+An example of a function that iterates over resources is ResourceToDocMap:
 
 ```
-func k8sFnRecordResourceNames(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
-    // Iterate over YAML documents
-	for _, doc := range parsedData {
-        // Extract the resource name
-		resourceName, err := k8skit.K8sResourceProvider.ResourceNameGetter(doc)
-		if err != nil {
-			return parsedData, nil, err
-		}
-
-        // Upsert an annotation
-		safeKey := yamlkit.EscapeDotsInPathSegment(OriginalNameAnnotation)
-		_, err = doc.SetP(string(resourceName), "metadata.annotations."+safeKey)
-		if err != nil {
-			return parsedData, nil, err
-		}
+// ResourceToDocMap returns a map of all resources in the provided list of parsed YAML
+// documents to their document index.
+func ResourceToDocMap(parsedData gaby.Container, resourceProvider ResourceProvider) (resourceMap ResourceInfoToDocMap, err error) {
+	resourceMap = make(ResourceInfoToDocMap)
+	if len(parsedData) == 0 {
+		return resourceMap, nil
 	}
-	return parsedData, nil, nil
+	visitor := func(_ *gaby.YamlDoc, _ any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		resourceMap[*resourceInfo] = index
+		return nil, []error{}
+	}
+	_, err = VisitResources(parsedData, nil, resourceProvider, visitor)
+	return resourceMap, err
 }
 ```
 
 ### Path traversal
 
-As in Kustomize, many mutating and readonly functions operate on specific paths in specific Kubernetes resource types. We're working on making the definition of paths extensible.
+As in Kustomize, many mutating and readonly functions operate on specific paths in specific Kubernetes resource types. We're working on making the definition of paths dynamically extensible.
 
-yamlkit provides a set of visitor functions to make these path traversals straightforward. VisitPaths ane VisitPathsAnyType are the main such functions. There are some more specific convenience functions layered on top of them: UpdatePathsFunction, UpdatePathsValue, GetPaths, GetPathsAnyType, UpdateStringPathsFunction, UpdateStringPaths, GetStringPaths, etc.
+yamlkit provides a set of visitor functions to make these path traversals straightforward. VisitPathsDoc is the main path visitor function. There are some more specific convenience functions layered on top of them: UpdatePathsFunction, UpdatePathsValue, GetPaths, GetPathsAnyType, UpdateStringPathsFunction, UpdateStringPaths, GetStringPaths, etc.
 
 Here's the code for `set-string-path`, which sets a string value at the specified YAML path:
 
 ```
-func k8sFnSetStringPath(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
-	gvk := args[0].Value.(string)
-	resolvedPath := args[1].Value.(string)
+	resourceType := args[0].Value.(string)
+	unresolvedPath := args[1].Value.(string)
 	value := args[2].Value.(string)
 
-	resourceTypeToPaths := getVisitorMapForPath(api.ResourceType(gvk), api.ResolvedPath(resolvedPath))
-	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, k8skit.K8sResourceProvider, value)
+	resourceTypeToPaths := GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
+	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert)
 	return parsedData, nil, err
 }
 ```
 
 ### Path registry
 
-A number of functions are as simple as just registering the right YAML paths for the visitor functions. You could use a function like `set-int-path` and specify the YAML path as a function argument, but if you operate on the same path(s) frequently, it can be worthwhile to define a function.
+A number of functions are as simple as just registering the right YAML paths for the visitor functions. You could use a function like `set-int-path` and specify the YAML path as a function argument, but if you operate on the same path(s) frequently, it can be worthwhile to define a function so that your users don't need to type or remember the paths.
+
+`generic.RegisterPathSetterAndGetter` will create setter and getter functions corresponding to a set of paths.
 
 As an example, here's the code for `set-replicas`:
 
 ```
-func k8sFnSetReplicas(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
-	// The argument value types should be verified before this function is called
-	newReplicas := args[0].Value.(int)
-
-	resourceTypeToReplicasPaths := yamlkit.GetPathRegistryForAttributeName(attributeNameReplicas)
-	err := yamlkit.UpdatePathsValue[int](parsedData, resourceTypeToReplicasPaths, []any{}, k8skit.K8sResourceProvider, newReplicas)
-	return parsedData, nil, err
-}
-```
-
-Look at this line:
-
-```
-	resourceTypeToReplicasPaths := yamlkit.GetPathRegistryForAttributeName(attributeNameReplicas)
+	minValue := 0
+	replicasParameters := []api.FunctionParameter{
+		{
+			ParameterName:    "replicas",
+			Required:         true,
+			Description:      "Number of replicas of workload controllers",
+			DataType:         api.DataTypeInt,
+			Example:          "3",
+			ValueConstraints: api.ValueConstraints{Min: &minValue},
+		},
+	}
+	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
+		" the replicas for workload controllers", attributeNameReplicas, k8skit.K8sResourceProvider, true, false)
 ```
 
 There's a path registry that associates a set of paths and path metadata with a named attribute used to identify that set of semantically related paths. `attributeNameReplicas` is currently defined to have the value `"replicas"`.
@@ -134,9 +145,11 @@ The paths are registered before the function executor server is started, like th
 ```
 	replicasGetterFunctionInvocation := &api.FunctionInvocation{
 		FunctionName: "get-replicas",
+		// Arguments will be added during traversal
 	}
 	replicasSetterFunctionInvocation := &api.FunctionInvocation{
 		FunctionName: "set-replicas",
+		// Arguments will be added during traversal
 	}
 
 	for _, resourceType := range replicatedControllerResourceTypes {
@@ -149,6 +162,7 @@ The paths are registered before the function executor server is started, like th
 			},
 		}
 		yamlkit.RegisterPathsByAttributeName(
+			k8skit.K8sResourceProvider,
 			attributeNameReplicas,
 			resourceType,
 			pathInfos,
@@ -159,65 +173,93 @@ The paths are registered before the function executor server is started, like th
 	}
 ```
 
-There's an even easier way to create simple path-based getter and setter functions. Take a look at `registerPathSetterAndGetter`.
-
 In the future we expect to provide a way to define these sets of paths dynamically.
 
 ## Registering functions
 
-Functions you add here can be built into the worker in this repo.
+Functions you add here can be built into the worker in this repo, or built into your own worker.
 
 There's an example here:
-https://github.com/confighubai/public/blob/main/plugin/bridge-workers/impl/custom_functions.go
+https://github.com/confighub/sdk/tree/main/examples/hello-world-function
 
 ```
-	fh.RegisterFunction("echo", &handler.FunctionRegistration{
-		FunctionSignature: api.FunctionSignature{
-			FunctionName: "echo",
-			OutputInfo: &api.FunctionOutput{
-				ResultName:  "resource",
-				Description: "Return the same data as input",
-				OutputType:  api.OutputTypeYAML,
-			},
-			Mutating:    true,
-			Validating:  false,
-			Hermetic:    true,
-			Idempotent:  true,
-			Description: "Echo is to demonstrate that a custom function can be registered via the worker model.",
-		},
-		Function: k8sFnEcho,
+	executor.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
+		FunctionSignature: GetHelloWorldFunctionSignature(),
+		Function:          HelloWorldFunction,
 	})
+...
+func GetHelloWorldFunctionSignature() api.FunctionSignature {
+	return api.FunctionSignature{
+		FunctionName: "hello-world",
+		Parameters: []api.FunctionParameter{
+			{
+				ParameterName: "greeting",
+				Description:   "The greeting message to add to the configuration",
+				Required:      true,
+				DataType:      api.DataTypeString,
+				Example:       "Hello from ConfigHub!",
+			},
+		},
+		RequiredParameters: 1,
+		VarArgs:            false, // This function doesn't accept variable arguments
+		OutputInfo: &api.FunctionOutput{
+			ResultName:  "modified-config",
+			Description: "Configuration with greeting annotation added",
+			OutputType:  api.OutputTypeYAML,
+		},
+		Mutating:              true,  // This function modifies the configuration
+		Validating:            false, // This function doesn't validate (return pass/fail)
+		Hermetic:              true,  // This function doesn't call external systems
+		Idempotent:            true,  // Running this function multiple times has the same effect
+		Description:           "Adds a greeting message as an annotation to the first Kubernetes resource",
+		FunctionType:          api.FunctionTypeCustom,
+		AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny}, // Works on any resource type
+	}
+}
 ```
 
 There are many more examples here:
-https://github.com/confighubai/public/tree/main/plugin/functions/internal/handlers/kubernetes
+https://github.com/confighub/sdk/tree/main/function/internal/handlers/kubernetes
 
 Function names, parameter names, and result names are expected to be in `kabob-case`, for consistency with the CLI.
 
-This is the FunctionSignature type, defined as part of the [function API](https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go):
+This is the FunctionSignature type, defined as part of the [function API](https://github.com/confighub/sdk/tree/main/function/api):
 
 ```
 // FunctionSignature specifies the parameter names and values, required and optional parameters,
 // OutputType, kind of function (mutating/readonly or validating), and description of the function.
 type FunctionSignature struct {
-	FunctionName       string              `description:"Name of the function in kabob-case"`
-	Parameters         []FunctionParameter `description:"Function parameters, in order"`
-	RequiredParameters int                 `description:"Number of required parameters"`
-	VarArgs            bool                `description:"Last parameter may be repeated"`
-	OutputInfo         *FunctionOutput     `description:"Output description"`
-	Mutating           bool                `description:"May change the configuration data"`
-	Validating         bool                `description:"Returns ValidationResult"`
-	Hermetic           bool                `description:"Does not call other systems"`
-	Idempotent         bool                `description:"Will return the same result if invoked again"`
-	Description        string              `description:"Description of the function"`
+	FunctionName          string              `description:"Name of the function in kabob-case"`
+	Parameters            []FunctionParameter `description:"Function parameters, in order"`
+	RequiredParameters    int                 `description:"Number of required parameters"`
+	VarArgs               bool                `description:"Last parameter may be repeated"`
+	OutputInfo            *FunctionOutput     `description:"Output description"`
+	Mutating              bool                `description:"May change the configuration data"`
+	Validating            bool                `description:"Returns ValidationResult"`
+	Hermetic              bool                `description:"Does not call other systems"`
+	Idempotent            bool                `description:"Will return the same result if invoked again"`
+	Description           string              `description:"Description of the function"`
+	FunctionType          FunctionType        `swaggertype:"string" description:"Implementation pattern of the function: PathVisitor or Custom"`
+	AttributeName         AttributeName       `json:",omitempty" swaggertype:"string" description:"Attribute corresponding to registered paths, if a path visitor; optional"`
+	AffectedResourceTypes []ResourceType      `json:",omitempty" description:"Resource types the function applies to; * if all"`
 }
 
-// FunctionParameter specifies the parameter name, description, required vs optional, and DataType.
+// FunctionParameter specifies the parameter name, description, required vs optional, data type, and example.
 type FunctionParameter struct {
 	ParameterName string   `description:"Name of the parameter in kabob-case"`
 	Description   string   `description:"Description of the parameter"`
 	Required      bool     `description:"Whether the parameter is required"`
 	DataType      DataType `swaggertype:"string" description:"Data type of the parameter"`
+	Example       string   `json:",omitempty" description:"Example value"`
+	ValueConstraints
+}
+
+// ValueConstraints specifies constraints on a parameter's value.
+type ValueConstraints struct {
+	Regexp     string   `json:",omitempty" description:"Regular expression matching valid values; applies to string parameters"`
+	Min        *int     `json:",omitempty" description:"Minimum allowed value; applies to int parameters"`
+	Max        *int     `json:",omitempty" description:"Maximum allowed value; applies to int parameters"`
+	EnumValues []string `json:",omitempty" description:"List of valid enum values; applies to enum parameters"`
 }
 
 // FunctionOutput specifies the name and description of the result and its OutputType.
@@ -231,21 +273,31 @@ type FunctionOutput struct {
 Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and specifies `CastStringArgsToScalars: true` so that the function executor handler knows it should convert them prior to invoking the functions.
 
 ```
+const (
 	DataTypeNone                 = DataType("")
 	DataTypeString               = DataType("string")
 	DataTypeInt                  = DataType("int")
 	DataTypeBool                 = DataType("bool")
+	DataTypeEnum                 = DataType("enum")
 	DataTypeAttributeValueList   = DataType("AttributeValueList")
 	DataTypePatchMap             = DataType("PatchMap")
 	DataTypeJSON                 = DataType("JSON")
 	DataTypeYAML                 = DataType("YAML")
+	DataTypeProperties           = DataType("Properties")
+	DataTypeTOML                 = DataType("TOML")
+	DataTypeINI                  = DataType("INI")
+	DataTypeEnv                  = DataType("Env")
+	DataTypeHCL                  = DataType("HCL")
 	DataTypeCEL                  = DataType("CEL")
 	DataTypeResourceMutationList = DataType("ResourceMutationList")
+	DataTypeResourceList         = DataType("ResourceList")
+)
 ```
 
 Outputs, on the other hand, are expected to be embedded JSON. Several well known types are defined in the function API. Some of these are also supported as parameter types above.
 
 ```
+const (
 	OutputTypeValidationResult     = OutputType("ValidationResult")
 	OutputTypeValidationResultList = OutputType("ValidationResultList")
 	OutputTypeAttributeValueList   = OutputType("AttributeValueList")
@@ -256,19 +308,21 @@ Outputs, on the other hand, are expected to be embedded JSON. Several well known
 	OutputTypeYAML                 = OutputType("YAML")
 	OutputTypeOpaque               = OutputType("Opaque")
 	OutputTypeResourceMutationList = OutputType("ResourceMutationList")
+)
 ```
 
 ## The function API
 
 The function API was mentioned several times:
-https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go
+https://github.com/confighub/sdk/tree/main/function/api
 
 The invocation request is currently:
 
 ```
 type FunctionInvocationRequest struct {
 	FunctionContext
-	ConfigData               []byte                 `swaggertype:"string" format:"byte" description:"Configuration data to operate on"`
+	ConfigData               []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
+	LiveState                []byte                 `swaggertype:"string" format:"byte" description:"The most recent live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit."`
 	CastStringArgsToScalars  bool                   `description:"If true, expect integer and boolean arguments to be passed as strings"`
 	NumFilters               int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
 	StopOnError              bool                   `description:"If true, stop executing functions on the first error"`
@@ -321,7 +375,7 @@ Functions just need to return the configuration data and output of the right for
 ## Local testing
 
 To test your functions locally, there's a simple CLI, fctl:
-https://github.com/confighubai/public/tree/main/plugin/functions/cmd/fctl
+https://github.com/confighub/sdk/tree/main/cmd/fctl
 
 For example:
 
@@ -330,4 +384,27 @@ fctl do deployment.yaml "MyDeploymentUnit" set-replicas 5
 ```
 
 And a test script that exercises all of the currently implemented functions:
-https://github.com/confighubai/public/blob/main/plugin/functions/cmd/fctl/manual-test.sh
+https://github.com/confighub/sdk/blob/main/cmd/fctl/manual-test.sh
+
+That set of tests can be run with `make manual-test`.
+
+Any new functions added to the SDK should have at least one test case added. Correctness is currently verified manually by reviewing the output. The output is then captured in the `golden-output` subdirectory for comparison with test runs. The golden outputs can be updated by `DIR=golden-output make manual-test`. The `diff` commands only report mismatches by default, but `QUIET=no make manual-test` will cause them to output any diffs. In addition to new test cases, test-data changes, and function behavioral changes, the addition of new functions, paths, and/or output structure fields require the golden outputs to be updated.
+
+## Configuration formats other than Kubernetes/YAML
+
+There is nascent support for other configuration formats:
+
+- Java Properties files: AppConfig/Properties
+- OpenTofu: OpenTofu/HCL
+
+Other formats are converted to and from YAML documents using the `configkit.ConfigConverter` interface so that the `yamlkit` and `gaby` libraries may be used to traverse and manipulate the configuration data, and so that a set of common / standard functions may be implemented in a generic way for all configuration formats. These functions are here:
+
+https://github.com/confighub/sdk/tree/main/function/internal/handlers/generic
+
+They are registered with a converter and a `ResourceProvider`, which may be implemented using the same receiver type, as done for Kubernetes:
+
+```
+	generic.RegisterStandardFunctions(fh, k8skit.K8sResourceProvider, k8skit.K8sResourceProvider)
+```
+
+The `ResourceProvider` interface is used to interact with configuration element metadata, such as resource categories, types, and names. The `ResourceCategory` identifies what kind of configuration element it is. Kubernetes only contains elements of category `api.ResourceCategoryResource`. Java Properties only contains elements of category `api.ResourceCategoryAppConfig`. OpenTofu contains elements of categories `api.ResourceCategoryResource` and `api.ResourceCategoryDyanmicData`, which corresponds to [data sources](https://opentofu.org/docs/language/data-sources/).

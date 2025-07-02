@@ -348,3 +348,106 @@ spec:
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
 }
+
+func TestResolveAssociativePaths_ParameterSegmentUpsert(t *testing.T) {
+	// YAML fixture for testing @ parameter segments - matches the manual test deployment.yaml
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mydep
+  annotations:
+    confighub.com/key: something
+  name: mydep
+  namespace: example
+spec:
+  replicas: 3
+  paused: false
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Test 1: Check if annotations exists first
+	annotationsNode := docs[0].S("metadata", "annotations")
+	assert.NotNil(t, annotationsNode, "annotations should exist initially")
+
+	// Test 1: @ parameter segment should be resolved and upserted
+	results1, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results1), "Should resolve one path even when annotations doesn't exist")
+	assert.Equal(t, api.ResolvedPath("metadata.annotations.confighub~1com/test"), results1[0].Path)
+	assert.Equal(t, 1, len(results1[0].PathArguments))
+	assert.Equal(t, "annotation-key", results1[0].PathArguments[0].ParameterName)
+	assert.Equal(t, "confighub.com/test", results1[0].PathArguments[0].Value)
+
+	// Test 2: @ parameter segment without parameter name should still work
+	results2, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/simple"), "", true)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results2))
+	assert.Equal(t, api.ResolvedPath("metadata.annotations.confighub~1com/simple"), results2[0].Path)
+	assert.Equal(t, 0, len(results2[0].PathArguments))
+
+	// Test 3: @ parameter segment in non-upsert mode should not work when path doesn't exist
+	results3, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", false)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results3))
+
+	// Test 4: Verify gaby can actually set the value at the resolved path
+	resolvedPath := string(results1[0].Path) // from Test 1
+	_, err = docs[0].SetP("test-value", resolvedPath)
+	assert.NoError(t, err)
+	
+	// Verify the value was set
+	result := docs[0].S("metadata", "annotations", "confighub.com/test")
+	assert.NotNil(t, result)
+	assert.Equal(t, "test-value", result.Data())
+}
+
+func TestResolveAssociativePaths_WildcardRewriting(t *testing.T) {
+	// YAML fixture with multiple containers
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-container-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: container-one
+        image: nginx:1.14.2
+      - name: container-two
+        image: redis:5.0
+      - name: container-three
+        image: mysql:8.0
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+	
+	// Test wildcard rewriting: ?name:container-name=* should be transformed to *?name:container-name
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:container-name=*.image"), "", false)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(results))
+	
+	// Verify all containers are matched
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[1].Path)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.2.image"), results[2].Path)
+	
+	// Verify parameter arguments are correctly captured
+	assert.Equal(t, 1, len(results[0].PathArguments))
+	assert.Equal(t, "container-name", results[0].PathArguments[0].ParameterName)
+	assert.Equal(t, "container-one", results[0].PathArguments[0].Value)
+	
+	assert.Equal(t, 1, len(results[1].PathArguments))
+	assert.Equal(t, "container-name", results[1].PathArguments[0].ParameterName)
+	assert.Equal(t, "container-two", results[1].PathArguments[0].Value)
+	
+	assert.Equal(t, 1, len(results[2].PathArguments))
+	assert.Equal(t, "container-name", results[2].PathArguments[0].ParameterName)
+	assert.Equal(t, "container-three", results[2].PathArguments[0].Value)
+}

@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -38,12 +39,19 @@ func parseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams,
 
 // kubernetesClientFactory is a function type that creates a Kubernetes client and resource manager
 // It is used for dependency injection in tests.
+
+var kubernetesConfigFactory = setupKubernetesConfig
+
+func setupKubernetesConfig(kubeContext string) (*rest.Config, error) {
+	return config.GetConfigWithContext(kubeContext)
+}
+
 var kubernetesClientFactory = setupKubernetesClient
 
 // setupKubernetesClient creates a Kubernetes client and resource manager
 // use the kubernetesClientFactory variable instead of calling this function directly
 func setupKubernetesClient(kubeContext string) (KubernetesClient, ResourceManager, error) {
-	cfg, err := config.GetConfigWithContext(kubeContext)
+	cfg, err := kubernetesConfigFactory(kubeContext)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get Kubernetes config: %v", err)
 	}
@@ -68,7 +76,7 @@ func setupKubernetesClient(kubeContext string) (KubernetesClient, ResourceManage
 		client:          k8sClient,
 	}
 
-	return wrappedManager.client, wrappedManager, nil
+	return k8sClient, wrappedManager, nil
 }
 
 // parseObjects parses YAML objects from payload data
@@ -128,6 +136,7 @@ func cleanup(u *unstructured.Unstructured) {
 	unstructured.RemoveNestedField(u.Object, "metadata", "ownerReferences")
 }
 
+// extraCleanupObjects performs heuristic cleanup on imported objects to make them suitable for being unit.Data
 func extraCleanupObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
 	cleanedObjects := make([]*unstructured.Unstructured, 0, len(objects))
 	for _, obj := range objects {

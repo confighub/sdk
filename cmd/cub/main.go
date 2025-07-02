@@ -482,7 +482,6 @@ type ModelConstraint interface {
 		goclientnew.OrganizationMember |
 		goclientnew.User |
 		goclientnew.BridgeWorker |
-		goclientnew.BridgeWorkerExtended |
 		goclientnew.BridgeWorkerStatus |
 		goclientnew.Revision |
 		goclientnew.RevisionExtended |

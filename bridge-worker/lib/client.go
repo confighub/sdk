@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/alitto/pond"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/bridge-worker/api"
+	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/shirou/gopsutil/v3/mem"
 	"golang.org/x/net/http2"
 )
