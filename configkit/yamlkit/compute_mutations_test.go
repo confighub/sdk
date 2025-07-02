@@ -380,7 +380,7 @@ spec:
 			previous: `apiVersion: v1
 kind: Namespace
 metadata:
-  name: replaceme
+  name: confighubplaceholder
 spec: {}
 `,
 			modified: `apiVersion: v1
@@ -402,9 +402,9 @@ spec: {}
 				assert.Len(t, mutations[0].Aliases, 2)
 				assert.Len(t, mutations[0].AliasesWithoutScopes, 2)
 				assert.Contains(t, mutations[0].Aliases, api.ResourceName("/myapp"))
-				assert.Contains(t, mutations[0].Aliases, api.ResourceName("/replaceme"))
+				assert.Contains(t, mutations[0].Aliases, api.ResourceName("/confighubplaceholder"))
 				assert.Contains(t, mutations[0].AliasesWithoutScopes, api.ResourceName("myapp"))
-				assert.Contains(t, mutations[0].AliasesWithoutScopes, api.ResourceName("replaceme"))
+				assert.Contains(t, mutations[0].AliasesWithoutScopes, api.ResourceName("confighubplaceholder"))
 			},
 		},
 		// ComputeMutations can only be called with valid parsed YAML

@@ -374,9 +374,10 @@ type AttributeValueList []AttributeValue
 // ValidationResult specifies whether a single validation function or sequence of validation
 // functions passed for the given configuration Unit.
 type ValidationResult struct {
-	Passed  bool     // true if valid, false otherwise
-	Index   int      // index of the function invocation corresponding to the result
-	Details []string `json:",omitempty"` // optional list of failure details
+	Passed           bool               // true if valid, false otherwise
+	Index            int                // index of the function invocation corresponding to the result
+	Details          []string           `json:",omitempty"` // optional list of failure details
+	FailedAttributes AttributeValueList `json:",omitempty"` // optional list of failed attributes; preferred over Details
 }
 
 type ValidationResultList []ValidationResult

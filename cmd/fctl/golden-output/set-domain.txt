@@ -31,7 +31,7 @@ kind: Service
 metadata:
   name: frontend
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: replaceme.cubby.bz
+    external-dns.alpha.kubernetes.io/hostname: confighubplaceholder.cubby.bz
 spec:
   selector:
     app: frontend
@@ -50,7 +50,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: replaceme.cubby.bz
+  - host: confighubplaceholder.cubby.bz
     http:
       paths:
       - path: /

@@ -3,8 +3,8 @@ OUTPUT
 ------
 [
   {
-    "ResourceName": "replaceme/replaceme",
-    "ResourceNameWithoutScope": "replaceme",
+    "ResourceName": "confighubplaceholder/confighubplaceholder",
+    "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "metadata.namespace",
@@ -23,11 +23,11 @@ OUTPUT
         }
       ]
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   },
   {
-    "ResourceName": "replaceme/replaceme",
-    "ResourceNameWithoutScope": "replaceme",
+    "ResourceName": "confighubplaceholder/confighubplaceholder",
+    "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "spec.template.spec.containers.0.envFrom.0.configMapRef.name",
@@ -46,11 +46,11 @@ OUTPUT
         }
       ]
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   },
   {
-    "ResourceName": "replaceme/replaceme",
-    "ResourceNameWithoutScope": "replaceme",
+    "ResourceName": "confighubplaceholder/confighubplaceholder",
+    "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "spec.template.spec.containers.0.image#uri",
@@ -70,11 +70,11 @@ OUTPUT
       ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   },
   {
-    "ResourceName": "replaceme/replaceme",
-    "ResourceNameWithoutScope": "replaceme",
+    "ResourceName": "confighubplaceholder/confighubplaceholder",
+    "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "spec.template.spec.serviceAccountName",
@@ -93,6 +93,6 @@ OUTPUT
         }
       ]
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   }
 ]

@@ -1,0 +1,149 @@
+SUCCESS    true    
+OUTPUT
+------
+{
+  "Passed": false,
+  "Index": 0,
+  "FailedAttributes": [
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "metadata.labels.app",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "metadata.name",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "metadata.namespace",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.selector.matchLabels.app",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.metadata.labels.app",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.env.0.value",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.env.1.value",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.env.2.value",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.env.3.value",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.env.4.value",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.envFrom.0.configMapRef.name",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.containers.0.image",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder:latest"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.template.spec.serviceAccountName",
+      "AttributeName": "attribute-value",
+      "DataType": "string",
+      "Value": "confighubplaceholder"
+    },
+    {
+      "ResourceName": "confighubplaceholder/confighubplaceholder",
+      "ResourceNameWithoutScope": "confighubplaceholder",
+      "ResourceType": "apps/v1/Deployment",
+      "ResourceCategory": "Resource",
+      "Path": "spec.replicas",
+      "AttributeName": "attribute-value",
+      "DataType": "int",
+      "Value": 999999999
+    }
+  ]
+}

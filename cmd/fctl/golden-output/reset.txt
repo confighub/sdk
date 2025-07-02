@@ -5,11 +5,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: myservice
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   type: ClusterIP
   selector:
-    app: replaceme
+    app: confighubplaceholder
   ports:
   - protocol: TCP
     port: 80
@@ -19,41 +19,41 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: replaceme
+    app: confighubplaceholder
   name: mydep
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: replaceme
+      app: confighubplaceholder
   strategy: {}
   template:
     metadata:
       labels:
-        app: replaceme
+        app: confighubplaceholder
     spec:
-      serviceAccountName: replaceme
+      serviceAccountName: confighubplaceholder
       containers:
-      - image: replaceme:latest
+      - image: confighubplaceholder:latest
         name: main
         ports:
         - containerPort: 8080
         resources: {}
         env:
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_HOST
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_PORT
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_NAME
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_USER
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_PASSWORD
         envFrom:
         - configMapRef:
-            name: replaceme
+            name: confighubplaceholder
 ---
 apiVersion: v1
 data:
@@ -61,13 +61,13 @@ data:
 kind: ConfigMap
 metadata:
   name: myconfig
-  namespace: replaceme
+  namespace: confighubplaceholder
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: mysa
-  namespace: replaceme
+  namespace: confighubplaceholder
 ---
 apiVersion: v1
 kind: Namespace

@@ -44,7 +44,7 @@ func TestK8SFnResourceMap(t *testing.T) {
 apiVersion: v1
 metadata:
   name: headlamp
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   ports:
     - port: 80
@@ -56,7 +56,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: headlamp
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   replicas: 1
   selector:
@@ -86,7 +86,7 @@ spec:
         'kubernetes.io/os': linux
 `,
 			want: yamlkit.ResourceNameToCategoryTypesMap{
-				api.ResourceName("replaceme/headlamp"): {
+				api.ResourceName("confighubplaceholder/headlamp"): {
 					{ResourceCategory: api.ResourceCategoryResource, ResourceType: testResourceTypeService},
 					{ResourceCategory: api.ResourceCategoryResource, ResourceType: testResourceTypeDeployment},
 				},

@@ -57,8 +57,8 @@ resource "aws_security_group_rule" "eks_cluster_ingress" {
 
 # EKS Cluster
 resource "aws_eks_cluster" "main" {
-  name     = "replaceme"
-  version  = "replaceme"
+  name     = "confighubplaceholder"
+  version  = "confighubplaceholder"
   role_arn = aws_iam_role.eks_cluster.arn
 
   vpc_config {
@@ -76,7 +76,7 @@ resource "aws_eks_cluster" "main" {
   ]
 
   tags = {
-    Name = "replaceme"
+    Name = "confighubplaceholder"
   }
 }
 

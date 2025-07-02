@@ -31,7 +31,7 @@ kind: Service
 metadata:
   name: frontend
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: chat.replaceme
+    external-dns.alpha.kubernetes.io/hostname: chat.confighubplaceholder
 spec:
   selector:
     app: frontend
@@ -50,7 +50,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: chat.replaceme
+  - host: chat.confighubplaceholder
     http:
       paths:
       - path: /

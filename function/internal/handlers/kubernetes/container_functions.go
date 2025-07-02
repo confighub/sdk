@@ -483,7 +483,7 @@ const (
 
 func initContainerFunctions() {
 	// This regular expression breaks down an image into its components, but is more
-	// complicated to use for replacement. It's not currently used, but is here in case we need it.
+	// complicated to use for confighubplaceholder. It's not currently used, but is here in case we need it.
 	imageRegexpString := fmt.Sprintf("^(?:(?P<registry>%s)/)?(?P<repository>%s)(?:\\:(?P<tag>%s)|@(?P<digest>%s))?$",
 		imageRegistryHostRegexpString, imageRepositoryRegexpString, imageTagReferenceRegexpString, imageDigestReferenceRegexpString)
 	imageRegexp = regexp.MustCompile(imageRegexpString)
@@ -1549,7 +1549,7 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 
 							// Create HTTP GET action for probes
 							httpGet := orderedmap.New[string, interface{}]()
-							httpGet.Set("path", "/replaceme")
+							httpGet.Set("path", yamlkit.PlaceHolderBlockApplyString)
 							httpGet.Set("port", probePort)
 
 							// Startup probe - most lenient, runs first

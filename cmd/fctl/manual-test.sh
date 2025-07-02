@@ -24,6 +24,8 @@ done
 
 ${FCTL} list > ${DIR}/list.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" get-placeholders > ${DIR}/get-placeholders.txt
+${FCTL} do test-data/deployment-sample.yaml "MyDeployment" no-placeholders > ${DIR}/no-placeholders.txt
+${FCTL} do test-data/deployment-sample.yaml "MyDeployment" search-replace confighubplaceholder replaceme > ${DIR}/search-replace.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-resources > ${DIR}/get-resources.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-namespace myns > ${DIR}/set-namespace.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-namespace > ${DIR}/get-namespace.txt

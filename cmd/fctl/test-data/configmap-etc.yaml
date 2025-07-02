@@ -4,13 +4,13 @@ data:
 kind: ConfigMap
 metadata:
   name: myconfig
-  namespace: replaceme
+  namespace: confighubplaceholder
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: mysa
-  namespace: replaceme
+  namespace: confighubplaceholder
 ---
 apiVersion: v1
 kind: Namespace

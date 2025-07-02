@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: headlamp
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   ports:
     - port: 80
@@ -14,7 +14,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: headlamp
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   replicas: 1
   selector:

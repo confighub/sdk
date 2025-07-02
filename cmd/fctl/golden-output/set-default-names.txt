@@ -7,7 +7,7 @@ metadata:
   labels:
     app: mydeployment-deepspace
   name: mydeployment-deepspace
-  namespace: replaceme
+  namespace: confighubplaceholder
 spec:
   replicas: 999999999
   paused: false
@@ -20,24 +20,24 @@ spec:
       labels:
         app: mydeployment-deepspace
     spec:
-      serviceAccountName: replaceme
+      serviceAccountName: confighubplaceholder
       containers:
-      - image: replaceme:latest
+      - image: confighubplaceholder:latest
         name: main
         ports:
         - containerPort: 8080
         resources: {}
         env:
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_HOST
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_PORT
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_NAME
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_USER
-        - value: replaceme
+        - value: confighubplaceholder
           name: DATABASE_PASSWORD
         envFrom:
         - configMapRef:
-            name: replaceme
+            name: confighubplaceholder

@@ -42,7 +42,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of attributes containing the placeholder string 'replaceme' or number 999999999",
+			Description:           "Returns a list of attributes containing the placeholder string 'confighubplaceholder' or number 999999999",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -60,7 +60,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'replaceme' or number 999999999",
+			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -535,7 +535,7 @@ var originalNamePath = "metadata.annotations." + yamlkit.EscapeDotsInPathSegment
 
 func k8sFnGetPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyString)
-	// OriginalName annotations can contain replaceme values for namespaces and/or names.
+	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
 	// Ignore those. They aren't a problem for apply.
 	filteredPaths := make(api.AttributeValueList, 0, len(paths))
 	for _, pathValue := range paths {
@@ -551,7 +551,7 @@ func k8sFnGetPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ [
 func k8sFnNoPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
-	// OriginalName annotations can contain replaceme values for namespaces and/or names.
+	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
 	// Ignore those. They aren't a problem for apply.
 	filteredPaths := make(api.AttributeValueList, 0, len(paths))
 	for _, pathValue := range paths {

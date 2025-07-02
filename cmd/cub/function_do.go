@@ -122,7 +122,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 	var funcArgs []goclientnew.FunctionArgument
 	namedArgMode := false
-	
+
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "--") && strings.Contains(arg, "=") {
 			// This is a named argument
@@ -130,13 +130,13 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 			parts := strings.SplitN(arg, "=", 2)
 			paramName := strings.TrimPrefix(parts[0], "--")
 			value := parts[1]
-			
+
 			funcArgs = append(funcArgs, goclientnew.FunctionArgument{
 				ParameterName: &paramName,
 				Value:         &goclientnew.FunctionArgument_Value{},
 			})
 			funcArgs[len(funcArgs)-1].Value.FromFunctionArgumentValue0(value)
-			
+
 		} else if namedArgMode {
 			// Once we've seen a named argument, all subsequent arguments must be named
 			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
@@ -344,6 +344,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					if err != nil || outputRaw {
 						tprint(string(outputBytes))
 					} else {
+						// TODO: Factor this out
 						details := ""
 						for j, detail := range payload.Details {
 							if j > 0 {
@@ -352,6 +353,11 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 							details += " " + detail
 						}
 						tprint("%v%s", payload.Passed, details)
+						tprint("Attributes:")
+						for j := range payload.FailedAttributes {
+							tprint("%v %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
+								payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
+						}
 					}
 				} else {
 					for i := range payload {
@@ -363,6 +369,11 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 							details += " " + detail
 						}
 						tprint("%v %d%s", payload[i].Passed, payload[i].Index, details)
+						tprint("Attributes:")
+						for j := range payload[i].FailedAttributes {
+							tprint("%v %s %s %s %s", payload[i].FailedAttributes[j].Value, payload[i].FailedAttributes[j].DataType,
+								payload[i].FailedAttributes[j].Path, payload[i].FailedAttributes[j].ResourceName, payload[i].FailedAttributes[j].ResourceType)
+						}
 					}
 				}
 			case string(api.OutputTypeResourceInfoList):

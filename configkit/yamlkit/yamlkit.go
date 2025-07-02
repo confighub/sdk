@@ -30,8 +30,9 @@ import (
 // PlaceHolderBlockApply We will need placeholders for different data types and that fit with different validation rules
 // The string value is all lowercase to comply with DNS label requirements.
 const (
-	PlaceHolderBlockApplyString = "replaceme"
-	PlaceHolderBlockApplyInt    = 999999999
+	PlaceHolderBlockApplyString           = "confighubplaceholder"
+	DeprecatedPlaceHolderBlockApplyString = "replaceme" // will be removed
+	PlaceHolderBlockApplyInt              = 999999999
 )
 
 // This is not in a more general place because it is expected to be used after conversion of other
@@ -349,13 +350,13 @@ func ResolveAssociativePaths(
 		if workList[0].CurrentSegmentIndex < len(constraintSegments) {
 			constraintSegment = constraintSegments[workList[0].CurrentSegmentIndex]
 		}
-		
+
 		// Transform associative lookup with wildcard value to wildcard form
 		// Convert ?key=* to *?key
 		if strings.HasPrefix(segment, "?") && strings.HasSuffix(segment, "=*") {
 			segment = "*" + strings.TrimSuffix(segment, "=*")
 		}
-		
+
 		switch {
 		case strings.HasPrefix(segment, "*"):
 			// Gaby Search supports wildcards, at least for array sequence nodes,
@@ -1287,7 +1288,9 @@ func GetPathsAnyType(
 		if neededValuesOnly {
 			switch currentDataType {
 			case api.DataTypeString:
-				if stringVal, ok := currentValue.(string); ok && !strings.Contains(stringVal, PlaceHolderBlockApplyString) {
+				if stringVal, ok := currentValue.(string); ok &&
+					!strings.Contains(stringVal, PlaceHolderBlockApplyString) &&
+					!strings.Contains(stringVal, DeprecatedPlaceHolderBlockApplyString) {
 					return output, nil // skip if there's already a value
 				}
 			case api.DataTypeInt:
@@ -1372,7 +1375,7 @@ func GetStringPaths(
 // GetNeededStringPaths traverses the specified path patterns of the specified resource types and returns
 // an api.AttributeValueList containing the values and registered information about all of
 // the found string attributes matching the path patterns that Need values. Currently "Need" is determined
-// using placeholder values, "replaceme" for strings. It can also extract fields embedded
+// using placeholder values, "confighubplaceholder" for strings. It can also extract fields embedded
 // in strings using registered embedded accessors.
 func GetNeededStringPaths(
 	parsedData gaby.Container,

@@ -3,7 +3,7 @@ OUTPUT
 ------
 [
   {
-    "ResourceName": "replaceme/headlamp",
+    "ResourceName": "confighubplaceholder/headlamp",
     "ResourceNameWithoutScope": "headlamp",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
@@ -23,10 +23,10 @@ OUTPUT
         }
       ]
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   },
   {
-    "ResourceName": "replaceme/headlamp",
+    "ResourceName": "confighubplaceholder/headlamp",
     "ResourceNameWithoutScope": "headlamp",
     "ResourceType": "v1/Service",
     "ResourceCategory": "Resource",
@@ -46,6 +46,6 @@ OUTPUT
         }
       ]
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   }
 ]

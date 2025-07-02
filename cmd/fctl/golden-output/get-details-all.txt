@@ -3,7 +3,7 @@ OUTPUT
 ------
 [
   {
-    "ResourceName": "replaceme/mydep",
+    "ResourceName": "confighubplaceholder/mydep",
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
@@ -26,7 +26,7 @@ OUTPUT
     "Value": 1
   },
   {
-    "ResourceName": "replaceme/mydep",
+    "ResourceName": "confighubplaceholder/mydep",
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
@@ -39,7 +39,7 @@ OUTPUT
     "Value": ":latest"
   },
   {
-    "ResourceName": "replaceme/mydep",
+    "ResourceName": "confighubplaceholder/mydep",
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
@@ -60,10 +60,10 @@ OUTPUT
       ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
-    "Value": "replaceme"
+    "Value": "confighubplaceholder"
   },
   {
-    "ResourceName": "replaceme/myservice",
+    "ResourceName": "confighubplaceholder/myservice",
     "ResourceNameWithoutScope": "myservice",
     "ResourceType": "v1/Service",
     "ResourceCategory": "Resource",
@@ -76,7 +76,7 @@ OUTPUT
     "Value": 80
   },
   {
-    "ResourceName": "replaceme/myservice",
+    "ResourceName": "confighubplaceholder/myservice",
     "ResourceNameWithoutScope": "myservice",
     "ResourceType": "v1/Service",
     "ResourceCategory": "Resource",

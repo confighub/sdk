@@ -28,7 +28,7 @@ kind: Service
 metadata:
   name: frontend
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: replaceme.replaceme
+    external-dns.alpha.kubernetes.io/hostname: confighubplaceholder.confighubplaceholder
 spec:
   selector:
     app: frontend
@@ -47,7 +47,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: replaceme.replaceme
+    - host: confighubplaceholder.confighubplaceholder
       http:
         paths:
           - path: /

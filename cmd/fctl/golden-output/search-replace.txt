@@ -5,39 +5,39 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: confighubplaceholder
-  name: confighubplaceholder
-  namespace: confighubplaceholder
+    app: replaceme
+  name: replaceme
+  namespace: replaceme
 spec:
-  replicas: 5
-  paused: true
+  replicas: 999999999
+  paused: false
   selector:
     matchLabels:
-      app: confighubplaceholder
+      app: replaceme
   strategy: {}
   template:
     metadata:
       labels:
-        app: confighubplaceholder
+        app: replaceme
     spec:
-      serviceAccountName: confighubplaceholder
+      serviceAccountName: replaceme
       containers:
-      - image: nginx:latest
+      - image: replaceme:latest
         name: main
         ports:
         - containerPort: 8080
         resources: {}
         env:
-        - value: confighubplaceholder
+        - value: replaceme
           name: DATABASE_HOST
-        - value: confighubplaceholder
+        - value: replaceme
           name: DATABASE_PORT
-        - value: confighubplaceholder
+        - value: replaceme
           name: DATABASE_NAME
-        - value: confighubplaceholder
+        - value: replaceme
           name: DATABASE_USER
-        - value: confighubplaceholder
+        - value: replaceme
           name: DATABASE_PASSWORD
         envFrom:
         - configMapRef:
-            name: confighubplaceholder
+            name: replaceme

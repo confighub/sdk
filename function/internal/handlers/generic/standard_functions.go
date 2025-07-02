@@ -169,7 +169,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of attributes containing the placeholder string 'replaceme' or number 999999999",
+			Description:           "Returns a list of attributes containing the placeholder string 'confighubplaceholder' or number 999999999",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -189,12 +189,41 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'replaceme' or number 999999999",
+			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 			return genericFnNoPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
+	fh.RegisterFunction("search-replace", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "search-replace",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "search-value",
+					Required:      true,
+					Description:   "Value to search for",
+					DataType:      api.DataTypeString,
+				},
+				{
+					ParameterName: "replace-value",
+					Required:      true,
+					Description:   "Value to use as the replacement for search-value",
+					DataType:      api.DataTypeString,
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Replace all instances of the search-value in all strings of all resource types with replace-value",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnSearchReplace(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
 	fh.RegisterFunction("get-string-path", &handler.FunctionRegistration{
@@ -932,29 +961,33 @@ func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *
 
 func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
-	// OriginalName annotations can contain replaceme values for namespaces and/or names.
-	// Ignore those. They aren't a problem for apply.
-	filteredPaths := make(api.AttributeValueList, 0, len(paths))
-	for _, pathValue := range paths {
-		filteredPaths = append(filteredPaths, pathValue)
-	}
-	paths = append(filteredPaths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.DeprecatedPlaceHolderBlockApplyString)...)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	return parsedData, paths, nil
 }
 
 func genericFnNoPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.DeprecatedPlaceHolderBlockApplyString)...)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
-	// OriginalName annotations can contain replaceme values for namespaces and/or names.
-	// Ignore those. They aren't a problem for apply.
-	filteredPaths := make(api.AttributeValueList, 0, len(paths))
-	for _, pathValue := range paths {
-		filteredPaths = append(filteredPaths, pathValue)
-	}
 	result := api.ValidationResult{
-		Passed: len(filteredPaths) == 0,
+		Passed:           len(paths) == 0,
+		FailedAttributes: paths,
 	}
 	return parsedData, result, nil
+}
+
+func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+	searchValue := args[0].Value.(string)
+	replaceValue := args[1].Value.(string)
+
+	attributeList := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, searchValue)
+	for i := range attributeList {
+		existingValue := attributeList[i].Value.(string)
+		attributeList[i].Value = strings.ReplaceAll(existingValue, searchValue, replaceValue)
+	}
+
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, liveState)
 }
 
 // GetVisitorMapForPath is used to get visitor info for a resolved path.
@@ -1087,7 +1120,8 @@ func trimResourceName(resourceName, typeName, spaceName, unitName, separator str
 
 func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentValue string) (any, error) {
-		if !strings.Contains(currentValue, yamlkit.PlaceHolderBlockApplyString) {
+		if !strings.Contains(currentValue, yamlkit.PlaceHolderBlockApplyString) &&
+			!strings.Contains(currentValue, yamlkit.DeprecatedPlaceHolderBlockApplyString) {
 			return nil, nil
 		}
 		nameTemplate := context.Info.GenerationTemplate
@@ -1153,8 +1187,13 @@ func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionC
 	if err != nil {
 		return parsedData, nil, err
 	}
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, liveState)
+}
+
+func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, liveState []byte) (gaby.Container, any, error) {
 	var multiErrs []error
 	for _, attribute := range attributeList {
+		var err error
 		setterArgs := make([]api.FunctionArgument, 3)
 		// TODO: match resourceName if set?
 		setterArgs[0].Value = string(attribute.ResourceType)
