@@ -47,9 +47,9 @@ ${FCTL} do test-data/confighub.yaml "confighub" set-image-reference-by-uri ghcr.
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env-var nginx SUCCESS true > ${DIR}/set-env-var.txt
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" get-env-var nginx HOPE > ${DIR}/get-env-var.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-resources nginx all 500m 256Mi 2 > ${DIR}/set-container-resources.txt
-${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults > ${DIR}/set-pod-defaults.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults true true true true true > ${DIR}/set-pod-defaults.yaml
 ${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp validate > ${DIR}/validate-set-pod-defaults.txt
-${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-default-names > ${DIR}/set-default-names.txt
 ${FCTL} do test-data/service.yaml "MyApp" get-attributes > ${DIR}/get-attributes.txt
 ${FCTL} do test-data/deployment.yaml "MyApp" get-attributes > ${DIR}/get-attributes2.txt

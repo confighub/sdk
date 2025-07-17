@@ -16,17 +16,24 @@ import (
 var unitListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List units",
-	Long: `List units you have access to in a space. The output includes display names, slugs, unit IDs, data size, head revision, apply gates, and last change timestamp.
+	Long:  getUnitListHelp(),
+	Args:        cobra.ExactArgs(0),
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        unitListCmdRun,
+}
+
+func getUnitListHelp() string {
+	baseHelp := `List units you have access to in a space. The output includes display names, slugs, unit IDs, data size, head revision, apply gates, and last change timestamp.
 
 Examples:
   # List all units in a space
   cub unit list --space my-space
 
   # List units without headers for scripting
-  cub unit list --space my-space --noheader
+  cub unit list --space my-space --no-header
 
   # List only unit slugs
-  cub unit list --space my-space --noheader --slugs-only
+  cub unit list --space my-space --no-header --slugs-only
 
   # List units with specific labels
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
@@ -47,10 +54,40 @@ Examples:
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
   # List units with JSON output and JQ filtering
-  cub unit list --space my-space --quiet --json --jq '.[].UnitID'`,
-	Args:        cobra.ExactArgs(0),
-	Annotations: map[string]string{"OrgLevel": ""},
-	RunE:        unitListCmdRun,
+  cub unit list --space my-space --quiet --json --jq '.[].UnitID'`
+
+	agentContext := `Essential for discovering and filtering units in ConfigHub.
+
+Agent discovery workflow:
+1. Start with 'unit list --space SPACE' to see all units
+2. Use --where filters to find specific units of interest
+3. Use --slugs-only for scripting and automation
+
+Key filtering patterns for agents:
+
+Configuration state:
+- Find units with pending changes: --where 'HeadRevisionNum > LiveRevisionNum' 
+- Find unapplied units: --where 'LiveRevisionNum = 0'
+- Find units with placeholders: Use 'function do get-placeholders' instead
+
+Approval workflow:
+- Find units needing approval: --where 'LEN(ApprovedBy) = 0'
+- Find approved units: --where 'LEN(ApprovedBy) > 0'
+- Find units with apply gates: --where 'LEN(ApplyGates) > 0'
+
+Content filtering:
+- By resource type: --resource-type apps/v1/Deployment --where-data "spec.replicas > 1"
+- By labels: --where "Labels.app = 'myapp'"
+- By creation time: --where "CreatedAt > '2025-01-01T00:00:00'"
+
+Output formats:
+- --json + --jq: Extract specific fields for further processing
+- --slugs-only: Get unit identifiers for use with other commands
+- --quiet: Suppress table headers for clean output
+
+The --where flag supports SQL-like expressions with AND conjunctions. All attribute names are PascalCase as in JSON output.`
+
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 var resourceType string

@@ -15,7 +15,14 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"go.uber.org/zap"
 )
+
+// DefaultTokenTTL defines the default time-to-live for worker tokens.
+// Tokens are valid for 90 days from creation. After expiration, the system
+// will log a warning but continue to accept the token, allowing operations
+// to proceed.
+const DefaultTokenTTL = 90 * 24 * time.Hour
 
 type Spec struct {
 	Prefix       string
@@ -33,7 +40,7 @@ func DefaultSpec() *Spec {
 		Prefix:       "ch_",
 		RandomLength: 4,
 		SecretKey:    []byte(os.Getenv("WORKER_MASTER_SECRET")),
-		TTL:          90 * 24 * time.Hour,
+		TTL:          DefaultTokenTTL,
 		RandReader:   rand.Reader,
 	}
 }
@@ -112,7 +119,9 @@ func Generate(spec *Spec) (string, error) {
 	return spec.Prefix + lowerEncoded, nil
 }
 
-func Verify(spec *Spec, token string) error {
+// VerifyWithLogger verifies a token and logs warnings using the provided zap logger.
+// If logger is nil, nothing is printed.
+func VerifyWithLogger(spec *Spec, token string, logger *zap.Logger) error {
 	if !strings.HasPrefix(token, spec.Prefix) {
 		return errors.New("invalid token prefix")
 	}
@@ -146,7 +155,13 @@ func Verify(spec *Spec, token string) error {
 	// Check expiration
 	expirationTime := time.Unix(timestamp, 0)
 	if time.Now().After(expirationTime) {
-		return fmt.Errorf("token expired at %v", expirationTime)
+		// Log warning but continue execution
+		if logger != nil {
+			logger.Warn("Worker token expired but continuing execution",
+				zap.String("token_prefix", token[:10]+"..."),
+				zap.Time("expired_at", expirationTime),
+				zap.Duration("expired_since", time.Since(expirationTime)))
+		}
 	}
 
 	// Verify HMAC
@@ -161,4 +176,9 @@ func Verify(spec *Spec, token string) error {
 	}
 
 	return nil
+}
+
+// Verify verifies a token with no logging (for backward compatibility)
+func Verify(spec *Spec, token string) error {
+	return VerifyWithLogger(spec, token, nil)
 }

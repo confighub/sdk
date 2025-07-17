@@ -15,7 +15,6 @@ import (
 	"github.com/fluxcd/pkg/ssa"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestKubernetesBridgeWorker_Apply_Success(t *testing.T) {
@@ -197,144 +196,6 @@ func TestKubernetesBridgeWorker_WatchForApply_ContextDeadlineExceeded(t *testing
 	mockManager.AssertNumberOfCalls(t, "Wait", 1)
 }
 
-// TestCleanupOperations consolidates all cleanup-related test cases
-func TestCleanupOperations(t *testing.T) {
-	tests := []struct {
-		name     string
-		testFunc func(*testing.T)
-	}{
-		{
-			name: "single object cleanup",
-			testFunc: func(t *testing.T) {
-				input := createTestDeployment("test-deployment", "default", 3)
-				// Add status fields that should be cleaned up
-				input.Object["status"] = map[string]interface{}{
-					"availableReplicas": int64(3),
-					"readyReplicas":     int64(3),
-				}
-				// Add metadata fields that should be cleaned up
-				metadata := input.Object["metadata"].(map[string]interface{})
-				metadata["resourceVersion"] = "123"
-				metadata["generation"] = "1"
-				metadata["uid"] = "abc-123"
-
-				expected := createExpectedObject(t,
-					"apps/v1",
-					"Deployment",
-					map[string]interface{}{
-						"name":      "test-deployment",
-						"namespace": "default",
-					},
-					createTestDeploymentSpec(3, "test", "nginx"),
-				)
-
-				cleanup(input)
-				verifyCleanupResult(t, input, expected)
-			},
-		},
-		{
-			name: "multiple objects cleanup with annotations and labels",
-			testFunc: func(t *testing.T) {
-				input := []*unstructured.Unstructured{
-					createTestDeployment("test-deployment", "default", 3),
-				}
-
-				// Add custom annotations and labels, plus system ones that should be filtered
-				metadata := input[0].Object["metadata"].(map[string]interface{})
-				metadata["annotations"] = map[string]interface{}{
-					"kubectl.kubernetes.io/last-applied-configuration": "{}",
-					"custom.annotation": "value",
-				}
-				metadata["labels"] = map[string]interface{}{
-					"kubernetes.io/name": "test",
-					"custom.label":       "value",
-				}
-
-				// Add status and system metadata that should be cleaned up
-				input[0].Object["status"] = map[string]interface{}{
-					"availableReplicas": int64(3),
-					"readyReplicas":     int64(3),
-				}
-
-				// Override template spec with specific test values
-				customSpec := createTestDeploymentSpec(3, "test", "test:latest")
-				customSpec["template"].(map[string]interface{})["spec"].(map[string]interface{})["dnsPolicy"] = "ClusterFirst"
-				input[0].Object["spec"] = customSpec
-
-				expected := []*unstructured.Unstructured{
-					createExpectedObject(t,
-						"apps/v1",
-						"Deployment",
-						map[string]interface{}{
-							"name":      "test-deployment",
-							"namespace": "default",
-							"annotations": map[string]interface{}{
-								"custom.annotation": "value",
-							},
-							"labels": map[string]interface{}{
-								"custom.label": "value",
-							},
-						},
-						createTestDeploymentSpec(3, "test", "test:latest"),
-					),
-				}
-
-				result := extraCleanupObjects(input)
-				assert.Equal(t, len(expected), len(result), "number of objects should match")
-				for i, obj := range result {
-					verifyCleanupResult(t, obj, expected[i])
-				}
-			},
-		},
-		{
-			name: "service cleanup",
-			testFunc: func(t *testing.T) {
-				input := []*unstructured.Unstructured{
-					createTestService("test-service", "default", "ClusterIP", 80),
-				}
-
-				// Add fields that should be cleaned up
-				spec := input[0].Object["spec"].(map[string]interface{})
-				spec["clusterIP"] = "10.0.0.1"
-
-				input[0].Object["status"] = map[string]interface{}{
-					"loadBalancer": map[string]interface{}{
-						"ingress": []interface{}{
-							map[string]interface{}{
-								"ip": "10.0.0.1",
-							},
-						},
-					},
-				}
-
-				expected := []*unstructured.Unstructured{
-					createExpectedObject(t,
-						"v1",
-						"Service",
-						map[string]interface{}{
-							"name":      "test-service",
-							"namespace": "default",
-						},
-						createTestServiceSpec("ClusterIP", 80),
-					),
-				}
-
-				result := extraCleanupObjects(input)
-				assert.Equal(t, len(expected), len(result), "number of objects should match")
-				for i, obj := range result {
-					verifyCleanupResult(t, obj, expected[i])
-				}
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.testFunc(t)
-		})
-	}
-}
-
 // Import operation test cases
 func TestKubernetesBridgeWorker_Import(t *testing.T) {
 	tests := []struct {
@@ -364,7 +225,7 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 			}(),
 			setupMockFunc:       setupMockGetResourcesWithParams,
 			expectedError:       false,
-			expectedStatusCalls: 4,
+			expectedStatusCalls: 3,
 		},
 		{
 			name: "legacy resource info list",
@@ -389,7 +250,7 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 			},
 			setupMockFunc:       setupMockGetAllClusterResources,
 			expectedError:       false,
-			expectedStatusCalls: 4,
+			expectedStatusCalls: 3,
 		},
 		{
 			name: "invalid json falls back to default",
@@ -399,7 +260,7 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 			},
 			setupMockFunc:       setupMockGetAllClusterResources,
 			expectedError:       false,
-			expectedStatusCalls: 4,
+			expectedStatusCalls: 3,
 		},
 	}
 
@@ -428,40 +289,4 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 			mockCtx.AssertNumberOfCalls(t, "SendStatus", tt.expectedStatusCalls)
 		})
 	}
-}
-
-// Helper functions for verification and cleanup
-func verifyCleanupResult(t *testing.T, actual, expected *unstructured.Unstructured) {
-	t.Helper()
-
-	// Verify metadata cleanup
-	metadata, exists := actual.Object["metadata"].(map[string]interface{})
-	assert.True(t, exists, "metadata should exist")
-	assert.Equal(t, expected.Object["metadata"].(map[string]interface{})["name"], metadata["name"], "name should be preserved")
-	assert.Equal(t, expected.Object["metadata"].(map[string]interface{})["namespace"], metadata["namespace"], "namespace should be preserved")
-	assert.NotContains(t, metadata, "resourceVersion", "resourceVersion should be removed")
-	assert.NotContains(t, metadata, "generation", "generation should be removed")
-	assert.NotContains(t, metadata, "uid", "uid should be removed")
-	assert.NotContains(t, metadata, "creationTimestamp", "creationTimestamp should be removed")
-	assert.NotContains(t, metadata, "managedFields", "managedFields should be removed")
-	assert.NotContains(t, metadata, "ownerReferences", "ownerReferences should be removed")
-
-	// Verify annotations and labels filtering
-	if expectedAnnotations, ok := expected.Object["metadata"].(map[string]interface{})["annotations"].(map[string]interface{}); ok {
-		actualAnnotations, exists := metadata["annotations"].(map[string]interface{})
-		assert.True(t, exists, "annotations should exist")
-		assert.Equal(t, expectedAnnotations, actualAnnotations, "annotations should match")
-	}
-
-	if expectedLabels, ok := expected.Object["metadata"].(map[string]interface{})["labels"].(map[string]interface{}); ok {
-		actualLabels, exists := metadata["labels"].(map[string]interface{})
-		assert.True(t, exists, "labels should exist")
-		assert.Equal(t, expectedLabels, actualLabels, "labels should match")
-	}
-
-	// Verify status removal
-	assert.NotContains(t, actual.Object, "status", "status should be removed")
-
-	// Verify spec preservation and cleanup
-	assert.Equal(t, expected.Object["spec"], actual.Object["spec"], "spec should be preserved and cleaned up")
 }

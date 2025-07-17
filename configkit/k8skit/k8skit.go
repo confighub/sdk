@@ -15,6 +15,81 @@ import (
 	"golang.org/x/text/language"
 )
 
+// Kubernetes annotation prefixes that should be removed during cleanup
+// Cannot import directly from k8s.io/pkg/apis/core because it is private
+// See https://kubernetes.io/docs/reference/labels-annotations-taints/
+// for more information.
+const (
+	// Kubectl client annotations
+	KubectlPrefix = "kubectl.kubernetes.io/"
+	// Kubernetes core annotations
+	KubernetesPrefix = "kubernetes.io/"
+	// Deployment controller annotations
+	DeploymentPrefix = "deployment.kubernetes.io/"
+	// Persistent volume annotations
+	PVPrefix = "pv.kubernetes.io/"
+	// Volume beta annotations (legacy)
+	VolumeBetaPrefix = "volume.beta.kubernetes.io/"
+	// Endpoints annotations
+	EndpointsPrefix = "endpoints.kubernetes.io/"
+	// Control plane alpha annotations
+	ControlPlaneAlphaPrefix = "control-plane.alpha.kubernetes.io/"
+	// Scheduler alpha annotations
+	SchedulerAlphaPrefix = "scheduler.alpha.kubernetes.io/"
+	// Batch annotations
+	BatchPrefix = "batch.kubernetes.io/"
+
+	// Specific annotation keys that should be removed
+	// Kubectl specific annotations
+	KubectlLastAppliedConfiguration = "kubectl.kubernetes.io/last-applied-configuration"
+	KubectlRestartedAt              = "kubectl.kubernetes.io/restartedAt"
+	// Kubernetes core annotations
+	KubernetesChangeCause = "kubernetes.io/change-cause"
+	KubernetesLimitRanger = "kubernetes.io/limit-ranger"
+	KubernetesPSP         = "kubernetes.io/psp"
+	// Static pod annotations
+	KubernetesConfigHash   = "kubernetes.io/config.hash"
+	KubernetesConfigMirror = "kubernetes.io/config.mirror"
+	KubernetesConfigSource = "kubernetes.io/config.source"
+	KubernetesConfigSeen   = "kubernetes.io/config.seen"
+
+	// Kubernetes label prefixes that should be removed during cleanup
+	// Controller-generated labels
+	ControllerUIDPrefix      = "controller-uid"
+	PodTemplateHashPrefix    = "pod-template-hash"
+	StatefulSetPodNamePrefix = "statefulset.kubernetes.io/pod-name"
+)
+
+var K8sInternalAnnotationPrefixes = []string{
+	KubectlPrefix,
+	KubernetesPrefix,
+	DeploymentPrefix,
+	PVPrefix,
+	VolumeBetaPrefix,
+	EndpointsPrefix,
+	ControlPlaneAlphaPrefix,
+	SchedulerAlphaPrefix,
+	BatchPrefix,
+}
+
+var K8sInternalAnnotationKeys = []string{
+	KubernetesChangeCause,
+	KubectlLastAppliedConfiguration,
+	KubectlRestartedAt,
+	KubernetesLimitRanger,
+	KubernetesPSP,
+	KubernetesConfigHash,
+	KubernetesConfigMirror,
+	KubernetesConfigSource,
+	KubernetesConfigSeen,
+}
+
+var K8sInternalLabelPrefixes = []string{
+	ControllerUIDPrefix,
+	PodTemplateHashPrefix,
+	StatefulSetPodNamePrefix,
+}
+
 // User data errors should not be logged here. They will be logged by the caller.
 // Errors indicate that the operation could not be completed.
 // Messages should be acceptable to return to the user, and should indicate the

@@ -19,8 +19,11 @@ var functionExecCmd = &cobra.Command{
 	Short: "Invoke a list of functions",
 	Long: `Invoke functions on units. Functions can be used to modify, validate, or query unit configurations.
 
-To get a list of supported functions, run:
+To display a list of supported functions, run:
   cub function list
+
+To display usage details of a specific function, run:
+  cub function explain --toolchain TOOLCHAIN_TYPE FUNCTION_NAME
 
 Example Functions:
   - set-image: Update container image in a deployment
@@ -46,6 +49,7 @@ set-namespace myns`,
 
 func init() {
 	functionExecCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
+	functionExecCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionExecCmd.Flags().BoolVar(&combine, "combine", false, "combine results")
 	functionExecCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionExecCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
@@ -60,20 +64,21 @@ func init() {
 	functionCmd.AddCommand(functionExecCmd)
 }
 
-func functionExecCommandRun(cmd *cobra.Command, args []string) error {
-	var resp *[]goclientnew.FunctionInvocationResponse
-	newBody := newFunctionInvocationsRequest()
-
+// executeFunctionsFromFile reads functions from a file and executes them with the given where clause
+func executeFunctionsFromFile(functionsFile, whereClause string) (*[]goclientnew.FunctionInvocationResponse, error) {
 	var content []byte
 	var err error
-	if args[0] == "-" {
+
+	if functionsFile == "-" {
 		content, err = readStdin()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
-		content = readFile(args[0])
+		content = readFile(functionsFile)
 	}
+
+	// Parse functions from file content
 	invocations := []goclientnew.FunctionInvocation{}
 	lines := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
 	for _, line := range lines {
@@ -86,35 +91,49 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		invocation := initializeFunctionInvocation(functionName, invokeArgs)
 		invocations = append(invocations, *invocation)
 	}
+
+	// Create function invocations request
+	newBody := newFunctionInvocationsRequest()
 	newBody.FunctionInvocations = &invocations
 
+	// Execute functions
+	var resp *[]goclientnew.FunctionInvocationResponse
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		if where != "" {
-			where = url.QueryEscape(where)
-			newParams.Where = &where
+		if whereClause != "" {
+			encoded := url.QueryEscape(whereClause)
+			newParams.Where = &encoded
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
 		if IsAPIError(err, funcRes) {
-			return fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
+			return nil, fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
 		}
 		resp = funcRes.JSON200
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
-		if where != "" {
-			where = url.QueryEscape(where)
-			newParams.Where = &where
+		if whereClause != "" {
+			encoded := url.QueryEscape(whereClause)
+			newParams.Where = &encoded
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
 		if IsAPIError(err, funcRes) {
-			return InterpretErrorGeneric(err, funcRes)
+			return nil, InterpretErrorGeneric(err, funcRes)
 		}
 		resp = funcRes.JSON200
 	}
 
-	// if server 200 empty-response
+	// Handle empty response
 	if resp == nil {
 		resp = &[]goclientnew.FunctionInvocationResponse{}
+	}
+
+	return resp, nil
+}
+
+func functionExecCommandRun(cmd *cobra.Command, args []string) error {
+	resp, err := executeFunctionsFromFile(args[0], where)
+	if err != nil {
+		return err
 	}
 	outputFunctionInvocationResponse(resp)
 	if jsonOutput {
@@ -128,7 +147,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 			if len(resp.Output) != 0 {
 				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
 				if err != nil {
-					tprint(resp.Output)
+					tprintRaw(resp.Output)
 					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 				}
 				if strings.TrimSpace(string(outputBytes)) != "null" {
@@ -139,7 +158,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	}
 	if wait {
 		if !quiet && !dataOnly && !outputOnly {
-			tprint("Awaiting triggers...")
+			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time
 		for _, resp := range *resp {

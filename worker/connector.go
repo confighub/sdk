@@ -25,6 +25,7 @@ import (
 
 type ConfighubConnector struct {
 	functionExecutor *function.FunctionExecutor
+	bridgeDispatcher *BridgeDispatcher
 	workerID         string
 	workerSecret     string
 	configHubURL     string
@@ -35,6 +36,7 @@ type ConnectorOptions struct {
 	WorkerSecret     string
 	ConfigHubURL     string
 	FunctionExecutor *function.FunctionExecutor
+	BridgeDispatcher *BridgeDispatcher
 }
 
 // NewConnector creates a new ConfighubConnector. WorkerID and WorkerSecret are required.
@@ -42,6 +44,7 @@ type ConnectorOptions struct {
 func NewConnector(opts ConnectorOptions) (*ConfighubConnector, error) {
 	return &ConfighubConnector{
 		functionExecutor: opts.FunctionExecutor,
+		bridgeDispatcher: opts.BridgeDispatcher,
 		workerID:         opts.WorkerID,
 		workerSecret:     opts.WorkerSecret,
 		configHubURL:     opts.ConfigHubURL,
@@ -67,17 +70,21 @@ func (c *ConfighubConnector) Start() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(apiInfo.JSON200.WorkerPort)
 	workerUrl := fmt.Sprintf("%s://%s:%s", url.Scheme, url.Hostname(), apiInfo.JSON200.WorkerPort)
 
-	// We create these wrappers so we can reuse the exising worker code in lib.worker.
-	// We don't support bridges yet in this first iteration, so it's just a null placeholder.
-	// Ultimately the whole thing should be refactored.
-	bridgeWorker := &NullBridgeWorker{}
+	var bw api.BridgeWorker // api.BridgeWorker is the interface.
+	if c.bridgeDispatcher != nil {
+		bw = c.bridgeDispatcher.getWrapped()
+	} else {
+		bw = &NullBridgeWorker{}
+	}
+	if c.functionExecutor == nil {
+		c.functionExecutor = function.NewEmptyExecutor()
+	}
 	adapter := &FunctionWorkerAdapter{executor: c.functionExecutor}
 
 	worker := lib.New(workerUrl, c.workerID, c.workerSecret).
-		WithBridgeWorker(bridgeWorker).
+		WithBridgeWorker(bw).
 		WithFunctionWorker(adapter)
 
 	return worker.Start(context.Background())

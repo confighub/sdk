@@ -18,9 +18,34 @@ import (
 var functionListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List functions",
-	Long:  `List functions you have access to in this space`,
+	Long:  getFunctionListHelp(),
 	Args:  cobra.ExactArgs(0),
 	RunE:  functionListCmdRun,
+}
+
+func getFunctionListHelp() string {
+	baseHelp := `List functions you have access to in this space`
+	agentContext := `Essential for function discovery and understanding available operations.
+
+Agent workflow:
+1. Run 'function list' to see all available functions by toolchain type
+2. Note the 'Mutating' and 'Validating' columns to understand function behavior
+3. Use 'function explain FUNCTION_NAME' for detailed parameter information
+
+Filter options:
+- --toolchain: Show functions for specific toolchain (Kubernetes/YAML, OpenTofu/HCL, etc.)
+- --target: Show functions available for a specific deployment target
+- --worker: Show functions available on a specific worker
+- --unit: Show functions available for a specific unit
+
+Function types:
+- Mutating: false = Read-only inspection functions (safe to run repeatedly)
+- Mutating: true = Modifies configuration data (changes unit state)
+- Validating: true = Returns pass/fail validation results
+
+Use --slugs-only to get just function names for scripting.`
+	
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 var functionListCmdArgs struct {

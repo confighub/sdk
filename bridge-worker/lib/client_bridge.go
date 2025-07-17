@@ -4,7 +4,6 @@
 package lib
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -102,7 +101,7 @@ func (c *workerClient) handleWatchApply(workerContext api.BridgeWorkerContext, p
 				MaxInterval:         5 * time.Minute,
 			}
 			_, err := backoff.Retry(
-				context.TODO(),
+				workerContext.Context(),
 				operation,
 				backoff.WithBackOff(eb),
 			)
@@ -144,7 +143,7 @@ func (c *workerClient) handleWatchDestroy(workerContext api.BridgeWorkerContext,
 				MaxInterval:         5 * time.Minute,
 			}
 			_, err := backoff.Retry(
-				context.TODO(),
+				workerContext.Context(),
 				operation,
 				backoff.WithBackOff(eb),
 			)

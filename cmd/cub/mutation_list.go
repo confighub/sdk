@@ -23,7 +23,7 @@ Examples:
   cub mutation list --space my-space my-ns
 
   # List mutations without headers
-  cub mutation list --space my-space --noheader my-ns
+  cub mutation list --space my-space --no-header my-ns
 
   # List mutations in JSON format
   cub mutation list --space my-space --json my-ns

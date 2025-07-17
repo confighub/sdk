@@ -105,6 +105,8 @@ type ActionType string
 
 // ApiInfo Information provided to clients by the server.
 type ApiInfo struct {
+	AuthServer string `json:"AuthServer,omitempty"`
+
 	// Build Build identifier for support cases.
 	Build string `json:"Build,omitempty"`
 
@@ -112,7 +114,8 @@ type ApiInfo struct {
 	BuiltAt string `json:"BuiltAt,omitempty"`
 
 	// ClientID ClientID for identity provider service.
-	ClientID string `json:"ClientID,omitempty"`
+	ClientID    string `json:"ClientID,omitempty"`
+	RedirectURI string `json:"RedirectURI,omitempty"`
 
 	// Revision Service revision identifier for support cases.
 	Revision string `json:"Revision,omitempty"`
@@ -610,6 +613,8 @@ type FunctionInvocationResponse struct {
 
 // FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
 type FunctionInvocationsRequest struct {
+	BridgeWorkerID *UUID `json:"BridgeWorkerID"`
+
 	// CastStringArgsToScalars CastStringArgsToScalars indicates whether to expect string arguments and cast them to int and bool types as necessary.
 	CastStringArgsToScalars bool `json:"CastStringArgsToScalars,omitempty"`
 
@@ -816,7 +821,7 @@ type Mutation struct {
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty"`
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty"`
-	LinkID             *UUID               `json:"LinkID,omitempty"`
+	LinkID             *UUID               `json:"LinkID"`
 
 	// MutationID Unique identifier for a Mutation.
 	MutationID openapi_types.UUID `json:"MutationID,omitempty"`
@@ -839,7 +844,7 @@ type Mutation struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty"`
-	TriggerID *UUID              `json:"TriggerID,omitempty"`
+	TriggerID *UUID              `json:"TriggerID"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty"`
@@ -1294,7 +1299,7 @@ type Trigger struct {
 
 	// Arguments Function arguments
 	Arguments      []FunctionArgument `json:"Arguments"`
-	BridgeWorkerID *UUID              `json:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID *UUID              `json:"BridgeWorkerID"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1441,14 +1446,14 @@ type Unit struct {
 
 	// PreviousLiveRevisionNum Sequence number the previous Revision applied. 0 if no live revision.
 	PreviousLiveRevisionNum int64 `json:"PreviousLiveRevisionNum,omitempty"`
-	SetID                   *UUID `json:"SetID,omitempty"`
+	SetID                   *UUID `json:"SetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug"`
 
 	// SpaceID Unique identifier for a space.
 	SpaceID  openapi_types.UUID `json:"SpaceID,omitempty"`
-	TargetID *UUID              `json:"TargetID,omitempty"`
+	TargetID *UUID              `json:"TargetID"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
 	ToolchainType string `json:"ToolchainType,omitempty"`
@@ -1458,12 +1463,12 @@ type Unit struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt              time.Time `json:"UpdatedAt,omitempty"`
-	UpstreamOrganizationID *UUID     `json:"UpstreamOrganizationID,omitempty"`
+	UpstreamOrganizationID *UUID     `json:"UpstreamOrganizationID"`
 
 	// UpstreamRevisionNum Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded.
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty"`
-	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID,omitempty"`
-	UpstreamUnitID      *UUID `json:"UpstreamUnitID,omitempty"`
+	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID"`
+	UpstreamUnitID      *UUID `json:"UpstreamUnitID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
@@ -2394,7 +2399,7 @@ type ListAllUnitsParams struct {
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty"`
 
-	// WhereData Where data filter: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. The expression syntax was inspired by SQL. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty"`
 }
 

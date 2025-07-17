@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,21 +30,6 @@ func (t TestConfigProvider) GetConfig() (*rest.Config, error) {
 // setupTestConfig sets up the test configuration provider
 func setupTestConfig() {
 	SetConfigProvider(TestConfigProvider{})
-}
-
-// setupMockListExpectation sets up a mock expectation for the List method
-func setupMockListExpectation(mockClient *MockK8sClient, items []unstructured.Unstructured) {
-	mockClient.On("List",
-		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		mock.MatchedBy(func(list client.ObjectList) bool {
-			ul, ok := list.(*unstructured.UnstructuredList)
-			return ok && ul != nil
-		}),
-		mock.Anything,
-	).Run(func(args mock.Arguments) {
-		list := args.Get(1).(*unstructured.UnstructuredList)
-		list.Items = items
-	}).Return(nil)
 }
 
 // setupMockListWithCondition sets up a mock expectation for the List method with conditional behavior
@@ -306,6 +292,93 @@ func TestParseGroupVersionKind_EdgeCases(t *testing.T) {
 	}
 }
 
+// TestWhereFilterParsing tests the new unified where-filter parsing pipeline
+func TestWhereFilterParsing(t *testing.T) {
+	tests := []struct {
+		name            string
+		whereFilter     string
+		expectedFilters int
+		expectedOptions int
+		expectError     bool
+		description     string
+	}{
+		{
+			name:            "Basic namespace filter with proper path",
+			whereFilter:     "metadata.namespace = 'import-test-default'",
+			expectedFilters: 1,
+			expectedOptions: 0,
+			expectError:     false,
+			description:     "Simple namespace filtering using Kubernetes path syntax",
+		},
+		{
+			name:            "Combined filters with import options",
+			whereFilter:     "metadata.namespace = 'import-test-default' AND import.include_system = true AND import.include_custom = true",
+			expectedFilters: 1,
+			expectedOptions: 2,
+			expectError:     false,
+			description:     "Namespace filter with import options",
+		},
+		{
+			name:            "Multiple filters with IN clause",
+			whereFilter:     "metadata.namespace IN ('import-test-default', 'import-test-production') AND kind != 'Secret'",
+			expectedFilters: 2,
+			expectedOptions: 0,
+			expectError:     false,
+			description:     "Multiple filters with IN clause",
+		},
+		{
+			name:            "Complex scenario matching test script",
+			whereFilter:     "metadata.namespace IN ('import-test-default', 'import-test-production') AND kind = 'ConfigMap' AND import.include_system = true AND import.include_custom = true AND import.include_cluster = false",
+			expectedFilters: 2,
+			expectedOptions: 3,
+			expectError:     false,
+			description:     "Complex scenario with multiple filters and options",
+		},
+		{
+			name:        "Invalid syntax",
+			whereFilter: "metadata.namespace = 'missing quote",
+			expectError: true,
+			description: "Should fail with invalid syntax",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filters, options, err := api.ParseWhereFilterForImport(tt.whereFilter)
+
+			if tt.expectError {
+				assert.Error(t, err, "Expected error for: %s", tt.description)
+				return
+			}
+
+			require.NoError(t, err, "Failed to parse where filter: %s", tt.whereFilter)
+			assert.Equal(t, tt.expectedFilters, len(filters), "Expected %d filters for: %s", tt.expectedFilters, tt.description)
+			assert.Equal(t, tt.expectedOptions, len(options), "Expected %d options for: %s", tt.expectedOptions, tt.description)
+
+			// Validate filter paths use correct Kubernetes syntax
+			for _, filter := range filters {
+				if filter.Type == "metadata.namespace" || filter.Type == "kind" || filter.Type == "apiVersion" {
+					// These are valid Kubernetes paths
+					continue
+				}
+				t.Logf("Filter type: %s", filter.Type)
+			}
+
+			// Validate import options are properly formatted
+			for key := range options {
+				assert.True(t, key == "include_system" || key == "include_custom" || key == "include_cluster",
+					"Invalid import option key: %s", key)
+			}
+
+			// Test that operators are correctly mapped
+			for _, filter := range filters {
+				assert.True(t, filter.Operator == "include" || filter.Operator == "exclude",
+					"Operator should be mapped to include/exclude, got: %s", filter.Operator)
+			}
+		})
+	}
+}
+
 // TestE2EImportScenarios validates the exact scenarios used in test-setup.sh
 func TestE2EImportScenarios(t *testing.T) {
 	// Create test resources that match what test-setup.sh creates
@@ -358,7 +431,7 @@ func TestE2EImportScenarios(t *testing.T) {
 			name: "Import with combined parameters",
 			filters: []goclientnew.ImportFilter{
 				{
-					Type:     "namespace",
+					Type:     "metadata.namespace",
 					Operator: "include",
 					Values:   []string{"import-test-default"},
 				},
@@ -373,7 +446,7 @@ func TestE2EImportScenarios(t *testing.T) {
 			name: "Complex unified syntax with exclusions",
 			filters: []goclientnew.ImportFilter{
 				{
-					Type:     "namespace",
+					Type:     "metadata.namespace",
 					Operator: "include",
 					Values:   []string{"import-test-default", "import-test-production"},
 				},
@@ -473,8 +546,8 @@ func TestE2EImportScenarios(t *testing.T) {
 	}
 }
 
-// TestImportCombinedScenario tests the exact scenario that's failing in test-setup.sh
-// Query: "namespace = 'import-test-default' AND IMPORT_OPTIONS(include_system=true, include_custom=true)"
+// TestImportCombinedScenario tests the exact scenario from test-setup.sh with new where-filter syntax
+// Query: "metadata.namespace = 'import-test-default' AND import.include_system = true AND import.include_custom = true"
 func TestImportCombinedScenario(t *testing.T) {
 	setupTestConfig()
 
@@ -517,7 +590,7 @@ func TestImportCombinedScenario(t *testing.T) {
 		importRequest := &goclientnew.ImportRequest{
 			Filters: []goclientnew.ImportFilter{
 				{
-					Type:     "namespace",
+					Type:     "metadata.namespace",
 					Operator: "include",
 					Values:   []string{"import-test-default"},
 				},
@@ -599,4 +672,68 @@ func TestImportCombinedScenario(t *testing.T) {
 			assert.Equal(t, 0, resourceTypes[adminResource], "Administrative resource %s should be excluded by default", adminResource)
 		}
 	})
+}
+
+// TestComplexPathFiltering tests the complex path filtering functionality
+func TestComplexPathFiltering(t *testing.T) {
+	// Create test resources using suite helpers
+	deployment := createTestDeployment("test-deployment", "default", 3)
+	// Customize the deployment to have nginx:latest and security context
+	containers := []interface{}{
+		map[string]interface{}{
+			"name":  "nginx",
+			"image": "nginx:latest",
+			"securityContext": map[string]interface{}{
+				"runAsNonRoot": true,
+			},
+		},
+	}
+	unstructured.SetNestedSlice(deployment.Object, containers, "spec", "template", "spec", "containers")
+	configMap := createTestConfigMap("test-config", "default", "test")
+
+	tests := []struct {
+		name     string
+		filter   goclientnew.ImportFilter
+		expected int
+	}{
+		{
+			name: "Simple field filtering",
+			filter: goclientnew.ImportFilter{
+				Type: "spec.replicas", Operator: "include", Values: []string{"3"},
+			},
+			expected: 1, // Only deployment has replicas=3
+		},
+		{
+			name: "Wildcard container image filtering",
+			filter: goclientnew.ImportFilter{
+				Type: "spec.template.spec.containers.*.image", Operator: "include", Values: []string{"nginx:latest"},
+			},
+			expected: 1, // Only deployment matches
+		},
+		{
+			name: "Numeric index container access",
+			filter: goclientnew.ImportFilter{
+				Type: "spec.template.spec.containers.0.name", Operator: "include", Values: []string{"nginx"},
+			},
+			expected: 1, // Only deployment matches
+		},
+		{
+			name: "Nonexistent path filtering",
+			filter: goclientnew.ImportFilter{
+				Type: "spec.nonexistent.field", Operator: "include", Values: []string{"value"},
+			},
+			expected: 0, // No resources match
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &ImportConfig{Filters: []goclientnew.ImportFilter{tt.filter}}
+			rd := &ResourceDiscovery{config: config}
+			allResources := []*unstructured.Unstructured{deployment, configMap}
+			filtered := rd.applyGenericFilters(allResources)
+
+			assert.Equal(t, tt.expected, len(filtered), "Filter: %s", tt.filter.Type)
+		})
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -22,13 +23,15 @@ var workerRunCmd = &cobra.Command{
 }
 
 var workerRunArgs struct {
-	workerType string
-	envs       []string
+	workerType        string
+	envs              []string
+	enableMultiplexer bool
 }
 
 func init() {
 	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerType, "worker-type", "t", "kubernetes", "worker type")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
+	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", false, "Enable multiplexer mode with prefixes and multi-worker support")
 
 	// [jj]: I commented this out and set "kubernetes" as default type.
 	// TODO: Type should not be required at all.
@@ -39,6 +42,11 @@ func init() {
 }
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
+	// Auto-enable multiplexer if worker type contains comma
+	if strings.Contains(workerRunArgs.workerType, ",") && !cmd.Flags().Changed("enable-multiplexer") {
+		workerRunArgs.enableMultiplexer = true
+	}
+
 	spaceID := uuid.MustParse(selectedSpaceID)
 	worker, err := apiGetBridgeWorkerFromSlug(args[0])
 	if err != nil {
@@ -66,7 +74,13 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	workerCommand := exec.Command(workerExecutable, workerRunArgs.workerType)
+	// Build command args
+	cmdArgs := []string{workerRunArgs.workerType}
+	if workerRunArgs.enableMultiplexer {
+		cmdArgs = append(cmdArgs, "--enable-multiplexer")
+	}
+	
+	workerCommand := exec.Command(workerExecutable, cmdArgs...)
 	workerCommand.Stdin = os.Stdin
 	workerCommand.Stdout = os.Stdout
 	workerCommand.Stderr = os.Stderr

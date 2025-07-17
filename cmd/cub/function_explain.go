@@ -13,9 +13,36 @@ import (
 var functionExplainCmd = &cobra.Command{
 	Use:   "explain <function>",
 	Short: "Explain a function",
-	Long:  `Explain details about a function you have access to in this space`,
+	Long:  getFunctionExplainHelp(),
 	Args:  cobra.ExactArgs(1),
 	RunE:  functionExplainCmdRun,
+}
+
+func getFunctionExplainHelp() string {
+	baseHelp := `Explain details about a function you have access to in this space`
+	agentContext := `Critical for understanding function parameters before execution.
+
+Agent workflow:
+1. First run 'function list' to discover available functions
+2. Use 'function explain FUNCTION_NAME' to understand parameters and behavior
+3. Review the generated usage string for proper invocation syntax
+
+Key information provided:
+- Function signature with required and optional parameters
+- Behavior flags (Mutating, Validating, Hermetic, Idempotent)
+- Parameter types, constraints, and examples
+- Affected resource types (which Kubernetes resources this function operates on)
+
+Usage pattern:
+  cub function explain set-image --toolchain Kubernetes/YAML
+
+The output includes a ready-to-use command template showing required and optional parameters.
+
+Important flags:
+- --toolchain: Specify function toolchain (defaults to "Kubernetes/YAML")
+- Use same --target, --worker, --unit flags as 'function list' if needed`
+
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 var functionExplainCmdArgs struct {
@@ -89,6 +116,22 @@ func displayFunctionDetails(toolchainType, functionName string, functionDetails 
 		}
 		view.Append([]string{"Affected Resource Types", affectedTypes})
 	}
+
+	// Generate usage string
+	usageStr := fmt.Sprintf("Usage: cub function do -- %s", functionName)
+	for _, param := range functionDetails.Parameters {
+		if param.Required {
+			usageStr += fmt.Sprintf(" <%s>", param.ParameterName)
+		} else {
+			usageStr += fmt.Sprintf(" [--%s=%s]", param.ParameterName, param.DataType)
+		}
+	}
+	if functionDetails.VarArgs {
+		usageStr += " ..."
+	}
+	tprintRaw(usageStr)
+	tprintRaw("")
+
 	view.Render()
 	view = tableView()
 	view.SetHeader([]string{"Parameter", "Name", "Data-Type", "Required", "Description", "Example", "Constraint"})

@@ -222,8 +222,8 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		chartName = parts[len(parts)-1]
 	}
 	unitLabels := map[string]string{
-		"helmChart":       chartName,
-		"helmReleaseName": helmInstallArgs.releaseName,
+		HelmChartLabel:   chartName,
+		HelmReleaseLabel: helmInstallArgs.releaseName,
 		// TODO "helmChartVersion": helmInstallArgs.version,
 	}
 

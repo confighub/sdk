@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -14,9 +15,11 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
+	"github.com/charmbracelet/glamour"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
@@ -30,6 +33,12 @@ import (
 const (
 	CONFIGHUB_DIR = ".confighub"
 )
+
+//go:embed cub-overview.md
+var overviewFS embed.FS
+
+//go:embed cub-agent-overview.md
+var agentsFS embed.FS
 
 var ctx = context.Background()
 var cubClientNew *goclientnew.ClientWithResponses
@@ -66,11 +75,83 @@ func (ct *CubTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
+var IsAgent bool = os.Getenv("CONFIGHUB_AGENT") != ""
+
+// Helper functions for dynamic help text generation
+
+// getCommandHelp returns help text for commands with optional agent context
+func getCommandHelp(baseHelp string, agentContext string) string {
+	if IsAgent && agentContext != "" {
+		return baseHelp + "\n\n" + agentContext
+	}
+	return baseHelp
+}
+
+func getFormattedOverview() string {
+	if IsAgent {
+		content, err := agentsFS.ReadFile("cub-agent-overview.md")
+		if err == nil {
+			return string(content)
+		}
+	}
+
+	content, err := overviewFS.ReadFile("cub-overview.md")
+	if err != nil {
+		// Fallback to simple text if markdown can't be read
+		return `Command line tool for using ConfigHub
+To change the default confighub host, set CONFIGHUB_URL environment variable.`
+	}
+
+	renderer, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(80),
+	)
+	if err != nil || IsAgent {
+		// Fallback to raw markdown if glamour fails
+		return string(content)
+	}
+
+	formatted, err := renderer.Render(string(content))
+	if err != nil {
+		// Fallback to raw markdown if rendering fails
+		return string(content)
+	}
+
+	return formatted
+}
+
+func getSimpleHelp() string {
+	return `Command line tool for using ConfigHub
+To change the default confighub host, set CONFIGHUB_URL environment variable.
+
+AI agents should set CONFIGHUB_AGENT=1 for all cub commands with --help, and execute cub --help-overview to display a detailed overview.`
+}
+
+func saveAgentsFile() error {
+	content, err := agentsFS.ReadFile("cub-agent-overview.md")
+	if err != nil {
+		return err
+	}
+
+	configHubDir := filepath.Join(os.Getenv("HOME"), CONFIGHUB_DIR)
+	err = os.MkdirAll(configHubDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	agentsFile := filepath.Join(configHubDir, "agents.md")
+	err = os.WriteFile(agentsFile, content, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "cub",
 	Short: "ConfigHub CLI",
-	Long: `Command line tool for using ConfigHub
-To change the default confighub host, set CONFIGHUB_URL environment variable.`,
+	Long:  getSimpleHelp(),
 }
 
 func globalPreRun(cmd *cobra.Command, args []string) error {
@@ -96,7 +177,7 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 
 	// Require authentication except for "login"
 	if !slices.Contains([]string{"login", "test-login"}, cmd.Name()) && authSession.BasicAuthPassword == "" && authSession.AccessToken == "" {
-		return errors.New("you must be authenticated to execute this command. Log in in with the command: cub auth login")
+		return errors.New("you must be authenticated to execute this command. Log in with the command: cub auth login")
 	}
 
 	cubClientNew, err = initializeClient()
@@ -149,6 +230,24 @@ func main() {
 	LoadCubContext()
 	_ = getEnvURL()
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Debug output")
+
+	// Add --help-overview flag
+	var helpOverview bool
+	rootCmd.Flags().BoolVar(&helpOverview, "help-overview", false, "Show detailed overview instead of standard help")
+
+	// Store original help function before overriding
+	originalHelpFunc := rootCmd.HelpFunc()
+
+	// Override the help function to handle --help-overview
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if helpOverview {
+			fmt.Print(getFormattedOverview())
+			return
+		}
+		// Use the original help function
+		originalHelpFunc(cmd, args)
+	})
+
 	// This turns off printing Usage after an error
 	rootCmd.SilenceUsage = true
 	// We don't want root command to print errors. We'll do it ourselves.
@@ -277,6 +376,12 @@ func tprintErr(format string, args ...interface{}) {
 	fmt.Fprint(os.Stderr, redf(fmt.Sprintf(format, args...)))
 }
 
+func tprintRaw(output string) {
+	// Ensure there are no leading newlines and exactly one trailing newline.
+	output = strings.Trim(output, "\n") + "\n"
+	fmt.Print(output)
+}
+
 func readFile(fileName string) []byte {
 	data, err := os.ReadFile(fileName)
 	failOnError(err)
@@ -331,11 +436,11 @@ func setLabels(labelMap *map[string]string) error {
 }
 
 func enableFromStdinFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&flagPopulateModelFromStdin, "from-stdin", false, "Read the entity from stdin and merge with existing on update")
+	cmd.Flags().BoolVar(&flagPopulateModelFromStdin, "from-stdin", false, "Read the ConfigHub entity JSON (e.g., retrieved with cub <entity> get --quiet --json) from stdin; merged with command arguments on create, and merged with command arguments and existing entity on update")
 }
 
 func enableReplaceFromStdinFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&flagReplaceModelFromStdin, "replace-from-stdin", false, "Read the entity from stdin and replace existing on update")
+	cmd.Flags().BoolVar(&flagReplaceModelFromStdin, "replace-from-stdin", false, "Read the ConfigHub entity JSON (e.g., retrieved with cub <entity> get --quiet --json) from stdin; merged with command arguments on create, and merged with command arguments and replaces existing entity on update")
 }
 
 func enableVerboseFlag(cmd *cobra.Command) {
@@ -443,7 +548,7 @@ func populateNewModelFromStdin(v interface{}) error {
 func displayJSON(entity any) {
 	outBytes, err := json.MarshalIndent(entity, "", "  ")
 	failOnError(err)
-	tprint(string(outBytes))
+	tprintRaw(string(outBytes))
 }
 
 func displayJQForBytes(outBytes []byte, jqExpr string) {

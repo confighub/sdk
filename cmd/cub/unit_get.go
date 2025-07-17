@@ -19,7 +19,12 @@ var unitGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about an unit",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a unit in a space including its configuration, status, and metadata.
+	Long:  getUnitGetHelp(),
+	RunE:  unitGetCmdRun,
+}
+
+func getUnitGetHelp() string {
+	baseHelp := `Get detailed information about a unit in a space including its configuration, status, and metadata.
 
 Examples:
   # Get details about a namespace unit
@@ -35,8 +40,43 @@ Examples:
   cub unit get --space my-space --data-only my-deployment
 
   # Get extended information about a unit
-  cub unit get --space my-space --json --extended my-ns`,
-	RunE: unitGetCmdRun,
+  cub unit get --space my-space --json --extended my-ns`
+
+	agentContext := `Critical for inspecting unit configuration and state before making changes.
+
+Agent inspection workflow:
+1. Use 'unit get UNIT_SLUG' to understand unit structure and current state
+2. Check revision numbers to understand change history
+3. Use --data-only to get raw configuration for local processing
+
+Key information provided:
+- Unit metadata: ID, slug, display name, creation/update times
+- Revision tracking: HeadRevisionNum vs LiveRevisionNum shows pending changes
+- Approval state: ApprovedBy list and ApplyGates status
+- Configuration data: Actual YAML/HCL content via --data-only
+
+Important flags for agents:
+- --data-only: Get just the configuration content, useful for:
+  * Saving to local files for editing
+  * Piping to other tools for processing
+  * Understanding current configuration state
+- --json: Get full metadata in structured format
+- --extended: Include additional related entity information
+- --quiet: Suppress table output, useful with --json
+
+Common agent patterns:
+  # Download unit for local editing
+  cub unit get my-app --space prod --data-only > my-app.yaml
+  
+  # Check if unit has pending changes
+  cub unit get my-app --space prod --json --jq '.HeadRevisionNum > .LiveRevisionNum'
+  
+  # Get approval status
+  cub unit get my-app --space prod --json --jq '.ApprovedBy | length'
+
+Use the slug or UUID to identify the unit. Slugs are more human-readable and typically preferred.`
+
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 func init() {
@@ -155,29 +195,31 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 		view.Render()
 
 		if len(*unitDetails.MutationSources) != 0 {
-			tprint("")
-			tprint("Mutation Sources:")
-			tprint("-----------------")
+			tprintRaw("")
+			tprintRaw("Mutation Sources:")
+			tprintRaw("-----------------")
 			// TODO: Make this prettier
 			displayJSON(unitDetails.MutationSources)
 		}
 
 		if unitDetails.LiveState != "" {
-			tprint("")
-			tprint("Live State:")
-			tprint("-----------")
+			tprintRaw("")
+			tprintRaw("Live State:")
+			tprintRaw("-----------")
 			livestate, err := base64.StdEncoding.DecodeString(unitDetails.LiveState)
 			failOnError(err)
-			tprint(string(livestate))
+			tprintRaw(string(livestate))
 		}
 	}
 
-	tprint("")
-	tprint("Config Data:")
-	tprint("------------")
+	if !dataOnly {
+		tprintRaw("")
+		tprintRaw("Config Data:")
+		tprintRaw("------------")
+	}
 	data, err := base64.StdEncoding.DecodeString(unitDetails.Data)
 	failOnError(err)
-	tprint(string(data))
+	tprintRaw(string(data))
 }
 
 func apiGetUnitExtended(unitID string) (*goclientnew.UnitExtended, error) {

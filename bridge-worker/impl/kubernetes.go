@@ -453,8 +453,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 
 	// Determine import source and get resource list
 	var resourceInfoList []api.ResourceInfo
-	var fromClusterFetch bool
-
+	var retrievedObjects []*unstructured.Unstructured
 	if len(payload.Data) > 0 {
 		// Legacy flow: Data is provided via stdin/file
 		if err := wctx.SendStatus(newActionResult(
@@ -480,65 +479,38 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		)); err != nil {
 			return err
 		}
-		fromClusterFetch = false
-	} else {
-		// New flow: Fetch resources from cluster using parameters
+
 		if err := wctx.SendStatus(newActionResult(
 			api.ActionStatusProgressing,
 			api.ActionResultNone,
-			"Fetching resources from Kubernetes cluster...",
+			"Converting resources to unstructured format...",
 		)); err != nil {
 			return err
 		}
-
-		resources, err := w.getResourcesFromImportSource(k8sclient, payload.ExtraParams)
-		if err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultImportFailed,
-				fmt.Sprintf("Failed to get cluster resources: %v", err),
-			), err)
+		// Convert ResourceInfoList to Unstructured objects
+		objects := []*unstructured.Unstructured{}
+		for _, resourceInfo := range resourceInfoList {
+			u := &unstructured.Unstructured{}
+			gvk, err := parseGroupVersionKind(resourceInfo.ResourceType)
+			if err != nil {
+				return lib.SafeSendStatus(wctx, newActionResult(
+					api.ActionStatusFailed,
+					api.ActionResultImportFailed,
+					err.Error(),
+				), err)
+			}
+			u.SetGroupVersionKind(gvk)
+			parts := strings.Split(resourceInfo.ResourceName, "/")
+			if len(parts) == 2 {
+				u.SetNamespace(parts[0])
+				u.SetName(parts[1])
+			} else if len(parts) == 1 {
+				u.SetName(resourceInfo.ResourceName)
+			}
+			objects = append(objects, u)
 		}
 
-		resourceInfoList = resourcesToResourceInfoList(resources)
-		fromClusterFetch = true
-	}
-
-	if err := wctx.SendStatus(newActionResult(
-		api.ActionStatusProgressing,
-		api.ActionResultNone,
-		"Converting resources to unstructured format...",
-	)); err != nil {
-		return err
-	}
-
-	// Convert ResourceInfoList to Unstructured objects
-	objects := []*unstructured.Unstructured{}
-	for _, resourceInfo := range resourceInfoList {
-		u := &unstructured.Unstructured{}
-		gvk, err := parseGroupVersionKind(resourceInfo.ResourceType)
-		if err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultImportFailed,
-				err.Error(),
-			), err)
-		}
-		u.SetGroupVersionKind(gvk)
-		parts := strings.Split(resourceInfo.ResourceName, "/")
-		if len(parts) == 2 {
-			u.SetNamespace(parts[0])
-			u.SetName(parts[1])
-		} else if len(parts) == 1 {
-			u.SetName(resourceInfo.ResourceName)
-		}
-		objects = append(objects, u)
-	}
-
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
-
-	var retrievedObjects []*unstructured.Unstructured
-	if !fromClusterFetch {
+		setDefaultNamespaceIfNotDeclared(objects, k8sclient)
 		// Only get live objects if we're importing from stdin/file (legacy flow)
 		if err := wctx.SendStatus(newActionResult(
 			api.ActionStatusProgressing,
@@ -558,8 +530,23 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			), err)
 		}
 	} else {
-		// If we got objects directly from cluster, use them as is
-		retrievedObjects = objects
+		// New flow: Fetch resources from cluster using parameters
+		if err := wctx.SendStatus(newActionResult(
+			api.ActionStatusProgressing,
+			api.ActionResultNone,
+			"Fetching resources from Kubernetes cluster...",
+		)); err != nil {
+			return err
+		}
+
+		retrievedObjects, err = w.getResourcesFromImportSource(k8sclient, payload.ExtraParams)
+		if err != nil {
+			return lib.SafeSendStatus(wctx, newActionResult(
+				api.ActionStatusFailed,
+				api.ActionResultImportFailed,
+				fmt.Sprintf("Failed to get cluster resources: %v", err),
+			), err)
+		}
 	}
 
 	if err := wctx.SendStatus(newActionResult(
@@ -581,7 +568,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 	}
 
 	//heuristic extra cleanup setups for objects to make them suitable for being unit.Data
-	yamlForData, err := ssautil.ObjectsToYAML(extraCleanupObjects(retrievedObjects))
+	yamlForData, err := objectsToYAML(extraCleanupObjects(retrievedObjects))
 	if err != nil {
 		log.Log.Error(err, "Failed to convert objects to YAML for data")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -598,18 +585,6 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 	)
 	result.Data = []byte(yamlForData)
 	result.LiveState = []byte(yamlForLiveState)
-
-	// Set import source based on how resources were obtained
-	// Use Outputs field to communicate source to backend
-	source := "file"
-	if fromClusterFetch {
-		source = "live_state"
-	}
-	importMetadata := map[string]interface{}{"import_source": source}
-	if metadataBytes, err := json.Marshal(importMetadata); err == nil {
-		result.Outputs = metadataBytes
-	}
-
 	return wctx.SendStatus(result)
 }
 

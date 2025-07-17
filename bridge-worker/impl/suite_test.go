@@ -286,14 +286,6 @@ func createTestMetadata(t *testing.T, name, namespace string, additionalFields m
 				"operation": "Update",
 			},
 		},
-		"ownerReferences": []interface{}{
-			map[string]interface{}{
-				"apiVersion": "v1",
-				"kind":       "ReplicaSet",
-				"name":       "test-rs",
-				"uid":        "rs-123",
-			},
-		},
 	}
 	for k, v := range additionalFields {
 		metadata[k] = v
@@ -436,6 +428,7 @@ func createTestServiceSpec(serviceType string, port int64) map[string]interface{
 				"port": port,
 			},
 		},
+		"clusterIP": "10.0.0.1",
 	}
 }
 
@@ -568,7 +561,7 @@ func assertStandardApplyResults(t *testing.T, err error, mockCtx *MockBridgeWork
 func setupImportStatusMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, expectedCalls int) {
 	t.Helper()
 	switch expectedCalls {
-	case 4: // Standard import flow
+	case 3: // Standard import flow
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Fetching resources from Kubernetes cluster...")
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Found")
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to unstructured format...")

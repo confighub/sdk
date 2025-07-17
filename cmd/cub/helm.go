@@ -16,6 +16,12 @@ var helmCmd = &cobra.Command{
 	PersistentPreRunE: spacePreRunE, // Re-use the space selection mechanism used elsewhere
 }
 
+// Helm label constants
+const (
+	HelmChartLabel   = "helmchart"
+	HelmReleaseLabel = "helmrelease"
+)
+
 func init() {
 	addSpaceFlags(helmCmd)
 	rootCmd.AddCommand(helmCmd) // helmCmd here refers to the package-level variable

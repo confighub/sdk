@@ -42,6 +42,7 @@ type workerClient struct {
 	bridgeWorker   api.BridgeWorker
 	functionWorker api.FunctionWorker
 	watcherPool    *pond.WorkerPool
+	unitQueues     *UnitQueueManager
 }
 
 func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.BridgeWorker, functionWorker api.FunctionWorker) *workerClient {
@@ -73,7 +74,7 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 	case "http":
 		transport = &http2.Transport{
 			AllowHTTP: true,
-			DialTLS: func(network, addr string, cfg *tls.Config) (netConn net.Conn, err error) {
+			DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (netConn net.Conn, err error) {
 				return net.Dial(network, addr)
 			},
 		}
@@ -91,6 +92,7 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 		bridgeWorker:   bridgeWorker,
 		functionWorker: functionWorker,
 		watcherPool:    pond.New(10, 50),
+		unitQueues:     NewUnitQueueManager(),
 	}
 }
 
@@ -100,6 +102,13 @@ func (c *workerClient) Start(ctx context.Context) error {
 		log.Printf("[ERROR] Failed to get bridge worker slug: %v", err)
 		return fmt.Errorf("failed to get bridge worker slug: %v", err)
 	}
+
+	// Start the unit queue manager
+	c.unitQueues.Start(ctx)
+
+	// Ensure cleanup on exit
+	defer c.unitQueues.Stop()
+
 	return c.startStream(ctx)
 }
 
@@ -107,6 +116,7 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	eventUrl := fmt.Sprintf(eventsRoute, c.serverURL, c.workerID)
 	log.Printf("[DEBUG] Opening event stream to URL: %s", eventUrl)
 
+	// TODO accumulate from all supported workers
 	bridgeWorkerInfo := c.bridgeWorker.Info(api.InfoOptions{Slug: c.workerSlug})
 	functionWorkerInfo := c.functionWorker.Info()
 
@@ -154,9 +164,7 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		// read body
-		body, _ := io.ReadAll(resp.Body)
-		log.Printf("[ERROR] Server returned status %d: %s\n%s", resp.StatusCode, resp.Status, string(body))
+		_, _ = io.ReadAll(resp.Body)
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -175,16 +183,20 @@ func (c *workerClient) startStream(ctx context.Context) error {
 		line, err := scanner.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-				log.Printf("[INFO] Stream closed by server (EOF) after processing %d events", eventCount)
+				if eventCount > 0 {
+					log.Printf("[INFO] Stream connection closed gracefully by server after processing %d events", eventCount)
+				} else {
+					log.Printf("[WARNING] Stream connection closed immediately - no events processed (possible server issue)")
+				}
 				break
 			}
-			log.Printf("[ERROR] Failed to read from stream after processing %d events: %v", eventCount, err)
+			log.Printf("[ERROR] Network/connection error while reading stream after %d events: %v", eventCount, err)
 			return fmt.Errorf("failed to read from event stream: %w", err)
 		}
 
 		// Check for SSE "data:" prefix
 		if !strings.HasPrefix(line, "data: ") {
-			log.Printf("[TRACE] Skipping non-data line: %q", strings.TrimSpace(line))
+			// Skip heartbeat lines, comments, etc. - this is normal SSE behavior
 			continue
 		}
 
@@ -192,28 +204,47 @@ func (c *workerClient) startStream(ctx context.Context) error {
 		data := strings.TrimPrefix(line, "data: ")
 		var event api.EventMessage
 		if err := json.Unmarshal([]byte(data), &event); err != nil {
-			log.Printf("[ERROR] Failed to unmarshal event: %v, raw data: %q", err, data)
+			log.Printf("[ERROR] Malformed event data received (invalid JSON): %v, raw data: %q", err, strings.TrimSpace(data))
 			continue
 		}
 
 		eventCount++
-		log.Printf("[DEBUG] Event #%d received - Type: %s, Data length: %d bytes",
-			eventCount, event.Event, len(data))
+		log.Printf("[INFO] Event #%d received: Type=%s", eventCount, event.Event)
 
 		// Convert event.Data to []byte for handleEvent
 		eventData, err := json.Marshal(event.Data)
 		if err != nil {
-			log.Printf("[ERROR] Failed to marshal event data for event #%d: %v", eventCount, err)
+			log.Printf("[ERROR] Failed to serialize event data for processing (event #%d): %v", eventCount, err)
 			continue
 		}
 
-		log.Printf("[DEBUG] Processing event #%d of type '%s'", eventCount, event.Event)
-		c.handleEvent(ctx, event.Event, eventData)
-		log.Printf("[DEBUG] Finished processing event #%d", eventCount)
+		// Process the event and track success/failure
+		if err := c.handleEventWithLogging(ctx, event.Event, eventData, eventCount); err != nil {
+			log.Printf("[ERROR] Failed to process event #%d: %v", eventCount, err)
+		} else {
+			log.Printf("[INFO] Successfully processed event #%d", eventCount)
+		}
 	}
 
 	log.Printf("[INFO] Event stream processing completed, handled %d total events", eventCount)
 	return nil
+}
+
+// handleEventWithLogging wraps handleEvent with proper error handling and logging
+func (c *workerClient) handleEventWithLogging(ctx context.Context, eventType string, data []byte, eventNumber int) error {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[ERROR] Panic while processing event #%d (type: %s): %v", eventNumber, eventType, r)
+		}
+	}()
+	
+	switch eventType {
+	case api.EventWorker, api.EventBridgeWorker, api.EventFunctionWorker:
+		c.handleEvent(ctx, eventType, data)
+		return nil
+	default:
+		return fmt.Errorf("unknown event type: %s", eventType)
+	}
 }
 
 func (c *workerClient) handleEvent(ctx context.Context, eventType string, data []byte) {
@@ -221,7 +252,7 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 	case api.EventWorker:
 		var op api.WorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
-			log.Printf("Error unmarshaling command: %v", err)
+			log.Printf("[ERROR] Failed to unmarshal worker event: %v", err)
 			return
 		}
 		if op.Action == api.ActionHeartbeat {
@@ -286,41 +317,52 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			return
 		}
 	case api.EventBridgeWorker:
-		var workerContext = &defaultBridgeWorkerContext{
-			// TODO with context cancel
-			ctx:       ctx,
-			serverURL: c.serverURL,
-			workerID:  c.workerID,
-		}
 		var op api.BridgeWorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
-			log.Printf("Error unmarshaling command: %v", err)
+			log.Printf("[ERROR] Failed to unmarshal bridge worker event: %v", err)
 			return
 		}
-		err := c.processBridgeCommand(workerContext, op)
-		if err != nil {
-			log.Printf("Error sending result: %v", err)
-			return
-		}
+
+		log.Printf("[INFO] Queueing bridge worker event: Unit=%s, Action=%s", op.Payload.UnitID.String(), op.Action)
+		// Queue the bridge worker event for async processing
+		c.unitQueues.QueueBridgeEvent(ctx, op, func(event api.BridgeWorkerEventRequest) {
+			var workerContext = &defaultBridgeWorkerContext{
+				ctx:       ctx,
+				serverURL: c.serverURL,
+				workerID:  c.workerID,
+			}
+			err := c.processBridgeCommand(workerContext, event)
+			if err != nil {
+				log.Printf("[ERROR] Bridge command processing failed for Unit=%s, Action=%s: %v", event.Payload.UnitID.String(), event.Action, err)
+			} else {
+				log.Printf("[INFO] Bridge command completed successfully for Unit=%s, Action=%s", event.Payload.UnitID.String(), event.Action)
+			}
+		})
+		return
 	case api.EventFunctionWorker:
 		// Handle events directed to the function worker plugin
-		var workerContext = &defaultFunctionWorkerContext{
-			// TODO with context cancel
-			ctx:       ctx,
-			serverURL: c.serverURL,
-			workerID:  c.workerID,
-		}
 		var op api.FunctionWorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
-			log.Printf("Error unmarshaling function worker command: %v", err)
+			log.Printf("[ERROR] Failed to unmarshal function worker event: %v", err)
 			return
 		}
-		err := c.processFunctionCommand(workerContext, op)
-		if err != nil {
-			log.Printf("Error processing function worker command: %v", err)
-			return
-		}
-		return // Explicit return after handling
+
+		log.Printf("[INFO] Queueing function worker event: Unit=%s, Action=%s", op.Payload.InvocationRequest.UnitID.String(), op.Action)
+		// Queue the function worker event for async processing
+		c.unitQueues.QueueFunctionEvent(ctx, op, func(event api.FunctionWorkerEventRequest) {
+			var workerContext = &defaultFunctionWorkerContext{
+				ctx:       ctx,
+				serverURL: c.serverURL,
+				workerID:  c.workerID,
+			}
+			err := c.processFunctionCommand(workerContext, event)
+			if err != nil {
+				log.Printf("[ERROR] Function command processing failed for Unit=%s, Action=%s: %v", event.Payload.InvocationRequest.UnitID.String(), event.Action, err)
+			} else {
+				log.Printf("[INFO] Function command completed successfully for Unit=%s, Action=%s", event.Payload.InvocationRequest.UnitID.String(), event.Action)
+			}
+		})
+		return
 	}
 }
 
@@ -339,8 +381,8 @@ func (c *workerClient) getBridgeWorkerSlug() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+		_, _ = io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
 	var info goclientnew.BridgeWorker
@@ -381,8 +423,8 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+		_, _ = io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
 	return nil

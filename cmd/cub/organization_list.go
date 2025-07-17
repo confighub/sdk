@@ -20,16 +20,13 @@ Examples:
   cub organization list
 
   # List organizations without headers for scripting
-  cub organization list --noheader
+  cub organization list --no-header
 
   # List organizations in JSON format
   cub organization list --json
 
   # List organizations with custom JQ filter
-  cub organization list --jq '.[].Slug'
-
-  # List organizations matching a specific criteria
-  cub organization list --where "DisplayName contains 'prod'"`,
+  cub organization list --jq '.[].Slug'`,
 	RunE: organizationListCmdRun,
 }
 

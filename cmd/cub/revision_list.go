@@ -23,7 +23,7 @@ Examples:
   cub revision list --space my-space my-ns
 
   # List revisions without headers
-  cub revision list --space my-space --noheader my-ns
+  cub revision list --space my-space --no-header my-ns
 
   # List revisions in JSON format
   cub revision list --space my-space --json my-ns

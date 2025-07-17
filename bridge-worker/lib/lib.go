@@ -45,6 +45,13 @@ func (b *Worker) Start(ctx context.Context) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Start error monitoring goroutine for queue errors
+	go func() {
+		for err := range client.unitQueues.ErrorChannel() {
+			log.Printf("[QUEUE ERROR] %v", err)
+		}
+	}()
+
 	if len(b.workerSecret) < 8 {
 		if len(b.workerSecret) == 0 {
 			log.Printf("No worker secret")

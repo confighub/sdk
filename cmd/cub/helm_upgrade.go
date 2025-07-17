@@ -97,8 +97,8 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		chartName = parts[len(parts)-1]
 	}
 	unitLabels := map[string]string{
-		"helmChart":       chartName,
-		"helmReleaseName": helmUpgradeArgs.releaseName,
+		HelmChartLabel:   chartName,
+		HelmReleaseLabel: helmUpgradeArgs.releaseName,
 		// TODO due to character restrictions in label values.
 		// helmChartVersion": helmInstallArgs.version,
 	}

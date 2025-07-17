@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -33,7 +32,7 @@ type CustomStringComparator interface {
 	// MatchesPath returns true if this comparator should handle the given path
 	MatchesPath(path string) bool
 	// Evaluate performs the comparison and returns the result
-	Evaluate(expr *RelationalExpression, value string) (bool, error)
+	Evaluate(expr *api.RelationalExpression, value string) (bool, error)
 }
 
 func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
@@ -574,8 +573,10 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "validation-expr",
 					Required:      true,
-					Description:   "CEL expression to validate each resource",
+					Description:   "CEL (Common Expression Language) expression to validate each resource. The current resource is refenced with the prefix 'r.' See https://cel.dev/ for language details.",
 					DataType:      api.DataTypeCEL,
+					// TODO: Override this with ToolchainType-specific examples.
+					Example: "r.kind != 'Deployment' || r.spec.template.spec.containers.all(container, container.securityContext.runAsNonRoot == true)",
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
@@ -608,7 +609,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "where-expression",
 					Required:      true,
-					Description:   "Where filter: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. The expression syntax was inspired by SQL. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
+					Description:   "Where filter: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -1375,169 +1376,11 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 	return parsedData, failedResult, errors.Join(multiErrors...)
 }
 
-// Path expressions support embedded accessors and escaped dots.
-// They also support wildcards and associative matches.
-// Kubernetes annotations and labels permit slashes
-var parameterNameRegexpString = "(?:[A-Za-z][A-Za-z0-9_\\-]{0,127})"
-var pathMapSegmentRegexpString = "(?:[A-Za-z](?:[A-Za-z0-9/_\\-]|(?:\\~[12])){0,127})"
-var pathMapSegmentBoundtoParameterRegexpString = "(?:@" + pathMapSegmentRegexpString + "\\:" + parameterNameRegexpString + ")"
-var pathIndexSegmentRegexpString = "(?:[0-9][0-9]{0,9})"
-var pathWildcardSegmentRegexpString = "\\*(?:(?:\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?)|(?:@\\:" + parameterNameRegexpString + "))?"
-var pathAssociativeMatchRegexpString = "\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?=[^.][^.]*"
-var pathSegmentRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + "|" + pathWildcardSegmentRegexpString + "|" + pathAssociativeMatchRegexpString + ")"
-
-// Path segment without patterns (for right side of split)
-var pathSegmentWithoutPatternsRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + ")"
-var pathRegexpString = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
-var pathNameRegexp = regexp.MustCompile(pathRegexpString)
-var whitespaceRegexpString = "^[ \t][ \t]*"
-var whitespaceRegexp = regexp.MustCompile(whitespaceRegexpString)
-var relationalOperatorRegexpString = "^(<=|>=|<|>|=|\\!=)"
-var relationalOperatorRegexp = regexp.MustCompile(relationalOperatorRegexpString)
-var logicalOperatorRegexpString = "^AND"
-var logicalOperatorRegexp = regexp.MustCompile(logicalOperatorRegexpString)
-var booleanLiteralRegexpString = "^(true|false)"
-var booleanLiteralRegexp = regexp.MustCompile(booleanLiteralRegexpString)
-var integerLiteralRegexpString = "^[0-9][0-9]{0,9}"
-var integerLiteralRegexp = regexp.MustCompile(integerLiteralRegexpString)
-var stringLiteralRegexpString = `^'[^'"\\]{0,255}'`
-var stringLiteralRegexp = regexp.MustCompile(stringLiteralRegexpString)
-
-const andOperator = "AND"
-
-func parseLiteral(decodedQueryString string) (string, string, api.DataType, error) {
-	pos := integerLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeInt, nil
-	}
-	pos = booleanLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeBool, nil
-	}
-	pos = stringLiteralRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		literal := decodedQueryString[pos[0]:pos[1]]
-		decodedQueryString = decodedQueryString[pos[1]:]
-		return decodedQueryString, literal, api.DataTypeString, nil
-	}
-
-	return decodedQueryString, "", api.DataTypeNone, fmt.Errorf("no operand found at `%s`", decodedQueryString)
-}
-
-type RelationalExpression struct {
-	Path     string
-	Operator string
-	Literal  string
-	DataType api.DataType
-	// New fields for split path feature
-	VisitorPath string // Left side of .| for visitor
-	SubPath     string // Right side of .| for property check
-	IsSplitPath bool   // Whether this uses the .|syntax
-}
-
-func parseAndValidateBinaryExpression(decodedQueryString string) (string, *RelationalExpression, error) {
-	var expression RelationalExpression
-
-	// Whitespace should have been skipped already
-	// For now, first operand is always a path name
-	pos := pathNameRegexp.FindStringIndex(decodedQueryString)
-	if pos == nil {
-		return decodedQueryString, &expression, fmt.Errorf("invalid path at `%s`", decodedQueryString)
-	}
-	path := decodedQueryString[pos[0]:pos[1]]
-	decodedQueryString = skipWhitespace(decodedQueryString[pos[1]:])
-
-	// Check for split path syntax using .| separator
-	if strings.Contains(path, ".|") {
-		parts := strings.SplitN(path, ".|", 2)
-		if len(parts) != 2 {
-			return decodedQueryString, &expression, fmt.Errorf("invalid split path syntax at `%s`", path)
-		}
-		expression.VisitorPath = parts[0]
-		expression.SubPath = parts[1]
-		expression.IsSplitPath = true
-		expression.Path = path // Keep original path for compatibility
-	} else {
-		expression.Path = path
-		expression.IsSplitPath = false
-	}
-
-	// Get the operator
-	pos = relationalOperatorRegexp.FindStringIndex(decodedQueryString)
-	if pos == nil {
-		return decodedQueryString, &expression, fmt.Errorf("invalid operator at `%s`", decodedQueryString)
-	}
-	// Operator should be a valid SQL operator
-	operator := decodedQueryString[pos[0]:pos[1]]
-	decodedQueryString = skipWhitespace(decodedQueryString[pos[1]:])
-
-	// Second operand must be a literal
-	var literal string
-	var dataType api.DataType
-	var err error
-	decodedQueryString, literal, dataType, err = parseLiteral(decodedQueryString)
-	if err != nil {
-		return decodedQueryString, &expression, err
-	}
-	if dataType == api.DataTypeBool && (operator != "=" && operator != "!=") {
-		return decodedQueryString, &expression, fmt.Errorf("invalid boolean operator `%s`", operator)
-	}
-
-	expression.Path = path
-	expression.Operator = operator
-	expression.Literal = literal
-	expression.DataType = dataType
-	return decodedQueryString, &expression, nil
-}
-
-func skipWhitespace(decodedQueryString string) string {
-	pos := whitespaceRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		return decodedQueryString[pos[1]:]
-	}
-	return decodedQueryString
-}
-
-func getLogicalOperator(decodedQueryString string) (string, string) {
-	pos := logicalOperatorRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		return decodedQueryString[pos[1]:], decodedQueryString[pos[0]:pos[1]]
-	}
-	return decodedQueryString, ""
-}
-
-func parseAndValidateWhereFilter(queryString string) ([]*RelationalExpression, error) {
-	expressions := []*RelationalExpression{}
-
-	decodedQueryString := skipWhitespace(queryString)
-	for decodedQueryString != "" {
-		var expression *RelationalExpression
-		var err error
-		decodedQueryString, expression, err = parseAndValidateBinaryExpression(decodedQueryString)
-		if err != nil {
-			return expressions, err
-		}
-		expressions = append(expressions, expression)
-		decodedQueryString = skipWhitespace(decodedQueryString)
-		var operator string
-		decodedQueryString, operator = getLogicalOperator(decodedQueryString)
-		if operator == andOperator {
-			decodedQueryString = skipWhitespace(decodedQueryString)
-		}
-	}
-
-	return expressions, nil
-}
-
-func evaluateStringRelationalExpression(expr *RelationalExpression, pathValue string) (bool, error) {
+func evaluateStringRelationalExpression(expr *api.RelationalExpression, pathValue string) (bool, error) {
 	return evaluateStringRelationalExpressionWithComparators(expr, pathValue, nil)
 }
 
-func evaluateStringRelationalExpressionWithComparators(expr *RelationalExpression, pathValue string, customComparators []CustomStringComparator) (bool, error) {
+func evaluateStringRelationalExpressionWithComparators(expr *api.RelationalExpression, pathValue string, customComparators []CustomStringComparator) (bool, error) {
 	// Check if any custom comparators match this path
 	for _, comparator := range customComparators {
 		if comparator.MatchesPath(expr.Path) {
@@ -1566,7 +1409,7 @@ func evaluateStringRelationalExpressionWithComparators(expr *RelationalExpressio
 
 // evaluateExpressionForValue evaluates a relational expression against a value of any type
 // Returns (matched, error) where error indicates type conversion failure
-func evaluateExpressionForValue(expr *RelationalExpression, value any, customComparators []CustomStringComparator) (bool, error) {
+func evaluateExpressionForValue(expr *api.RelationalExpression, value any, customComparators []CustomStringComparator) (bool, error) {
 	switch expr.DataType {
 	case api.DataTypeString:
 		stringValue, ok := value.(string)
@@ -1594,7 +1437,7 @@ func evaluateExpressionForValue(expr *RelationalExpression, value any, customCom
 	}
 }
 
-func evaluateIntRelationalExpression(expr *RelationalExpression, pathValue int) bool {
+func evaluateIntRelationalExpression(expr *api.RelationalExpression, pathValue int) bool {
 	intLiteral, err := strconv.Atoi(expr.Literal)
 	if err != nil {
 		return false
@@ -1616,7 +1459,7 @@ func evaluateIntRelationalExpression(expr *RelationalExpression, pathValue int) 
 	return false
 }
 
-func evaluateBoolRelationalExpression(expr *RelationalExpression, pathValue bool) bool {
+func evaluateBoolRelationalExpression(expr *api.RelationalExpression, pathValue bool) bool {
 	boolLiteral := expr.Literal == "true"
 	switch expr.Operator {
 	case "=":
@@ -1628,11 +1471,11 @@ func evaluateBoolRelationalExpression(expr *RelationalExpression, pathValue bool
 }
 
 // evaluateSplitPathExpression handles the split path syntax with | separator
-func evaluateSplitPathExpression(expression *RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (map[string]bool, error) {
+func evaluateSplitPathExpression(expression *api.RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (map[string]bool, error) {
 	return evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, nil)
 }
 
-func evaluateSplitPathExpressionWithComparators(expression *RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []CustomStringComparator) (map[string]bool, error) {
+func evaluateSplitPathExpressionWithComparators(expression *api.RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []CustomStringComparator) (map[string]bool, error) {
 	matchingResources := map[string]bool{}
 
 	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of |)
@@ -1704,7 +1547,7 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 		return parsedData, api.ValidationResultFalse, nil
 	}
 
-	expressions, err := parseAndValidateWhereFilter(whereExpr)
+	expressions, err := api.ParseAndValidateWhereFilter(whereExpr)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}

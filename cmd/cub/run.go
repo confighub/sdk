@@ -31,6 +31,7 @@ func init() {
 
 	addSpaceFlags(runCmd)
 	runCmd.PersistentFlags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
+	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	runCmd.PersistentFlags().BoolVar(&combine, "combine", false, "combine results")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
@@ -40,6 +41,7 @@ func init() {
 	runCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON output")
 	runCmd.PersistentFlags().BoolVar(&wait, "wait", false, "wait for completion")
 	runCmd.PersistentFlags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 
 	RegisterFunctionsAsCobraCommands()
 
@@ -111,7 +113,7 @@ func RegisterFunctionsAsCobraCommands() {
 					}
 
 					var funcParams []goclientnew.FunctionArgument
-					
+
 					// Handle positional arguments first
 					for i, param := range cmdDef.Parameters {
 						if i < len(args) {
@@ -147,7 +149,7 @@ func RegisterFunctionsAsCobraCommands() {
 									hasValue = true
 								}
 							}
-							
+
 							// Only add argument if value was provided or parameter is required
 							if hasValue || param.Required {
 								if !hasValue && param.Required {
@@ -160,7 +162,7 @@ func RegisterFunctionsAsCobraCommands() {
 							}
 						}
 					}
-					
+
 					// Handle VarArgs - any extra positional arguments beyond the parameter count
 					if cmdDef.VarArgs && len(args) > len(cmdDef.Parameters) {
 						lastParam := cmdDef.Parameters[len(cmdDef.Parameters)-1]

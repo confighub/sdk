@@ -21,7 +21,7 @@ Examples:
   cub user list
 
   # List user without headers for scripting
-  cub user list --noheader
+  cub user list --no-header
 
   # List user in JSON format
   cub user list --json
@@ -30,9 +30,6 @@ Examples:
   cub user list --jq '.[].UserID'
 
 `,
-	// TODO: where filter
-	// # List user matching a specific criteria
-	// cub user list --where "DisplayName contains 'prod'"
 	RunE: userListCmdRun,
 }
 

@@ -21,10 +21,10 @@ Examples:
   cub link list --space my-space
 
   # List links without headers for scripting
-  cub link list --space my-space --noheader
+  cub link list --space my-space --no-header
 
   # List only link slugs
-  cub link list --space my-space --noheader --slugs-only
+  cub link list --space my-space --no-header --slugs-only
 
   # List links in JSON format
   cub link list --space my-space --json

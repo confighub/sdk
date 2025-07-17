@@ -12,20 +12,19 @@ import (
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
-var unitListEventCmd = &cobra.Command{
-	Use:     "list-events <unit-slug>",
-	Aliases: []string{"list-event"},
-	Short:   "List events",
+var unitEventListCmd = &cobra.Command{
+	Use:     "list <unit-slug>",
+	Short:   "List unit events",
 	Args:    cobra.ExactArgs(1),
-	RunE:    unitListEventRun,
+	RunE:    unitEventListRun,
 }
 
 func init() {
-	addStandardListFlags(unitListEventCmd)
-	unitCmd.AddCommand(unitListEventCmd)
+	addStandardListFlags(unitEventListCmd)
+	unitEventCmd.AddCommand(unitEventListCmd)
 }
 
-func unitListEventRun(cmd *cobra.Command, args []string) error {
+func unitEventListRun(cmd *cobra.Command, args []string) error {
 	slug := args[0]
 	u, err := apiGetUnitFromSlug(slug)
 	if err != nil {

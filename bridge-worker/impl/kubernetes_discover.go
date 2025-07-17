@@ -9,9 +9,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/confighub/sdk/configkit/k8skit"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
@@ -21,6 +18,9 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/confighub/sdk/configkit/k8skit"
+	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
 // ResourceTypeInfo holds information about a discovered resource type
@@ -47,6 +47,11 @@ func shouldSkipResource(res metav1.APIResource) bool {
 
 	// 2. Skip virtual resources that can never be listed successfully
 	if isVirtualResource(res.Kind, res.Name) {
+		return true
+	}
+
+	// 2. Skip secret resources. We don't want to import secrets.
+	if res.Kind == "Secret" {
 		return true
 	}
 
@@ -267,6 +272,12 @@ func DiscoverAllResourceTypes(cfg *rest.Config) (map[string]ResourceTypeInfo, er
 			if shouldSkipResource(res) {
 				continue
 			}
+
+			// Skip administrative resources unless explicitly requested
+			// This prevents expensive listResourcesGVK calls on administrative resource types
+			if isAdministrativeResource(res.Kind, res.Name) {
+				continue
+			}
 			gvk := schema.GroupVersionKind{
 				Group:   gv.Group,
 				Version: gv.Version,
@@ -318,16 +329,6 @@ func getResourceType(gvk schema.GroupVersionKind) string {
 		return fmt.Sprintf("%s/%s", gvk.Version, gvk.Kind)
 	}
 	return fmt.Sprintf("%s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-}
-
-// getResourceName formats the resource name using k8skit's ResourceNameGetter logic
-func getResourceName(resource *unstructured.Unstructured) string {
-	namespace := resource.GetNamespace()
-	name := resource.GetName()
-	if namespace != "" {
-		return fmt.Sprintf("%s/%s", namespace, name)
-	}
-	return name
 }
 
 // ImportConfig holds the configuration options for resource import
@@ -387,9 +388,9 @@ func (b *ListOptionsBuilder) WithNamespace(namespace string) *ListOptionsBuilder
 func (b *ListOptionsBuilder) WithFilters(filters []goclientnew.ImportFilter) *ListOptionsBuilder {
 	for _, filter := range filters {
 		switch filter.Type {
-		case "label":
+		case "metadata.labels":
 			b.labelFilters = append(b.labelFilters, filter)
-		case "field":
+		default:
 			b.fieldFilters = append(b.fieldFilters, filter)
 		}
 	}
@@ -459,7 +460,7 @@ func (rd *ResourceDiscovery) Discover() ([]*unstructured.Unstructured, error) {
 		return nil, fmt.Errorf("failed to execute discovery query: %w", err)
 	}
 
-	return rd.applyPostProcessingFilters(resources), nil
+	return rd.applyGenericFilters(resources), nil
 }
 
 // buildQuery creates a DiscoveryQuery from the ImportConfig
@@ -570,11 +571,6 @@ func (rd *ResourceDiscovery) queryResources(query *discoveryQuery, namespacesOnl
 	return allResources, nil
 }
 
-// applyPostProcessingFilters applies complex filters that can't be done server-side
-func (rd *ResourceDiscovery) applyPostProcessingFilters(resources []*unstructured.Unstructured) []*unstructured.Unstructured {
-	return rd.applyGenericFilters(resources)
-}
-
 // NewImportConfigFromRequest creates an ImportConfig from an ImportRequest
 func NewImportConfigFromRequest(request *goclientnew.ImportRequest) *ImportConfig {
 	config := &ImportConfig{
@@ -643,7 +639,7 @@ func GetResourcesWithConfig(k8sclient KubernetesClient, config *ImportConfig, cf
 func extractNamespaceFilters(filters []goclientnew.ImportFilter) []string {
 	namespaces := []string{} // Initialize as empty slice rather than nil
 	for _, filter := range filters {
-		if filter.Type == "namespace" && filter.Operator == "include" {
+		if filter.Type == "metadata.namespace" && filter.Operator == "include" {
 			namespaces = append(namespaces, filter.Values...)
 		}
 	}
@@ -726,110 +722,65 @@ func (rd *ResourceDiscovery) applyGenericFilters(resources []*unstructured.Unstr
 	var filtered []*unstructured.Unstructured
 
 	for _, resource := range resources {
-		include := true
+		// Skip resources with owner references (managed by other resources)
+		if resource.GetOwnerReferences() != nil {
+			continue
+		}
 
+		// Step 1: Check for force-include conditions (ImportOptions override filters)
+		if rd.shouldForceInclude(resource) {
+			filtered = append(filtered, resource)
+			continue // Skip all filtering for force-included resources
+		}
+
+		// Step 2: Apply subtractive filtering to remaining resources
+		include := true
 		resourceGVK := resource.GetObjectKind().GroupVersionKind()
+
 		// Apply system namespace filtering first (catch any resources that slipped through)
 		if !rd.config.IncludeSystem && slices.Contains(systemNamespaces, resource.GetNamespace()) {
 			include = false
 		}
-		if resourceGVK == crdGVK && rd.config.IncludeCustom {
-			filtered = append(filtered, resource)
-			continue
+		// Check if this is an administrative resource that should be excluded by default
+		if isAdministrativeResource(resourceGVK.Kind, "") {
+			include = false
 		}
 
 		if include {
 			for _, filter := range rd.config.Filters {
 				switch filter.Type {
-				case "namespace":
-					if filter.Operator == "exclude" {
-						if slices.Contains(filter.Values, resource.GetNamespace()) {
-							include = false
-							break
-						}
-					} else if filter.Operator == "include" {
-						// For include filters, only include resources from specified namespaces
-						// BUT if include_system=true, also allow system namespaces even if not in original filter
-						resourceNamespace := resource.GetNamespace()
-						inOriginalFilter := slices.Contains(filter.Values, resourceNamespace)
-						inSystemNamespaces := slices.Contains(systemNamespaces, resourceNamespace)
-
-						// Include if: in original filter OR (include_system=true AND in system namespaces)
-						// Cluster-scoped resources (empty namespace) should be excluded when namespace filters are applied
-						if resourceNamespace == "" || (!inOriginalFilter && !(rd.config.IncludeSystem && inSystemNamespaces)) {
-							include = false
-							break
-						}
+				case "metadata.namespace":
+					if rd.applyNamespaceFilterLogic(filter.Operator, filter.Values, resource.GetNamespace()) {
+						include = false
+						break
 					}
 
 				case "resource_type":
-					gvk := resource.GetObjectKind().GroupVersionKind()
-					resourceType := getResourceType(gvk)
-					// Check if this is an administrative resource that should be excluded by default
-					// Explicit resource_type filters will override this
-					if isAdministrativeResource(resourceGVK.Kind, "") {
+					resourceType := getResourceType(resourceGVK)
+					if shouldExcludeBasedOnSimpleFilter(filter.Operator, filter.Values, resourceType) {
 						include = false
+						break
 					}
 
-					if filter.Operator == "exclude" {
-						if slices.Contains(filter.Values, resourceType) {
-							include = false
-							break
-						}
-					} else if filter.Operator == "include" {
-						if slices.Contains(filter.Values, resourceType) {
-							break
-						} else {
-							// if we found the resource type, break out of the loop
-							include = false
-							break
-						}
-					}
-
-				case "label":
+				case "metadata.labels":
 					labels := resource.GetLabels()
-					if filter.Operator == "exclude" {
-						for _, labelFilter := range filter.Values {
-							if matchesFilter(labels, labelFilter) {
-								include = false
-								break
-							}
-						}
-					} else if filter.Operator == "include" {
-						hasMatch := false
-						for _, labelFilter := range filter.Values {
-							if matchesFilter(labels, labelFilter) {
-								hasMatch = true
-								break
-							}
-						}
-						if !hasMatch {
-							include = false
-							break
-						}
+					if shouldExcludeBasedOnMatchFilter(filter.Operator, filter.Values, labels) {
+						include = false
+						break
 					}
 
-				case "annotation":
+				case "metadata.annotations":
 					annotations := resource.GetAnnotations()
-					if filter.Operator == "exclude" {
-						for _, annotationFilter := range filter.Values {
-							if matchesFilter(annotations, annotationFilter) {
-								include = false
-								break
-							}
-						}
-					} else if filter.Operator == "include" {
-						hasMatch := false
-						for _, annotationFilter := range filter.Values {
-							if matchesFilter(annotations, annotationFilter) {
-								hasMatch = true
-								break
-							}
-						}
-						if !hasMatch {
-							include = false
-							break
-						}
+					if shouldExcludeBasedOnMatchFilter(filter.Operator, filter.Values, annotations) {
+						include = false
+						break
+					}
+
+				default:
+					// Handle complex path-based filters using unstructured.Nested* functions
+					if rd.evaluateComplexPathFilter(resource, filter) {
+						include = false
+						break
 					}
 				}
 
@@ -847,6 +798,260 @@ func (rd *ResourceDiscovery) applyGenericFilters(resources []*unstructured.Unstr
 	return filtered
 }
 
+// shouldExcludeBasedOnSimpleFilter applies simple include/exclude logic for exact value matching
+// Returns true if the resource should be excluded based on the filter
+func shouldExcludeBasedOnSimpleFilter(operator string, filterValues []string, resourceValue string) bool {
+	switch operator {
+	case "exclude":
+		return slices.Contains(filterValues, resourceValue)
+	case "include":
+		return !slices.Contains(filterValues, resourceValue)
+	default:
+		return false
+	}
+}
+
+// shouldExcludeBasedOnMatchFilter applies include/exclude logic using matchesFilter for pattern matching
+// Returns true if the resource should be excluded based on the filter
+func shouldExcludeBasedOnMatchFilter(operator string, filterValues []string, collection map[string]string) bool {
+	switch operator {
+	case "exclude":
+		for _, filterValue := range filterValues {
+			if matchesFilter(collection, filterValue) {
+				return true
+			}
+		}
+		return false
+	case "include":
+		for _, filterValue := range filterValues {
+			if matchesFilter(collection, filterValue) {
+				return false // Found a match, don't exclude
+			}
+		}
+		return true // No match found, exclude
+	default:
+		return false
+	}
+}
+
+// applyNamespaceFilterLogic applies namespace-specific include/exclude logic with system namespace handling
+// Returns true if the resource should be excluded based on the filter
+func (rd *ResourceDiscovery) applyNamespaceFilterLogic(operator string, filterValues []string, resourceNamespace string) bool {
+	switch operator {
+	case "exclude":
+		return slices.Contains(filterValues, resourceNamespace)
+	case "include":
+		inOriginalFilter := slices.Contains(filterValues, resourceNamespace)
+		inSystemNamespaces := slices.Contains(systemNamespaces, resourceNamespace)
+		// Exclude if: NOT in original filter AND NOT (include_system=true AND in system namespaces)
+		// Cluster-scoped resources (empty namespace) should be excluded when namespace filters are applied
+		return resourceNamespace == "" || (!inOriginalFilter && !(rd.config.IncludeSystem && inSystemNamespaces))
+	default:
+		return false
+	}
+}
+
+// shouldForceInclude determines if a resource should be force-included regardless of filters
+// based on ImportOptions like include_custom, include_system, etc.
+// Returns true if the resource should bypass all filtering
+func (rd *ResourceDiscovery) shouldForceInclude(resource *unstructured.Unstructured) bool {
+	resourceGVK := resource.GetObjectKind().GroupVersionKind()
+
+	// CRDs always included if include_custom=true
+	if resourceGVK == crdGVK && rd.config.IncludeCustom {
+		return true
+	}
+
+	// System resources always included if include_system=true
+	if rd.config.IncludeSystem && slices.Contains(systemNamespaces, resource.GetNamespace()) {
+		return true
+	}
+
+	// Administrative resources always included if include_cluster=true
+	if rd.config.IncludeCluster && isAdministrativeResource(resourceGVK.Kind, "") {
+		return true
+	}
+
+	return false
+}
+
+// evaluateComplexPathFilter evaluates complex path-based filters with support for wildcards and indices
+// Returns true if the resource should be excluded based on the filter
+func (rd *ResourceDiscovery) evaluateComplexPathFilter(resource *unstructured.Unstructured, filter goclientnew.ImportFilter) bool {
+	pathParts := strings.Split(filter.Type, ".")
+
+	// Find the first wildcard or numeric index that requires iteration
+	iterationIndex := rd.findIterationPoint(pathParts)
+
+	if iterationIndex == -1 {
+		// No iteration needed, use standard nested access
+		value, found, err := unstructured.NestedFieldNoCopy(resource.Object, pathParts...)
+		if err != nil || !found {
+			return rd.applyFilterLogicForValue(filter.Operator, filter.Values, "", false)
+		}
+		stringValue := rd.convertValueToString(value)
+		return rd.applyFilterLogicForValue(filter.Operator, filter.Values, stringValue, true)
+	}
+
+	// Handle iteration case (wildcard or numeric index)
+	return rd.evaluateWithIteration(resource, filter, pathParts, iterationIndex)
+}
+
+// applyFilterLogicForValue applies include/exclude logic for a single value
+// Returns true if the resource should be excluded based on the filter
+func (rd *ResourceDiscovery) applyFilterLogicForValue(operator string, filterValues []string, resourceValue string, valueExists bool) bool {
+	switch operator {
+	case "exclude":
+		// Only exclude if the value exists AND matches one of the filter values
+		return valueExists && slices.Contains(filterValues, resourceValue)
+	case "include":
+		// Exclude if the value doesn't exist OR doesn't match any filter values
+		return !valueExists || !slices.Contains(filterValues, resourceValue)
+	default:
+		return false
+	}
+}
+
+// findIterationPoint finds the first path part that requires iteration (wildcard or numeric index)
+func (rd *ResourceDiscovery) findIterationPoint(pathParts []string) int {
+	for i, part := range pathParts {
+		if part == "*" || rd.isNumericIndex(part) {
+			return i
+		}
+	}
+	return -1
+}
+
+// isNumericIndex checks if a path part is a numeric index
+func (rd *ResourceDiscovery) isNumericIndex(part string) bool {
+	if len(part) == 0 {
+		return false
+	}
+	for _, char := range part {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// evaluateWithIteration handles path evaluation when iteration is needed
+func (rd *ResourceDiscovery) evaluateWithIteration(resource *unstructured.Unstructured, filter goclientnew.ImportFilter, pathParts []string, iterationIndex int) bool {
+	preParts := pathParts[:iterationIndex]
+	iterationPart := pathParts[iterationIndex]
+	postParts := pathParts[iterationIndex+1:]
+
+	// Get the collection at the iteration point
+	collection, found, err := unstructured.NestedFieldNoCopy(resource.Object, preParts...)
+	if err != nil || !found {
+		return rd.applyFilterLogicForValue(filter.Operator, filter.Values, "", false)
+	}
+
+	if iterationPart == "*" {
+		// Wildcard: iterate through all items
+		return rd.iterateCollection(collection, filter, postParts)
+	} else {
+		// Numeric index: access specific item
+		return rd.accessByIndex(collection, filter, postParts, iterationPart)
+	}
+}
+
+// iterateCollection iterates through a collection and applies the filter
+func (rd *ResourceDiscovery) iterateCollection(collection interface{}, filter goclientnew.ImportFilter, postParts []string) bool {
+	switch coll := collection.(type) {
+	case []interface{}:
+		// Handle slice iteration
+		for _, item := range coll {
+			if rd.evaluateItem(item, filter, postParts) {
+				return false // Found a match, don't exclude
+			}
+		}
+	case map[string]interface{}:
+		// Handle map iteration
+		for _, item := range coll {
+			if rd.evaluateItem(item, filter, postParts) {
+				return false // Found a match, don't exclude
+			}
+		}
+	default:
+		return rd.applyFilterLogicForValue(filter.Operator, filter.Values, "", false)
+	}
+
+	// No matches found
+	return true
+}
+
+// accessByIndex accesses a specific index in a collection
+func (rd *ResourceDiscovery) accessByIndex(collection interface{}, filter goclientnew.ImportFilter, postParts []string, indexStr string) bool {
+	index := rd.parseNumericIndex(indexStr)
+
+	switch coll := collection.(type) {
+	case []interface{}:
+		if index >= 0 && index < len(coll) {
+			return !rd.evaluateItem(coll[index], filter, postParts)
+		}
+	case map[string]interface{}:
+		// For maps, treat numeric index as string key
+		if item, exists := coll[indexStr]; exists {
+			return !rd.evaluateItem(item, filter, postParts)
+		}
+	}
+
+	return rd.applyFilterLogicForValue(filter.Operator, filter.Values, "", false)
+}
+
+// evaluateItem evaluates a single item with the remaining path parts
+func (rd *ResourceDiscovery) evaluateItem(item interface{}, filter goclientnew.ImportFilter, postParts []string) bool {
+	if len(postParts) == 0 {
+		// No further path, compare the item itself
+		stringValue := rd.convertValueToString(item)
+		return !rd.applyFilterLogicForValue(filter.Operator, filter.Values, stringValue, true)
+	}
+
+	// Continue traversal
+	if itemMap, ok := item.(map[string]interface{}); ok {
+		value, found, err := unstructured.NestedFieldNoCopy(itemMap, postParts...)
+		if err == nil && found {
+			stringValue := rd.convertValueToString(value)
+			return !rd.applyFilterLogicForValue(filter.Operator, filter.Values, stringValue, true)
+		}
+	}
+
+	return false
+}
+
+// parseNumericIndex converts a numeric string to integer
+func (rd *ResourceDiscovery) parseNumericIndex(indexStr string) int {
+	index := 0
+	for _, char := range indexStr {
+		index = index*10 + int(char-'0')
+	}
+	return index
+}
+
+// convertValueToString converts various value types to string for filter comparison
+func (rd *ResourceDiscovery) convertValueToString(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
+	switch v := value.(type) {
+	case string:
+		return v
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", v)
+	case uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v)
+	case float32, float64:
+		return fmt.Sprintf("%g", v)
+	case bool:
+		return fmt.Sprintf("%t", v)
+	default:
+		// For complex types, convert to JSON string representation
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 func matchesFilter(lookup map[string]string, filter string) bool {
 	if lookup == nil {
 		return false
@@ -862,18 +1067,4 @@ func matchesFilter(lookup map[string]string, filter string) bool {
 	// Just check if lookup key exists
 	_, exists := lookup[filter]
 	return exists
-}
-
-// resourcesToResourceInfoList converts a slice of Unstructured objects to ResourceInfoList
-func resourcesToResourceInfoList(resources []*unstructured.Unstructured) []api.ResourceInfo {
-	resourceInfoList := make([]api.ResourceInfo, 0, len(resources))
-	for _, resource := range resources {
-		gvk := resource.GetObjectKind().GroupVersionKind()
-		resourceInfo := api.ResourceInfo{
-			ResourceType: getResourceType(gvk),
-			ResourceName: getResourceName(resource),
-		}
-		resourceInfoList = append(resourceInfoList, resourceInfo)
-	}
-	return resourceInfoList
 }

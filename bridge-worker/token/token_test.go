@@ -136,7 +136,7 @@ func TestVerify(t *testing.T) {
 			name:    "expired token",
 			spec:    validSpec,
 			token:   expiredToken,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "invalid signature",

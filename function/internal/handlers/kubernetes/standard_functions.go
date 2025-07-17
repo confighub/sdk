@@ -11,19 +11,19 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
 	"github.com/labstack/gommon/log"
+	"github.com/yannh/kubeconform/pkg/resource"
+	"github.com/yannh/kubeconform/pkg/validator"
+	quantity "k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/kustomize/kyaml/resid"
 	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/third_party/gaby"
 	kustomizeexcerpts "github.com/confighub/sdk/third_party/kustomize"
-	"github.com/yannh/kubeconform/pkg/resource"
-	"github.com/yannh/kubeconform/pkg/validator"
-	quantity "k8s.io/apimachinery/pkg/api/resource"
 )
 
 func registerStandardFunctions(fh handler.FunctionRegistry) {
@@ -568,7 +568,7 @@ func k8sFnNoPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []
 
 // Kubernetes-specific resource quantity handling
 
-func evaluateResourceQuantityRelationalExpression(expr *generic.RelationalExpression, pathQuantity quantity.Quantity) bool {
+func evaluateResourceQuantityRelationalExpression(expr *api.RelationalExpression, pathQuantity quantity.Quantity) bool {
 	stringLiteral := strings.Trim(expr.Literal, "'")
 	exprQuantity, err := quantity.ParseQuantity(stringLiteral)
 	if err != nil {
@@ -591,7 +591,6 @@ func evaluateResourceQuantityRelationalExpression(expr *generic.RelationalExpres
 	return false
 }
 
-
 var resourcesPathRegexpString = "\\.resources\\.(requests|limits)\\.[a-z]+$"
 var resourcesPathRegexp = regexp.MustCompile(resourcesPathRegexpString)
 
@@ -613,12 +612,12 @@ func (r *ResourceQuantityComparison) MatchesPath(path string) bool {
 }
 
 // Evaluate implements CustomStringComparator.Evaluate
-func (r *ResourceQuantityComparison) Evaluate(expr *generic.RelationalExpression, value string) (bool, error) {
+func (r *ResourceQuantityComparison) Evaluate(expr *api.RelationalExpression, value string) (bool, error) {
 	return evaluateResourceQuantityComparison(expr, value)
 }
 
 // evaluateResourceQuantityComparison wraps resource quantity parsing and comparison
-func evaluateResourceQuantityComparison(expr *generic.RelationalExpression, value string) (bool, error) {
+func evaluateResourceQuantityComparison(expr *api.RelationalExpression, value string) (bool, error) {
 	resourceQuantity, err := quantity.ParseQuantity(value)
 	if err != nil {
 		return false, fmt.Errorf("invalid resource quantity %s: %w", value, err)

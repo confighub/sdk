@@ -80,9 +80,9 @@ func NewStandardExecutor() *FunctionExecutor {
 		handler.SetConverter(converter)
 		registrators[toolchain](handler)
 		executor.functionRegistry[toolchain] = *handler
-		var signatureRegistry = make(map[string]api.FunctionSignature)
+		executor.signatureRegistry[toolchain] = make(map[string]api.FunctionSignature)
 		for name, registration := range handler.ListCore() {
-			signatureRegistry[name] = registration.FunctionSignature
+			executor.signatureRegistry[toolchain][name] = registration.FunctionSignature
 		}
 	}
 	return executor

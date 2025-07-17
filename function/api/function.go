@@ -46,23 +46,35 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 type DataType string
 
 const (
-	DataTypeNone                 = DataType("")
-	DataTypeString               = DataType("string")
-	DataTypeInt                  = DataType("int")
-	DataTypeBool                 = DataType("bool")
-	DataTypeEnum                 = DataType("enum")
+	// Basic scalar types
+	DataTypeNone   = DataType("")
+	DataTypeString = DataType("string")
+	DataTypeInt    = DataType("int")
+	DataTypeBool   = DataType("bool")
+	DataTypeEnum   = DataType("enum")
+
+	// Additional Storage types
+	DataTypeUUID          = DataType("uuid")
+	DataTypeTime          = DataType("time")
+	DataTypeStringMap     = DataType("map[string]string")
+	DataTypeStringBoolMap = DataType("map[string]bool")
+	DataTypeUUIDArray     = DataType("[]uuid")
+
+	// Structured data types
 	DataTypeAttributeValueList   = DataType("AttributeValueList")
 	DataTypePatchMap             = DataType("PatchMap")
-	DataTypeJSON                 = DataType("JSON")
-	DataTypeYAML                 = DataType("YAML")
-	DataTypeProperties           = DataType("Properties")
-	DataTypeTOML                 = DataType("TOML")
-	DataTypeINI                  = DataType("INI")
-	DataTypeEnv                  = DataType("Env")
-	DataTypeHCL                  = DataType("HCL")
-	DataTypeCEL                  = DataType("CEL")
 	DataTypeResourceMutationList = DataType("ResourceMutationList")
 	DataTypeResourceList         = DataType("ResourceList")
+
+	// Configuration format types
+	DataTypeJSON       = DataType("JSON")
+	DataTypeYAML       = DataType("YAML")
+	DataTypeProperties = DataType("Properties")
+	DataTypeTOML       = DataType("TOML")
+	DataTypeINI        = DataType("INI")
+	DataTypeEnv        = DataType("Env")
+	DataTypeHCL        = DataType("HCL")
+	DataTypeCEL        = DataType("CEL")
 )
 
 // OutputType represents the type of output produced by a function. It is either a well

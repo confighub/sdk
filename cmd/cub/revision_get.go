@@ -88,17 +88,17 @@ func displayRevisionDetails(rev *goclientnew.Revision) {
 			view.Append([]string{"Apply Gates", strings.TrimSpace(gates)})
 		}
 		view.Render()
-		tprint("---")
+		tprintRaw("---")
 		if len(*rev.MutationSources) != 0 {
-			tprint("Mutation Sources:")
+			tprintRaw("Mutation Sources:")
 			// TODO: Make this prettier
 			displayJSON(rev.MutationSources)
-			tprint("---")
+			tprintRaw("---")
 		}
 	}
 	data, err := base64.StdEncoding.DecodeString(rev.Data)
 	failOnError(err)
-	tprint(string(data))
+	tprintRaw(string(data))
 }
 
 func displayRevisionExtendedDetails(revisionExtendedDetails *goclientnew.RevisionExtended) {

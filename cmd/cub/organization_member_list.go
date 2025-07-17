@@ -22,16 +22,13 @@ Examples:
   cub organization-member list
 
   # List organization-member without headers for scripting
-  cub organization-member list --noheader
+  cub organization-member list --no-header
 
   # List organization-member in JSON format
   cub organization-member list --json
 
   # List organization-member with custom JQ filter
-  cub organization-member list --jq '.[].UserID'
-
-  # List organization-member matching a specific criteria
-  cub organization-member list --where "DisplayName contains 'prod'"`,
+  cub organization-member list --jq '.[].UserID'`,
 	RunE: organizationMemberListCmdRun,
 }
 

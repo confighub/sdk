@@ -12,7 +12,27 @@ import (
 var spaceCmd = &cobra.Command{
 	Use:   "space",
 	Short: "Space commands",
-	Long:  `The space subcommands are used to manage spaces`,
+	Long:  getSpaceCommandGroupHelp(),
+}
+
+func getSpaceCommandGroupHelp() string {
+	baseHelp := `The space subcommands are used to manage spaces`
+	agentContext := `Spaces are organizational boundaries within ConfigHub that contain units, define access control, and provide collaboration contexts.
+
+Key concepts for agents:
+- Spaces contain all units and their configurations
+- Each space has independent access control and permissions
+- Operations are typically scoped to a specific space
+- Use wildcard "*" for cross-space operations where supported
+
+Setup workflow:
+1. List available spaces ('space list') to discover accessible spaces
+2. Set default space context ('context set --space SPACE_SLUG')
+3. Verify current context ('context get')
+
+Most unit and function commands require a space context either through --space flag or default context.`
+	
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 func init() {

@@ -164,6 +164,14 @@ func AuthorizeUser() error {
 	}
 	// Preload builtin functions
 	_, _, err = listAndSaveFunctions("", "", "")
+	if err != nil {
+		return err
+	}
+	// Disable writing of the agents file for now.
+	if false {
+		// Save agents file for AI agents
+		err = saveAgentsFile()
+	}
 	return err
 }
 

@@ -21,10 +21,10 @@ Examples:
   cub set list --space my-space
 
   # List sets without headers for scripting
-  cub set list --space my-space --noheader
+  cub set list --space my-space --no-header
 
   # List only set slugs
-  cub set list --space my-space --noheader --slugs-only
+  cub set list --space my-space --no-header --slugs-only
 
   # List sets in JSON format
   cub set list --space my-space --quiet --json

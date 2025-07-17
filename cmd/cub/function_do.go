@@ -18,12 +18,28 @@ import (
 )
 
 var functionDoCmd = &cobra.Command{
-	Use:   "do <function> [<arg1> ...]",
-	Short: "Invoke one function",
-	Long: `Invoke a function on units in a space. Functions can be used to modify, validate, or query unit configurations.
+	Use:         "do <function> [<arg1> ...]",
+	Short:       "Invoke one function",
+	Long:        getFunctionDoHelp(),
+	Args:        cobra.MinimumNArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        functionDoCommandRun,
+}
 
-To get a list of supported functions, run:
+func getFunctionDoHelp() string {
+	baseHelp := `Invoke a function on units in a space, or across all spaces if the selected space is "*". 
+
+Functions can be used to modify, validate, or inspect unit configurations.
+
+Function argument values may be simply listed in order so long as no optional parameters are skipped.
+Parameters may be specified out of order using the "--parameter-name=value" syntax.  These are not cub
+flags, so specify "--" before the function name if using that syntax for function arguments.
+
+To display a list of supported functions for each ToolchainType, run:
   cub function list
+
+To display usage details of a specific function, run:
+  cub function explain --toolchain TOOLCHAIN_TYPE FUNCTION_NAME
 
 Example Functions:
   - set-image: Update container image in a deployment
@@ -71,15 +87,52 @@ Examples:
     --output-jq '.[].Passed' \
     --jq '.[].UnitID'
 
+  # Set best-practice pod fields, other than for probes, to default values in all units in all spaces
+  cub function do \
+    --space "*" \
+	-- \
+	set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false
+
   # Validate deployment replicas using CEL
   cub function do --space my-space \
     cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1' \
     --quiet \
     --output-jq '.[].Passed' \
-    --jq '.[].UnitID'`,
-	Args:        cobra.MinimumNArgs(1),
-	Annotations: map[string]string{"OrgLevel": ""},
-	RunE:        functionDoCommandRun,
+    --jq '.[].UnitID'`
+
+	agentContext := `Agent-specific guidance:
+
+Prerequisites:
+- Authentication: Run 'cub auth login' first
+- Space context: Set with 'cub context set --space SPACE_SLUG' or use --space flag
+- Discovery: Use 'cub function list' to see available functions for each toolchain
+
+Common agent workflows:
+
+1. Inspect configuration before making changes:
+   cub function do --space SPACE --where "Slug = 'UNIT'" get-placeholders
+   cub function do --space SPACE --where "Slug = 'UNIT'" yq '.spec.replicas'
+
+2. Modify configuration:
+   cub function do --space SPACE --where "Slug = 'UNIT'" set-image nginx nginx:1.25-alpine --wait
+
+3. Validate after changes:
+   cub function do --space SPACE --where "Slug = 'UNIT'" no-placeholders
+   cub function do --space SPACE --where "Slug = 'UNIT'" cel-validate 'r.spec.replicas > 0'
+
+Key flags for agents:
+- --where: Filter units (use quotes around expressions)
+- --space: Target space ("*" for all spaces where supported)
+- --output-only: Show just function output, not execution details
+- --quiet: Suppress status messages
+- --wait: Wait for async triggers to complete
+
+Error handling:
+- Functions return Success: true/false in response
+- Use --quiet --output-jq to extract specific values
+- Check function signatures with 'cub function explain FUNCTION_NAME'`
+
+	return getCommandHelp(baseHelp, agentContext)
 }
 
 var useWorker bool
@@ -92,6 +145,7 @@ var outputJQ string
 
 func init() {
 	functionDoCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
+	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionDoCmd.Flags().BoolVar(&combine, "combine", false, "combine results")
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionDoCmd.Flags().BoolVar(&outputRaw, "output-raw", false, "show output as raw JSON")
@@ -116,6 +170,13 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.UseFunctionWorker = useWorker
 	req.CombineResults = combine
 	req.ChangeDescription = changeDescription
+	if workerSlug != "" {
+		worker, err := apiGetBridgeWorkerFromSlug(workerSlug)
+		if err != nil {
+			failOnError(err)
+		}
+		req.BridgeWorkerID = &worker.BridgeWorkerID
+	}
 	return req
 }
 
@@ -220,7 +281,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			if len(resp.Output) != 0 {
 				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
 				if err != nil {
-					tprint(resp.Output)
+					tprintRaw(resp.Output)
 					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 				}
 				if strings.TrimSpace(string(outputBytes)) != "null" {
@@ -234,7 +295,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			if len(resp.Output) != 0 {
 				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
 				if err != nil {
-					tprint(resp.Output)
+					tprintRaw(resp.Output)
 					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 				}
 				if strings.TrimSpace(string(outputBytes)) != "null" {
@@ -242,7 +303,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 					var attrValueList api.AttributeValueList
 					err = json.Unmarshal(outputBytes, &attrValueList)
 					if err != nil {
-						tprint(string(outputBytes))
+						tprintRaw(string(outputBytes))
 						failOnError(fmt.Errorf("%s: Failed to decode output as AttributeValueList", err.Error()))
 					}
 					for i := range attrValueList {
@@ -254,7 +315,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	}
 	if wait {
 		if !quiet && !dataOnly && !outputOnly && !outputValuesOnly {
-			tprint("Awaiting triggers...")
+			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time
 		for _, resp := range *resp {
@@ -289,19 +350,19 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 		if dataOnly || ((!quiet && !outputOnly && !outputValuesOnly) && len(respMsg.ConfigData) != 0 && len(respMsg.Mutators) > 0) {
 			// Don't use detailView to print the data because it pads the entire width with spaces.
 			if !dataOnly {
-				tprint("CONFIGDATA\n---------\n")
+				tprintRaw("CONFIGDATA\n---------\n")
 			}
 			data, err := base64.StdEncoding.DecodeString(respMsg.ConfigData)
 			if err != nil {
 				failOnError(fmt.Errorf("%s: Failed to decode config data", err.Error()))
 			}
-			tprint(string(data))
+			tprintRaw(string(data))
 		}
 		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Output) != 0 {
 			// TODO: handle more output types
 			outputBytes, err := base64.StdEncoding.DecodeString(respMsg.Output)
 			if err != nil {
-				tprint(respMsg.Output)
+				tprintRaw(respMsg.Output)
 				failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 			}
 			if strings.TrimSpace(string(outputBytes)) == "null" {
@@ -309,7 +370,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			}
 			// Don't use detailView to print the output because it pads the entire width with spaces.
 			if !outputOnly && !outputValuesOnly {
-				tprint("OUTPUT\n------\n")
+				tprintRaw("OUTPUT\n------\n")
 			}
 			switch respMsg.OutputType {
 			case string(api.OutputTypeYAML):
@@ -317,16 +378,16 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				err := json.Unmarshal(outputBytes, &payload)
 				// If there's an error print the raw output
 				if err != nil || outputRaw {
-					tprint(string(outputBytes))
+					tprintRaw(string(outputBytes))
 				} else {
-					tprint(payload.Payload)
+					tprintRaw(payload.Payload)
 				}
 			case string(api.OutputTypeAttributeValueList):
 				var payload api.AttributeValueList
 				err := json.Unmarshal(outputBytes, &payload)
 				// If there's an error print the raw output
 				if err != nil || outputRaw {
-					tprint(string(outputBytes))
+					tprintRaw(string(outputBytes))
 				} else {
 					for i := range payload {
 						tprint("%v %s %s %s %s", payload[i].Value, payload[i].DataType, payload[i].Path, payload[i].ResourceName, payload[i].ResourceType)
@@ -342,7 +403,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output
 					if err != nil || outputRaw {
-						tprint(string(outputBytes))
+						tprintRaw(string(outputBytes))
 					} else {
 						// TODO: Factor this out
 						details := ""
@@ -353,7 +414,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 							details += " " + detail
 						}
 						tprint("%v%s", payload.Passed, details)
-						tprint("Attributes:")
+						tprintRaw("Attributes:")
 						for j := range payload.FailedAttributes {
 							tprint("%v %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
 								payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
@@ -369,7 +430,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 							details += " " + detail
 						}
 						tprint("%v %d%s", payload[i].Passed, payload[i].Index, details)
-						tprint("Attributes:")
+						tprintRaw("Attributes:")
 						for j := range payload[i].FailedAttributes {
 							tprint("%v %s %s %s %s", payload[i].FailedAttributes[j].Value, payload[i].FailedAttributes[j].DataType,
 								payload[i].FailedAttributes[j].Path, payload[i].FailedAttributes[j].ResourceName, payload[i].FailedAttributes[j].ResourceType)
@@ -381,7 +442,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				err := json.Unmarshal(outputBytes, &payload)
 				// If there's an error print the raw output
 				if err != nil || outputRaw {
-					tprint(string(outputBytes))
+					tprintRaw(string(outputBytes))
 				} else {
 					for i := range payload {
 						tprint("%s %s", payload[i].ResourceName, payload[i].ResourceType)
@@ -392,11 +453,11 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				err := json.Unmarshal(outputBytes, &payload)
 				// If there's an error print the raw output
 				if err != nil || outputRaw {
-					tprint(string(outputBytes))
+					tprintRaw(string(outputBytes))
 				} else {
 					for i := range payload {
 						tprint("%s %s:", payload[i].ResourceName, payload[i].ResourceType)
-						tprint("%s", payload[i].ResourceBody)
+						tprintRaw(payload[i].ResourceBody)
 					}
 				}
 			default:
@@ -404,9 +465,9 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				var out bytes.Buffer
 				err := json.Indent(&out, outputBytes, "", "  ")
 				if err != nil || outputRaw {
-					tprint(respMsg.Output)
+					tprintRaw(respMsg.Output)
 				} else {
-					tprint(out.String())
+					tprintRaw(out.String())
 				}
 			}
 		}

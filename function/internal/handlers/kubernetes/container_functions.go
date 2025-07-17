@@ -282,35 +282,35 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 				{
 					ParameterName: "pod-security",
 					Required:      false,
-					Description:   "Enable pod security labels on namespaces (default: true)",
+					Description:   "Enable pod security labels on namespaces (default: false)",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},
 				{
 					ParameterName: "automount-service-account-token",
 					Required:      false,
-					Description:   "Set automountServiceAccountToken to false (default: true)",
+					Description:   "Set automountServiceAccountToken to false (default: false)",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},
 				{
 					ParameterName: "security-context",
 					Required:      false,
-					Description:   "Set security context for pods and containers (default: true)",
+					Description:   "Set security context for pods and containers (default: false)",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},
 				{
 					ParameterName: "resources",
 					Required:      false,
-					Description:   "Set minimum resource requests for containers (default: true)",
+					Description:   "Set minimum resource requests for containers (default: false)",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},
 				{
 					ParameterName: "probes",
 					Required:      false,
-					Description:   "Add liveness, readiness, and startup probes to containers (default: true)",
+					Description:   "Add liveness, readiness, and startup probes to containers (default: false)",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},
@@ -1279,12 +1279,13 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 	multiErrs := []error{}
 	var err error
 
-	// Parse parameters with default values of true
-	podSecurity := true
-	automountServiceAccountToken := true
-	securityContext := true
-	resources := true
-	probes := true
+	// Parse parameters with default values of false
+	defaultValue := false
+	podSecurity := defaultValue
+	automountServiceAccountToken := defaultValue
+	securityContext := defaultValue
+	resources := defaultValue
+	probes := defaultValue
 
 	for _, arg := range args {
 		switch arg.ParameterName {

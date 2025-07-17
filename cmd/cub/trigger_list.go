@@ -23,13 +23,13 @@ Examples:
   cub trigger list --space my-space
 
   # List triggers without headers for scripting
-  cub trigger list --space my-space --noheader
+  cub trigger list --space my-space --no-header
 
   # List triggers in JSON format
   cub trigger list --space my-space --json
 
   # List only trigger slugs
-  cub trigger list --space my-space --noheader --slugs-only
+  cub trigger list --space my-space --no-header --slugs-only
 
   # List triggers with a specific event type
   cub trigger list --space my-space --where "Event = 'Mutation'"
