@@ -4,8 +4,6 @@
 package main
 
 import (
-	"net/url"
-
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -68,7 +66,6 @@ func displayOrganizationList(organizations []*goclientnew.Organization) {
 func apiListOrganizations(whereFilter string) ([]*goclientnew.Organization, error) {
 	newParams := &goclientnew.ListOrganizationsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 	orgsRes, err := cubClientNew.ListOrganizationsWithResponse(ctx, newParams)

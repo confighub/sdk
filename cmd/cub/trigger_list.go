@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -16,7 +15,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: `List triggers you have access to in a space. The output includes display names, slugs, trigger IDs, events, toolchain types, function names, and the number of arguments.
+	Long: `List triggers you have access to in a space. The output includes slugs, worker slugs, events, validation status, disabled status, enforcement status, toolchain types, function names, and the number of arguments.
 
 Examples:
   # List all triggers in a space with headers
@@ -29,7 +28,7 @@ Examples:
   cub trigger list --space my-space --json
 
   # List only trigger slugs
-  cub trigger list --space my-space --no-header --slugs-only
+  cub trigger list --space my-space --no-header --slugs
 
   # List triggers with a specific event type
   cub trigger list --space my-space --where "Event = 'Mutation'"
@@ -64,15 +63,17 @@ func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Worker-ID", "Event", "Validating", "Disabled", "Enforced", "Toolchain-Type", "Function-Name", "Num-Args"})
+		table.SetHeader([]string{"Slug", "Worker-Slug", "Event", "Validating", "Disabled", "Enforced", "Toolchain-Type", "Function-Name", "Num-Args"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
+		workerSlug := ""
+		if t.BridgeWorker != nil {
+			workerSlug = t.BridgeWorker.Slug
+		}
 		table.Append([]string{
-			trigger.DisplayName,
 			trigger.Slug,
-			trigger.TriggerID.String(),
-			uuidPtrToString(trigger.BridgeWorkerID),
+			workerSlug,
 			trigger.Event,
 			strconv.FormatBool(trigger.Validating),
 			strconv.FormatBool(trigger.Disabled),
@@ -90,7 +91,6 @@ func apiListTriggers(spaceID string, whereFilter string) ([]*goclientnew.Extende
 	include := "BridgeWorkerID"
 	newParams.Include = &include
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 	triggersRes, err := cubClientNew.ListTriggersWithResponse(ctx, uuid.MustParse(spaceID), newParams)

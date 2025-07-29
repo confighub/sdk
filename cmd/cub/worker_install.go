@@ -98,7 +98,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Wait for triggers after unit creation
 		if wait {
 			err = awaitTriggersRemoval(unitDetails)
@@ -106,15 +106,15 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		}
-		
+
 		// Execute functions if functions file is specified
 		if workerInstallArgs.functionsFile != "" {
 			whereClause := "Slug='" + workerInstallArgs.unitSlug + "'"
-			_, err = executeFunctionsFromFile(workerInstallArgs.functionsFile, whereClause)
+			_, err = executeFunctionsFromFile(workerInstallArgs.functionsFile, whereClause, []string{})
 			if err != nil {
 				return err
 			}
-			
+
 			// Wait for triggers after function execution
 			if wait {
 				// Get updated unit details after function execution
@@ -128,7 +128,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-		
+
 		// Display results after all operations are complete
 		displayCreateResults(unitDetails, "unit", workerInstallArgs.unitSlug, unitDetails.UnitID.String(), displayUnitDetails)
 		return nil
@@ -233,7 +233,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 			},
 		},
 	}
-	
+
 	// Add hostNetwork if requested
 	if hostNetwork {
 		podSpec["hostNetwork"] = true
@@ -285,7 +285,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew.Unit, error) {
 	spaceID := uuid.MustParse(selectedSpaceID)
-	
+
 	// Create new unit
 	newUnit := &goclientnew.Unit{
 		SpaceID:       spaceID,
@@ -294,7 +294,7 @@ func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew
 		ToolchainType: string(workerapi.ToolchainKubernetesYAML),
 		Data:          base64.StdEncoding.EncodeToString([]byte(manifest)),
 	}
-	
+
 	// Set target if specified
 	if targetSlug != "" {
 		target, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID)
@@ -303,14 +303,14 @@ func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew
 		}
 		newUnit.TargetID = &target.Target.TargetID
 	}
-	
+
 	// Create the unit
 	newParams := &goclientnew.CreateUnitParams{}
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if IsAPIError(err, unitRes) {
 		return nil, InterpretErrorGeneric(err, unitRes)
 	}
-	
+
 	return unitRes.JSON200, nil
 }
 

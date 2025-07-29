@@ -31,29 +31,31 @@ var unitCreateCmd = &cobra.Command{
 func getUnitCreateHelp() string {
 	baseHelp := `Create a new unit in a space. A unit represents a collection of related resources that can be managed together.
 
-Units can be created in several ways:
-  1. From a configuration file (local or remote)
+Like other ConfigHub entities, Units have metadata, which can be partly set on the command line
+and otherwise read from stdin using the flag --from-stdin. 
+
+Unlike other ConfigHub entities, Units also contain configuration data, which is read from another
+source.
+
+Unit configuration data can be provided in multiple ways:
+  1. From a local or remote configuration file, or from stdin (by specifying "-")
   2. By cloning an existing upstream unit (using --upstream-unit)
-  3. From stdin (using '-' as a ConfigHub Unit, which can include the Unit's configuration Data)
 
 Examples:
   # Create a unit from a local YAML file
-  cub unit create --space my-space myunit -f config.yaml
-
-  # Create a unit from a file:// URL
-  cub unit create --space my-space myunit -f file:///path/to/config.yaml
-
-  # Create a unit from a remote HTTPS URL
-  cub unit create --space my-space myunit -f https://example.com/config.yaml
-
-  # Backward compatibility - positional argument
   cub unit create --space my-space myunit config.yaml
 
-  # Backward compatibility - stdin for config data
-  cub unit create --space my-space myunit - --from-stdin
+  # Create a unit from a file:// URL
+  cub unit create --space my-space myunit file:///path/to/config.yaml
+
+  # Create a unit from a remote HTTPS URL
+  cub unit create --space my-space myunit https://example.com/config.yaml
+
+  # Create a unit with config from stdin
+  cub unit create --space my-space myunit -
 
   # Combine Unit JSON metadata from stdin with config data from file
-  cub unit create --space my-space myunit -f config.yaml --from-stdin
+  cub unit create --space my-space myunit config.yaml --from-stdin
 
   # Clone an existing unit
   cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment`
@@ -101,7 +103,6 @@ var unitCreateArgs struct {
 	importUnitSlug    string
 	toolchainType     string
 	targetSlug        string
-	filename          string
 }
 
 func init() {
@@ -111,16 +112,15 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug")
-	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.filename, "filename", "f", "", "config file, file:// URL, or HTTPS URL (supports local files, file:// URLs, and HTTPS URLs only)")
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type")
 	unitCmd.AddCommand(unitCreateCmd)
 }
 
 func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
-	// Validate conflicting options
-	if unitCreateArgs.filename != "" && flagPopulateModelFromStdin {
-		return errors.New("cannot specify both -f and --from-stdin")
+	// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
+	if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
+		return errors.New("can't read both entity attributes and config data from stdin")
 	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
@@ -132,18 +132,17 @@ func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if unitCreateArgs.filename != "" {
-		var configSource string
-		if unitCreateArgs.filename != "" {
-			configSource = unitCreateArgs.filename
-		} else if len(args) > 1 {
-			configSource = args[1]
+	// Handle config data from 2nd positional argument
+	if len(args) > 1 {
+		if unitCreateArgs.upstreamUnitSlug != "" {
+			return errors.New("shouldn't specify both an upstream to clone and config data")
 		}
-		content, err := fetchContent(configSource)
+		content, err := fetchContent(args[1])
 		if err != nil {
 			return fmt.Errorf("failed to read config: %w", err)
 		}
-		newUnit.Data = string(content)
+		var base64Content strfmt.Base64 = content
+		newUnit.Data = base64Content.String()
 	}
 
 	err := setLabels(&newUnit.Labels)
@@ -189,25 +188,6 @@ func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newParams.UpstreamUnitId = &upstreamUnitID
 	}
 
-	// Read test payload, don't use if --filename is set
-	if len(args) > 1 && unitCreateArgs.filename == "" {
-		if unitCreateArgs.upstreamUnitSlug != "" {
-			return errors.New("shouldn't specify both an upstream to clone and config data")
-		}
-		var content strfmt.Base64
-		if args[1] == "-" {
-			if flagPopulateModelFromStdin {
-				return errors.New("can't read both entity attributes and config data from stdin")
-			}
-			content, err = readStdin()
-			if err != nil {
-				return err
-			}
-		} else {
-			content = readFile(args[1])
-		}
-		newUnit.Data = content.String()
-	}
 
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if IsAPIError(err, unitRes) {

@@ -483,19 +483,13 @@ func AttributeNameForResourceType(resourceType ResourceType) AttributeName {
 	return AttributeName(string(AttributeNameResourceName) + "/" + string(resourceType))
 }
 
+// All types except int and bool are always serialized as strings
 func DataTypeIsSerializedAsString(dataType DataType) bool {
 	switch dataType {
-	case DataTypeString,
-		DataTypeEnum,
-		DataTypeAttributeValueList,
-		DataTypePatchMap,
-		DataTypeResourceMutationList,
-		DataTypeResourceList,
-		DataTypeJSON, DataTypeYAML, DataTypeProperties, DataTypeTOML, DataTypeINI, DataTypeEnv, DataTypeHCL,
-		DataTypeCEL:
-		return true
+	case DataTypeInt, DataTypeBool:
+		return false
 	}
-	return false
+	return true
 }
 
 func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {

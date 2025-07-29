@@ -31,7 +31,7 @@ Setup workflow:
 3. Verify current context ('context get')
 
 Most unit and function commands require a space context either through --space flag or default context.`
-	
+
 	return getCommandHelp(baseHelp, agentContext)
 }
 

@@ -229,13 +229,13 @@ func NewConfighubApi() (*ConfighubApi, error) {
 	for _, space := range spaces {
 		c.spaces[space.Slug] = space
 		spaceid := space.SpaceID.String()
-		workers, err := apiListBridgeworkers(spaceid)
+		workers, err := apiListBridgeworkers(spaceid, "")
 		if err != nil {
 			return nil, err
 		}
 		tprint("Fetched %d workers in space %s", len(workers), space.Slug)
 		for _, worker := range workers {
-			c.workers[space.Slug+"/"+worker.Slug] = worker
+			c.workers[space.Slug+"/"+worker.BridgeWorker.Slug] = worker.BridgeWorker
 		}
 		targets, err := apiListTargets(spaceid, "")
 		if err != nil {
@@ -258,8 +258,8 @@ func NewConfighubApi() (*ConfighubApi, error) {
 			return nil, err
 		}
 		tprint("Fetched %d links in space %s", len(links), space.Slug)
-		for _, link := range links {
-			c.links[space.Slug+"/"+link.Slug] = link
+		for _, extendedLink := range links {
+			c.links[space.Slug+"/"+extendedLink.Link.Slug] = extendedLink.Link
 		}
 	}
 	return c, nil

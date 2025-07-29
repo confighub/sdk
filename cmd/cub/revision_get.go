@@ -151,9 +151,9 @@ func apiGetRevisionFromNumber(revNo int64, unitID string) (*goclientnew.Revision
 	if err != nil {
 		return nil, err
 	}
-	for _, rev := range revisions {
-		if int64(rev.RevisionNum) == revNo {
-			return rev, nil
+	for _, extendedRev := range revisions {
+		if int64(extendedRev.Revision.RevisionNum) == revNo {
+			return extendedRev.Revision, nil
 		}
 	}
 	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)

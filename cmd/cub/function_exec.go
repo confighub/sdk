@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"net/url"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -55,6 +54,8 @@ func init() {
 	functionExecCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	// Same flag as unit update
 	functionExecCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
+	functionExecCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
+	functionExecCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	enableWhereFlag(functionExecCmd)
 	enableQuietFlag(functionExecCmd)
 	enableJsonFlag(functionExecCmd)
@@ -65,7 +66,23 @@ func init() {
 }
 
 // executeFunctionsFromFile reads functions from a file and executes them with the given where clause
-func executeFunctionsFromFile(functionsFile, whereClause string) (*[]goclientnew.FunctionInvocationResponse, error) {
+func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []string) (*[]goclientnew.FunctionInvocationResponse, error) {
+	// Check for mutual exclusivity between unit identifiers and where clause
+	if len(unitIds) > 0 && whereClause != "" {
+		return nil, fmt.Errorf("--unit and --where flags are mutually exclusive")
+	}
+
+	// Build WHERE clause from unit identifiers if provided
+	var effectiveWhere string
+	if len(unitIds) > 0 {
+		whereFromUnits, err := buildWhereClauseFromUnits(unitIds)
+		if err != nil {
+			return nil, err
+		}
+		effectiveWhere = whereFromUnits
+	} else {
+		effectiveWhere = whereClause
+	}
 	var content []byte
 	var err error
 
@@ -100,9 +117,12 @@ func executeFunctionsFromFile(functionsFile, whereClause string) (*[]goclientnew
 	var resp *[]goclientnew.FunctionInvocationResponse
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		if whereClause != "" {
-			encoded := url.QueryEscape(whereClause)
-			newParams.Where = &encoded
+		if effectiveWhere != "" {
+			newParams.Where = &effectiveWhere
+		}
+		if dryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
 		if IsAPIError(err, funcRes) {
@@ -111,9 +131,12 @@ func executeFunctionsFromFile(functionsFile, whereClause string) (*[]goclientnew
 		resp = funcRes.JSON200
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
-		if whereClause != "" {
-			encoded := url.QueryEscape(whereClause)
-			newParams.Where = &encoded
+		if effectiveWhere != "" {
+			newParams.Where = &effectiveWhere
+		}
+		if dryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
 		if IsAPIError(err, funcRes) {
@@ -131,11 +154,16 @@ func executeFunctionsFromFile(functionsFile, whereClause string) (*[]goclientnew
 }
 
 func functionExecCommandRun(cmd *cobra.Command, args []string) error {
-	resp, err := executeFunctionsFromFile(args[0], where)
+	resp, err := executeFunctionsFromFile(args[0], where, unitIdentifiers)
 	if err != nil {
 		return err
 	}
-	outputFunctionInvocationResponse(resp)
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+
+	if !hasAlternativeOutput {
+		outputFunctionInvocationResponse(resp)
+	}
 	if jsonOutput {
 		displayJSON(resp)
 	}

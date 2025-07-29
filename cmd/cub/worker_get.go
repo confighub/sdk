@@ -56,8 +56,9 @@ func workerGetCmdRun(_ *cobra.Command, args []string) error {
 		// detail.Append([]string{"Provided Info", string(workerInfo)})
 		detail.Append([]string{"Secret", worker.Secret})
 		detail.Append([]string{"Condition", worker.Condition})
-		detail.Append([]string{"Heartbeat Message", worker.LastHeartbeatMessage})
-		detail.Append([]string{"Heartbeat Received At", worker.LastHeartbeatReceivedAt.String()})
+		detail.Append([]string{"Last Message", worker.LastMessage})
+		detail.Append([]string{"Last Seen At", worker.LastSeenAt.String()})
+		detail.Append([]string{"IP Address", worker.IPAddress})
 		detail.Render()
 	}
 	return nil

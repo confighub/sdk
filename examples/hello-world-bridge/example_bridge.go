@@ -12,6 +12,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/workerapi"
+	"github.com/gosimple/slug"
 )
 
 // ExampleBridge implements the Bridge interface
@@ -52,7 +53,7 @@ func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
 		for _, entry := range entries {
 			if entry.IsDir() {
 				targets = append(targets, api.Target{
-					Name: entry.Name(),
+					Name: slug.Make(entry.Name()),
 					Params: map[string]interface{}{
 						"description": fmt.Sprintf("Filesystem target for directory: %s", entry.Name()),
 						"dir_name":    entry.Name(),

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -26,14 +25,6 @@ import (
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/third_party/gaby"
 )
-
-// CustomStringComparator allows injecting custom string comparison logic for specific path patterns
-type CustomStringComparator interface {
-	// MatchesPath returns true if this comparator should handle the given path
-	MatchesPath(path string) bool
-	// Evaluate performs the comparison and returns the result
-	Evaluate(expr *api.RelationalExpression, value string) (bool, error)
-}
 
 func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	fh.RegisterFunction("compute-mutations", &handler.FunctionRegistration{
@@ -82,6 +73,16 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	fh.RegisterFunction("get-resources", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-resources",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "body",
+					Required:      false,
+					Description:   "Format for resource body output: yaml (default), none, json, or native",
+					DataType:      api.DataTypeEnum,
+					Example:       "yaml",
+					ValueConstraints: api.ValueConstraints{EnumValues: []string{"yaml", "none", "json", "native"}},
+				},
+			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "resource",
 				Description: "Return the names, types, and bodies of the resources",
@@ -96,7 +97,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetResources(resourceProvider, functionContext, parsedData, args, liveState)
+			return genericFnGetResources(converter, resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
 	fh.RegisterFunction("get-resources-of-type", &handler.FunctionRegistration{
@@ -898,7 +899,13 @@ func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeNa
 	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
 }
 
-func genericFnGetResources(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	// Default body format is "yaml"
+	bodyFormat := "yaml"
+	if len(args) > 0 {
+		bodyFormat = strings.ToLower(args[0].Value.(string))
+	}
+
 	list := make(api.ResourceList, 0, len(parsedData))
 	for _, doc := range parsedData {
 		resourceCategory, err := resourceProvider.ResourceCategoryGetter(doc)
@@ -913,6 +920,30 @@ func genericFnGetResources(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 		if err != nil {
 			return parsedData, nil, err
 		}
+
+		var resourceBody string
+		switch bodyFormat {
+		case "none":
+			resourceBody = ""
+		case "json":
+			jsonBytes, err := doc.MarshalJSON()
+			if err != nil {
+				return parsedData, nil, err
+			}
+			resourceBody = string(jsonBytes)
+		case "native":
+			yamlBytes := []byte(doc.String())
+			nativeBytes, err := converter.YAMLToNative(yamlBytes)
+			if err != nil {
+				return parsedData, nil, err
+			}
+			resourceBody = string(nativeBytes)
+		case "yaml":
+			fallthrough
+		default:
+			resourceBody = doc.String()
+		}
+
 		list = append(list, api.Resource{
 			ResourceInfo: api.ResourceInfo{
 				ResourceName:             resourceName,
@@ -920,7 +951,7 @@ func genericFnGetResources(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 				ResourceType:             resourceType,
 				ResourceCategory:         resourceCategory,
 			},
-			ResourceBody: doc.String(),
+			ResourceBody: resourceBody,
 		})
 	}
 	return parsedData, list, nil
@@ -1376,106 +1407,7 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 	return parsedData, failedResult, errors.Join(multiErrors...)
 }
 
-func evaluateStringRelationalExpression(expr *api.RelationalExpression, pathValue string) (bool, error) {
-	return evaluateStringRelationalExpressionWithComparators(expr, pathValue, nil)
-}
-
-func evaluateStringRelationalExpressionWithComparators(expr *api.RelationalExpression, pathValue string, customComparators []CustomStringComparator) (bool, error) {
-	// Check if any custom comparators match this path
-	for _, comparator := range customComparators {
-		if comparator.MatchesPath(expr.Path) {
-			return comparator.Evaluate(expr, pathValue)
-		}
-	}
-
-	// Default string comparison logic
-	stringLiteral := strings.Trim(expr.Literal, "'")
-	switch expr.Operator {
-	case "=":
-		return pathValue == stringLiteral, nil
-	case "!=":
-		return pathValue != stringLiteral, nil
-	case "<":
-		return pathValue < stringLiteral, nil
-	case "<=":
-		return pathValue <= stringLiteral, nil
-	case ">":
-		return pathValue > stringLiteral, nil
-	case ">=":
-		return pathValue >= stringLiteral, nil
-	}
-	return false, nil
-}
-
-// evaluateExpressionForValue evaluates a relational expression against a value of any type
-// Returns (matched, error) where error indicates type conversion failure
-func evaluateExpressionForValue(expr *api.RelationalExpression, value any, customComparators []CustomStringComparator) (bool, error) {
-	switch expr.DataType {
-	case api.DataTypeString:
-		stringValue, ok := value.(string)
-		if !ok {
-			return false, fmt.Errorf("internal error: expected string but got %T", value)
-		}
-		return evaluateStringRelationalExpressionWithComparators(expr, stringValue, customComparators)
-	case api.DataTypeInt:
-		if intValue, ok := value.(int); ok {
-			return evaluateIntRelationalExpression(expr, intValue), nil
-		} else if floatValue, ok := value.(float64); ok {
-			// Handle JSON numbers that parse as float64
-			return evaluateIntRelationalExpression(expr, int(floatValue)), nil
-		} else {
-			return false, fmt.Errorf("internal error: expected int but got %T", value)
-		}
-	case api.DataTypeBool:
-		boolValue, ok := value.(bool)
-		if !ok {
-			return false, fmt.Errorf("internal error: expected bool but got %T", value)
-		}
-		return evaluateBoolRelationalExpression(expr, boolValue), nil
-	default:
-		return false, fmt.Errorf("unsupported data type %s", expr.DataType)
-	}
-}
-
-func evaluateIntRelationalExpression(expr *api.RelationalExpression, pathValue int) bool {
-	intLiteral, err := strconv.Atoi(expr.Literal)
-	if err != nil {
-		return false
-	}
-	switch expr.Operator {
-	case "=":
-		return pathValue == intLiteral
-	case "!=":
-		return pathValue != intLiteral
-	case "<":
-		return pathValue < intLiteral
-	case "<=":
-		return pathValue <= intLiteral
-	case ">":
-		return pathValue > intLiteral
-	case ">=":
-		return pathValue >= intLiteral
-	}
-	return false
-}
-
-func evaluateBoolRelationalExpression(expr *api.RelationalExpression, pathValue bool) bool {
-	boolLiteral := expr.Literal == "true"
-	switch expr.Operator {
-	case "=":
-		return pathValue == boolLiteral
-	case "!=":
-		return pathValue != boolLiteral
-	}
-	return false
-}
-
-// evaluateSplitPathExpression handles the split path syntax with | separator
-func evaluateSplitPathExpression(expression *api.RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (map[string]bool, error) {
-	return evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, nil)
-}
-
-func evaluateSplitPathExpressionWithComparators(expression *api.RelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []CustomStringComparator) (map[string]bool, error) {
+func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []api.CustomStringComparator) (map[string]bool, error) {
 	matchingResources := map[string]bool{}
 
 	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of |)
@@ -1501,7 +1433,7 @@ func evaluateSplitPathExpressionWithComparators(expression *api.RelationalExpres
 		} else {
 			// Property is present - evaluate normally
 			var err error
-			matches, err = evaluateExpressionForValue(expression, value, customComparators)
+			matches, err = api.EvaluateExpression(&expression.RelationalExpression, value, nil, customComparators)
 			if err != nil {
 				return output, err
 			}
@@ -1528,7 +1460,7 @@ func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, func
 	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, functionContext, parsedData, args, liveState)
 }
 
-func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	whereExpr := args[1].Value.(string)
 
@@ -1617,7 +1549,7 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 			}
 			for _, attribValue := range attribValues {
 				//fmt.Printf("path: %s\n", attribValue.Path)
-				found, err := evaluateExpressionForValue(expression, attribValue.Value, customComparators)
+				found, err := api.EvaluateExpression(&expression.RelationalExpression, attribValue.Value, nil, customComparators)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				} else if found {

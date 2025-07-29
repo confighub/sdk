@@ -4,8 +4,6 @@
 package main
 
 import (
-	"net/url"
-
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -14,7 +12,7 @@ import (
 var linkListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List links",
-	Long: `List links you have access to in a space. The output includes display names, slugs, link IDs, source unit IDs (From-ID), target unit IDs (To-ID), and target space IDs.
+	Long: `List links you have access to in a space. The output includes slugs, source unit slugs (From-Unit), target unit slugs (To-Unit), and target space slugs (To-Space).
 
 Examples:
   # List all links in a space
@@ -24,13 +22,13 @@ Examples:
   cub link list --space my-space --no-header
 
   # List only link slugs
-  cub link list --space my-space --no-header --slugs-only
+  cub link list --space my-space --no-header --slugs
 
   # List links in JSON format
   cub link list --space my-space --json
 
   # List links with custom JQ filter
-  cub link list --space my-space --quiet --jq ".[].LinkID"
+  cub link list --space my-space --quiet --jq ".[].Slug"
 
   # List links to a specific unit
   cub link list --space my-space --where "ToUnitID = 'c871ca3a-d9ca-4eeb-a576-79c3b5a2ca97'"
@@ -58,46 +56,60 @@ func linkListCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getLinkSlug(link *goclientnew.Link) string {
-	return link.Slug
+func getLinkSlug(extendedLink *goclientnew.ExtendedLink) string {
+	return extendedLink.Link.Slug
 }
 
-func displayLinkList(links []*goclientnew.Link) {
+func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "From-ID", "To-ID", "To-Space-ID"})
+		table.SetHeader([]string{"Slug", "From-Unit", "To-Unit", "To-Space"})
 	}
-	for _, link := range links {
+	for _, extendedLink := range extendedLinks {
+		link := extendedLink.Link
+		fromUnitSlug := ""
+		if extendedLink.FromUnit != nil {
+			fromUnitSlug = extendedLink.FromUnit.Slug
+		}
+		toUnitSlug := ""
+		if extendedLink.ToUnit != nil {
+			toUnitSlug = extendedLink.ToUnit.Slug
+		}
+		toSpaceSlug := ""
+		if extendedLink.ToSpace != nil {
+			toSpaceSlug = extendedLink.ToSpace.Slug
+		} else if link.ToSpaceID.String() == selectedSpaceID {
+			toSpaceSlug = selectedSpaceSlug
+		}
 		table.Append([]string{
-			link.DisplayName,
 			link.Slug,
-			link.LinkID.String(),
-			link.FromUnitID.String(),
-			link.ToUnitID.String(),
-			link.ToSpaceID.String(),
+			fromUnitSlug,
+			toUnitSlug,
+			toSpaceSlug,
 		})
 	}
 	table.Render()
 }
 
-func apiListLinks(spaceID string, whereFilter string) ([]*goclientnew.Link, error) {
+func apiListLinks(spaceID string, whereFilter string) ([]*goclientnew.ExtendedLink, error) {
 	// TODO: update List APIs to allow where filter
 	newParams := &goclientnew.ListLinksParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
+	include := "FromUnitID,ToUnitID,ToSpaceID"
+	newParams.Include = &include
 	linkRes, err := cubClientNew.ListLinksWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, linkRes) {
 		return nil, InterpretErrorGeneric(err, linkRes)
 	}
 
-	links := make([]*goclientnew.Link, 0, len(*linkRes.JSON200))
-	for _, link := range *linkRes.JSON200 {
-		if link.Link == nil {
+	links := make([]*goclientnew.ExtendedLink, 0, len(*linkRes.JSON200))
+	for _, extendedLink := range *linkRes.JSON200 {
+		if extendedLink.Link == nil {
 			continue
 		}
-		links = append(links, link.Link)
+		links = append(links, &extendedLink)
 	}
 	return links, nil
 }

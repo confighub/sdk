@@ -32,7 +32,7 @@ Key commands for agents:
 - 'unit update' - modify existing units
 
 Units are scoped to spaces and can be linked to other units to model dependencies.`
-	
+
 	return getCommandHelp(baseHelp, agentContext)
 }
 

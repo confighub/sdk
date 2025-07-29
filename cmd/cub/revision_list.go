@@ -5,7 +5,7 @@ package main
 
 import (
 	"fmt"
-	"net/url"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -16,7 +16,7 @@ import (
 var revisionListCmd = &cobra.Command{
 	Use:   "list <unit>",
 	Short: "List revisions",
-	Long: `List revisions for a unit in a space. Revisions track the history of changes made to a unit's configuration.
+	Long: `List revisions for a unit in a space. The output includes revision numbers, timestamps, usernames, sources, descriptions, and apply gates. Revisions track the history of changes made to a unit's configuration.
 
 Examples:
   # List all revisions for a unit
@@ -70,17 +70,18 @@ func revisionListCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getRevisionSlug(revision *goclientnew.Revision) string {
+func getRevisionSlug(extendedRevision *goclientnew.ExtendedRevision) string {
 	// Use number
-	return fmt.Sprintf("%d", revision.RevisionNum)
+	return fmt.Sprintf("%d", extendedRevision.Revision.RevisionNum)
 }
 
-func displayRevisionList(revisions []*goclientnew.Revision) {
+func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"ID", "Num", "Time", "User-ID", "Source", "Description", "Apply-Gates"})
+		table.SetHeader([]string{"Num", "Time", "User", "Source", "Description", "Apply-Gates"})
 	}
-	for _, rev := range revisions {
+	for _, extendedRev := range extendedRevisions {
+		rev := extendedRev.Revision
 		applyGates := "None"
 		if rev.ApplyGates != nil {
 			if len(rev.ApplyGates) > 1 {
@@ -91,11 +92,14 @@ func displayRevisionList(revisions []*goclientnew.Revision) {
 				}
 			}
 		}
+		username := ""
+		if extendedRev.User != nil {
+			username = extendedRev.User.Username
+		}
 		table.Append([]string{
-			rev.RevisionID.String(),
 			fmt.Sprintf("%d", rev.RevisionNum),
 			rev.CreatedAt.String(),
-			rev.UserID.String(),
+			username,
 			rev.Source,
 			rev.Description,
 			applyGates,
@@ -104,12 +108,13 @@ func displayRevisionList(revisions []*goclientnew.Revision) {
 	table.Render()
 }
 
-func apiListRevisions(spaceID string, unitID string, whereFilter string) ([]*goclientnew.Revision, error) {
+func apiListRevisions(spaceID string, unitID string, whereFilter string) ([]*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.ListExtendedRevisionsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
+	include := "UserID"
+	newParams.Include = &include
 	revsRes, err := cubClientNew.ListExtendedRevisionsWithResponse(ctx,
 		uuid.MustParse(spaceID),
 		uuid.MustParse(unitID),
@@ -119,9 +124,15 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string) ([]*goc
 		return nil, InterpretErrorGeneric(err, revsRes)
 	}
 
-	revisions := make([]*goclientnew.Revision, len(*revsRes.JSON200))
+	revisions := make([]*goclientnew.ExtendedRevision, len(*revsRes.JSON200))
 	for i, er := range *revsRes.JSON200 {
-		revisions[i] = er.Revision
+		revisions[i] = &er
 	}
+	
+	// Sort by RevisionNum descending
+	sort.Slice(revisions, func(i, j int) bool {
+		return revisions[i].Revision.RevisionNum > revisions[j].Revision.RevisionNum
+	})
+	
 	return revisions, nil
 }

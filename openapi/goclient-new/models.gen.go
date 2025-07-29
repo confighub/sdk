@@ -139,7 +139,7 @@ type BridgeWorker struct {
 	// BridgeWorkerID Unique identifier for a Bridge Worker.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty"`
 
-	// Condition Condition represents the worker's readiness state (Ready, NotReady, Unknown).
+	// Condition Condition represents the worker's readiness state (Ready, NotReady, Unresponsive, Disconnected).
 	Condition string `json:"Condition,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -154,14 +154,17 @@ type BridgeWorker struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty"`
 
+	// IPAddress IPAddress is the IP address from which the worker last connected.
+	IPAddress string `json:"IPAddress,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty"`
 
-	// LastHeartbeatMessage LastHeartbeatMessage contains the message from the last heartbeat.
-	LastHeartbeatMessage string `json:"LastHeartbeatMessage,omitempty"`
+	// LastMessage LastMessage contains the last message from the worker (heartbeat message or other status).
+	LastMessage string `json:"LastMessage,omitempty"`
 
-	// LastHeartbeatReceivedAt LastHeartbeatReceivedAt is the time the last heartbeat was received.
-	LastHeartbeatReceivedAt time.Time `json:"LastHeartbeatReceivedAt,omitempty"`
+	// LastSeenAt LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event).
+	LastSeenAt time.Time `json:"LastSeenAt,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
@@ -1483,7 +1486,8 @@ type Unit struct {
 // in the connected Bridge. The status and drift detection help track the health
 // and consistency of the provisioned configuration compared to what is defined in the Unit.
 type UnitEvent struct {
-	Action *ActionType `json:"Action,omitempty"`
+	Action         *ActionType `json:"Action,omitempty"`
+	BridgeWorkerID *UUID       `json:"BridgeWorkerID"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1623,7 +1627,12 @@ type ListAllBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1649,12 +1658,20 @@ type ListAllBridgeWorkersParams struct {
 
 // InvokeFunctionsOnOrgParams defines parameters for InvokeFunctionsOnOrg.
 type InvokeFunctionsOnOrgParams struct {
+	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
+	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1684,7 +1701,12 @@ type ListOrganizationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1703,6 +1725,23 @@ type ListOrganizationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Organization include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Organization.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -1733,7 +1772,12 @@ type ListOrganizationMembersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1752,6 +1796,23 @@ type ListOrganizationMembersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for OrganizationMember include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
 // ListSpacesParams defines parameters for ListSpaces.
@@ -1761,7 +1822,12 @@ type ListSpacesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1780,6 +1846,23 @@ type ListSpacesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Space include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Space.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -1816,7 +1899,12 @@ type ListBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1835,6 +1923,23 @@ type ListBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for BridgeWorker.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -1875,12 +1980,20 @@ type InvokeFunctionsParams struct {
 	// RevisionId Revision ID to invoke functions on instead of units
 	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty"`
 
+	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
+	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1910,7 +2023,12 @@ type ListLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1929,6 +2047,23 @@ type ListLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Link include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Link.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -1959,7 +2094,12 @@ type ListSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1978,6 +2118,23 @@ type ListSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Set include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Set.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2008,7 +2165,12 @@ type ListTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2027,6 +2189,23 @@ type ListTargetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Target.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2057,7 +2236,12 @@ type ListTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2076,6 +2260,23 @@ type ListTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Trigger.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2106,7 +2307,12 @@ type ListUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2127,6 +2333,23 @@ type ListUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2154,7 +2377,12 @@ type ListExtendedUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2176,6 +2404,35 @@ type ListExtendedUnitsParams struct {
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
 
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// GetUnitParams defines parameters for GetUnit.
+type GetUnitParams struct {
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -2202,7 +2459,12 @@ type ListExtendedMutationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2221,6 +2483,23 @@ type ListExtendedMutationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Mutation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Mutation.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2251,7 +2530,12 @@ type ListExtendedRevisionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2270,6 +2554,23 @@ type ListExtendedRevisionsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Revision.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2300,7 +2601,12 @@ type ListUnitEventsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2315,10 +2621,27 @@ type ListUnitEventsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on UnitEvent: Action, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for UnitEvent include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
 // ListAllTargetsParams defines parameters for ListAllTargets.
@@ -2328,7 +2651,12 @@ type ListAllTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2348,6 +2676,23 @@ type ListAllTargetsParams struct {
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
 
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Target.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -2365,7 +2710,12 @@ type ListAllUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2386,6 +2736,23 @@ type ListAllUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -2410,7 +2777,12 @@ type ListUsersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2429,6 +2801,23 @@ type ListUsersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for User include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
 // CreateActionResultJSONRequestBody defines body for CreateActionResult for application/json ContentType.

@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/confighub/sdk/function/api"
@@ -142,17 +141,21 @@ var outputValuesOnly bool
 var outputRaw bool
 var dataOnly bool
 var outputJQ string
+var unitIdentifiers []string
+var dryRun bool
 
 func init() {
 	functionDoCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionDoCmd.Flags().BoolVar(&combine, "combine", false, "combine results")
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
-	functionDoCmd.Flags().BoolVar(&outputRaw, "output-raw", false, "show output as raw JSON")
+	functionDoCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
 	functionDoCmd.Flags().BoolVar(&outputValuesOnly, "output-values-only", false, "show output values (from functions returning AttributeValueList) without other response details")
 	functionDoCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	// Same flag as unit update
 	functionDoCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
+	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
+	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	enableWhereFlag(functionDoCmd)
 	enableQuietFlag(functionDoCmd)
 	enableJsonFlag(functionDoCmd)
@@ -213,6 +216,47 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 	return funcArgs
 }
 
+// buildWhereClauseFromUnits generates a WHERE clause from unit identifiers
+func buildWhereClauseFromUnits(unitIds []string) (string, error) {
+	if len(unitIds) == 0 {
+		return "", nil
+	}
+	
+	// Check if the first identifier is a UUID to determine type
+	_, err := uuid.Parse(unitIds[0])
+	isUUID := err == nil
+	
+	// Validate all identifiers are of the same type
+	for i, unitId := range unitIds {
+		_, parseErr := uuid.Parse(unitId)
+		currentIsUUID := parseErr == nil
+		
+		if i == 0 {
+			continue // First one sets the type
+		}
+		
+		if currentIsUUID != isUUID {
+			return "", fmt.Errorf("all unit identifiers must be the same type (all UUIDs or all slugs)")
+		}
+	}
+	
+	// Build the appropriate WHERE clause
+	var field string
+	if isUUID {
+		field = "UnitID"
+	} else {
+		field = "Slug"
+	}
+	
+	// Build the IN clause
+	var values []string
+	for _, unitId := range unitIds {
+		values = append(values, fmt.Sprintf("'%s'", unitId))
+	}
+	
+	return fmt.Sprintf("%s IN (%s)", field, strings.Join(values, ", ")), nil
+}
+
 func initializeFunctionInvocation(functionName string, args []string) *goclientnew.FunctionInvocation {
 	funcArgs := parseFunctionArguments(args)
 	return &goclientnew.FunctionInvocation{
@@ -233,6 +277,23 @@ func initializeFunctionInvocationsRequest(cmdArgs []string) *goclientnew.Functio
 func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	var resp *[]goclientnew.FunctionInvocationResponse
 
+	// Check for mutual exclusivity between --unit and --where flags
+	if len(unitIdentifiers) > 0 && where != "" {
+		return fmt.Errorf("--unit and --where flags are mutually exclusive")
+	}
+
+	// Build WHERE clause from unit identifiers if provided
+	var effectiveWhere string
+	if len(unitIdentifiers) > 0 {
+		whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
+		if err != nil {
+			return err
+		}
+		effectiveWhere = whereClause
+	} else {
+		effectiveWhere = where
+	}
+
 	// Functions operate on lists of units. That makes it harder to know what ToolchainType(s)
 	// are having functions invoked on them and what workers the functions might be running in.
 	// There could be multiple of each.
@@ -243,9 +304,12 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	newBody := initializeFunctionInvocationsRequest(args)
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		if where != "" {
-			where = url.QueryEscape(where)
-			newParams.Where = &where
+		if effectiveWhere != "" {
+			newParams.Where = &effectiveWhere
+		}
+		if dryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
 		if IsAPIError(err, funcRes) {
@@ -254,9 +318,12 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		resp = funcRes.JSON200
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
-		if where != "" {
-			where = url.QueryEscape(where)
-			newParams.Where = &where
+		if effectiveWhere != "" {
+			newParams.Where = &effectiveWhere
+		}
+		if dryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
 		if IsAPIError(err, funcRes) {
@@ -269,7 +336,13 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	if resp == nil {
 		resp = &[]goclientnew.FunctionInvocationResponse{}
 	}
-	outputFunctionInvocationResponse(resp)
+
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+
+	if !hasAlternativeOutput {
+		outputFunctionInvocationResponse(resp)
+	}
 	if jsonOutput {
 		displayJSON(resp)
 	}

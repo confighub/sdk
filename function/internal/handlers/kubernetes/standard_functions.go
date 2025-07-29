@@ -627,7 +627,7 @@ func evaluateResourceQuantityComparison(expr *api.RelationalExpression, value st
 
 func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 	// Create custom comparator for Kubernetes resource quantities
-	customComparators := []generic.CustomStringComparator{
+	customComparators := []api.CustomStringComparator{
 		NewResourceQuantityComparison(),
 	}
 

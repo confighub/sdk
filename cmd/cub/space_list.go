@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
@@ -15,11 +14,11 @@ var spaceListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List spaces",
 	Long:  getSpaceListHelp(),
-	RunE: spaceListCmdRun,
+	RunE:  spaceListCmdRun,
 }
 
 func getSpaceListHelp() string {
-	baseHelp := `List spaces you have access to in this organization. The output includes display names, slugs, space IDs, and organization IDs.
+	baseHelp := `List spaces you have access to in this organization. The output includes slugs, environment labels, and summary counts for units, workers, targets, and triggers.
 
 Examples:
   # List all spaces with headers
@@ -55,19 +54,18 @@ Initial setup:
 
 Environment-specific operations:
   # Find production spaces
-  cub space list --where "Labels.Environment = 'prod'" --slugs-only
+  cub space list --where "Labels.Environment = 'prod'" --slugs
   
   # Find staging spaces
-  cub space list --where "Labels.Environment = 'staging'" --slugs-only
+  cub space list --where "Labels.Environment = 'staging'" --slugs
 
 Key information provided:
 - Space slugs: Used for --space flag and context setting
-- Display names: Human-readable space descriptions  
-- Space IDs: Unique identifiers for API operations
+- Summary counts: Numbers of units, workers, targets, and triggers in each space
 - Organization context: Which org these spaces belong to
 
 Important flags for agents:
-- --slugs-only: Get just space identifiers for automation
+- --slugs: Get just space identifiers for automation
 - --json + --jq: Extract specific fields for further processing
 - --where: Filter spaces by display name or other attributes
 - --quiet: Suppress table headers for clean output
@@ -101,13 +99,18 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "#Units", "#Gated", "#Upgradable", "#Workers", "#Targets", "#Triggers"})
+		table.SetHeader([]string{"Slug", "Environment", "#Units", "#Gated", "#Upgradable", "#Workers", "#Targets", "#Triggers"})
 	}
 	for _, extendedSpace := range extendedSpaces {
+		environment := ""
+		if extendedSpace.Space.Labels != nil {
+			if env, exists := extendedSpace.Space.Labels["Environment"]; exists {
+				environment = env
+			}
+		}
 		table.Append([]string{
-			extendedSpace.Space.DisplayName,
 			extendedSpace.Space.Slug,
-			extendedSpace.Space.SpaceID.String(),
+			environment,
 			fmt.Sprintf("%d", extendedSpace.TotalUnitCount),
 			fmt.Sprintf("%d", extendedSpace.GatedUnitCount),
 			fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount),
@@ -122,7 +125,6 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 func apiListSpaces(whereFilter string) ([]*goclientnew.Space, error) {
 	newParams := &goclientnew.ListSpacesParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
@@ -145,7 +147,6 @@ func apiListExtendedSpaces(whereFilter string) ([]*goclientnew.ExtendedSpace, er
 	summary := true
 	newParams.Summary = &summary
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)

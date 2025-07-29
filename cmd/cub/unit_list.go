@@ -5,25 +5,23 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
 var unitListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List units",
-	Long:  getUnitListHelp(),
+	Use:         "list",
+	Short:       "List units",
+	Long:        getUnitListHelp(),
 	Args:        cobra.ExactArgs(0),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        unitListCmdRun,
 }
 
 func getUnitListHelp() string {
-	baseHelp := `List units you have access to in a space. The output includes display names, slugs, unit IDs, data size, head revision, apply gates, and last change timestamp.
+	baseHelp := `List units you have access to in a space. The output includes slugs, data size, head revision, apply gates, and last change timestamp.
 
 Examples:
   # List all units in a space
@@ -33,7 +31,7 @@ Examples:
   cub unit list --space my-space --no-header
 
   # List only unit slugs
-  cub unit list --space my-space --no-header --slugs-only
+  cub unit list --space my-space --no-header --slugs
 
   # List units with specific labels
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
@@ -54,14 +52,32 @@ Examples:
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
   # List units with JSON output and JQ filtering
-  cub unit list --space my-space --quiet --json --jq '.[].UnitID'`
+  cub unit list --space my-space --quiet --json --jq '.[].Slug'
+
+  # List units with custom columns
+  cub unit list --space my-space --columns Unit.Slug,Target.Slug
+
+  # List units showing label and annotation values
+  cub unit list --space my-space --columns Unit.Slug,Unit.Labels.env,Unit.Labels.tier,Unit.Annotations.owner
+
+Available columns (prefixed with Unit.):
+  - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
+  - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
+  - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, LiveState, ApprovedBy
+  - Relationships: SetID, TargetID, ToolchainType
+  - Revisions: LastAppliedRevisionNum, PreviousLiveRevisionNum
+  - Dynamic: Labels.<key>, Annotations.<key>
+
+Example extended available columns (not exhaustive):
+  - Basic: Space.Slug, Target.Slug
+  - Status: UnitStatus.Status`
 
 	agentContext := `Essential for discovering and filtering units in ConfigHub.
 
 Agent discovery workflow:
 1. Start with 'unit list --space SPACE' to see all units
 2. Use --where filters to find specific units of interest
-3. Use --slugs-only for scripting and automation
+3. Use --slugs for scripting and automation
 
 Key filtering patterns for agents:
 
@@ -82,7 +98,7 @@ Content filtering:
 
 Output formats:
 - --json + --jq: Extract specific fields for further processing
-- --slugs-only: Get unit identifiers for use with other commands
+- --slugs: Get unit identifiers for use with other commands
 - --quiet: Suppress table headers for clean output
 
 The --where flag supports SQL-like expressions with AND conjunctions. All attribute names are PascalCase as in JSON output.`
@@ -92,11 +108,59 @@ The --where flag supports SQL-like expressions with AND conjunctions. All attrib
 
 var resourceType string
 var whereData string
+var columns string
+
+// Default columns to display when --columns is not specified
+// var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "DataBytes", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+
+// Unit-specific aliases
+var unitAliases = map[string]string{
+	"Name": "Slug",
+	"ID":   "UnitID",
+}
+
+// Unit-specific custom columns
+var unitCustomColumns = map[string]func(interface{}) string{
+	"DataBytes": func(obj interface{}) string {
+		if unit, ok := obj.(*goclientnew.ExtendedUnit); ok {
+			return fmt.Sprintf("%d", len(unit.Unit.Data))
+		}
+		if unit, ok := obj.(*goclientnew.Unit); ok {
+			return fmt.Sprintf("%d", len(unit.Data))
+		}
+		return "0"
+	},
+	"UpgradeNeeded": func(obj interface{}) string {
+		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
+			unit := extendedUnit.Unit
+			if extendedUnit.UpstreamUnit != nil {
+				if unit.UpstreamRevisionNum < extendedUnit.UpstreamUnit.HeadRevisionNum {
+					return "Yes"
+				}
+				if unit.UpstreamRevisionNum > 0 {
+					return "No"
+				}
+			}
+		}
+		return ""
+	},
+	"UnappliedChanges": func(obj interface{}) string {
+		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
+			unit := extendedUnit.Unit
+			if unit.HeadRevisionNum > unit.LiveRevisionNum {
+				return "Yes"
+			}
+		}
+		return ""
+	},
+}
 
 func init() {
 	addStandardListFlags(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
+	unitListCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,SetID,Labels.env,Annotations.owner)")
 	unitCmd.AddCommand(unitListCmd)
 }
 
@@ -121,18 +185,14 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		displayListResults(extendedUnits, getExtendedUnitSlug, displayExtendedUnitList)
 	} else {
-		var units []*goclientnew.Unit
-		units, err = apiListUnits(selectedSpaceID, where)
+		var units []*goclientnew.ExtendedUnit
+		units, err = apiListExtendedUnits(selectedSpaceID, where)
 		if err != nil {
 			return err
 		}
-		displayListResults(units, getUnitSlug, displayUnitList)
+		displayListResults(units, getExtendedUnitSlug, displayExtendedUnitList)
 	}
 	return nil
-}
-
-func getUnitSlug(unit *goclientnew.Unit) string {
-	return unit.Slug
 }
 
 func getExtendedUnitSlug(extendedUnit *goclientnew.ExtendedUnit) string {
@@ -143,86 +203,61 @@ func getUnitExtendedSlug(unitExtended *goclientnew.UnitExtended) string {
 	return unitExtended.Unit.Slug
 }
 
-func appendUnitDetails(unitDetails *goclientnew.Unit, table *tablewriter.Table) {
-	applyGates := "None"
-	if len(unitDetails.ApplyGates) != 0 {
-		if len(unitDetails.ApplyGates) > 1 {
-			applyGates = "Multiple"
-		} else {
-			for key := range unitDetails.ApplyGates {
-				applyGates = key
-			}
-		}
-	}
-	table.Append([]string{
-		unitDetails.DisplayName,
-		unitDetails.Slug,
-		unitDetails.UnitID.String(),
-		fmt.Sprintf("%d", len(unitDetails.Data)),
-		fmt.Sprintf("%d", unitDetails.HeadRevisionNum),
-		fmt.Sprintf("%d", unitDetails.HeadMutationNum),
-		applyGates,
-		unitDetails.LastChangeDescription,
-	})
-}
-
-func displayUnitList(units []*goclientnew.Unit) {
-	table := tableView()
-	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Data-Bytes", "Head-Revision", "Head-Mutation", "Apply-Gates", "Last-Change"})
-	}
-	for _, unitDetails := range units {
-		appendUnitDetails(unitDetails, table)
-	}
-	table.Render()
-}
-
 func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
-	table := tableView()
-	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Data-Bytes", "Head-Revision", "Head-Mutation", "Apply-Gates", "Last-Change"})
-	}
-	for _, extendedUnitDetails := range units {
-		u := extendedUnitDetails.Unit
-		appendUnitDetails(u, table)
-	}
-	table.Render()
+	DisplayListGeneric(units, columns, defaultUnitColumns, unitAliases, unitCustomColumns)
 }
 
 func apiListUnits(spaceID string, whereFilter string) ([]*goclientnew.Unit, error) {
+	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	units := make([]*goclientnew.Unit, 0, len(extendedUnits))
+	for _, extendedUnit := range extendedUnits {
+		units = append(units, extendedUnit.Unit)
+	}
+	return units, nil
+}
+
+func apiListExtendedUnits(spaceID string, whereFilter string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListUnitsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	newParams.Include = &include
 	unitsRes, err := cubClientNew.ListUnitsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, unitsRes) {
 		return nil, InterpretErrorGeneric(err, unitsRes)
 	}
 
-	units := make([]*goclientnew.Unit, 0, len(*unitsRes.JSON200))
-	for _, unit := range *unitsRes.JSON200 {
-		units = append(units, &unit)
+	extendedUnits := make([]*goclientnew.ExtendedUnit, 0, len(*unitsRes.JSON200))
+	for _, extendedUnit := range *unitsRes.JSON200 {
+		extendedUnits = append(extendedUnits, &extendedUnit)
 	}
-	return units, nil
+	return extendedUnits, nil
 }
 
 func apiSearchUnits(whereFilter string, resourceType string, whereData string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListAllUnitsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
+	}
+	if contains != "" {
+		newParams.Contains = &contains
 	}
 
 	if resourceType != "" {
-		resourceType = url.QueryEscape(resourceType)
 		newParams.ResourceType = &resourceType
 	}
 	if whereData != "" {
-		whereData = url.QueryEscape(whereData)
 		newParams.WhereData = &whereData
 	}
-	include := url.QueryEscape("UnitEventID,TargetID")
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	newParams.Include = &include
 	res, err := cubClientNew.ListAllUnits(ctx, newParams)
 	if err != nil {

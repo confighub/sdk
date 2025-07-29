@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
 
+	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -81,6 +82,7 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 
 func init() {
 	addStandardGetFlags(unitGetCmd)
+	enableVerboseFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	unitCmd.AddCommand(unitGetCmd)
 }
@@ -137,6 +139,20 @@ func displayUnitExtendedDetails(view *tablewriter.Table, unitExtendedDetails *go
 	}
 }
 
+func countResources(unitDetails *goclientnew.Unit) int {
+	if len(*unitDetails.MutationSources) == 0 {
+		return 0
+	}
+	count := 0
+	for i := range *unitDetails.MutationSources {
+		if *(*unitDetails.MutationSources)[i].ResourceMutationInfo.MutationType == goclientnew.MutationType(api.MutationTypeDelete) {
+			continue
+		}
+		count++
+	}
+	return count
+}
+
 func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	if !dataOnly {
 		view := tableView()
@@ -183,6 +199,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
 		}
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.HeadMutationNum)})
+		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(unitDetails))})
 
 		if extended {
 			unitExtended, err := apiGetUnitExtended(unitDetails.UnitID.String())
@@ -194,7 +211,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 
 		view.Render()
 
-		if len(*unitDetails.MutationSources) != 0 {
+		if len(*unitDetails.MutationSources) != 0 && verbose {
 			tprintRaw("")
 			tprintRaw("Mutation Sources:")
 			tprintRaw("-----------------")
@@ -202,7 +219,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 			displayJSON(unitDetails.MutationSources)
 		}
 
-		if unitDetails.LiveState != "" {
+		if unitDetails.LiveState != "" && verbose {
 			tprintRaw("")
 			tprintRaw("Live State:")
 			tprintRaw("-----------")
@@ -212,14 +229,16 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 		}
 	}
 
-	if !dataOnly {
-		tprintRaw("")
-		tprintRaw("Config Data:")
-		tprintRaw("------------")
+	if dataOnly || verbose {
+		if verbose {
+			tprintRaw("")
+			tprintRaw("Config Data:")
+			tprintRaw("------------")
+		}
+		data, err := base64.StdEncoding.DecodeString(unitDetails.Data)
+		failOnError(err)
+		tprintRaw(string(data))
 	}
-	data, err := base64.StdEncoding.DecodeString(unitDetails.Data)
-	failOnError(err)
-	tprintRaw(string(data))
 }
 
 func apiGetUnitExtended(unitID string) (*goclientnew.UnitExtended, error) {
@@ -236,19 +255,30 @@ func apiGetUnitExtended(unitID string) (*goclientnew.UnitExtended, error) {
 }
 
 func apiGetUnit(unitID string) (*goclientnew.Unit, error) {
-	unit, err := apiGetUnitInSpace(unitID, selectedSpaceID)
+	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, selectedSpaceID)
 	if err != nil {
 		return nil, err
 	}
-	if unit.SpaceID.String() != selectedSpaceID {
+	if extendedUnit.Unit.SpaceID.String() != selectedSpaceID {
 		return nil, fmt.Errorf("SERVER DIDN'T CHECK: unit %s not found in space %s (%s)", unitID, selectedSpaceSlug, selectedSpaceID)
 	}
 
-	return unit, nil
+	return extendedUnit.Unit, nil
 }
 
 func apiGetUnitInSpace(unitID string, spaceID string) (*goclientnew.Unit, error) {
-	unitRes, err := cubClientNew.GetUnitWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID))
+	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, spaceID)
+	if err != nil {
+		return nil, err
+	}
+	return extendedUnit.Unit, nil
+}
+
+func apiGetExtendedUnitInSpace(unitID string, spaceID string) (*goclientnew.ExtendedUnit, error) {
+	newParams := &goclientnew.GetUnitParams{}
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	newParams.Include = &include
+	unitRes, err := cubClientNew.GetUnitWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
 	if IsAPIError(err, unitRes) {
 		return nil, InterpretErrorGeneric(err, unitRes)
 	}

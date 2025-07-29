@@ -164,7 +164,10 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		_, _ = io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("[ERROR]: Server returned status %d: %s", resp.StatusCode, resp.Status)
+		log.Printf("[ERROR]: Response body:\n%s\n", string(body))
+
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -237,7 +240,7 @@ func (c *workerClient) handleEventWithLogging(ctx context.Context, eventType str
 			log.Printf("[ERROR] Panic while processing event #%d (type: %s): %v", eventNumber, eventType, r)
 		}
 	}()
-	
+
 	switch eventType {
 	case api.EventWorker, api.EventBridgeWorker, api.EventFunctionWorker:
 		c.handleEvent(ctx, eventType, data)

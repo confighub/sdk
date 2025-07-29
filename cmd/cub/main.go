@@ -399,11 +399,12 @@ func readStdin() ([]byte, error) {
 var flagPopulateModelFromStdin = false
 var flagReplaceModelFromStdin = false
 var where = ""
+var contains = ""
 var verbose = false
 var quiet = false
 var jsonOutput = false
 var jq = ""
-var slugsOnly = false
+var slugs = false
 var extended = false
 var debug = false
 var noheader = false
@@ -444,7 +445,7 @@ func enableReplaceFromStdinFlag(cmd *cobra.Command) {
 }
 
 func enableVerboseFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&verbose, "verbose", false, "Detailed output")
+	cmd.Flags().BoolVar(&verbose, "verbose", false, "Detailed output, additive with default output")
 }
 
 func enableQuietFlag(cmd *cobra.Command) {
@@ -464,19 +465,23 @@ func enableExtendedFlag(cmd *cobra.Command) {
 }
 
 func enableJsonFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output, suppressing default output")
 }
 
-func enableSlugsOnlyFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&slugsOnly, "slugs-only", false, "Only output slugs")
+func enableSlugsFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&slugs, "slugs", false, "Only output slugs, suppressing default output")
 }
 
 func enableJqFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&jq, "jq", "", "jq expression")
+	cmd.Flags().StringVar(&jq, "jq", "", "jq expression, suppressing default output")
 }
 
 func enableWhereFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&where, "where", "", "where filter")
+	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\"")
+}
+
+func enableContainsFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&contains, "contains", "", "Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with --where using AND logic. Example: \"backend\" to find entities with backend in any searchable field")
 }
 
 func enableWaitFlag(cmd *cobra.Command) {
@@ -490,7 +495,8 @@ type Unmarshalable interface {
 
 func addStandardListFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
-	enableSlugsOnlyFlag(cmd)
+	enableContainsFlag(cmd)
+	enableSlugsFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
@@ -581,14 +587,17 @@ func displayJQ(entity any) {
 
 type ModelConstraint interface {
 	goclientnew.Link |
+		goclientnew.ExtendedLink |
 		goclientnew.LinkExtended |
 		goclientnew.Organization |
 		goclientnew.OrganizationExtended |
 		goclientnew.OrganizationMember |
 		goclientnew.User |
+		goclientnew.ExtendedBridgeWorker |
 		goclientnew.BridgeWorker |
 		goclientnew.BridgeWorkerStatus |
 		goclientnew.Revision |
+		goclientnew.ExtendedRevision |
 		goclientnew.RevisionExtended |
 		goclientnew.Mutation |
 		goclientnew.MutationExtended |
@@ -611,7 +620,10 @@ type ModelConstraint interface {
 }
 
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
-	if !quiet {
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully created %s %s (%s)", entityName, slug, id)
 	}
 	if verbose {
@@ -626,7 +638,10 @@ func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 }
 
 func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
-	if !quiet {
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully updated %s %s (%s)", entityName, slug, id)
 	}
 	if verbose {
@@ -641,10 +656,16 @@ func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 }
 
 func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func(entity *Entity) string, display func(entities []*Entity)) {
-	if !quiet && !slugsOnly {
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := slugs || jsonOutput || jq != ""
+
+	if !quiet && !hasAlternativeOutput {
 		display(entities)
 	}
-	if slugsOnly && getSlug != nil {
+	if verbose && !hasAlternativeOutput {
+		display(entities)
+	}
+	if slugs && getSlug != nil {
 		table := tableView()
 		for _, entity := range entities {
 			table.Append([]string{
@@ -662,7 +683,10 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 }
 
 func displayGetResults[Entity ModelConstraint](entity *Entity, display func(entity *Entity)) {
-	if !quiet {
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	if !quiet && !hasAlternativeOutput {
 		display(entity)
 	}
 	if jsonOutput {

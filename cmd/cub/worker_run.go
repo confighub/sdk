@@ -79,7 +79,7 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	if workerRunArgs.enableMultiplexer {
 		cmdArgs = append(cmdArgs, "--enable-multiplexer")
 	}
-	
+
 	workerCommand := exec.Command(workerExecutable, cmdArgs...)
 	workerCommand.Stdin = os.Stdin
 	workerCommand.Stdout = os.Stdout

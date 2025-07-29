@@ -104,15 +104,16 @@ There are also some common flags that affect the output, input, or operation:
 
 - `--from-stdin`: Read the JSON entity body from standard input. Applies to `create` and `update`.
 - `--label`: Add a label or list of labels, comma-separated, using key=value syntax. Applies to `create` and `update`.
-- `--where`: The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. An example conjunction is: `CreatedAt >= '2025-01-07' AND DisplayName = 'test' AND Labels.mykey = 'myvalue'`. Applies to `list`.
+- `--where`: The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`. String pattern operators include `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, and `!~~` for NOT LIKE. String regex operators include `~` for regex matching, `~*` for case-insensitive regex, and `!~`/`!~*` for regex not matching. Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. An example conjunction is: `CreatedAt >= '2025-01-07' AND DisplayName = 'test' AND Labels.mykey = 'myvalue'`. Applies to `list`.
+- `--contains`: Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with `--where` using AND logic. Example: `--contains backend` to find entities with "backend" in any searchable field. Applies to `list`.
 - `--extended`: Additionally returns selected attributes from associated entities. Applies to `get`.
-- `--slugs-only`: Print only slugs, not headers or other details. Applies to `list`.
+- `--slugs`: Print only slugs, suppressing default output. Applies to `list`.
 - `--no-header`: Omit the header line. Applies to `list`.
 - `--debug`: Print API calls. Applies to all verbs.
 - `--quiet`: Do not print default output. Applies to all verbs.
-- `--verbose`: Print details of the returned entity. Applies to `create` and `update`.
-- `--json`: Print formatted JSON of the response payload. Applies to `list`, `get`, `create`, and `update`.
-- `--jq`: Print the result of applying the specified `jq` expression to the response payload. Applies to `list`, `get`, `create`, and `update`.
+- `--verbose`: Print details of the returned entity, additive with default output. Applies to `create` and `update`.
+- `--json`: Print formatted JSON of the response payload, suppressing default output. Applies to `list`, `get`, `create`, and `update`.
+- `--jq`: Print the result of applying the specified `jq` expression to the response payload, suppressing default output. Applies to `list`, `get`, `create`, and `update`.
 - `--space`: Specify the slug of the space of the entity or other area. Overrides the current context. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
 
 ## Sample commands
@@ -251,6 +252,48 @@ Get all apply gates of units with a specific apply gate:
 
 ```
 cub unit list --space $SPACE --where "ApplyGates.complete/no-placeholders = true" --jq '.[].ApplyGates'
+```
+
+Find units with names starting with "test":
+
+```
+cub unit list --space $SPACE --where "Slug LIKE 'test%'"
+```
+
+Find units with names containing "backend" (case-insensitive):
+
+```
+cub unit list --space $SPACE --where "Slug ILIKE '%backend%'"
+```
+
+Find units with slugs matching a regex pattern:
+
+```
+cub unit list --space $SPACE --where "Slug ~ '^app-[0-9]+$'"
+```
+
+Find units NOT starting with "temp":
+
+```
+cub unit list --space $SPACE --where "Slug !~~ 'temp%'"
+```
+
+Find units containing "backend" in any searchable field:
+
+```
+cub unit list --space $SPACE --contains "backend"
+```
+
+Combine text search with specific filtering:
+
+```
+cub unit list --space $SPACE --where "CreatedAt > '2025-01-01'" --contains "api"
+```
+
+Search for units with "prod" in labels or annotations:
+
+```
+cub unit list --space $SPACE --contains "prod"
 ```
 
 ### Functions

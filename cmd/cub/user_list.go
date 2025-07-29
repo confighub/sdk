@@ -5,7 +5,6 @@ package main
 
 import (
 	"log"
-	"net/url"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
@@ -71,7 +70,6 @@ func displayUserList(users []*goclientnew.User) {
 func apiListUsers(whereFilter string) ([]*goclientnew.User, error) {
 	newParams := &goclientnew.ListUsersParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
 	}

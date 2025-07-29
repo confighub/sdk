@@ -5,7 +5,7 @@ package main
 
 import (
 	"fmt"
-	"net/url"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -76,26 +76,24 @@ func getMutationSlugFromExtended(mutationDetails *goclientnew.ExtendedMutation) 
 func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"ID", "Num", "RevisionNum", "RevisionID", "LinkID", "ProvidedResource", "ProvidedPath", "TriggerID", "FunctionName"})
+		table.SetHeader([]string{"Num", "RevisionNum", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "FunctionName"})
 	}
 	for _, extendedMutation := range extendedMutations {
 		mutationDetails := extendedMutation.Mutation
-		var linkID, triggerID string
-		if mutationDetails.LinkID != nil {
-			linkID = mutationDetails.LinkID.String()
+		var linkSlug, triggerSlug string
+		if extendedMutation.Link != nil {
+			linkSlug = extendedMutation.Link.Slug
 		}
-		if mutationDetails.TriggerID != nil {
-			triggerID = mutationDetails.TriggerID.String()
+		if extendedMutation.Trigger != nil {
+			triggerSlug = extendedMutation.Trigger.Slug
 		}
 		table.Append([]string{
-			mutationDetails.MutationID.String(),
 			fmt.Sprintf("%d", mutationDetails.MutationNum),
 			fmt.Sprintf("%d", mutationDetails.RevisionNum),
-			mutationDetails.RevisionID.String(),
-			linkID,
+			linkSlug,
 			mutationDetails.ProvidedResource.ResourceName,
 			mutationDetails.ProvidedPath,
-			triggerID,
+			triggerSlug,
 			mutationDetails.FunctionInvocation.FunctionName,
 		})
 	}
@@ -105,10 +103,9 @@ func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 func apiListMutations(spaceID string, unitID string, whereFilter string) ([]*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.ListExtendedMutationsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
-	include := url.QueryEscape("RevisionID,LinkID,TargetID")
+	include := "RevisionID,LinkID,TargetID"
 	newParams.Include = &include
 	muteRes, err := cubClientNew.ListExtendedMutationsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
 	if IsAPIError(err, muteRes) {
@@ -119,5 +116,11 @@ func apiListMutations(spaceID string, unitID string, whereFilter string) ([]*goc
 	for i, mutation := range *muteRes.JSON200 {
 		muteSlice[i] = &mutation
 	}
+	
+	// Sort by MutationNum descending
+	sort.Slice(muteSlice, func(i, j int) bool {
+		return muteSlice[i].Mutation.MutationNum > muteSlice[j].Mutation.MutationNum
+	})
+	
 	return muteSlice, nil
 }

@@ -4,7 +4,7 @@
 package main
 
 import (
-	"net/url"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -13,10 +13,10 @@ import (
 )
 
 var unitEventListCmd = &cobra.Command{
-	Use:     "list <unit-slug>",
-	Short:   "List unit events",
-	Args:    cobra.ExactArgs(1),
-	RunE:    unitEventListRun,
+	Use:   "list <unit-slug>",
+	Short: "List unit events",
+	Args:  cobra.ExactArgs(1),
+	RunE:  unitEventListRun,
 }
 
 func init() {
@@ -58,12 +58,16 @@ func displayUnitEventList(events []*goclientnew.UnitEvent) {
 		if action.Result != nil {
 			result = string(*action.Result)
 		}
+		terminatedAt := ""
+		if !action.TerminatedAt.IsZero() {
+			terminatedAt = action.TerminatedAt.String()
+		}
 		table.Append([]string{
 			act,
 			result,
 			string(actionStatus(action.Status)),
 			action.CreatedAt.String(),
-			action.TerminatedAt.String(),
+			terminatedAt,
 			action.Message,
 		})
 	}
@@ -73,7 +77,6 @@ func displayUnitEventList(events []*goclientnew.UnitEvent) {
 func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string) ([]*goclientnew.UnitEvent, error) {
 	newParams := &goclientnew.ListUnitEventsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 	eventsRes, err := cubClientNew.ListUnitEventsWithResponse(ctx, spaceID, unitID, newParams)
@@ -84,5 +87,11 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string) 
 	for _, event := range *eventsRes.JSON200 {
 		events = append(events, &event)
 	}
+	
+	// Sort by CreatedAt descending (most recent first)
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].CreatedAt.After(events[j].CreatedAt)
+	})
+	
 	return events, nil
 }

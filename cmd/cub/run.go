@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"net/url"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -36,12 +35,14 @@ func init() {
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	runCmd.PersistentFlags().StringVar(&where, "where", "", "where filter")
+	runCmd.PersistentFlags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	runCmd.PersistentFlags().StringVar(&jq, "jq", "", "jq expression")
 	runCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "No output")
 	runCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON output")
 	runCmd.PersistentFlags().BoolVar(&wait, "wait", false, "wait for completion")
 	runCmd.PersistentFlags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
+	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 
 	RegisterFunctionsAsCobraCommands()
 
@@ -104,12 +105,32 @@ func RegisterFunctionsAsCobraCommands() {
 				Use:   cmdDef.FunctionName,
 				Short: fmt.Sprintf("%s%s Supported toolchains: %s", description, functionAttributes, toolchain),
 				RunE: func(cmd *cobra.Command, args []string) error {
+					// Check for mutual exclusivity between --unit and --where flags
+					if len(unitIdentifiers) > 0 && where != "" {
+						return fmt.Errorf("--unit and --where flags are mutually exclusive")
+					}
+
+					// Build WHERE clause from unit identifiers if provided
+					var effectiveWhere string
+					if len(unitIdentifiers) > 0 {
+						whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
+						if err != nil {
+							return err
+						}
+						effectiveWhere = whereClause
+					} else {
+						effectiveWhere = where
+					}
+
 					newParams := &goclientnew.InvokeFunctionsParams{}
 					newBody := newFunctionInvocationsRequest()
 
-					if where != "" {
-						where = url.QueryEscape(where)
-						newParams.Where = &where
+					if effectiveWhere != "" {
+						newParams.Where = &effectiveWhere
+					}
+					if dryRun {
+						dryRunStr := "true"
+						newParams.DryRun = &dryRunStr
 					}
 
 					var funcParams []goclientnew.FunctionArgument
@@ -192,7 +213,10 @@ func RegisterFunctionsAsCobraCommands() {
 					if respMsgs == nil {
 						respMsgs = &[]goclientnew.FunctionInvocationResponse{}
 					}
-					if !quiet {
+					// Check if any alternative output format is specified
+					hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+
+					if !hasAlternativeOutput {
 						outputFunctionInvocationResponse(respMsgs)
 					}
 					if jsonOutput {

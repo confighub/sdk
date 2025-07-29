@@ -55,7 +55,7 @@ func apiGetUnitEvent(spaceID uuid.UUID, unitID uuid.UUID, eventID uuid.UUID) (*g
 
 func displayUnitEvent(event *goclientnew.UnitEvent) {
 	table := tableView()
-	
+
 	action := ""
 	result := ""
 	if event.Action != nil {
@@ -64,13 +64,18 @@ func displayUnitEvent(event *goclientnew.UnitEvent) {
 	if event.Result != nil {
 		result = string(*event.Result)
 	}
-	
+
 	table.Append([]string{"Action", action})
 	table.Append([]string{"Result", result})
 	table.Append([]string{"Status", string(actionStatus(event.Status))})
 	table.Append([]string{"Created At", event.CreatedAt.String()})
 	table.Append([]string{"Terminated At", event.TerminatedAt.String()})
 	table.Append([]string{"Message", event.Message})
-	
+
+	// Display BridgeWorkerID if present
+	if event.BridgeWorkerID != nil {
+		table.Append([]string{"Bridge Worker ID", event.BridgeWorkerID.String()})
+	}
+
 	table.Render()
 }

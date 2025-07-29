@@ -43,13 +43,13 @@ func apiGetBridgeWorkerFromSlug(slug string) (*goclientnew.BridgeWorker, error) 
 		slugParsed = slugpath[1]
 	}
 	// TODO: Take advantage of where filter.
-	list, err := apiListBridgeworkers(space)
+	list, err := apiListBridgeworkers(space, "")
 	if err != nil {
 		return nil, err
 	}
 	for _, entity := range list {
-		if entity.Slug == slugParsed {
-			return entity, nil
+		if entity.BridgeWorker.Slug == slugParsed {
+			return entity.BridgeWorker, nil
 		}
 	}
 	return nil, fmt.Errorf("bridgeworker %s not found in space %s", slug, space)

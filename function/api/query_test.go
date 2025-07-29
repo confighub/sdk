@@ -10,49 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestOperatorSeparation is the key regression test - validates that standard vs import parsing
-// have different operator support, protecting GenericFnResourceWhereMatchWithComparators
-func TestOperatorSeparation(t *testing.T) {
-	tests := []struct {
-		name        string
-		query       string
-		description string
-	}{
-		{
-			name:        "IN operator separation",
-			query:       "name IN ('test1', 'test2')",
-			description: "IN operator should be rejected by standard parsing but accepted by import parsing",
-		},
-		{
-			name:        "NOT IN operator separation",
-			query:       "kind NOT IN ('Secret', 'ConfigMap')",
-			description: "NOT IN operator should be rejected by standard parsing but accepted by import parsing",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Standard parsing should reject IN/NOT IN
-			_, err := ParseAndValidateWhereFilter(tt.query)
-			assert.Error(t, err, "Standard parsing should reject query: %s", tt.query)
-
-			// Import parsing should accept IN/NOT IN
-			expressions, err := ParseAndValidateWhereFilterForImport(tt.query)
-			assert.NoError(t, err, "Import parsing should accept query: %s", tt.query)
-			assert.NotEmpty(t, expressions, "Import parsing should return expressions")
-		})
-	}
-}
-
-// TestStandardParsingOperatorLimits ensures standard parsing only supports basic operators
-func TestStandardParsingOperatorLimits(t *testing.T) {
+// TestStandardParsingOperators ensures standard parsing supports intended operators
+func TestStandardParsingOperators(t *testing.T) {
 	// Test that standard operators work
 	validQuery := "name = 'test' AND age > 18"
 	expressions, err := ParseAndValidateWhereFilter(validQuery)
 	assert.NoError(t, err, "Standard operators should work")
 	assert.Len(t, expressions, 2, "Should parse two expressions")
 
-	// Test that enhanced operators are rejected
+	// Test newer enhanced operators
 	enhancedQueries := []string{
 		"name IN ('test1', 'test2')",
 		"kind NOT IN ('Secret')",
@@ -60,12 +26,12 @@ func TestStandardParsingOperatorLimits(t *testing.T) {
 
 	for _, query := range enhancedQueries {
 		_, err := ParseAndValidateWhereFilter(query)
-		assert.Error(t, err, "Enhanced operator should be rejected in standard parsing: %s", query)
+		assert.NoError(t, err, "IN and NOT IN should be supported in standard parsing: %s", query)
 	}
 }
 
-// TestImportParsingEnhancedOperators validates import-specific operator support
-func TestImportParsingEnhancedOperators(t *testing.T) {
+// TestImportParsingOperators validates import-specific operator support
+func TestImportParsingOperators(t *testing.T) {
 	tests := []struct {
 		name    string
 		query   string

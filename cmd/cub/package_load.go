@@ -60,6 +60,9 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		if resp.JSON200 == nil {
+			return fmt.Errorf("failed to create space %s: %s", space.Slug, resp.Body)
+		}
 		createdSpaces[space.Slug] = *resp.JSON200
 	}
 	for _, worker := range manifest.Workers {
@@ -91,7 +94,11 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		targetDetails.SpaceID = createdSpaces[target.SpaceSlug].SpaceID
-		targetDetails.BridgeWorkerID = createdWorkers[target.Worker].BridgeWorkerID
+		worker, ok := createdWorkers[target.Worker]
+		if !ok {
+			return fmt.Errorf("worker %s not found for target %s", target.Worker, target.Slug)
+		}
+		targetDetails.BridgeWorkerID = worker.BridgeWorkerID
 		resp, err := cubClientNew.CreateTargetWithResponse(ctx, createdSpaces[target.SpaceSlug].SpaceID, *targetDetails)
 		if err != nil {
 			return err
@@ -114,9 +121,11 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		unitDetails.SpaceID = createdSpaces[unit.SpaceSlug].SpaceID
-		target, ok := createdTargets[unit.Target]
-		if ok {
-			unitDetails.TargetID = &target.TargetID
+		if unit.Target != "" {
+			target, ok := createdTargets[unit.Target]
+			if ok {
+				unitDetails.TargetID = &target.TargetID
+			}
 		}
 		unitData, err := os.ReadFile(dir + unit.UnitDataLoc)
 		if err != nil {

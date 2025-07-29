@@ -4,8 +4,6 @@
 package main
 
 import (
-	"net/url"
-
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -14,7 +12,7 @@ import (
 var setListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List sets",
-	Long: `List sets you have access to in a space. The output includes display names, slugs, set IDs, space IDs, and organization IDs.
+	Long: `List sets you have access to in a space. The output includes slugs and space slugs.
 
 Examples:
   # List all sets in a space
@@ -24,7 +22,7 @@ Examples:
   cub set list --space my-space --no-header
 
   # List only set slugs
-  cub set list --space my-space --no-header --slugs-only
+  cub set list --space my-space --no-header --slugs
 
   # List sets in JSON format
   cub set list --space my-space --quiet --json
@@ -33,7 +31,7 @@ Examples:
   cub set list --space my-space --quiet --json --debug
 
   # List sets with custom JQ filter
-  cub set list --space my-space --quiet --jq '.[].SetID'
+  cub set list --space my-space --quiet --jq '.[].Slug'
 
   # List sets matching a specific slug
   cub set list --space my-space --where "Slug = 'my-set'"
@@ -65,15 +63,12 @@ func getSetSlug(set *goclientnew.Set) string {
 func displaySetList(sets []*goclientnew.Set) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Space-ID", "Org-ID"})
+		table.SetHeader([]string{"Slug", "Space"})
 	}
 	for _, set := range sets {
 		table.Append([]string{
-			set.DisplayName,
 			set.Slug,
-			set.SetID.String(),
-			set.SpaceID.String(),
-			set.OrganizationID.String(),
+			selectedSpaceSlug,
 		})
 	}
 	table.Render()
@@ -82,7 +77,6 @@ func displaySetList(sets []*goclientnew.Set) {
 func apiListSets(spaceID string, whereFilter string) ([]*goclientnew.Set, error) {
 	newParams := goclientnew.ListSetsParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		newParams.Where = &whereFilter
 	}
 

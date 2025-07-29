@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -101,7 +100,7 @@ func displayMutationExtendedDetails(mutationExtendedDetails *goclientnew.Mutatio
 
 func apiGetMutation(mutationID string, unitID string) (*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.GetExtendedMutationParams{}
-	include := url.QueryEscape("RevisionID,LinkID,TargetID")
+	include := "RevisionID,LinkID,TargetID"
 	newParams.Include = &include
 	muteRes, err := cubClientNew.GetExtendedMutationWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID),

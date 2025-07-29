@@ -75,7 +75,6 @@ func displaySetExtendedDetails(setExtendedDetails *goclientnew.SetExtended) {
 func apiGetSet(setID string) (*goclientnew.Set, error) {
 	newParams := goclientnew.GetSetParams{}
 	// if whereFilter != "" {
-	// 	whereFilter = url.QueryEscape(whereFilter)
 	// 	newParams.Where = &whereFilter
 	// }
 	setDetails, err := cubClientNew.GetSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(setID), &newParams)

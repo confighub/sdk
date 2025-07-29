@@ -5,7 +5,6 @@ package main
 
 import (
 	"log"
-	"net/url"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -74,7 +73,6 @@ func displayOrganizationMemberList(organizationMembers []*goclientnew.Organizati
 func apiListOrganizationMembers(whereFilter string) ([]*goclientnew.OrganizationMember, error) {
 	newParams := &goclientnew.ListOrganizationMembersParams{}
 	if whereFilter != "" {
-		whereFilter = url.QueryEscape(whereFilter)
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
 	}

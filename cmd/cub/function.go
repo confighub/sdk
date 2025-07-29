@@ -29,7 +29,7 @@ Functions are categorized as:
 - Validation (checking): no-placeholders, cel-validate, is-approved
 
 Functions are toolchain-specific (Kubernetes/YAML, OpenTofu/HCL, etc.) and operate on units matching specified criteria.`
-	
+
 	return getCommandHelp(baseHelp, agentContext)
 }
 

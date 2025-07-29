@@ -93,6 +93,16 @@ spec:
 		"spec.template.spec.containers.?name=main.image#uri='nginx'",
 		"spec.template.spec.containers.?name=main.image#reference=':1.14.2'",
 		"spec.template.spec.containers.*.image#reference=':1.14.2'",
+		"spec.template.spec.containers.1.image LIKE 'nginx:%'",
+		"spec.template.spec.containers.1.image ILIKE 'Nginx:%'",
+		"spec.template.spec.containers.1.image ~~ 'nginx:%'",
+		"spec.template.spec.containers.1.image ~ 'nginx:.*'",
+		"spec.template.spec.containers.1.image ~* 'Nginx:.*'",
+		"spec.template.spec.containers.0.image !~~ 'nginx:%'",
+		"spec.template.spec.containers.0.image !~ 'nginx:.*'",
+		"spec.template.spec.containers.0.image !~* 'Nginx:.*'",
+		"spec.template.spec.containers.1.image IN ('nginx:1.14.1', 'nginx:1.14.2')",
+		"spec.template.spec.containers.1.image NOT IN ('nginx:latest')",
 	}
 
 	for _, expression := range expressions {

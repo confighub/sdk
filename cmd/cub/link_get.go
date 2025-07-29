@@ -109,9 +109,9 @@ func apiGetLinkFromSlug(slug string) (*goclientnew.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, link := range links {
-		if link.Slug == slug {
-			return link, nil
+	for _, extendedLink := range links {
+		if extendedLink.Link.Slug == slug {
+			return extendedLink.Link, nil
 		}
 	}
 	return nil, fmt.Errorf("link %s not found in space %s", slug, selectedSpaceSlug)

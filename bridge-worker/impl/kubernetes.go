@@ -15,6 +15,7 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
+	"github.com/gosimple/slug"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -124,7 +125,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
 		targets = append(targets, api.Target{
-			Name: fmt.Sprintf("%s-%s", opts.Slug, contextName),
+			Name: fmt.Sprintf("%s-%s", opts.Slug, slug.Make(contextName)),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: "2m0s",

@@ -22,11 +22,27 @@ import (
 )
 
 var authLoginCmd = &cobra.Command{
-	Use:   "login",
+	Use:   "login [organization]",
 	Short: "Log into ConfigHub",
-	Long:  `Authenticate the CLI to ConfigHub via Browser Login`,
-	Args:  cobra.ExactArgs(0),
-	RunE:  authLoginCmdRun,
+	Long: `Authenticate the CLI to ConfigHub via Browser Login
+
+The organization argument is optional and can be a partial match of:
+- Organization Display Name (e.g., "ConfigHub")
+- Organization Slug (e.g., "org_01jsqq70m483a3b1fk3zfs9z1a")
+- Organization ID (ConfigHub UUID, e.g., "2af2356f-8587-4816-8619-77dfa85fb524")
+- External ID (WorkOS ID, e.g., "org_01JSQQ70M483A3B1FK3ZFS9Z1A")
+
+Examples:
+  # Login without specifying organization
+  cub auth login
+  
+  # Login to specific organization by display name
+  cub auth login "ConfigHub"
+  
+  # Login to specific organization by slug
+  cub auth login "org_01jsqq70m483a3b1fk3zfs9z1a"`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: authLoginCmdRun,
 }
 
 func init() {
@@ -34,7 +50,23 @@ func init() {
 }
 
 func authLoginCmdRun(cmd *cobra.Command, args []string) error {
-	return AuthorizeUser()
+	var desiredOrg string
+	if len(args) > 0 {
+		desiredOrg = args[0]
+	}
+
+	// First, authenticate normally
+	err := AuthorizeUser()
+	if err != nil {
+		return err
+	}
+
+	// If a specific organization was requested, switch to it
+	if desiredOrg != "" {
+		return switchToOrganization(desiredOrg)
+	}
+
+	return nil
 }
 
 // AuthorizeUser implements the PKCE OAuth2 flow.
@@ -154,7 +186,7 @@ func AuthorizeUser() error {
 
 	select {
 	case <-ctx.Done():
-		tprint("Successfully logged into " + cubContext.ConfigHubURL)
+		tprint("Successfully logged into %s (Organization: %s)", cubContext.ConfigHubURL, authSession.OrganizationID)
 	case <-time.After(2 * time.Minute):
 		tprint("Timed out waiting for authentication")
 	}

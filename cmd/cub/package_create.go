@@ -9,7 +9,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -42,11 +41,10 @@ func packageCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	newParams := &goclientnew.ListAllUnitsParams{}
 	if where != "" {
-		whereFilter := url.QueryEscape(where)
-		newParams.Where = &whereFilter
+		newParams.Where = &where
 	}
 
-	include := url.QueryEscape("UnitEventID,TargetID,SpaceID")
+	include := "UnitEventID,TargetID,SpaceID"
 	newParams.Include = &include
 	res, err := cubClientNew.ListAllUnits(ctx, newParams)
 	if err != nil {
@@ -238,6 +236,9 @@ func pruneUnit(unit *goclientnew.Unit) {
 	unit.OrganizationID = uuid.Nil
 	unit.SpaceID = uuid.Nil
 	unit.SetID = nil
+	unit.UpstreamOrganizationID = nil
+	unit.UpstreamSpaceID = nil
+	unit.UpstreamUnitID = nil
 	unit.LastChangeDescription = ""
 	unit.Annotations = nil
 	unit.ApplyGates = nil
@@ -275,7 +276,7 @@ func pruneWorker(worker *goclientnew.BridgeWorker) {
 	worker.SpaceID = uuid.Nil
 	worker.Secret = ""
 	worker.CursorID = 0
-	worker.LastHeartbeatReceivedAt = time.Time{}
+	worker.LastSeenAt = time.Time{}
 	worker.Condition = ""
 }
 

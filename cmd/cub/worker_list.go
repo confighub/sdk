@@ -10,10 +10,11 @@ import (
 )
 
 var workerListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List workers",
-	Long:  `List workers`,
-	RunE:  workerListCmdRun,
+	Use:         "list",
+	Short:       "List workers",
+	Long:        `List workers in a space or across all spaces. Use --space "*" to list workers across all spaces.`,
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        workerListCmdRun,
 }
 
 func init() {
@@ -22,43 +23,90 @@ func init() {
 }
 
 func workerListCmdRun(_ *cobra.Command, _ []string) error {
-	workers, err := apiListBridgeworkers(selectedSpaceID)
-	if err != nil {
-		return err
+	var workers []*goclientnew.ExtendedBridgeWorker
+	var err error
+	if selectedSpaceID == "*" {
+		// Cross-space listing
+		workers, err = apiListAllBridgeWorkers(where)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Single space listing
+		workers, err = apiListBridgeworkers(selectedSpaceID, where)
+		if err != nil {
+			return err
+		}
 	}
-
-	displayListResults(workers, getWorkerSlug, displayWorkerList)
+	displayListResults(workers, getExtendedWorkerSlug, displayExtendedWorkerList)
 	return nil
 }
 
-func apiListBridgeworkers(spaceID string) ([]*goclientnew.BridgeWorker, error) {
-	workersRes, err := cubClientNew.ListBridgeWorkersWithResponse(ctx, uuid.MustParse(spaceID), nil)
+func apiListBridgeworkers(spaceID string, whereFilter string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+	newParams := &goclientnew.ListBridgeWorkersParams{}
+	if whereFilter != "" {
+		newParams.Where = &whereFilter
+	}
+	include := "SpaceID"
+	newParams.Include = &include
+	workersRes, err := cubClientNew.ListBridgeWorkersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, workersRes) {
 		return nil, InterpretErrorGeneric(err, workersRes)
 	}
 
-	workers := make([]*goclientnew.BridgeWorker, 0, len(*workersRes.JSON200))
+	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))
 	for _, worker := range *workersRes.JSON200 {
-		workers = append(workers, worker.BridgeWorker)
+		workers = append(workers, &worker)
 	}
 	return workers, nil
 }
 
-func getWorkerSlug(worker *goclientnew.BridgeWorker) string {
-	return worker.Slug
+func apiListAllBridgeWorkers(whereFilter string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+	newParams := &goclientnew.ListAllBridgeWorkersParams{}
+	if whereFilter != "" {
+		newParams.Where = &whereFilter
+	}
+	include := "SpaceID"
+	newParams.Include = &include
+	workersRes, err := cubClientNew.ListAllBridgeWorkersWithResponse(ctx, newParams)
+	if IsAPIError(err, workersRes) {
+		return nil, InterpretErrorGeneric(err, workersRes)
+	}
+
+	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))
+	for _, worker := range *workersRes.JSON200 {
+		workers = append(workers, &worker)
+	}
+	return workers, nil
 }
 
-func displayWorkerList(workers []*goclientnew.BridgeWorker) {
+func getExtendedWorkerSlug(worker *goclientnew.ExtendedBridgeWorker) string {
+	return worker.BridgeWorker.Slug
+}
+
+func displayExtendedWorkerList(workers []*goclientnew.ExtendedBridgeWorker) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Condition"})
+		table.SetHeader([]string{"Slug", "Condition", "Space", "Last-Seen"})
 	}
 	for _, worker := range workers {
+		spaceSlug := ""
+		if worker.Space != nil {
+			spaceSlug = worker.Space.Slug
+		} else if selectedSpaceID != "*" {
+			spaceSlug = selectedSpaceSlug
+		}
+		
+		lastSeen := worker.BridgeWorker.CreatedAt.Format("2006-01-02 15:04:05")
+		if !worker.BridgeWorker.LastSeenAt.IsZero() {
+			lastSeen = worker.BridgeWorker.LastSeenAt.Format("2006-01-02 15:04:05")
+		}
+		
 		table.Append([]string{
-			worker.DisplayName,
-			worker.Slug,
-			worker.BridgeWorkerID.String(),
-			worker.Condition,
+			worker.BridgeWorker.Slug,
+			worker.BridgeWorker.Condition,
+			spaceSlug,
+			lastSeen,
 		})
 	}
 	table.Render()
