@@ -21,8 +21,7 @@ Examples:
   # Get details about a organization-member
   cub organization-member get --json my-organization-member
 
-  # Get extended information about a organization-member
-  cub organization-member --json --extended my-organization-member`,
+`,
 	RunE: organizationMemberGetCmdRun,
 }
 
@@ -35,16 +34,6 @@ func organizationMemberGetCmdRun(cmd *cobra.Command, args []string) error {
 	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0])
 	if err != nil {
 		return err
-	}
-
-	// TODO: enable extend org members
-	if extended {
-		organizationMemberExtended, err := apiGetOrganizationMember(organizationMemberDetails.UserID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(organizationMemberExtended, displayOrganizationMemberExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -65,10 +54,6 @@ func displayOrganizationMemberDetails(member *goclientnew.OrganizationMember) {
 	view.Append([]string{"Organization ID", member.OrganizationID.String()})
 	view.Append([]string{"External Organization ID", member.ExternalOrganizationID})
 	view.Render()
-}
-
-func displayOrganizationMemberExtendedDetails(organizationMemberExtendedDetails *goclientnew.OrganizationMember) {
-	displayOrganizationMemberDetails(organizationMemberExtendedDetails)
 }
 
 // TODO: Org Member Serialization is wrong

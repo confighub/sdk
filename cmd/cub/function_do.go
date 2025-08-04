@@ -275,7 +275,7 @@ func initializeFunctionInvocationsRequest(cmdArgs []string) *goclientnew.Functio
 }
 
 func functionDoCommandRun(cmd *cobra.Command, args []string) error {
-	var resp *[]goclientnew.FunctionInvocationResponse
+	var resp *[]goclientnew.FunctionInvocationsResponse
 
 	// Check for mutual exclusivity between --unit and --where flags
 	if len(unitIdentifiers) > 0 && where != "" {
@@ -315,7 +315,12 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		if IsAPIError(err, funcRes) {
 			return fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
 		}
-		resp = funcRes.JSON200
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
 		if effectiveWhere != "" {
@@ -329,12 +334,17 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		if IsAPIError(err, funcRes) {
 			return InterpretErrorGeneric(err, funcRes)
 		}
-		resp = funcRes.JSON200
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
 	}
 
 	// if server 200 empty-response
 	if resp == nil {
-		resp = &[]goclientnew.FunctionInvocationResponse{}
+		resp = &[]goclientnew.FunctionInvocationsResponse{}
 	}
 
 	// Check if any alternative output format is specified
@@ -406,17 +416,17 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationResponse) {
+func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationsResponse) {
 	for _, respMsg := range *respMsgs {
 		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly {
 			detail := detailView()
 			detail.Append([]string{strings.ToUpper("Success"), fmt.Sprintf("%v", respMsg.Success)})
-			if !respMsg.Success {
-				messages := ""
-				for _, msg := range respMsg.ErrorMessages {
-					messages += msg + "; "
+			if !respMsg.Success && respMsg.Error != nil {
+				messages := respMsg.Error.Message
+				if len(respMsg.Error.Details) > 0 {
+					messages += ": " + strings.Join(respMsg.Error.Details, "; ")
 				}
-				detail.Append([]string{strings.ToUpper("ErrorMessages"), messages})
+				detail.Append([]string{strings.ToUpper("Error"), messages})
 			}
 			detail.Render()
 		}

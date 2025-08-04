@@ -208,10 +208,16 @@ func RegisterFunctionsAsCobraCommands() {
 					if IsAPIError(err, funcRes) {
 						return InterpretErrorGeneric(err, funcRes)
 					}
-					respMsgs := funcRes.JSON200
+					// Handle both successful (200) and partial success/failure (207) responses
+					var respMsgs *[]goclientnew.FunctionInvocationsResponse
+					if funcRes.JSON200 != nil {
+						respMsgs = funcRes.JSON200
+					} else if funcRes.JSON207 != nil {
+						respMsgs = funcRes.JSON207
+					}
 					// Shouldn't happen
 					if respMsgs == nil {
-						respMsgs = &[]goclientnew.FunctionInvocationResponse{}
+						respMsgs = &[]goclientnew.FunctionInvocationsResponse{}
 					}
 					// Check if any alternative output format is specified
 					hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""

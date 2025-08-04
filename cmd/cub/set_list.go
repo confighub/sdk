@@ -21,8 +21,8 @@ Examples:
   # List sets without headers for scripting
   cub set list --space my-space --no-header
 
-  # List only set slugs
-  cub set list --space my-space --no-header --slugs
+  # List only set names
+  cub set list --space my-space --no-header --names
 
   # List sets in JSON format
   cub set list --space my-space --quiet --json

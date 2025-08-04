@@ -76,6 +76,12 @@ func init() {
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.usePlaceholder, "use-placeholder", true, "use confighubplaceholder placeholder")
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm upgrade --skip-crds'")
 
+	// Enable wait flag for this command
+	enableWaitFlag(helmUpgradeCmd)
+
+	// Enable quiet flag for this command
+	enableQuietFlagForOperation(helmUpgradeCmd)
+
 	// Compose command hierarchy
 	helmCmd.AddCommand(helmUpgradeCmd)
 }
@@ -208,7 +214,9 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 			splitResult.CRDs = crdContent.String()
 		}
 	} else if helmUpgradeArgs.skipCRDs && chrt.CRDObjects() != nil && len(chrt.CRDObjects()) > 0 {
-		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
+		if !quiet {
+			tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
+		}
 	}
 
 	// 6. Check if base unit exists
@@ -226,6 +234,8 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		for k, v := range unitLabels {
 			baseUnit.Labels[k] = v
 		}
+		// Add abstract label to base unit
+		baseUnit.Labels[AbstractLabel] = "true"
 
 		// Update the unit
 		params := &goclientnew.UpdateUnitParams{}
@@ -233,9 +243,16 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to update base unit: %w", err)
 		}
-		tprint("Successfully updated unit '%s' (ID: %s) with resources from chart '%s'", updatedUnit.Slug, updatedUnit.UnitID.String(), helmUpgradeArgs.chartName)
+		if wait {
+			if err := awaitTriggersRemoval(updatedUnit); err != nil {
+				return fmt.Errorf("failed to wait for base unit triggers: %w", err)
+			}
+		}
+		displayUpdateResults(updatedUnit, "unit", updatedUnit.Slug, updatedUnit.UnitID.String(), displayUnitDetails)
 	} else {
-		tprint("No resources found in chart '%s', skipping update of base unit.", helmUpgradeArgs.chartName)
+		if !quiet {
+			tprint("No resources found in chart '%s', skipping update of base unit.", helmUpgradeArgs.chartName)
+		}
 	}
 
 	// 8. Optionally update CRDs unit if flag is set
@@ -243,7 +260,9 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		crdUnitSlug := fmt.Sprintf("%s-crds", helmUpgradeArgs.releaseName)
 		crdUnit, err := apiGetUnitFromSlug(crdUnitSlug)
 		if err != nil {
-			tprint("CRDs unit '%s' not found, skipping CRDs update: %v", crdUnitSlug, err)
+			if !quiet {
+				tprint("CRDs unit '%s' not found, skipping CRDs update: %v", crdUnitSlug, err)
+			}
 		} else {
 			// Encode the CRDs content
 			encodedCRDs := base64.StdEncoding.EncodeToString([]byte(splitResult.CRDs))
@@ -258,7 +277,12 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return fmt.Errorf("failed to update CRDs unit: %w", err)
 			}
-			tprint("Successfully updated CRDs unit '%s' (ID: %s) with CRDs from chart '%s'", updatedCRDUnit.Slug, updatedCRDUnit.UnitID.String(), helmUpgradeArgs.chartName)
+			if wait {
+				if err := awaitTriggersRemoval(updatedCRDUnit); err != nil {
+					return fmt.Errorf("failed to wait for CRDs unit triggers: %w", err)
+				}
+			}
+			displayUpdateResults(updatedCRDUnit, "unit", updatedCRDUnit.Slug, updatedCRDUnit.UnitID.String(), displayUnitDetails)
 		}
 	}
 

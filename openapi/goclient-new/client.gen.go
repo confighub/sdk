@@ -140,9 +140,6 @@ type ClientInterface interface {
 
 	UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetOrganizationExtended request
-	GetOrganizationExtended(ctx context.Context, organizationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListOrganizationMembers request
 	ListOrganizationMembers(ctx context.Context, organizationId openapi_types.UUID, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -195,9 +192,6 @@ type ClientInterface interface {
 
 	UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetBridgeWorkerExtended request
-	GetBridgeWorkerExtended(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListBridgeWorkerFunctions request
 	ListBridgeWorkerFunctions(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -206,9 +200,6 @@ type ClientInterface interface {
 
 	// GetBridgeWorkerStatus request
 	GetBridgeWorkerStatus(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSpaceExtended request
-	GetSpaceExtended(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFunctions request
 	ListFunctions(ctx context.Context, spaceId openapi_types.UUID, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -237,9 +228,6 @@ type ClientInterface interface {
 
 	UpdateLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetLinkExtended request
-	GetLinkExtended(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListSets request
 	ListSets(ctx context.Context, spaceId openapi_types.UUID, params *ListSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -258,9 +246,6 @@ type ClientInterface interface {
 	UpdateSetWithBody(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateSet(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, body UpdateSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetSetExtended request
-	GetSetExtended(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTargets request
 	ListTargets(ctx context.Context, spaceId openapi_types.UUID, params *ListTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -281,9 +266,6 @@ type ClientInterface interface {
 
 	UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetTargetExtended request
-	GetTargetExtended(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListTriggers request
 	ListTriggers(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -302,9 +284,6 @@ type ClientInterface interface {
 	UpdateTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetTriggerExtended request
-	GetTriggerExtended(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUnits request
 	ListUnits(ctx context.Context, spaceId openapi_types.UUID, params *ListUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -354,9 +333,6 @@ type ClientInterface interface {
 	// GetExtendedMutation request
 	GetExtendedMutation(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetMutationExtended request
-	GetMutationExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// RefreshUnit request
 	RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -368,9 +344,6 @@ type ClientInterface interface {
 
 	// GetRevisionData request
 	GetRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetRevisionExtended request
-	GetRevisionExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUnitEvents request
 	ListUnitEvents(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -588,18 +561,6 @@ func (c *Client) UpdateOrganizationWithBody(ctx context.Context, organizationId 
 
 func (c *Client) UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateOrganizationRequest(c.Server, organizationId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetOrganizationExtended(ctx context.Context, organizationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetOrganizationExtendedRequest(c.Server, organizationId)
 	if err != nil {
 		return nil, err
 	}
@@ -838,18 +799,6 @@ func (c *Client) UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetBridgeWorkerExtended(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetBridgeWorkerExtendedRequest(c.Server, spaceId, bridgeWorkerId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListBridgeWorkerFunctions(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListBridgeWorkerFunctionsRequest(c.Server, spaceId, bridgeWorkerId)
 	if err != nil {
@@ -876,18 +825,6 @@ func (c *Client) ListBridgeWorkerStatuses(ctx context.Context, spaceId openapi_t
 
 func (c *Client) GetBridgeWorkerStatus(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetBridgeWorkerStatusRequest(c.Server, spaceId, bridgeWorkerId, statusId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetSpaceExtended(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSpaceExtendedRequest(c.Server, spaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -1018,18 +955,6 @@ func (c *Client) UpdateLink(ctx context.Context, spaceId openapi_types.UUID, lin
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetLinkExtended(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetLinkExtendedRequest(c.Server, spaceId, linkId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListSets(ctx context.Context, spaceId openapi_types.UUID, params *ListSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListSetsRequest(c.Server, spaceId, params)
 	if err != nil {
@@ -1104,18 +1029,6 @@ func (c *Client) UpdateSetWithBody(ctx context.Context, spaceId openapi_types.UU
 
 func (c *Client) UpdateSet(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, body UpdateSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateSetRequest(c.Server, spaceId, setId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetSetExtended(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetSetExtendedRequest(c.Server, spaceId, setId)
 	if err != nil {
 		return nil, err
 	}
@@ -1210,18 +1123,6 @@ func (c *Client) UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, t
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetTargetExtended(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTargetExtendedRequest(c.Server, spaceId, targetId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) ListTriggers(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListTriggersRequest(c.Server, spaceId, params)
 	if err != nil {
@@ -1296,18 +1197,6 @@ func (c *Client) UpdateTriggerWithBody(ctx context.Context, spaceId openapi_type
 
 func (c *Client) UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateTriggerRequest(c.Server, spaceId, triggerId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetTriggerExtended(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetTriggerExtendedRequest(c.Server, spaceId, triggerId)
 	if err != nil {
 		return nil, err
 	}
@@ -1522,18 +1411,6 @@ func (c *Client) GetExtendedMutation(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetMutationExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetMutationExtendedRequest(c.Server, spaceId, unitId, mutationId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRefreshUnitRequest(c.Server, spaceId, unitId)
 	if err != nil {
@@ -1572,18 +1449,6 @@ func (c *Client) GetExtendedRevision(ctx context.Context, spaceId openapi_types.
 
 func (c *Client) GetRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRevisionDataRequest(c.Server, spaceId, unitId, revisionId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetRevisionExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRevisionExtendedRequest(c.Server, spaceId, unitId, revisionId)
 	if err != nil {
 		return nil, err
 	}
@@ -2287,40 +2152,6 @@ func NewUpdateOrganizationRequestWithBody(server string, organizationId openapi_
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetOrganizationExtendedRequest generates requests for GetOrganizationExtended
-func NewGetOrganizationExtendedRequest(server string, organizationId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "organization_id", runtime.ParamLocationPath, organizationId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/organization/%s/extended", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -3109,47 +2940,6 @@ func NewUpdateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.U
 	return req, nil
 }
 
-// NewGetBridgeWorkerExtendedRequest generates requests for GetBridgeWorkerExtended
-func NewGetBridgeWorkerExtendedRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "bridge_worker_id", runtime.ParamLocationPath, bridgeWorkerId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/bridge_worker/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewListBridgeWorkerFunctionsRequest generates requests for ListBridgeWorkerFunctions
 func NewListBridgeWorkerFunctionsRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID) (*http.Request, error) {
 	var err error
@@ -3263,40 +3053,6 @@ func NewGetBridgeWorkerStatusRequest(server string, spaceId openapi_types.UUID, 
 	}
 
 	operationPath := fmt.Sprintf("/space/%s/bridge_worker/%s/status/%s", pathParam0, pathParam1, pathParam2)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetSpaceExtendedRequest generates requests for GetSpaceExtended
-func NewGetSpaceExtendedRequest(server string, spaceId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/extended", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -3796,47 +3552,6 @@ func NewUpdateLinkRequestWithBody(server string, spaceId openapi_types.UUID, lin
 	return req, nil
 }
 
-// NewGetLinkExtendedRequest generates requests for GetLinkExtended
-func NewGetLinkExtendedRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "link_id", runtime.ParamLocationPath, linkId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/link/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewListSetsRequest generates requests for ListSets
 func NewListSetsRequest(server string, spaceId openapi_types.UUID, params *ListSetsParams) (*http.Request, error) {
 	var err error
@@ -4126,47 +3841,6 @@ func NewUpdateSetRequestWithBody(server string, spaceId openapi_types.UUID, setI
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetSetExtendedRequest generates requests for GetSetExtended
-func NewGetSetExtendedRequest(server string, spaceId openapi_types.UUID, setId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "set_id", runtime.ParamLocationPath, setId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/set/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -4464,47 +4138,6 @@ func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, t
 	return req, nil
 }
 
-// NewGetTargetExtendedRequest generates requests for GetTargetExtended
-func NewGetTargetExtendedRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "target_id", runtime.ParamLocationPath, targetId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/target/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewListTriggersRequest generates requests for ListTriggers
 func NewListTriggersRequest(server string, spaceId openapi_types.UUID, params *ListTriggersParams) (*http.Request, error) {
 	var err error
@@ -4794,47 +4427,6 @@ func NewUpdateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, 
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetTriggerExtendedRequest generates requests for GetTriggerExtended
-func NewGetTriggerExtendedRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "trigger_id", runtime.ParamLocationPath, triggerId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/trigger/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -5720,54 +5312,6 @@ func NewGetExtendedMutationRequest(server string, spaceId openapi_types.UUID, un
 	return req, nil
 }
 
-// NewGetMutationExtendedRequest generates requests for GetMutationExtended
-func NewGetMutationExtendedRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam2 string
-
-	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "mutation_id", runtime.ParamLocationPath, mutationId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/mutation/%s/extended", pathParam0, pathParam1, pathParam2)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewRefreshUnitRequest generates requests for RefreshUnit
 func NewRefreshUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
 	var err error
@@ -6005,54 +5549,6 @@ func NewGetRevisionDataRequest(server string, spaceId openapi_types.UUID, unitId
 	}
 
 	operationPath := fmt.Sprintf("/space/%s/unit/%s/revision/%s/data", pathParam0, pathParam1, pathParam2)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetRevisionExtendedRequest generates requests for GetRevisionExtended
-func NewGetRevisionExtendedRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam2 string
-
-	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "revision_id", runtime.ParamLocationPath, revisionId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/revision/%s/extended", pathParam0, pathParam1, pathParam2)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -6621,9 +6117,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error)
 
-	// GetOrganizationExtendedWithResponse request
-	GetOrganizationExtendedWithResponse(ctx context.Context, organizationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetOrganizationExtendedResponse, error)
-
 	// ListOrganizationMembersWithResponse request
 	ListOrganizationMembersWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*ListOrganizationMembersResponse, error)
 
@@ -6676,9 +6169,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error)
 
-	// GetBridgeWorkerExtendedWithResponse request
-	GetBridgeWorkerExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetBridgeWorkerExtendedResponse, error)
-
 	// ListBridgeWorkerFunctionsWithResponse request
 	ListBridgeWorkerFunctionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListBridgeWorkerFunctionsResponse, error)
 
@@ -6687,9 +6177,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetBridgeWorkerStatusWithResponse request
 	GetBridgeWorkerStatusWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetBridgeWorkerStatusResponse, error)
-
-	// GetSpaceExtendedWithResponse request
-	GetSpaceExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSpaceExtendedResponse, error)
 
 	// ListFunctionsWithResponse request
 	ListFunctionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResponse, error)
@@ -6718,9 +6205,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
 
-	// GetLinkExtendedWithResponse request
-	GetLinkExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLinkExtendedResponse, error)
-
 	// ListSetsWithResponse request
 	ListSetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListSetsParams, reqEditors ...RequestEditorFn) (*ListSetsResponse, error)
 
@@ -6739,9 +6223,6 @@ type ClientWithResponsesInterface interface {
 	UpdateSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSetResponse, error)
 
 	UpdateSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, body UpdateSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSetResponse, error)
-
-	// GetSetExtendedWithResponse request
-	GetSetExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSetExtendedResponse, error)
 
 	// ListTargetsWithResponse request
 	ListTargetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTargetsParams, reqEditors ...RequestEditorFn) (*ListTargetsResponse, error)
@@ -6762,9 +6243,6 @@ type ClientWithResponsesInterface interface {
 
 	UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
 
-	// GetTargetExtendedWithResponse request
-	GetTargetExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTargetExtendedResponse, error)
-
 	// ListTriggersWithResponse request
 	ListTriggersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*ListTriggersResponse, error)
 
@@ -6783,9 +6261,6 @@ type ClientWithResponsesInterface interface {
 	UpdateTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
 
 	UpdateTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
-
-	// GetTriggerExtendedWithResponse request
-	GetTriggerExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTriggerExtendedResponse, error)
 
 	// ListUnitsWithResponse request
 	ListUnitsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListUnitsParams, reqEditors ...RequestEditorFn) (*ListUnitsResponse, error)
@@ -6835,9 +6310,6 @@ type ClientWithResponsesInterface interface {
 	// GetExtendedMutationWithResponse request
 	GetExtendedMutationWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*GetExtendedMutationResponse, error)
 
-	// GetMutationExtendedWithResponse request
-	GetMutationExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetMutationExtendedResponse, error)
-
 	// RefreshUnitWithResponse request
 	RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error)
 
@@ -6849,9 +6321,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetRevisionDataWithResponse request
 	GetRevisionDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionDataResponse, error)
-
-	// GetRevisionExtendedWithResponse request
-	GetRevisionExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionExtendedResponse, error)
 
 	// ListUnitEventsWithResponse request
 	ListUnitEventsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*ListUnitEventsResponse, error)
@@ -7011,13 +6480,15 @@ func (r ListOrgFunctionsResponse) StatusCode() int {
 type InvokeFunctionsOnOrgResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]FunctionInvocationResponse
+	JSON200      *[]FunctionInvocationsResponse
+	JSON207      *[]FunctionInvocationsResponse
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
-	JSONDefault  *[]FunctionInvocationResponse
+	JSONDefault  *[]FunctionInvocationsResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -7222,34 +6693,6 @@ func (r UpdateOrganizationResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateOrganizationResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetOrganizationExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *OrganizationExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *OrganizationExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetOrganizationExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetOrganizationExtendedResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7650,34 +7093,6 @@ func (r UpdateBridgeWorkerResponse) StatusCode() int {
 	return 0
 }
 
-type GetBridgeWorkerExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ExtendedBridgeWorker
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *ExtendedBridgeWorker
-}
-
-// Status returns HTTPResponse.Status
-func (r GetBridgeWorkerExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetBridgeWorkerExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ListBridgeWorkerFunctionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -7757,34 +7172,6 @@ func (r GetBridgeWorkerStatusResponse) StatusCode() int {
 	return 0
 }
 
-type GetSpaceExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *SpaceExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *SpaceExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSpaceExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSpaceExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ListFunctionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -7816,13 +7203,15 @@ func (r ListFunctionsResponse) StatusCode() int {
 type InvokeFunctionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]FunctionInvocationResponse
+	JSON200      *[]FunctionInvocationsResponse
+	JSON207      *[]FunctionInvocationsResponse
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
-	JSONDefault  *[]FunctionInvocationResponse
+	JSONDefault  *[]FunctionInvocationsResponse
 }
 
 // Status returns HTTPResponse.Status
@@ -7982,34 +7371,6 @@ func (r UpdateLinkResponse) StatusCode() int {
 	return 0
 }
 
-type GetLinkExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *LinkExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *LinkExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetLinkExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetLinkExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ListSetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8145,34 +7506,6 @@ func (r UpdateSetResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateSetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetSetExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *SetExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *SetExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetSetExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetSetExtendedResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8320,34 +7653,6 @@ func (r UpdateTargetResponse) StatusCode() int {
 	return 0
 }
 
-type GetTargetExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *TargetExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *TargetExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetTargetExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetTargetExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type ListTriggersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8483,34 +7788,6 @@ func (r UpdateTriggerResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateTriggerResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetTriggerExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *TriggerExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *TriggerExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetTriggerExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetTriggerExtendedResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -8908,34 +8185,6 @@ func (r GetExtendedMutationResponse) StatusCode() int {
 	return 0
 }
 
-type GetMutationExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *MutationExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *MutationExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetMutationExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetMutationExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type RefreshUnitResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -9040,34 +8289,6 @@ func (r GetRevisionDataResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetRevisionDataResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetRevisionExtendedResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *RevisionExtended
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *RevisionExtended
-}
-
-// Status returns HTTPResponse.Status
-func (r GetRevisionExtendedResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetRevisionExtendedResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -9420,15 +8641,6 @@ func (c *ClientWithResponses) UpdateOrganizationWithResponse(ctx context.Context
 	return ParseUpdateOrganizationResponse(rsp)
 }
 
-// GetOrganizationExtendedWithResponse request returning *GetOrganizationExtendedResponse
-func (c *ClientWithResponses) GetOrganizationExtendedWithResponse(ctx context.Context, organizationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetOrganizationExtendedResponse, error) {
-	rsp, err := c.GetOrganizationExtended(ctx, organizationId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetOrganizationExtendedResponse(rsp)
-}
-
 // ListOrganizationMembersWithResponse request returning *ListOrganizationMembersResponse
 func (c *ClientWithResponses) ListOrganizationMembersWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*ListOrganizationMembersResponse, error) {
 	rsp, err := c.ListOrganizationMembers(ctx, organizationId, params, reqEditors...)
@@ -9595,15 +8807,6 @@ func (c *ClientWithResponses) UpdateBridgeWorkerWithResponse(ctx context.Context
 	return ParseUpdateBridgeWorkerResponse(rsp)
 }
 
-// GetBridgeWorkerExtendedWithResponse request returning *GetBridgeWorkerExtendedResponse
-func (c *ClientWithResponses) GetBridgeWorkerExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetBridgeWorkerExtendedResponse, error) {
-	rsp, err := c.GetBridgeWorkerExtended(ctx, spaceId, bridgeWorkerId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetBridgeWorkerExtendedResponse(rsp)
-}
-
 // ListBridgeWorkerFunctionsWithResponse request returning *ListBridgeWorkerFunctionsResponse
 func (c *ClientWithResponses) ListBridgeWorkerFunctionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListBridgeWorkerFunctionsResponse, error) {
 	rsp, err := c.ListBridgeWorkerFunctions(ctx, spaceId, bridgeWorkerId, reqEditors...)
@@ -9629,15 +8832,6 @@ func (c *ClientWithResponses) GetBridgeWorkerStatusWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetBridgeWorkerStatusResponse(rsp)
-}
-
-// GetSpaceExtendedWithResponse request returning *GetSpaceExtendedResponse
-func (c *ClientWithResponses) GetSpaceExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSpaceExtendedResponse, error) {
-	rsp, err := c.GetSpaceExtended(ctx, spaceId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetSpaceExtendedResponse(rsp)
 }
 
 // ListFunctionsWithResponse request returning *ListFunctionsResponse
@@ -9727,15 +8921,6 @@ func (c *ClientWithResponses) UpdateLinkWithResponse(ctx context.Context, spaceI
 	return ParseUpdateLinkResponse(rsp)
 }
 
-// GetLinkExtendedWithResponse request returning *GetLinkExtendedResponse
-func (c *ClientWithResponses) GetLinkExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLinkExtendedResponse, error) {
-	rsp, err := c.GetLinkExtended(ctx, spaceId, linkId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetLinkExtendedResponse(rsp)
-}
-
 // ListSetsWithResponse request returning *ListSetsResponse
 func (c *ClientWithResponses) ListSetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListSetsParams, reqEditors ...RequestEditorFn) (*ListSetsResponse, error) {
 	rsp, err := c.ListSets(ctx, spaceId, params, reqEditors...)
@@ -9795,15 +8980,6 @@ func (c *ClientWithResponses) UpdateSetWithResponse(ctx context.Context, spaceId
 		return nil, err
 	}
 	return ParseUpdateSetResponse(rsp)
-}
-
-// GetSetExtendedWithResponse request returning *GetSetExtendedResponse
-func (c *ClientWithResponses) GetSetExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, setId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSetExtendedResponse, error) {
-	rsp, err := c.GetSetExtended(ctx, spaceId, setId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetSetExtendedResponse(rsp)
 }
 
 // ListTargetsWithResponse request returning *ListTargetsResponse
@@ -9867,15 +9043,6 @@ func (c *ClientWithResponses) UpdateTargetWithResponse(ctx context.Context, spac
 	return ParseUpdateTargetResponse(rsp)
 }
 
-// GetTargetExtendedWithResponse request returning *GetTargetExtendedResponse
-func (c *ClientWithResponses) GetTargetExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTargetExtendedResponse, error) {
-	rsp, err := c.GetTargetExtended(ctx, spaceId, targetId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetTargetExtendedResponse(rsp)
-}
-
 // ListTriggersWithResponse request returning *ListTriggersResponse
 func (c *ClientWithResponses) ListTriggersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*ListTriggersResponse, error) {
 	rsp, err := c.ListTriggers(ctx, spaceId, params, reqEditors...)
@@ -9935,15 +9102,6 @@ func (c *ClientWithResponses) UpdateTriggerWithResponse(ctx context.Context, spa
 		return nil, err
 	}
 	return ParseUpdateTriggerResponse(rsp)
-}
-
-// GetTriggerExtendedWithResponse request returning *GetTriggerExtendedResponse
-func (c *ClientWithResponses) GetTriggerExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTriggerExtendedResponse, error) {
-	rsp, err := c.GetTriggerExtended(ctx, spaceId, triggerId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetTriggerExtendedResponse(rsp)
 }
 
 // ListUnitsWithResponse request returning *ListUnitsResponse
@@ -10096,15 +9254,6 @@ func (c *ClientWithResponses) GetExtendedMutationWithResponse(ctx context.Contex
 	return ParseGetExtendedMutationResponse(rsp)
 }
 
-// GetMutationExtendedWithResponse request returning *GetMutationExtendedResponse
-func (c *ClientWithResponses) GetMutationExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetMutationExtendedResponse, error) {
-	rsp, err := c.GetMutationExtended(ctx, spaceId, unitId, mutationId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetMutationExtendedResponse(rsp)
-}
-
 // RefreshUnitWithResponse request returning *RefreshUnitResponse
 func (c *ClientWithResponses) RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error) {
 	rsp, err := c.RefreshUnit(ctx, spaceId, unitId, reqEditors...)
@@ -10139,15 +9288,6 @@ func (c *ClientWithResponses) GetRevisionDataWithResponse(ctx context.Context, s
 		return nil, err
 	}
 	return ParseGetRevisionDataResponse(rsp)
-}
-
-// GetRevisionExtendedWithResponse request returning *GetRevisionExtendedResponse
-func (c *ClientWithResponses) GetRevisionExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionExtendedResponse, error) {
-	rsp, err := c.GetRevisionExtended(ctx, spaceId, unitId, revisionId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetRevisionExtendedResponse(rsp)
 }
 
 // ListUnitEventsWithResponse request returning *ListUnitEventsResponse
@@ -10519,11 +9659,18 @@ func ParseInvokeFunctionsOnOrgResponse(rsp *http.Response) (*InvokeFunctionsOnOr
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []FunctionInvocationResponse
+		var dest []FunctionInvocationsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []FunctionInvocationsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
@@ -10553,6 +9700,13 @@ func ParseInvokeFunctionsOnOrgResponse(rsp *http.Response) (*InvokeFunctionsOnOr
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -10561,7 +9715,7 @@ func ParseInvokeFunctionsOnOrgResponse(rsp *http.Response) (*InvokeFunctionsOnOr
 		response.JSON500 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest []FunctionInvocationResponse
+		var dest []FunctionInvocationsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -11010,74 +10164,6 @@ func ParseUpdateOrganizationResponse(rsp *http.Response) (*UpdateOrganizationRes
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Organization
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetOrganizationExtendedResponse parses an HTTP response from a GetOrganizationExtendedWithResponse call
-func ParseGetOrganizationExtendedResponse(rsp *http.Response) (*GetOrganizationExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetOrganizationExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest OrganizationExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest OrganizationExtended
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -12054,74 +11140,6 @@ func ParseUpdateBridgeWorkerResponse(rsp *http.Response) (*UpdateBridgeWorkerRes
 	return response, nil
 }
 
-// ParseGetBridgeWorkerExtendedResponse parses an HTTP response from a GetBridgeWorkerExtendedWithResponse call
-func ParseGetBridgeWorkerExtendedResponse(rsp *http.Response) (*GetBridgeWorkerExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetBridgeWorkerExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ExtendedBridgeWorker
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest ExtendedBridgeWorker
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListBridgeWorkerFunctionsResponse parses an HTTP response from a ListBridgeWorkerFunctionsWithResponse call
 func ParseListBridgeWorkerFunctionsResponse(rsp *http.Response) (*ListBridgeWorkerFunctionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -12291,74 +11309,6 @@ func ParseGetBridgeWorkerStatusResponse(rsp *http.Response) (*GetBridgeWorkerSta
 	return response, nil
 }
 
-// ParseGetSpaceExtendedResponse parses an HTTP response from a GetSpaceExtendedWithResponse call
-func ParseGetSpaceExtendedResponse(rsp *http.Response) (*GetSpaceExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSpaceExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest SpaceExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest SpaceExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListFunctionsResponse parses an HTTP response from a ListFunctionsWithResponse call
 func ParseListFunctionsResponse(rsp *http.Response) (*ListFunctionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -12442,11 +11392,18 @@ func ParseInvokeFunctionsResponse(rsp *http.Response) (*InvokeFunctionsResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []FunctionInvocationResponse
+		var dest []FunctionInvocationsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []FunctionInvocationsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
@@ -12476,6 +11433,13 @@ func ParseInvokeFunctionsResponse(rsp *http.Response) (*InvokeFunctionsResponse,
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -12484,7 +11448,7 @@ func ParseInvokeFunctionsResponse(rsp *http.Response) (*InvokeFunctionsResponse,
 		response.JSON500 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest []FunctionInvocationResponse
+		var dest []FunctionInvocationsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -12842,74 +11806,6 @@ func ParseUpdateLinkResponse(rsp *http.Response) (*UpdateLinkResponse, error) {
 	return response, nil
 }
 
-// ParseGetLinkExtendedResponse parses an HTTP response from a GetLinkExtendedWithResponse call
-func ParseGetLinkExtendedResponse(rsp *http.Response) (*GetLinkExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetLinkExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest LinkExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest LinkExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListSetsResponse parses an HTTP response from a ListSetsWithResponse call
 func ParseListSetsResponse(rsp *http.Response) (*ListSetsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -13247,74 +12143,6 @@ func ParseUpdateSetResponse(rsp *http.Response) (*UpdateSetResponse, error) {
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Set
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetSetExtendedResponse parses an HTTP response from a GetSetExtendedWithResponse call
-func ParseGetSetExtendedResponse(rsp *http.Response) (*GetSetExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetSetExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest SetExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest SetExtended
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -13672,74 +12500,6 @@ func ParseUpdateTargetResponse(rsp *http.Response) (*UpdateTargetResponse, error
 	return response, nil
 }
 
-// ParseGetTargetExtendedResponse parses an HTTP response from a GetTargetExtendedWithResponse call
-func ParseGetTargetExtendedResponse(rsp *http.Response) (*GetTargetExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetTargetExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TargetExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest TargetExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListTriggersResponse parses an HTTP response from a ListTriggersWithResponse call
 func ParseListTriggersResponse(rsp *http.Response) (*ListTriggersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -14077,74 +12837,6 @@ func ParseUpdateTriggerResponse(rsp *http.Response) (*UpdateTriggerResponse, err
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Trigger
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetTriggerExtendedResponse parses an HTTP response from a GetTriggerExtendedWithResponse call
-func ParseGetTriggerExtendedResponse(rsp *http.Response) (*GetTriggerExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetTriggerExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest TriggerExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest TriggerExtended
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -15100,74 +13792,6 @@ func ParseGetExtendedMutationResponse(rsp *http.Response) (*GetExtendedMutationR
 	return response, nil
 }
 
-// ParseGetMutationExtendedResponse parses an HTTP response from a GetMutationExtendedWithResponse call
-func ParseGetMutationExtendedResponse(rsp *http.Response) (*GetMutationExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetMutationExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest MutationExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest MutationExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseRefreshUnitResponse parses an HTTP response from a RefreshUnitWithResponse call
 func ParseRefreshUnitResponse(rsp *http.Response) (*RefreshUnitResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -15420,74 +14044,6 @@ func ParseGetRevisionDataResponse(rsp *http.Response) (*GetRevisionDataResponse,
 			return nil, err
 		}
 		response.JSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetRevisionExtendedResponse parses an HTTP response from a GetRevisionExtendedWithResponse call
-func ParseGetRevisionExtendedResponse(rsp *http.Response) (*GetRevisionExtendedResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetRevisionExtendedResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RevisionExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest RevisionExtended
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
 
 	}
 

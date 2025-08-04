@@ -13,10 +13,10 @@ import (
 )
 
 var spaceGetCmd = &cobra.Command{
-	Use:   "get <slug or id>",
+	Use:   "get <name or id>",
 	Short: "Get details about a space",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a space including its ID, slug, display name, and organization details.
+	Long: `Get detailed information about a space including its ID, name, and organization details.
 
 Examples:
   # Get space details in table format
@@ -25,8 +25,7 @@ Examples:
   # Get space details in JSON format
   cub space get --json my-space
 
-  # Get extended space information
-  cub space get --extended my-space`,
+`,
 	RunE: spaceGetCmdRun,
 }
 
@@ -40,14 +39,6 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if extended {
-		spaceExtended, err := apiGetSpaceExtended(spaceDetails.SpaceID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(spaceExtended, displaySpaceExtendedDetails)
-		return nil
-	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
 	extendedSpace, err := apiGetExtendedSpace(spaceDetails.SpaceID.String())
@@ -60,8 +51,7 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 
 func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewriter.Table) {
 	view.Append([]string{"ID", spaceDetails.SpaceID.String()})
-	view.Append([]string{"Slug", spaceDetails.Slug})
-	view.Append([]string{"Display Name", spaceDetails.DisplayName})
+	view.Append([]string{"Name", spaceDetails.Slug})
 	view.Append([]string{"Created At", spaceDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", spaceDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(spaceDetails.Labels)})
@@ -104,10 +94,6 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Render()
 }
 
-func displaySpaceExtendedDetails(spaceExtendedDetails *goclientnew.SpaceExtended) {
-	displaySpaceDetails(spaceExtendedDetails.Space)
-}
-
 func apiGetExtendedSpace(spaceID string) (*goclientnew.ExtendedSpace, error) {
 	newParams := &goclientnew.GetSpaceParams{}
 	summary := true
@@ -126,14 +112,6 @@ func apiGetSpace(spaceID string) (*goclientnew.Space, error) {
 		return nil, InterpretErrorGeneric(err, spaceRes)
 	}
 	return spaceRes.JSON200.Space, nil
-}
-
-func apiGetSpaceExtended(spaceID string) (*goclientnew.SpaceExtended, error) {
-	spaceRes, err := cubClientNew.GetSpaceExtendedWithResponse(ctx, uuid.MustParse(spaceID))
-	if IsAPIError(err, spaceRes) {
-		return nil, InterpretErrorGeneric(err, spaceRes)
-	}
-	return spaceRes.JSON200, nil
 }
 
 func apiGetSpaceFromSlug(slug string) (*goclientnew.Space, error) {

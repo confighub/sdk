@@ -24,8 +24,7 @@ Examples:
   # Get organization details in JSON format
   cub organization get --json my-organization
 
-  # Get extended organization information
-  cub organization get --extended my-organization`,
+`,
 	RunE: organizationGetCmdRun,
 }
 
@@ -35,19 +34,10 @@ func init() {
 }
 
 // organizationGetCmdRun is the main entry point for `cub organization get`
-// If the extended flag is set, get extended organization information
 func organizationGetCmdRun(cmd *cobra.Command, args []string) error {
 	organizationDetails, err := apiGetOrganizationFromSlug(args[0])
 	if err != nil {
 		return err
-	}
-	if extended {
-		organizationExtended, err := apiGetOrganizationExtended(organizationDetails.OrganizationID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(organizationExtended, displayOrganizationExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -62,7 +52,6 @@ func organizationGetCmdRun(cmd *cobra.Command, args []string) error {
 func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view := tableView()
 	view.Append([]string{"Organization ID", organizationDetails.OrganizationID.String()})
-	view.Append([]string{"Slug", organizationDetails.Slug})
 	view.Append([]string{"Display Name", organizationDetails.DisplayName})
 	view.Append([]string{"Created At", organizationDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", organizationDetails.UpdatedAt.String()})
@@ -73,21 +62,9 @@ func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view.Render()
 }
 
-func displayOrganizationExtendedDetails(organizationExtendedDetails *goclientnew.OrganizationExtended) {
-	displayOrganizationDetails(organizationExtendedDetails.Organization)
-}
-
 func apiGetOrganization(organizationID string) (*goclientnew.Organization, error) {
 	newParams := &goclientnew.GetOrganizationParams{}
 	orgRes, err := cubClientNew.GetOrganizationWithResponse(ctx, uuid.MustParse(organizationID), newParams)
-	if IsAPIError(err, orgRes) {
-		return nil, InterpretErrorGeneric(err, orgRes)
-	}
-	return orgRes.JSON200, nil
-}
-
-func apiGetOrganizationExtended(organizationID string) (*goclientnew.OrganizationExtended, error) {
-	orgRes, err := cubClientNew.GetOrganizationExtendedWithResponse(ctx, uuid.MustParse(organizationID))
 	if IsAPIError(err, orgRes) {
 		return nil, InterpretErrorGeneric(err, orgRes)
 	}

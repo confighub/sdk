@@ -50,7 +50,6 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	workerDetails.Slug = makeSlug(args[0])
-	workerDetails.DisplayName = args[0]
 	workerDetails.SpaceID = uuid.MustParse(selectedSpaceID)
 
 	workerDetails, err = apiCreateWorker(workerDetails, workerDetails.SpaceID)

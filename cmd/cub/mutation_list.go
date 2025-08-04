@@ -37,8 +37,7 @@ Examples:
   # List mutations with specific criteria
   cub mutation list --space my-space --where 'MutationNum > 1' my-ns
 
-  # List mutations with extended information
-  cub mutation list --space my-space --json --extended my-ns`,
+`,
 	Args: cobra.ExactArgs(1),
 	RunE: mutationListCmdRun,
 }

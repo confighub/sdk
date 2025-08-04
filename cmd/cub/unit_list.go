@@ -30,8 +30,8 @@ Examples:
   # List units without headers for scripting
   cub unit list --space my-space --no-header
 
-  # List only unit slugs
-  cub unit list --space my-space --no-header --slugs
+  # List only unit names
+  cub unit list --space my-space --no-header --names
 
   # List units with specific labels
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
@@ -77,7 +77,7 @@ Example extended available columns (not exhaustive):
 Agent discovery workflow:
 1. Start with 'unit list --space SPACE' to see all units
 2. Use --where filters to find specific units of interest
-3. Use --slugs for scripting and automation
+3. Use --names for scripting and automation
 
 Key filtering patterns for agents:
 
@@ -98,7 +98,7 @@ Content filtering:
 
 Output formats:
 - --json + --jq: Extract specific fields for further processing
-- --slugs: Get unit identifiers for use with other commands
+- --names: Get unit identifiers for use with other commands
 - --quiet: Suppress table headers for clean output
 
 The --where flag supports SQL-like expressions with AND conjunctions. All attribute names are PascalCase as in JSON output.`

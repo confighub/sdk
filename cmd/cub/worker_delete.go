@@ -9,7 +9,7 @@ import (
 )
 
 var bridgeworkerDeleteCmd = &cobra.Command{
-	Use:   "delete <slug>",
+	Use:   "delete <name>",
 	Short: "Delete a bridgeworker",
 	Long:  `Delete a bridgeworker`,
 	Args:  cobra.ExactArgs(1),

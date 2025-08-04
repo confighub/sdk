@@ -184,6 +184,7 @@ type BridgeWorker struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+	UserID    *UUID     `json:"UserID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
@@ -241,6 +242,27 @@ type DeleteResponse struct {
 	Message string `json:"Message,omitempty"`
 }
 
+// ErrorItem defines model for ErrorItem.
+type ErrorItem struct {
+	// Description A clear explanation of what went wrong
+	Description string `json:"Description,omitempty"`
+
+	// Item The name of the field, resource, or entity that the error relates to
+	Item string `json:"Item,omitempty"`
+}
+
+// ErrorMetadata defines model for ErrorMetadata.
+type ErrorMetadata struct {
+	// EntityID Optional ID of the entity this error relates to
+	EntityID string `json:"EntityID,omitempty"`
+
+	// EntityType Optional type of the entity this error relates to
+	EntityType string `json:"EntityType,omitempty"`
+
+	// Items Collection of error details
+	Items []ErrorItem `json:"Items,omitempty"`
+}
+
 // EventMessage defines model for EventMessage.
 type EventMessage struct {
 	Data  *string `json:"Data,omitempty"`
@@ -257,7 +279,8 @@ type ExtendedBridgeWorker struct {
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
 	// bridge worker to establish a secure connection and receive configuration actions.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty"`
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
@@ -269,6 +292,8 @@ type ExtendedBridgeWorker struct {
 
 // ExtendedLink defines model for ExtendedLink.
 type ExtendedLink struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
 	// FromUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
@@ -317,6 +342,8 @@ type ExtendedLink struct {
 
 // ExtendedMutation defines model for ExtendedMutation.
 type ExtendedMutation struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
 	// A Link indicates that config values Provided by the To Unit (the producer) may
 	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
@@ -365,6 +392,8 @@ type ExtendedMutation struct {
 
 // ExtendedRevision defines model for ExtendedRevision.
 type ExtendedRevision struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
 
@@ -394,6 +423,8 @@ type ExtendedRevision struct {
 
 // ExtendedSet defines model for ExtendedSet.
 type ExtendedSet struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
 
@@ -406,8 +437,9 @@ type ExtendedSet struct {
 
 // ExtendedSpace defines model for ExtendedSpace.
 type ExtendedSpace struct {
-	GatedUnitCount           int64 `json:"GatedUnitCount,omitempty"`
-	IncompleteApplyUnitCount int64 `json:"IncompleteApplyUnitCount,omitempty"`
+	Error                    *ResponseError `json:"Error,omitempty"`
+	GatedUnitCount           int64          `json:"GatedUnitCount,omitempty"`
+	IncompleteApplyUnitCount int64          `json:"IncompleteApplyUnitCount,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization          *Organization `json:"Organization,omitempty"`
@@ -435,7 +467,8 @@ type ExtendedTarget struct {
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
 	// bridge worker to establish a secure connection and receive configuration actions.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty"`
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
@@ -457,7 +490,8 @@ type ExtendedTrigger struct {
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
 	// bridge worker to establish a secure connection and receive configuration actions.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty"`
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
@@ -480,7 +514,8 @@ type ExtendedTrigger struct {
 // ExtendedUnit Unit with capability to extend additional related entities.
 type ExtendedUnit struct {
 	// ApprovedBy the users that have approved the latest revision of the config data.
-	ApprovedBy []User `json:"ApprovedBy,omitempty"`
+	ApprovedBy []User         `json:"ApprovedBy,omitempty"`
+	Error      *ResponseError `json:"Error,omitempty"`
 
 	// HeadMutation Mutation is a single source of mutation for a Revision.
 	HeadMutation *Mutation `json:"HeadMutation,omitempty"`
@@ -580,14 +615,36 @@ type FunctionInvocation struct {
 // FunctionInvocationList defines model for FunctionInvocationList.
 type FunctionInvocationList = []FunctionInvocation
 
-// FunctionInvocationResponse defines model for FunctionInvocationResponse.
-type FunctionInvocationResponse struct {
-	// ConfigData The resulting configuration data, potentially mutated
-	ConfigData string `json:"ConfigData,omitempty"`
+// FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
+type FunctionInvocationsRequest struct {
+	BridgeWorkerID *UUID `json:"BridgeWorkerID"`
 
-	// ErrorMessages Error messages from function execution; will be empty if Success is true
-	ErrorMessages []string              `json:"ErrorMessages"`
-	Mutations     *ResourceMutationList `json:"Mutations"`
+	// CastStringArgsToScalars CastStringArgsToScalars indicates whether to expect string arguments and cast them to int and bool types as necessary.
+	CastStringArgsToScalars bool `json:"CastStringArgsToScalars,omitempty"`
+
+	// ChangeDescription ChangeDescription is a description of the change being made, if any.
+	ChangeDescription string `json:"ChangeDescription,omitempty"`
+
+	// CombineResults CombineResults indicates whether to combine the Outputs of all functions in the FunctionInvocations list. In the case of ValidationResult, the Passed results are ANDed together and a single ValidationResult is returned instead of a ValidationResultList. In the case of AttributeValueList and ResourceInfoList, the lists are concatenated. All output-generating functions must return the same OutputType, or only the first OutputType will be returned. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
+	CombineResults      bool                    `json:"CombineResults,omitempty"`
+	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations"`
+
+	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
+	NumFilters int `json:"NumFilters,omitempty"`
+
+	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
+	StopOnError bool `json:"StopOnError,omitempty"`
+
+	// UseFunctionWorker UseFunctionWorker indicates whether to use the function worker or the builtin function executor, which is the default. The FunctionInvocations are forwarded to the executor/worker, so all must be executable by the same executor/worker currently.
+	UseFunctionWorker bool `json:"UseFunctionWorker,omitempty"`
+}
+
+// FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
+type FunctionInvocationsResponse struct {
+	// ConfigData The resulting configuration data, potentially mutated
+	ConfigData string                `json:"ConfigData,omitempty"`
+	Error      *ResponseError        `json:"Error,omitempty"`
+	Mutations  *ResourceMutationList `json:"Mutations"`
 
 	// Mutators List of function invocation indices that resulted in mutations
 	Mutators []int `json:"Mutators"`
@@ -612,30 +669,6 @@ type FunctionInvocationResponse struct {
 
 	// UnitID ID of the Unit the configuration data is associated with
 	UnitID openapi_types.UUID `json:"UnitID,omitempty"`
-}
-
-// FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
-type FunctionInvocationsRequest struct {
-	BridgeWorkerID *UUID `json:"BridgeWorkerID"`
-
-	// CastStringArgsToScalars CastStringArgsToScalars indicates whether to expect string arguments and cast them to int and bool types as necessary.
-	CastStringArgsToScalars bool `json:"CastStringArgsToScalars,omitempty"`
-
-	// ChangeDescription ChangeDescription is a description of the change being made, if any.
-	ChangeDescription string `json:"ChangeDescription,omitempty"`
-
-	// CombineResults CombineResults indicates whether to combine the Outputs of all functions in the FunctionInvocations list. In the case of ValidationResult, the Passed results are ANDed together and a single ValidationResult is returned instead of a ValidationResultList. In the case of AttributeValueList and ResourceInfoList, the lists are concatenated. All output-generating functions must return the same OutputType, or only the first OutputType will be returned.
-	CombineResults      bool                    `json:"CombineResults,omitempty"`
-	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations"`
-
-	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
-	NumFilters int `json:"NumFilters,omitempty"`
-
-	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors.
-	StopOnError bool `json:"StopOnError,omitempty"`
-
-	// UseFunctionWorker UseFunctionWorker indicates whether to use the function worker or the builtin function executor, which is the default. The FunctionInvocations are forwarded to the executor/worker, so all must be executable by the same executor/worker currently.
-	UseFunctionWorker bool `json:"UseFunctionWorker,omitempty"`
 }
 
 // FunctionOutput defines model for FunctionOutput.
@@ -797,22 +830,6 @@ type Link struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
-// LinkExtended defines model for LinkExtended.
-type LinkExtended struct {
-	FromSpaceSlug string `json:"FromSpaceSlug,omitempty"`
-	FromUnitSlug  string `json:"FromUnitSlug,omitempty"`
-
-	// Link Link connects two config Units in a dependency / producer-consumer relationship.
-	// A Link indicates that config values Provided by the To Unit (the producer) may
-	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
-	// to be matched before values Provided by other Units in the Space (if within the same
-	// Space). Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a Set.
-	Link        *Link  `json:"Link,omitempty"`
-	ToSpaceSlug string `json:"ToSpaceSlug,omitempty"`
-	ToUnitSlug  string `json:"ToUnitSlug,omitempty"`
-}
-
 // Mutation Mutation is a single source of mutation for a Revision.
 type Mutation struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -858,12 +875,6 @@ type Mutation struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
-}
-
-// MutationExtended defines model for MutationExtended.
-type MutationExtended struct {
-	// Mutation Mutation is a single source of mutation for a Revision.
-	Mutation *Mutation `json:"Mutation,omitempty"`
 }
 
 // MutationInfo defines model for MutationInfo.
@@ -923,12 +934,6 @@ type Organization struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
-}
-
-// OrganizationExtended defines model for OrganizationExtended.
-type OrganizationExtended struct {
-	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty"`
 }
 
 // OrganizationMember a User given membership on the Organization
@@ -1030,6 +1035,25 @@ type ResourceMutation struct {
 // ResourceMutationList defines model for ResourceMutationList.
 type ResourceMutationList = []ResourceMutation
 
+// ResponseError defines model for ResponseError.
+type ResponseError struct {
+	// Details Additional context messages
+	Details []string `json:"Details,omitempty"`
+
+	// ErrorCategory The type of error (e.g., validation, not-found)
+	ErrorCategory string         `json:"ErrorCategory,omitempty"`
+	ErrorMetadata *ErrorMetadata `json:"ErrorMetadata,omitempty"`
+
+	// Message The primary error message
+	Message string `json:"Message,omitempty"`
+
+	// Status HTTP status code
+	Status int `json:"Status,omitempty"`
+
+	// Type The type of error (e.g., validation, not-found)
+	Type string `json:"Type,omitempty"`
+}
+
 // Revision Revision is a historial view of a Config Unit.
 type Revision struct {
 	// ApplyGates A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision.
@@ -1092,15 +1116,6 @@ type Revision struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
-// RevisionExtended defines model for RevisionExtended.
-type RevisionExtended struct {
-	ApprovedByUsers []string `json:"ApprovedByUsers"`
-
-	// Revision Revision is a historial view of a Config Unit.
-	Revision *Revision `json:"Revision,omitempty"`
-	Username string    `json:"Username,omitempty"`
-}
-
 // Set A group of related Units that can be cloned, upgraded, applied, refreshed, or destroyed as a group.
 type Set struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1141,12 +1156,6 @@ type Set struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
-// SetExtended defines model for SetExtended.
-type SetExtended struct {
-	// Set A group of related Units that can be cloned, upgraded, applied, refreshed, or destroyed as a group.
-	Set *Set `json:"Set,omitempty"`
-}
-
 // Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 type Space struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1182,12 +1191,6 @@ type Space struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
-}
-
-// SpaceExtended defines model for SpaceExtended.
-type SpaceExtended struct {
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
-	Space *Space `json:"Space,omitempty"`
 }
 
 // StandardErrorResponse Error response details.
@@ -1272,12 +1275,6 @@ type Target struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
-// TargetExtended defines model for TargetExtended.
-type TargetExtended struct {
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., AWS, Kubernetes, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
-	Target *Target `json:"Target,omitempty"`
-}
-
 // TargetType2 defines model for TargetType2.
 type TargetType2 struct {
 	// Name Used to set the Slug and DisplayName of the Target created in ConfigHub
@@ -1360,20 +1357,6 @@ type Trigger struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
-}
-
-// TriggerExtended defines model for TriggerExtended.
-type TriggerExtended struct {
-	// Trigger Defines an automated function invocation that executes in response to specific
-	// Unit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,
-	// automated transformations, or other custom logic that should run when configuration
-	// changes occur. Each Trigger is associated with a specific Space and can be configured
-	// to execute on events.
-	//
-	// Triggers can be either validating (checking configuration validity without modifying it)
-	// or mutating (making changes to the configuration). They can also be enforced (cannot be
-	// overridden) or disabled.
-	Trigger *Trigger `json:"Trigger,omitempty"`
 }
 
 // UUID defines model for UUID.
@@ -1647,7 +1630,7 @@ type ListAllBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on bridge_worker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on bridge_worker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -1919,7 +1902,7 @@ type ListBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`

@@ -43,7 +43,7 @@ Function types:
 - Mutating: true = Modifies configuration data (changes unit state)
 - Validating: true = Returns pass/fail validation results
 
-Use --slugs to get just function names for scripting.`
+Use --names to get just function names for scripting.`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
@@ -61,7 +61,7 @@ func init() {
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.unitSlug, "unit", "", "Unit slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for")
 	// Function list doesn't support where
-	enableSlugsFlag(functionListCmd)
+	enableNamesFlag(functionListCmd)
 	enableQuietFlag(functionListCmd)
 	enableJsonFlag(functionListCmd)
 	enableJqFlag(functionListCmd)
@@ -186,12 +186,12 @@ func functionListCmdRun(cmd *cobra.Command, args []string) error {
 
 	// The return type doesn't match displayListResults, so we repeat that code here.
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := slugs || jsonOutput || jq != ""
+	hasAlternativeOutput := names || jsonOutput || jq != ""
 
 	if !quiet && !hasAlternativeOutput {
 		displayFunctionList(funcs)
 	}
-	if slugs {
+	if names {
 		table := tableView()
 		for toolchainType, functionMap := range funcs {
 			if functionListCmdArgs.toolchainType != "" && functionListCmdArgs.toolchainType != toolchainType {

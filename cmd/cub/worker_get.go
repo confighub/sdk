@@ -48,8 +48,7 @@ func workerGetCmdRun(_ *cobra.Command, args []string) error {
 		// }
 		detail := detailView()
 		detail.Append([]string{"ID", worker.BridgeWorkerID.String()})
-		detail.Append([]string{"Slug", worker.Slug})
-		detail.Append([]string{"Display Name", worker.DisplayName})
+		detail.Append([]string{"Name", worker.Slug})
 		detail.Append([]string{"Space ID", worker.SpaceID.String()})
 		detail.Append([]string{"Created At", worker.CreatedAt.String()})
 		detail.Append([]string{"Updated At", worker.UpdatedAt.String()})

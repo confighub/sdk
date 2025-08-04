@@ -66,7 +66,7 @@ func init() {
 }
 
 // executeFunctionsFromFile reads functions from a file and executes them with the given where clause
-func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []string) (*[]goclientnew.FunctionInvocationResponse, error) {
+func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []string) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	// Check for mutual exclusivity between unit identifiers and where clause
 	if len(unitIds) > 0 && whereClause != "" {
 		return nil, fmt.Errorf("--unit and --where flags are mutually exclusive")
@@ -114,7 +114,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	newBody.FunctionInvocations = &invocations
 
 	// Execute functions
-	var resp *[]goclientnew.FunctionInvocationResponse
+	var resp *[]goclientnew.FunctionInvocationsResponse
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
 		if effectiveWhere != "" {
@@ -128,7 +128,12 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		if IsAPIError(err, funcRes) {
 			return nil, fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
 		}
-		resp = funcRes.JSON200
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
 		if effectiveWhere != "" {
@@ -142,12 +147,17 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		if IsAPIError(err, funcRes) {
 			return nil, InterpretErrorGeneric(err, funcRes)
 		}
-		resp = funcRes.JSON200
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
 	}
 
 	// Handle empty response
 	if resp == nil {
-		resp = &[]goclientnew.FunctionInvocationResponse{}
+		resp = &[]goclientnew.FunctionInvocationsResponse{}
 	}
 
 	return resp, nil

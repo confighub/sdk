@@ -21,7 +21,7 @@ import (
 )
 
 var unitCreateCmd = &cobra.Command{
-	Use:   "create <slug> [config-file]",
+	Use:   "create <name> [config-file]",
 	Short: "Create a unit",
 	Long:  getUnitCreateHelp(),
 	Args:  cobra.RangeArgs(1, 2),
@@ -178,9 +178,6 @@ func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
 	// If these were set from stdin, they will be overridden
 	newUnit.SpaceID = spaceID
 	newUnit.Slug = makeSlug(args[0])
-	if newUnit.DisplayName == "" {
-		newUnit.DisplayName = args[0]
-	}
 	newUnit.ToolchainType = unitCreateArgs.toolchainType
 
 	if unitCreateArgs.upstreamUnitSlug != "" {

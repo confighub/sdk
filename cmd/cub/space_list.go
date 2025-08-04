@@ -54,10 +54,10 @@ Initial setup:
 
 Environment-specific operations:
   # Find production spaces
-  cub space list --where "Labels.Environment = 'prod'" --slugs
+  cub space list --where "Labels.Environment = 'prod'" --names
   
   # Find staging spaces
-  cub space list --where "Labels.Environment = 'staging'" --slugs
+  cub space list --where "Labels.Environment = 'staging'" --names
 
 Key information provided:
 - Space slugs: Used for --space flag and context setting
@@ -65,7 +65,7 @@ Key information provided:
 - Organization context: Which org these spaces belong to
 
 Important flags for agents:
-- --slugs: Get just space identifiers for automation
+- --names: Get just space identifiers for automation
 - --json + --jq: Extract specific fields for further processing
 - --where: Filter spaces by display name or other attributes
 - --quiet: Suppress table headers for clean output

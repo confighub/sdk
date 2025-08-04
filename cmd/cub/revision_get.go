@@ -4,7 +4,6 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"strconv"
@@ -28,8 +27,7 @@ Examples:
   # Get only the configuration data of a revision
   cub revision get --space my-space --data-only my-ns 2
 
-  # Get extended information about a revision
-  cub revision get --space my-space --json --extended my-ns 1`,
+`,
 	RunE: revisionGetCmdRun,
 }
 
@@ -51,14 +49,6 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String())
 	if err != nil {
 		return err
-	}
-	if extended {
-		revisionExtended, err := apiGetRevisionExtended(unit.UnitID.String(), rev.RevisionID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(revisionExtended, displayRevisionExtendedDetails)
-		return nil
 	}
 
 	displayGetResults(rev, displayRevisionDetails)
@@ -101,22 +91,6 @@ func displayRevisionDetails(rev *goclientnew.Revision) {
 	tprintRaw(string(data))
 }
 
-func displayRevisionExtendedDetails(revisionExtendedDetails *goclientnew.RevisionExtended) {
-	displayRevisionDetails(revisionExtendedDetails.Revision)
-	view := tableView()
-	if revisionExtendedDetails.Username != "" {
-		view.Append([]string{"Username", revisionExtendedDetails.Username})
-	}
-	if len(revisionExtendedDetails.ApprovedByUsers) != 0 {
-		approvers := ""
-		for _, approver := range revisionExtendedDetails.ApprovedByUsers {
-			approvers += " " + approver
-		}
-		view.Append([]string{"Approved By", strings.TrimSpace(approvers)})
-	}
-	view.Render()
-}
-
 func apiGetRevision(revisionID string, unitID string) (*goclientnew.Revision, error) {
 	revRes, err := cubClientNew.GetExtendedRevisionWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID),
@@ -132,18 +106,6 @@ func apiGetRevision(revisionID string, unitID string) (*goclientnew.Revision, er
 	}
 
 	return revRes.JSON200.Revision, nil
-}
-
-func apiGetRevisionExtended(unitID string, revisionID string) (*goclientnew.RevisionExtended, error) {
-	revRes, err := cubClientNew.GetRevisionExtendedWithResponse(context.Background(),
-		uuid.MustParse(selectedSpaceID),
-		uuid.MustParse(unitID),
-		uuid.MustParse(revisionID),
-	)
-	if IsAPIError(err, revRes) {
-		return nil, InterpretErrorGeneric(err, revRes)
-	}
-	return revRes.JSON200, nil
 }
 
 func apiGetRevisionFromNumber(revNo int64, unitID string) (*goclientnew.Revision, error) {

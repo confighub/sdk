@@ -21,8 +21,7 @@ Examples:
   # Get details about a deployment-to-namespace link
   cub link get --space my-space deployment-to-namespace
 
-  # Get extended information about a link
-  cub link get --space my-space --extended clone-to-namespace`,
+`,
 	RunE: linkGetCmdRun,
 }
 
@@ -35,14 +34,6 @@ func linkGetCmdRun(cmd *cobra.Command, args []string) error {
 	linkDetails, err := apiGetLinkFromSlug(args[0])
 	if err != nil {
 		return err
-	}
-	if extended {
-		linkExtended, err := apiGetLinkExtended(linkDetails.LinkID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(linkExtended, displayLinkExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -57,8 +48,7 @@ func linkGetCmdRun(cmd *cobra.Command, args []string) error {
 func displayLinkDetails(linkDetails *goclientnew.Link) {
 	view := tableView()
 	view.Append([]string{"ID", linkDetails.LinkID.String()})
-	view.Append([]string{"Slug", linkDetails.Slug})
-	view.Append([]string{"Display Name", linkDetails.DisplayName})
+	view.Append([]string{"Name", linkDetails.Slug})
 	view.Append([]string{"Space ID", linkDetails.SpaceID.String()})
 	view.Append([]string{"Created At", linkDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", linkDetails.UpdatedAt.String()})
@@ -71,16 +61,6 @@ func displayLinkDetails(linkDetails *goclientnew.Link) {
 	view.Render()
 }
 
-func displayLinkExtendedDetails(linkExtendedDetails *goclientnew.LinkExtended) {
-	displayLinkDetails(linkExtendedDetails.Link)
-	view := tableView()
-	view.Append([]string{"From Unit Slug", linkExtendedDetails.FromUnitSlug})
-	view.Append([]string{"From Space Slug", linkExtendedDetails.FromSpaceSlug})
-	view.Append([]string{"To Unit Slug", linkExtendedDetails.ToUnitSlug})
-	view.Append([]string{"To Space Slug", linkExtendedDetails.ToSpaceSlug})
-	view.Render()
-}
-
 func apiGetLink(linkID string) (*goclientnew.Link, error) {
 	newParams := &goclientnew.GetLinkParams{}
 	linkRes, err := cubClientNew.GetLinkWithResponse(ctx,
@@ -89,15 +69,6 @@ func apiGetLink(linkID string) (*goclientnew.Link, error) {
 		return nil, InterpretErrorGeneric(err, linkRes)
 	}
 	return linkRes.JSON200.Link, nil
-}
-
-func apiGetLinkExtended(linkID string) (*goclientnew.LinkExtended, error) {
-	linkRes, err := cubClientNew.GetLinkExtendedWithResponse(ctx,
-		uuid.MustParse(selectedSpaceID), uuid.MustParse(linkID))
-	if err != nil {
-		return nil, err
-	}
-	return linkRes.JSON200, nil
 }
 
 func apiGetLinkFromSlug(slug string) (*goclientnew.Link, error) {

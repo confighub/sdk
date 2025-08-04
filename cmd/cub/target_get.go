@@ -21,8 +21,7 @@ Examples:
   # Get details about a target
   cub target get --space my-space --json my-target
 
-  # Get extended information about a target
-  cub target get --space my-space --json --extended my-target`,
+`,
 	RunE: targetGetCmdRun,
 }
 
@@ -35,14 +34,6 @@ func targetGetCmdRun(cmd *cobra.Command, args []string) error {
 	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID)
 	if err != nil {
 		return err
-	}
-	if extended {
-		targetExtended, err := apiGetTarget(targetDetails.Target.TargetID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(targetExtended, displayTargetExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -58,8 +49,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	targetDetails := extendedTarget.Target
 	view := tableView()
 	view.Append([]string{"ID", targetDetails.TargetID.String()})
-	view.Append([]string{"Slug", targetDetails.Slug})
-	view.Append([]string{"Display Name", targetDetails.DisplayName})
+	view.Append([]string{"Name", targetDetails.Slug})
 	view.Append([]string{"Space ID", targetDetails.SpaceID.String()})
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})
@@ -69,10 +59,6 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Render()
 }
 
-func displayTargetExtendedDetails(targetExtendedDetails *goclientnew.ExtendedTarget) {
-	displayTargetDetails(targetExtendedDetails)
-}
-
 func apiGetTarget(targetID string) (*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.GetTargetParams{}
 	targetRes, err := cubClientNew.GetTargetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(targetID), newParams)
@@ -80,10 +66,6 @@ func apiGetTarget(targetID string) (*goclientnew.ExtendedTarget, error) {
 		return nil, InterpretErrorGeneric(err, targetRes)
 	}
 	return targetRes.JSON200, nil
-}
-
-func apiGetTargetExtended(targetID string) (*goclientnew.ExtendedTarget, error) {
-	return apiGetTarget(targetID)
 }
 
 func apiGetTargetFromSlug(slug string, spaceID string) (*goclientnew.ExtendedTarget, error) {

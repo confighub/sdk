@@ -10,7 +10,7 @@ import (
 )
 
 var bridgeworkerUpdateCmd = &cobra.Command{
-	Use:   "update <slug>",
+	Use:   "update <name>",
 	Short: "Update a bridgeworker",
 	Long:  `Update a bridgeworker.`,
 	Args:  cobra.ExactArgs(1),

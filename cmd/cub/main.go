@@ -404,8 +404,7 @@ var verbose = false
 var quiet = false
 var jsonOutput = false
 var jq = ""
-var slugs = false
-var extended = false
+var names = false
 var debug = false
 var noheader = false
 var wait = true
@@ -460,16 +459,12 @@ func enableNoheaderFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&noheader, "no-header", false, "No header for lists")
 }
 
-func enableExtendedFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&extended, "extended", false, "Extended output")
-}
-
 func enableJsonFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output, suppressing default output")
 }
 
-func enableSlugsFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&slugs, "slugs", false, "Only output slugs, suppressing default output")
+func enableNamesFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&names, "names", false, "Only output names, suppressing default output")
 }
 
 func enableJqFlag(cmd *cobra.Command) {
@@ -496,7 +491,7 @@ type Unmarshalable interface {
 func addStandardListFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
 	enableContainsFlag(cmd)
-	enableSlugsFlag(cmd)
+	enableNamesFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
@@ -516,7 +511,6 @@ func addStandardGetFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
-	enableExtendedFlag(cmd)
 }
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
@@ -575,7 +569,12 @@ func displayJQForBytes(outBytes []byte, jqExpr string) {
 			}
 			failOnError(err)
 		}
-		tprint(fmt.Sprintf("%v", value))
+		switch v := value.(type) {
+		case string, int, bool:
+			tprint("%v", v)
+		default:
+			displayJSON(value)
+		}
 	}
 }
 
@@ -588,9 +587,7 @@ func displayJQ(entity any) {
 type ModelConstraint interface {
 	goclientnew.Link |
 		goclientnew.ExtendedLink |
-		goclientnew.LinkExtended |
 		goclientnew.Organization |
-		goclientnew.OrganizationExtended |
 		goclientnew.OrganizationMember |
 		goclientnew.User |
 		goclientnew.ExtendedBridgeWorker |
@@ -598,24 +595,18 @@ type ModelConstraint interface {
 		goclientnew.BridgeWorkerStatus |
 		goclientnew.Revision |
 		goclientnew.ExtendedRevision |
-		goclientnew.RevisionExtended |
 		goclientnew.Mutation |
-		goclientnew.MutationExtended |
 		goclientnew.ExtendedMutation |
 		goclientnew.Set |
-		goclientnew.SetExtended |
 		goclientnew.ExtendedSet |
 		goclientnew.Space |
 		goclientnew.ExtendedSpace |
-		goclientnew.SpaceExtended |
 		goclientnew.Target |
 		goclientnew.ExtendedTarget |
 		goclientnew.Trigger |
-		goclientnew.TriggerExtended |
 		goclientnew.ExtendedTrigger |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
-		goclientnew.UnitExtended |
 		goclientnew.ExtendedUnit
 }
 
@@ -657,7 +648,7 @@ func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 
 func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func(entity *Entity) string, display func(entities []*Entity)) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := slugs || jsonOutput || jq != ""
+	hasAlternativeOutput := names || jsonOutput || jq != ""
 
 	if !quiet && !hasAlternativeOutput {
 		display(entities)
@@ -665,7 +656,7 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 	if verbose && !hasAlternativeOutput {
 		display(entities)
 	}
-	if slugs && getSlug != nil {
+	if names && getSlug != nil {
 		table := tableView()
 		for _, entity := range entities {
 			table.Append([]string{

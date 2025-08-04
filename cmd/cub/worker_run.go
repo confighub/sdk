@@ -53,7 +53,6 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		// assume worker not found and create a default worker on the fly
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
 			SpaceID:     spaceID,
-			DisplayName: args[0], // TODO: DisplayName is required by server. It should not be.
 			Slug:        args[0],
 		}, spaceID)
 		if err != nil {

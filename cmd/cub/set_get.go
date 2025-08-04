@@ -21,8 +21,7 @@ Examples:
   # Get details about a set
   cub set get --space my-space --json my-set
 
-  # Get extended information about a set
-  cub set get --space my-space --json --extended my-set`,
+`,
 	RunE: setGetCmdRun,
 }
 
@@ -35,14 +34,6 @@ func setGetCmdRun(cmd *cobra.Command, args []string) error {
 	setDetails, err := apiGetSetFromSlug(args[0])
 	if err != nil {
 		return err
-	}
-	if extended {
-		setExtended, err := apiGetSetExtended(setDetails.SetID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(setExtended, displaySetExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -57,8 +48,7 @@ func setGetCmdRun(cmd *cobra.Command, args []string) error {
 func displaySetDetails(setDetails *goclientnew.Set) {
 	view := tableView()
 	view.Append([]string{"ID", setDetails.SetID.String()})
-	view.Append([]string{"Slug", setDetails.Slug})
-	view.Append([]string{"Display Name", setDetails.DisplayName})
+	view.Append([]string{"Name", setDetails.Slug})
 	view.Append([]string{"Space ID", setDetails.SpaceID.String()})
 	view.Append([]string{"Created At", setDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", setDetails.UpdatedAt.String()})
@@ -66,10 +56,6 @@ func displaySetDetails(setDetails *goclientnew.Set) {
 	view.Append([]string{"Annotations", annotationsToString(setDetails.Annotations)})
 	view.Append([]string{"Organization ID", setDetails.OrganizationID.String()})
 	view.Render()
-}
-
-func displaySetExtendedDetails(setExtendedDetails *goclientnew.SetExtended) {
-	displaySetDetails(setExtendedDetails.Set)
 }
 
 func apiGetSet(setID string) (*goclientnew.Set, error) {
@@ -86,18 +72,6 @@ func apiGetSet(setID string) (*goclientnew.Set, error) {
 		return nil, fmt.Errorf("unexpected response: %v", setDetails)
 	}
 	return setDetails.JSON200.Set, nil
-}
-
-func apiGetSetExtended(setID string) (*goclientnew.SetExtended, error) {
-	res, err := cubClientNew.GetSetExtended(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(setID))
-	if err != nil {
-		return nil, err
-	}
-	setDetails, err := goclientnew.ParseGetSetExtendedResponse(res)
-	if IsAPIError(err, setDetails) {
-		return nil, InterpretErrorGeneric(err, setDetails)
-	}
-	return setDetails.JSON200, nil
 }
 
 func apiGetSetFromSlug(slug string) (*goclientnew.Set, error) {

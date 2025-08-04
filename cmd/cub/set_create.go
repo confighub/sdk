@@ -10,7 +10,7 @@ import (
 )
 
 var setCreateCmd = &cobra.Command{
-	Use:   "create <slug>",
+	Use:   "create <name>",
 	Short: "Create a new set",
 	Long: `Create a new set to group and organize related units within a space.
 

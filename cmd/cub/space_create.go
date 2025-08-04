@@ -45,10 +45,6 @@ func spaceCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Even if slug was set in stdin, we override it with the one from args
 	newBody.Slug = makeSlug(args[0])
-	// Make sure DisplayName is set
-	if newBody.DisplayName == "" {
-		newBody.DisplayName = args[0]
-	}
 
 	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, *newBody)
 	if IsAPIError(err, spaceRes) {

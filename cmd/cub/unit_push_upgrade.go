@@ -12,7 +12,7 @@ import (
 )
 
 var unitPushUpgradeCmd = &cobra.Command{
-	Use:   "upgrade downstreams from <slug>",
+	Use:   "upgrade downstreams from <name>",
 	Short: "Upgrade downstreams from unit",
 	Long:  `upgrade downstreams from the unit`,
 	Args:  cobra.ExactArgs(1),
@@ -57,8 +57,7 @@ func displayUpgradeResults[Result any](result *Result, entityName, slug, id stri
 func displayBulkUpgradeDetails(unitDetails *goclientnew.UpgradeUnitResponse) {
 	tableSuccess := tableView()
 	if !noheader {
-		tableSuccess.SetHeader([]string{"Display-Name",
-			"Slug", "ID", "Data-Bytes",
+		tableSuccess.SetHeader([]string{"Name", "ID", "Data-Bytes",
 			"Head-Revision", "Apply-Gates",
 			"Last-Change"})
 	}
@@ -75,7 +74,6 @@ func displayBulkUpgradeDetails(unitDetails *goclientnew.UpgradeUnitResponse) {
 			}
 		}
 		tableSuccess.Append([]string{
-			upgraded.DisplayName,
 			upgraded.Slug,
 			upgraded.UnitID.String(),
 			fmt.Sprintf("%d", len(upgraded.Data)),

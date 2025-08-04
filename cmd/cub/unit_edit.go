@@ -16,7 +16,7 @@ import (
 )
 
 var unitEditCmd = &cobra.Command{
-	Use:   "edit <slug>",
+	Use:   "edit <name>",
 	Short: "Edit the config data of a unit in your system's editor",
 	Long: `This command will pull down the latest revision of this unit and open it the editor specified in the
 	        EDITOR environment variable or vi if the variable is not set. When the editor process exits,

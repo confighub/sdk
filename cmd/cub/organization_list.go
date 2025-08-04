@@ -49,12 +49,11 @@ func getOrganizationSlug(organization *goclientnew.Organization) string {
 func displayOrganizationList(organizations []*goclientnew.Organization) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "Slug", "ID", "Billing-ID", "External-ID"})
+		table.SetHeader([]string{"Display-Name", "ID", "Billing-ID", "External-ID"})
 	}
 	for _, organization := range organizations {
 		table.Append([]string{
 			organization.DisplayName,
-			organization.Slug,
 			organization.OrganizationID.String(),
 			organization.BillingAccountID.String(),
 			organization.ExternalID,

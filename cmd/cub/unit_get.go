@@ -17,7 +17,7 @@ import (
 )
 
 var unitGetCmd = &cobra.Command{
-	Use:   "get <slug or id>",
+	Use:   "get <name or id>",
 	Short: "Get details about an unit",
 	Args:  cobra.ExactArgs(1),
 	Long:  getUnitGetHelp(),
@@ -40,8 +40,7 @@ Examples:
   # Get only the configuration data of a unit
   cub unit get --space my-space --data-only my-deployment
 
-  # Get extended information about a unit
-  cub unit get --space my-space --json --extended my-ns`
+  cub unit get --space my-space --json my-ns`
 
 	agentContext := `Critical for inspecting unit configuration and state before making changes.
 
@@ -62,7 +61,6 @@ Important flags for agents:
   * Piping to other tools for processing
   * Understanding current configuration state
 - --json: Get full metadata in structured format
-- --extended: Include additional related entity information
 - --quiet: Suppress table output, useful with --json
 
 Common agent patterns:
@@ -157,8 +155,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	if !dataOnly {
 		view := tableView()
 		view.Append([]string{"ID", unitDetails.UnitID.String()})
-		view.Append([]string{"Slug", unitDetails.Slug})
-		view.Append([]string{"Display Name", unitDetails.DisplayName})
+		view.Append([]string{"Name", unitDetails.Slug})
 		view.Append([]string{"Toolchain Type", unitDetails.ToolchainType})
 		if unitDetails.SetID != nil && *unitDetails.SetID != uuid.Nil {
 			view.Append([]string{"Set", unitDetails.SetID.String()})
@@ -201,13 +198,6 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.HeadMutationNum)})
 		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(unitDetails))})
 
-		if extended {
-			unitExtended, err := apiGetUnitExtended(unitDetails.UnitID.String())
-			if err != nil {
-				failOnError(err)
-			}
-			displayUnitExtendedDetails(view, unitExtended)
-		}
 
 		view.Render()
 
@@ -239,19 +229,6 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 		failOnError(err)
 		tprintRaw(string(data))
 	}
-}
-
-func apiGetUnitExtended(unitID string) (*goclientnew.UnitExtended, error) {
-	unitRes, err := cubClientNew.GetUnitExtendedWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(unitID))
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
-	}
-
-	if unitRes.JSON200.Unit == nil || unitRes.JSON200.Unit.SpaceID.String() != selectedSpaceID {
-		return nil, fmt.Errorf("SERVER DIDN'T CHECK: unit %s not found in space %s (%s)", unitID, selectedSpaceSlug, selectedSpaceID)
-	}
-
-	return unitRes.JSON200, nil
 }
 
 func apiGetUnit(unitID string) (*goclientnew.Unit, error) {

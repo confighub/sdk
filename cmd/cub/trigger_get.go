@@ -25,8 +25,7 @@ Examples:
   # Get details about a trigger that enforces low resource usage
   cub trigger get --space my-space --json enforce-low-cost
 
-  # Get details about a trigger with extended information
-  cub trigger get --space my-space --json --extended validate-replicas`,
+`,
 	RunE: triggerGetCmdRun,
 }
 
@@ -39,14 +38,6 @@ func triggerGetCmdRun(cmd *cobra.Command, args []string) error {
 	triggerDetails, err := apiGetTriggerFromSlug(args[0])
 	if err != nil {
 		return err
-	}
-	if extended {
-		triggerExtended, err := apiGetTriggerExtended(triggerDetails.TriggerID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(triggerExtended, displayTriggerExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -85,8 +76,7 @@ func formatFunctionArgumentValue(value *goclientnew.FunctionArgument_Value) stri
 func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
 	view := tableView()
 	view.Append([]string{"ID", triggerDetails.TriggerID.String()})
-	view.Append([]string{"Slug", triggerDetails.Slug})
-	view.Append([]string{"Display Name", (triggerDetails.DisplayName)})
+	view.Append([]string{"Name", triggerDetails.Slug})
 	view.Append([]string{"Space ID", triggerDetails.SpaceID.String()})
 	view.Append([]string{"Created At", triggerDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", triggerDetails.UpdatedAt.String()})
@@ -112,10 +102,6 @@ func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
 	view.Render()
 }
 
-func displayTriggerExtendedDetails(triggerExtendedDetails *goclientnew.TriggerExtended) {
-	displayTriggerDetails(triggerExtendedDetails.Trigger)
-}
-
 func apiGetTrigger(triggerID string) (*goclientnew.Trigger, error) {
 	newParams := &goclientnew.GetTriggerParams{}
 	include := "BridgeWorkerID"
@@ -125,18 +111,6 @@ func apiGetTrigger(triggerID string) (*goclientnew.Trigger, error) {
 		return nil, InterpretErrorGeneric(err, triggerRes)
 	}
 	return triggerRes.JSON200.Trigger, nil
-}
-
-func apiGetTriggerExtended(triggerID string) (*goclientnew.TriggerExtended, error) {
-	res, err := cubClientNew.GetTriggerExtended(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(triggerID))
-	if err != nil {
-		return nil, err
-	}
-	triggerExtendedRes, err := goclientnew.ParseGetTriggerExtendedResponse(res)
-	if IsAPIError(err, triggerExtendedRes) {
-		return nil, InterpretErrorGeneric(err, triggerExtendedRes)
-	}
-	return triggerExtendedRes.JSON200, nil
 }
 
 func apiGetTriggerFromSlug(slug string) (*goclientnew.Trigger, error) {

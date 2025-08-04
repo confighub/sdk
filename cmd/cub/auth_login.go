@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +21,10 @@ import (
 
 	cv "github.com/nirasan/go-oauth-pkce-code-verifier"
 	"github.com/skratchdot/open-golang/open"
+)
+
+var (
+	asWorker bool
 )
 
 var authLoginCmd = &cobra.Command{
@@ -40,12 +46,16 @@ Examples:
   cub auth login "ConfigHub"
   
   # Login to specific organization by slug
-  cub auth login "org_01jsqq70m483a3b1fk3zfs9z1a"`,
+  cub auth login "org_01jsqq70m483a3b1fk3zfs9z1a"
+  
+  # Login as a worker using environment variables
+  cub auth login --as-worker`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: authLoginCmdRun,
 }
 
 func init() {
+	authLoginCmd.Flags().BoolVar(&asWorker, "as-worker", false, "Authenticate as a worker using CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables")
 	authCmd.AddCommand(authLoginCmd)
 }
 
@@ -53,6 +63,15 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	var desiredOrg string
 	if len(args) > 0 {
 		desiredOrg = args[0]
+	}
+
+	// Check if worker authentication is requested
+	if asWorker {
+		// Worker authentication doesn't support organization switching
+		if desiredOrg != "" {
+			return fmt.Errorf("organization switching is not supported with --as-worker flag")
+		}
+		return AuthorizeWorker()
 	}
 
 	// First, authenticate normally
@@ -87,7 +106,7 @@ func AuthorizeUser() error {
 	// TODO: Need to fail with a good error message if something already listens on 3000
 	redirectURL := "http://127.0.0.1:3000/"
 
-	// construct the authorization URL (with Auth0 as the authorization provider)
+	// construct the authorization URL (with WorkOS as the authorization provider)
 	authorizationURL := fmt.Sprintf(
 		"https://api.workos.com/user_management/authorize?"+
 			"provider=authkit&response_type=code&client_id=%s"+
@@ -268,4 +287,87 @@ func getSession(clientID string, codeVerifier string, authorizationCode string, 
 		return nil, err
 	}
 	return session, nil
+}
+
+// AuthorizeWorker implements worker authentication using JWT
+func AuthorizeWorker() error {
+	// Get worker credentials from environment variables
+	workerID := os.Getenv("CONFIGHUB_WORKER_ID")
+	workerSecret := os.Getenv("CONFIGHUB_WORKER_SECRET")
+
+	if workerID == "" || workerSecret == "" {
+		return fmt.Errorf("CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables must be set")
+	}
+
+	// Create the request body
+	requestBody := map[string]string{
+		"worker_id":     workerID,
+		"worker_secret": workerSecret,
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	// Make the authentication request
+	endpoint := fmt.Sprintf("%s/auth/worker", cubContext.ConfigHubURL)
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make authentication request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("authentication failed: %s", string(body))
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	session := AuthSession{}
+	session.AuthType = "Bearer"
+
+	err = json.Unmarshal(body, &session)
+	if err != nil {
+		return fmt.Errorf("failed to parse authentication response: %w", err)
+	}
+
+	// Save the session
+	err = SaveSession(session)
+	if err != nil {
+		return fmt.Errorf("failed to save session: %w", err)
+	}
+
+	authSession = session
+	authHeader = setAuthHeader(&authSession)
+	cubClientNew, err = initializeClient()
+	if err != nil {
+		return fmt.Errorf("error initializing client: %w", err)
+	}
+
+	tprint("Successfully logged in as worker %s (Organization: %s)", workerID, session.OrganizationID)
+
+	// Set space context
+	err = setSpaceContext()
+	if err != nil {
+		return err
+	}
+
+	// Preload builtin functions
+	_, _, err = listAndSaveFunctions("", "", "")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

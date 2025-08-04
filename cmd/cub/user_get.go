@@ -21,8 +21,7 @@ Examples:
   # Get details about a user
   cub user get --json my-user
 
-  # Get extended information about a user
-  cub ouser --json --extended my-user`,
+`,
 	RunE: userGetCmdRun,
 }
 
@@ -35,16 +34,6 @@ func userGetCmdRun(cmd *cobra.Command, args []string) error {
 	userDetails, err := apiGetUserFromUsername(args[0])
 	if err != nil {
 		return err
-	}
-
-	// TODO: enable extend users
-	if extended {
-		userExtended, err := apiGetUser(userDetails.UserID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(userExtended, displayUserExtendedDetails)
-		return nil
 	}
 
 	// the previous call got the list resource. We want the "detail" resource just in case they're different
@@ -63,10 +52,6 @@ func displayUserDetails(member *goclientnew.User) {
 	view.Append([]string{"Display Name", member.DisplayName})
 	view.Append([]string{"Username", member.Username})
 	view.Render()
-}
-
-func displayUserExtendedDetails(userExtendedDetails *goclientnew.User) {
-	displayUserDetails(userExtendedDetails)
 }
 
 func apiGetUser(userID string) (*goclientnew.User, error) {

@@ -21,8 +21,8 @@ Examples:
   # List links without headers for scripting
   cub link list --space my-space --no-header
 
-  # List only link slugs
-  cub link list --space my-space --no-header --slugs
+  # List only link names
+  cub link list --space my-space --no-header --names
 
   # List links in JSON format
   cub link list --space my-space --json

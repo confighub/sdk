@@ -293,6 +293,23 @@ type FunctionInvocationRequest struct {
 	FunctionInvocations      FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }
 
+// FunctionIDs contains the IDs related to a function invocation.
+type FunctionIDs struct {
+	OrganizationID uuid.UUID `description:"ID of the Unit's Organization"`
+	SpaceID        uuid.UUID `description:"ID of the Unit's Space"`
+	UnitID         uuid.UUID `description:"ID of the Unit the configuration data is associated with"`
+	RevisionID     uuid.UUID `description:"ID of the Revision the configuration data is associated with"`
+}
+
+// FunctionInvocationSuccessResponse contains the data returned from a successful function invocation.
+type FunctionInvocationSuccessResponse struct {
+	ConfigData []byte               `swaggertype:"string" format:"byte" description:"The resulting configuration data, potentially mutated"`
+	Output     []byte               `swaggertype:"string" format:"byte" description:"Output other than config data, as embedded JSON"`
+	OutputType OutputType           `swaggertype:"string" description:"Type of structured function output, if any"`
+	Mutations  ResourceMutationList `description:"List of mutations in the same order as the resources in ConfigData"`
+	Mutators   []int                `description:"List of function invocation indices that resulted in mutations"`
+}
+
 // A FunctionInvocationResponse is returned by the function executor in response to a
 // FunctionInvocationRequest. It contains the potentially modified configuration data,
 // any output produced by read-only and/or validation functions, whether the function
@@ -302,17 +319,10 @@ type FunctionInvocationRequest struct {
 // combined into a single ValidationResult, multiple AttributeValueLists will be appended
 // together, and multiple ResourceInfoLists will be appended together.
 type FunctionInvocationResponse struct {
-	OrganizationID uuid.UUID            `description:"ID of the Unit's Organization"`
-	SpaceID        uuid.UUID            `description:"ID of the Unit's Space"`
-	UnitID         uuid.UUID            `description:"ID of the Unit the configuration data is associated with"`
-	RevisionID     uuid.UUID            `description:"ID of the Revision the configuration data is associated with"`
-	ConfigData     []byte               `swaggertype:"string" format:"byte" description:"The resulting configuration data, potentially mutated"`
-	Output         []byte               `swaggertype:"string" format:"byte" description:"Output other than config data, as embedded JSON"`
-	OutputType     OutputType           `swaggertype:"string" description:"Type of structured function output, if any"`
-	Success        bool                 `description:"True if all functions executed successfully"`
-	Mutations      ResourceMutationList `description:"List of mutations in the same order as the resources in ConfigData"`
-	Mutators       []int                `description:"List of function invocation indices that resulted in mutations"`
-	ErrorMessages  []string             `description:"Error messages from function execution; will be empty if Success is true"`
+	FunctionIDs
+	FunctionInvocationSuccessResponse
+	Success       bool     `description:"True if all functions executed successfully"`
+	ErrorMessages []string `description:"Error messages from function execution; will be empty if Success is true"`
 }
 
 // ResourceInfo contains the ResourceName, ResourceNameWithoutScope, ResourceType, and ResourceCategory for a configuration Element within a configuration Unit.

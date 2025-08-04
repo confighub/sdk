@@ -18,8 +18,13 @@ type APIResponse interface {
 }
 
 func IsAPIError(err error, resp APIResponse) bool {
+	if err != nil || resp == nil {
+		return true
+	}
+
 	// TODO: We should also check for nil JSON200 here
-	if err != nil || resp.StatusCode() != http.StatusOK {
+	statusCode := resp.StatusCode()
+	if statusCode != http.StatusOK && statusCode != http.StatusMultiStatus {
 		return true
 	}
 
@@ -30,8 +35,17 @@ func IsAPIError(err error, resp APIResponse) bool {
 		v = v.Elem()
 	}
 	json200Field := v.FieldByName("JSON200")
+	json207Field := v.FieldByName("JSON207")
 	// This will cause commands to bail and call InterpretErrorGeneric
-	if json200Field.IsValid() && json200Field.IsNil() {
+	// We're successful if we have either a 200 or 207 response
+	hasValidResponse := false
+	if json200Field.IsValid() && !json200Field.IsNil() {
+		hasValidResponse = true
+	}
+	if json207Field.IsValid() && !json207Field.IsNil() {
+		hasValidResponse = true
+	}
+	if !hasValidResponse {
 		return true
 	}
 	return false
@@ -71,7 +85,8 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 		name := fieldType.Name
 
 		// For a JSONxxx field, check if it's non-nil
-		if strings.HasPrefix(name, "JSON") && !strings.HasSuffix(name, "200") && !field.IsNil() {
+		// Skip JSON200 and JSON207 as they are success responses
+		if strings.HasPrefix(name, "JSON") && !strings.HasSuffix(name, "200") && !strings.HasSuffix(name, "207") && !field.IsNil() {
 			// Should always be a http.Response Code integer
 			res := v.MethodByName("StatusCode").Call(nil)
 			code := res[0].Int()

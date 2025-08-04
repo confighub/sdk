@@ -23,8 +23,7 @@ Examples:
   # Get details about a specific mutation in JSON format
   cub mutation get --space my-space --json my-deployment 3
 
-  # Get extended information about a mutation
-  cub mutation get --space my-space --json --extended my-ns 1`,
+`,
 	RunE: mutationGetCmdRun,
 }
 
@@ -45,14 +44,6 @@ func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
 	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.UnitID.String())
 	if err != nil {
 		return err
-	}
-	if extended {
-		mutationExtended, err := apiGetMutationExtended(unit.UnitID.String(), extendedMutationDetails.Mutation.MutationID.String())
-		if err != nil {
-			return err
-		}
-		displayGetResults(mutationExtended, displayMutationExtendedDetails)
-		return nil
 	}
 
 	displayGetResults(extendedMutationDetails, displayExtendedMutationDetails)
@@ -94,10 +85,6 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	}
 }
 
-func displayMutationExtendedDetails(mutationExtendedDetails *goclientnew.MutationExtended) {
-	displayMutationDetails(mutationExtendedDetails.Mutation)
-}
-
 func apiGetMutation(mutationID string, unitID string) (*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.GetExtendedMutationParams{}
 	include := "RevisionID,LinkID,TargetID"
@@ -115,21 +102,6 @@ func apiGetMutation(mutationID string, unitID string) (*goclientnew.ExtendedMuta
 		return nil, fmt.Errorf("SERVER DIDN'T CHECK: mutation %s not found", mutationID)
 	}
 	return mutation, nil
-}
-
-func apiGetMutationExtended(unitID string, mutationID string) (*goclientnew.MutationExtended, error) {
-	res, err := cubClientNew.GetMutationExtended(ctx,
-		uuid.MustParse(selectedSpaceID),
-		uuid.MustParse(unitID),
-		uuid.MustParse(mutationID))
-	if err != nil {
-		return nil, err
-	}
-	muteRes, err := goclientnew.ParseGetMutationExtendedResponse(res)
-	if IsAPIError(err, muteRes) {
-		return nil, InterpretErrorGeneric(err, muteRes)
-	}
-	return muteRes.JSON200, nil
 }
 
 func apiGetMutationFromNumber(mutationNum int64, unitID string) (*goclientnew.ExtendedMutation, error) {

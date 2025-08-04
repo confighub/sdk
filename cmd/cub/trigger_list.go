@@ -27,8 +27,8 @@ Examples:
   # List triggers in JSON format
   cub trigger list --space my-space --json
 
-  # List only trigger slugs
-  cub trigger list --space my-space --no-header --slugs
+  # List only trigger names
+  cub trigger list --space my-space --no-header --names
 
   # List triggers with a specific event type
   cub trigger list --space my-space --where "Event = 'Mutation'"

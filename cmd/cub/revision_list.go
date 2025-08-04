@@ -37,8 +37,7 @@ Examples:
   # List revisions with specific criteria
   cub revision list --space my-space --where 'RevisionNum > 1' my-ns
 
-  # List revisions with extended information
-  cub revision list --space my-space --json --extended my-ns`,
+`,
 	Args: cobra.ExactArgs(1),
 	RunE: revisionListCmdRun,
 }
