@@ -186,8 +186,7 @@ type BridgeWorker struct {
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 	UserID    *UUID     `json:"UserID"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -297,7 +296,7 @@ type ExtendedLink struct {
 	// FromUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -328,7 +327,7 @@ type ExtendedLink struct {
 	// ToUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -378,7 +377,7 @@ type ExtendedMutation struct {
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -406,7 +405,7 @@ type ExtendedRevision struct {
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -553,7 +552,7 @@ type ExtendedUnit struct {
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -571,7 +570,7 @@ type ExtendedUnit struct {
 	// UpstreamUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -799,7 +798,7 @@ type Link struct {
 	EntityType string `json:"EntityType,omitempty"`
 
 	// FromUnitID Unique identifier the Unit the Link initiates from. Links must be in the same space as the source unit.
-	FromUnitID openapi_types.UUID `json:"FromUnitID,omitempty"`
+	FromUnitID openapi_types.UUID `json:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty"`
@@ -820,14 +819,26 @@ type Link struct {
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty"`
 
 	// ToUnitID Unique identifier the Unit the Link targets.
-	ToUnitID openapi_types.UUID `json:"ToUnitID,omitempty"`
+	ToUnitID openapi_types.UUID `json:"ToUnitID"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
+}
+
+// LinkCreateOrUpdateResponse defines model for LinkCreateOrUpdateResponse.
+type LinkCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Link Link connects two config Units in a dependency / producer-consumer relationship.
+	// A Link indicates that config values Provided by the To Unit (the producer) may
+	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
+	// to be matched before values Provided by other Units in the Space (if within the same
+	// Space). Links must be created in the same Space as the From Unit.
+	// They also imply an ordering when Applied or Destroyed as a Set.
+	Link *Link `json:"Link,omitempty"`
 }
 
 // Mutation Mutation is a single source of mutation for a Revision.
@@ -872,8 +883,7 @@ type Mutation struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -901,7 +911,7 @@ type Organization struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty"`
 
-	// BillingAccountID Unique identifier for a billing account for the organization.
+	// BillingAccountID Unique identifier for a billing account for the organization. Set to the BillingAccountID of the authenticated Organization.
 	BillingAccountID openapi_types.UUID `json:"BillingAccountID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -931,8 +941,7 @@ type Organization struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1111,8 +1120,7 @@ type Revision struct {
 	// UserID UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000".
 	UserID openapi_types.UUID `json:"UserID,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1151,8 +1159,7 @@ type Set struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1188,8 +1195,7 @@ type Space struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1208,7 +1214,7 @@ type Target struct {
 	Annotations map[string]string `json:"Annotations,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker associated with the Target.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1253,7 +1259,7 @@ type Target struct {
 	Parameters string `json:"Parameters,omitempty"`
 
 	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS".
-	ProviderType string `json:"ProviderType,omitempty"`
+	ProviderType string `json:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug"`
@@ -1265,13 +1271,12 @@ type Target struct {
 	TargetID openapi_types.UUID `json:"TargetID,omitempty"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
-	ToolchainType string `json:"ToolchainType,omitempty"`
+	ToolchainType string `json:"ToolchainType"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1322,7 +1327,7 @@ type Trigger struct {
 	EntityType string `json:"EntityType,omitempty"`
 
 	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation, PreClone, and PostClone
-	Event string `json:"Event,omitempty"`
+	Event string `json:"Event"`
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty"`
@@ -1341,7 +1346,7 @@ type Trigger struct {
 
 	// ToolchainType ToolchainType specifies the type of toolchain this trigger works with.
 	// 		This determines which configuration formats the trigger can process.
-	ToolchainType string `json:"ToolchainType,omitempty"`
+	ToolchainType string `json:"ToolchainType"`
 
 	// TriggerID TriggerID uniquely identifies a trigger within the system.
 	TriggerID openapi_types.UUID `json:"TriggerID,omitempty"`
@@ -1354,8 +1359,7 @@ type Trigger struct {
 	// 		This value is returned by ConfigHub based on the corresponding property of the specified function.
 	Validating bool `json:"Validating,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1365,7 +1369,7 @@ type UUID = openapi_types.UUID
 // Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 // of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 // that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 // from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 // the underlying configuration / deployment tool. The resources must belong to a single
 // infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -1442,7 +1446,7 @@ type Unit struct {
 	TargetID *UUID              `json:"TargetID"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
-	ToolchainType string `json:"ToolchainType,omitempty"`
+	ToolchainType string `json:"ToolchainType"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty"`
@@ -1456,9 +1460,28 @@ type Unit struct {
 	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID"`
 	UpstreamUnitID      *UUID `json:"UpstreamUnitID"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
+}
+
+// UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
+type UnitCreateOrUpdateResponse struct {
+	Error *ResponseError               `json:"Error,omitempty"`
+	Links []LinkCreateOrUpdateResponse `json:"Links,omitempty"`
+
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
+	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
+	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
+	// the underlying configuration / deployment tool. The resources must belong to a single
+	// infrastructure provider and the actuation mechanism must be able to resolve references and
+	// ordering dependencies among the resources within the document. For example, if one resource
+	// needs to be fully provisioned to provide input to another resource, then the actuation code is
+	// responsible for handling this. Revisions store historical copies of the configuration data.
+	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
+	// new variants of a configuration.
+	Unit *Unit `json:"Unit,omitempty"`
 }
 
 // UnitEvent UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
@@ -1503,8 +1526,7 @@ type UnitEvent struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -1523,7 +1545,7 @@ type UnitExtended struct {
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single "transaction"
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
 	// the underlying configuration / deployment tool. The resources must belong to a single
 	// infrastructure provider and the actuation mechanism must be able to resolve references and
@@ -1583,8 +1605,7 @@ type User struct {
 	// Username Unique username for a User. Must be unique for all of Confighub.
 	Username string `json:"Username,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
 }
 
@@ -2426,6 +2447,51 @@ type GetUnitParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
+// PatchUnitApplicationMergePatchPlusJSONBody defines parameters for PatchUnit.
+type PatchUnitApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Data The full configuration data for this unit.
+	Data *[]int `json:"Data"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
+	LastChangeDescription *string `json:"LastChangeDescription"`
+
+	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
+	SetID *[]int `json:"SetID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	TargetID *[]int `json:"TargetID"`
+
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// PatchUnitParams defines parameters for PatchUnit.
+type PatchUnitParams struct {
+	// RevisionId Unique identifier for a revision_id
+	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty"`
+
+	// Upgrade Flag parameter for enabling upgrade
+	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty"`
+
+	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	Restore *string `form:"restore,omitempty" json:"restore,omitempty"`
+}
+
 // UpdateUnitParams defines parameters for UpdateUnit.
 type UpdateUnitParams struct {
 	// RevisionId Unique identifier for a revision_id
@@ -2433,6 +2499,9 @@ type UpdateUnitParams struct {
 
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty"`
+
+	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	Restore *string `form:"restore,omitempty" json:"restore,omitempty"`
 }
 
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
@@ -2753,6 +2822,206 @@ type ListAllUnitsParams struct {
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty"`
 }
 
+// BulkPatchUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchUnits.
+type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Data The full configuration data for this unit.
+	Data *[]int `json:"Data"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
+	LastChangeDescription *string `json:"LastChangeDescription"`
+
+	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
+	SetID *[]int `json:"SetID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	TargetID *[]int `json:"TargetID"`
+
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchUnitsParams defines parameters for BulkPatchUnits.
+type BulkPatchUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Upgrade If true, upgrade units from upstream sources
+	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty"`
+
+	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	Restore *string `form:"restore,omitempty" json:"restore,omitempty"`
+}
+
+// BulkCreateUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateUnits.
+type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Data The full configuration data for this unit.
+	Data *[]int `json:"Data"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
+	LastChangeDescription *string `json:"LastChangeDescription"`
+
+	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
+	SetID *[]int `json:"SetID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	TargetID *[]int `json:"TargetID"`
+
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateUnitsParams defines parameters for BulkCreateUnits.
+type BulkCreateUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Unit names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// DestSpaces Comma-separated list of destination Space IDs or slugs
+	DestSpaces *string `form:"dest_spaces,omitempty" json:"dest_spaces,omitempty"`
+}
+
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -2860,11 +3129,20 @@ type UpdateTriggerJSONRequestBody = Trigger
 // CreateUnitJSONRequestBody defines body for CreateUnit for application/json ContentType.
 type CreateUnitJSONRequestBody = Unit
 
+// PatchUnitApplicationMergePatchPlusJSONRequestBody defines body for PatchUnit for application/merge-patch+json ContentType.
+type PatchUnitApplicationMergePatchPlusJSONRequestBody PatchUnitApplicationMergePatchPlusJSONBody
+
 // UpdateUnitJSONRequestBody defines body for UpdateUnit for application/json ContentType.
 type UpdateUnitJSONRequestBody = Unit
 
 // ImportUnitJSONRequestBody defines body for ImportUnit for application/json ContentType.
 type ImportUnitJSONRequestBody = ImportRequest
+
+// BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchUnits for application/merge-patch+json ContentType.
+type BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody BulkPatchUnitsApplicationMergePatchPlusJSONBody
+
+// BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateUnits for application/merge-patch+json ContentType.
+type BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody BulkCreateUnitsApplicationMergePatchPlusJSONBody
 
 // AsFunctionArgumentValue0 returns the union data inside the FunctionArgument_Value as a FunctionArgumentValue0
 func (t FunctionArgument_Value) AsFunctionArgumentValue0() (FunctionArgumentValue0, error) {

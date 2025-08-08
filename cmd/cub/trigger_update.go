@@ -36,27 +36,30 @@ func init() {
 }
 
 func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentTrigger, err := apiGetTriggerFromSlug(args[0])
 	if err != nil {
 		return err
 	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentTrigger); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingTrigger := currentTrigger
-		currentTrigger = new(goclientnew.Trigger)
-		// Before reading from stdin so it can be overridden by stdin
-		currentTrigger.Version = existingTrigger.Version
-		if err := populateNewModelFromStdin(currentTrigger); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentTrigger = new(goclientnew.Trigger)
+			currentTrigger.Version = existingTrigger.Version
+		}
+		
+		if err := populateModelFromFlags(currentTrigger); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentTrigger.OrganizationID = existingTrigger.OrganizationID
 		currentTrigger.SpaceID = existingTrigger.SpaceID
 		currentTrigger.TriggerID = existingTrigger.TriggerID

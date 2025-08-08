@@ -23,27 +23,30 @@ func init() {
 }
 
 func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentSet, err := apiGetSetFromSlug(args[0])
 	if err != nil {
 		return err
 	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentSet); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingSet := currentSet
-		currentSet = new(goclientnew.Set)
-		// Before reading from stdin so it can be overridden by stdin
-		currentSet.Version = existingSet.Version
-		if err := populateNewModelFromStdin(currentSet); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentSet = new(goclientnew.Set)
+			currentSet.Version = existingSet.Version
+		}
+		
+		if err := populateModelFromFlags(currentSet); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentSet.OrganizationID = existingSet.OrganizationID
 		currentSet.SpaceID = existingSet.SpaceID
 		currentSet.SetID = existingSet.SetID

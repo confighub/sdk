@@ -32,9 +32,13 @@ func init() {
 }
 
 func organizationMemberCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	member := &goclientnew.OrganizationMember{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(member); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(member); err != nil {
 			return err
 		}
 	}

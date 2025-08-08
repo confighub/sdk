@@ -5,7 +5,6 @@ package api
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -194,20 +193,6 @@ func SkipWhitespaceWithLimit(decodedQueryString string, limit int) string {
 		return decodedQueryString[pos[1]:]
 	}
 	return decodedQueryString
-}
-
-// PreprocessQueryString handles URL decoding and length validation
-func PreprocessQueryString(queryString string, maxLength int) (string, error) {
-	decodedQueryString, err := url.QueryUnescape(queryString)
-	if err != nil {
-		return "", fmt.Errorf("failed to decode query string: %w", err)
-	}
-
-	if maxLength > 0 && len(decodedQueryString) > maxLength {
-		return "", fmt.Errorf("query string exceeds maximum length of %d", maxLength)
-	}
-
-	return decodedQueryString, nil
 }
 
 func GetLogicalOperator(decodedQueryString string) (string, string) {

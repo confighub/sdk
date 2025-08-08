@@ -4,23 +4,80 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 var unitPushUpgradeCmd = &cobra.Command{
-	Use:   "upgrade downstreams from <name>",
+	Use:   "push-upgrade <name>",
 	Short: "Upgrade downstreams from unit",
-	Long:  `upgrade downstreams from the unit`,
+	Long:  getUnitPushUpgradeHelp(),
 	Args:  cobra.ExactArgs(1),
 	RunE:  unitBulkUpgradeCmdRun,
 }
 
+func getUnitPushUpgradeHelp() string {
+	baseHelp := `Upgrade all downstream units that depend on the specified upstream unit. This command finds all units that have the specified unit as their upstream source and upgrades them to match the latest version if they are behind.
+
+The push-upgrade operation only affects downstream units where:
+- Unit.UpstreamUnitID matches the specified unit
+- Unit.UpstreamRevisionNum is less than the upstream unit's HeadRevisionNum
+
+This is useful for propagating changes from a template or base configuration to all dependent units across your infrastructure.
+
+Examples:
+  # Upgrade all downstream units from a template unit
+  cub unit push-upgrade --space my-space base-template
+
+  # Upgrade downstream units with verbose output showing details
+  cub unit push-upgrade --space my-space base-template --verbose
+
+  # Upgrade and get JSON response for programmatic use
+  cub unit push-upgrade --space my-space base-template --json
+
+  # Upgrade with specific field selection using jq
+  cub unit push-upgrade --space my-space base-template --jq '.[] | select(.Unit) | .Unit | {Slug, UnitID, HeadRevisionNum}'`
+
+	agentContext := `Essential for maintaining consistency across dependent configurations.
+
+Agent push-upgrade workflow:
+1. Identify the upstream/template unit by slug
+2. Execute bulk push-upgrade operation on all downstream units
+3. Review results for any partial failures or issues
+4. Handle any units that failed to upgrade
+
+Common use cases:
+
+Upgrade from template unit:
+  cub unit push-upgrade --space SPACE template-name --verbose
+
+Get structured push-upgrade results:
+  cub unit push-upgrade --space SPACE template-name --json
+
+Check specific push-upgrade outcomes:
+  cub unit push-upgrade --space SPACE template-name --jq '.[] | select(.Error) | {Unit: .Unit.Slug, Error: .Error.Message}'
+
+Key flags for agents:
+- --verbose: Show detailed information about upgraded units
+- --json: Get structured response with full push-upgrade details
+- --jq: Extract specific information from push-upgrade results
+- --quiet: Suppress default output for programmatic use
+
+Post-upgrade workflow:
+1. Review push-upgrade results for any failures
+2. Check individual units that failed to upgrade for specific issues
+3. Use 'unit get' to verify upgrade succeeded for critical units
+4. Monitor apply gates and triggers for upgraded units`
+
+	return getCommandHelp(baseHelp, agentContext)
+}
+
 func init() {
 	addStandardUpdateFlags(unitPushUpgradeCmd)
+	enableWaitFlag(unitPushUpgradeCmd)
 	unitCmd.AddCommand(unitPushUpgradeCmd)
 }
 
@@ -29,67 +86,48 @@ func unitBulkUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	upgradeRes, err := cubClientNew.UpgradeDownstreamUnitsWithResponse(ctx, uuid.MustParse(selectedSpaceID), currentUnit.UnitID)
-	if IsAPIError(err, upgradeRes) {
-		return InterpretErrorGeneric(err, upgradeRes)
+
+	// Build WHERE clause for downstream units that need upgrading
+	whereClause := fmt.Sprintf("Unit.UpstreamUnitID = '%s' AND Unit.UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum", currentUnit.UnitID.String())
+
+	// Build bulk patch parameters
+	upgrade := true
+	params := &goclientnew.BulkPatchUnitsParams{
+		Where:   &whereClause,
+		Upgrade: &upgrade, // Set upgrade to true
 	}
 
-	unitDetails := upgradeRes.JSON200
-	displayUpgradeResults(unitDetails, "unit", args[0], currentUnit.UnitID.String(), displayBulkUpgradeDetails)
-	return nil
-}
+	// Set include parameter to expand UpstreamUnitID
+	include := "UpstreamUnitID"
+	params.Include = &include
 
-func displayUpgradeResults[Result any](result *Result, entityName, slug, id string, display func(result *Result)) {
-	if !quiet {
-		tprint("Successfully upgraded %ss related to %s (%s)", entityName, slug, id)
-	}
-	if verbose {
-		display(result)
-	}
-	if jsonOutput {
-		displayJSON(result)
-	}
-	if jq != "" {
-		displayJQ(result)
-	}
-}
+	// Use "null" as the patch body since we're only upgrading
+	patchData := []byte("null")
 
-func displayBulkUpgradeDetails(unitDetails *goclientnew.UpgradeUnitResponse) {
-	tableSuccess := tableView()
-	if !noheader {
-		tableSuccess.SetHeader([]string{"Name", "ID", "Data-Bytes",
-			"Head-Revision", "Apply-Gates",
-			"Last-Change"})
+	// Call the bulk patch API
+	bulkRes, err := cubClientNew.BulkPatchUnitsWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchData),
+	)
+	if IsAPIError(err, bulkRes) {
+		return InterpretErrorGeneric(err, bulkRes)
 	}
 
-	for _, upgraded := range unitDetails.UpgradedUnits {
-		applyGates := "None"
-		if len(upgraded.ApplyGates) != 0 {
-			if len(upgraded.ApplyGates) > 1 {
-				applyGates = "Multiple"
-			} else {
-				for key := range upgraded.ApplyGates {
-					applyGates = key
-				}
-			}
-		}
-		tableSuccess.Append([]string{
-			upgraded.Slug,
-			upgraded.UnitID.String(),
-			fmt.Sprintf("%d", len(upgraded.Data)),
-			fmt.Sprintf("%d", upgraded.HeadRevisionNum),
-			applyGates,
-			upgraded.LastChangeDescription,
-		})
+	// Handle response based on status code
+	var responses *[]goclientnew.UnitCreateOrUpdateResponse
+	var statusCode int
+
+	if bulkRes.JSON200 != nil {
+		responses = bulkRes.JSON200
+		statusCode = 200
+	} else if bulkRes.JSON207 != nil {
+		responses = bulkRes.JSON207
+		statusCode = 207
+	} else {
+		return fmt.Errorf("unexpected response from bulk patch API")
 	}
 
-	tableFails := tableView()
-	if !noheader {
-		tableFails.SetHeader([]string{"ID", "Error"})
-	}
-	for k, v := range unitDetails.FailedUnits {
-		tableSuccess.Append([]string{k, v})
-	}
-	tableSuccess.Render()
-	tableFails.Render()
+	return handleBulkCreateOrUpdateResponse(responses, statusCode, "upgrade", fmt.Sprintf("%s (%s)", args[0], currentUnit.UnitID.String()))
 }

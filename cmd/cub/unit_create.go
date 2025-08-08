@@ -4,13 +4,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -21,16 +19,18 @@ import (
 )
 
 var unitCreateCmd = &cobra.Command{
-	Use:   "create <name> [config-file]",
-	Short: "Create a unit",
-	Long:  getUnitCreateHelp(),
-	Args:  cobra.RangeArgs(1, 2),
-	RunE:  unitCreateCmdRun,
+	Use:         "create [<name> [config-file]]",
+	Short:       "Create a unit or bulk create units",
+	Long:        getUnitCreateHelp(),
+	Args:        cobra.RangeArgs(0, 2), // Allow 0 args for bulk mode
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        unitCreateCmdRun,
 }
 
 func getUnitCreateHelp() string {
-	baseHelp := `Create a new unit in a space. A unit represents a collection of related resources that can be managed together.
+	baseHelp := `Create a new unit or bulk create multiple units by cloning existing ones.
 
+SINGLE UNIT CREATION:
 Like other ConfigHub entities, Units have metadata, which can be partly set on the command line
 and otherwise read from stdin using the flag --from-stdin. 
 
@@ -41,7 +41,11 @@ Unit configuration data can be provided in multiple ways:
   1. From a local or remote configuration file, or from stdin (by specifying "-")
   2. By cloning an existing upstream unit (using --upstream-unit)
 
-Examples:
+BULK UNIT CREATION:
+When no positional arguments are provided, bulk create mode is activated. This mode clones existing
+units based on filters and creates multiple new units with optional modifications.
+
+Single Unit Examples:
   # Create a unit from a local YAML file
   cub unit create --space my-space myunit config.yaml
 
@@ -58,7 +62,20 @@ Examples:
   cub unit create --space my-space myunit config.yaml --from-stdin
 
   # Clone an existing unit
-  cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment`
+  cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment
+
+Bulk Create Examples:
+  # Clone all units matching a pattern with name prefixes
+  cub unit create --where "Slug LIKE 'app-%'" --name-prefix dev-,staging- --dest-space dev-space
+
+  # Clone specific units to multiple spaces
+  cub unit create --unit app1,app2 --dest-space dev-space,test-space
+
+  # Clone units with target assignment and labels
+  cub unit create --where "Labels.env = 'prod'" --name-prefix canary- --target my-target --label "env=canary"
+
+  # Clone units with JSON patch modifications
+  echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin`
 
 	agentContext := `Essential for adding new configuration to ConfigHub.
 
@@ -103,31 +120,99 @@ var unitCreateArgs struct {
 	importUnitSlug    string
 	toolchainType     string
 	targetSlug        string
+	// Bulk create specific flags
+	destSpaces   []string
+	namePrefixes []string
 }
 
 func init() {
-	addStandardCreateFlags(unitCreateCmd)
+	addStandardCreateFlags(unitCreateCmd) // This already includes verbose, json, jq flags
 	enableWaitFlag(unitCreateCmd)
+	enableWhereFlag(unitCreateCmd)
+
+	// Single unit create flags
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.targetSlug, "target", "", "target for the unit")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
-	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type")
+	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
+
+	// Bulk create specific flags
+	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
+	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	unitCreateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk create (can be repeated or comma-separated)")
+
 	unitCmd.AddCommand(unitCreateCmd)
 }
 
-func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
-	// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
-	if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
-		return errors.New("can't read both entity attributes and config data from stdin")
+func checkUnitCreateConflictingArgs(args []string) (bool, error) {
+	// Determine if bulk create mode: no positional args and has bulk-specific flags
+	isBulkCreateMode := len(args) == 0 && (where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || len(unitCreateArgs.namePrefixes) > 0)
+
+	if isBulkCreateMode {
+		// Validate bulk create requirements
+		if where == "" && len(unitIdentifiers) == 0 {
+			return false, errors.New("bulk create mode requires --where or --unit flags")
+		}
+
+		if len(unitIdentifiers) > 0 && where != "" {
+			return false, errors.New("--unit and --where flags are mutually exclusive")
+		}
+
+		if len(unitCreateArgs.destSpaces) == 0 && len(unitCreateArgs.namePrefixes) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space or --name-prefix")
+		}
+
+		// Validate single-mode-only flags are not used in bulk mode
+		if unitCreateArgs.upstreamUnitSlug != "" || unitCreateArgs.upstreamSpaceSlug != "" ||
+			unitCreateArgs.importUnitSlug != "" || unitCreateArgs.toolchainType != string(workerapi.ToolchainKubernetesYAML) {
+			return false, errors.New("--upstream-unit, --upstream-space, --import, and --toolchain flags cannot be used in bulk create mode")
+		}
+	} else {
+		// Single create mode validation
+		if len(args) == 0 {
+			return false, errors.New("unit name is required for single unit creation")
+		}
+
+		if where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || len(unitCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--where, --unit, --dest-space, --name-prefix) can only be used without positional arguments")
+		}
+
+		// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
+		if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
+			return false, errors.New("can't read both entity attributes and config data from stdin")
+		}
 	}
 
+	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	return isBulkCreateMode, nil
+}
+
+func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
+	isBulkCreateMode, err := checkUnitCreateConflictingArgs(args)
+	if err != nil {
+		return err
+	}
+
+	if isBulkCreateMode {
+		return runBulkUnitCreate()
+	}
+
+	return runSingleUnitCreate(args)
+}
+
+func runSingleUnitCreate(args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 	newUnit := &goclientnew.Unit{}
 	newParams := &goclientnew.CreateUnitParams{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newUnit); err != nil {
+
+	// Handle --from-stdin or --filename
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(newUnit); err != nil {
 			return err
 		}
 	}
@@ -185,7 +270,6 @@ func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newParams.UpstreamUnitId = &upstreamUnitID
 	}
 
-
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if IsAPIError(err, unitRes) {
 		return InterpretErrorGeneric(err, unitRes)
@@ -202,70 +286,136 @@ func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func fetchContent(source string) ([]byte, error) {
-	if source == "" {
-		return nil, errors.New("source cannot be empty")
-	}
+// createBulkCreatePatch creates a JSON patch for bulk create operations
+func createBulkCreatePatch() ([]byte, error) {
+	patchMap := make(map[string]interface{})
 
-	// Handle stdin
-	if source == "-" {
-		return readStdin()
-	}
-
-	// Handle file:// URLs
-	if filePath, found := strings.CutPrefix(source, "file://"); found {
-		data, err := os.ReadFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+	// Add target if specified
+	if unitCreateArgs.targetSlug != "" {
+		var targetID uuid.UUID
+		if unitCreateArgs.targetSlug == "-" {
+			targetID = uuid.Nil
+		} else {
+			exTarget, err := apiGetTargetFromSlug(unitCreateArgs.targetSlug, selectedSpaceID)
+			if err != nil {
+				return nil, err
+			}
+			targetID = exTarget.Target.TargetID
 		}
-		return data, nil
+		patchMap["TargetID"] = targetID
 	}
 
-	// Handle HTTPS URLs only
-	if strings.HasPrefix(source, "https://") {
-		return fetchWithHTTP(source)
-	}
-
-	// Handle local files (backward compatibility - no prefix)
-	if !strings.Contains(source, "://") {
-		data, err := os.ReadFile(source)
+	// Add labels if specified
+	if len(label) > 0 {
+		labels := make(map[string]string)
+		err := setLabels(&labels)
 		if err != nil {
 			return nil, err
 		}
-		return data, nil
+		patchMap["Labels"] = labels
 	}
 
-	return nil, fmt.Errorf("unsupported URL scheme: %s (only file:// and https:// are supported)", source)
+	// Add change description if specified
+	if changeDescription != "" {
+		patchMap["LastChangeDescription"] = changeDescription
+	}
+
+	// For bulk create, we typically want to apply other modifications from stdin/filename
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		// Get additional patch data from stdin/filename
+		additionalPatchData, err := getBytesFromFlags()
+		if err != nil {
+			return nil, err
+		}
+
+		if len(additionalPatchData) > 0 && string(additionalPatchData) != "null" {
+			var additionalPatch map[string]interface{}
+			if err := json.Unmarshal(additionalPatchData, &additionalPatch); err != nil {
+				return nil, fmt.Errorf("failed to parse additional patch data: %w", err)
+			}
+
+			// Merge additional patch into our patch
+			for k, v := range additionalPatch {
+				patchMap[k] = v
+			}
+		}
+	}
+
+	// If no modifications specified, create an empty patch
+	if len(patchMap) == 0 {
+		patchMap = map[string]interface{}{}
+	}
+
+	return json.Marshal(patchMap)
 }
 
-func fetchWithHTTP(source string) ([]byte, error) {
-	// Only allow HTTPS URLs for security
-	if !strings.HasPrefix(source, "https://") {
-		return nil, fmt.Errorf("only HTTPS URLs are supported, got: %s", source)
+func runBulkUnitCreate() error {
+	// Build WHERE clause from unit identifiers if provided
+	var effectiveWhere string
+	if len(unitIdentifiers) > 0 {
+		whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
+		if err != nil {
+			return err
+		}
+		effectiveWhere = whereClause
+	} else {
+		effectiveWhere = where
 	}
 
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	// Append space constraint to the where clause
+	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Make HTTP request
-	resp, err := client.Get(source)
+	// Create JSON patch for customizing cloned units
+	patchJSON, err := createBulkCreatePatch()
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch %s: %w", source, err)
-	}
-	defer resp.Body.Close()
-
-	// Check HTTP status
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch %s, Code: %d, Status: %s", source, resp.StatusCode, resp.Status)
+		return err
 	}
 
-	// Read response body
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response from %s: %w", source, err)
+	// Build bulk create parameters
+	params := &goclientnew.BulkCreateUnitsParams{
+		Where: &effectiveWhere,
 	}
 
-	return data, nil
+	// Set include parameter to expand UpstreamUnitID
+	include := "UpstreamUnitID"
+	params.Include = &include
+
+	// Set name prefixes parameter if specified
+	if len(unitCreateArgs.namePrefixes) > 0 {
+		namePrefixesStr := strings.Join(unitCreateArgs.namePrefixes, ",")
+		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Set destination spaces parameter if specified
+	if len(unitCreateArgs.destSpaces) > 0 {
+		destSpacesStr := strings.Join(unitCreateArgs.destSpaces, ",")
+		params.DestSpaces = &destSpacesStr
+	}
+
+	// Call the bulk create API
+	bulkRes, err := cubClientNew.BulkCreateUnitsWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchJSON),
+	)
+	if IsAPIError(err, bulkRes) {
+		return InterpretErrorGeneric(err, bulkRes)
+	}
+
+	// Handle response based on status code
+	var responses *[]goclientnew.UnitCreateOrUpdateResponse
+	var statusCode int
+
+	if bulkRes.JSON200 != nil {
+		responses = bulkRes.JSON200
+		statusCode = 200
+	} else if bulkRes.JSON207 != nil {
+		responses = bulkRes.JSON207
+		statusCode = 207
+	} else {
+		return fmt.Errorf("unexpected response from bulk create API")
+	}
+
+	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
 }

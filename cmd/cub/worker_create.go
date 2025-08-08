@@ -39,9 +39,13 @@ func init() {
 }
 
 func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	workerDetails := &goclientnew.BridgeWorker{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(workerDetails); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(workerDetails); err != nil {
 			return err
 		}
 	}

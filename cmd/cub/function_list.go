@@ -16,11 +16,12 @@ import (
 )
 
 var functionListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List functions",
-	Long:  getFunctionListHelp(),
-	Args:  cobra.ExactArgs(0),
-	RunE:  functionListCmdRun,
+	Use:         "list",
+	Short:       "List functions",
+	Long:        getFunctionListHelp(),
+	Args:        cobra.ExactArgs(0),
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        functionListCmdRun,
 }
 
 func getFunctionListHelp() string {
@@ -78,6 +79,11 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 	entity := builtinFunctionKey
 	funcs := functionsByToolchain{}
 	params := &goclientnew.ListFunctionsParams{}
+	
+	// Validate that selectedSpaceID is not "*" when target, worker, or unit is specified
+	if selectedSpaceID == "*" && (targetSlug != "" || workerSlug != "" || unitSlug != "") {
+		return entity, funcs, fmt.Errorf("cannot use --space '*' with --target, --worker, or --unit flags")
+	}
 	if targetSlug != "" {
 		targetDetails, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID)
 		if err != nil {
@@ -110,17 +116,27 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 		entity = unitIDStr
 	}
 
-	// TODO: Support ListOrgFunctionsWithResponse for --space "*", but only for built-in functions
-
-	funcsRes, err := cubClientNew.ListFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), params)
-	if IsAPIError(err, funcsRes) {
-		return entity, funcs, InterpretErrorGeneric(err, funcsRes)
+	if selectedSpaceID == "*" {
+		orgFuncsRes, err := cubClientNew.ListOrgFunctionsWithResponse(ctx)
+		if IsAPIError(err, orgFuncsRes) {
+			return entity, funcs, InterpretErrorGeneric(err, orgFuncsRes)
+		}
+		// This shouldn't happen
+		if orgFuncsRes.JSON200 == nil {
+			return entity, funcs, fmt.Errorf("no functions returned")
+		}
+		funcs = *orgFuncsRes.JSON200
+	} else {
+		funcsRes, err := cubClientNew.ListFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), params)
+		if IsAPIError(err, funcsRes) {
+			return entity, funcs, InterpretErrorGeneric(err, funcsRes)
+		}
+		// This shouldn't happen
+		if funcsRes.JSON200 == nil {
+			return entity, funcs, fmt.Errorf("no functions returned")
+		}
+		funcs = *funcsRes.JSON200
 	}
-	// This shouldn't happen
-	if funcsRes.JSON200 == nil {
-		return entity, funcs, fmt.Errorf("no functions returned")
-	}
-	funcs = *funcsRes.JSON200
 	return entity, funcs, nil
 }
 

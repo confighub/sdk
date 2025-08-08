@@ -23,26 +23,30 @@ func init() {
 }
 
 func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentTarget, err := apiGetTargetFromSlug(args[0], selectedSpaceID)
 	if err != nil {
 		return err
 	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(currentTarget.Target); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingTarget := currentTarget.Target
-		currentTarget.Target = new(goclientnew.Target)
-		// Before reading from stdin so it can be overridden by stdin
-		currentTarget.Target.Version = existingTarget.Version
-		if err := populateNewModelFromStdin(currentTarget.Target); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentTarget.Target = new(goclientnew.Target)
+			currentTarget.Target.Version = existingTarget.Version
+		}
+		
+		if err := populateModelFromFlags(currentTarget.Target); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentTarget.Target.OrganizationID = existingTarget.OrganizationID
 		currentTarget.Target.SpaceID = existingTarget.SpaceID
 		currentTarget.Target.TargetID = existingTarget.TargetID

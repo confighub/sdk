@@ -22,6 +22,10 @@ func init() {
 }
 
 func spaceUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	currentSpace, err := apiGetSpaceFromSlug(args[0])
 	if err != nil {
 		return err
@@ -29,20 +33,20 @@ func spaceUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	newBody := currentSpace
 	currentSpaceID := currentSpace.SpaceID
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(newBody); err != nil {
+	
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			newBody = new(goclientnew.Space)
+			newBody.Version = currentSpace.Version
+		}
+		
+		if err := populateModelFromFlags(newBody); err != nil {
 			return err
 		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		newBody = new(goclientnew.Space)
-		// Before reading from stdin so it can be overridden by stdin
-		newBody.Version = currentSpace.Version
-		if err := populateNewModelFromStdin(newBody); err != nil {
-			return err
-		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		newBody.OrganizationID = currentSpace.OrganizationID
 		newBody.SpaceID = currentSpace.SpaceID
 	}

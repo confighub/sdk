@@ -97,3 +97,69 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 	// This should be a nil JSON200 response
 	return errors.New("no response body from server for req " + requestID)
 }
+
+// displayResponseErrorDetails displays detailed information for a single ResponseError
+func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
+	table := detailView()
+	
+	table.Append([]string{"Message:", respError.Message})
+	table.Append([]string{"Status:", fmt.Sprintf("%d", respError.Status)})
+	
+	if respError.Type != "" {
+		table.Append([]string{"Type:", respError.Type})
+	}
+	
+	if respError.ErrorCategory != "" {
+		table.Append([]string{"Category:", respError.ErrorCategory})
+	}
+	
+	if respError.ErrorMetadata != nil {
+		if respError.ErrorMetadata.EntityType != "" {
+			table.Append([]string{"Entity Type:", respError.ErrorMetadata.EntityType})
+		}
+		if respError.ErrorMetadata.EntityID != "" {
+			table.Append([]string{"Entity ID:", respError.ErrorMetadata.EntityID})
+		}
+	}
+	
+	if len(respError.Details) > 0 {
+		table.Append([]string{"Details:", strings.Join(respError.Details, "; ")})
+	}
+	
+	table.Render()
+}
+
+// displayResponseErrorTable displays a table of multiple ResponseErrors
+func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
+	table := tableView()
+	if !noheader {
+		table.SetHeader([]string{"Entity Type", "Entity ID", "Status", "Message"})
+	}
+	
+	for _, respError := range errors {
+		entityType := ""
+		entityID := ""
+		
+		if respError.ErrorMetadata != nil {
+			entityType = respError.ErrorMetadata.EntityType
+			entityID = respError.ErrorMetadata.EntityID
+		}
+		
+		// If no entity metadata, show "unknown"
+		if entityType == "" {
+			entityType = "unknown"
+		}
+		if entityID == "" {
+			entityID = "unknown"
+		}
+		
+		table.Append([]string{
+			entityType,
+			entityID,
+			fmt.Sprintf("%d", respError.Status),
+			respError.Message,
+		})
+	}
+	
+	table.Render()
+}

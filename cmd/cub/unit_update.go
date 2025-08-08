@@ -4,8 +4,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -15,11 +18,12 @@ import (
 )
 
 var unitUpdateCmd = &cobra.Command{
-	Use:   "update <slug or id> [config-file]",
-	Short: "Update a unit",
-	Long:  getUnitUpdateHelp(),
-	Args:  cobra.RangeArgs(1, 2),
-	RunE:  unitUpdateCmdRun,
+	Use:         "update <slug or id> [config-file]",
+	Short:       "Update a unit",
+	Long:        getUnitUpdateHelp(),
+	Args:        cobra.RangeArgs(0, 2), // Allow 0 args for bulk mode
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        unitUpdateCmdRun,
 }
 
 func getUnitUpdateHelp() string {
@@ -55,11 +59,39 @@ Examples:
   # Restore a unit to 2 revisions ago (relative to head)
   cub unit update --space my-space myunit --restore -2
 
+  # Restore a unit using a specific revision ID
+  cub unit update --space my-space myunit --restore 550e8400-e29b-41d4-a716-446655440000
+
+  # Restore a unit to the live revision
+  cub unit update --space my-space myunit --restore LiveRevisionNum
+
+  # Restore a unit to the last applied revision
+  cub unit update --space my-space myunit --restore LastAppliedRevisionNum
+
   # Upgrade a unit to match its upstream unit
   cub unit update --space my-space myunit --upgrade
 
   # Update with a change description
-  cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"`
+  cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
+
+Patch Mode Examples:
+  # Individual patch with labels
+  cub unit update --patch --space my-space myunit --label version=1.2
+
+  # Patch with data from file plus metadata changes
+  cub unit update --patch --space my-space myunit --filename patch.json --change-desc "Updated annotations" --label patched=true
+
+  # Bulk patch with change description and labels
+  cub unit update --patch --where "Slug LIKE 'app-%'" --change-desc "Metadata review" --label reviewed=2024-01
+
+  # Bulk patch across all spaces with metadata
+  cub unit update --patch --space "*" --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
+
+  # Bulk restore with change description
+  cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LiveRevisionNum --change-desc "Restored to live revision"
+
+  # Bulk patch with data from stdin plus metadata (just an example; use cub unit set-target for this case)
+  echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"`
 
 	agentContext := `Essential for maintaining and evolving configuration in ConfigHub.
 
@@ -72,16 +104,24 @@ Agent update workflow:
 Update methods:
 
 From local file:
-  cub unit update --space SPACE my-unit config.yaml --wait
+  cub unit update --space SPACE my-unit config.yaml
 
 From stdin (useful for programmatic updates):
-  cat config.yaml | cub unit update --space SPACE my-unit - --wait
+  cat config.yaml | cub unit update --space SPACE my-unit -
 
 Restore to previous revision:
-  cub unit update --space SPACE my-unit --restore 3 --wait
+  cub unit update --space SPACE my-unit --restore 3
+
+Restore using revision ID or special values:
+  cub unit update --space SPACE my-unit --restore 550e8400-e29b-41d4-a716-446655440000
+  cub unit update --space SPACE my-unit --restore LiveRevisionNum
 
 Upgrade from upstream:
-  cub unit update --space SPACE my-unit --upgrade --wait
+  cub unit update --space SPACE my-unit --upgrade
+
+Bulk patch operations:
+  cub unit update --patch --where "Slug LIKE 'app-%'" --restore LiveRevisionNum --change-desc "Restored apps"
+  cub unit update --patch --space "*" --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)
@@ -89,10 +129,13 @@ Key flags for agents:
 - --verbose: Show detailed update information
 - --from-stdin: Read additional metadata from stdin
 - --replace-from-stdin: Replace entire metadata from stdin
-- --restore: Restore to a specific revision number (positive) or relative to head (negative)
+- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
 - --change-desc: Add a description for this change
 - --label: Update labels for organization and filtering
+- --patch: Use patch API for individual or bulk operations (enables --where and --unit flags for bulk mode)
+- --where: Filter units for bulk patch operations (requires --patch with no unit argument)
+- --unit: Target specific units by slug/UUID for bulk patch operations (requires --patch with no unit argument)
 
 Post-update workflow:
 1. Use 'function do get-placeholders' to check for placeholder values
@@ -107,76 +150,221 @@ Important: Only one of config-file, --restore, or --upgrade should be specified 
 
 var (
 	changeDescription string
-	revisionNum       int64
+	restore           string
 	isUpgrade         bool
+	isPatch           bool
 )
 
 func init() {
 	addStandardUpdateFlags(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
-	unitUpdateCmd.Flags().Int64Var(&revisionNum, "restore", 0, "revision number to restore")
+	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
+	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
+	enableWhereFlag(unitUpdateCmd)
+	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	enableWaitFlag(unitUpdateCmd)
 	unitCmd.AddCommand(unitUpdateCmd)
 }
 
-func checkConflictingArgs(args []string) {
-	if revisionNum != 0 && (isUpgrade || len(args) > 1) {
+// addSpaceIDToWhereClause adds space constraint to where clause, for reuse across commands
+func addSpaceIDToWhereClause(whereClause, spaceID string) string {
+	spaceConstraint := fmt.Sprintf("SpaceID = '%s'", spaceID)
+	if whereClause != "" {
+		return fmt.Sprintf("%s AND %s", whereClause, spaceConstraint)
+	}
+	return spaceConstraint
+}
+
+// enhancePatchData adds changeDescription and labels to patch data if specified
+func enhancePatchData(patchData []byte) ([]byte, error) {
+	// Check if we need to add changeDescription or labels
+	needsEnhancement := changeDescription != "" || len(label) > 0
+	if !needsEnhancement {
+		return patchData, nil
+	}
+
+	// Parse existing patch data
+	var patchMap map[string]interface{}
+	if len(patchData) > 0 && string(patchData) != "null" {
+		if err := json.Unmarshal(patchData, &patchMap); err != nil {
+			return nil, fmt.Errorf("failed to parse patch data: %w", err)
+		}
+	} else {
+		patchMap = make(map[string]interface{})
+	}
+
+	// Add change description if specified
+	if changeDescription != "" {
+		patchMap["LastChangeDescription"] = changeDescription
+	}
+
+	// Add labels if specified
+	if len(label) > 0 {
+		labels := make(map[string]string)
+		// Preserve existing labels if any
+		if existingLabels, ok := patchMap["Labels"]; ok {
+			if labelMap, ok := existingLabels.(map[string]interface{}); ok {
+				for k, v := range labelMap {
+					if strVal, ok := v.(string); ok {
+						labels[k] = strVal
+					}
+				}
+			}
+		}
+
+		// Add new labels from command line
+		err := setLabels(&labels)
+		if err != nil {
+			return nil, err
+		}
+		patchMap["Labels"] = labels
+	}
+
+	// Re-marshal the enhanced patch
+	return json.Marshal(patchMap)
+}
+
+var restoreValues = map[string]struct{}{
+	"LiveRevisionNum":         struct{}{},
+	"LastAppliedRevisionNum":  struct{}{},
+	"PreviousLiveRevisionNum": struct{}{},
+}
+
+func checkConflictingArgs(args []string) bool {
+	// Check for bulk patch mode (no positional args with --patch)
+	isBulkPatchMode := isPatch && len(args) == 0
+
+	if !isBulkPatchMode && (where != "" || len(unitIdentifiers) > 0) {
+		failOnError(fmt.Errorf("--where or --unit can only be specified with --patch and no unit positional argument"))
+	}
+
+	// Check for mutual exclusivity between --unit and --where flags
+	if len(unitIdentifiers) > 0 && where != "" {
+		failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
+	}
+
+	if restore != "" && isUpgrade {
+		failOnError(fmt.Errorf("only one of --restore and --upgrade should be specified"))
+	}
+
+	dataFromEntity := restore != "" || isUpgrade
+	if dataFromEntity && len(args) > 1 {
 		failOnError(fmt.Errorf("only one of --restore, --upgrade, or config-file should be specified"))
 	}
+
+	if isPatch && flagReplace {
+		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
+	}
+
+	if isPatch && !isBulkPatchMode && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 {
+		failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, or --label"))
+	}
+
+	if isBulkPatchMode && restore != "" {
+		// In bulk mode, restore parameter can't be UUID or integer (only special strings)
+		if _, isValid := restoreValues[restore]; !isValid {
+			failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LiveRevisionNum"))
+		}
+	}
+
+	if err := validateStdinFlags(); err != nil {
+		failOnError(err)
+	}
+
+	return isBulkPatchMode
 }
 
 func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
-	checkConflictingArgs(args)
+	isBulkPatchMode := checkConflictingArgs(args)
+
+	if isBulkPatchMode {
+		return runBulkUnitUpdate()
+	}
+
 	newParams := &goclientnew.UpdateUnitParams{}
 	currentUnit, err := apiGetUnitFromSlug(args[0])
 	if err != nil {
 		return err
 	}
 
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentUnit); err != nil {
-			return err
+	spaceID := uuid.MustParse(selectedSpaceID)
+
+	var patchData []byte
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if isPatch {
+			// Get patch data from stdin/filename or use empty patch
+			patchData, err = getBytesFromFlags()
+			if err != nil {
+				return fmt.Errorf("failed to read patch data: %w", err)
+			}
+			if patchData == nil {
+				// Null patch for operations like restore/upgrade
+				patchData = []byte("null")
+			}
+			// Enhance patch data with change description and labels
+			patchData, err = enhancePatchData(patchData)
+			if err != nil {
+				return err
+			}
+		} else {
+			existingUnit := currentUnit
+			if flagReplace {
+				// Replace mode - create new entity, allow Version to be overwritten
+				currentUnit = new(goclientnew.Unit)
+				currentUnit.Version = existingUnit.Version
+			}
+
+			if err := populateModelFromFlags(currentUnit); err != nil {
+				return err
+			}
+
+			// Ensure essential fields can't be clobbered
+			currentUnit.OrganizationID = existingUnit.OrganizationID
+			currentUnit.SpaceID = existingUnit.SpaceID
+			currentUnit.UnitID = existingUnit.UnitID
 		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		existingUnit := currentUnit
-		currentUnit = new(goclientnew.Unit)
-		// Before reading from stdin so it can be overridden by stdin
-		currentUnit.Version = existingUnit.Version
-		if err := populateNewModelFromStdin(currentUnit); err != nil {
-			return err
-		}
-		// After reading from stdin so it can't be clobbered by stdin
-		currentUnit.OrganizationID = existingUnit.OrganizationID
-		currentUnit.SpaceID = existingUnit.SpaceID
-		currentUnit.UnitID = existingUnit.UnitID
 	}
-	err = setLabels(&currentUnit.Labels)
-	if err != nil {
-		return err
+	// For non-patch operations, handle labels in the traditional way
+	if !isPatch {
+		err = setLabels(&currentUnit.Labels)
+		if err != nil {
+			return err
+		}
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
 	// If this was set from stdin, it will be overridden
 	currentUnit.SpaceID = spaceID
 
-	if revisionNum != 0 {
-		if revisionNum < 0 {
-			// a negative value means it's relative to head revision num
-			revisionNum = int64(currentUnit.HeadRevisionNum) + revisionNum
+	if restore != "" {
+		// Parse restore parameter - could be UUID (revision ID), int64 (revision number), or special string
+		if revisionUUID, err := uuid.Parse(restore); err == nil {
+			// It's a UUID - use as revision ID directly
+			newParams.RevisionId = &revisionUUID
+		} else if revisionNum, err := strconv.ParseInt(restore, 10, 64); err == nil {
+			// It's an integer - treat as revision number
+			if revisionNum < 0 {
+				// A negative value means it's relative to head revision num
+				revisionNum = int64(currentUnit.HeadRevisionNum) + revisionNum
+			}
+			rev, err := apiGetRevisionFromNumber(revisionNum, currentUnit.UnitID.String())
+			failOnError(err)
+			// TODO: this should read RevisionID, but stays revision_id in the query parameter call
+			newParams.RevisionId = &rev.RevisionID
+		} else if _, isValid := restoreValues[restore]; isValid {
+			// It's one of the special restore parameter values - use restore parameter instead of revision_id
+			newParams.Restore = &restore
+		} else {
+			return fmt.Errorf("invalid restore value '%s': must be a UUID (revision ID), integer (revision number), or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", restore)
 		}
-		rev, err := apiGetRevisionFromNumber(revisionNum, currentUnit.UnitID.String())
-		failOnError(err)
-		// TODO: this should read RevisionID, but stays revision_id in the query parameter call
-		newParams.RevisionId = &rev.RevisionID
 	}
-	if changeDescription != "" {
+	// For non-patch operations, handle change description in the traditional way
+	if !isPatch && changeDescription != "" {
 		currentUnit.LastChangeDescription = changeDescription
 	}
 
-	// Read test payload
+	// Read data payload
 	if len(args) > 1 {
 		if args[1] == "-" && flagPopulateModelFromStdin {
 			return errors.New("can't read both entity attributes and config data from stdin")
@@ -192,7 +380,21 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		newParams.Upgrade = &isUpgrade
 	}
 
-	unitDetails, err := updateUnit(spaceID, currentUnit, newParams)
+	var unitDetails *goclientnew.Unit
+	if isPatch {
+		// If we don't have patch data yet (no stdin/filename), create it for change description and labels
+		if patchData == nil {
+			patchData = []byte("null")
+			// Enhance patch data with change description and labels
+			patchData, err = enhancePatchData(patchData)
+			if err != nil {
+				return err
+			}
+		}
+		unitDetails, err = patchUnit(spaceID, currentUnit.UnitID, newParams, patchData)
+	} else {
+		unitDetails, err = updateUnit(spaceID, currentUnit, newParams)
+	}
 	if err != nil {
 		return err
 	}
@@ -206,6 +408,92 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func runBulkUnitUpdate() error {
+	// Build WHERE clause from unit identifiers if provided
+	var effectiveWhere string
+	if len(unitIdentifiers) > 0 {
+		whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
+		if err != nil {
+			return err
+		}
+		effectiveWhere = whereClause
+	} else {
+		effectiveWhere = where
+	}
+
+	// Add space constraint to the where clause only if not org level
+	if selectedSpaceID != "*" {
+		effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
+	}
+
+	// Get patch data from stdin/filename or use empty patch
+	var patchData []byte
+	var err error
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		patchData, err = getBytesFromFlags()
+		if err != nil {
+			return fmt.Errorf("failed to read patch data: %w", err)
+		}
+	}
+	if patchData == nil {
+		// Null patch for operations like restore/upgrade
+		patchData = []byte("null")
+	}
+
+	// Enhance patch data with change description and labels
+	patchData, err = enhancePatchData(patchData)
+	if err != nil {
+		return err
+	}
+
+	// Build bulk patch parameters
+	params := &goclientnew.BulkPatchUnitsParams{
+		Where: &effectiveWhere,
+	}
+
+	// Set include parameter to expand UpstreamUnitID
+	include := "UpstreamUnitID"
+	params.Include = &include
+
+	// Add restore parameter if specified
+	if restore != "" {
+		params.Restore = &restore
+	}
+
+	// Add upgrade parameter if specified
+	if isUpgrade {
+		params.Upgrade = &isUpgrade
+	}
+
+	// Call the bulk patch API (organization-level API that can be constrained by SpaceID in WHERE clause)
+	bulkRes, err := cubClientNew.BulkPatchUnitsWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchData),
+	)
+
+	if IsAPIError(err, bulkRes) {
+		return InterpretErrorGeneric(err, bulkRes)
+	}
+
+	// Handle response based on status code
+	var responses *[]goclientnew.UnitCreateOrUpdateResponse
+	var statusCode int
+
+	if bulkRes.JSON200 != nil {
+		responses = bulkRes.JSON200
+		statusCode = 200
+	} else if bulkRes.JSON207 != nil {
+		responses = bulkRes.JSON207
+		statusCode = 207
+	} else {
+		return fmt.Errorf("unexpected response from bulk patch API")
+	}
+
+	return handleBulkCreateOrUpdateResponse(responses, statusCode, "update", "")
+}
+
 func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclientnew.UpdateUnitParams) (*goclientnew.Unit, error) {
 	updatedRes, err := cubClientNew.UpdateUnitWithResponse(ctx, spaceID, currentUnit.UnitID, params, *currentUnit)
 	if IsAPIError(err, updatedRes) {
@@ -213,6 +501,34 @@ func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclie
 	}
 
 	return updatedRes.JSON200, nil
+}
+
+func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.UpdateUnitParams, patchData []byte) (*goclientnew.Unit, error) {
+	// Convert UpdateUnitParams to PatchUnitParams
+	patchParams := &goclientnew.PatchUnitParams{}
+	if updateParams.RevisionId != nil {
+		patchParams.RevisionId = updateParams.RevisionId
+	}
+	if updateParams.Restore != nil {
+		patchParams.Restore = updateParams.Restore
+	}
+	if updateParams.Upgrade != nil {
+		patchParams.Upgrade = updateParams.Upgrade
+	}
+
+	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
+		ctx,
+		spaceID,
+		unitID,
+		patchParams,
+		"application/merge-patch+json",
+		bytes.NewReader(patchData),
+	)
+	if IsAPIError(err, unitRes) {
+		return nil, InterpretErrorGeneric(err, unitRes)
+	}
+
+	return unitRes.JSON200, nil
 }
 
 func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
@@ -248,5 +564,97 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	if !done {
 		return errors.New("triggers didn't execute on unit " + unitDetails.Slug)
 	}
+	return nil
+}
+
+func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
+	if responses == nil {
+		return fmt.Errorf("no response data received")
+	}
+
+	successCount := 0
+	errorCount := 0
+	var successfulUnits []*goclientnew.ExtendedUnit
+	var failedErrors []*goclientnew.ResponseError
+
+	for _, resp := range *responses {
+		if resp.Error != nil {
+			errorCount++
+			failedErrors = append(failedErrors, resp.Error)
+		} else if resp.Unit != nil {
+			successCount++
+			// Convert Unit to ExtendedUnit for display
+			extendedUnit := &goclientnew.ExtendedUnit{
+				Unit: resp.Unit,
+			}
+			successfulUnits = append(successfulUnits, extendedUnit)
+		}
+	}
+
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	// Wait for triggers to complete if requested. Do it before displaying the units with apply gates.
+	if wait && successCount > 0 {
+		if !quiet && !hasAlternativeOutput {
+			tprintRaw("Awaiting triggers...")
+		}
+		// Wait for each successfully updated unit
+		for i := range successfulUnits {
+			// The units returned don't have the extended information, so we re-fetch them with that information.
+			unitExtended, err := apiGetExtendedUnitInSpace(successfulUnits[i].Unit.UnitID.String(), successfulUnits[i].Unit.SpaceID.String())
+			if err != nil {
+				return err
+			}
+			err = awaitTriggersRemoval(unitExtended.Unit)
+			if err != nil {
+				return err
+			}
+			// TODO: We should change awaitTriggersRemoval to return the latest state. This will show one unit with triggers.
+			successfulUnits[i] = unitExtended
+		}
+	}
+
+	// Summary message
+	if !quiet && !hasAlternativeOutput {
+		// Display successful units using standard display function.
+		if verbose && len(successfulUnits) > 0 {
+			displayListResults(successfulUnits, getExtendedUnitSlug, displayExtendedUnitList)
+		}
+
+		// Display failed units if any
+		if len(failedErrors) > 0 {
+			tprintRaw(fmt.Sprintf("Failed to %s units:", operationName))
+			displayResponseErrorTable(failedErrors)
+		}
+
+		totalCount := len(*responses)
+		if statusCode == 207 {
+			tprint("Bulk %s completed with mixed results: %d succeeded, %d failed out of %d total units",
+				operationName, successCount, errorCount, totalCount)
+		} else if statusCode == 200 {
+			if contextInfo != "" {
+				tprint("Bulk %s completed successfully: %d units %s from %s",
+					operationName, successCount, operationName, contextInfo)
+			} else {
+				tprint("Bulk %s completed successfully: %d units %s",
+					operationName, successCount, operationName)
+			}
+		}
+	}
+
+	// Output JSON if requested
+	if jsonOutput {
+		displayJSON(responses)
+	}
+	if jq != "" {
+		displayJQ(responses)
+	}
+
+	// Return error if all operations failed
+	if errorCount > 0 && successCount == 0 {
+		return fmt.Errorf("all bulk %s operations failed", operationName)
+	}
+
 	return nil
 }

@@ -39,9 +39,13 @@ func init() {
 }
 
 func linkCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	newLink := &goclientnew.Link{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newLink); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(newLink); err != nil {
 			return err
 		}
 	}

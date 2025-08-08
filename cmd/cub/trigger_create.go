@@ -69,10 +69,14 @@ func init() {
 }
 
 func triggerCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	spaceID := uuid.MustParse(selectedSpaceID)
 	newBody := goclientnew.Trigger{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newBody); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(&newBody); err != nil {
 			return err
 		}
 	}

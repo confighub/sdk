@@ -22,25 +22,28 @@ func init() {
 }
 
 func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentOrganization, err := apiGetOrganizationFromSlug(args[0])
 	if err != nil {
 		return err
 	}
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentOrganization); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingOrganization := currentOrganization
-		currentOrganization = new(goclientnew.Organization)
-		// Before reading from stdin so it can be overridden by stdin
-		currentOrganization.Version = existingOrganization.Version
-		if err := populateNewModelFromStdin(currentOrganization); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentOrganization = new(goclientnew.Organization)
+			currentOrganization.Version = existingOrganization.Version
+		}
+		
+		if err := populateModelFromFlags(currentOrganization); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentOrganization.OrganizationID = existingOrganization.OrganizationID
 	}
 	err = setLabels(&currentOrganization.Labels)

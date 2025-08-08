@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/glamour"
 	"github.com/fatih/color"
@@ -396,8 +397,77 @@ func readStdin() ([]byte, error) {
 	return data, nil
 }
 
+func fetchContent(source string) ([]byte, error) {
+	if source == "" {
+		return nil, errors.New("source cannot be empty")
+	}
+
+	// Handle stdin
+	if source == "-" {
+		return readStdin()
+	}
+
+	// Handle file:// URLs
+	if filePath, found := strings.CutPrefix(source, "file://"); found {
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+		}
+		return data, nil
+	}
+
+	// Handle HTTPS URLs only
+	if strings.HasPrefix(source, "https://") {
+		return fetchWithHTTP(source)
+	}
+
+	// Handle local files (backward compatibility - no prefix)
+	if !strings.Contains(source, "://") {
+		data, err := os.ReadFile(source)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	}
+
+	return nil, fmt.Errorf("unsupported URL scheme: %s (only file:// and https:// are supported)", source)
+}
+
+func fetchWithHTTP(source string) ([]byte, error) {
+	// Only allow HTTPS URLs for security
+	if !strings.HasPrefix(source, "https://") {
+		return nil, fmt.Errorf("only HTTPS URLs are supported, got: %s", source)
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Make HTTP request
+	resp, err := client.Get(source)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch %s: %w", source, err)
+	}
+	defer resp.Body.Close()
+
+	// Check HTTP status
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch %s, Code: %d, Status: %s", source, resp.StatusCode, resp.Status)
+	}
+
+	// Read response body
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response from %s: %w", source, err)
+	}
+
+	return data, nil
+}
+
 var flagPopulateModelFromStdin = false
-var flagReplaceModelFromStdin = false
+var flagReplace = false
+var flagFilename = ""
 var where = ""
 var contains = ""
 var verbose = false
@@ -439,8 +509,12 @@ func enableFromStdinFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&flagPopulateModelFromStdin, "from-stdin", false, "Read the ConfigHub entity JSON (e.g., retrieved with cub <entity> get --quiet --json) from stdin; merged with command arguments on create, and merged with command arguments and existing entity on update")
 }
 
-func enableReplaceFromStdinFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&flagReplaceModelFromStdin, "replace-from-stdin", false, "Read the ConfigHub entity JSON (e.g., retrieved with cub <entity> get --quiet --json) from stdin; merged with command arguments on create, and merged with command arguments and replaces existing entity on update")
+func enableReplaceFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&flagReplace, "replace", false, "Replace entity instead of merging when using --from-stdin or --filename")
+}
+
+func enableFilenameFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&flagFilename, "filename", "", "Read the ConfigHub entity JSON from file, URL (https://), or stdin (-); mutually exclusive with --from-stdin")
 }
 
 func enableVerboseFlag(cmd *cobra.Command) {
@@ -501,6 +575,7 @@ func addStandardListFlags(cmd *cobra.Command) {
 func addStandardCreateFlags(cmd *cobra.Command) {
 	enableLabelFlag(cmd)
 	enableFromStdinFlag(cmd)
+	enableFilenameFlag(cmd)
 	enableVerboseFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
@@ -516,7 +591,8 @@ func addStandardGetFlags(cmd *cobra.Command) {
 func addStandardUpdateFlags(cmd *cobra.Command) {
 	enableLabelFlag(cmd)
 	enableFromStdinFlag(cmd)
-	enableReplaceFromStdinFlag(cmd)
+	enableReplaceFlag(cmd)
+	enableFilenameFlag(cmd)
 	enableVerboseFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
@@ -538,9 +614,46 @@ func populateNewModelFromStdin(v interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(jsonBytes, v)
+	return mergeEntityWithData(v, jsonBytes)
+}
+
+func mergeEntityWithData(v any, data []byte) error {
+	return json.Unmarshal(data, v)
+}
+
+func populateModelFromFile(v any, filename string) error {
+	data, err := fetchContent(filename)
 	if err != nil {
 		return err
+	}
+	return mergeEntityWithData(v, data)
+}
+
+func validateStdinFlags() error {
+	if flagPopulateModelFromStdin && flagFilename != "" {
+		return errors.New("--from-stdin and --filename are mutually exclusive")
+	}
+	return nil
+}
+
+// getBytesFromFlags returns raw bytes from --from-stdin or --filename flags
+func getBytesFromFlags() ([]byte, error) {
+	if flagPopulateModelFromStdin {
+		return readStdin()
+	} else if flagFilename != "" {
+		return fetchContent(flagFilename)
+	}
+	return nil, nil
+}
+
+// populateModelFromFlags handles both --from-stdin and --filename flags
+func populateModelFromFlags(v any) error {
+	data, err := getBytesFromFlags()
+	if err != nil {
+		return err
+	}
+	if data != nil {
+		return mergeEntityWithData(v, data)
 	}
 	return nil
 }
@@ -650,10 +763,7 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 	// Check if any alternative output format is specified
 	hasAlternativeOutput := names || jsonOutput || jq != ""
 
-	if !quiet && !hasAlternativeOutput {
-		display(entities)
-	}
-	if verbose && !hasAlternativeOutput {
+	if (!quiet || verbose) && !hasAlternativeOutput {
 		display(entities)
 	}
 	if names && getSlug != nil {

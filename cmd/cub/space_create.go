@@ -32,9 +32,13 @@ func init() {
 }
 
 func spaceCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	newBody := &goclientnew.Space{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newBody); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(newBody); err != nil {
 			return err
 		}
 	}

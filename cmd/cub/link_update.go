@@ -24,6 +24,10 @@ func init() {
 }
 
 func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentLink, err := apiGetLinkFromSlug(args[0])
 	if err != nil {
 		return err
@@ -31,21 +35,20 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	spaceID := uuid.MustParse(selectedSpaceID)
 	currentLink.SpaceID = spaceID
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentLink); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingLink := currentLink
-		currentLink = new(goclientnew.Link)
-		// Before reading from stdin so it can be overridden by stdin
-		currentLink.Version = existingLink.Version
-		if err := populateNewModelFromStdin(currentLink); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentLink = new(goclientnew.Link)
+			currentLink.Version = existingLink.Version
+		}
+		
+		if err := populateModelFromFlags(currentLink); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentLink.OrganizationID = existingLink.OrganizationID
 		currentLink.SpaceID = existingLink.SpaceID
 		currentLink.LinkID = existingLink.LinkID

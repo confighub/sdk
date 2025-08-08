@@ -32,9 +32,13 @@ func init() {
 }
 
 func setCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	newSet := &goclientnew.Set{}
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newSet); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(newSet); err != nil {
 			return err
 		}
 	}

@@ -23,26 +23,29 @@ func init() {
 }
 
 func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+	
 	currentBridgeworker, err := apiGetBridgeWorkerFromSlug(args[0])
 	if err != nil {
 		return err
 	}
 	spaceID := uuid.MustParse(selectedSpaceID)
-	if flagPopulateModelFromStdin {
-		// TODO: this could clobber a lot of fields
-		if err := populateNewModelFromStdin(currentBridgeworker); err != nil {
-			return err
-		}
-	} else if flagReplaceModelFromStdin {
-		// TODO: this could clobber a lot of fields
+	// Handle --from-stdin or --filename with optional --replace
+	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingBridgeworker := currentBridgeworker
-		currentBridgeworker = new(goclientnew.BridgeWorker)
-		// Before reading from stdin so it can be overridden by stdin
-		currentBridgeworker.Version = existingBridgeworker.Version
-		if err := populateNewModelFromStdin(currentBridgeworker); err != nil {
+		if flagReplace {
+			// Replace mode - create new entity, allow Version to be overwritten
+			currentBridgeworker = new(goclientnew.BridgeWorker)
+			currentBridgeworker.Version = existingBridgeworker.Version
+		}
+		
+		if err := populateModelFromFlags(currentBridgeworker); err != nil {
 			return err
 		}
-		// After reading from stdin so it can't be clobbered by stdin
+		
+		// Ensure essential fields can't be clobbered
 		currentBridgeworker.OrganizationID = existingBridgeworker.OrganizationID
 		currentBridgeworker.SpaceID = existingBridgeworker.SpaceID
 		currentBridgeworker.BridgeWorkerID = existingBridgeworker.BridgeWorkerID

@@ -177,21 +177,19 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 			selectedSpaceID = "*"
 		}
 	}
+	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		var extendedUnits []*goclientnew.ExtendedUnit
 		extendedUnits, err = apiSearchUnits(where, resourceType, whereData)
 		if err != nil {
 			return err
 		}
-		displayListResults(extendedUnits, getExtendedUnitSlug, displayExtendedUnitList)
 	} else {
-		var units []*goclientnew.ExtendedUnit
-		units, err = apiListExtendedUnits(selectedSpaceID, where)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where)
 		if err != nil {
 			return err
 		}
-		displayListResults(units, getExtendedUnitSlug, displayExtendedUnitList)
 	}
+	displayListResults(extendedUnits, getExtendedUnitSlug, displayExtendedUnitList)
 	return nil
 }
 

@@ -40,6 +40,10 @@ func init() {
 }
 
 func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := validateStdinFlags(); err != nil {
+		return err
+	}
+
 	spaceID := uuid.MustParse(selectedSpaceID)
 	newTarget := goclientnew.Target{}
 
@@ -47,8 +51,8 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		if fromTarget == "" || fromTargetSpace == "" {
 			return errors.New("both of --from-target and --from-target-space must be specified")
 		}
-		if flagPopulateModelFromStdin {
-			return errors.New("only one of --from-target or --from-stdin may be specified")
+		if flagPopulateModelFromStdin || flagFilename != "" {
+			return errors.New("only one of --from-target or --from-stdin/--filename may be specified")
 		}
 		ftSpace, err := apiGetSpaceFromSlug(fromTargetSpace)
 		if err != nil {
@@ -61,14 +65,14 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newTarget = *ftTarget.Target
 	}
 
-	if flagPopulateModelFromStdin {
-		if err := populateNewModelFromStdin(newTarget); err != nil {
+	if flagPopulateModelFromStdin || flagFilename != "" {
+		if err := populateModelFromFlags(&newTarget); err != nil {
 			return err
 		}
 	}
 
 	// set toolchainType and providerType if not copying from another target or stdin
-	if fromTarget == "" && fromTargetSpace == "" && !flagPopulateModelFromStdin {
+	if fromTarget == "" && fromTargetSpace == "" && !flagPopulateModelFromStdin && flagFilename == "" {
 		newTarget.ToolchainType = toolchainType
 		newTarget.ProviderType = providerType
 	}
