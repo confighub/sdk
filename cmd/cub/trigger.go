@@ -18,3 +18,8 @@ func init() {
 	addSpaceFlags(triggerCmd)
 	rootCmd.AddCommand(triggerCmd)
 }
+
+// buildWhereClauseFromTriggers generates a WHERE clause from trigger identifiers
+func buildWhereClauseFromTriggers(triggerIds []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(triggerIds, "TriggerID", "Slug")
+}

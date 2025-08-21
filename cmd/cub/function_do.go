@@ -174,7 +174,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.CombineResults = combine
 	req.ChangeDescription = changeDescription
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug)
+		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "") // default select is fine
 		if err != nil {
 			failOnError(err)
 		}
@@ -216,44 +216,45 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 	return funcArgs
 }
 
-// buildWhereClauseFromUnits generates a WHERE clause from unit identifiers
-func buildWhereClauseFromUnits(unitIds []string) (string, error) {
-	if len(unitIds) == 0 {
+// buildWhereClauseFromIdentifiers generates a WHERE clause from entity identifiers
+// uuidField and slugField specify the field names for UUIDs and slugs respectively
+func buildWhereClauseFromIdentifiers(identifiers []string, uuidField, slugField string) (string, error) {
+	if len(identifiers) == 0 {
 		return "", nil
 	}
-	
+
 	// Check if the first identifier is a UUID to determine type
-	_, err := uuid.Parse(unitIds[0])
+	_, err := uuid.Parse(identifiers[0])
 	isUUID := err == nil
-	
+
 	// Validate all identifiers are of the same type
-	for i, unitId := range unitIds {
-		_, parseErr := uuid.Parse(unitId)
+	for i, identifier := range identifiers {
+		_, parseErr := uuid.Parse(identifier)
 		currentIsUUID := parseErr == nil
-		
+
 		if i == 0 {
 			continue // First one sets the type
 		}
-		
+
 		if currentIsUUID != isUUID {
-			return "", fmt.Errorf("all unit identifiers must be the same type (all UUIDs or all slugs)")
+			return "", fmt.Errorf("all identifiers must be the same type (all UUIDs or all slugs)")
 		}
 	}
-	
+
 	// Build the appropriate WHERE clause
 	var field string
 	if isUUID {
-		field = "UnitID"
+		field = uuidField
 	} else {
-		field = "Slug"
+		field = slugField
 	}
-	
+
 	// Build the IN clause
 	var values []string
-	for _, unitId := range unitIds {
-		values = append(values, fmt.Sprintf("'%s'", unitId))
+	for _, identifier := range identifiers {
+		values = append(values, fmt.Sprintf("'%s'", identifier))
 	}
-	
+
 	return fmt.Sprintf("%s IN (%s)", field, strings.Join(values, ", ")), nil
 }
 
@@ -403,7 +404,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		// Wait one at a time
 		for _, resp := range *resp {
 			selectedSpaceID = resp.SpaceID.String()
-			unitDetails, err := apiGetUnit(resp.UnitID.String())
+			unitDetails, err := apiGetUnit(resp.UnitID.String(), "*")
 			if err != nil {
 				return err
 			}

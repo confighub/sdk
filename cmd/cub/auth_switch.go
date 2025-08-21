@@ -56,7 +56,7 @@ func switchToOrganization(searchTerm string) error {
 	}
 
 	// Get list of organizations to find the matching one
-	organizations, err := apiListOrganizations("")
+	organizations, err := apiListOrganizations("", "*")
 	if err != nil {
 		return fmt.Errorf("failed to list organizations: %w", err)
 	}

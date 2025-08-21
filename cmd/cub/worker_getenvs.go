@@ -31,7 +31,7 @@ func init() {
 
 func workerEnvsCmdRun(_ *cobra.Command, args []string) error {
 	workerEnvsArgs.slug = args[0]
-	worker, err := apiGetBridgeWorkerFromSlug(workerEnvsArgs.slug)
+	worker, err := apiGetBridgeWorkerFromSlug(workerEnvsArgs.slug, "*") // get all fields for now
 	if err != nil {
 		return err
 	}

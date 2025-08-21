@@ -23,7 +23,7 @@ func init() {
 
 func contextSetCmdRun(_ *cobra.Command, _ []string) error {
 	if spaceFlag != "" {
-		space, err := apiGetSpaceFromSlug(spaceFlag)
+		space, err := apiGetSpaceFromSlug(spaceFlag, "") // default select should be fine
 		if err != nil {
 			return err
 		}

@@ -201,7 +201,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		// Wait one at a time
 		for _, resp := range *resp {
 			selectedSpaceID = resp.SpaceID.String()
-			unitDetails, err := apiGetUnit(resp.UnitID.String())
+			unitDetails, err := apiGetUnit(resp.UnitID.String(), "*")
 			if err != nil {
 				return err
 			}

@@ -22,7 +22,7 @@ func init() {
 }
 
 func setDeleteCmdRun(cmd *cobra.Command, args []string) error {
-	setDetails, err := apiGetSetFromSlug(args[0])
+	setDetails, err := apiGetSetFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}

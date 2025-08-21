@@ -17,6 +17,18 @@ var workerListCmd = &cobra.Command{
 	RunE:        workerListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultWorkerColumns = []string{"BridgeWorker.Slug", "BridgeWorker.Condition", "Space.Slug", "BridgeWorker.LastSeenAt"}
+
+// Worker-specific aliases
+var workerAliases = map[string]string{
+	"Name": "BridgeWorker.Slug",
+	"ID":   "BridgeWorker.BridgeWorkerID",
+}
+
+// Worker custom column dependencies
+var workerCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(workerListCmd)
 	workerCmd.AddCommand(workerListCmd)
@@ -27,13 +39,13 @@ func workerListCmdRun(_ *cobra.Command, _ []string) error {
 	var err error
 	if selectedSpaceID == "*" {
 		// Cross-space listing
-		workers, err = apiListAllBridgeWorkers(where)
+		workers, err = apiListAllBridgeWorkers(where, selectFields)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Single space listing
-		workers, err = apiListBridgeworkers(selectedSpaceID, where)
+		workers, err = apiListBridgeworkers(selectedSpaceID, where, selectFields)
 		if err != nil {
 			return err
 		}
@@ -42,13 +54,24 @@ func workerListCmdRun(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func apiListBridgeworkers(spaceID string, whereFilter string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	newParams := &goclientnew.ListBridgeWorkersParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
 	include := "SpaceID"
 	newParams.Include = &include
+	// Handle select parameter
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
+		return buildSelectList("BridgeWorker", "", include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	workersRes, err := cubClientNew.ListBridgeWorkersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, workersRes) {
 		return nil, InterpretErrorGeneric(err, workersRes)
@@ -61,13 +84,24 @@ func apiListBridgeworkers(spaceID string, whereFilter string) ([]*goclientnew.Ex
 	return workers, nil
 }
 
-func apiListAllBridgeWorkers(whereFilter string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+func apiListAllBridgeWorkers(whereFilter string, selectParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	newParams := &goclientnew.ListAllBridgeWorkersParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
 	include := "SpaceID"
 	newParams.Include = &include
+	// Handle select parameter
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
+		return buildSelectList("BridgeWorker", "", include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	workersRes, err := cubClientNew.ListAllBridgeWorkersWithResponse(ctx, newParams)
 	if IsAPIError(err, workersRes) {
 		return nil, InterpretErrorGeneric(err, workersRes)
@@ -87,7 +121,7 @@ func getExtendedWorkerSlug(worker *goclientnew.ExtendedBridgeWorker) string {
 func displayExtendedWorkerList(workers []*goclientnew.ExtendedBridgeWorker) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Slug", "Condition", "Space", "Last-Seen"})
+		table.SetHeader([]string{"Name", "Condition", "Space", "Last-Seen"})
 	}
 	for _, worker := range workers {
 		spaceSlug := ""
@@ -96,12 +130,12 @@ func displayExtendedWorkerList(workers []*goclientnew.ExtendedBridgeWorker) {
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
 		}
-		
+
 		lastSeen := worker.BridgeWorker.CreatedAt.Format("2006-01-02 15:04:05")
 		if !worker.BridgeWorker.LastSeenAt.IsZero() {
 			lastSeen = worker.BridgeWorker.LastSeenAt.Format("2006-01-02 15:04:05")
 		}
-		
+
 		table.Append([]string{
 			worker.BridgeWorker.Slug,
 			worker.BridgeWorker.Condition,

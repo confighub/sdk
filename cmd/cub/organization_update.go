@@ -25,8 +25,8 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
-	
-	currentOrganization, err := apiGetOrganizationFromSlug(args[0])
+
+	currentOrganization, err := apiGetOrganizationFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
@@ -38,11 +38,11 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			currentOrganization = new(goclientnew.Organization)
 			currentOrganization.Version = existingOrganization.Version
 		}
-		
+
 		if err := populateModelFromFlags(currentOrganization); err != nil {
 			return err
 		}
-		
+
 		// Ensure essential fields can't be clobbered
 		currentOrganization.OrganizationID = existingOrganization.OrganizationID
 	}

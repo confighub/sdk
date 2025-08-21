@@ -35,16 +35,11 @@ func init() {
 }
 
 func triggerGetCmdRun(cmd *cobra.Command, args []string) error {
-	triggerDetails, err := apiGetTriggerFromSlug(args[0])
+	triggerDetails, err := apiGetTriggerFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	triggerDetails, err = apiGetTrigger(triggerDetails.TriggerID.String())
-	if err != nil {
-		return err
-	}
 	displayGetResults(triggerDetails, displayTriggerDetails)
 	return nil
 }
@@ -102,10 +97,14 @@ func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
 	view.Render()
 }
 
-func apiGetTrigger(triggerID string) (*goclientnew.Trigger, error) {
+func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.Trigger, error) {
 	newParams := &goclientnew.GetTriggerParams{}
 	include := "BridgeWorkerID"
 	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	triggerRes, err := cubClientNew.GetTriggerWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(triggerID), newParams)
 	if IsAPIError(err, triggerRes) {
 		return nil, InterpretErrorGeneric(err, triggerRes)
@@ -113,12 +112,16 @@ func apiGetTrigger(triggerID string) (*goclientnew.Trigger, error) {
 	return triggerRes.JSON200.Trigger, nil
 }
 
-func apiGetTriggerFromSlug(slug string) (*goclientnew.Trigger, error) {
+func apiGetTriggerFromSlug(slug string, selectParam string) (*goclientnew.Trigger, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetTrigger(id.String())
+		return apiGetTrigger(id.String(), selectParam)
 	}
-	triggers, err := apiListTriggers(selectedSpaceID, "Slug = '"+slug+"'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	triggers, err := apiListTriggers(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

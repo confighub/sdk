@@ -31,7 +31,7 @@ func init() {
 }
 
 func unitEditCmdRun(cmd *cobra.Command, args []string) error {
-	currentUnit, err := apiGetUnitFromSlug(args[0])
+	currentUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}

@@ -56,7 +56,7 @@ func createTargetPatch(targetSlug string) ([]byte, error) {
 	if targetSlug == "-" {
 		targetID = uuid.Nil
 	} else {
-		exTarget, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID)
+		exTarget, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func createTargetPatch(targetSlug string) ([]byte, error) {
 
 func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 	newParams := &goclientnew.PatchUnitParams{}
-	configUnit, err := apiGetUnitFromSlug(unitSlug)
+	configUnit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func runBulkUnitSetTarget(targetSlug string) error {
 	}
 
 	// Set include parameter to expand UpstreamUnitID
-	include := "UpstreamUnitID"
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	params.Include = &include
 
 	// Call the bulk patch API

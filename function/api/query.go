@@ -688,6 +688,44 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			rightStringValue = parseStringLiteral(expr.Literal)
 		}
 		return evaluateStringMapExpression(expr.Operator, stringMapValue, rightStringValue)
+	case DataTypeUUIDStringMap:
+		uuidStringMapValue, ok := leftValue.(map[uuid.UUID]string)
+		if !ok {
+			return false, fmt.Errorf("internal error: expected map[uuid]string but got %T", leftValue)
+		}
+		if expr.IsLengthExpression {
+			// Length comparison - evaluate LEN(map) against integer literal
+			var err error
+			var rightIntValue int
+			if rightValue != nil {
+				rightIntValue, err = convertNumberToInt(rightValue)
+				if err != nil {
+					return false, fmt.Errorf("internal error: expected number but got %T", rightValue)
+				}
+			} else {
+				rightIntValue, err = parseIntLiteral(expr.Literal)
+				if err != nil {
+					return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+				}
+			}
+			return evaluateIntExpression(expr.Operator, len(uuidStringMapValue), rightIntValue), nil
+		}
+		// Right operand must be a UUID
+		var rightUUIDValue uuid.UUID
+		if rightValue != nil {
+			rightUUIDValue, ok = rightValue.(uuid.UUID)
+			if !ok {
+				return false, fmt.Errorf("internal error: expected uuid.UUID but got %T", rightValue)
+			}
+		} else {
+			var err error
+			literalStr := strings.Trim(expr.Literal, "'")
+			rightUUIDValue, err = uuid.Parse(literalStr)
+			if err != nil {
+				return false, fmt.Errorf("invalid UUID literal: %w", err)
+			}
+		}
+		return evaluateUUIDStringMapExpression(expr.Operator, uuidStringMapValue, rightUUIDValue)
 	default:
 		return false, fmt.Errorf("unsupported data type %s", expr.DataType)
 	}
@@ -979,5 +1017,17 @@ func evaluateStringMapExpression(operator string, leftValue map[string]string, r
 		return exists, nil
 	default:
 		return false, fmt.Errorf("unsupported operator for string map: %s", operator)
+	}
+}
+
+// evaluateUUIDStringMapExpression evaluates UUID-string map expressions with ? operator
+func evaluateUUIDStringMapExpression(operator string, leftValue map[uuid.UUID]string, rightValue uuid.UUID) (bool, error) {
+	switch operator {
+	case "?":
+		// Map containment - check if key exists in map
+		_, exists := leftValue[rightValue]
+		return exists, nil
+	default:
+		return false, fmt.Errorf("unsupported operator for UUID-string map: %s", operator)
 	}
 }

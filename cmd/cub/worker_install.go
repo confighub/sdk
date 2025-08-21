@@ -59,7 +59,7 @@ func init() {
 
 func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	workerSlug := args[0]
-	worker, err := apiGetBridgeWorkerFromSlug(workerSlug)
+	worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 			// Wait for triggers after function execution
 			if wait {
 				// Get updated unit details after function execution
-				unitDetails, err = apiGetUnit(unitDetails.UnitID.String())
+				unitDetails, err = apiGetUnit(unitDetails.UnitID.String(), "*") // get all fields for now
 				if err != nil {
 					return err
 				}
@@ -297,7 +297,7 @@ func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew
 
 	// Set target if specified
 	if targetSlug != "" {
-		target, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID)
+		target, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return nil, err
 		}

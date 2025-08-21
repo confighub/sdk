@@ -62,7 +62,7 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 			}
 			return fmt.Errorf("space wildcard * not permitted for command %s", cmd.Name())
 		}
-		space, err := apiGetSpaceFromSlug(spaceFlag)
+		space, err := apiGetSpaceFromSlug(spaceFlag, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
@@ -76,4 +76,8 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	selectedSpaceID = cubContext.SpaceID
 	selectedSpaceSlug = cubContext.Space
 	return nil
+}
+
+func buildWhereClauseFromSpaces(spaceIds []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(spaceIds, "SpaceID", "Slug")
 }

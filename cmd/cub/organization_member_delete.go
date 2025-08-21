@@ -22,7 +22,7 @@ func init() {
 }
 
 func organizationMemberDeleteCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0])
+	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}

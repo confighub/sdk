@@ -32,6 +32,18 @@ Examples:
 	RunE: userListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultUserColumns = []string{"UserID", "ExternalID", "DisplayName", "Username"}
+
+// User-specific aliases
+var userAliases = map[string]string{
+	"Name": "DisplayName",
+	"ID":   "UserID",
+}
+
+// User custom column dependencies
+var userCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(userListCmd)
 	userCmd.AddCommand(userListCmd)
@@ -73,6 +85,18 @@ func apiListUsers(whereFilter string) ([]*goclientnew.User, error) {
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	// TODO: Add select parameter support when backend endpoint supports it
+	// Auto-select fields based on default display if no custom output format is specified
+	// if selectFields == "" {
+	//     baseFields := []string{"Slug", "UserID"}
+	//     autoSelect := buildSelectList("User", "", "", defaultUserColumns, userAliases, userCustomColumnDependencies, baseFields)
+	//     newParams.Select = &autoSelect
+	// } else if selectFields != "" {
+	//     newParams.Select = &selectFields
+	// }
 	membersRes, err := cubClientNew.ListUsersWithResponse(ctx, newParams)
 	if IsAPIError(err, membersRes) {
 		return nil, InterpretErrorGeneric(err, membersRes)

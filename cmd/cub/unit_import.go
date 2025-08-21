@@ -51,7 +51,7 @@ func init() {
 }
 
 func unitImportCmdRun(cmd *cobra.Command, args []string) error {
-	configUnit, err := apiGetUnitFromSlug(args[0])
+	configUnit, err := apiGetUnitFromSlug(args[0], "*")
 	if err != nil {
 		return err
 	}

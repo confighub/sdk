@@ -28,13 +28,25 @@ Examples:
 	RunE: organizationListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultOrganizationColumns = []string{"DisplayName", "OrganizationID", "BillingAccountID", "ExternalID"}
+
+// Organization-specific aliases
+var organizationAliases = map[string]string{
+	"Name": "DisplayName",
+	"ID":   "OrganizationID",
+}
+
+// Organization custom column dependencies
+var organizationCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(organizationListCmd)
 	organizationCmd.AddCommand(organizationListCmd)
 }
 
 func organizationListCmdRun(cmd *cobra.Command, args []string) error {
-	organizations, err := apiListOrganizations(where)
+	organizations, err := apiListOrganizations(where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -62,10 +74,20 @@ func displayOrganizationList(organizations []*goclientnew.Organization) {
 	table.Render()
 }
 
-func apiListOrganizations(whereFilter string) ([]*goclientnew.Organization, error) {
+func apiListOrganizations(whereFilter string, selectParam string) ([]*goclientnew.Organization, error) {
 	newParams := &goclientnew.ListOrganizationsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "OrganizationID"}
+		return buildSelectList("Organization", "", "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
 	}
 	orgsRes, err := cubClientNew.ListOrganizationsWithResponse(ctx, newParams)
 	if IsAPIError(err, orgsRes) {

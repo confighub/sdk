@@ -29,9 +29,10 @@ func init() {
 	workerCmd.AddCommand(workerGetCmd)
 }
 
+// TODO: Make this more standard, supporting jq, select, quiet, etc.
 func workerGetCmdRun(_ *cobra.Command, args []string) error {
 	workerGetInput.slug = args[0]
-	worker, err := apiGetBridgeWorkerFromSlug(workerGetInput.slug)
+	worker, err := apiGetBridgeWorkerFromSlug(workerGetInput.slug, selectFields)
 	if err != nil {
 		return err
 	}

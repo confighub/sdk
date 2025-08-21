@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/olekukonko/tablewriter"
 
 	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -86,55 +85,14 @@ func init() {
 }
 
 func unitGetCmdRun(cmd *cobra.Command, args []string) error {
-	unitDetails, err := apiGetUnitFromSlug(args[0])
+	// TODO: just get extended details
+	unitDetails, err := apiGetUnitFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	unitDetails, err = apiGetUnit(unitDetails.UnitID.String())
-	if err != nil {
-		return err
-	}
 	displayGetResults(unitDetails, displayUnitDetails)
 	return nil
-}
-
-func displayUnitExtendedDetails(view *tablewriter.Table, unitExtendedDetails *goclientnew.UnitExtended) {
-	action := ""
-	actionResult := ""
-	if unitExtendedDetails.Action != nil {
-		action = fmt.Sprintf("%s", *unitExtendedDetails.Action)
-	}
-	if unitExtendedDetails.ActionResult != nil {
-		actionResult = fmt.Sprintf("%s", *unitExtendedDetails.ActionResult)
-	}
-	view.Append([]string{"Status", strings.TrimSpace(unitExtendedDetails.Status)})
-	view.Append([]string{"Action", strings.TrimSpace(action)})
-	view.Append([]string{"Action Result", strings.TrimSpace(actionResult)})
-	view.Append([]string{"Action Started At", strings.TrimSpace(unitExtendedDetails.ActionStartedAt.String())})
-	view.Append([]string{"Action Terminated At", strings.TrimSpace(unitExtendedDetails.ActionTerminatedAt.String())})
-	view.Append([]string{"Drift", strings.TrimSpace(unitExtendedDetails.Drift)})
-
-	if len(unitExtendedDetails.ApprovedByUsers) != 0 {
-		approvers := ""
-		for _, approver := range unitExtendedDetails.ApprovedByUsers {
-			approvers += " " + approver
-		}
-		view.Append([]string{"Approved By", strings.TrimSpace(approvers)})
-	}
-	for _, link := range unitExtendedDetails.FromLinks {
-		view.Append([]string{fmt.Sprintf("From Link %s To Unit ID", link.Slug), link.ToUnitID.String()})
-		if link.ToSpaceID != unitExtendedDetails.Unit.SpaceID {
-			view.Append([]string{fmt.Sprintf("From Link %s To Space ID", link.Slug), link.ToSpaceID.String()})
-		}
-	}
-	for _, link := range unitExtendedDetails.ToLinks {
-		view.Append([]string{fmt.Sprintf("To Link %s From Unit ID", link.Slug), link.FromUnitID.String()})
-		if link.SpaceID != unitExtendedDetails.Unit.SpaceID {
-			view.Append([]string{fmt.Sprintf("To Link %s From Space ID", link.Slug), link.SpaceID.String()})
-		}
-	}
 }
 
 func countResources(unitDetails *goclientnew.Unit) int {
@@ -198,7 +156,6 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.HeadMutationNum)})
 		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(unitDetails))})
 
-
 		view.Render()
 
 		if len(*unitDetails.MutationSources) != 0 && verbose {
@@ -231,8 +188,8 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	}
 }
 
-func apiGetUnit(unitID string) (*goclientnew.Unit, error) {
-	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, selectedSpaceID)
+func apiGetUnit(unitID string, selectParam string) (*goclientnew.Unit, error) {
+	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, selectedSpaceID, selectParam)
 	if err != nil {
 		return nil, err
 	}
@@ -243,18 +200,22 @@ func apiGetUnit(unitID string) (*goclientnew.Unit, error) {
 	return extendedUnit.Unit, nil
 }
 
-func apiGetUnitInSpace(unitID string, spaceID string) (*goclientnew.Unit, error) {
-	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, spaceID)
+func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
+	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, spaceID, selectParam)
 	if err != nil {
 		return nil, err
 	}
 	return extendedUnit.Unit, nil
 }
 
-func apiGetExtendedUnitInSpace(unitID string, spaceID string) (*goclientnew.ExtendedUnit, error) {
+func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.GetUnitParams{}
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	unitRes, err := cubClientNew.GetUnitWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
 	if IsAPIError(err, unitRes) {
 		return nil, InterpretErrorGeneric(err, unitRes)
@@ -262,16 +223,20 @@ func apiGetExtendedUnitInSpace(unitID string, spaceID string) (*goclientnew.Exte
 	return unitRes.JSON200, nil
 }
 
-func apiGetUnitFromSlug(slug string) (*goclientnew.Unit, error) {
-	return apiGetUnitFromSlugInSpace(slug, selectedSpaceID)
+func apiGetUnitFromSlug(slug string, selectParam string) (*goclientnew.Unit, error) {
+	return apiGetUnitFromSlugInSpace(slug, selectedSpaceID, selectParam)
 }
 
-func apiGetUnitFromSlugInSpace(slug string, spaceID string) (*goclientnew.Unit, error) {
+func apiGetUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetUnit(id.String())
+		return apiGetUnit(id.String(), selectParam)
 	}
-	units, err := apiListUnits(spaceID, "Slug = '"+slug+"'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	units, err := apiListUnits(spaceID, "Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +248,7 @@ func apiGetUnitFromSlugInSpace(slug string, spaceID string) (*goclientnew.Unit, 
 	return nil, fmt.Errorf("unit %s not found in space %s", slug, spaceID)
 }
 
-func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string) (*goclientnew.ExtendedUnit, error) {
+func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	_, err := uuid.Parse(slug)
 	var where string
 	if err == nil {
@@ -291,7 +256,11 @@ func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string) (*goclientne
 	} else {
 		where = "SpaceID='" + spaceID + "' AND Slug='" + slug + "'"
 	}
-	units, err := apiSearchUnits(where, "", "")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	units, err := apiSearchUnits(where, "", "", selectParam)
 	if err != nil {
 		return nil, err
 	}

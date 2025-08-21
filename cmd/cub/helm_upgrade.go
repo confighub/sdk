@@ -221,7 +221,7 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 
 	// 6. Check if base unit exists
 	baseUnitSlug := fmt.Sprintf("%s-base", helmUpgradeArgs.releaseName)
-	baseUnit, err := apiGetUnitFromSlug(baseUnitSlug)
+	baseUnit, err := apiGetUnitFromSlug(baseUnitSlug, "*")
 	if err != nil {
 		return fmt.Errorf("base unit '%s' not found: %w", baseUnitSlug, err)
 	}
@@ -258,7 +258,7 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 	// 8. Optionally update CRDs unit if flag is set
 	if helmUpgradeArgs.updateCRDs && len(splitResult.CRDs) > 0 {
 		crdUnitSlug := fmt.Sprintf("%s-crds", helmUpgradeArgs.releaseName)
-		crdUnit, err := apiGetUnitFromSlug(crdUnitSlug)
+		crdUnit, err := apiGetUnitFromSlug(crdUnitSlug, "*")
 		if err != nil {
 			if !quiet {
 				tprint("CRDs unit '%s' not found, skipping CRDs update: %v", crdUnitSlug, err)

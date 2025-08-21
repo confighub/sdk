@@ -31,7 +31,7 @@ func init() {
 }
 
 func workerListStatusCmdRun(_ *cobra.Command, args []string) error {
-	entity, err := apiGetBridgeWorkerFromSlug(args[0])
+	entity, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}

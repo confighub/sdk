@@ -13,6 +13,8 @@ import (
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
+var byUnitID bool
+
 var mutationListCmd = &cobra.Command{
 	Use:   "list <unit>",
 	Short: "List mutations",
@@ -42,6 +44,18 @@ Examples:
 	RunE: mutationListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultMutationColumns = []string{"Mutation.MutationNum", "Mutation.RevisionNum", "Link.Slug", "Mutation.ProvidedResource", "Mutation.ProvidedPath", "Trigger.Slug", "Mutation.FunctionInvocation"}
+
+// Mutation-specific aliases
+var mutationAliases = map[string]string{
+	"Name": "Mutation.MutationNum",
+	"ID":   "Mutation.MutationID",
+}
+
+// Mutation custom column dependencies
+var mutationCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(mutationListCmd)
 	mutationListCmd.Flags().BoolVar(&byUnitID, "by-unit-id", false, "use unit id instead of slug")
@@ -52,14 +66,14 @@ func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 	var unit *goclientnew.Unit
 	var err error
 	if byUnitID {
-		unit, err = apiGetUnit(args[0])
+		unit, err = apiGetUnit(args[0], "*")
 	} else {
-		unit, err = apiGetUnitFromSlug(args[0])
+		unit, err = apiGetUnitFromSlug(args[0], "*")
 	}
 	if err != nil {
 		return err
 	}
-	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where)
+	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -99,13 +113,23 @@ func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 	table.Render()
 }
 
-func apiListMutations(spaceID string, unitID string, whereFilter string) ([]*goclientnew.ExtendedMutation, error) {
+func apiListMutations(spaceID string, unitID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.ListExtendedMutationsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
-	include := "RevisionID,LinkID,TargetID"
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	include := "RevisionID,LinkID,TriggerID"
 	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"MutationNum", "MutationID", "UnitID", "SpaceID", "OrganizationID"}
+		return buildSelectList("Mutation", "", include, defaultMutationColumns, mutationAliases, mutationCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	muteRes, err := cubClientNew.ListExtendedMutationsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
 	if IsAPIError(err, muteRes) {
 		return nil, InterpretErrorGeneric(err, muteRes)
@@ -115,11 +139,11 @@ func apiListMutations(spaceID string, unitID string, whereFilter string) ([]*goc
 	for i, mutation := range *muteRes.JSON200 {
 		muteSlice[i] = &mutation
 	}
-	
+
 	// Sort by MutationNum descending
 	sort.Slice(muteSlice, func(i, j int) bool {
 		return muteSlice[i].Mutation.MutationNum > muteSlice[j].Mutation.MutationNum
 	})
-	
+
 	return muteSlice, nil
 }

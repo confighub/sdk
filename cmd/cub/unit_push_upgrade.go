@@ -82,7 +82,7 @@ func init() {
 }
 
 func unitBulkUpgradeCmdRun(cmd *cobra.Command, args []string) error {
-	currentUnit, err := apiGetUnitFromSlug(args[0])
+	currentUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}

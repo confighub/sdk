@@ -19,6 +19,17 @@ var unitEventListCmd = &cobra.Command{
 	RunE:  unitEventListRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultUnitEventColumns = []string{"Action", "Result", "Status", "CreatedAt", "TerminatedAt", "Message"}
+
+// UnitEvent-specific aliases
+var unitEventAliases = map[string]string{
+	"ID": "UnitEventID",
+}
+
+// UnitEvent custom column dependencies
+var unitEventCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(unitEventListCmd)
 	unitEventCmd.AddCommand(unitEventListCmd)
@@ -26,7 +37,7 @@ func init() {
 
 func unitEventListRun(cmd *cobra.Command, args []string) error {
 	slug := args[0]
-	u, err := apiGetUnitFromSlug(slug)
+	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -79,6 +90,18 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string) 
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	// TODO: Add select parameter support when backend endpoint supports it
+	// Auto-select fields based on default display if no custom output format is specified
+	// if selectFields == "" {
+	//     baseFields := []string{"UnitEventID", "UnitID", "SpaceID", "OrganizationID"}
+	//     autoSelect := buildSelectList("UnitEvent", "", "", defaultUnitEventColumns, unitEventAliases, unitEventCustomColumnDependencies, baseFields)
+	//     newParams.Select = &autoSelect
+	// } else if selectFields != "" {
+	//     newParams.Select = &selectFields
+	// }
 	eventsRes, err := cubClientNew.ListUnitEventsWithResponse(ctx, spaceID, unitID, newParams)
 	if IsAPIError(err, eventsRes) {
 		return nil, InterpretErrorGeneric(err, eventsRes)
@@ -87,11 +110,11 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string) 
 	for _, event := range *eventsRes.JSON200 {
 		events = append(events, &event)
 	}
-	
+
 	// Sort by CreatedAt descending (most recent first)
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].CreatedAt.After(events[j].CreatedAt)
 	})
-	
+
 	return events, nil
 }

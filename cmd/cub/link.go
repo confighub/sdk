@@ -14,6 +14,10 @@ var linkCmd = &cobra.Command{
 	PersistentPreRunE: spacePreRunE,
 }
 
+func buildWhereClauseFromLinks(linkIds []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(linkIds, "LinkID", "Slug")
+}
+
 func init() {
 	addSpaceFlags(linkCmd)
 	rootCmd.AddCommand(linkCmd)

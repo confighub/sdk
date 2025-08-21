@@ -78,13 +78,27 @@ Next steps after listing spaces:
 	return getCommandHelp(baseHelp, agentContext)
 }
 
+// Default columns to display when no custom columns are specified
+var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "TotalUnitCount", "GatedUnitCount", "UpgradableUnitCount", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TriggerCountByEventType"}
+
+// Space-specific aliases
+var spaceAliases = map[string]string{
+	"Name": "Space.Slug",
+	"ID":   "Space.SpaceID",
+}
+
+// Space custom column dependencies (Environment comes from Labels.Environment)
+var spaceCustomColumnDependencies = map[string][]string{
+	"Environment": {"Labels"},
+}
+
 func init() {
 	addStandardListFlags(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
 }
 
 func spaceListCmdRun(cmd *cobra.Command, args []string) error {
-	extendedSpaces, err := apiListExtendedSpaces(where)
+	extendedSpaces, err := apiListExtendedSpaces(where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -99,7 +113,7 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Slug", "Environment", "#Units", "#Gated", "#Upgradable", "#Workers", "#Targets", "#Triggers"})
+		table.SetHeader([]string{"Name", "Environment", "#Units", "#Gated", "#Upgradable", "#Workers", "#Targets", "#Triggers"})
 	}
 	for _, extendedSpace := range extendedSpaces {
 		environment := ""
@@ -122,10 +136,21 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table.Render()
 }
 
-func apiListSpaces(whereFilter string) ([]*goclientnew.Space, error) {
+// TODO: Eliminate this function
+func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space, error) {
 	newParams := &goclientnew.ListSpacesParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
+		return buildSelectList("Space", "", "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
 	if IsAPIError(err, spacesRes) {
@@ -142,12 +167,22 @@ func apiListSpaces(whereFilter string) ([]*goclientnew.Space, error) {
 	return spaces, nil
 }
 
-func apiListExtendedSpaces(whereFilter string) ([]*goclientnew.ExtendedSpace, error) {
+func apiListExtendedSpaces(whereFilter string, selectParam string) ([]*goclientnew.ExtendedSpace, error) {
 	newParams := &goclientnew.ListSpacesParams{}
 	summary := true
 	newParams.Summary = &summary
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
+		return buildSelectList("Space", "", "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
 	if IsAPIError(err, spacesRes) {

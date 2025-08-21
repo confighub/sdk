@@ -26,7 +26,7 @@ func unitEventGetRun(cmd *cobra.Command, args []string) error {
 	slug := args[0]
 	eventID := args[1]
 
-	u, err := apiGetUnitFromSlug(slug)
+	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -46,6 +46,7 @@ func unitEventGetRun(cmd *cobra.Command, args []string) error {
 }
 
 func apiGetUnitEvent(spaceID uuid.UUID, unitID uuid.UUID, eventID uuid.UUID) (*goclientnew.UnitEvent, error) {
+	// No params yet
 	eventRes, err := cubClientNew.GetUnitEventWithResponse(ctx, spaceID, unitID, eventID)
 	if IsAPIError(err, eventRes) {
 		return nil, InterpretErrorGeneric(err, eventRes)

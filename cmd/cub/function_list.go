@@ -79,13 +79,13 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 	entity := builtinFunctionKey
 	funcs := functionsByToolchain{}
 	params := &goclientnew.ListFunctionsParams{}
-	
+
 	// Validate that selectedSpaceID is not "*" when target, worker, or unit is specified
 	if selectedSpaceID == "*" && (targetSlug != "" || workerSlug != "" || unitSlug != "") {
 		return entity, funcs, fmt.Errorf("cannot use --space '*' with --target, --worker, or --unit flags")
 	}
 	if targetSlug != "" {
-		targetDetails, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID)
+		targetDetails, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "") // default select is fine
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get target '%s': %w", targetSlug, err)
 		}
@@ -95,7 +95,7 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 		params.Id = &targetIDStr
 		entity = targetIDStr
 	} else if workerSlug != "" {
-		workerDetails, err := apiGetBridgeWorkerFromSlug(workerSlug)
+		workerDetails, err := apiGetBridgeWorkerFromSlug(workerSlug, "") // default select is fine
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get worker '%s': %w", workerSlug, err)
 		}
@@ -105,7 +105,7 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 		params.Id = &workerIDStr
 		entity = workerIDStr
 	} else if unitSlug != "" {
-		unitDetails, err := apiGetUnitFromSlug(unitSlug)
+		unitDetails, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
 		}

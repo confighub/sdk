@@ -46,6 +46,7 @@ func packageCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	include := "UnitEventID,TargetID,SpaceID"
 	newParams.Include = &include
+	// No select. Get all fields.
 	res, err := cubClientNew.ListAllUnits(ctx, newParams)
 	if err != nil {
 		return err
@@ -96,7 +97,7 @@ func addWorkerIfNotDone(dir string, manifest *PackageManifest, spaceID uuid.UUID
 	if addedWorkersByID[workerID.String()] != nil {
 		return &addedWorkersByID[workerID.String()].Slug, nil
 	}
-	worker, err := apiGetBridgeWorker(spaceID, workerID)
+	worker, err := apiGetBridgeWorker(spaceID, workerID, "*") // get all fields for now
 	if err != nil {
 		return nil, err
 	}

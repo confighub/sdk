@@ -250,7 +250,7 @@ func RegisterFunctionsAsCobraCommands() {
 						}
 						// Wait one at a time
 						for _, respMsg := range *respMsgs {
-							unitDetails, err := apiGetUnit(respMsg.UnitID.String())
+							unitDetails, err := apiGetUnit(respMsg.UnitID.String(), "*") // get all fields for now
 							if err != nil {
 								return err
 							}

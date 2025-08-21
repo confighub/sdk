@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -58,7 +59,7 @@ Examples:
   cub unit list --space my-space --columns Unit.Slug,Target.Slug
 
   # List units showing label and annotation values
-  cub unit list --space my-space --columns Unit.Slug,Unit.Labels.env,Unit.Labels.tier,Unit.Annotations.owner
+  cub unit list --space my-space --columns Unit.Slug,Unit.Labels.Environment,Unit.Labels.Tier,Unit.Annotations.Owner
 
 Available columns (prefixed with Unit.):
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
@@ -112,12 +113,12 @@ var columns string
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
-var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "DataBytes", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
 
 // Unit-specific aliases
 var unitAliases = map[string]string{
-	"Name": "Slug",
-	"ID":   "UnitID",
+	"Name": "Unit.Slug",
+	"ID":   "Unit.UnitID",
 }
 
 // Unit-specific custom columns
@@ -156,11 +157,18 @@ var unitCustomColumns = map[string]func(interface{}) string{
 	},
 }
 
+// Fields required by custom columns
+var unitCustomColumnDependencies = map[string][]string{
+	"DataBytes":        {"Data"},
+	"UpgradeNeeded":    {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
+	"UnappliedChanges": {"HeadRevisionNum", "LiveRevisionNum"},
+}
+
 func init() {
 	addStandardListFlags(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
-	unitListCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,SetID,Labels.env,Annotations.owner)")
+	unitListCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,TargetID,Labels.Environment,Annotations.Owner)")
 	unitCmd.AddCommand(unitListCmd)
 }
 
@@ -179,12 +187,12 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		extendedUnits, err = apiSearchUnits(where, resourceType, whereData)
+		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, selectFields)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, selectFields)
 		if err != nil {
 			return err
 		}
@@ -205,8 +213,8 @@ func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
 	DisplayListGeneric(units, columns, defaultUnitColumns, unitAliases, unitCustomColumns)
 }
 
-func apiListUnits(spaceID string, whereFilter string) ([]*goclientnew.Unit, error) {
-	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter)
+func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
+	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, selectParam)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +226,7 @@ func apiListUnits(spaceID string, whereFilter string) ([]*goclientnew.Unit, erro
 	return units, nil
 }
 
-func apiListExtendedUnits(spaceID string, whereFilter string) ([]*goclientnew.ExtendedUnit, error) {
+func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListUnitsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -228,6 +236,16 @@ func apiListExtendedUnits(spaceID string, whereFilter string) ([]*goclientnew.Ex
 	}
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	newParams.Include = &include
+	// Handle select parameter
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
+		// UnitEventID is not a real field. Remove it.
+		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
+		return buildSelectList("Unit", columns, selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	unitsRes, err := cubClientNew.ListUnitsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, unitsRes) {
 		return nil, InterpretErrorGeneric(err, unitsRes)
@@ -240,7 +258,7 @@ func apiListExtendedUnits(spaceID string, whereFilter string) ([]*goclientnew.Ex
 	return extendedUnits, nil
 }
 
-func apiSearchUnits(whereFilter string, resourceType string, whereData string) ([]*goclientnew.ExtendedUnit, error) {
+func apiSearchUnits(whereFilter string, resourceType string, whereData string, selectParam string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListAllUnitsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -257,6 +275,16 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string) (
 	}
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	newParams.Include = &include
+	
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
+		// UnitEventID is not a real field. Remove it.
+		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
+		return buildSelectList("Unit", columns, selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	res, err := cubClientNew.ListAllUnits(ctx, newParams)
 	if err != nil {
 		return nil, err

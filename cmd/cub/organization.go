@@ -32,7 +32,7 @@ func organizationPreRunE(cmd *cobra.Command, args []string) error {
 	if cubContext.OrganizationID == "" {
 		return fmt.Errorf("organization is required. Set with --organization option or set in context with the context sub-command")
 	}
-	selectedOrg, err := apiGetOrganization(cubContext.OrganizationID)
+	selectedOrg, err := apiGetOrganization(cubContext.OrganizationID, "*")
 	if err != nil {
 		return err
 	}

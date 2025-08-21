@@ -26,8 +26,8 @@ func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
-	
-	currentSet, err := apiGetSetFromSlug(args[0])
+
+	currentSet, err := apiGetSetFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
@@ -41,11 +41,11 @@ func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			currentSet = new(goclientnew.Set)
 			currentSet.Version = existingSet.Version
 		}
-		
+
 		if err := populateModelFromFlags(currentSet); err != nil {
 			return err
 		}
-		
+
 		// Ensure essential fields can't be clobbered
 		currentSet.OrganizationID = existingSet.OrganizationID
 		currentSet.SpaceID = existingSet.SpaceID

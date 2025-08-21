@@ -124,6 +124,12 @@ type ApiInfo struct {
 	WorkerPort string `json:"WorkerPort,omitempty"`
 }
 
+// ApproveResponse defines model for ApproveResponse.
+type ApproveResponse struct {
+	Error   *ResponseError `json:"Error,omitempty"`
+	Message string         `json:"Message,omitempty"`
+}
+
 // BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
 // A bridge worker is a worker program that connects ConfigHub to external systems and targets.
 // It acts as a bridge between ConfigHub and the infrastructure where configurations need
@@ -190,6 +196,20 @@ type BridgeWorker struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
+// BridgeWorkerCreateOrUpdateResponse defines model for BridgeWorkerCreateOrUpdateResponse.
+type BridgeWorkerCreateOrUpdateResponse struct {
+	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
+	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
+	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
+	// to be applied. Bridge workers are responsible for executing configuration changes on
+	// remote targets and reporting status back to ConfigHub.
+	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
+	// required for authentication with the ConfigHub server. These credentials allow the
+	// bridge worker to establish a secure connection and receive configuration actions.
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
+}
+
 // BridgeWorkerInfo defines model for BridgeWorkerInfo.
 type BridgeWorkerInfo struct {
 	// SupportedConfigTypes Configuration types supported by the BridgeWorker
@@ -223,6 +243,64 @@ type BridgeWorkerStatus struct {
 	Status string `json:"Status,omitempty"`
 }
 
+// ChangeSet Defines an entity changeset.
+type ChangeSet struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty"`
+
+	// ChangeSetID ChangeSetID uniquely identifies a changeset within the system.
+	ChangeSetID openapi_types.UUID `json:"ChangeSetID,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty"`
+
+	// Description Description is a human-readable description of the change.
+	Description string `json:"Description,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty"`
+	EndTagID    *UUID  `json:"EndTagID"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty"`
+	FilterID   *UUID  `json:"FilterID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID    openapi_types.UUID `json:"SpaceID,omitempty"`
+	StartTagID *UUID              `json:"StartTagID"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty"`
+}
+
+// ChangeSetCreateOrUpdateResponse defines model for ChangeSetCreateOrUpdateResponse.
+type ChangeSetCreateOrUpdateResponse struct {
+	// ChangeSet Defines an entity changeset.
+	ChangeSet *ChangeSet     `json:"ChangeSet,omitempty"`
+	Error     *ResponseError `json:"Error,omitempty"`
+}
+
+// Column defines model for Column.
+type Column struct {
+	// Name Name of the column in PascalCase without spaces or dashes, if built-in, entity attribute (e.g., Labels.Environment), or extended attribute (e.g., UpstreamUnit.HeadRevisionNum)
+	Name string `json:"Name"`
+}
+
 // ConfigType defines model for ConfigType.
 type ConfigType struct {
 	// AvailableTargets Targets known by the BridgeWorker
@@ -237,6 +315,8 @@ type ConfigType struct {
 
 // DeleteResponse Response for successful delete operation
 type DeleteResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
 	// Message Response message.
 	Message string `json:"Message,omitempty"`
 }
@@ -287,6 +367,68 @@ type ExtendedBridgeWorker struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space       *Space `json:"Space,omitempty"`
 	TargetCount int64  `json:"TargetCount,omitempty"`
+}
+
+// ExtendedChangeSet defines model for ExtendedChangeSet.
+type ExtendedChangeSet struct {
+	// ChangeSet Defines an entity changeset.
+	ChangeSet *ChangeSet `json:"ChangeSet,omitempty"`
+
+	// EndTag Defines a Tag that can be used to identify a set of Revisions across Units.
+	EndTag *Tag           `json:"EndTag,omitempty"`
+	Error  *ResponseError `json:"Error,omitempty"`
+
+	// Filter Defines an entity filter.
+	Filter *Filter `json:"Filter,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
+
+	// StartTag Defines a Tag that can be used to identify a set of Revisions across Units.
+	StartTag *Tag `json:"StartTag,omitempty"`
+}
+
+// ExtendedFilter defines model for ExtendedFilter.
+type ExtendedFilter struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Filter Defines an entity filter.
+	Filter *Filter `json:"Filter,omitempty"`
+
+	// FromSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	FromSpace *Space `json:"FromSpace,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
+}
+
+// ExtendedInvocation defines model for ExtendedInvocation.
+type ExtendedInvocation struct {
+	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
+	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
+	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
+	// to be applied. Bridge workers are responsible for executing configuration changes on
+	// remote targets and reporting status back to ConfigHub.
+	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
+	// required for authentication with the ConfigHub server. These credentials allow the
+	// bridge worker to establish a secure connection and receive configuration actions.
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
+
+	// Invocation Defines a function invocation.
+	Invocation *Invocation `json:"Invocation,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
 }
 
 // ExtendedLink defines model for ExtendedLink.
@@ -342,6 +484,9 @@ type ExtendedLink struct {
 // ExtendedMutation defines model for ExtendedMutation.
 type ExtendedMutation struct {
 	Error *ResponseError `json:"Error,omitempty"`
+
+	// Invocation Defines a function invocation.
+	Invocation *Invocation `json:"Invocation,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
 	// A Link indicates that config values Provided by the To Unit (the producer) may
@@ -456,6 +601,20 @@ type ExtendedSpace struct {
 	UpgradableUnitCount        int64          `json:"UpgradableUnitCount,omitempty"`
 }
 
+// ExtendedTag defines model for ExtendedTag.
+type ExtendedTag struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
+
+	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
+	Tag *Tag `json:"Tag,omitempty"`
+}
+
 // ExtendedTarget defines model for ExtendedTarget.
 type ExtendedTarget struct {
 	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
@@ -491,6 +650,9 @@ type ExtendedTrigger struct {
 	// bridge worker to establish a secure connection and receive configuration actions.
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty"`
+
+	// Invocation Defines a function invocation.
+	Invocation *Invocation `json:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
@@ -580,6 +742,86 @@ type ExtendedUnit struct {
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
 	UpstreamUnit *Unit `json:"UpstreamUnit,omitempty"`
+}
+
+// ExtendedView defines model for ExtendedView.
+type ExtendedView struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Filter Defines an entity filter.
+	Filter *Filter `json:"Filter,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
+
+	// View Defines an entity view.
+	View *View `json:"View,omitempty"`
+}
+
+// Filter Defines an entity filter.
+type Filter struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty"`
+
+	// FilterID FilterID uniquely identifies a filter within the system.
+	FilterID openapi_types.UUID `json:"FilterID,omitempty"`
+
+	// From From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.
+	From        string `json:"From"`
+	FromSpaceID *UUID  `json:"FromSpaceID"`
+
+	// Hash SHA256 hash of the filter parameters encoded as hexadecimal. (readonly)
+	Hash string `json:"Hash,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
+
+	// ResourceType Resource type to match for the desired ToolchainType, for example apps/v1/Deployment. Valid only for Units. (optional)
+	ResourceType string `json:"ResourceType,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty"`
+
+	// Where Where specifices the where filter expression in the syntax used in list and search API query parameters. (optional)
+	Where string `json:"Where,omitempty"`
+
+	// WhereData WhereData specifies a filter expression for configuration data. Valid only for Units. (optional)
+	WhereData string `json:"WhereData,omitempty"`
+}
+
+// FilterCreateOrUpdateResponse defines model for FilterCreateOrUpdateResponse.
+type FilterCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Filter Defines an entity filter.
+	Filter *Filter `json:"Filter,omitempty"`
 }
 
 // FunctionArgument defines model for FunctionArgument.
@@ -775,6 +1017,67 @@ type ImportRequest struct {
 	Where            string            `json:"Where,omitempty"`
 }
 
+// Invocation Defines a function invocation.
+type Invocation struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty"`
+
+	// Arguments Function arguments
+	Arguments      []FunctionArgument `json:"Arguments"`
+	BridgeWorkerID *UUID              `json:"BridgeWorkerID"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty"`
+
+	// FunctionName Function name
+	FunctionName string `json:"FunctionName,omitempty"`
+
+	// Hash SHA256 hash of the function name and arguments encoded as hexadecimal.
+	Hash string `json:"Hash,omitempty"`
+
+	// InvocationID InvocationID uniquely identifies a invocation within the system.
+	InvocationID openapi_types.UUID `json:"InvocationID,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty"`
+
+	// ToolchainType ToolchainType specifies the type of toolchain this invocation works with.
+	// 		This determines which configuration formats the invocation can process.
+	ToolchainType string `json:"ToolchainType"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty"`
+}
+
+// InvocationCreateOrUpdateResponse defines model for InvocationCreateOrUpdateResponse.
+type InvocationCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Invocation Defines a function invocation.
+	Invocation *Invocation `json:"Invocation,omitempty"`
+}
+
 // Link Link connects two config Units in a dependency / producer-consumer relationship.
 // A Link indicates that config values Provided by the To Unit (the producer) may
 // satisfy config values Needed by the From Unit (the consumer), and should be attempted
@@ -852,6 +1155,7 @@ type Mutation struct {
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty"`
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty"`
+	InvocationID       *UUID               `json:"InvocationID"`
 	LinkID             *UUID               `json:"LinkID"`
 
 	// MutationID Unique identifier for a Mutation.
@@ -866,6 +1170,9 @@ type Mutation struct {
 	// ProvidedPath ProvidedPath is the path of the provided value used to satisfy a needed value if the change was made due to resolving a link.
 	ProvidedPath     string        `json:"ProvidedPath,omitempty"`
 	ProvidedResource *ResourceInfo `json:"ProvidedResource,omitempty"`
+
+	// RestoredRevisionNum Sequence number of the restored revision, if the change was due to a restore operation.
+	RestoredRevisionNum int64 `json:"RestoredRevisionNum,omitempty"`
 
 	// RevisionID Unique identifier of the corresponding Revision.
 	RevisionID openapi_types.UUID `json:"RevisionID,omitempty"`
@@ -882,6 +1189,9 @@ type Mutation struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// UpgradedFromUpstreamRevisionNum Sequence number of the upstream revision the unit was upgraded from, if the change was due to an upgrade operation.
+	UpgradedFromUpstreamRevisionNum int64 `json:"UpgradedFromUpstreamRevisionNum,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
@@ -1069,7 +1379,7 @@ type Revision struct {
 	ApplyGates map[string]bool `json:"ApplyGates,omitempty"`
 
 	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy"`
+	ApprovedBy []UUID `json:"ApprovedBy,omitempty"`
 
 	// ContentHash The CRC32 hash of this revision's data.
 	ContentHash int `json:"ContentHash,omitempty"`
@@ -1107,6 +1417,9 @@ type Revision struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty"`
+
+	// Tags A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now.
+	Tags map[string]string `json:"Tags,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty"`
@@ -1199,6 +1512,14 @@ type Space struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
+// SpaceCreateOrUpdateResponse defines model for SpaceCreateOrUpdateResponse.
+type SpaceCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty"`
+}
+
 // StandardErrorResponse Error response details.
 type StandardErrorResponse struct {
 	// Code HTTP status code of the response.
@@ -1206,6 +1527,53 @@ type StandardErrorResponse struct {
 
 	// Message Message returned with the response.
 	Message string `json:"Message,omitempty"`
+}
+
+// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
+type Tag struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty"`
+
+	// TagID TagID uniquely identifies a tag within the system.
+	TagID openapi_types.UUID `json:"TagID,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty"`
+}
+
+// TagCreateOrUpdateResponse defines model for TagCreateOrUpdateResponse.
+type TagCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
+	Tag *Tag `json:"Tag,omitempty"`
 }
 
 // Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., AWS, Kubernetes, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
@@ -1280,6 +1648,14 @@ type Target struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
+// TargetCreateOrUpdateResponse defines model for TargetCreateOrUpdateResponse.
+type TargetCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., AWS, Kubernetes, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	Target *Target `json:"Target,omitempty"`
+}
+
 // TargetType2 defines model for TargetType2.
 type TargetType2 struct {
 	// Name Used to set the Slug and DisplayName of the Target created in ConfigHub
@@ -1331,6 +1707,7 @@ type Trigger struct {
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty"`
+	InvocationID *UUID  `json:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty"`
@@ -1361,6 +1738,22 @@ type Trigger struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
+}
+
+// TriggerCreateOrUpdateResponse defines model for TriggerCreateOrUpdateResponse.
+type TriggerCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// Trigger Defines an automated function invocation that executes in response to specific
+	// Unit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,
+	// automated transformations, or other custom logic that should run when configuration
+	// changes occur. Each Trigger is associated with a specific Space and can be configured
+	// to execute on events.
+	//
+	// Triggers can be either validating (checking configuration validity without modifying it)
+	// or mutating (making changes to the configuration). They can also be enforced (cannot be
+	// overridden) or disabled.
+	Trigger *Trigger `json:"Trigger,omitempty"`
 }
 
 // UUID defines model for UUID.
@@ -1462,6 +1855,13 @@ type Unit struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
+}
+
+// UnitActionResponse defines model for UnitActionResponse.
+type UnitActionResponse struct {
+	// Action QueuedOperation is a record of an operation to be done by a bridge worker.
+	Action *QueuedOperation `json:"Action,omitempty"`
+	Error  *ResponseError   `json:"Error,omitempty"`
 }
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
@@ -1567,10 +1967,17 @@ type UnitStatus struct {
 	Status             string            `json:"Status,omitempty"`
 }
 
-// UpgradeUnitResponse defines model for UpgradeUnitResponse.
-type UpgradeUnitResponse struct {
-	FailedUnits   map[string]string `json:"FailedUnits"`
-	UpgradedUnits []Unit            `json:"UpgradedUnits"`
+// UnitTagRequest defines model for UnitTagRequest.
+type UnitTagRequest struct {
+	// Revision Which Unit revision to tag: 'HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	Revision string             `json:"Revision,omitempty"`
+	TagID    openapi_types.UUID `json:"TagID,omitempty"`
+}
+
+// UnitTagResponse defines model for UnitTagResponse.
+type UnitTagResponse struct {
+	Error   *ResponseError `json:"Error,omitempty"`
+	Message string         `json:"Message,omitempty"`
 }
 
 // User a User in Confighub.
@@ -1609,34 +2016,87 @@ type User struct {
 	Version int64 `json:"Version,omitempty"`
 }
 
+// View Defines an entity view.
+type View struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty"`
+
+	// Columns Columns to display, in order. (optional)
+	Columns []Column `json:"Columns,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty"`
+
+	// FilterID FilterID identifies a filter. (required)
+	FilterID openapi_types.UUID `json:"FilterID"`
+
+	// GroupBy Column to group by (optional).
+	GroupBy string `json:"GroupBy,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty"`
+
+	// OrderBy Column to sort by. (optional)
+	OrderBy string `json:"OrderBy,omitempty"`
+
+	// OrderByDirection Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional)
+	OrderByDirection string `json:"OrderByDirection,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty"`
+
+	// ViewID ViewID uniquely identifies a view within the system.
+	ViewID openapi_types.UUID `json:"ViewID,omitempty"`
+}
+
+// ViewCreateOrUpdateResponse defines model for ViewCreateOrUpdateResponse.
+type ViewCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty"`
+
+	// View Defines an entity view.
+	View *View `json:"View,omitempty"`
+}
+
 // WorkerInfo defines model for WorkerInfo.
 type WorkerInfo struct {
 	BridgeWorkerInfo   *BridgeWorkerInfo   `json:"BridgeWorkerInfo,omitempty"`
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty"`
 }
 
-// ListAllBridgeWorkersParams defines parameters for ListAllBridgeWorkers.
-type ListAllBridgeWorkersParams struct {
-	// Include Include clause for expanding related entities in the response for bridge_worker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for bridge_worker are OrganizationID, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty"`
-
+// BulkDeleteSpacesParams defines parameters for BulkDeleteSpaces.
+type BulkDeleteSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1647,85 +2107,13 @@ type ListAllBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on bridge_worker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty"`
-
-	// Summary Include summary information in the response
-	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
-}
-
-// InvokeFunctionsOnOrgParams defines parameters for InvokeFunctionsOnOrg.
-type InvokeFunctionsOnOrgParams struct {
-	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
-	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
-
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty"`
-}
-
-// ListOrganizationsParams defines parameters for ListOrganizations.
-type ListOrganizationsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -1742,46 +2130,52 @@ type ListOrganizationsParams struct {
 	//
 	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
 	//
-	// Searchable fields for Organization include string and map-type attributes from the queryable attributes list.
+	// Searchable fields for Space include string and map-type attributes from the queryable attributes list.
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 
-	// Include Include clause for expanding related entities in the response for Organization.
+	// Include Include clause for expanding related entities in the response for Space.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Organization are .
+	// Supported attributes for Space are OrganizationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
-// GetOrganizationParams defines parameters for GetOrganization.
-type GetOrganizationParams struct {
-	// Include Include clause for expanding related entities in the response for Organization.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Organization are .
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty"`
+// BulkPatchSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchSpaces.
+type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
 }
 
-// ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
-type ListOrganizationMembersParams struct {
+// BulkPatchSpacesParams defines parameters for BulkPatchSpaces.
+type BulkPatchSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1792,11 +2186,13 @@ type ListOrganizationMembersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on OrganizationMember: DisplayName, ExternalID, Slug, UserID, Username.
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -1813,25 +2209,52 @@ type ListOrganizationMembersParams struct {
 	//
 	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
 	//
-	// Searchable fields for OrganizationMember include string and map-type attributes from the queryable attributes list.
+	// Searchable fields for Space include string and map-type attributes from the queryable attributes list.
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Space are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
-// ListSpacesParams defines parameters for ListSpaces.
-type ListSpacesParams struct {
+// BulkCreateSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkCreateSpaces.
+type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateSpacesParams defines parameters for BulkCreateSpaces.
+type BulkCreateSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1842,6 +2265,8 @@ type ListSpacesParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -1877,38 +2302,23 @@ type ListSpacesParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 
-	// Summary Flag parameter for enabling summary
-	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Space names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 }
 
-// GetSpaceParams defines parameters for GetSpace.
-type GetSpaceParams struct {
-	// Include Include clause for expanding related entities in the response for Space.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Space are OrganizationID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty"`
-
-	// Summary Flag parameter for enabling summary
-	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
-}
-
-// ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
-type ListBridgeWorkersParams struct {
+// BulkDeleteBridgeWorkersParams defines parameters for BulkDeleteBridgeWorkers.
+type BulkDeleteBridgeWorkersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -1919,6 +2329,173 @@ type ListBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// ListAllBridgeWorkersParams defines parameters for ListAllBridgeWorkers.
+type ListAllBridgeWorkersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
+	// Summary Include summary information in the response
+	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
+}
+
+// BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchBridgeWorkers.
+type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations    *map[string]*string `json:"Annotations"`
+	BridgeWorkerID *[]int              `json:"BridgeWorkerID"`
+	Condition      *string             `json:"Condition"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchBridgeWorkersParams defines parameters for BulkPatchBridgeWorkers.
+type BulkPatchBridgeWorkersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -1955,49 +2532,19 @@ type ListBridgeWorkersParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
-// GetBridgeWorkerParams defines parameters for GetBridgeWorker.
-type GetBridgeWorkerParams struct {
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty"`
-}
-
-// ListFunctionsParams defines parameters for ListFunctions.
-type ListFunctionsParams struct {
-	// Entity Type of entity used to identify the worker whose functions should be listed: unit, target, or worker
-	Entity *string `form:"entity,omitempty" json:"entity,omitempty"`
-
-	// Id ID of the entity used to identify the worker whose functions should be listed
-	Id *string `form:"id,omitempty" json:"id,omitempty"`
-}
-
-// InvokeFunctionsParams defines parameters for InvokeFunctions.
-type InvokeFunctionsParams struct {
-	// UnitId Unit ID of the Revision to invoke functions on
-	UnitId *openapi_types.UUID `form:"unit_id,omitempty" json:"unit_id,omitempty"`
-
-	// RevisionId Revision ID to invoke functions on instead of units
-	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty"`
-
-	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
-	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
-
+// BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
+type BulkDeleteChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2008,6 +2555,687 @@ type InvokeFunctionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllChangeSetsParams defines parameters for ListAllChangeSets.
+type ListAllChangeSetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeSets.
+type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+	ChangeSetID *[]int              `json:"ChangeSetID"`
+	Description *string             `json:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	EndTagID    *[]int  `json:"EndTagID"`
+	FilterID    *[]int  `json:"FilterID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug       *string `json:"Slug"`
+	StartTagID *[]int  `json:"StartTagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchChangeSetsParams defines parameters for BulkPatchChangeSets.
+type BulkPatchChangeSetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeSets.
+type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+	ChangeSetID *[]int              `json:"ChangeSetID"`
+	Description *string             `json:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	EndTagID    *[]int  `json:"EndTagID"`
+	FilterID    *[]int  `json:"FilterID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug       *string `json:"Slug"`
+	StartTagID *[]int  `json:"StartTagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateChangeSetsParams defines parameters for BulkCreateChangeSets.
+type BulkCreateChangeSetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeSet names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning changesets
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkDeleteFiltersParams defines parameters for BulkDeleteFilters.
+type BulkDeleteFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllFiltersParams defines parameters for ListAllFilters.
+type ListAllFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchFiltersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchFilters.
+type BulkPatchFiltersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	From        *string `json:"From"`
+	FromSpaceID *[]int  `json:"FromSpaceID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels       *map[string]*string `json:"Labels"`
+	ResourceType *string             `json:"ResourceType"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version   *int    `json:"Version"`
+	Where     *string `json:"Where"`
+	WhereData *string `json:"WhereData"`
+}
+
+// BulkPatchFiltersParams defines parameters for BulkPatchFilters.
+type BulkPatchFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateFiltersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateFilters.
+type BulkCreateFiltersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	From        *string `json:"From"`
+	FromSpaceID *[]int  `json:"FromSpaceID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels       *map[string]*string `json:"Labels"`
+	ResourceType *string             `json:"ResourceType"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version   *int    `json:"Version"`
+	Where     *string `json:"Where"`
+	WhereData *string `json:"WhereData"`
+}
+
+// BulkCreateFiltersParams defines parameters for BulkCreateFilters.
+type BulkCreateFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Filter names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning filters
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// InvokeFunctionsOnOrgParams defines parameters for InvokeFunctionsOnOrg.
+type InvokeFunctionsOnOrgParams struct {
+	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
+	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2020,19 +3248,19 @@ type InvokeFunctionsParams struct {
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
 }
 
-// ListLinksParams defines parameters for ListLinks.
-type ListLinksParams struct {
+// BulkDeleteInvocationsParams defines parameters for BulkDeleteInvocations.
+type BulkDeleteInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2043,6 +3271,416 @@ type ListLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllInvocationsParams defines parameters for ListAllInvocations.
+type ListAllInvocationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
+type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchInvocationsParams defines parameters for BulkPatchInvocations.
+type BulkPatchInvocationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateInvocations.
+type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateInvocationsParams defines parameters for BulkCreateInvocations.
+type BulkCreateInvocationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Invocation names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning invocations
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkDeleteLinksParams defines parameters for BulkDeleteLinks.
+type BulkDeleteLinksParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	//
+	// filter
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Link include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// SearchListLinksParams defines parameters for SearchListLinks.
+type SearchListLinksParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2077,6 +3715,1116 @@ type ListLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchLinksApplicationMergePatchPlusJSONBody defines parameters for BulkPatchLinks.
+type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FromUnitID  *[]int  `json:"FromUnitID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+	LinkID *[]int              `json:"LinkID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug      *string `json:"Slug"`
+	ToSpaceID *[]int  `json:"ToSpaceID"`
+	ToUnitID  *[]int  `json:"ToUnitID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchLinksParams defines parameters for BulkPatchLinks.
+type BulkPatchLinksParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	//
+	// filter
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Link include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateLinksApplicationMergePatchPlusJSONBody defines parameters for BulkCreateLinks.
+type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FromUnitID  *[]int  `json:"FromUnitID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+	LinkID *[]int              `json:"LinkID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug      *string `json:"Slug"`
+	ToSpaceID *[]int  `json:"ToSpaceID"`
+	ToUnitID  *[]int  `json:"ToUnitID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateLinksParams defines parameters for BulkCreateLinks.
+type BulkCreateLinksParams struct {
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for created links
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// WhereToSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select ToSpaces for created links
+	//
+	// The whole string must be query-encoded.
+	WhereToSpace *string `form:"where_to_space,omitempty" json:"where_to_space,omitempty"`
+
+	// WhereFrom The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Where expression to select FromUnits for created links
+	//
+	// The whole string must be query-encoded.
+	WhereFrom *string `form:"where_from,omitempty" json:"where_from,omitempty"`
+
+	// WhereTo The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Where expression to select ToUnits for created links
+	//
+	// The whole string must be query-encoded.
+	WhereTo *string `form:"where_to,omitempty" json:"where_to,omitempty"`
+}
+
+// ListOrganizationsParams defines parameters for ListOrganizations.
+type ListOrganizationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Organization include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Organization.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Organization are .
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Organization.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetOrganizationParams defines parameters for GetOrganization.
+type GetOrganizationParams struct {
+	// Include Include clause for expanding related entities in the response for Organization.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Organization are .
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Organization.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
+type ListOrganizationMembersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on OrganizationMember: DisplayName, ExternalID, Slug, UserID, Username.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for OrganizationMember include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+}
+
+// ListSpacesParams defines parameters for ListSpaces.
+type ListSpacesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Space include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Space are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
+	// Summary Flag parameter for enabling summary
+	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
+}
+
+// GetSpaceParams defines parameters for GetSpace.
+type GetSpaceParams struct {
+	// Include Include clause for expanding related entities in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Space are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
+	// Summary Flag parameter for enabling summary
+	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
+}
+
+// PatchSpaceApplicationMergePatchPlusJSONBody defines parameters for PatchSpace.
+type PatchSpaceApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
+type ListBridgeWorkersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetBridgeWorkerParams defines parameters for GetBridgeWorker.
+type GetBridgeWorkerParams struct {
+	// Include Include clause for expanding related entities in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchBridgeWorkerApplicationMergePatchPlusJSONBody defines parameters for PatchBridgeWorker.
+type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations    *map[string]*string `json:"Annotations"`
+	BridgeWorkerID *[]int              `json:"BridgeWorkerID"`
+	Condition      *string             `json:"Condition"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// ListChangeSetsParams defines parameters for ListChangeSets.
+type ListChangeSetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetChangeSetParams defines parameters for GetChangeSet.
+type GetChangeSetParams struct {
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, FilterID, OrganizationID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchChangeSetApplicationMergePatchPlusJSONBody defines parameters for PatchChangeSet.
+type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+	ChangeSetID *[]int              `json:"ChangeSetID"`
+	Description *string             `json:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	EndTagID    *[]int  `json:"EndTagID"`
+	FilterID    *[]int  `json:"FilterID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug       *string `json:"Slug"`
+	StartTagID *[]int  `json:"StartTagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// ListFiltersParams defines parameters for ListFilters.
+type ListFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetFilterParams defines parameters for GetFilter.
+type GetFilterParams struct {
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchFilterApplicationMergePatchPlusJSONBody defines parameters for PatchFilter.
+type PatchFilterApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	From        *string `json:"From"`
+	FromSpaceID *[]int  `json:"FromSpaceID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels       *map[string]*string `json:"Labels"`
+	ResourceType *string             `json:"ResourceType"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version   *int    `json:"Version"`
+	Where     *string `json:"Where"`
+	WhereData *string `json:"WhereData"`
+}
+
+// ListFunctionsParams defines parameters for ListFunctions.
+type ListFunctionsParams struct {
+	// Entity Type of entity used to identify the worker whose functions should be listed: unit, target, or worker
+	Entity *string `form:"entity,omitempty" json:"entity,omitempty"`
+
+	// Id ID of the entity used to identify the worker whose functions should be listed
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+}
+
+// InvokeFunctionsParams defines parameters for InvokeFunctions.
+type InvokeFunctionsParams struct {
+	// UnitId Unit ID of the Revision to invoke functions on
+	UnitId *openapi_types.UUID `form:"unit_id,omitempty" json:"unit_id,omitempty"`
+
+	// RevisionId Revision ID to invoke functions on instead of units
+	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty"`
+
+	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
+	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+}
+
+// ListInvocationsParams defines parameters for ListInvocations.
+type ListInvocationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetInvocationParams defines parameters for GetInvocation.
+type GetInvocationParams struct {
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchInvocationApplicationMergePatchPlusJSONBody defines parameters for PatchInvocation.
+type PatchInvocationApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// ListLinksParams defines parameters for ListLinks.
+type ListLinksParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Link include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetLinkParams defines parameters for GetLink.
@@ -2089,6 +4837,38 @@ type GetLinkParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchLinkApplicationMergePatchPlusJSONBody defines parameters for PatchLink.
+type PatchLinkApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FromUnitID  *[]int  `json:"FromUnitID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+	LinkID *[]int              `json:"LinkID"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug      *string `json:"Slug"`
+	ToSpaceID *[]int  `json:"ToSpaceID"`
+	ToUnitID  *[]int  `json:"ToUnitID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
 }
 
 // ListSetsParams defines parameters for ListSets.
@@ -2098,12 +4878,12 @@ type ListSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2114,6 +4894,8 @@ type ListSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2148,6 +4930,16 @@ type ListSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Set.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, SetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetSetParams defines parameters for GetSet.
@@ -2160,21 +4952,31 @@ type GetSetParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Set.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, SetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
-// ListTargetsParams defines parameters for ListTargets.
-type ListTargetsParams struct {
+// ListTagsParams defines parameters for ListTags.
+type ListTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2185,6 +4987,120 @@ type ListTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetTagParams defines parameters for GetTag.
+type GetTagParams struct {
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchTagApplicationMergePatchPlusJSONBody defines parameters for PatchTag.
+type PatchTagApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug  *string `json:"Slug"`
+	TagID *[]int  `json:"TagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// ListTargetsParams defines parameters for ListTargets.
+type ListTargetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2219,6 +5135,16 @@ type ListTargetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetTargetParams defines parameters for GetTarget.
@@ -2231,6 +5157,39 @@ type GetTargetParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchTargetApplicationMergePatchPlusJSONBody defines parameters for PatchTarget.
+type PatchTargetApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations    *map[string]*string `json:"Annotations"`
+	BridgeWorkerID *[]int              `json:"BridgeWorkerID"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels       *map[string]*string `json:"Labels"`
+	Parameters   *string             `json:"Parameters"`
+	ProviderType *string             `json:"ProviderType"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	TargetID      *[]int  `json:"TargetID"`
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
 }
 
 // ListTriggersParams defines parameters for ListTriggers.
@@ -2240,12 +5199,12 @@ type ListTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2256,11 +5215,13 @@ type ListTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -2286,10 +5247,20 @@ type ListTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetTriggerParams defines parameters for GetTrigger.
@@ -2298,10 +5269,52 @@ type GetTriggerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchTriggerApplicationMergePatchPlusJSONBody defines parameters for PatchTrigger.
+type PatchTriggerApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+	Disabled       *bool                     `json:"Disabled"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	Enforced    *bool   `json:"Enforced"`
+	Event       *string `json:"Event"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+	TriggerID     *[]int  `json:"TriggerID"`
+	Validating    *bool   `json:"Validating"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
 }
 
 // ListUnitsParams defines parameters for ListUnits.
@@ -2311,12 +5324,12 @@ type ListUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2327,6 +5340,8 @@ type ListUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2363,6 +5378,16 @@ type ListUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // CreateUnitParams defines parameters for CreateUnit.
@@ -2381,12 +5406,12 @@ type ListExtendedUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2397,6 +5422,8 @@ type ListExtendedUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2433,6 +5460,16 @@ type ListExtendedUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetUnitParams defines parameters for GetUnit.
@@ -2445,6 +5482,16 @@ type GetUnitParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // PatchUnitApplicationMergePatchPlusJSONBody defines parameters for PatchUnit.
@@ -2511,12 +5558,12 @@ type ListExtendedMutationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2527,11 +5574,13 @@ type ListExtendedMutationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, LinkID, MutationID, MutationNum, OrganizationID, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -2557,10 +5606,20 @@ type ListExtendedMutationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Mutation are LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
+	// Supported attributes for Mutation are InvocationID, LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Mutation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetExtendedMutationParams defines parameters for GetExtendedMutation.
@@ -2569,10 +5628,20 @@ type GetExtendedMutationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Mutation are LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
+	// Supported attributes for Mutation are InvocationID, LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Mutation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.
@@ -2582,12 +5651,12 @@ type ListExtendedRevisionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2598,6 +5667,8 @@ type ListExtendedRevisionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2632,6 +5703,16 @@ type ListExtendedRevisionsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // GetExtendedRevisionParams defines parameters for GetExtendedRevision.
@@ -2644,6 +5725,16 @@ type GetExtendedRevisionParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // ListUnitEventsParams defines parameters for ListUnitEvents.
@@ -2653,12 +5744,12 @@ type ListUnitEventsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2669,6 +5760,8 @@ type ListUnitEventsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2696,19 +5789,19 @@ type ListUnitEventsParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
-// ListAllTargetsParams defines parameters for ListAllTargets.
-type ListAllTargetsParams struct {
+// ListViewsParams defines parameters for ListViews.
+type ListViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2719,6 +5812,454 @@ type ListAllTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// GetViewParams defines parameters for GetView.
+type GetViewParams struct {
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// PatchViewApplicationMergePatchPlusJSONBody defines parameters for PatchView.
+type PatchViewApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string       `json:"Annotations"`
+	Columns     *[]map[string]interface{} `json:"Columns"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	GroupBy     *string `json:"GroupBy"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels           *map[string]*string `json:"Labels"`
+	OrderBy          *string             `json:"OrderBy"`
+	OrderByDirection *string             `json:"OrderByDirection"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int   `json:"Version"`
+	ViewID  *[]int `json:"ViewID"`
+}
+
+// BulkDeleteTagsParams defines parameters for BulkDeleteTags.
+type BulkDeleteTagsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllTagsParams defines parameters for ListAllTags.
+type ListAllTagsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchTagsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTags.
+type BulkPatchTagsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug  *string `json:"Slug"`
+	TagID *[]int  `json:"TagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchTagsParams defines parameters for BulkPatchTags.
+type BulkPatchTagsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateTagsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateTags.
+type BulkCreateTagsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug  *string `json:"Slug"`
+	TagID *[]int  `json:"TagID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateTagsParams defines parameters for BulkCreateTags.
+type BulkCreateTagsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Tag names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning tags
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkDeleteTargetsParams defines parameters for BulkDeleteTargets.
+type BulkDeleteTargetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2755,19 +6296,19 @@ type ListAllTargetsParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
-// ListAllUnitsParams defines parameters for ListAllUnits.
-type ListAllUnitsParams struct {
+// ListAllTargetsParams defines parameters for ListAllTargets.
+type ListAllTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2778,6 +6319,581 @@ type ListAllUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTargets.
+type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations    *map[string]*string `json:"Annotations"`
+	BridgeWorkerID *[]int              `json:"BridgeWorkerID"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels       *map[string]*string `json:"Labels"`
+	Parameters   *string             `json:"Parameters"`
+	ProviderType *string             `json:"ProviderType"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	TargetID      *[]int  `json:"TargetID"`
+	ToolchainType *string `json:"ToolchainType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchTargetsParams defines parameters for BulkPatchTargets.
+type BulkPatchTargetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkDeleteTriggersParams defines parameters for BulkDeleteTriggers.
+type BulkDeleteTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllTriggersParams defines parameters for ListAllTriggers.
+type ListAllTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTriggers.
+type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+	Disabled       *bool                     `json:"Disabled"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	Enforced    *bool   `json:"Enforced"`
+	Event       *string `json:"Event"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+	TriggerID     *[]int  `json:"TriggerID"`
+	Validating    *bool   `json:"Validating"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkPatchTriggersParams defines parameters for BulkPatchTriggers.
+type BulkPatchTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateTriggers.
+type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations"`
+
+	// Arguments Function arguments
+	Arguments      *[]map[string]interface{} `json:"Arguments"`
+	BridgeWorkerID *[]int                    `json:"BridgeWorkerID"`
+	Disabled       *bool                     `json:"Disabled"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	Enforced    *bool   `json:"Enforced"`
+	Event       *string `json:"Event"`
+
+	// FunctionName Function name
+	FunctionName *string `json:"FunctionName"`
+	InvocationID *[]int  `json:"InvocationID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string `json:"Slug"`
+	ToolchainType *string `json:"ToolchainType"`
+	TriggerID     *[]int  `json:"TriggerID"`
+	Validating    *bool   `json:"Validating"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version"`
+}
+
+// BulkCreateTriggersParams defines parameters for BulkCreateTriggers.
+type BulkCreateTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Trigger names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning triggers
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkDeleteUnitsParams defines parameters for BulkDeleteUnits.
+type BulkDeleteUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllUnitsParams defines parameters for ListAllUnits.
+type ListAllUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2815,10 +6931,20 @@ type ListAllUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty"`
 
-	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty"`
 }
 
@@ -2862,12 +6988,12 @@ type BulkPatchUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2878,6 +7004,8 @@ type BulkPatchUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -2962,12 +7090,12 @@ type BulkCreateUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -2978,6 +7106,8 @@ type BulkCreateUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -3018,23 +7148,17 @@ type BulkCreateUnitsParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Unit names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
-	// DestSpaces Comma-separated list of destination Space IDs or slugs
-	DestSpaces *string `form:"dest_spaces,omitempty" json:"dest_spaces,omitempty"`
-}
-
-// ListUsersParams defines parameters for ListUsers.
-type ListUsersParams struct {
-	// Where The specified string is an expression for the purpose of filtering
+	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
 	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`.
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
 	// UUIDs and boolean attributes support equality and inequality only.
 	// UUID and time literals must be quoted as string literals.
 	// String literals are quoted with single quotes, such as `'string'`.
@@ -3045,6 +7169,237 @@ type ListUsersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning units
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkApplyUnitsParams defines parameters for BulkApplyUnits.
+type BulkApplyUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where string `form:"where" json:"where"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// DryRun Dry run mode - validates which units would be applied without executing
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+}
+
+// BulkApproveUnitsParams defines parameters for BulkApproveUnits.
+type BulkApproveUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkTagUnitsParams defines parameters for BulkTagUnits.
+type BulkTagUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListUsersParams defines parameters for ListUsers.
+type ListUsersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
@@ -3072,11 +7427,383 @@ type ListUsersParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
+// BulkDeleteViewsParams defines parameters for BulkDeleteViews.
+type BulkDeleteViewsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// ListAllViewsParams defines parameters for ListAllViews.
+type ListAllViewsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// BulkPatchViewsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchViews.
+type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string       `json:"Annotations"`
+	Columns     *[]map[string]interface{} `json:"Columns"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	GroupBy     *string `json:"GroupBy"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels           *map[string]*string `json:"Labels"`
+	OrderBy          *string             `json:"OrderBy"`
+	OrderByDirection *string             `json:"OrderByDirection"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int   `json:"Version"`
+	ViewID  *[]int `json:"ViewID"`
+}
+
+// BulkPatchViewsParams defines parameters for BulkPatchViews.
+type BulkPatchViewsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+}
+
+// BulkCreateViewsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateViews.
+type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string       `json:"Annotations"`
+	Columns     *[]map[string]interface{} `json:"Columns"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName"`
+	FilterID    *[]int  `json:"FilterID"`
+	GroupBy     *string `json:"GroupBy"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels           *map[string]*string `json:"Labels"`
+	OrderBy          *string             `json:"OrderBy"`
+	OrderByDirection *string             `json:"OrderByDirection"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int   `json:"Version"`
+	ViewID  *[]int `json:"ViewID"`
+}
+
+// BulkCreateViewsParams defines parameters for BulkCreateViews.
+type BulkCreateViewsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned View names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning views
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+}
+
+// BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchSpaces for application/merge-patch+json ContentType.
+type BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody BulkPatchSpacesApplicationMergePatchPlusJSONBody
+
+// BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateSpaces for application/merge-patch+json ContentType.
+type BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody BulkCreateSpacesApplicationMergePatchPlusJSONBody
+
+// BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchBridgeWorkers for application/merge-patch+json ContentType.
+type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody
+
 // CreateActionResultJSONRequestBody defines body for CreateActionResult for application/json ContentType.
 type CreateActionResultJSONRequestBody = ActionResult
 
+// BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChangeSets for application/merge-patch+json ContentType.
+type BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody BulkPatchChangeSetsApplicationMergePatchPlusJSONBody
+
+// BulkCreateChangeSetsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateChangeSets for application/merge-patch+json ContentType.
+type BulkCreateChangeSetsApplicationMergePatchPlusJSONRequestBody BulkCreateChangeSetsApplicationMergePatchPlusJSONBody
+
+// BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchFilters for application/merge-patch+json ContentType.
+type BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody BulkPatchFiltersApplicationMergePatchPlusJSONBody
+
+// BulkCreateFiltersApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateFilters for application/merge-patch+json ContentType.
+type BulkCreateFiltersApplicationMergePatchPlusJSONRequestBody BulkCreateFiltersApplicationMergePatchPlusJSONBody
+
 // InvokeFunctionsOnOrgJSONRequestBody defines body for InvokeFunctionsOnOrg for application/json ContentType.
 type InvokeFunctionsOnOrgJSONRequestBody = FunctionInvocationsRequest
+
+// BulkPatchInvocationsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchInvocations for application/merge-patch+json ContentType.
+type BulkPatchInvocationsApplicationMergePatchPlusJSONRequestBody BulkPatchInvocationsApplicationMergePatchPlusJSONBody
+
+// BulkCreateInvocationsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateInvocations for application/merge-patch+json ContentType.
+type BulkCreateInvocationsApplicationMergePatchPlusJSONRequestBody BulkCreateInvocationsApplicationMergePatchPlusJSONBody
+
+// BulkPatchLinksApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchLinks for application/merge-patch+json ContentType.
+type BulkPatchLinksApplicationMergePatchPlusJSONRequestBody BulkPatchLinksApplicationMergePatchPlusJSONBody
+
+// BulkCreateLinksApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateLinks for application/merge-patch+json ContentType.
+type BulkCreateLinksApplicationMergePatchPlusJSONRequestBody BulkCreateLinksApplicationMergePatchPlusJSONBody
 
 // CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
 type CreateOrganizationJSONRequestBody = Organization
@@ -3090,20 +7817,56 @@ type CreateOrganizationMemberJSONRequestBody = OrganizationMember
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space
 
+// PatchSpaceApplicationMergePatchPlusJSONRequestBody defines body for PatchSpace for application/merge-patch+json ContentType.
+type PatchSpaceApplicationMergePatchPlusJSONRequestBody PatchSpaceApplicationMergePatchPlusJSONBody
+
 // UpdateSpaceJSONRequestBody defines body for UpdateSpace for application/json ContentType.
 type UpdateSpaceJSONRequestBody = Space
 
 // CreateBridgeWorkerJSONRequestBody defines body for CreateBridgeWorker for application/json ContentType.
 type CreateBridgeWorkerJSONRequestBody = BridgeWorker
 
+// PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody defines body for PatchBridgeWorker for application/merge-patch+json ContentType.
+type PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody PatchBridgeWorkerApplicationMergePatchPlusJSONBody
+
 // UpdateBridgeWorkerJSONRequestBody defines body for UpdateBridgeWorker for application/json ContentType.
 type UpdateBridgeWorkerJSONRequestBody = BridgeWorker
+
+// CreateChangeSetJSONRequestBody defines body for CreateChangeSet for application/json ContentType.
+type CreateChangeSetJSONRequestBody = ChangeSet
+
+// PatchChangeSetApplicationMergePatchPlusJSONRequestBody defines body for PatchChangeSet for application/merge-patch+json ContentType.
+type PatchChangeSetApplicationMergePatchPlusJSONRequestBody PatchChangeSetApplicationMergePatchPlusJSONBody
+
+// UpdateChangeSetJSONRequestBody defines body for UpdateChangeSet for application/json ContentType.
+type UpdateChangeSetJSONRequestBody = ChangeSet
+
+// CreateFilterJSONRequestBody defines body for CreateFilter for application/json ContentType.
+type CreateFilterJSONRequestBody = Filter
+
+// PatchFilterApplicationMergePatchPlusJSONRequestBody defines body for PatchFilter for application/merge-patch+json ContentType.
+type PatchFilterApplicationMergePatchPlusJSONRequestBody PatchFilterApplicationMergePatchPlusJSONBody
+
+// UpdateFilterJSONRequestBody defines body for UpdateFilter for application/json ContentType.
+type UpdateFilterJSONRequestBody = Filter
 
 // InvokeFunctionsJSONRequestBody defines body for InvokeFunctions for application/json ContentType.
 type InvokeFunctionsJSONRequestBody = FunctionInvocationsRequest
 
+// CreateInvocationJSONRequestBody defines body for CreateInvocation for application/json ContentType.
+type CreateInvocationJSONRequestBody = Invocation
+
+// PatchInvocationApplicationMergePatchPlusJSONRequestBody defines body for PatchInvocation for application/merge-patch+json ContentType.
+type PatchInvocationApplicationMergePatchPlusJSONRequestBody PatchInvocationApplicationMergePatchPlusJSONBody
+
+// UpdateInvocationJSONRequestBody defines body for UpdateInvocation for application/json ContentType.
+type UpdateInvocationJSONRequestBody = Invocation
+
 // CreateLinkJSONRequestBody defines body for CreateLink for application/json ContentType.
 type CreateLinkJSONRequestBody = Link
+
+// PatchLinkApplicationMergePatchPlusJSONRequestBody defines body for PatchLink for application/merge-patch+json ContentType.
+type PatchLinkApplicationMergePatchPlusJSONRequestBody PatchLinkApplicationMergePatchPlusJSONBody
 
 // UpdateLinkJSONRequestBody defines body for UpdateLink for application/json ContentType.
 type UpdateLinkJSONRequestBody = Link
@@ -3114,14 +7877,29 @@ type CreateSetJSONRequestBody = Set
 // UpdateSetJSONRequestBody defines body for UpdateSet for application/json ContentType.
 type UpdateSetJSONRequestBody = Set
 
+// CreateTagJSONRequestBody defines body for CreateTag for application/json ContentType.
+type CreateTagJSONRequestBody = Tag
+
+// PatchTagApplicationMergePatchPlusJSONRequestBody defines body for PatchTag for application/merge-patch+json ContentType.
+type PatchTagApplicationMergePatchPlusJSONRequestBody PatchTagApplicationMergePatchPlusJSONBody
+
+// UpdateTagJSONRequestBody defines body for UpdateTag for application/json ContentType.
+type UpdateTagJSONRequestBody = Tag
+
 // CreateTargetJSONRequestBody defines body for CreateTarget for application/json ContentType.
 type CreateTargetJSONRequestBody = Target
+
+// PatchTargetApplicationMergePatchPlusJSONRequestBody defines body for PatchTarget for application/merge-patch+json ContentType.
+type PatchTargetApplicationMergePatchPlusJSONRequestBody PatchTargetApplicationMergePatchPlusJSONBody
 
 // UpdateTargetJSONRequestBody defines body for UpdateTarget for application/json ContentType.
 type UpdateTargetJSONRequestBody = Target
 
 // CreateTriggerJSONRequestBody defines body for CreateTrigger for application/json ContentType.
 type CreateTriggerJSONRequestBody = Trigger
+
+// PatchTriggerApplicationMergePatchPlusJSONRequestBody defines body for PatchTrigger for application/merge-patch+json ContentType.
+type PatchTriggerApplicationMergePatchPlusJSONRequestBody PatchTriggerApplicationMergePatchPlusJSONBody
 
 // UpdateTriggerJSONRequestBody defines body for UpdateTrigger for application/json ContentType.
 type UpdateTriggerJSONRequestBody = Trigger
@@ -3138,11 +7916,44 @@ type UpdateUnitJSONRequestBody = Unit
 // ImportUnitJSONRequestBody defines body for ImportUnit for application/json ContentType.
 type ImportUnitJSONRequestBody = ImportRequest
 
+// CreateViewJSONRequestBody defines body for CreateView for application/json ContentType.
+type CreateViewJSONRequestBody = View
+
+// PatchViewApplicationMergePatchPlusJSONRequestBody defines body for PatchView for application/merge-patch+json ContentType.
+type PatchViewApplicationMergePatchPlusJSONRequestBody PatchViewApplicationMergePatchPlusJSONBody
+
+// UpdateViewJSONRequestBody defines body for UpdateView for application/json ContentType.
+type UpdateViewJSONRequestBody = View
+
+// BulkPatchTagsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchTags for application/merge-patch+json ContentType.
+type BulkPatchTagsApplicationMergePatchPlusJSONRequestBody BulkPatchTagsApplicationMergePatchPlusJSONBody
+
+// BulkCreateTagsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateTags for application/merge-patch+json ContentType.
+type BulkCreateTagsApplicationMergePatchPlusJSONRequestBody BulkCreateTagsApplicationMergePatchPlusJSONBody
+
+// BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchTargets for application/merge-patch+json ContentType.
+type BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody BulkPatchTargetsApplicationMergePatchPlusJSONBody
+
+// BulkPatchTriggersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchTriggers for application/merge-patch+json ContentType.
+type BulkPatchTriggersApplicationMergePatchPlusJSONRequestBody BulkPatchTriggersApplicationMergePatchPlusJSONBody
+
+// BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateTriggers for application/merge-patch+json ContentType.
+type BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody BulkCreateTriggersApplicationMergePatchPlusJSONBody
+
 // BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchUnits for application/merge-patch+json ContentType.
 type BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody BulkPatchUnitsApplicationMergePatchPlusJSONBody
 
 // BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateUnits for application/merge-patch+json ContentType.
 type BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody BulkCreateUnitsApplicationMergePatchPlusJSONBody
+
+// BulkTagUnitsJSONRequestBody defines body for BulkTagUnits for application/json ContentType.
+type BulkTagUnitsJSONRequestBody = UnitTagRequest
+
+// BulkPatchViewsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchViews for application/merge-patch+json ContentType.
+type BulkPatchViewsApplicationMergePatchPlusJSONRequestBody BulkPatchViewsApplicationMergePatchPlusJSONBody
+
+// BulkCreateViewsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateViews for application/merge-patch+json ContentType.
+type BulkCreateViewsApplicationMergePatchPlusJSONRequestBody BulkCreateViewsApplicationMergePatchPlusJSONBody
 
 // AsFunctionArgumentValue0 returns the union data inside the FunctionArgument_Value as a FunctionArgumentValue0
 func (t FunctionArgument_Value) AsFunctionArgumentValue0() (FunctionArgumentValue0, error) {

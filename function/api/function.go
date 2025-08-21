@@ -59,6 +59,7 @@ const (
 	DataTypeStringMap     = DataType("map[string]string")
 	DataTypeStringBoolMap = DataType("map[string]bool")
 	DataTypeUUIDArray     = DataType("[]uuid")
+	DataTypeUUIDStringMap = DataType("map[uuid]string")
 
 	// Structured data types
 	DataTypeAttributeValueList   = DataType("AttributeValueList")

@@ -31,16 +31,11 @@ func init() {
 }
 
 func setGetCmdRun(cmd *cobra.Command, args []string) error {
-	setDetails, err := apiGetSetFromSlug(args[0])
+	setDetails, err := apiGetSetFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	setDetails, err = apiGetSet(setDetails.SetID.String())
-	if err != nil {
-		return err
-	}
 	displayGetResults(setDetails, displaySetDetails)
 	return nil
 }
@@ -58,11 +53,12 @@ func displaySetDetails(setDetails *goclientnew.Set) {
 	view.Render()
 }
 
-func apiGetSet(setID string) (*goclientnew.Set, error) {
+func apiGetSet(setID string, selectParam string) (*goclientnew.Set, error) {
 	newParams := goclientnew.GetSetParams{}
-	// if whereFilter != "" {
-	// 	newParams.Where = &whereFilter
-	// }
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	setDetails, err := cubClientNew.GetSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(setID), &newParams)
 	if IsAPIError(err, setDetails) {
 		return nil, InterpretErrorGeneric(err, setDetails)
@@ -74,12 +70,16 @@ func apiGetSet(setID string) (*goclientnew.Set, error) {
 	return setDetails.JSON200.Set, nil
 }
 
-func apiGetSetFromSlug(slug string) (*goclientnew.Set, error) {
+func apiGetSetFromSlug(slug string, selectParam string) (*goclientnew.Set, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetSet(id.String())
+		return apiGetSet(id.String(), selectParam)
 	}
-	sets, err := apiListSets(selectedSpaceID, "Slug = '"+slug+"'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	sets, err := apiListSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

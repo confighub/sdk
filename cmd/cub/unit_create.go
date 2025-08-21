@@ -5,9 +5,9 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -71,8 +71,11 @@ Bulk Create Examples:
   # Clone specific units to multiple spaces
   cub unit create --unit app1,app2 --dest-space dev-space,test-space
 
+  # Clone units using a where expression for destination spaces
+  cub unit create --where "Slug LIKE 'app-%'" --where-space "Labels.Environment IN ('dev', 'staging')"
+
   # Clone units with target assignment and labels
-  cub unit create --where "Labels.env = 'prod'" --name-prefix canary- --target my-target --label "env=canary"
+  cub unit create --where "Labels.Tier = 'backend'" --name-prefix canary- --target my-target --label "Rollout=canary"
 
   # Clone units with JSON patch modifications
   echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin`
@@ -122,6 +125,7 @@ var unitCreateArgs struct {
 	targetSlug        string
 	// Bulk create specific flags
 	destSpaces   []string
+	whereSpace   string
 	namePrefixes []string
 }
 
@@ -140,15 +144,21 @@ func init() {
 
 	// Bulk create specific flags
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	unitCreateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk create (can be repeated or comma-separated)")
 
 	unitCmd.AddCommand(unitCreateCmd)
 }
 
+// buildWhereClauseForSpaces converts space identifiers to a where clause
+func buildWhereClauseForSpaces(identifiers []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(identifiers, "SpaceID", "Slug")
+}
+
 func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || len(unitCreateArgs.namePrefixes) > 0)
+	isBulkCreateMode := len(args) == 0 && (where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || unitCreateArgs.whereSpace != "" || len(unitCreateArgs.namePrefixes) > 0)
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
@@ -160,8 +170,12 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--unit and --where flags are mutually exclusive")
 		}
 
-		if len(unitCreateArgs.destSpaces) == 0 && len(unitCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space or --name-prefix")
+		if len(unitCreateArgs.destSpaces) > 0 && unitCreateArgs.whereSpace != "" {
+			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
+		}
+
+		if len(unitCreateArgs.destSpaces) == 0 && unitCreateArgs.whereSpace == "" && len(unitCreateArgs.namePrefixes) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
 		}
 
 		// Validate single-mode-only flags are not used in bulk mode
@@ -175,14 +189,18 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("unit name is required for single unit creation")
 		}
 
-		if where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || len(unitCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --unit, --dest-space, --name-prefix) can only be used without positional arguments")
+		if where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || unitCreateArgs.whereSpace != "" || len(unitCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--where, --unit, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 
 		// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
 		if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
 			return false, errors.New("can't read both entity attributes and config data from stdin")
 		}
+	}
+
+	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
+		failOnError(err)
 	}
 
 	if err := validateStdinFlags(); err != nil {
@@ -236,7 +254,7 @@ func runSingleUnitCreate(args []string) error {
 	}
 	var upstreamSpaceID, upstreamUnitID uuid.UUID
 	if unitCreateArgs.upstreamSpaceSlug != "" {
-		upstreamSpace, err := apiGetSpaceFromSlug(unitCreateArgs.upstreamSpaceSlug)
+		upstreamSpace, err := apiGetSpaceFromSlug(unitCreateArgs.upstreamSpaceSlug, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
@@ -246,14 +264,14 @@ func runSingleUnitCreate(args []string) error {
 		if unitCreateArgs.upstreamSpaceSlug == "" {
 			upstreamSpaceID = spaceID
 		}
-		upstreamUnit, err := apiGetUnitFromSlugInSpace(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String())
+		upstreamUnit, err := apiGetUnitFromSlugInSpace(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
 		upstreamUnitID = upstreamUnit.UnitID
 	}
 	if unitCreateArgs.targetSlug != "" {
-		target, err := apiGetTargetFromSlug(unitCreateArgs.targetSlug, selectedSpaceID)
+		target, err := apiGetTargetFromSlug(unitCreateArgs.targetSlug, selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
@@ -288,65 +306,33 @@ func runSingleUnitCreate(args []string) error {
 
 // createBulkCreatePatch creates a JSON patch for bulk create operations
 func createBulkCreatePatch() ([]byte, error) {
-	patchMap := make(map[string]interface{})
-
-	// Add target if specified
-	if unitCreateArgs.targetSlug != "" {
-		var targetID uuid.UUID
-		if unitCreateArgs.targetSlug == "-" {
-			targetID = uuid.Nil
-		} else {
-			exTarget, err := apiGetTargetFromSlug(unitCreateArgs.targetSlug, selectedSpaceID)
-			if err != nil {
-				return nil, err
+	// Create enhancer for unit-specific fields
+	var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+		// Add target if specified
+		if unitCreateArgs.targetSlug != "" {
+			var targetID uuid.UUID
+			if unitCreateArgs.targetSlug == "-" {
+				targetID = uuid.Nil
+			} else {
+				exTarget, err := apiGetTargetFromSlug(unitCreateArgs.targetSlug, selectedSpaceID, "*") // get all fields for now
+				if err != nil {
+					// Can't return error from enhancer, so log it
+					fmt.Fprintf(os.Stderr, "Failed to get target: %v\n", err)
+					return
+				}
+				targetID = exTarget.Target.TargetID
 			}
-			targetID = exTarget.Target.TargetID
-		}
-		patchMap["TargetID"] = targetID
-	}
-
-	// Add labels if specified
-	if len(label) > 0 {
-		labels := make(map[string]string)
-		err := setLabels(&labels)
-		if err != nil {
-			return nil, err
-		}
-		patchMap["Labels"] = labels
-	}
-
-	// Add change description if specified
-	if changeDescription != "" {
-		patchMap["LastChangeDescription"] = changeDescription
-	}
-
-	// For bulk create, we typically want to apply other modifications from stdin/filename
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		// Get additional patch data from stdin/filename
-		additionalPatchData, err := getBytesFromFlags()
-		if err != nil {
-			return nil, err
+			patchMap["TargetID"] = targetID
 		}
 
-		if len(additionalPatchData) > 0 && string(additionalPatchData) != "null" {
-			var additionalPatch map[string]interface{}
-			if err := json.Unmarshal(additionalPatchData, &additionalPatch); err != nil {
-				return nil, fmt.Errorf("failed to parse additional patch data: %w", err)
-			}
-
-			// Merge additional patch into our patch
-			for k, v := range additionalPatch {
-				patchMap[k] = v
-			}
+		// Add change description if specified
+		if changeDescription != "" {
+			patchMap["LastChangeDescription"] = changeDescription
 		}
 	}
 
-	// If no modifications specified, create an empty patch
-	if len(patchMap) == 0 {
-		patchMap = map[string]interface{}{}
-	}
-
-	return json.Marshal(patchMap)
+	// Build patch data using consolidated function
+	return BuildPatchData(enhancer)
 }
 
 func runBulkUnitCreate() error {
@@ -377,7 +363,7 @@ func runBulkUnitCreate() error {
 	}
 
 	// Set include parameter to expand UpstreamUnitID
-	include := "UpstreamUnitID"
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	params.Include = &include
 
 	// Set name prefixes parameter if specified
@@ -386,10 +372,20 @@ func runBulkUnitCreate() error {
 		params.NamePrefixes = &namePrefixesStr
 	}
 
-	// Set destination spaces parameter if specified
-	if len(unitCreateArgs.destSpaces) > 0 {
-		destSpacesStr := strings.Join(unitCreateArgs.destSpaces, ",")
-		params.DestSpaces = &destSpacesStr
+	// Set where_space parameter - either from direct where-space flag or converted from dest-space
+	var whereSpaceExpr string
+	if unitCreateArgs.whereSpace != "" {
+		whereSpaceExpr = unitCreateArgs.whereSpace
+	} else if len(unitCreateArgs.destSpaces) > 0 {
+		// Convert dest-space identifiers to a where expression
+		whereSpaceExpr, err = buildWhereClauseForSpaces(unitCreateArgs.destSpaces)
+		if err != nil {
+			return fmt.Errorf("error converting destination spaces to where expression: %w", err)
+		}
+	}
+
+	if whereSpaceExpr != "" {
+		params.WhereSpace = &whereSpaceExpr
 	}
 
 	// Call the bulk create API

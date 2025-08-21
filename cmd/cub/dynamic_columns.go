@@ -72,6 +72,9 @@ func (p *DynamicColumnProvider) WithCustomColumns(columns map[string]func(any) s
 
 // GetValue dynamically gets a value from a struct using a field path
 func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
+	// Debug: uncomment to see what's being requested
+	// fmt.Printf("GetValue called with fieldPath: %s\n", fieldPath)
+
 	// Check for custom columns first
 	if customFunc, ok := p.customColumns[fieldPath]; ok {
 		return customFunc(obj)
@@ -88,14 +91,32 @@ func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
 		fieldPrefix = entityPrefix
 	}
 
-	// Handle special cases for Labels and Annotations
-	labelsPrefix := fieldPrefix + "Labels"
-	if strings.HasPrefix(fieldPath, labelsPrefix+".") {
-		return p.getMapValue(obj, labelsPrefix, strings.TrimPrefix(fieldPath, labelsPrefix+"."))
-	}
-	annotationsPrefix := fieldPrefix + "Annotations"
-	if strings.HasPrefix(fieldPath, annotationsPrefix+".") {
-		return p.getMapValue(obj, annotationsPrefix, strings.TrimPrefix(fieldPath, annotationsPrefix+"."))
+	// Handle special cases for Labels and Annotations (only for non-nested paths)
+	if fieldPrefix == "" {
+		labelsPrefix := "Labels"
+		if strings.HasPrefix(fieldPath, labelsPrefix+".") {
+			// First try at top level
+			result := p.getMapValue(obj, labelsPrefix, strings.TrimPrefix(fieldPath, labelsPrefix+"."))
+			if result != "" {
+				return result
+			}
+			// If not found and we have an entityType (from ExtendedX), try X.Labels
+			if p.entityType != "" {
+				return p.GetValue(obj, p.entityType+"."+fieldPath)
+			}
+		}
+		annotationsPrefix := "Annotations"
+		if strings.HasPrefix(fieldPath, annotationsPrefix+".") {
+			// First try at top level
+			result := p.getMapValue(obj, annotationsPrefix, strings.TrimPrefix(fieldPath, annotationsPrefix+"."))
+			if result != "" {
+				return result
+			}
+			// If not found and we have an entityType (from ExtendedX), try X.Annotations
+			if p.entityType != "" {
+				return p.GetValue(obj, p.entityType+"."+fieldPath)
+			}
+		}
 	}
 
 	// Use reflection to navigate the field path
@@ -108,19 +129,51 @@ func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
 	}
 
 	parts := strings.Split(fieldPath, ".")
-	for _, part := range parts {
-		if v.Kind() == reflect.Ptr {
+	for i := 0; i < len(parts); i++ {
+		part := parts[i]
+
+		// Dereference pointers
+		for v.Kind() == reflect.Ptr {
 			if v.IsNil() {
 				return ""
 			}
 			v = v.Elem()
 		}
 
-		field := v.FieldByName(part)
-		if !field.IsValid() {
+		// Check if current value is a struct (to get fields) or map (to get keys)
+		if v.Kind() == reflect.Struct {
+			// Get the field by name
+			field := v.FieldByName(part)
+			if !field.IsValid() {
+				// If this is the first part and we have an entityType (from ExtendedX),
+				// try to find it under the X field as a convenience
+				if i == 0 && p.entityType != "" {
+					entityField := v.FieldByName(p.entityType)
+					if entityField.IsValid() && entityField.Kind() == reflect.Ptr && !entityField.IsNil() {
+						entityStruct := entityField.Elem()
+						field = entityStruct.FieldByName(part)
+						if field.IsValid() {
+							// Found it under the entity field, continue from there
+							v = field
+							continue
+						}
+					}
+				}
+				return "?"
+			}
+			v = field
+		} else if v.Kind() == reflect.Map {
+			// Current value is a map, so this part is a key
+			mapKeyValue := reflect.ValueOf(part)
+			value := v.MapIndex(mapKeyValue)
+			if !value.IsValid() {
+				return ""
+			}
+			v = value
+		} else {
+			// Can't navigate further
 			return "?"
 		}
-		v = field
 	}
 
 	return p.formatValue(v)
@@ -312,4 +365,110 @@ func columnToHeader(provider *DynamicColumnProvider, col string) string {
 	header = strings.Replace(header, "API", "API", -1)
 
 	return header
+}
+
+// buildSelectList builds a select parameter based on specified columns
+func buildSelectList(entity string, columnsSpec string, include string, defaultCols []string, aliases map[string]string, customColumnDeps map[string][]string, baseFields []string) string {
+	columns := strings.Split(columnsSpec, ",")
+	if columnsSpec == "" {
+		columns = defaultCols
+	}
+
+	fieldsMap := make(map[string]bool)
+
+	for _, col := range columns {
+		col = strings.TrimSpace(col)
+		originalCol := col
+
+		// Resolve aliases
+		if alias, exists := aliases[col]; exists {
+			col = alias
+		}
+
+		actualCols := []string{col}
+		// Add dependencies for custom columns. Should be mutally exclusive with aliases.
+		if deps, exists := customColumnDeps[originalCol]; exists {
+			actualCols = deps
+		}
+
+		for _, actualCol := range actualCols {
+			// Handle prefixed columns (Unit.Slug -> Slug)
+			if strings.Contains(actualCol, ".") {
+				actualCol = strings.TrimPrefix(actualCol, entity+".")
+				parts := strings.Split(actualCol, ".")
+				if parts[0] == "Labels" || parts[0] == "Annotations" {
+					actualCol = parts[0]
+				} else if len(parts) > 1 {
+					// This is an included relationship field (Space.Slug, Target.Slug, etc.)
+					// Keep full actualCol.
+					// TODO: Except for UnitStatus, which is synthetic. Fix this.
+					if parts[0] == "UnitStatus" {
+						continue
+					}
+				}
+			} else if strings.Contains(actualCol, "Count") {
+				// This is a summary field
+				continue
+			}
+			// Regular field - add it to select
+			fieldsMap[actualCol] = true
+		}
+	}
+
+	// Always include base required fields
+	for _, field := range baseFields {
+		fieldsMap[field] = true
+	}
+
+	// Add include fields
+	if include != "" {
+		includeFields := strings.Split(include, ",")
+		for _, field := range includeFields {
+			fieldsMap[field] = true
+		}
+	}
+
+	// Convert to slice and join
+	var fields []string
+	for field := range fieldsMap {
+		fields = append(fields, field)
+	}
+
+	return strings.Join(fields, ",")
+}
+
+// handleSelectParameter processes the select parameter for API calls
+// Parameters:
+//   - selectParam: the select parameter passed to the function (can be "", "*", or a field list)
+//   - globalSelectFields: the global selectFields variable value
+//   - autoSelectFunc: a function that returns the auto-selected fields when no select is specified
+//
+// Returns the select string to be used in the API call, or empty string for all fields
+func handleSelectParameter(selectParam string, globalSelectFields string, autoSelectFunc func() string) string {
+	// Handle function-level select parameter first
+	if selectParam == "*" {
+		// "*" means get all fields, represented by empty string
+		return ""
+	} else if selectParam != "" {
+		// Use the provided select parameter
+		return selectParam
+	}
+
+	// Fall back to global selectFields
+	if globalSelectFields == "*" {
+		// "*" means get all fields
+		return ""
+	} else if globalSelectFields != "" {
+		// Use global selectFields
+		return globalSelectFields
+	}
+
+	// Auto-select fields if no select parameter is specified and not in special output mode
+	if autoSelectFunc != nil {
+		return autoSelectFunc()
+	}
+	// TODO: If names is true, should just select the appropriate "Slug" field
+
+	// Default to empty string (all fields)
+	return ""
 }

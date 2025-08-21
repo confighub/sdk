@@ -31,17 +31,12 @@ func init() {
 }
 
 func targetGetCmdRun(cmd *cobra.Command, args []string) error {
-	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID)
+	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	exTargetDetails, err := apiGetTarget(targetDetails.Target.TargetID.String())
-	if err != nil {
-		return err
-	}
-	displayGetResults(exTargetDetails, displayTargetDetails)
+	displayGetResults(targetDetails, displayTargetDetails)
 	return nil
 }
 
@@ -59,8 +54,12 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Render()
 }
 
-func apiGetTarget(targetID string) (*goclientnew.ExtendedTarget, error) {
+func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.GetTargetParams{}
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	targetRes, err := cubClientNew.GetTargetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(targetID), newParams)
 	if IsAPIError(err, targetRes) {
 		return nil, InterpretErrorGeneric(err, targetRes)
@@ -68,12 +67,16 @@ func apiGetTarget(targetID string) (*goclientnew.ExtendedTarget, error) {
 	return targetRes.JSON200, nil
 }
 
-func apiGetTargetFromSlug(slug string, spaceID string) (*goclientnew.ExtendedTarget, error) {
+func apiGetTargetFromSlug(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetTarget(id.String())
+		return apiGetTarget(id.String(), selectParam)
 	}
-	targets, err := apiListTargets(spaceID, "Slug = '"+slug+"'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	targets, err := apiListTargets(spaceID, "Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

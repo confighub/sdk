@@ -35,13 +35,13 @@ func init() {
 }
 
 func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
-	spaceDetails, err := apiGetSpaceFromSlug(args[0])
+	spaceDetails, err := apiGetSpaceFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	extendedSpace, err := apiGetExtendedSpace(spaceDetails.SpaceID.String())
+	// TODO: Just use extended entities everywhere so we can eliminate the extra calls and duplicate code
+	extendedSpace, err := apiGetExtendedSpace(spaceDetails.SpaceID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -94,10 +94,14 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Render()
 }
 
-func apiGetExtendedSpace(spaceID string) (*goclientnew.ExtendedSpace, error) {
+func apiGetExtendedSpace(spaceID string, selectParam string) (*goclientnew.ExtendedSpace, error) {
 	newParams := &goclientnew.GetSpaceParams{}
 	summary := true
 	newParams.Summary = &summary
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, spaceRes) {
 		return nil, InterpretErrorGeneric(err, spaceRes)
@@ -105,8 +109,12 @@ func apiGetExtendedSpace(spaceID string) (*goclientnew.ExtendedSpace, error) {
 	return spaceRes.JSON200, nil
 }
 
-func apiGetSpace(spaceID string) (*goclientnew.Space, error) {
+func apiGetSpace(spaceID string, selectParam string) (*goclientnew.Space, error) {
 	newParams := &goclientnew.GetSpaceParams{}
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
 	if IsAPIError(err, spaceRes) {
 		return nil, InterpretErrorGeneric(err, spaceRes)
@@ -114,12 +122,16 @@ func apiGetSpace(spaceID string) (*goclientnew.Space, error) {
 	return spaceRes.JSON200.Space, nil
 }
 
-func apiGetSpaceFromSlug(slug string) (*goclientnew.Space, error) {
+func apiGetSpaceFromSlug(slug string, selectParam string) (*goclientnew.Space, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetSpace(id.String())
+		return apiGetSpace(id.String(), selectParam)
 	}
-	spaces, err := apiListSpaces("Slug = '" + slug + "'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	spaces, err := apiListSpaces("Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

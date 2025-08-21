@@ -30,6 +30,8 @@ func init() {
 	userCmd.AddCommand(userGetCmd)
 }
 
+// TODO: select
+
 func userGetCmdRun(cmd *cobra.Command, args []string) error {
 	userDetails, err := apiGetUserFromUsername(args[0])
 	if err != nil {

@@ -475,11 +475,13 @@ var quiet = false
 var jsonOutput = false
 var jq = ""
 var names = false
+var selectFields = ""
 var debug = false
 var noheader = false
 var wait = true
 var timeout = "2m"
 var label []string
+var spaceIdentifiers []string
 
 func enableLabelFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&label, "label", []string{}, "labels in key=value format; can separate by commas and/or use multiple instances of the flag")
@@ -496,6 +498,9 @@ func setLabels(labelMap *map[string]string) error {
 			case 1:
 				(*labelMap)[keyValue[0]] = ""
 			case 2:
+				// Note: For patch operations, value "-" indicates removal and is handled
+				// by BuildPatchData and EnhancePatchData functions. This function only
+				// handles non-patch (Put) operations where removal is not supported.
 				(*labelMap)[keyValue[0]] = keyValue[1]
 			default:
 				return fmt.Errorf("invalid label; expected key=value: %s", labelString)
@@ -545,6 +550,10 @@ func enableJqFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&jq, "jq", "", "jq expression, suppressing default output")
 }
 
+func enableSelectFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&selectFields, "select", "", "Comma-separated list of fields to retrieve and display. Entity IDs and Slug are always included. Example: \"DisplayName,CreatedAt,Labels\"")
+}
+
 func enableWhereFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\"")
 }
@@ -565,6 +574,7 @@ type Unmarshalable interface {
 func addStandardListFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
 	enableContainsFlag(cmd)
+	enableSelectFlag(cmd)
 	enableNamesFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
@@ -586,6 +596,7 @@ func addStandardGetFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableSelectFlag(cmd)
 }
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
@@ -627,6 +638,13 @@ func populateModelFromFile(v any, filename string) error {
 		return err
 	}
 	return mergeEntityWithData(v, data)
+}
+
+func validateSpaceFlag(bulk bool) error {
+	if !bulk && selectedSpaceID == "*" {
+		return errors.New("--space must not be '*' when not performing bulk operations")
+	}
+	return nil
 }
 
 func validateStdinFlags() error {
@@ -718,6 +736,16 @@ type ModelConstraint interface {
 		goclientnew.ExtendedTarget |
 		goclientnew.Trigger |
 		goclientnew.ExtendedTrigger |
+		goclientnew.Filter |
+		goclientnew.ExtendedFilter |
+		goclientnew.View |
+		goclientnew.ExtendedView |
+		goclientnew.Invocation |
+		goclientnew.ExtendedInvocation |
+		goclientnew.Tag |
+		goclientnew.ExtendedTag |
+		goclientnew.ChangeSet |
+		goclientnew.ExtendedChangeSet |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
 		goclientnew.ExtendedUnit

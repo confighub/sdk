@@ -227,9 +227,9 @@ func AuthorizeUser() error {
 }
 
 func setSpaceContext() error {
-	currentSpace, err := apiGetSpaceFromSlug(cubContext.Space)
+	currentSpace, err := apiGetSpaceFromSlug(cubContext.Space, "*")
 	if err != nil {
-		spaceList, err := apiListSpaces("")
+		spaceList, err := apiListSpaces("", "*")
 		if err != nil {
 			return err
 		}

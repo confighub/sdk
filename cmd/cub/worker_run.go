@@ -48,12 +48,12 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
-	worker, err := apiGetBridgeWorkerFromSlug(args[0])
+	worker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		// assume worker not found and create a default worker on the fly
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
-			SpaceID:     spaceID,
-			Slug:        args[0],
+			SpaceID: spaceID,
+			Slug:    args[0],
 		}, spaceID)
 		if err != nil {
 			return err

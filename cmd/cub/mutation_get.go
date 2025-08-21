@@ -33,7 +33,7 @@ func init() {
 }
 
 func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
-	unit, err := apiGetUnitFromSlug(args[0])
+	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.UnitID.String())
+	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -85,10 +85,14 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	}
 }
 
-func apiGetMutation(mutationID string, unitID string) (*goclientnew.ExtendedMutation, error) {
+func apiGetMutation(mutationID string, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.GetExtendedMutationParams{}
 	include := "RevisionID,LinkID,TargetID"
 	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	muteRes, err := cubClientNew.GetExtendedMutationWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID),
 		uuid.MustParse(unitID),
@@ -104,8 +108,12 @@ func apiGetMutation(mutationID string, unitID string) (*goclientnew.ExtendedMuta
 	return mutation, nil
 }
 
-func apiGetMutationFromNumber(mutationNum int64, unitID string) (*goclientnew.ExtendedMutation, error) {
-	extendedMutations, err := apiListMutations(selectedSpaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum))
+func apiGetMutationFromNumber(mutationNum int64, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	extendedMutations, err := apiListMutations(selectedSpaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum), selectParam)
 	if err != nil {
 		return nil, err
 	}

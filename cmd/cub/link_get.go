@@ -31,22 +31,18 @@ func init() {
 }
 
 func linkGetCmdRun(cmd *cobra.Command, args []string) error {
-	linkDetails, err := apiGetLinkFromSlug(args[0])
+	linkDetails, err := apiGetLinkFromSlug(args[0], selectFields) // use select flag
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	linkDetails, err = apiGetLink(linkDetails.LinkID.String())
-	if err != nil {
-		return err
-	}
 	displayGetResults(linkDetails, displayLinkDetails)
 	return nil
 }
 
 func displayLinkDetails(linkDetails *goclientnew.Link) {
 	view := tableView()
+	// TODO: Only display selected fields
 	view.Append([]string{"ID", linkDetails.LinkID.String()})
 	view.Append([]string{"Name", linkDetails.Slug})
 	view.Append([]string{"Space ID", linkDetails.SpaceID.String()})
@@ -61,8 +57,12 @@ func displayLinkDetails(linkDetails *goclientnew.Link) {
 	view.Render()
 }
 
-func apiGetLink(linkID string) (*goclientnew.Link, error) {
+func apiGetLink(linkID string, selectParam string) (*goclientnew.Link, error) {
 	newParams := &goclientnew.GetLinkParams{}
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	linkRes, err := cubClientNew.GetLinkWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID), uuid.MustParse(linkID), newParams)
 	if IsAPIError(err, linkRes) {
@@ -71,12 +71,16 @@ func apiGetLink(linkID string) (*goclientnew.Link, error) {
 	return linkRes.JSON200.Link, nil
 }
 
-func apiGetLinkFromSlug(slug string) (*goclientnew.Link, error) {
+func apiGetLinkFromSlug(slug string, selectParam string) (*goclientnew.Link, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetLink(id.String())
+		return apiGetLink(id.String(), selectParam)
 	}
-	links, err := apiListLinks(selectedSpaceID, "Slug = '"+slug+"'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	links, err := apiListLinks(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

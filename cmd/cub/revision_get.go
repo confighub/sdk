@@ -38,7 +38,7 @@ func init() {
 }
 
 func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
-	unit, err := apiGetUnitFromSlug(args[0])
+	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String())
+	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -91,12 +91,17 @@ func displayRevisionDetails(rev *goclientnew.Revision) {
 	tprintRaw(string(data))
 }
 
-func apiGetRevision(revisionID string, unitID string) (*goclientnew.Revision, error) {
+func apiGetRevision(revisionID string, unitID string, selectParam string) (*goclientnew.Revision, error) {
+	newParams := &goclientnew.GetExtendedRevisionParams{}
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	revRes, err := cubClientNew.GetExtendedRevisionWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID),
 		uuid.MustParse(unitID),
 		uuid.MustParse(revisionID),
-		&goclientnew.GetExtendedRevisionParams{},
+		newParams,
 	)
 	if IsAPIError(err, revRes) {
 		return nil, InterpretErrorGeneric(err, revRes)
@@ -108,8 +113,12 @@ func apiGetRevision(revisionID string, unitID string) (*goclientnew.Revision, er
 	return revRes.JSON200.Revision, nil
 }
 
-func apiGetRevisionFromNumber(revNo int64, unitID string) (*goclientnew.Revision, error) {
-	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo))
+func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.Revision, error) {
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam)
 	if err != nil {
 		return nil, err
 	}

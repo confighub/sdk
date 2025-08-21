@@ -20,12 +20,12 @@ var workerListFunctionCmd = &cobra.Command{
 }
 
 func init() {
-	addStandardListFlags(workerListFunctionCmd)
+	addStandardListFlags(workerListFunctionCmd) // TODO: this is wrong
 	workerCmd.AddCommand(workerListFunctionCmd)
 }
 
 func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
-	entity, err := apiGetBridgeWorkerFromSlug(args[0])
+	entity, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,7 @@ func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
 		return InterpretErrorGeneric(err, funcsRes)
 	}
 
+	// TODO: Reuse cub function list display function
 	table := tableView()
 	table.SetHeader([]string{
 		"ToolchainType",

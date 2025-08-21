@@ -42,13 +42,25 @@ Examples:
 	RunE: setListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultSetColumns = []string{"Set.Slug", "Space.Slug"}
+
+// Set-specific aliases
+var setAliases = map[string]string{
+	"Name": "Set.Slug",
+	"ID":   "Set.SetID",
+}
+
+// Set custom column dependencies
+var setCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(setListCmd)
 	setCmd.AddCommand(setListCmd)
 }
 
 func setListCmdRun(cmd *cobra.Command, args []string) error {
-	sets, err := apiListSets(selectedSpaceID, where)
+	sets, err := apiListSets(selectedSpaceID, where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -63,7 +75,7 @@ func getSetSlug(set *goclientnew.Set) string {
 func displaySetList(sets []*goclientnew.Set) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Slug", "Space"})
+		table.SetHeader([]string{"Name", "Space"})
 	}
 	for _, set := range sets {
 		table.Append([]string{
@@ -74,10 +86,20 @@ func displaySetList(sets []*goclientnew.Set) {
 	table.Render()
 }
 
-func apiListSets(spaceID string, whereFilter string) ([]*goclientnew.Set, error) {
+func apiListSets(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Set, error) {
 	newParams := goclientnew.ListSetsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"Slug", "SetID", "SpaceID", "OrganizationID"}
+		return buildSelectList("Set", "", "", defaultSetColumns, setAliases, setCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
 	}
 
 	setsRes, err := cubClientNew.ListSetsWithResponse(ctx, uuid.MustParse(spaceID), &newParams)

@@ -54,11 +54,11 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		if flagPopulateModelFromStdin || flagFilename != "" {
 			return errors.New("only one of --from-target or --from-stdin/--filename may be specified")
 		}
-		ftSpace, err := apiGetSpaceFromSlug(fromTargetSpace)
+		ftSpace, err := apiGetSpaceFromSlug(fromTargetSpace, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		ftTarget, err := apiGetTargetFromSlug(fromTarget, ftSpace.SpaceID.String())
+		ftTarget, err := apiGetTargetFromSlug(fromTarget, ftSpace.SpaceID.String(), "*") // get all fields for copy
 		if err != nil {
 			return err
 		}
@@ -95,8 +95,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newTarget.Parameters = args[1]
 	}
 	if len(args) == 3 {
-		// TODO: cutover bridgeworkers to use the new OAS API
-		worker, err := apiGetBridgeWorkerFromSlug(args[2])
+		worker, err := apiGetBridgeWorkerFromSlug(args[2], "*") // get all fields for now
 		if err != nil {
 			return err
 		}

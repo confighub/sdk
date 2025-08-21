@@ -40,3 +40,8 @@ func init() {
 	addSpaceFlags(unitCmd)
 	rootCmd.AddCommand(unitCmd)
 }
+
+// buildWhereClauseFromUnits generates a WHERE clause from unit identifiers
+func buildWhereClauseFromUnits(unitIds []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(unitIds, "UnitID", "Slug")
+}

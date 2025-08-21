@@ -221,7 +221,7 @@ func NewConfighubApi() (*ConfighubApi, error) {
 		links:   make(map[string]*goclientnew.Link),
 	}
 
-	spaces, err := apiListSpaces("")
+	spaces, err := apiListSpaces("", "*")
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func NewConfighubApi() (*ConfighubApi, error) {
 	for _, space := range spaces {
 		c.spaces[space.Slug] = space
 		spaceid := space.SpaceID.String()
-		workers, err := apiListBridgeworkers(spaceid, "")
+		workers, err := apiListBridgeworkers(spaceid, "", "*")
 		if err != nil {
 			return nil, err
 		}
@@ -237,7 +237,7 @@ func NewConfighubApi() (*ConfighubApi, error) {
 		for _, worker := range workers {
 			c.workers[space.Slug+"/"+worker.BridgeWorker.Slug] = worker.BridgeWorker
 		}
-		targets, err := apiListTargets(spaceid, "")
+		targets, err := apiListTargets(spaceid, "", "*")
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +245,7 @@ func NewConfighubApi() (*ConfighubApi, error) {
 		for _, target := range targets {
 			c.targets[space.Slug+"/"+target.Target.Slug] = target.Target
 		}
-		units, err := apiListUnits(spaceid, "")
+		units, err := apiListUnits(spaceid, "", "*")
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +253,7 @@ func NewConfighubApi() (*ConfighubApi, error) {
 		for _, unit := range units {
 			c.units[space.Slug+"/"+unit.Slug] = unit
 		}
-		links, err := apiListLinks(spaceid, "")
+		links, err := apiListLinks(spaceid, "", "*")
 		if err != nil {
 			return nil, err
 		}

@@ -90,7 +90,7 @@ func init() {
 // resolveRevisionNumber gets the actual revision number for HEAD or numeric reference
 func resolveRevisionNumber(unitSlug string, base string) (int64, error) {
 	if base == revHEAD || base == revLIVE {
-		unit, err := apiGetUnitFromSlug(unitSlug)
+		unit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for now
 		if err != nil {
 			return 0, fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 		}
@@ -390,18 +390,18 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get unit ID
-	unit, err := apiGetUnitFromSlug(unitSlug)
+	unit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for now
 	if err != nil {
 		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 	}
 
 	// Get revision data for both revisions
-	revFromData, err := apiGetRevisionFromNumber(revFromNum, unit.UnitID.String())
+	revFromData, err := apiGetRevisionFromNumber(revFromNum, unit.UnitID.String(), "*") // get all fields for now
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d: %v", revFromNum, err)
 	}
 
-	revToData, err := apiGetRevisionFromNumber(revToNum, unit.UnitID.String())
+	revToData, err := apiGetRevisionFromNumber(revToNum, unit.UnitID.String(), "*") //get all fields for now
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d: %v", revToNum, err)
 	}

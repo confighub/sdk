@@ -42,26 +42,31 @@ Examples:
 	RunE: revisionListCmdRun,
 }
 
-var byUnitID bool
+// Default columns to display when no custom columns are specified
+var defaultRevisionColumns = []string{"Revision.RevisionNum", "Revision.CreatedAt", "User.Username", "Revision.Source", "Revision.Description", "Revision.ApplyGates"}
+
+// Revision-specific aliases
+var revisionAliases = map[string]string{
+	"Name": "RevisionNum",
+	"ID":   "RevisionID",
+}
+
+// Revision custom column dependencies
+var revisionCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(revisionListCmd)
-	revisionListCmd.Flags().BoolVar(&byUnitID, "by-unit-id", false, "use unit id instead of slug")
 	revisionCmd.AddCommand(revisionListCmd)
 }
 
 func revisionListCmdRun(cmd *cobra.Command, args []string) error {
 	var unit *goclientnew.Unit
 	var err error
-	if byUnitID {
-		unit, err = apiGetUnit(args[0])
-	} else {
-		unit, err = apiGetUnitFromSlug(args[0])
-	}
+	unit, err = apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), where)
+	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -107,13 +112,23 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 	table.Render()
 }
 
-func apiListRevisions(spaceID string, unitID string, whereFilter string) ([]*goclientnew.ExtendedRevision, error) {
+func apiListRevisions(spaceID string, unitID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.ListExtendedRevisionsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
 	include := "UserID"
 	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
+		return buildSelectList("Revision", "", include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	revsRes, err := cubClientNew.ListExtendedRevisionsWithResponse(ctx,
 		uuid.MustParse(spaceID),
 		uuid.MustParse(unitID),
@@ -127,11 +142,11 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string) ([]*goc
 	for i, er := range *revsRes.JSON200 {
 		revisions[i] = &er
 	}
-	
+
 	// Sort by RevisionNum descending
 	sort.Slice(revisions, func(i, j int) bool {
 		return revisions[i].Revision.RevisionNum > revisions[j].Revision.RevisionNum
 	})
-	
+
 	return revisions, nil
 }

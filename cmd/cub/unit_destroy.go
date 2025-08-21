@@ -23,7 +23,7 @@ func init() {
 }
 
 func unitDestroyCmdRun(_ *cobra.Command, args []string) error {
-	configUnit, err := apiGetUnitFromSlug(args[0])
+	configUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}

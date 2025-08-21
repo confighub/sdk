@@ -35,16 +35,11 @@ func init() {
 
 // organizationGetCmdRun is the main entry point for `cub organization get`
 func organizationGetCmdRun(cmd *cobra.Command, args []string) error {
-	organizationDetails, err := apiGetOrganizationFromSlug(args[0])
+	organizationDetails, err := apiGetOrganizationFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	organizationDetails, err = apiGetOrganization(organizationDetails.OrganizationID.String())
-	if err != nil {
-		return err
-	}
 	displayGetResults(organizationDetails, displayOrganizationDetails)
 	return nil
 }
@@ -62,8 +57,12 @@ func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view.Render()
 }
 
-func apiGetOrganization(organizationID string) (*goclientnew.Organization, error) {
+func apiGetOrganization(organizationID string, selectParam string) (*goclientnew.Organization, error) {
 	newParams := &goclientnew.GetOrganizationParams{}
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
 	orgRes, err := cubClientNew.GetOrganizationWithResponse(ctx, uuid.MustParse(organizationID), newParams)
 	if IsAPIError(err, orgRes) {
 		return nil, InterpretErrorGeneric(err, orgRes)
@@ -71,12 +70,16 @@ func apiGetOrganization(organizationID string) (*goclientnew.Organization, error
 	return orgRes.JSON200, nil
 }
 
-func apiGetOrganizationFromSlug(slug string) (*goclientnew.Organization, error) {
+func apiGetOrganizationFromSlug(slug string, selectParam string) (*goclientnew.Organization, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetOrganization(id.String())
+		return apiGetOrganization(id.String(), selectParam)
 	}
-	organizations, err := apiListOrganizations("Slug = '" + slug + "'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	organizations, err := apiListOrganizations("Slug = '"+slug+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

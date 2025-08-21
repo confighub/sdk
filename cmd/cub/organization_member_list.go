@@ -31,13 +31,25 @@ Examples:
 	RunE: organizationMemberListCmdRun,
 }
 
+// Default columns to display when no custom columns are specified
+var defaultOrganizationMemberColumns = []string{"UserID", "ExternalID", "DisplayName", "Username", "OrganizationID", "ExternalOrganizationID"}
+
+// OrganizationMember-specific aliases
+var organizationMemberAliases = map[string]string{
+	"Name": "DisplayName",
+	"ID":   "UserID",
+}
+
+// OrganizationMember custom column dependencies
+var organizationMemberCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(organizationMemberListCmd)
 	organizationMemberCmd.AddCommand(organizationMemberListCmd)
 }
 
 func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMembers, err := apiListOrganizationMembers(where)
+	organizationMembers, err := apiListOrganizationMembers(where, selectFields)
 	if err != nil {
 		return err
 	}
@@ -70,12 +82,24 @@ func displayOrganizationMemberList(organizationMembers []*goclientnew.Organizati
 
 // apiListOrganizationMembers
 // TODO: where filter not implemented yet
-func apiListOrganizationMembers(whereFilter string) ([]*goclientnew.OrganizationMember, error) {
+func apiListOrganizationMembers(whereFilter string, selectParam string) ([]*goclientnew.OrganizationMember, error) {
 	newParams := &goclientnew.ListOrganizationMembersParams{}
 	if whereFilter != "" {
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
 	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	// TODO: Add select parameter support when backend endpoint supports it
+	// Auto-select fields based on default display if no custom output format is specified
+	// if selectFields == "" {
+	//     baseFields := []string{"Username", "UserID", "OrganizationID"}
+	//     autoSelect := buildSelectList("OrganizationMember", "", "", defaultOrganizationMemberColumns, organizationMemberAliases, organizationMemberCustomColumnDependencies, baseFields)
+	//     newParams.Select = &autoSelect
+	// } else if selectFields != "" && selectFields != "*" {
+	//     newParams.Select = &selectFields
+	// }
 	membersRes, err := cubClientNew.ListOrganizationMembersWithResponse(ctx, uuid.MustParse(selectedOrganizationID), newParams)
 	if IsAPIError(err, membersRes) {
 		return nil, InterpretErrorGeneric(err, membersRes)

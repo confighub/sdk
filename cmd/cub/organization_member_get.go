@@ -31,17 +31,12 @@ func init() {
 }
 
 func organizationMemberGetCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0])
+	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	exOrganizationMemberDetails, err := apiGetOrganizationMember(organizationMemberDetails.UserID.String())
-	if err != nil {
-		return err
-	}
-	displayGetResults(exOrganizationMemberDetails, displayOrganizationMemberDetails)
+	displayGetResults(organizationMemberDetails, displayOrganizationMemberDetails)
 	return nil
 }
 
@@ -57,7 +52,7 @@ func displayOrganizationMemberDetails(member *goclientnew.OrganizationMember) {
 }
 
 // TODO: Org Member Serialization is wrong
-func apiGetOrganizationMember(userID string) (*goclientnew.OrganizationMember, error) {
+func apiGetOrganizationMember(userID string, selectParam string) (*goclientnew.OrganizationMember, error) {
 	// No params currently
 	// newParams := &goclientnew.GetOrganizationMemberParams{}
 	orgMemberRes, err := cubClientNew.GetOrganizationMemberWithResponse(ctx, uuid.MustParse(selectedOrganizationID), uuid.MustParse(userID) /*, newParams*/)
@@ -67,12 +62,16 @@ func apiGetOrganizationMember(userID string) (*goclientnew.OrganizationMember, e
 	return orgMemberRes.JSON200, nil
 }
 
-func apiGetOrganizationMemberFromUsername(username string) (*goclientnew.OrganizationMember, error) {
+func apiGetOrganizationMemberFromUsername(username string, selectParam string) (*goclientnew.OrganizationMember, error) {
 	id, err := uuid.Parse(username)
 	if err == nil {
-		return apiGetOrganizationMember(id.String())
+		return apiGetOrganizationMember(id.String(), selectParam)
 	}
-	organizationMembers, err := apiListOrganizationMembers("Username='" + username + "'")
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	organizationMembers, err := apiListOrganizationMembers("Username='"+username+"'", selectParam)
 	if err != nil {
 		return nil, err
 	}

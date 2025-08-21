@@ -86,11 +86,14 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 
 		// For a JSONxxx field, check if it's non-nil
 		// Skip JSON200 and JSON207 as they are success responses
-		if strings.HasPrefix(name, "JSON") && !strings.HasSuffix(name, "200") && !strings.HasSuffix(name, "207") && !field.IsNil() {
+		if strings.HasPrefix(name, "JSON") && !strings.HasSuffix(name, "200") && !strings.HasSuffix(name, "207") && !strings.HasSuffix(name, "Default") && !field.IsNil() {
 			// Should always be a http.Response Code integer
 			res := v.MethodByName("StatusCode").Call(nil)
 			code := res[0].Int()
-			stdErrRes := field.Interface().(*goclientnew.StandardErrorResponse)
+			stdErrRes, ok := field.Interface().(*goclientnew.StandardErrorResponse)
+			if !ok {
+				return fmt.Errorf("Unexpected response type for %s status %d req %s: %v", name, code, requestID, field.Type())
+			}
 			return fmt.Errorf("HTTP %d for req %s: %s", code, requestID, stdErrRes.Message)
 		}
 	}
@@ -101,18 +104,18 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 // displayResponseErrorDetails displays detailed information for a single ResponseError
 func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
 	table := detailView()
-	
+
 	table.Append([]string{"Message:", respError.Message})
 	table.Append([]string{"Status:", fmt.Sprintf("%d", respError.Status)})
-	
+
 	if respError.Type != "" {
 		table.Append([]string{"Type:", respError.Type})
 	}
-	
+
 	if respError.ErrorCategory != "" {
 		table.Append([]string{"Category:", respError.ErrorCategory})
 	}
-	
+
 	if respError.ErrorMetadata != nil {
 		if respError.ErrorMetadata.EntityType != "" {
 			table.Append([]string{"Entity Type:", respError.ErrorMetadata.EntityType})
@@ -121,11 +124,11 @@ func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
 			table.Append([]string{"Entity ID:", respError.ErrorMetadata.EntityID})
 		}
 	}
-	
+
 	if len(respError.Details) > 0 {
 		table.Append([]string{"Details:", strings.Join(respError.Details, "; ")})
 	}
-	
+
 	table.Render()
 }
 
@@ -135,16 +138,16 @@ func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
 	if !noheader {
 		table.SetHeader([]string{"Entity Type", "Entity ID", "Status", "Message"})
 	}
-	
+
 	for _, respError := range errors {
 		entityType := ""
 		entityID := ""
-		
+
 		if respError.ErrorMetadata != nil {
 			entityType = respError.ErrorMetadata.EntityType
 			entityID = respError.ErrorMetadata.EntityID
 		}
-		
+
 		// If no entity metadata, show "unknown"
 		if entityType == "" {
 			entityType = "unknown"
@@ -152,7 +155,7 @@ func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
 		if entityID == "" {
 			entityID = "unknown"
 		}
-		
+
 		table.Append([]string{
 			entityType,
 			entityID,
@@ -160,6 +163,6 @@ func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
 			respError.Message,
 		})
 	}
-	
+
 	table.Render()
 }
