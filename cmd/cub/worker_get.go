@@ -4,62 +4,72 @@
 package main
 
 import (
+	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
 
 var workerGetCmd = &cobra.Command{
 	Use:   "get <worker-slug>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Get Bridge Worker environment variables",
-	Long: `Get Bridge Worker environment variables.
+	Short: "Get details about a bridge worker",
+	Long: `Get detailed information about a bridge worker including its configuration, status, and metadata.
 
-# Get the environment variables for a Bridge Worker
-cub worker get-envs <worker-slug>`,
+Examples:
+  # Get details about a bridge worker
+  cub worker get --space my-space my-worker
+
+  # Get details in JSON format
+  cub worker get --space my-space --json my-worker
+
+  # Include worker secret in output
+  cub worker get --space my-space --include-secret my-worker`,
 	RunE: workerGetCmdRun,
 }
 
-var workerGetInput struct {
-	slug          string
-	includeSecret bool
-}
+var includeSecret bool
 
 func init() {
-	enableJsonFlag(workerGetCmd)
-	workerGetCmd.Flags().BoolVar(&workerGetInput.includeSecret, "include-secret", false, "Include worker secret in putput")
+	addStandardGetFlags(workerGetCmd)
+	workerGetCmd.Flags().BoolVar(&includeSecret, "include-secret", false, "Include worker secret in output")
 	workerCmd.AddCommand(workerGetCmd)
 }
 
-// TODO: Make this more standard, supporting jq, select, quiet, etc.
 func workerGetCmdRun(_ *cobra.Command, args []string) error {
-	workerGetInput.slug = args[0]
-	worker, err := apiGetBridgeWorkerFromSlug(workerGetInput.slug, selectFields)
+	extendedWorker, err := apiGetExtendedBridgeWorkerFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
-	if !workerGetInput.includeSecret {
-		worker.Secret = "********"
-	}
-	if jsonOutput {
-		displayJSON(worker)
-	} else {
-		// TODO WorkerInfo is too large to display in the CLI
-		// workerInfo, err := json.Marshal(worker.ProvidedInfo)
-		// if err != nil {
-		//	return errors.Wrap(err, "failed to marshal worker info")
-		// }
-		detail := detailView()
-		detail.Append([]string{"ID", worker.BridgeWorkerID.String()})
-		detail.Append([]string{"Name", worker.Slug})
-		detail.Append([]string{"Space ID", worker.SpaceID.String()})
-		detail.Append([]string{"Created At", worker.CreatedAt.String()})
-		detail.Append([]string{"Updated At", worker.UpdatedAt.String()})
-		// detail.Append([]string{"Provided Info", string(workerInfo)})
-		detail.Append([]string{"Secret", worker.Secret})
-		detail.Append([]string{"Condition", worker.Condition})
-		detail.Append([]string{"Last Message", worker.LastMessage})
-		detail.Append([]string{"Last Seen At", worker.LastSeenAt.String()})
-		detail.Append([]string{"IP Address", worker.IPAddress})
-		detail.Render()
-	}
+	
+	displayGetResults(extendedWorker, displayExtendedBridgeWorkerDetails)
 	return nil
+}
+
+func displayExtendedBridgeWorkerDetails(extendedWorker *goclientnew.ExtendedBridgeWorker) {
+	worker := extendedWorker.BridgeWorker
+	
+	// Handle secret masking
+	displayWorker := *worker
+	if !includeSecret {
+		displayWorker.Secret = "********"
+	}
+	
+	view := tableView()
+	view.Append([]string{"ID", displayWorker.BridgeWorkerID.String()})
+	view.Append([]string{"Name", displayWorker.Slug})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedWorker.Space != nil {
+		view.Append([]string{"Space", extendedWorker.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", displayWorker.SpaceID.String()})
+	}
+	
+	view.Append([]string{"Created At", displayWorker.CreatedAt.String()})
+	view.Append([]string{"Updated At", displayWorker.UpdatedAt.String()})
+	view.Append([]string{"Secret", displayWorker.Secret})
+	view.Append([]string{"Condition", displayWorker.Condition})
+	view.Append([]string{"Last Message", displayWorker.LastMessage})
+	view.Append([]string{"Last Seen At", displayWorker.LastSeenAt.String()})
+	view.Append([]string{"IP Address", displayWorker.IPAddress})
+	view.Render()
 }

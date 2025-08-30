@@ -58,10 +58,11 @@ func init() {
 	addStandardUpdateFlags(viewUpdateCmd)
 	viewUpdateCmd.Flags().BoolVar(&viewPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(viewUpdateCmd)
+	enableFilterFlag(viewUpdateCmd)
 	viewUpdateCmd.Flags().StringSliceVar(&viewIdentifiers, "view", []string{}, "target specific views by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
-	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.filter, "filter", "", "filter to identify entities to include in the view (slug or UUID)")
+	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.filter, "filter-field", "", "filter to identify entities to include in the view (slug or UUID)")
 	viewUpdateCmd.Flags().StringSliceVar(&viewUpdateArgs.columns, "column", []string{}, "column names to display in the view (can be repeated or comma-separated)")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.groupBy, "group-by", "", "column name to group by")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.orderBy, "order-by", "", "column name to sort by")
@@ -71,29 +72,32 @@ func init() {
 }
 
 func checkViewConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := viewPatch && len(args) == 0
+	// Check for bulk patch mode (no positional args)
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(viewIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --view can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !viewPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) != 1 {
-		failOnError(errors.New("single view update requires exactly one argument: <slug or id>"))
-	}
+		// Check for mutual exclusivity between --view and --where flags
+		if len(viewIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--view and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --view and --where flags
-	if len(viewIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--view and --where flags are mutually exclusive"))
+	} else {
+		// Single create mode validation
+		if len(args) != 1 {
+			failOnError(errors.New("single view update requires exactly one argument: <slug or id>"))
+		}
+
+		if filter != "" || where != "" || len(viewIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --view can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if viewPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isBulkPatchMode && (where == "" && len(viewIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --view flags"))
 	}
 
 	// Validate order-by-direction is only used with order-by
@@ -118,6 +122,12 @@ func checkViewConflictingArgs(args []string) bool {
 }
 
 func runBulkViewUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from view identifiers or use provided where clause
 	var effectiveWhere string
 	if len(viewIdentifiers) > 0 {
@@ -138,11 +148,11 @@ func runBulkViewUpdate() error {
 
 	// Add view-specific fields
 	if viewUpdateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID")
+		filterField, err := parseFilterFlag(viewUpdateArgs.filter)
 		if err != nil {
 			return err
 		}
-		patchData["FilterID"] = filter.FilterID.String()
+		patchData["FilterID"] = filterField
 	}
 
 	if len(viewUpdateArgs.columns) > 0 {
@@ -217,6 +227,9 @@ func runBulkViewUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchViewsWithBodyWithResponse(
@@ -276,7 +289,7 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Add view details from flags
 		if viewUpdateArgs.filter != "" {
-			filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID")
+			filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID", selectedSpaceID)
 			if err != nil {
 				return err
 			}
@@ -349,7 +362,7 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Set view-specific fields from flags
 	if viewUpdateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID")
+		filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID", selectedSpaceID)
 		if err != nil {
 			return err
 		}

@@ -63,13 +63,18 @@ func invocationListCmdRun(cmd *cobra.Command, args []string) error {
 	var extendedInvocations []*goclientnew.ExtendedInvocation
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		extendedInvocations, err = apiSearchInvocations(where, selectFields)
+		extendedInvocations, err = apiSearchInvocations(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedInvocations, err = apiListInvocations(selectedSpaceID, where, selectFields)
+		extendedInvocations, err = apiListInvocations(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -112,12 +117,15 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	table.Render()
 }
 
-func apiListInvocations(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedInvocation, error) {
+func apiListInvocations(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
 	newParams := &goclientnew.ListInvocationsParams{}
 	include := "SpaceID,BridgeWorkerID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -142,10 +150,13 @@ func apiListInvocations(spaceID string, whereFilter string, selectParam string) 
 	return invocations, nil
 }
 
-func apiSearchInvocations(whereFilter string, selectParam string) ([]*goclientnew.ExtendedInvocation, error) {
+func apiSearchInvocations(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
 	newParams := &goclientnew.ListAllInvocationsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

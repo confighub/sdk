@@ -41,38 +41,47 @@ func init() {
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(spaceUpdateCmd)
+	enableFilterFlag(spaceUpdateCmd)
 	spaceCmd.AddCommand(spaceUpdateCmd)
 }
 
 func checkSpaceUpdateConflictingArgs(args []string) (bool, error) {
 	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := isPatch && len(args) == 0
+	isBulkPatchMode := len(args) == 0
 
-	// Validate label removal only works with patch
-	if err := ValidateLabelRemoval(label, isPatch); err != nil {
-		return false, err
-	}
+	if isBulkPatchMode {
+		if !isPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	if !isBulkPatchMode && (where != "" || len(spaceIdentifiers) > 0) {
-		return false, fmt.Errorf("--where or --space can only be specified with --patch and no space positional argument")
-	}
+		// Check for mutual exclusivity between --space and --where flags
+		if len(spaceIdentifiers) > 0 && where != "" {
+			return false, fmt.Errorf("--space and --where flags are mutually exclusive")
+		}
 
-	// Check for mutual exclusivity between --space and --where flags
-	if len(spaceIdentifiers) > 0 && where != "" {
-		return false, fmt.Errorf("--space and --where flags are mutually exclusive")
+	} else {
+		if len(args) != 1 {
+			return false, errors.New("space name is required for single space update")
+		}
+
+		if filter != "" || where != "" || len(spaceIdentifiers) > 0 {
+			return false, fmt.Errorf("--filter, --where, or --space can only be specified with --patch and no space positional argument")
+		}
 	}
 
 	if isPatch && flagReplace {
 		return false, fmt.Errorf("only one of --patch and --replace should be specified")
 	}
 
-	if isBulkPatchMode && (where == "" && len(spaceIdentifiers) == 0) {
-		return false, fmt.Errorf("bulk patch mode requires --where or --space flags")
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, isPatch); err != nil {
+		return false, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
 		return isBulkPatchMode, err
 	}
+
 	return isBulkPatchMode, nil
 }
 
@@ -207,6 +216,12 @@ func createSpacePatchData(currentSpace, newSpace *goclientnew.Space) ([]byte, er
 }
 
 func runBulkSpaceUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build the where clause
 	var effectiveWhere string
 	if len(spaceIdentifiers) > 0 {
@@ -244,6 +259,9 @@ func runBulkSpaceUpdate() error {
 	// Build bulk patch parameters
 	params := &goclientnew.BulkPatchSpacesParams{
 		Where: &effectiveWhere,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Set include parameter to expand OrganizationID if needed

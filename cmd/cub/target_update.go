@@ -44,11 +44,17 @@ func init() {
 	addStandardUpdateFlags(targetUpdateCmd)
 	targetUpdateCmd.Flags().BoolVar(&targetPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(targetUpdateCmd)
+	enableFilterFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringSliceVar(&targetIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
 
+// func checkTargetUpdateConflictingArgs(args []string) bool {
+// }
+
 func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	// TODO: Refactor to checkTargetUpdateConflictingArgs
+
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
@@ -59,9 +65,17 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := targetPatch && len(args) == 0
+	isBulkPatchMode := len(args) == 0
 
 	if isBulkPatchMode {
+		if !targetPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
+		// Check for mutual exclusivity between --target and --where flags
+		if len(targetIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--target and --where flags are mutually exclusive"))
+		}
+
 		return targetBulkPatchCmdRun(cmd, args)
 	}
 
@@ -76,8 +90,8 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check that bulk-only flags are not used in single mode
-	if where != "" || len(targetIdentifiers) > 0 {
-		return fmt.Errorf("--where or --target can only be specified with --patch")
+	if filter != "" || where != "" || len(targetIdentifiers) > 0 {
+		return fmt.Errorf("--filter, --where, or --target can only be specified with --patch")
 	}
 
 	currentTarget, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "*") // get all fields for RMW
@@ -158,6 +172,12 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from target identifiers or use provided where clause
 	var effectiveWhere string
 	if len(targetIdentifiers) > 0 {
@@ -186,6 +206,9 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	params := &goclientnew.BulkPatchTargetsParams{}
 	if effectiveWhere != "" {
 		params.Where = &effectiveWhere
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 	include := "SpaceID,BridgeWorkerID"
 	params.Include = &include

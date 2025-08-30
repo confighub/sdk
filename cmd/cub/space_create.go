@@ -47,35 +47,31 @@ func init() {
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
 	enableWhereFlag(spaceCreateCmd)
+	enableFilterFlag(spaceCreateCmd)
 	spaceCmd.AddCommand(spaceCreateCmd)
 }
 
 func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(spaceIdentifiers) > 0 || len(spaceCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(spaceIdentifiers) == 0 {
-			return false, errors.New("bulk create mode requires --where or --space flags")
-		}
 		if len(spaceIdentifiers) > 0 && where != "" {
 			return false, errors.New("--space and --where flags are mutually exclusive")
 		}
+
 		if len(spaceCreateArgs.namePrefixes) == 0 {
 			return false, errors.New("bulk create mode requires --name-prefix")
 		}
 	} else {
 		// Single create mode validation
-		if len(args) == 0 {
+		if len(args) != 1 {
 			return false, errors.New("space name is required for single space creation")
 		}
-		if where != "" || len(spaceIdentifiers) > 0 || len(spaceCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --space, --name-prefix) can only be used without positional arguments")
-		}
-		// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
-		if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
-			return false, errors.New("can't read both entity attributes and config data from stdin")
+
+		if filter != "" || where != "" || len(spaceIdentifiers) > 0 || len(spaceCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -129,6 +125,12 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 }
 
 func runBulkSpaceCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build the where clause
 	var effectiveWhere string
 	if len(spaceIdentifiers) > 0 {
@@ -151,6 +153,9 @@ func runBulkSpaceCreate() error {
 	// Build bulk create parameters
 	params := &goclientnew.BulkCreateSpacesParams{
 		Where: &effectiveWhere,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Set include parameter for filtering if needed

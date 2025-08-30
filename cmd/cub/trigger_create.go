@@ -95,10 +95,12 @@ Bulk Create Examples:
 }
 
 var triggerCreateArgs struct {
-	destSpaces   []string
-	whereSpace   string
-	namePrefixes []string
-	triggerSlugs []string
+	destSpaces      []string
+	whereSpace      string
+	namePrefixes    []string
+	triggerSlugs    []string
+	filterSpace     string
+	invocationSlug  string
 }
 
 func init() {
@@ -107,26 +109,25 @@ func init() {
 	triggerCreateCmd.Flags().BoolVar(&enforceTrigger, "enforce", false, "Enforce trigger")
 	triggerCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	enableWhereFlag(triggerCreateCmd)
+	enableFilterFlag(triggerCreateCmd)
 
 	// Bulk create specific flags
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.triggerSlugs, "trigger", []string{}, "target specific triggers by slug or UUID for bulk create (can be repeated or comma-separated)")
+	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
+	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 
 	triggerCmd.AddCommand(triggerCreateCmd)
 }
 
 func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(triggerCreateArgs.triggerSlugs) > 0 || len(triggerCreateArgs.destSpaces) > 0 || triggerCreateArgs.whereSpace != "" || len(triggerCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(triggerCreateArgs.triggerSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --trigger flags")
-		}
-
 		if len(triggerCreateArgs.triggerSlugs) > 0 && where != "" {
 			return false, errors.New("--trigger and --where flags are mutually exclusive")
 		}
@@ -140,12 +141,20 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 		}
 	} else {
 		// Single create mode validation
-		if len(args) < 4 {
-			return false, errors.New("single trigger creation requires: <slug> <event> <config type> <function> [arguments...]")
+		if triggerCreateArgs.invocationSlug != "" {
+			// When using invocation, we need 3 args: slug, event, config type
+			if len(args) != 3 {
+				return false, errors.New("single trigger creation with --invocation requires: <slug> <event> <config type>")
+			}
+		} else {
+			// Traditional mode requires function and arguments
+			if len(args) < 4 {
+				return false, errors.New("single trigger creation requires: <slug> <event> <config type> <function> [arguments...]")
+			}
 		}
 
-		if where != "" || len(triggerCreateArgs.triggerSlugs) > 0 || len(triggerCreateArgs.destSpaces) > 0 || triggerCreateArgs.whereSpace != "" || len(triggerCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --trigger, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(triggerCreateArgs.triggerSlugs) > 0 || len(triggerCreateArgs.destSpaces) > 0 || triggerCreateArgs.whereSpace != "" || len(triggerCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --trigger, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -208,21 +217,46 @@ func runSingleTriggerCreate(args []string) error {
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])
 	newBody.Event = args[1]
 	newBody.ToolchainType = args[2]
-	newBody.FunctionName = args[3]
-	invokeArgs := args[4:]
-	newArgs := parseFunctionArguments(invokeArgs)
-	newBody.Arguments = newArgs
+	
+	if triggerCreateArgs.invocationSlug != "" {
+		// Use invocation instead of function and arguments
+		invocationID, err := parseInvocationSlug(triggerCreateArgs.invocationSlug)
+		if err != nil {
+			return err
+		}
+		newBody.InvocationID = &invocationID
+		// Clear function-related fields when using invocation
+		newBody.FunctionName = ""
+		newBody.Arguments = nil
+	} else {
+		// Traditional function and arguments approach
+		newBody.FunctionName = args[3]
+		invokeArgs := args[4:]
+		newArgs := parseFunctionArguments(invokeArgs)
+		newBody.Arguments = newArgs
+	}
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, newBody)
 	if IsAPIError(err, triggerRes) {
 		return InterpretErrorGeneric(err, triggerRes)
 	}
 
 	triggerDetails := triggerRes.JSON200
-	displayCreateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
+	displayCreateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
+		extendedTrigger := &goclientnew.ExtendedTrigger{
+			Trigger: trigger,
+		}
+		displayTriggerDetails(extendedTrigger)
+	})
 	return nil
 }
 
 func runBulkTriggerCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from trigger identifiers or use provided where clause
 	var effectiveWhere string
 	if len(triggerCreateArgs.triggerSlugs) > 0 {
@@ -250,6 +284,9 @@ func runBulkTriggerCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Add name prefixes if specified
 	if len(triggerCreateArgs.namePrefixes) > 0 {
@@ -271,6 +308,15 @@ func runBulkTriggerCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if triggerCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(triggerCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

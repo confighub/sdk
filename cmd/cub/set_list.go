@@ -60,7 +60,12 @@ func init() {
 }
 
 func setListCmdRun(cmd *cobra.Command, args []string) error {
-	sets, err := apiListSets(selectedSpaceID, where, selectFields)
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
+	sets, err := apiListSets(selectedSpaceID, where, selectFields, filterID)
 	if err != nil {
 		return err
 	}
@@ -86,10 +91,13 @@ func displaySetList(sets []*goclientnew.Set) {
 	table.Render()
 }
 
-func apiListSets(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Set, error) {
+func apiListSets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.Set, error) {
 	newParams := goclientnew.ListSetsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

@@ -46,30 +46,30 @@ var (
 func init() {
 	addStandardDeleteFlags(triggerDeleteCmd)
 	enableWhereFlag(triggerDeleteCmd)
+	enableFilterFlag(triggerDeleteCmd)
 	triggerDeleteCmd.Flags().StringSliceVar(&triggerDeleteIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	triggerCmd.AddCommand(triggerDeleteCmd)
 }
 
 func checkTriggerDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --trigger)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(triggerDeleteIdentifiers) > 0)
+	// Check for bulk delete mode: no positional args
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(triggerDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --trigger can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --trigger and --where flags
+		if len(triggerDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single trigger delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single trigger delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --trigger and --where flags
-	if len(triggerDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(triggerDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --trigger flags"))
+		if filter != "" || where != "" || len(triggerDeleteIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --trigger can only be specified with no positional arguments"))
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
@@ -80,6 +80,12 @@ func checkTriggerDeleteConflictingArgs(args []string) bool {
 }
 
 func runBulkTriggerDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from trigger identifiers or use provided where clause
 	var effectiveWhere string
 	if len(triggerDeleteIdentifiers) > 0 {
@@ -100,6 +106,9 @@ func runBulkTriggerDelete() error {
 	params := &goclientnew.BulkDeleteTriggersParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API
@@ -124,12 +133,12 @@ func triggerDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteTriggerWithResponse(ctx, uuid.MustParse(selectedSpaceID), triggerDetails.TriggerID)
+	deleteRes, err := cubClientNew.DeleteTriggerWithResponse(ctx, uuid.MustParse(selectedSpaceID), triggerDetails.Trigger.TriggerID)
 	if IsAPIError(err, deleteRes) {
 		return InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("trigger", args[0], triggerDetails.TriggerID.String())
+	displayDeleteResults("trigger", args[0], triggerDetails.Trigger.TriggerID.String())
 	return nil
 }
 

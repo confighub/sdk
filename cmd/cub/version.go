@@ -31,6 +31,6 @@ func versionCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Printf("  Build Date: %s\n", BuildDate)
 	apiInfo := GetApiInfo()
 	fmt.Printf("Server Version:\n")
-	fmt.Printf("  URL:        %s\n", cubContext.ConfigHubURL)
+	fmt.Printf("  URL:        %s\n", contextManager.ActiveContext().Coordinate.ServerURL)
 	fmt.Printf("  Commit:     %s\n", apiInfo.Build)
 }

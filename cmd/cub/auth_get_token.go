@@ -22,13 +22,17 @@ func init() {
 }
 
 func authGetTokenCmdRun(cmd *cobra.Command, args []string) error {
-	// Check if we have a valid session
-	if authSession.AccessToken == "" {
+	ctx := contextManager.ActiveContext()
+	tokenData, err := contextManager.LoadTokenData(ctx)
+	if err != nil {
+		return err
+	}
+	if tokenData.AccessToken == "" {
 		return fmt.Errorf("not authenticated. Please run 'cub auth login' first")
 	}
 
 	// Simply output the token. Do not include a newline so that it can be used in a HTTP header directly.
-	fmt.Print(authSession.AccessToken)
+	fmt.Print(tokenData.AccessToken)
 
 	return nil
 }

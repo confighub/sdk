@@ -34,6 +34,7 @@ func init() {
 	addStandardCreateFlags(targetCreateCmd)
 	targetCreateCmd.Flags().StringVarP(&providerType, "provider", "p", "Kubernetes", "The type of provider for the target.\nDefault is Kubernetes.\n\t(e.g., Kubernetes, Terraform, FluxOCIWriter)")
 	targetCreateCmd.Flags().StringVarP(&toolchainType, "toolchain", "t", "Kubernetes/YAML", "The type of toolchain for the target.\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, Terraform)")
+	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
 	targetCmd.AddCommand(targetCreateCmd)

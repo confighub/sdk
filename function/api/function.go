@@ -285,13 +285,11 @@ type FunctionInvocationList []FunctionInvocation
 // options for the invocation.
 type FunctionInvocationRequest struct {
 	FunctionContext
-	ConfigData               []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
-	LiveState                []byte                 `swaggertype:"string" format:"byte" description:"The most recent live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit."`
-	CastStringArgsToScalars  bool                   `description:"If true, expect integer and boolean arguments to be passed as strings"`
-	NumFilters               int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
-	StopOnError              bool                   `description:"If true, stop executing functions on the first error"`
-	CombineValidationResults bool                   `description:"If true, return a single ValidationResult for validating functions rather than a ValidationResultList"`
-	FunctionInvocations      FunctionInvocationList `description:"List of functions to invoke and their arguments"`
+	ConfigData          []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
+	LiveState           []byte                 `swaggertype:"string" format:"byte" description:"The most recent live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit."`
+	NumFilters          int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
+	StopOnError         bool                   `description:"If true, stop executing functions on the first error"`
+	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }
 
 // FunctionIDs contains the IDs related to a function invocation.
@@ -316,8 +314,7 @@ type FunctionInvocationSuccessResponse struct {
 // any output produced by read-only and/or validation functions, whether the function
 // sequence executed successfully, and any error messages returned.
 // Output of compatible OutputTypes is combined, and otherwise the first output is
-// returned. For instance, a sequence of validation functions will have their outputs
-// combined into a single ValidationResult, multiple AttributeValueLists will be appended
+// returned. For instance, multiple AttributeValueLists will be appended
 // together, and multiple ResourceInfoLists will be appended together.
 type FunctionInvocationResponse struct {
 	FunctionIDs
@@ -505,9 +502,15 @@ func DataTypeIsSerializedAsString(dataType DataType) bool {
 
 func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 	switch outputType {
-	case OutputTypeValidationResult:
-		var output ValidationResult
+	case OutputTypeValidationResult, OutputTypeValidationResultList:
+		var output ValidationResultList
 		err := json.Unmarshal(outputBytes, &output)
+		if err != nil {
+			// Fallback to ValidationResult
+			var output ValidationResult
+			err := json.Unmarshal(outputBytes, &output)
+			return output, err
+		}
 		return output, err
 	case OutputTypeAttributeValueList:
 		var output AttributeValueList
@@ -521,8 +524,14 @@ func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 		var output ResourceList
 		err := json.Unmarshal(outputBytes, &output)
 		return output, err
+	case OutputTypeYAML:
+		var output YAMLPayload
+		err := json.Unmarshal(outputBytes, &output)
+		return output, err
 	default:
-		return nil, fmt.Errorf("output type %s cannot be unmarshaled", string(outputType))
+		var output any
+		err := json.Unmarshal(outputBytes, &output)
+		return output, err
 	}
 }
 
@@ -533,28 +542,24 @@ func CombineOutputs(
 	newOutputType OutputType,
 	output any,
 	newOutput any,
-	combineValidationResults bool,
 	functionInvocationIndex int,
 	messages []string,
 ) (any, []string) {
 	if output == nil {
 		outputType = newOutputType
 		switch outputType {
-		case OutputTypeValidationResult:
-			if combineValidationResults {
-				output = ValidationResult{
-					Passed: true,
-				}
-			} else {
-				output = ValidationResultList{}
-			}
+		case OutputTypeValidationResult, OutputTypeValidationResultList:
+			output = ValidationResultList{}
 		case OutputTypeAttributeValueList:
 			output = AttributeValueList{}
 		case OutputTypeResourceInfoList:
 			output = ResourceInfoList{}
 		case OutputTypeResourceList:
 			output = ResourceList{}
+		case OutputTypeYAML:
+			output = YAMLPayload{}
 		default:
+			// includes OutputTypeJSON, etc.
 			output = newOutput
 			return output, messages
 		}
@@ -562,26 +567,15 @@ func CombineOutputs(
 	if outputType == newOutputType {
 		switch outputType {
 		case OutputTypeValidationResult:
-			newResult, newExpectedType := newOutput.(ValidationResult)
+			// Should be a ValidationResultList in actuality
+			newResult, newExpectedType := newOutput.(ValidationResultList)
 			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to ValidationResult")
-				return output, messages
-			}
-			if !newResult.Passed {
-				messages = append(messages, fmt.Sprintf("function failed: %s at %d on %s",
-					functionName, functionInvocationIndex, instance))
-			}
-			if combineValidationResults {
-				previousResult, previousExpectedType := output.(ValidationResult)
-				if !previousExpectedType {
-					messages = append(messages, "couldn't convert previous result to ValidationResult")
+				// Fall back to ValidationResult
+				newResult, newExpectedType := newOutput.(ValidationResult)
+				if !newExpectedType {
+					messages = append(messages, "couldn't convert new result to ValidationResultList or ValidationResult")
 					return output, messages
 				}
-				newResult.Passed = newResult.Passed && previousResult.Passed
-				newResult.Details = append(newResult.Details, previousResult.Details...)
-				// Index is not set
-				output = newResult
-			} else {
 				previousResults, previousExpectedType := output.(ValidationResultList)
 				if !previousExpectedType {
 					messages = append(messages, "couldn't convert previous result to ValidationResultList")
@@ -590,7 +584,35 @@ func CombineOutputs(
 				newResult.Index = functionInvocationIndex
 				previousResults = append(previousResults, newResult)
 				output = previousResults
+			} else {
+				previousResults, previousExpectedType := output.(ValidationResultList)
+				if !previousExpectedType {
+					messages = append(messages, "couldn't convert previous result to ValidationResultList")
+					return output, messages
+				}
+				for i := range newResult {
+					newResult[i].Index = functionInvocationIndex
+				}
+				previousResults = append(previousResults, newResult...)
+				output = previousResults
 			}
+
+		case OutputTypeValidationResultList:
+			newResult, newExpectedType := newOutput.(ValidationResultList)
+			if !newExpectedType {
+				messages = append(messages, "couldn't convert new result to ValidationResult")
+				return output, messages
+			}
+			for i := range newResult {
+				newResult[i].Index = functionInvocationIndex
+			}
+			previousResults, previousExpectedType := output.(ValidationResultList)
+			if !previousExpectedType {
+				messages = append(messages, "couldn't convert previous result to ValidationResultList")
+				return output, messages
+			}
+			previousResults = append(previousResults, newResult...)
+			output = previousResults
 
 		case OutputTypeAttributeValueList:
 			previousOutput, previousExpectedType := output.(AttributeValueList)
@@ -632,6 +654,28 @@ func CombineOutputs(
 				return output, messages
 			}
 			previousOutput = append(previousOutput, newOutput...)
+			output = previousOutput
+
+		case OutputTypeYAML:
+			previousOutput, previousExpectedType := output.(YAMLPayload)
+			if !previousExpectedType {
+				messages = append(messages, "couldn't convert previous result to YAMLPayload")
+				return output, messages
+			}
+			newOutput, newExpectedType := newOutput.(YAMLPayload)
+			if !newExpectedType {
+				messages = append(messages, "couldn't convert new result to YAMLPayload")
+				return output, messages
+			}
+			// Concatenate YAML documents
+			if len(newOutput.Payload) > 0 {
+				if len(previousOutput.Payload) == 0 {
+					previousOutput.Payload = newOutput.Payload
+				} else {
+					payloads := []string{previousOutput.Payload, newOutput.Payload}
+					previousOutput.Payload = strings.Join(payloads, "\n---\n")
+				}
+			}
 			output = previousOutput
 
 		default:

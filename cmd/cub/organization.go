@@ -26,13 +26,20 @@ var selectedOrganizationSlug string
 
 // to be used by sub-commands that requires organization ID
 func organizationPreRunE(cmd *cobra.Command, args []string) error {
-	globalPreRun(cmd, args)
+	if err := globalPreRun(cmd, args); err != nil {
+		return err
+	}
+
+	ctx := contextManager.ActiveContext()
+	if ctx == nil {
+		return fmt.Errorf("no context available")
+	}
 
 	selectedOrg := &goclientnew.Organization{}
-	if cubContext.OrganizationID == "" {
+	if ctx.Coordinate.OrganizationID == "" {
 		return fmt.Errorf("organization is required. Set with --organization option or set in context with the context sub-command")
 	}
-	selectedOrg, err := apiGetOrganization(cubContext.OrganizationID, "*")
+	selectedOrg, err := apiGetOrganizationFromExternalID(ctx.Coordinate.OrganizationID)
 	if err != nil {
 		return err
 	}

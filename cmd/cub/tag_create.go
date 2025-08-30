@@ -63,31 +63,30 @@ var tagCreateArgs struct {
 	whereSpace   string
 	namePrefixes []string
 	tagSlugs     []string
+	filterSpace  string
 }
 
 func init() {
 	addStandardCreateFlags(tagCreateCmd)
 	enableWhereFlag(tagCreateCmd)
+	enableFilterFlag(tagCreateCmd)
 
 	// Bulk create specific flags
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	tagCreateCmd.Flags().StringVar(&tagCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.tagSlugs, "tag", []string{}, "target specific tags by slug or UUID for bulk create (can be repeated or comma-separated)")
+	tagCreateCmd.Flags().StringVar(&tagCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	tagCmd.AddCommand(tagCreateCmd)
 }
 
 func checkTagCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(tagCreateArgs.tagSlugs) > 0 || len(tagCreateArgs.destSpaces) > 0 || tagCreateArgs.whereSpace != "" || len(tagCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(tagCreateArgs.tagSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --tag flags")
-		}
-
 		if len(tagCreateArgs.tagSlugs) > 0 && where != "" {
 			return false, errors.New("--tag and --where flags are mutually exclusive")
 		}
@@ -101,12 +100,12 @@ func checkTagCreateConflictingArgs(args []string) (bool, error) {
 		}
 	} else {
 		// Single create mode validation
-		if len(args) < 1 {
+		if len(args) != 1 {
 			return false, errors.New("single tag creation requires: <slug>")
 		}
 
-		if where != "" || len(tagCreateArgs.tagSlugs) > 0 || len(tagCreateArgs.destSpaces) > 0 || tagCreateArgs.whereSpace != "" || len(tagCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --tag, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(tagCreateArgs.tagSlugs) > 0 || len(tagCreateArgs.destSpaces) > 0 || tagCreateArgs.whereSpace != "" || len(tagCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --tag, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -163,6 +162,12 @@ func runSingleTagCreate(args []string) error {
 }
 
 func runBulkTagCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from tag identifiers or use provided where clause
 	var effectiveWhere string
 	if len(tagCreateArgs.tagSlugs) > 0 {
@@ -190,6 +195,9 @@ func runBulkTagCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Add name prefixes if specified
 	if len(tagCreateArgs.namePrefixes) > 0 {
@@ -211,6 +219,15 @@ func runBulkTagCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if tagCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(tagCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

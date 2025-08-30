@@ -44,11 +44,14 @@ func init() {
 	addStandardUpdateFlags(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().BoolVar(&workerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(bridgeworkerUpdateCmd)
+	enableFilterFlag(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
 }
 
 func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	// TODO: refactor arg checks into a separate function
+
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
@@ -59,9 +62,12 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := workerPatch && len(args) == 0
+	isBulkPatchMode := len(args) == 0
 
 	if isBulkPatchMode {
+		if !workerPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 		return workerBulkPatchCmdRun(cmd, args)
 	}
 
@@ -76,8 +82,8 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check that bulk-only flags are not used in single mode
-	if where != "" || len(workerIdentifiers) > 0 {
-		return fmt.Errorf("--where or --worker can only be specified with --patch")
+	if filter != "" || where != "" || len(workerIdentifiers) > 0 {
+		return fmt.Errorf("--filter, --where, or --worker can only be specified with --patch")
 	}
 
 	currentBridgeworker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for RMW
@@ -149,6 +155,12 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from worker identifiers or use provided where clause
 	var effectiveWhere string
 	if len(workerIdentifiers) > 0 {
@@ -177,6 +189,9 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	params := &goclientnew.BulkPatchBridgeWorkersParams{}
 	if effectiveWhere != "" {
 		params.Where = &effectiveWhere
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 	include := "SpaceID"
 	params.Include = &include

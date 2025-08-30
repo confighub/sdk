@@ -44,6 +44,7 @@ func init() {
 	addStandardCreateFlags(unitImportCmd)
 	enableWaitFlag(unitImportCmd)
 	enableWhereFlag(unitImportCmd)
+	enableFilterFlag(unitImportCmd)
 	// enableQuietFlagForOperation(unitImportCmd)
 	unitImportCmd.Flags().StringVar(&unitImportArgs.targetSlug, "target", "", "target slug to import into")
 

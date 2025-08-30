@@ -67,13 +67,18 @@ func linkListCmdRun(cmd *cobra.Command, args []string) error {
 	var links []*goclientnew.ExtendedLink
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		links, err = apiSearchLinks(where, selectFields)
+		links, err = apiSearchLinks(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		links, err = apiListLinks(selectedSpaceID, where, selectFields)
+		links, err = apiListLinks(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -123,10 +128,13 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	table.Render()
 }
 
-func apiSearchLinks(whereFilter string, selectParam string) ([]*goclientnew.ExtendedLink, error) {
+func apiSearchLinks(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
 	params := &goclientnew.SearchListLinksParams{}
 	if whereFilter != "" {
 		params.Where = &whereFilter
+	}
+	if filterParam != "" {
+		params.Filter = &filterParam
 	}
 	if contains != "" {
 		params.Contains = &contains
@@ -160,11 +168,14 @@ func apiSearchLinks(whereFilter string, selectParam string) ([]*goclientnew.Exte
 	return extendedLinks, nil
 }
 
-func apiListLinks(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedLink, error) {
+func apiListLinks(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
 	// TODO: update List APIs to allow where filter
 	newParams := &goclientnew.ListLinksParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

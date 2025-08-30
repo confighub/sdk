@@ -147,6 +147,38 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 		Function: k8sFnSetImageReferenceByURI,
 	})
 	setImageReferenceByUriHandler = fh.GetHandlerImplementation("set-image-reference-by-uri") // for testing
+	fh.RegisterFunction("set-image-uri-by-uri", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "set-image-uri-by-uri",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName:    "repository-uri",
+					Required:         true,
+					Description:      "Image repository URI whose URI should be set",
+					DataType:         api.DataTypeString,
+					Example:          "quay.io/jetstack/cert-manager-controller",
+					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(imageURIRegexpString)},
+				},
+				{
+					ParameterName:    "new-repository-uri",
+					Required:         true,
+					Description:      "New image repository URI to set",
+					DataType:         api.DataTypeString,
+					Example:          "mirror.registry.example.com/jetstack/cert-manager-controller",
+					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(imageURIRegexpString)},
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Replace the specified image URI with a new URI",
+			FunctionType:          api.FunctionTypeCustom,
+			AttributeName:         api.AttributeNameContainerImages,
+			AffectedResourceTypes: resourceTypes,
+		},
+		Function: k8sFnSetImageURIByURI,
+	})
 	minValue := 0
 	replicasParameters := []api.FunctionParameter{
 		{
@@ -934,7 +966,6 @@ func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Contain
 		// The second two should be the start and end of the URI
 		// The third two should be the start and end of the reference
 		if len(matches) != 6 {
-			fmt.Printf("\n")
 			return currentValue
 		}
 		currentURI := currentValue[matches[2]:matches[3]]
@@ -943,6 +974,33 @@ func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Contain
 			return currentValue
 		}
 		return newImage
+	}
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{}, k8skit.K8sResourceProvider, updater, false)
+	return parsedData, nil, err
+}
+
+func k8sFnSetImageURIByURI(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	// The argument value types should be verified before this function is called
+	imageURI := args[0].Value.(string)
+	newURI := args[1].Value.(string)
+
+	resourceTypeToAllImagePaths := yamlkit.GetPathRegistryForAttributeName(k8skit.K8sResourceProvider, api.AttributeNameContainerImages)
+	updater := func(currentValue string) string {
+		matches := imageURIReferenceRegexp.FindStringSubmatchIndex(currentValue)
+		// fmt.Printf("image %s, matches %v", currentValue, matches)
+		// The first two elements should be zero and length of the string
+		// The second two should be the start and end of the URI
+		// The third two should be the start and end of the reference
+		if len(matches) != 6 {
+			return currentValue
+		}
+		currentURI := currentValue[matches[2]:matches[3]]
+		// fmt.Printf(", URI %s\n", currentURI)
+		if currentURI != imageURI {
+			return currentValue
+		}
+		currentReference := currentValue[matches[4]:matches[5]]
+		return newURI + currentReference
 	}
 	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{}, k8skit.K8sResourceProvider, updater, false)
 	return parsedData, nil, err

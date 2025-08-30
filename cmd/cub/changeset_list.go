@@ -61,13 +61,18 @@ func changesetListCmdRun(cmd *cobra.Command, args []string) error {
 	var extendedChangeSets []*goclientnew.ExtendedChangeSet
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		extendedChangeSets, err = apiSearchChangeSets(where, selectFields)
+		extendedChangeSets, err = apiSearchChangeSets(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedChangeSets, err = apiListChangeSets(selectedSpaceID, where, selectFields)
+		extendedChangeSets, err = apiListChangeSets(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -128,12 +133,15 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 	table.Render()
 }
 
-func apiListChangeSets(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedChangeSet, error) {
+func apiListChangeSets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
 	newParams := &goclientnew.ListChangeSetsParams{}
 	include := "SpaceID,FilterID,StartTagID,EndTagID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -158,10 +166,13 @@ func apiListChangeSets(spaceID string, whereFilter string, selectParam string) (
 	return changesets, nil
 }
 
-func apiSearchChangeSets(whereFilter string, selectParam string) ([]*goclientnew.ExtendedChangeSet, error) {
+func apiSearchChangeSets(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
 	newParams := &goclientnew.ListAllChangeSetsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

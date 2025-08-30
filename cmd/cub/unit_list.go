@@ -149,7 +149,7 @@ var unitCustomColumns = map[string]func(interface{}) string{
 	"UnappliedChanges": func(obj interface{}) string {
 		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
 			unit := extendedUnit.Unit
-			if unit.HeadRevisionNum > unit.LiveRevisionNum {
+			if unit.HeadRevisionNum > unit.LiveRevisionNum && (unit.TargetID != nil && *unit.TargetID != uuid.Nil) {
 				return "Yes"
 			}
 		}
@@ -185,14 +185,19 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 			selectedSpaceID = "*"
 		}
 	}
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, selectFields)
+		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, selectFields)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -214,7 +219,7 @@ func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
 }
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
-	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, selectParam)
+	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -226,15 +231,18 @@ func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*go
 	return units, nil
 }
 
-func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedUnit, error) {
+func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListUnitsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
+	}
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
 	newParams.Include = &include
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
@@ -258,13 +266,16 @@ func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string
 	return extendedUnits, nil
 }
 
-func apiSearchUnits(whereFilter string, resourceType string, whereData string, selectParam string) ([]*goclientnew.ExtendedUnit, error) {
+func apiSearchUnits(whereFilter string, resourceType string, whereData string, selectParam string, filterParam string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListAllUnitsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 
 	if resourceType != "" {
@@ -273,9 +284,9 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string, s
 	if whereData != "" {
 		newParams.WhereData = &whereData
 	}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
 	newParams.Include = &include
-	
+
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
 		// UnitEventID is not a real field. Remove it.

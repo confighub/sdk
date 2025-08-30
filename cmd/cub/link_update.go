@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -59,6 +60,7 @@ func init() {
 	enableWaitFlag(linkUpdateCmd)
 	linkUpdateCmd.Flags().BoolVar(&linkPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(linkUpdateCmd)
+	enableFilterFlag(linkUpdateCmd)
 	linkUpdateCmd.Flags().StringSliceVar(&linkIdentifiers, "link", []string{}, "target specific links by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	linkCmd.AddCommand(linkUpdateCmd)
 }
@@ -142,17 +144,33 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 }
 
 func checkLinkConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := linkPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
+
+	if isBulkPatchMode {
+		if !linkPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
+
+		// Check for mutual exclusivity between --invocation and --where flags
+		if len(linkIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--link and --where flags are mutually exclusive"))
+		}
+
+	} else {
+		// Single create mode validation
+		if len(args) < 3 || len(args) > 4 {
+			failOnError(errors.New("single link update requires: <slug> <from unit> <to unit> [to space]"))
+		}
+
+		if filter != "" || where != "" || len(linkIdentifiers) > 0 {
+			failOnError(errors.New("--filter, --where, and --link flags can only be used in bulk mode (without positional arguments)"))
+		}
+	}
 
 	// Validate label removal only works with patch
 	if err := ValidateLabelRemoval(label, linkPatch); err != nil {
 		fmt.Printf("Error: %v\n", err)
-		return false
-	}
-
-	if !isBulkPatchMode && (where != "" || len(linkIdentifiers) > 0) {
-		fmt.Printf("Error: --where and --link flags can only be used in bulk mode (with --patch and without positional arguments)\n")
 		return false
 	}
 
@@ -164,6 +182,12 @@ func checkLinkConflictingArgs(args []string) bool {
 }
 
 func runBulkLinkUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 {
 		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, or --label")
 	}
@@ -193,6 +217,9 @@ func runBulkLinkUpdate() error {
 	params := &goclientnew.BulkPatchLinksParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk patch API

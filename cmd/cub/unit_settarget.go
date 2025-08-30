@@ -35,9 +35,12 @@ func init() {
 	enableJsonFlag(unitSetTargetCmd)
 	enableJqFlag(unitSetTargetCmd)
 	enableWhereFlag(unitSetTargetCmd)
+	enableFilterFlag(unitSetTargetCmd)
 	unitSetTargetCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	unitCmd.AddCommand(unitSetTargetCmd)
 }
+
+// TODO: Check arguments
 
 func unitSetTargetCmdRun(cmd *cobra.Command, args []string) error {
 	// Determine operation mode based on number of arguments
@@ -56,11 +59,17 @@ func createTargetPatch(targetSlug string) ([]byte, error) {
 	if targetSlug == "-" {
 		targetID = uuid.Nil
 	} else {
-		exTarget, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "*") // get all fields for now
+		// Use parseEntityIdentifierSingle to support cross-space target lookup
+		id, err := parseEntityIdentifierSingle[goclientnew.Target](
+			targetSlug,
+			EntityTypeTarget,
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
 		if err != nil {
 			return nil, err
 		}
-		targetID = exTarget.Target.TargetID
+		targetID = id
 	}
 
 	// Create JSON patch with only the TargetID field
@@ -113,6 +122,12 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 }
 
 func runBulkUnitSetTarget(targetSlug string) error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Check for mutual exclusivity between --unit and --where flags
 	if len(unitIdentifiers) > 0 && where != "" {
 		return fmt.Errorf("--unit and --where flags are mutually exclusive")
@@ -141,6 +156,9 @@ func runBulkUnitSetTarget(targetSlug string) error {
 	// Build bulk patch parameters
 	params := &goclientnew.BulkPatchUnitsParams{
 		Where: &effectiveWhere,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Set include parameter to expand UpstreamUnitID

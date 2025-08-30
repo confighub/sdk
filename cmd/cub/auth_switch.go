@@ -45,18 +45,18 @@ func authSwitchCmdRun(cmd *cobra.Command, args []string) error {
 
 // switchToOrganization switches to the specified organization
 func switchToOrganization(searchTerm string) error {
-	// Load current session to get refresh token
-	session, err := LoadSession()
+	ctx := contextManager.ActiveContext()
+	tokenData, err := contextManager.LoadTokenData(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to load session: %w", err)
+		return fmt.Errorf("failed to load tokens for current context: %w", err)
 	}
 
-	if session.RefreshToken == "" {
+	if tokenData.RefreshToken == "" {
 		return fmt.Errorf("no refresh token found. Please run 'cub auth login' first")
 	}
 
 	// Get list of organizations to find the matching one
-	organizations, err := apiListOrganizations("", "*")
+	organizations, err := apiListOrganizations("", "*", "")
 	if err != nil {
 		return fmt.Errorf("failed to list organizations: %w", err)
 	}
@@ -68,32 +68,46 @@ func switchToOrganization(searchTerm string) error {
 	}
 
 	// Check if we're already in the correct organization
-	if session.OrganizationID == matchedOrg.ExternalID {
+	if ctx.Coordinate.OrganizationID == matchedOrg.ExternalID {
 		fmt.Printf("Already in organization: %s (%s)\n", matchedOrg.DisplayName, matchedOrg.ExternalID)
 		return nil
 	}
 
 	// Call the switch organization API
-	newTokens, err := callSwitchOrganizationAPI(session.RefreshToken, matchedOrg.ExternalID)
+	newTokens, err := callSwitchOrganizationAPI(tokenData.RefreshToken, matchedOrg.ExternalID)
 	if err != nil {
-		return fmt.Errorf("failed to switch organization: %w", err)
+		return fmt.Errorf("failed to switch organization: %w. Try running 'cub auth login' to re-authenticate first", err)
 	}
 
-	// Update session with new tokens
-	session.AccessToken = newTokens.AccessToken
-	session.RefreshToken = newTokens.RefreshToken
-	session.OrganizationID = matchedOrg.ExternalID
+	newCoordinate := Coordinate{
+		ServerURL:      ctx.Coordinate.ServerURL,
+		OrganizationID: matchedOrg.ExternalID,
+		User:           ctx.Coordinate.User,
+	}
 
-	// Save updated session
-	err = SaveSession(session)
+	ctx, err = contextManager.FindContextByCoordinate(newCoordinate)
+	if err != nil {
+		ctx = contextManager.NewContext()
+		ctx.Coordinate = newCoordinate
+		tokenData = &TokenData{}
+	}
+	// We set this even if it might already been set.
+	// It could have been changed on the server or failed to set previously.
+	ctx.Metadata.OrganizationName = matchedOrg.DisplayName
+
+	contextManager.SetCurrentContext(ctx.Name)
+
+	tokenData.AccessToken = newTokens.AccessToken
+	tokenData.RefreshToken = newTokens.RefreshToken
+
+	// Save updated tokens
+	err = contextManager.SaveTokenData(ctx, tokenData)
 	if err != nil {
 		return fmt.Errorf("failed to save session: %w", err)
 	}
 
-	// Update the global context and auth header with the new session
-	authSession = session
-	authHeader = setAuthHeader(&authSession)
-	cubClientNew, err = initializeClient()
+	// Update the API client
+	cubClientNew, err = InitializeClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error initializing client: %w", err)
 	}
@@ -102,6 +116,11 @@ func switchToOrganization(searchTerm string) error {
 	err = setSpaceContext()
 	if err != nil {
 		return fmt.Errorf("failed to set space context: %w", err)
+	}
+
+	// Save the configuration
+	if err := contextManager.SaveConfig(); err != nil {
+		return fmt.Errorf("failed to save context configuration: %w", err)
 	}
 
 	fmt.Printf("Successfully switched to organization: %s (%s)\n", matchedOrg.DisplayName, matchedOrg.ExternalID)
@@ -145,7 +164,7 @@ type SwitchOrganizationResponse struct {
 func callSwitchOrganizationAPI(refreshToken, organizationID string) (*SwitchOrganizationResponse, error) {
 	// Construct the URL
 	switchURL := fmt.Sprintf("%s/auth/switch-organization?organization_id=%s",
-		strings.TrimSuffix(cubContext.ConfigHubURL, "/api"),
+		strings.TrimSuffix(contextManager.ActiveContext().Coordinate.ServerURL, "/api"),
 		url.QueryEscape(organizationID))
 
 	// Create the HTTP request

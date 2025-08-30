@@ -70,6 +70,19 @@ func apiGetOrganization(organizationID string, selectParam string) (*goclientnew
 	return orgRes.JSON200, nil
 }
 
+func apiGetOrganizationFromExternalID(extID string) (*goclientnew.Organization, error) {
+	organizations, err := apiListOrganizations("ExternalID = '"+extID+"'", "", "")
+	if err != nil {
+		return nil, err
+	}
+	for _, organization := range organizations {
+		if organization.ExternalID == extID {
+			return organization, nil
+		}
+	}
+	return nil, fmt.Errorf("organization %s not found", extID)
+}
+
 func apiGetOrganizationFromSlug(slug string, selectParam string) (*goclientnew.Organization, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
@@ -79,7 +92,7 @@ func apiGetOrganizationFromSlug(slug string, selectParam string) (*goclientnew.O
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	organizations, err := apiListOrganizations("Slug = '"+slug+"'", selectParam)
+	organizations, err := apiListOrganizations("Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}

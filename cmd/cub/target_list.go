@@ -38,15 +38,21 @@ func init() {
 func targetListCmdRun(cmd *cobra.Command, args []string) error {
 	var targets []*goclientnew.ExtendedTarget
 	var err error
+
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
 		// Cross-space listing
-		targets, err = apiListAllTargets(where, selectFields)
+		targets, err = apiListAllTargets(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Single space listing
-		targets, err = apiListTargets(selectedSpaceID, where, selectFields)
+		targets, err = apiListTargets(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -84,10 +90,13 @@ func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
 	table.Render()
 }
 
-func apiListTargets(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedTarget, error) {
+func apiListTargets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.ListTargetsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -114,10 +123,13 @@ func apiListTargets(spaceID string, whereFilter string, selectParam string) ([]*
 	return targets, nil
 }
 
-func apiListAllTargets(whereFilter string, selectParam string) ([]*goclientnew.ExtendedTarget, error) {
+func apiListAllTargets(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.ListAllTargetsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

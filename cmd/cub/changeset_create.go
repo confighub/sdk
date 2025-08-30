@@ -14,7 +14,7 @@ import (
 )
 
 var changesetCreateCmd = &cobra.Command{
-	Use:         "create [<slug> [--filter <filter>] [--start-tag <start-tag>] [--end-tag <end-tag>] [--description <description>]]",
+	Use:         "create [<slug> [--filter-field <filter>] [--start-tag <start-tag>] [--end-tag <end-tag>] [--description <description>]]",
 	Short:       "Create a new changeset or bulk create changesets",
 	Long:        getChangeSetCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -30,13 +30,13 @@ Create a new changeset to record an entity changeset specification.
 
 Examples:
   # Create a changeset with a filter
-  cub changeset create --space my-space release-changeset --filter unit-filter --description "Release 1.0 changes"
+  cub changeset create --space my-space release-changeset --filter-field unit-filter --description "Release 1.0 changes"
 
   # Create a changeset with start and end tags
   cub changeset create --space my-space hotfix-changeset --start-tag v1.0 --end-tag v1.1 --description "Hotfix changes"
 
   # Create a changeset with all parameters
-  cub changeset create --space my-space full-changeset --filter deployment-filter --start-tag baseline --end-tag current --description "Full deployment changes"
+  cub changeset create --space my-space full-changeset --filter-field deployment-filter --start-tag baseline --end-tag current --description "Full deployment changes"
 
   # Create a changeset from JSON
   cub changeset create --space my-space --json my-changeset --from-stdin < changeset.json
@@ -66,18 +66,20 @@ var changesetCreateArgs struct {
 	whereSpace     string
 	namePrefixes   []string
 	changesetSlugs []string
-	filter         string
+	filterField    string
 	startTag       string
 	endTag         string
 	description    string
+	filterSpace    string
 }
 
 func init() {
 	addStandardCreateFlags(changesetCreateCmd)
 	enableWhereFlag(changesetCreateCmd)
+	enableFilterFlag(changesetCreateCmd)
 
 	// Single create specific flags
-	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.filter, "filter", "", "filter to identify units whose revisions are included (slug or UUID)")
+	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.filterField, "filter-field", "", "filter to identify units whose revisions are included (slug or UUID)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.startTag, "start-tag", "", "tag identifying the set of revisions that begin the changeset (slug or UUID)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.endTag, "end-tag", "", "tag identifying the set of revisions that end the changeset (slug or UUID)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.description, "description", "", "human-readable description of the change")
@@ -87,20 +89,17 @@ func init() {
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.changesetSlugs, "changeset", []string{}, "target specific changesets by slug or UUID for bulk create (can be repeated or comma-separated)")
+	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	changesetCmd.AddCommand(changesetCreateCmd)
 }
 
 func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(changesetCreateArgs.changesetSlugs) > 0 || len(changesetCreateArgs.destSpaces) > 0 || changesetCreateArgs.whereSpace != "" || len(changesetCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(changesetCreateArgs.changesetSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --changeset flags")
-		}
-
 		if len(changesetCreateArgs.changesetSlugs) > 0 && where != "" {
 			return false, errors.New("--changeset and --where flags are mutually exclusive")
 		}
@@ -114,12 +113,12 @@ func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
 		}
 	} else {
 		// Single create mode validation
-		if len(args) < 1 {
+		if len(args) != 1 {
 			return false, errors.New("single changeset creation requires: <slug>")
 		}
 
-		if where != "" || len(changesetCreateArgs.changesetSlugs) > 0 || len(changesetCreateArgs.destSpaces) > 0 || changesetCreateArgs.whereSpace != "" || len(changesetCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --changeset, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(changesetCreateArgs.changesetSlugs) > 0 || len(changesetCreateArgs.destSpaces) > 0 || changesetCreateArgs.whereSpace != "" || len(changesetCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --changeset, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -166,12 +165,16 @@ func runSingleChangeSetCreate(args []string) error {
 	}
 
 	// Set filter reference if provided
-	if changesetCreateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(changesetCreateArgs.filter, "FilterID")
+	if changesetCreateArgs.filterField != "" {
+		filterIDString, err := parseFilterFlag(changesetCreateArgs.filterField)
 		if err != nil {
 			return err
 		}
-		newBody.FilterID = &filter.FilterID
+		filterID, err := uuid.Parse(filterIDString)
+		if err != nil {
+			return err
+		}
+		newBody.FilterID = &filterID
 	}
 
 	// Set start tag reference if provided
@@ -208,6 +211,12 @@ func runSingleChangeSetCreate(args []string) error {
 }
 
 func runBulkChangeSetCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from changeset identifiers or use provided where clause
 	var effectiveWhere string
 	if len(changesetCreateArgs.changesetSlugs) > 0 {
@@ -235,6 +244,9 @@ func runBulkChangeSetCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Add name prefixes if specified
 	if len(changesetCreateArgs.namePrefixes) > 0 {
@@ -256,6 +268,15 @@ func runBulkChangeSetCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if changesetCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(changesetCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

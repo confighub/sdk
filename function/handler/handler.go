@@ -135,7 +135,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			invocationInfo += fmt.Sprintf(" %v", arg.Value)
 		}
 
-		arguments, validationErr := ValidateAndBuildArguments(&invocation, &f.FunctionSignature, functionInvocation.CastStringArgsToScalars)
+		arguments, validationErr := ValidateAndBuildArguments(&invocation, &f.FunctionSignature)
 		if validationErr != nil {
 			invocationInfo += ": " + validationErr.Error()
 			log.Info(invocationInfo)
@@ -219,7 +219,6 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 				f.OutputInfo.OutputType,
 				output,
 				functionOutput,
-				functionInvocation.CombineValidationResults,
 				functionIndex,
 				messages,
 			)
@@ -280,7 +279,7 @@ func intConstraintString(constraints api.ValueConstraints) string {
 
 // ValidateAndBuildArguments validates function arguments and builds an in-order argument list.
 // It returns the validated arguments or an error if validation fails.
-func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.FunctionSignature, castStringArgsToScalars bool) ([]api.FunctionArgument, error) {
+func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.FunctionSignature) ([]api.FunctionArgument, error) {
 	nargs := len(invocation.Arguments)
 	if nargs < f.RequiredParameters {
 		usage := fmt.Sprintf("insufficient arguments: got %d, expected %d:", nargs, f.RequiredParameters)
@@ -361,28 +360,20 @@ func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.Functi
 		case string:
 			switch parameter.DataType {
 			case api.DataTypeInt:
-				if castStringArgsToScalars {
-					intVal, err := strconv.Atoi(v)
-					if err != nil {
-						return nil, fmt.Errorf("cannot convert argument %s value %s to int: %w", argumentName, v, err)
-					}
-					invocation.Arguments[i].Value = intVal
-					if !validateIntArg(intVal, parameter.ValueConstraints) {
-						return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, intVal, intConstraintString(parameter.ValueConstraints))
-					}
-				} else {
-					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
+				intVal, err := strconv.Atoi(v)
+				if err != nil {
+					return nil, fmt.Errorf("cannot convert argument %s value %s to int: %w", argumentName, v, err)
+				}
+				invocation.Arguments[i].Value = intVal
+				if !validateIntArg(intVal, parameter.ValueConstraints) {
+					return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, intVal, intConstraintString(parameter.ValueConstraints))
 				}
 			case api.DataTypeBool:
-				if castStringArgsToScalars {
-					boolVal, err := strconv.ParseBool(v)
-					if err != nil {
-						return nil, fmt.Errorf("cannot convert argument %s value %s to bool: %w", argumentName, v, err)
-					}
-					invocation.Arguments[i].Value = boolVal
-				} else {
-					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)
+				boolVal, err := strconv.ParseBool(v)
+				if err != nil {
+					return nil, fmt.Errorf("cannot convert argument %s value %s to bool: %w", argumentName, v, err)
 				}
+				invocation.Arguments[i].Value = boolVal
 			default:
 				if !api.DataTypeIsSerializedAsString(parameter.DataType) {
 					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)

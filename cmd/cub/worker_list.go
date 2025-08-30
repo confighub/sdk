@@ -37,15 +37,21 @@ func init() {
 func workerListCmdRun(_ *cobra.Command, _ []string) error {
 	var workers []*goclientnew.ExtendedBridgeWorker
 	var err error
+
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
 		// Cross-space listing
-		workers, err = apiListAllBridgeWorkers(where, selectFields)
+		workers, err = apiListAllBridgeWorkers(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Single space listing
-		workers, err = apiListBridgeworkers(selectedSpaceID, where, selectFields)
+		workers, err = apiListBridgeworkers(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -54,10 +60,13 @@ func workerListCmdRun(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	newParams := &goclientnew.ListBridgeWorkersParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -84,11 +93,12 @@ func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string
 	return workers, nil
 }
 
-func apiListAllBridgeWorkers(whereFilter string, selectParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
+func apiListAllBridgeWorkers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	newParams := &goclientnew.ListAllBridgeWorkersParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	// Note: ListAllBridgeWorkersParams doesn't support Filter parameter yet
 	if contains != "" {
 		newParams.Contains = &contains
 	}

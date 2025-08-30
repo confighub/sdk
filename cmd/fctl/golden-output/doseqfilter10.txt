@@ -41,7 +41,9 @@ spec:
         - containerPort: 4318
 OUTPUT
 ------
-{
-  "Passed": true,
-  "Index": 0
-}
+[
+  {
+    "Passed": true,
+    "Index": 0
+  }
+]

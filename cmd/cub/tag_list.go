@@ -61,13 +61,18 @@ func tagListCmdRun(cmd *cobra.Command, args []string) error {
 	var extendedTags []*goclientnew.ExtendedTag
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		extendedTags, err = apiSearchTags(where, selectFields)
+		extendedTags, err = apiSearchTags(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedTags, err = apiListTags(selectedSpaceID, where, selectFields)
+		extendedTags, err = apiListTags(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -104,12 +109,15 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 	table.Render()
 }
 
-func apiListTags(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedTag, error) {
+func apiListTags(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
 	newParams := &goclientnew.ListTagsParams{}
 	include := "SpaceID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -134,10 +142,13 @@ func apiListTags(spaceID string, whereFilter string, selectParam string) ([]*goc
 	return tags, nil
 }
 
-func apiSearchTags(whereFilter string, selectParam string) ([]*goclientnew.ExtendedTag, error) {
+func apiSearchTags(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
 	newParams := &goclientnew.ListAllTagsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

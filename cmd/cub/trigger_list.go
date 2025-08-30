@@ -50,7 +50,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Enforced", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments"}
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Enforced", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
 // Trigger-specific aliases
 var triggerAliases = map[string]string{
@@ -70,13 +70,18 @@ func triggerListCmdRun(cmd *cobra.Command, args []string) error {
 	var extendedTriggers []*goclientnew.ExtendedTrigger
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		extendedTriggers, err = apiSearchTriggers(where, selectFields)
+		extendedTriggers, err = apiSearchTriggers(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedTriggers, err = apiListTriggers(selectedSpaceID, where, selectFields)
+		extendedTriggers, err = apiListTriggers(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -93,7 +98,7 @@ func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Enforced", "Toolchain-Type", "Function-Name", "Num-Args"})
+		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Enforced", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
@@ -107,6 +112,10 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
 		}
+		invocationSlug := ""
+		if t.Invocation != nil {
+			invocationSlug = t.Invocation.Slug
+		}
 		table.Append([]string{
 			trigger.Slug,
 			spaceSlug,
@@ -118,20 +127,24 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			trigger.ToolchainType,
 			trigger.FunctionName,
 			fmt.Sprintf("%d", len(trigger.Arguments)),
+			invocationSlug,
 		})
 	}
 	table.Render()
 }
 
-func apiListTriggers(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedTrigger, error) {
+func apiListTriggers(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
 	newParams := &goclientnew.ListTriggersParams{}
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,InvocationID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
@@ -153,7 +166,7 @@ func apiListTriggers(spaceID string, whereFilter string, selectParam string) ([]
 	return triggers, nil
 }
 
-func apiSearchTriggers(whereFilter string, selectParam string) ([]*goclientnew.ExtendedTrigger, error) {
+func apiSearchTriggers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
 	newParams := &goclientnew.ListAllTriggersParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -161,8 +174,11 @@ func apiSearchTriggers(whereFilter string, selectParam string) ([]*goclientnew.E
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
+	}
 
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,InvocationID"
 	newParams.Include = &include
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

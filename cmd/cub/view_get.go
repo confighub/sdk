@@ -34,12 +34,12 @@ func init() {
 }
 
 func viewGetCmdRun(cmd *cobra.Command, args []string) error {
-	viewDetails, err := apiGetViewFromSlug(args[0], selectFields)
+	viewDetails, err := apiGetExtendedViewFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(viewDetails, displayViewDetails)
+	displayGetResults(viewDetails, displayExtendedViewDetails)
 	return nil
 }
 
@@ -57,17 +57,39 @@ func formatColumnsForDetails(columns []goclientnew.Column) string {
 }
 
 func displayViewDetails(viewDetails *goclientnew.View) {
+	// Create an ExtendedView wrapper with just the View set
+	extendedView := &goclientnew.ExtendedView{
+		View: viewDetails,
+		// All other fields (Space, Filter, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedViewDetails(extendedView)
+}
+
+func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
+	viewDetails := extendedView.View
 	view := tableView()
 	view.Append([]string{"ID", viewDetails.ViewID.String()})
 	view.Append([]string{"Name", viewDetails.Slug})
-	view.Append([]string{"Display Name", viewDetails.DisplayName})
-	view.Append([]string{"Space ID", viewDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedView.Space != nil {
+		view.Append([]string{"Space", extendedView.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", viewDetails.SpaceID.String()})
+	}
+	
 	view.Append([]string{"Created At", viewDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", viewDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(viewDetails.Labels)})
 	view.Append([]string{"Annotations", annotationsToString(viewDetails.Annotations)})
 	view.Append([]string{"Organization ID", viewDetails.OrganizationID.String()})
-	view.Append([]string{"Filter ID", viewDetails.FilterID.String()})
+	
+	// Show Filter slug when available
+	if extendedView.Filter != nil {
+		view.Append([]string{"Filter", extendedView.Filter.Slug})
+	} else {
+		view.Append([]string{"Filter ID", viewDetails.FilterID.String()})
+	}
 	
 	if len(viewDetails.Columns) > 0 {
 		view.Append([]string{"Columns", formatColumnsForDetails(viewDetails.Columns)})
@@ -89,8 +111,16 @@ func displayViewDetails(viewDetails *goclientnew.View) {
 }
 
 func apiGetView(viewID string, selectParam string) (*goclientnew.View, error) {
+	extendedView, err := apiGetExtendedView(viewID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedView.View, nil
+}
+
+func apiGetExtendedView(viewID string, selectParam string) (*goclientnew.ExtendedView, error) {
 	newParams := &goclientnew.GetViewParams{}
-	include := "FilterID"
+	include := "SpaceID,FilterID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -100,10 +130,36 @@ func apiGetView(viewID string, selectParam string) (*goclientnew.View, error) {
 	if IsAPIError(err, viewRes) {
 		return nil, InterpretErrorGeneric(err, viewRes)
 	}
-	return viewRes.JSON200.View, nil
+	return viewRes.JSON200, nil
 }
 
 func apiGetViewFromSlug(slug string, selectParam string) (*goclientnew.View, error) {
+	return apiGetViewFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetExtendedViewFromSlug(slug string, selectParam string) (*goclientnew.ExtendedView, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedView(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	views, err := apiListViews(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	// find view by slug
+	for _, view := range views {
+		if view.View != nil && view.View.Slug == slug {
+			return view, nil
+		}
+	}
+	return nil, fmt.Errorf("view %s not found in space %s", slug, selectedSpaceID)
+}
+
+func apiGetViewFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.View, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetView(id.String(), selectParam)
@@ -112,7 +168,7 @@ func apiGetViewFromSlug(slug string, selectParam string) (*goclientnew.View, err
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	views, err := apiListViews(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	views, err := apiListViews(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -122,5 +178,13 @@ func apiGetViewFromSlug(slug string, selectParam string) (*goclientnew.View, err
 			return view.View, nil
 		}
 	}
-	return nil, fmt.Errorf("view %s not found in space %s", slug, selectedSpaceSlug)
+	
+	// Get space slug for error message
+	spaceSlug := spaceID
+	if spaceUUID, err := uuid.Parse(spaceID); err == nil {
+		if space, err := apiGetSpace(spaceUUID.String(), "Slug"); err == nil && space != nil {
+			spaceSlug = space.Slug
+		}
+	}
+	return nil, fmt.Errorf("view %s not found in space %s", slug, spaceSlug)
 }

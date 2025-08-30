@@ -33,29 +33,49 @@ func init() {
 }
 
 func invocationGetCmdRun(cmd *cobra.Command, args []string) error {
-	invocationDetails, err := apiGetInvocationFromSlug(args[0], selectFields)
+	invocationDetails, err := apiGetExtendedInvocationFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(invocationDetails, displayInvocationDetails)
+	displayGetResults(invocationDetails, displayExtendedInvocationDetails)
 	return nil
 }
 
 func displayInvocationDetails(invocationDetails *goclientnew.Invocation) {
+	// Create an ExtendedInvocation wrapper with just the Invocation set
+	extendedInvocation := &goclientnew.ExtendedInvocation{
+		Invocation: invocationDetails,
+		// All other fields (Space, BridgeWorker, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedInvocationDetails(extendedInvocation)
+}
+
+func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedInvocation) {
+	invocationDetails := extendedInvocation.Invocation
 	view := tableView()
 	view.Append([]string{"ID", invocationDetails.InvocationID.String()})
 	view.Append([]string{"Name", invocationDetails.Slug})
-	view.Append([]string{"Display Name", invocationDetails.DisplayName})
-	view.Append([]string{"Space ID", invocationDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedInvocation.Space != nil {
+		view.Append([]string{"Space", extendedInvocation.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", invocationDetails.SpaceID.String()})
+	}
 	view.Append([]string{"Created At", invocationDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", invocationDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(invocationDetails.Labels)})
 	view.Append([]string{"Annotations", annotationsToString(invocationDetails.Annotations)})
 	view.Append([]string{"Organization ID", invocationDetails.OrganizationID.String()})
-	if invocationDetails.BridgeWorkerID != nil && *invocationDetails.BridgeWorkerID != uuid.Nil {
+	
+	// Show BridgeWorker slug instead of BridgeWorkerID when available
+	if extendedInvocation.BridgeWorker != nil {
+		view.Append([]string{"Worker", extendedInvocation.BridgeWorker.Slug})
+	} else if invocationDetails.BridgeWorkerID != nil && *invocationDetails.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", invocationDetails.BridgeWorkerID.String()})
 	}
+	
 	view.Append([]string{"Toolchain Type", invocationDetails.ToolchainType})
 	view.Append([]string{"Function Name", invocationDetails.FunctionName})
 	for i := range invocationDetails.Arguments {
@@ -72,8 +92,16 @@ func displayInvocationDetails(invocationDetails *goclientnew.Invocation) {
 }
 
 func apiGetInvocation(invocationID string, selectParam string) (*goclientnew.Invocation, error) {
+	extendedInvocation, err := apiGetExtendedInvocation(invocationID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedInvocation.Invocation, nil
+}
+
+func apiGetExtendedInvocation(invocationID string, selectParam string) (*goclientnew.ExtendedInvocation, error) {
 	newParams := &goclientnew.GetInvocationParams{}
-	include := "BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -83,10 +111,14 @@ func apiGetInvocation(invocationID string, selectParam string) (*goclientnew.Inv
 	if IsAPIError(err, invocationRes) {
 		return nil, InterpretErrorGeneric(err, invocationRes)
 	}
-	return invocationRes.JSON200.Invocation, nil
+	return invocationRes.JSON200, nil
 }
 
 func apiGetInvocationFromSlug(slug string, selectParam string) (*goclientnew.Invocation, error) {
+	return apiGetInvocationFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetInvocationFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Invocation, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetInvocation(id.String(), selectParam)
@@ -95,7 +127,7 @@ func apiGetInvocationFromSlug(slug string, selectParam string) (*goclientnew.Inv
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	invocations, err := apiListInvocations(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	invocations, err := apiListInvocations(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -105,5 +137,27 @@ func apiGetInvocationFromSlug(slug string, selectParam string) (*goclientnew.Inv
 			return invocation.Invocation, nil
 		}
 	}
-	return nil, fmt.Errorf("invocation %s not found in space %s", slug, selectedSpaceSlug)
+	return nil, fmt.Errorf("invocation %s not found in space %s", slug, spaceID)
+}
+
+func apiGetExtendedInvocationFromSlug(slug string, selectParam string) (*goclientnew.ExtendedInvocation, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedInvocation(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	invocations, err := apiListInvocations(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	// find invocation by slug
+	for _, invocation := range invocations {
+		if invocation.Invocation != nil && invocation.Invocation.Slug == slug {
+			return invocation, nil
+		}
+	}
+	return nil, fmt.Errorf("invocation %s not found in space %s", slug, selectedSpaceID)
 }

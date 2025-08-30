@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -47,6 +48,7 @@ func init() {
 	addStandardDeleteFlags(linkDeleteCmd)
 	enableWaitFlag(linkDeleteCmd)
 	enableWhereFlag(linkDeleteCmd)
+	enableFilterFlag(linkDeleteCmd)
 	linkDeleteCmd.Flags().StringSliceVar(&linkDeleteIdentifiers, "link", []string{}, "target specific links by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	linkCmd.AddCommand(linkDeleteCmd)
 }
@@ -113,11 +115,23 @@ func handleBulkLinkDeleteResponse(responses200 *[]goclientnew.DeleteResponse, re
 
 func checkLinkDeleteConflictingArgs(args []string) bool {
 	// Check for bulk delete mode
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(linkDeleteIdentifiers) > 0)
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(linkDeleteIdentifiers) > 0) {
-		fmt.Printf("Error: --where and --link flags can only be used in bulk mode (without positional arguments)\n")
-		return false
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --invocation and --where flags
+		if len(linkDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--link and --where flags are mutually exclusive"))
+		}
+
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single invocation delete requires exactly one argument: <slug or id>"))
+		}
+
+		if filter != "" || where != "" || len(linkDeleteIdentifiers) > 0 {
+			failOnError(errors.New("--filter, --where, and --link flags can only be used in bulk mode (without positional arguments)"))
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
@@ -128,6 +142,12 @@ func checkLinkDeleteConflictingArgs(args []string) bool {
 }
 
 func runBulkLinkDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	var effectiveWhere string
 	if len(linkDeleteIdentifiers) > 0 {
 		whereClause, err := buildWhereClauseFromLinks(linkDeleteIdentifiers)
@@ -147,6 +167,9 @@ func runBulkLinkDelete() error {
 	params := &goclientnew.BulkDeleteLinksParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 	if contains != "" {
 		params.Contains = &contains

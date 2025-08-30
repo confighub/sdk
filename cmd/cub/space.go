@@ -50,7 +50,9 @@ func addSpaceFlags(cmd *cobra.Command) {
 
 // to be used by sub-commands that requires space ID
 func spacePreRunE(cmd *cobra.Command, args []string) error {
-	globalPreRun(cmd, args)
+	if err := globalPreRun(cmd, args); err != nil {
+		return err
+	}
 
 	if spaceFlag != "" {
 		if spaceFlag == "*" {
@@ -70,11 +72,25 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 		selectedSpaceSlug = space.Slug
 		return nil
 	}
-	if cubContext.SpaceID == "" {
+	// Check if we have space information
+	ctx := contextManager.ActiveContext()
+	if ctx == nil {
+		return fmt.Errorf("no context available")
+	}
+	if ctx.Settings.DefaultSpace == "" {
 		return fmt.Errorf("space is required. Set with --space option or set in context with the context sub-command")
 	}
-	selectedSpaceID = cubContext.SpaceID
-	selectedSpaceSlug = cubContext.Space
+	if selectedSpaceID == "" {
+		// Any message output here messes up json and jq output, output only for functions, config data only, etc.
+		// tprint("Space ID is not set. Fetching for space name %s", ctx.Settings.DefaultSpace)
+		space, err := apiGetSpaceFromSlug(ctx.Settings.DefaultSpace, "")
+		// Note: If the DefaultSpace has been deleted, this will fail.
+		if err != nil {
+			return fmt.Errorf("failed to resolve space %s: %w", ctx.Settings.DefaultSpace, err)
+		}
+		selectedSpaceID = space.SpaceID.String()
+		selectedSpaceSlug = space.Slug
+	}
 	return nil
 }
 

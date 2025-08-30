@@ -68,38 +68,59 @@ func formatFunctionArgumentValue(value *goclientnew.FunctionArgument_Value) stri
 	return fmt.Sprintf("%v", value)
 }
 
-func displayTriggerDetails(triggerDetails *goclientnew.Trigger) {
+func displayTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {
+	trigger := extendedTrigger.Trigger
 	view := tableView()
-	view.Append([]string{"ID", triggerDetails.TriggerID.String()})
-	view.Append([]string{"Name", triggerDetails.Slug})
-	view.Append([]string{"Space ID", triggerDetails.SpaceID.String()})
-	view.Append([]string{"Created At", triggerDetails.CreatedAt.String()})
-	view.Append([]string{"Updated At", triggerDetails.UpdatedAt.String()})
-	view.Append([]string{"Labels", labelsToString(triggerDetails.Labels)})
-	view.Append([]string{"Annotations", annotationsToString(triggerDetails.Annotations)})
-	view.Append([]string{"Organization ID", triggerDetails.OrganizationID.String()})
-	if triggerDetails.BridgeWorkerID != nil && *triggerDetails.BridgeWorkerID != uuid.Nil {
-		view.Append([]string{"Worker ID", triggerDetails.BridgeWorkerID.String()})
+	view.Append([]string{"ID", trigger.TriggerID.String()})
+	view.Append([]string{"Name", trigger.Slug})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedTrigger.Space != nil {
+		view.Append([]string{"Space", extendedTrigger.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", trigger.SpaceID.String()})
 	}
-	view.Append([]string{"Event", triggerDetails.Event})
-	view.Append([]string{"Validating", strconv.FormatBool(triggerDetails.Validating)})
-	view.Append([]string{"Disabled", strconv.FormatBool(triggerDetails.Disabled)})
-	view.Append([]string{"Enforced", strconv.FormatBool(triggerDetails.Enforced)})
-	view.Append([]string{"Toolchain Type", (triggerDetails.ToolchainType)})
-	view.Append([]string{"Function Name", (triggerDetails.FunctionName)})
-	for i := range triggerDetails.Arguments {
-		argLabel := fmt.Sprintf("Argument %d", i)
-		if triggerDetails.Arguments[i].ParameterName != nil {
-			argLabel = fmt.Sprintf("Argument %d (%s)", i, *triggerDetails.Arguments[i].ParameterName)
+	view.Append([]string{"Created At", trigger.CreatedAt.String()})
+	view.Append([]string{"Updated At", trigger.UpdatedAt.String()})
+	view.Append([]string{"Labels", labelsToString(trigger.Labels)})
+	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
+	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
+	
+	// Show BridgeWorker slug instead of BridgeWorkerID when available
+	if extendedTrigger.BridgeWorker != nil {
+		view.Append([]string{"Worker", extendedTrigger.BridgeWorker.Slug})
+	} else if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
+		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
+	}
+	
+	view.Append([]string{"Event", trigger.Event})
+	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
+	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
+	view.Append([]string{"Enforced", strconv.FormatBool(trigger.Enforced)})
+	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
+	
+	// Show Invocation slug instead of InvocationID when available
+	if extendedTrigger.Invocation != nil {
+		view.Append([]string{"Invocation", extendedTrigger.Invocation.Slug})
+	} else if trigger.InvocationID != nil && *trigger.InvocationID != uuid.Nil {
+		view.Append([]string{"Invocation ID", trigger.InvocationID.String()})
+	}
+	if trigger.FunctionName != "" {
+		view.Append([]string{"Function Name", (trigger.FunctionName)})
+		for i := range trigger.Arguments {
+			argLabel := fmt.Sprintf("Argument %d", i)
+			if trigger.Arguments[i].ParameterName != nil {
+				argLabel = fmt.Sprintf("Argument %d (%s)", i, *trigger.Arguments[i].ParameterName)
+			}
+			view.Append([]string{argLabel, formatFunctionArgumentValue(trigger.Arguments[i].Value)})
 		}
-		view.Append([]string{argLabel, formatFunctionArgumentValue(triggerDetails.Arguments[i].Value)})
 	}
 	view.Render()
 }
 
-func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.Trigger, error) {
+func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
 	newParams := &goclientnew.GetTriggerParams{}
-	include := "BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -109,10 +130,26 @@ func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.Trigger, 
 	if IsAPIError(err, triggerRes) {
 		return nil, InterpretErrorGeneric(err, triggerRes)
 	}
-	return triggerRes.JSON200.Trigger, nil
+	return triggerRes.JSON200, nil
 }
 
-func apiGetTriggerFromSlug(slug string, selectParam string) (*goclientnew.Trigger, error) {
+func apiGetTriggerFromSlug(slug string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
+	return apiGetTriggerFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+// apiGetTriggerFromSlugInSpaceCore returns just the Trigger, for use with parseEntityIdentifiers
+func apiGetTriggerFromSlugInSpaceCore(slug string, spaceID string, selectParam string) (*goclientnew.Trigger, error) {
+	extendedTrigger, err := apiGetTriggerFromSlugInSpace(slug, spaceID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	if extendedTrigger.Trigger == nil {
+		return nil, fmt.Errorf("trigger data not found")
+	}
+	return extendedTrigger.Trigger, nil
+}
+
+func apiGetTriggerFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetTrigger(id.String(), selectParam)
@@ -121,15 +158,15 @@ func apiGetTriggerFromSlug(slug string, selectParam string) (*goclientnew.Trigge
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	triggers, err := apiListTriggers(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	triggers, err := apiListTriggers(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
 	// find trigger by slug
 	for _, trigger := range triggers {
 		if trigger.Trigger != nil && trigger.Trigger.Slug == slug {
-			return trigger.Trigger, nil
+			return trigger, nil
 		}
 	}
-	return nil, fmt.Errorf("trigger %s not found in space %s", slug, selectedSpaceSlug)
+	return nil, fmt.Errorf("trigger %s not found in space %s", slug, spaceID)
 }

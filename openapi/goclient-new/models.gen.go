@@ -190,7 +190,7 @@ type BridgeWorker struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
-	UserID    *UUID     `json:"UserID"`
+	UserID    *UUID     `json:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
@@ -262,11 +262,11 @@ type ChangeSet struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty"`
-	EndTagID    *UUID  `json:"EndTagID"`
+	EndTagID    *UUID  `json:"EndTagID,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty"`
-	FilterID   *UUID  `json:"FilterID"`
+	FilterID   *UUID  `json:"FilterID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty"`
@@ -279,7 +279,7 @@ type ChangeSet struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID    openapi_types.UUID `json:"SpaceID,omitempty"`
-	StartTagID *UUID              `json:"StartTagID"`
+	StartTagID *UUID              `json:"StartTagID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty"`
@@ -593,7 +593,12 @@ type ExtendedSpace struct {
 	Space                      *Space         `json:"Space,omitempty"`
 	TargetCountByToolchainType map[string]int `json:"TargetCountByToolchainType"`
 	TotalBridgeWorkerCount     int64          `json:"TotalBridgeWorkerCount,omitempty"`
+	TotalChangeSetCount        int64          `json:"TotalChangeSetCount,omitempty"`
+	TotalFilterCount           int64          `json:"TotalFilterCount,omitempty"`
+	TotalInvocationCount       int64          `json:"TotalInvocationCount,omitempty"`
+	TotalTagCount              int64          `json:"TotalTagCount,omitempty"`
 	TotalUnitCount             int64          `json:"TotalUnitCount,omitempty"`
+	TotalViewCount             int64          `json:"TotalViewCount,omitempty"`
 	TriggerCountByEventType    map[string]int `json:"TriggerCountByEventType"`
 	UnappliedUnitCount         int64          `json:"UnappliedUnitCount,omitempty"`
 	UnapprovedUnitCount        int64          `json:"UnapprovedUnitCount,omitempty"`
@@ -675,8 +680,19 @@ type ExtendedTrigger struct {
 // ExtendedUnit Unit with capability to extend additional related entities.
 type ExtendedUnit struct {
 	// ApprovedBy the users that have approved the latest revision of the config data.
-	ApprovedBy []User         `json:"ApprovedBy,omitempty"`
-	Error      *ResponseError `json:"Error,omitempty"`
+	ApprovedBy []User `json:"ApprovedBy,omitempty"`
+
+	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
+	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
+	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
+	// to be applied. Bridge workers are responsible for executing configuration changes on
+	// remote targets and reporting status back to ConfigHub.
+	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
+	// required for authentication with the ConfigHub server. These credentials allow the
+	// bridge worker to establish a secure connection and receive configuration actions.
+	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty"`
+	FromLink     []Link         `json:"FromLink,omitempty"`
 
 	// HeadMutation Mutation is a single source of mutation for a Revision.
 	HeadMutation *Mutation `json:"HeadMutation,omitempty"`
@@ -783,7 +799,7 @@ type Filter struct {
 
 	// From From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.
 	From        string `json:"From"`
-	FromSpaceID *UUID  `json:"FromSpaceID"`
+	FromSpaceID *UUID  `json:"FromSpaceID,omitempty"`
 
 	// Hash SHA256 hash of the filter parameters encoded as hexadecimal. (readonly)
 	Hash string `json:"Hash,omitempty"`
@@ -858,23 +874,23 @@ type FunctionInvocationList = []FunctionInvocation
 
 // FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
 type FunctionInvocationsRequest struct {
-	BridgeWorkerID *UUID `json:"BridgeWorkerID"`
-
-	// CastStringArgsToScalars CastStringArgsToScalars indicates whether to expect string arguments and cast them to int and bool types as necessary.
-	CastStringArgsToScalars bool `json:"CastStringArgsToScalars,omitempty"`
+	BridgeWorkerID *UUID `json:"BridgeWorkerID,omitempty"`
 
 	// ChangeDescription ChangeDescription is a description of the change being made, if any.
-	ChangeDescription string `json:"ChangeDescription,omitempty"`
-
-	// CombineResults CombineResults indicates whether to combine the Outputs of all functions in the FunctionInvocations list. In the case of ValidationResult, the Passed results are ANDed together and a single ValidationResult is returned instead of a ValidationResultList. In the case of AttributeValueList and ResourceInfoList, the lists are concatenated. All output-generating functions must return the same OutputType, or only the first OutputType will be returned. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
-	CombineResults      bool                    `json:"CombineResults,omitempty"`
+	ChangeDescription   string                  `json:"ChangeDescription,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations"`
+
+	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
+	Invocations []UUID `json:"Invocations,omitempty"`
 
 	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
 	NumFilters int `json:"NumFilters,omitempty"`
 
 	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
 	StopOnError bool `json:"StopOnError,omitempty"`
+
+	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
+	Triggers []UUID `json:"Triggers,omitempty"`
 
 	// UseFunctionWorker UseFunctionWorker indicates whether to use the function worker or the builtin function executor, which is the default. The FunctionInvocations are forwarded to the executor/worker, so all must be executable by the same executor/worker currently.
 	UseFunctionWorker bool `json:"UseFunctionWorker,omitempty"`
@@ -1024,7 +1040,7 @@ type Invocation struct {
 
 	// Arguments Function arguments
 	Arguments      []FunctionArgument `json:"Arguments"`
-	BridgeWorkerID *UUID              `json:"BridgeWorkerID"`
+	BridgeWorkerID *UUID              `json:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1155,8 +1171,8 @@ type Mutation struct {
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty"`
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty"`
-	InvocationID       *UUID               `json:"InvocationID"`
-	LinkID             *UUID               `json:"LinkID"`
+	InvocationID       *UUID               `json:"InvocationID,omitempty"`
+	LinkID             *UUID               `json:"LinkID,omitempty"`
 
 	// MutationID Unique identifier for a Mutation.
 	MutationID openapi_types.UUID `json:"MutationID,omitempty"`
@@ -1182,7 +1198,7 @@ type Mutation struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty"`
-	TriggerID *UUID              `json:"TriggerID"`
+	TriggerID *UUID              `json:"TriggerID,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty"`
@@ -1680,7 +1696,7 @@ type Trigger struct {
 
 	// Arguments Function arguments
 	Arguments      []FunctionArgument `json:"Arguments"`
-	BridgeWorkerID *UUID              `json:"BridgeWorkerID"`
+	BridgeWorkerID *UUID              `json:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1707,7 +1723,7 @@ type Trigger struct {
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty"`
-	InvocationID *UUID  `json:"InvocationID"`
+	InvocationID *UUID  `json:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty"`
@@ -1779,7 +1795,8 @@ type Unit struct {
 	ApplyGates map[string]bool `json:"ApplyGates,omitempty"`
 
 	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy"`
+	ApprovedBy     []UUID `json:"ApprovedBy"`
+	BridgeWorkerID *UUID  `json:"BridgeWorkerID,omitempty"`
 
 	// ContentHash The CRC32 hash of the configuration data.
 	ContentHash int `json:"ContentHash,omitempty"`
@@ -1798,6 +1815,9 @@ type Unit struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty"`
+
+	// FromLinkID IDs of Links originating from this Unit.
+	FromLinkID []UUID `json:"FromLinkID"`
 
 	// HeadMutationNum Sequence number the head Mutation.
 	HeadMutationNum int64 `json:"HeadMutationNum,omitempty"`
@@ -1829,14 +1849,14 @@ type Unit struct {
 
 	// PreviousLiveRevisionNum Sequence number the previous Revision applied. 0 if no live revision.
 	PreviousLiveRevisionNum int64 `json:"PreviousLiveRevisionNum,omitempty"`
-	SetID                   *UUID `json:"SetID"`
+	SetID                   *UUID `json:"SetID,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug"`
 
 	// SpaceID Unique identifier for a space.
 	SpaceID  openapi_types.UUID `json:"SpaceID,omitempty"`
-	TargetID *UUID              `json:"TargetID"`
+	TargetID *UUID              `json:"TargetID,omitempty"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties".
 	ToolchainType string `json:"ToolchainType"`
@@ -1846,12 +1866,12 @@ type Unit struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt              time.Time `json:"UpdatedAt,omitempty"`
-	UpstreamOrganizationID *UUID     `json:"UpstreamOrganizationID"`
+	UpstreamOrganizationID *UUID     `json:"UpstreamOrganizationID,omitempty"`
 
 	// UpstreamRevisionNum Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded.
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty"`
-	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID"`
-	UpstreamUnitID      *UUID `json:"UpstreamUnitID"`
+	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID,omitempty"`
+	UpstreamUnitID      *UUID `json:"UpstreamUnitID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty"`
@@ -1893,7 +1913,7 @@ type UnitCreateOrUpdateResponse struct {
 // and consistency of the provisioned configuration compared to what is defined in the Unit.
 type UnitEvent struct {
 	Action         *ActionType `json:"Action,omitempty"`
-	BridgeWorkerID *UUID       `json:"BridgeWorkerID"`
+	BridgeWorkerID *UUID       `json:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
@@ -1969,7 +1989,7 @@ type UnitStatus struct {
 
 // UnitTagRequest defines model for UnitTagRequest.
 type UnitTagRequest struct {
-	// Revision Which Unit revision to tag: 'HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	// Revision Which Unit revision to tag: 'HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', or 'Remove' to remove the tag from the unit
 	Revision string             `json:"Revision,omitempty"`
 	TagID    openapi_types.UUID `json:"TagID,omitempty"`
 }
@@ -2087,7 +2107,7 @@ type WorkerInfo struct {
 // BulkDeleteSpacesParams defines parameters for BulkDeleteSpaces.
 type BulkDeleteSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2111,12 +2131,25 @@ type BulkDeleteSpacesParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2166,7 +2199,7 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 // BulkPatchSpacesParams defines parameters for BulkPatchSpaces.
 type BulkPatchSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2190,12 +2223,25 @@ type BulkPatchSpacesParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2245,7 +2291,7 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 // BulkCreateSpacesParams defines parameters for BulkCreateSpaces.
 type BulkCreateSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2269,12 +2315,25 @@ type BulkCreateSpacesParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2309,7 +2368,7 @@ type BulkCreateSpacesParams struct {
 // BulkDeleteBridgeWorkersParams defines parameters for BulkDeleteBridgeWorkers.
 type BulkDeleteBridgeWorkersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2333,12 +2392,25 @@ type BulkDeleteBridgeWorkersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (BridgeWorker).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2365,22 +2437,12 @@ type BulkDeleteBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
-
-	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	// If not specified, all fields are returned.
-	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
-	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-	// The whole string must be query-encoded.
-	Select *string `form:"select,omitempty" json:"select,omitempty"`
 }
 
 // ListAllBridgeWorkersParams defines parameters for ListAllBridgeWorkers.
 type ListAllBridgeWorkersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2404,7 +2466,7 @@ type ListAllBridgeWorkersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
@@ -2474,7 +2536,7 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 // BulkPatchBridgeWorkersParams defines parameters for BulkPatchBridgeWorkers.
 type BulkPatchBridgeWorkersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2498,12 +2560,25 @@ type BulkPatchBridgeWorkersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (BridgeWorker).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2535,7 +2610,7 @@ type BulkPatchBridgeWorkersParams struct {
 // BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
 type BulkDeleteChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2559,12 +2634,25 @@ type BulkDeleteChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2596,7 +2684,7 @@ type BulkDeleteChangeSetsParams struct {
 // ListAllChangeSetsParams defines parameters for ListAllChangeSets.
 type ListAllChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2620,12 +2708,25 @@ type ListAllChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2690,7 +2791,7 @@ type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 // BulkPatchChangeSetsParams defines parameters for BulkPatchChangeSets.
 type BulkPatchChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2714,12 +2815,25 @@ type BulkPatchChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2774,7 +2888,7 @@ type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 // BulkCreateChangeSetsParams defines parameters for BulkCreateChangeSets.
 type BulkCreateChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2798,12 +2912,25 @@ type BulkCreateChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2835,7 +2962,7 @@ type BulkCreateChangeSetsParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2859,7 +2986,7 @@ type BulkCreateChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -2867,12 +2994,25 @@ type BulkCreateChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkDeleteFiltersParams defines parameters for BulkDeleteFilters.
 type BulkDeleteFiltersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Filters returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2896,12 +3036,25 @@ type BulkDeleteFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -2933,7 +3086,7 @@ type BulkDeleteFiltersParams struct {
 // ListAllFiltersParams defines parameters for ListAllFilters.
 type ListAllFiltersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Filters returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -2957,12 +3110,25 @@ type ListAllFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3028,7 +3194,7 @@ type BulkPatchFiltersApplicationMergePatchPlusJSONBody struct {
 // BulkPatchFiltersParams defines parameters for BulkPatchFilters.
 type BulkPatchFiltersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Filters returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3052,12 +3218,25 @@ type BulkPatchFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3113,7 +3292,7 @@ type BulkCreateFiltersApplicationMergePatchPlusJSONBody struct {
 // BulkCreateFiltersParams defines parameters for BulkCreateFilters.
 type BulkCreateFiltersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Filters returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3137,12 +3316,25 @@ type BulkCreateFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3174,7 +3366,7 @@ type BulkCreateFiltersParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3198,7 +3390,7 @@ type BulkCreateFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -3206,6 +3398,19 @@ type BulkCreateFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // InvokeFunctionsOnOrgParams defines parameters for InvokeFunctionsOnOrg.
@@ -3238,20 +3443,33 @@ type InvokeFunctionsOnOrgParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // BulkDeleteInvocationsParams defines parameters for BulkDeleteInvocations.
 type BulkDeleteInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3275,12 +3493,25 @@ type BulkDeleteInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3312,7 +3543,7 @@ type BulkDeleteInvocationsParams struct {
 // ListAllInvocationsParams defines parameters for ListAllInvocations.
 type ListAllInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3336,12 +3567,25 @@ type ListAllInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3410,7 +3654,7 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 // BulkPatchInvocationsParams defines parameters for BulkPatchInvocations.
 type BulkPatchInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3434,12 +3678,25 @@ type BulkPatchInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3498,7 +3755,7 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 // BulkCreateInvocationsParams defines parameters for BulkCreateInvocations.
 type BulkCreateInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3522,12 +3779,25 @@ type BulkCreateInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3559,7 +3829,7 @@ type BulkCreateInvocationsParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3583,7 +3853,7 @@ type BulkCreateInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -3591,12 +3861,25 @@ type BulkCreateInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkDeleteLinksParams defines parameters for BulkDeleteLinks.
 type BulkDeleteLinksParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Links returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3620,7 +3903,7 @@ type BulkDeleteLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
 	//
@@ -3628,6 +3911,19 @@ type BulkDeleteLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Link list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Link).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3659,7 +3955,7 @@ type BulkDeleteLinksParams struct {
 // SearchListLinksParams defines parameters for SearchListLinks.
 type SearchListLinksParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Links returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3683,12 +3979,25 @@ type SearchListLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Link list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Link).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3752,7 +4061,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 // BulkPatchLinksParams defines parameters for BulkPatchLinks.
 type BulkPatchLinksParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Links returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3776,7 +4085,7 @@ type BulkPatchLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
 	//
@@ -3784,6 +4093,19 @@ type BulkPatchLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Link list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Link).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -3837,7 +4159,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 // BulkCreateLinksParams defines parameters for BulkCreateLinks.
 type BulkCreateLinksParams struct {
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3861,7 +4183,7 @@ type BulkCreateLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -3870,8 +4192,21 @@ type BulkCreateLinksParams struct {
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
 
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
+
 	// WhereToSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -3895,7 +4230,7 @@ type BulkCreateLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -3903,6 +4238,19 @@ type BulkCreateLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereToSpace *string `form:"where_to_space,omitempty" json:"where_to_space,omitempty"`
+
+	// FilterToSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterToSpace *string `form:"filter_to_space,omitempty" json:"filter_to_space,omitempty"`
 
 	// WhereFrom The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
@@ -3929,14 +4277,27 @@ type BulkCreateLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Where expression to select FromUnits for created links
 	//
 	// The whole string must be query-encoded.
 	WhereFrom *string `form:"where_from,omitempty" json:"where_from,omitempty"`
+
+	// FilterFrom UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterFrom *string `form:"filter_from,omitempty" json:"filter_from,omitempty"`
 
 	// WhereTo The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
@@ -3963,20 +4324,33 @@ type BulkCreateLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Where expression to select ToUnits for created links
 	//
 	// The whole string must be query-encoded.
 	WhereTo *string `form:"where_to,omitempty" json:"where_to,omitempty"`
+
+	// FilterTo UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterTo *string `form:"filter_to,omitempty" json:"filter_to,omitempty"`
 }
 
 // ListOrganizationsParams defines parameters for ListOrganizations.
 type ListOrganizationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Organizations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4000,12 +4374,25 @@ type ListOrganizationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Organization list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Organization).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4069,7 +4456,7 @@ type GetOrganizationParams struct {
 // ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
 type ListOrganizationMembersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of OrganizationMembers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4093,12 +4480,25 @@ type ListOrganizationMembersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on OrganizationMember: DisplayName, ExternalID, Slug, UserID, Username.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the OrganizationMember list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (OrganizationMember).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4118,10 +4518,10 @@ type ListOrganizationMembersParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
 }
 
-// ListSpacesParams defines parameters for ListSpaces.
-type ListSpacesParams struct {
+// ListAllRevisionsParams defines parameters for ListAllRevisions.
+type ListAllRevisionsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Revisions returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4145,12 +4545,109 @@ type ListSpacesParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Revision list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Revision).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Revision are OrganizationID, SpaceID, UnitID, UserID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty"`
+}
+
+// ListSpacesParams defines parameters for ListSpaces.
+type ListSpacesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4238,7 +4735,7 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 // ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
 type ListBridgeWorkersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4262,12 +4759,25 @@ type ListBridgeWorkersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (BridgeWorker).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4351,7 +4861,7 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 // ListChangeSetsParams defines parameters for ListChangeSets.
 type ListChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4375,12 +4885,25 @@ type ListChangeSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, FilterID, Labels, OrganizationID, Slug, SpaceID, StartTagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4467,7 +4990,7 @@ type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 // ListFiltersParams defines parameters for ListFilters.
 type ListFiltersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Filters returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4491,12 +5014,25 @@ type ListFiltersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Filter: CreatedAt, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4626,20 +5162,33 @@ type InvokeFunctionsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
 // ListInvocationsParams defines parameters for ListInvocations.
 type ListInvocationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4663,12 +5212,25 @@ type ListInvocationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4759,7 +5321,7 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 // ListLinksParams defines parameters for ListLinks.
 type ListLinksParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Links returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4783,12 +5345,25 @@ type ListLinksParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Link: CreatedAt, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Link list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Link).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4874,7 +5449,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 // ListSetsParams defines parameters for ListSets.
 type ListSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Sets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4898,12 +5473,25 @@ type ListSetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Set: CreatedAt, DisplayName, Labels, OrganizationID, SetID, Slug, SpaceID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Set list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Set).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -4967,7 +5555,7 @@ type GetSetParams struct {
 // ListTagsParams defines parameters for ListTags.
 type ListTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Tags returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -4991,12 +5579,25 @@ type ListTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5079,7 +5680,7 @@ type PatchTagApplicationMergePatchPlusJSONBody struct {
 // ListTargetsParams defines parameters for ListTargets.
 type ListTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Targets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5103,12 +5704,25 @@ type ListTargetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5195,7 +5809,7 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 // ListTriggersParams defines parameters for ListTriggers.
 type ListTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5219,12 +5833,25 @@ type ListTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5344,14 +5971,27 @@ type ListUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5374,7 +6014,7 @@ type ListUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -5426,14 +6066,27 @@ type ListExtendedUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5456,7 +6109,7 @@ type ListExtendedUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -5478,7 +6131,7 @@ type GetUnitParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -5551,10 +6204,22 @@ type UpdateUnitParams struct {
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty"`
 }
 
+// ApplyUnitParams defines parameters for ApplyUnit.
+type ApplyUnitParams struct {
+	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
+	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
+}
+
+// ApproveUnitParams defines parameters for ApproveUnit.
+type ApproveUnitParams struct {
+	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
+	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
+}
+
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
 type ListExtendedMutationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Mutations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5578,12 +6243,25 @@ type ListExtendedMutationsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Mutation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Mutation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5647,7 +6325,7 @@ type GetExtendedMutationParams struct {
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.
 type ListExtendedRevisionsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Revisions returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5671,12 +6349,25 @@ type ListExtendedRevisionsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Revision list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Revision).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5740,7 +6431,7 @@ type GetExtendedRevisionParams struct {
 // ListUnitEventsParams defines parameters for ListUnitEvents.
 type ListUnitEventsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of UnitEvents returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5764,12 +6455,25 @@ type ListUnitEventsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the UnitEvent list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (UnitEvent).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5792,7 +6496,7 @@ type ListUnitEventsParams struct {
 // ListViewsParams defines parameters for ListViews.
 type ListViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Views returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5816,12 +6520,25 @@ type ListViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5909,7 +6626,7 @@ type PatchViewApplicationMergePatchPlusJSONBody struct {
 // BulkDeleteTagsParams defines parameters for BulkDeleteTags.
 type BulkDeleteTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Tags returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5933,12 +6650,25 @@ type BulkDeleteTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -5970,7 +6700,7 @@ type BulkDeleteTagsParams struct {
 // ListAllTagsParams defines parameters for ListAllTags.
 type ListAllTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Tags returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -5994,12 +6724,25 @@ type ListAllTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6060,7 +6803,7 @@ type BulkPatchTagsApplicationMergePatchPlusJSONBody struct {
 // BulkPatchTagsParams defines parameters for BulkPatchTags.
 type BulkPatchTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Tags returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6084,12 +6827,25 @@ type BulkPatchTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6140,7 +6896,7 @@ type BulkCreateTagsApplicationMergePatchPlusJSONBody struct {
 // BulkCreateTagsParams defines parameters for BulkCreateTags.
 type BulkCreateTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Tags returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6164,12 +6920,25 @@ type BulkCreateTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Tag: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6201,7 +6970,7 @@ type BulkCreateTagsParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6225,7 +6994,7 @@ type BulkCreateTagsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -6233,12 +7002,25 @@ type BulkCreateTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkDeleteTargetsParams defines parameters for BulkDeleteTargets.
 type BulkDeleteTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Targets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6262,12 +7044,25 @@ type BulkDeleteTargetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6299,7 +7094,7 @@ type BulkDeleteTargetsParams struct {
 // ListAllTargetsParams defines parameters for ListAllTargets.
 type ListAllTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Targets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6323,12 +7118,25 @@ type ListAllTargetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6393,7 +7201,7 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 // BulkPatchTargetsParams defines parameters for BulkPatchTargets.
 type BulkPatchTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Targets returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6417,12 +7225,25 @@ type BulkPatchTargetsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6454,7 +7275,7 @@ type BulkPatchTargetsParams struct {
 // BulkDeleteTriggersParams defines parameters for BulkDeleteTriggers.
 type BulkDeleteTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6478,12 +7299,25 @@ type BulkDeleteTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6515,7 +7349,7 @@ type BulkDeleteTriggersParams struct {
 // ListAllTriggersParams defines parameters for ListAllTriggers.
 type ListAllTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6539,12 +7373,25 @@ type ListAllTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6618,7 +7465,7 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 // BulkPatchTriggersParams defines parameters for BulkPatchTriggers.
 type BulkPatchTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6642,12 +7489,25 @@ type BulkPatchTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6711,7 +7571,7 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 // BulkCreateTriggersParams defines parameters for BulkCreateTriggers.
 type BulkCreateTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6735,12 +7595,25 @@ type BulkCreateTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6772,7 +7645,7 @@ type BulkCreateTriggersParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -6796,7 +7669,7 @@ type BulkCreateTriggersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -6804,6 +7677,19 @@ type BulkCreateTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkDeleteUnitsParams defines parameters for BulkDeleteUnits.
@@ -6833,14 +7719,27 @@ type BulkDeleteUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6863,7 +7762,7 @@ type BulkDeleteUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -6896,14 +7795,27 @@ type ListAllUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -6926,7 +7838,7 @@ type ListAllUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7008,14 +7920,27 @@ type BulkPatchUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7038,7 +7963,7 @@ type BulkPatchUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7110,14 +8035,27 @@ type BulkCreateUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7140,7 +8078,7 @@ type BulkCreateUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7149,7 +8087,7 @@ type BulkCreateUnitsParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7173,7 +8111,7 @@ type BulkCreateUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -7181,6 +8119,19 @@ type BulkCreateUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkApplyUnitsParams defines parameters for BulkApplyUnits.
@@ -7210,14 +8161,27 @@ type BulkApplyUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where string `form:"where" json:"where"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7240,13 +8204,16 @@ type BulkApplyUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 
 	// DryRun Dry run mode - validates which units would be applied without executing
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty"`
+
+	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
+	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
 }
 
 // BulkApproveUnitsParams defines parameters for BulkApproveUnits.
@@ -7276,14 +8243,27 @@ type BulkApproveUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7306,10 +8286,92 @@ type BulkApproveUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
+	Revision *string `form:"revision,omitempty" json:"revision,omitempty"`
+}
+
+// BulkDestroyUnitsParams defines parameters for BulkDestroyUnits.
+type BulkDestroyUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where string `form:"where" json:"where"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// DryRun Dry run mode - validates which units would be destroyed without executing
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty"`
 }
 
 // BulkTagUnitsParams defines parameters for BulkTagUnits.
@@ -7339,14 +8401,27 @@ type BulkTagUnitsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, CreatedAt, DisplayName, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, CreatedAt, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7369,7 +8444,7 @@ type BulkTagUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7378,7 +8453,7 @@ type BulkTagUnitsParams struct {
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Users returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7402,12 +8477,25 @@ type ListUsersParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on User: CreatedAt, DisplayName, ExternalID, Slug, UpdatedAt, UserID, Username.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the User list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (User).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7430,7 +8518,7 @@ type ListUsersParams struct {
 // BulkDeleteViewsParams defines parameters for BulkDeleteViews.
 type BulkDeleteViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Views returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7454,12 +8542,25 @@ type BulkDeleteViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7491,7 +8592,7 @@ type BulkDeleteViewsParams struct {
 // ListAllViewsParams defines parameters for ListAllViews.
 type ListAllViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Views returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7515,12 +8616,25 @@ type ListAllViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7586,7 +8700,7 @@ type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
 // BulkPatchViewsParams defines parameters for BulkPatchViews.
 type BulkPatchViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Views returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7610,12 +8724,25 @@ type BulkPatchViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7671,7 +8798,7 @@ type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
 // BulkCreateViewsParams defines parameters for BulkCreateViews.
 type BulkCreateViewsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Views returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7695,12 +8822,25 @@ type BulkCreateViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
@@ -7732,7 +8872,7 @@ type BulkCreateViewsParams struct {
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
@@ -7756,7 +8896,7 @@ type BulkCreateViewsParams struct {
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND DisplayName = 'testunit' AND Labels.mykey = 'myvalue'`.
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Space: CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
 	//
@@ -7764,6 +8904,19 @@ type BulkCreateViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty"`
 }
 
 // BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchSpaces for application/merge-patch+json ContentType.

@@ -46,30 +46,30 @@ var (
 func init() {
 	addStandardDeleteFlags(changesetDeleteCmd)
 	enableWhereFlag(changesetDeleteCmd)
+	enableFilterFlag(changesetDeleteCmd)
 	changesetDeleteCmd.Flags().StringSliceVar(&changesetDeleteIdentifiers, "changeset", []string{}, "target specific changesets by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	changesetCmd.AddCommand(changesetDeleteCmd)
 }
 
 func checkChangeSetDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --changeset)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(changesetDeleteIdentifiers) > 0)
+	// Check for bulk delete mode: no positional args
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(changesetDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --changeset can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --changeset and --where flags
+		if len(changesetDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--changeset and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single changeset delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single changeset delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --changeset and --where flags
-	if len(changesetDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--changeset and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(changesetDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --changeset flags"))
+		if filter != "" || where != "" || len(changesetDeleteIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --changeset can only be specified with no positional arguments"))
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
@@ -80,6 +80,12 @@ func checkChangeSetDeleteConflictingArgs(args []string) bool {
 }
 
 func runBulkChangeSetDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from changeset identifiers or use provided where clause
 	var effectiveWhere string
 	if len(changesetDeleteIdentifiers) > 0 {
@@ -100,6 +106,9 @@ func runBulkChangeSetDelete() error {
 	params := &goclientnew.BulkDeleteChangeSetsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

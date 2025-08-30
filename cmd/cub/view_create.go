@@ -74,19 +74,19 @@ var viewCreateArgs struct {
 	whereSpace       string
 	namePrefixes     []string
 	viewSlugs        []string
-	filter           string
 	columns          []string
 	groupBy          string
 	orderBy          string
 	orderByDirection string
+	filterSpace      string
 }
 
 func init() {
 	addStandardCreateFlags(viewCreateCmd)
 	enableWhereFlag(viewCreateCmd)
+	enableFilterFlag(viewCreateCmd)
 
 	// Single create specific flags
-	viewCreateCmd.Flags().StringVar(&viewCreateArgs.filter, "filter", "", "filter to identify entities to include in the view (slug or UUID, required for single create)")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.columns, "column", []string{}, "column names to display in the view (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.groupBy, "group-by", "", "column name to group by")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.orderBy, "order-by", "", "column name to sort by")
@@ -97,20 +97,17 @@ func init() {
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.viewSlugs, "view", []string{}, "target specific views by slug or UUID for bulk create (can be repeated or comma-separated)")
+	viewCreateCmd.Flags().StringVar(&viewCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	viewCmd.AddCommand(viewCreateCmd)
 }
 
 func checkViewCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(viewCreateArgs.viewSlugs) > 0 || len(viewCreateArgs.destSpaces) > 0 || viewCreateArgs.whereSpace != "" || len(viewCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(viewCreateArgs.viewSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --view flags")
-		}
-
 		if len(viewCreateArgs.viewSlugs) > 0 && where != "" {
 			return false, errors.New("--view and --where flags are mutually exclusive")
 		}
@@ -124,12 +121,12 @@ func checkViewCreateConflictingArgs(args []string) (bool, error) {
 		}
 	} else {
 		// Single create mode validation
-		if len(args) < 2 {
+		if len(args) != 2 {
 			return false, errors.New("single view creation requires: <slug> <filter>")
 		}
 
-		if where != "" || len(viewCreateArgs.viewSlugs) > 0 || len(viewCreateArgs.destSpaces) > 0 || viewCreateArgs.whereSpace != "" || len(viewCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --view, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(viewCreateArgs.viewSlugs) > 0 || len(viewCreateArgs.destSpaces) > 0 || viewCreateArgs.whereSpace != "" || len(viewCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --view, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 
 		// Validate order-by-direction is only used with order-by
@@ -187,14 +184,15 @@ func runSingleViewCreate(args []string) error {
 
 	// Set filter reference (required)
 	filterSlug := args[1]
-	if viewCreateArgs.filter != "" {
-		filterSlug = viewCreateArgs.filter
-	}
-	filter, err := apiGetFilterFromSlug(filterSlug, "FilterID")
+	filterIDString, err := parseFilterFlag(filterSlug)
 	if err != nil {
 		return err
 	}
-	newBody.FilterID = filter.FilterID
+	filterID, err := uuid.Parse(filterIDString)
+	if err != nil {
+		return err
+	}
+	newBody.FilterID = filterID
 
 	// Set columns if provided
 	if len(viewCreateArgs.columns) > 0 {
@@ -231,6 +229,12 @@ func runSingleViewCreate(args []string) error {
 }
 
 func runBulkViewCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from view identifiers or use provided where clause
 	var effectiveWhere string
 	if len(viewCreateArgs.viewSlugs) > 0 {
@@ -252,11 +256,16 @@ func runBulkViewCreate() error {
 		return err
 	}
 
+	// TODO: Support patching view fields. Share code with runBulkViewUpdate
+
 	// Build bulk create parameters
 	include := "SpaceID"
 	params := &goclientnew.BulkCreateViewsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Add name prefixes if specified
@@ -279,6 +288,15 @@ func runBulkViewCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if viewCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(viewCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

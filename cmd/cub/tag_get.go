@@ -33,21 +33,37 @@ func init() {
 }
 
 func tagGetCmdRun(cmd *cobra.Command, args []string) error {
-	tagDetails, err := apiGetTagFromSlug(args[0], selectFields)
+	tagDetails, err := apiGetExtendedTagFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(tagDetails, displayTagDetails)
+	displayGetResults(tagDetails, displayExtendedTagDetails)
 	return nil
 }
 
 func displayTagDetails(tagDetails *goclientnew.Tag) {
+	// Create an ExtendedTag wrapper with just the Tag set
+	extendedTag := &goclientnew.ExtendedTag{
+		Tag: tagDetails,
+		// All other fields (Space, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedTagDetails(extendedTag)
+}
+
+func displayExtendedTagDetails(extendedTag *goclientnew.ExtendedTag) {
+	tagDetails := extendedTag.Tag
 	view := tableView()
 	view.Append([]string{"ID", tagDetails.TagID.String()})
 	view.Append([]string{"Name", tagDetails.Slug})
-	view.Append([]string{"Display Name", tagDetails.DisplayName})
-	view.Append([]string{"Space ID", tagDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedTag.Space != nil {
+		view.Append([]string{"Space", extendedTag.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", tagDetails.SpaceID.String()})
+	}
+	
 	view.Append([]string{"Created At", tagDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", tagDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(tagDetails.Labels)})
@@ -57,7 +73,17 @@ func displayTagDetails(tagDetails *goclientnew.Tag) {
 }
 
 func apiGetTag(tagID string, selectParam string) (*goclientnew.Tag, error) {
+	extendedTag, err := apiGetExtendedTag(tagID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedTag.Tag, nil
+}
+
+func apiGetExtendedTag(tagID string, selectParam string) (*goclientnew.ExtendedTag, error) {
 	newParams := &goclientnew.GetTagParams{}
+	include := "SpaceID"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -66,10 +92,40 @@ func apiGetTag(tagID string, selectParam string) (*goclientnew.Tag, error) {
 	if IsAPIError(err, tagRes) {
 		return nil, InterpretErrorGeneric(err, tagRes)
 	}
-	return tagRes.JSON200.Tag, nil
+	return tagRes.JSON200, nil
 }
 
 func apiGetTagFromSlug(slug string, selectParam string) (*goclientnew.Tag, error) {
+	return apiGetTagFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetExtendedTagFromSlug(slug string, selectParam string) (*goclientnew.ExtendedTag, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedTag(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	tags, err := apiListTags(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	// find tag by slug
+	for _, tag := range tags {
+		if tag.Tag != nil && tag.Tag.Slug == slug {
+			return tag, nil
+		}
+	}
+	return nil, fmt.Errorf("tag %s not found in space %s", slug, selectedSpaceID)
+}
+
+func apiGetTagFromSlugWithSpace(slug string, selectParam string, spaceID string) (*goclientnew.Tag, error) {
+	return apiGetTagFromSlugInSpace(slug, spaceID, selectParam)
+}
+
+func apiGetTagFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Tag, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetTag(id.String(), selectParam)
@@ -78,7 +134,7 @@ func apiGetTagFromSlug(slug string, selectParam string) (*goclientnew.Tag, error
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	tags, err := apiListTags(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	tags, err := apiListTags(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -88,5 +144,5 @@ func apiGetTagFromSlug(slug string, selectParam string) (*goclientnew.Tag, error
 			return tag.Tag, nil
 		}
 	}
-	return nil, fmt.Errorf("tag %s not found in space %s", slug, selectedSpaceSlug)
+	return nil, fmt.Errorf("tag %s not found in space %s", slug, spaceID)
 }

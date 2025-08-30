@@ -31,11 +31,14 @@ func init() {
 	addSpaceFlags(runCmd)
 	runCmd.PersistentFlags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
-	runCmd.PersistentFlags().BoolVar(&combine, "combine", false, "combine results")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	runCmd.PersistentFlags().StringVar(&where, "where", "", "where filter")
+	runCmd.PersistentFlags().StringVar(&filter, "filter", "", "filter to apply (slug, space/filter, or UUID)")
 	runCmd.PersistentFlags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
+	//These flags don't make sense in the context of cub run because it assumes one function will be explicitly specified on the command line
+	//runCmd.PersistentFlags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
+	//runCmd.PersistentFlags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	runCmd.PersistentFlags().StringVar(&jq, "jq", "", "jq expression")
 	runCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "No output")
 	runCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON output")
@@ -105,6 +108,12 @@ func RegisterFunctionsAsCobraCommands() {
 				Use:   cmdDef.FunctionName,
 				Short: fmt.Sprintf("%s%s Supported toolchains: %s", description, functionAttributes, toolchain),
 				RunE: func(cmd *cobra.Command, args []string) error {
+					// Parse filter parameter
+					filterID, err := parseFilterFlag(filter)
+					if err != nil {
+						return err
+					}
+
 					// Check for mutual exclusivity between --unit and --where flags
 					if len(unitIdentifiers) > 0 && where != "" {
 						return fmt.Errorf("--unit and --where flags are mutually exclusive")
@@ -127,6 +136,9 @@ func RegisterFunctionsAsCobraCommands() {
 
 					if effectiveWhere != "" {
 						newParams.Where = &effectiveWhere
+					}
+					if filterID != "" {
+						newParams.Filter = &filterID
 					}
 					if dryRun {
 						dryRunStr := "true"

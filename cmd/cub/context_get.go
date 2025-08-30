@@ -4,42 +4,52 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
 var contextGetCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Gets the current local context",
-	Long: `Get information about the current local context including user details, organization, and space settings.
+	Use:   "get [context-name]",
+	Short: "Get context information",
+	Long: `Get information about a specific context or the current context.
 
 Examples:
   # Get current context information
-  cub context get`,
-	Args: cobra.ExactArgs(0),
+  cub context get
+  
+  # Get specific context information
+  cub context get prod-acme`,
+	Args: cobra.RangeArgs(0, 1),
 	RunE: contextGetCmdRun,
 }
 
-var spaceSlugOnly bool
-
 func init() {
-	contextGetCmd.Flags().BoolVar(&spaceSlugOnly, "space-slug-only", false, "just print the space slug")
+	enableJsonFlag(contextGetCmd)
+	enableJqFlag(contextGetCmd)
 	contextCmd.AddCommand(contextGetCmd)
 }
 
-func contextGetCmdRun(_ *cobra.Command, _ []string) error {
-	if spaceSlugOnly {
-		tprint(cubContext.Space)
-		return nil
+func contextGetCmdRun(_ *cobra.Command, args []string) error {
+	var ctx *Context
+	var err error
+	if len(args) > 0 {
+		ctx, err = contextManager.GetContext(args[0])
+		if err != nil {
+			return err
+		}
+	} else {
+		ctx = contextManager.ActiveContext()
 	}
-	view := tableView()
-	view.Append([]string{"User Email", authSession.User.Email})
-	view.Append([]string{"IDP User ID", authSession.User.ID})
-	view.Append([]string{"IDP Organization ID", authSession.OrganizationID})
-	view.Append([]string{"ConfigHub URL", cubContext.ConfigHubURL})
-	view.Append([]string{"Space", fmt.Sprintf("%s (%s)", cubContext.Space, cubContext.SpaceID)})
-	view.Append([]string{"Organization", fmt.Sprintf("%s", cubContext.OrganizationID)})
-	view.Render()
+	displayGetResults(ctx, displayContextDetails)
 	return nil
+}
+
+func displayContextDetails(ctx *Context) {
+	view := detailView()
+	view.Append([]string{"Context Name", ctx.Name})
+	view.Append([]string{"User", ctx.Coordinate.User})
+	view.Append([]string{"Organization ID", ctx.Coordinate.OrganizationID})
+	view.Append([]string{"Organization Name", ctx.Metadata.OrganizationName})
+	view.Append([]string{"Server URL", ctx.Coordinate.ServerURL})
+	view.Append([]string{"Default Space", ctx.Settings.DefaultSpace})
+	view.Render()
 }

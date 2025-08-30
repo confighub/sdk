@@ -36,13 +36,18 @@ func init() {
 }
 
 func unitEventListRun(cmd *cobra.Command, args []string) error {
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	slug := args[0]
 	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	actions, err := apiListUnitEvents(uuid.MustParse(selectedSpaceID), u.UnitID, where)
+	actions, err := apiListUnitEvents(uuid.MustParse(selectedSpaceID), u.UnitID, where, filterID)
 	if err != nil {
 		return err
 	}
@@ -85,10 +90,13 @@ func displayUnitEventList(events []*goclientnew.UnitEvent) {
 	table.Render()
 }
 
-func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string) ([]*goclientnew.UnitEvent, error) {
+func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, filterParam string) ([]*goclientnew.UnitEvent, error) {
 	newParams := &goclientnew.ListUnitEventsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

@@ -31,34 +31,78 @@ func init() {
 }
 
 func linkGetCmdRun(cmd *cobra.Command, args []string) error {
-	linkDetails, err := apiGetLinkFromSlug(args[0], selectFields) // use select flag
+	linkDetails, err := apiGetExtendedLinkFromSlug(args[0], selectFields) // use select flag
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(linkDetails, displayLinkDetails)
+	displayGetResults(linkDetails, displayExtendedLinkDetails)
 	return nil
 }
 
 func displayLinkDetails(linkDetails *goclientnew.Link) {
+	// Create an ExtendedLink wrapper with just the Link set
+	extendedLink := &goclientnew.ExtendedLink{
+		Link: linkDetails,
+		// All other fields (Space, ToSpace, FromUnit, ToUnit, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedLinkDetails(extendedLink)
+}
+
+func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
+	linkDetails := extendedLink.Link
 	view := tableView()
-	// TODO: Only display selected fields
 	view.Append([]string{"ID", linkDetails.LinkID.String()})
 	view.Append([]string{"Name", linkDetails.Slug})
-	view.Append([]string{"Space ID", linkDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedLink.Space != nil {
+		view.Append([]string{"Space", extendedLink.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", linkDetails.SpaceID.String()})
+	}
+	
 	view.Append([]string{"Created At", linkDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", linkDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(linkDetails.Labels)})
 	view.Append([]string{"Annotations", annotationsToString(linkDetails.Annotations)})
 	view.Append([]string{"Organization ID", linkDetails.OrganizationID.String()})
-	view.Append([]string{"From Unit ID", linkDetails.FromUnitID.String()})
-	view.Append([]string{"To Unit ID", linkDetails.ToUnitID.String()})
-	view.Append([]string{"To Space ID", linkDetails.ToSpaceID.String()})
+	
+	// Show related units by slug when available
+	if extendedLink.FromUnit != nil {
+		view.Append([]string{"From Unit", extendedLink.FromUnit.Slug})
+	} else {
+		view.Append([]string{"From Unit ID", linkDetails.FromUnitID.String()})
+	}
+	
+	if extendedLink.ToUnit != nil {
+		view.Append([]string{"To Unit", extendedLink.ToUnit.Slug})
+	} else {
+		view.Append([]string{"To Unit ID", linkDetails.ToUnitID.String()})
+	}
+	
+	// Show To Space slug when available
+	if extendedLink.ToSpace != nil {
+		view.Append([]string{"To Space", extendedLink.ToSpace.Slug})
+	} else {
+		view.Append([]string{"To Space ID", linkDetails.ToSpaceID.String()})
+	}
+	
 	view.Render()
 }
 
 func apiGetLink(linkID string, selectParam string) (*goclientnew.Link, error) {
+	extendedLink, err := apiGetExtendedLink(linkID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedLink.Link, nil
+}
+
+func apiGetExtendedLink(linkID string, selectParam string) (*goclientnew.ExtendedLink, error) {
 	newParams := &goclientnew.GetLinkParams{}
+	include := "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -68,10 +112,14 @@ func apiGetLink(linkID string, selectParam string) (*goclientnew.Link, error) {
 	if IsAPIError(err, linkRes) {
 		return nil, InterpretErrorGeneric(err, linkRes)
 	}
-	return linkRes.JSON200.Link, nil
+	return linkRes.JSON200, nil
 }
 
 func apiGetLinkFromSlug(slug string, selectParam string) (*goclientnew.Link, error) {
+	return apiGetLinkFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetLinkFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Link, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetLink(id.String(), selectParam)
@@ -80,7 +128,7 @@ func apiGetLinkFromSlug(slug string, selectParam string) (*goclientnew.Link, err
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	links, err := apiListLinks(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	links, err := apiListLinks(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -89,5 +137,34 @@ func apiGetLinkFromSlug(slug string, selectParam string) (*goclientnew.Link, err
 			return extendedLink.Link, nil
 		}
 	}
-	return nil, fmt.Errorf("link %s not found in space %s", slug, selectedSpaceSlug)
+	
+	// Get space slug for error message
+	spaceSlug := spaceID
+	if spaceUUID, err := uuid.Parse(spaceID); err == nil {
+		if space, err := apiGetSpace(spaceUUID.String(), "Slug"); err == nil && space != nil {
+			spaceSlug = space.Slug
+		}
+	}
+	return nil, fmt.Errorf("link %s not found in space %s", slug, spaceSlug)
+}
+
+func apiGetExtendedLinkFromSlug(slug string, selectParam string) (*goclientnew.ExtendedLink, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedLink(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	links, err := apiListLinks(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, extendedLink := range links {
+		if extendedLink.Link.Slug == slug {
+			return extendedLink, nil
+		}
+	}
+	return nil, fmt.Errorf("link %s not found in space %s", slug, selectedSpaceID)
 }

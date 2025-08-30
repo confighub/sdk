@@ -51,6 +51,16 @@ func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func displayMutationDetails(mutationDetails *goclientnew.Mutation) {
+	// Create an ExtendedMutation wrapper with just the Mutation set
+	extendedMutation := &goclientnew.ExtendedMutation{
+		Mutation: mutationDetails,
+		// All other fields (Space, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedMutationDetails(extendedMutation)
+}
+
+func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.ExtendedMutation) {
+	mutationDetails := extendedMutationDetails.Mutation
 	view := tableView()
 	view.Append([]string{"ID", mutationDetails.MutationID.String()})
 	view.Append([]string{"Unit ID", mutationDetails.UnitID.String()})
@@ -60,34 +70,73 @@ func displayMutationDetails(mutationDetails *goclientnew.Mutation) {
 		view.Append([]string{"Link ID", mutationDetails.LinkID.String()})
 	}
 	view.Append([]string{"Provided Path", mutationDetails.ProvidedPath})
-	if mutationDetails.TriggerID != nil {
+	
+	// Show Trigger slug when available
+	if extendedMutationDetails.Trigger != nil {
+		view.Append([]string{"Trigger", extendedMutationDetails.Trigger.Slug})
+	} else if mutationDetails.TriggerID != nil {
 		view.Append([]string{"Trigger ID", mutationDetails.TriggerID.String()})
 	}
+	
+	// Show Invocation slug when available
+	if extendedMutationDetails.Invocation != nil {
+		view.Append([]string{"Invocation", extendedMutationDetails.Invocation.Slug})
+	} else if mutationDetails.InvocationID != nil {
+		view.Append([]string{"Invocation ID", mutationDetails.InvocationID.String()})
+	}
+	
 	if mutationDetails.FunctionInvocation.FunctionName != "" {
 		view.Append([]string{"Function Name", mutationDetails.FunctionInvocation.FunctionName})
 		for i := range mutationDetails.FunctionInvocation.Arguments {
 			view.Append([]string{fmt.Sprintf("Argument %d", i), fmt.Sprintf("%v", (mutationDetails.FunctionInvocation.Arguments)[i].Value)})
 		}
 	}
-	view.Append([]string{"Space ID", mutationDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedMutationDetails.Space != nil {
+		view.Append([]string{"Space", extendedMutationDetails.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", mutationDetails.SpaceID.String()})
+	}
 	view.Append([]string{"Organization ID", mutationDetails.OrganizationID.String()})
 	view.Render()
-}
-
-func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.ExtendedMutation) {
-	displayMutationDetails(extendedMutationDetails.Mutation)
-	// TODO
-	// if extendedMutationDetails.Link != nil {
-	// 	displayLinkDetails(extendedMutationDetails.Link)
-	// }
+	
+	// Display Link details if present
+	if extendedMutationDetails.Link != nil {
+		tprintRaw("")
+		tprintRaw("Link Details:")
+		tprintRaw("-------------")
+		displayLinkDetails(extendedMutationDetails.Link)
+	}
+	
+	// Display Trigger details if present
 	if extendedMutationDetails.Trigger != nil {
-		displayTriggerDetails(extendedMutationDetails.Trigger)
+		tprintRaw("")
+		tprintRaw("Trigger Details:")
+		tprintRaw("----------------")
+		// Create an ExtendedTrigger wrapper
+		extendedTrigger := &goclientnew.ExtendedTrigger{
+			Trigger: extendedMutationDetails.Trigger,
+		}
+		displayTriggerDetails(extendedTrigger)
+	}
+	
+	// Display Invocation details if present
+	if extendedMutationDetails.Invocation != nil {
+		tprintRaw("")
+		tprintRaw("Invocation Details:")
+		tprintRaw("-------------------")
+		// Create an ExtendedInvocation wrapper
+		extendedInvocation := &goclientnew.ExtendedInvocation{
+			Invocation: extendedMutationDetails.Invocation,
+		}
+		displayExtendedInvocationDetails(extendedInvocation)
 	}
 }
 
 func apiGetMutation(mutationID string, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.GetExtendedMutationParams{}
-	include := "RevisionID,LinkID,TargetID"
+	include := "SpaceID,RevisionID,LinkID,TriggerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -113,7 +162,7 @@ func apiGetMutationFromNumber(mutationNum int64, unitID string, selectParam stri
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	extendedMutations, err := apiListMutations(selectedSpaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum), selectParam)
+	extendedMutations, err := apiListMutations(selectedSpaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum), selectParam, "")
 	if err != nil {
 		return nil, err
 	}

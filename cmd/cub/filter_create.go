@@ -14,7 +14,7 @@ import (
 )
 
 var filterCreateCmd = &cobra.Command{
-	Use:         "create [<slug> <from> [--where <where>] [--where-data <where-data>] [--resource-type <resource-type>] [--from-space <from-space>]]",
+	Use:         "create [<slug> <from> [--where-field <where>] [--where-data <where-data>] [--resource-type <resource-type>] [--from-space <from-space>]]",
 	Short:       "Create a new filter or bulk create filters",
 	Long:        getFilterCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -37,7 +37,7 @@ From Types:
 
 Examples:
   # Create a filter for Units with specific labels
-  cub filter create --space my-space --json unit-filter Unit --where "Labels.Environment = 'production'"
+  cub filter create --space my-space --json unit-filter Unit --where-field "Labels.Environment = 'production'"
 
   # Create a filter for Units with specific resource type
   cub filter create --space my-space --json deployment-filter Unit --resource-type "apps/v1/Deployment"
@@ -46,10 +46,10 @@ Examples:
   cub filter create --space my-space --json replicas-filter Unit --where-data "spec.replicas > 2"
 
   # Create a filter for Spaces with specific criteria
-  cub filter create --space my-space --json dev-spaces Space --where "Labels.Environment = 'dev'"
+  cub filter create --space my-space --json dev-spaces Space --where-field "Labels.Environment = 'dev'"
 
   # Create a filter with from-space for filtering within a specific space
-  cub filter create --space my-space --json cross-space-filter Unit --from-space other-space --where "DisplayName LIKE 'app-%'"
+  cub filter create --space my-space --json cross-space-filter Unit --from-space other-space --where-field "DisplayName LIKE 'app-%'"
 
 BULK FILTER CREATION:
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
@@ -60,7 +60,7 @@ Bulk Create Examples:
   cub filter create --where "From = 'Unit'" --name-prefix dev-,staging- --dest-space dev-space
 
   # Clone specific filters to multiple spaces
-  cub filter create --filter my-filter --dest-space dev-space,staging-space
+  cub filter create --filter-entity my-filter --dest-space dev-space,staging-space
 
   # Clone filters using a where expression for destination spaces
   cub filter create --where "From = 'Space'" --where-space "Labels.Environment IN ('dev', 'staging')"
@@ -76,16 +76,20 @@ var filterCreateArgs struct {
 	whereSpace   string
 	namePrefixes []string
 	filterSlugs  []string
+	whereField   string
 	whereData    string
 	resourceType string
 	fromSpace    string
+	filterSpace  string
 }
 
 func init() {
 	addStandardCreateFlags(filterCreateCmd)
 	enableWhereFlag(filterCreateCmd)
+	enableFilterFlag(filterCreateCmd)
 
 	// Single create specific flags
+	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereField, "where-field", "", "where expression for the filter entity")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereData, "where-data", "", "where filter expression for configuration data (valid only for Units)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.resourceType, "resource-type", "", "resource type to match (e.g., apps/v1/Deployment, valid only for Units)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.fromSpace, "from-space", "", "space to filter within (slug or UUID, only relevant for spaced entity types)")
@@ -94,23 +98,21 @@ func init() {
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
-	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.filterSlugs, "filter", []string{}, "target specific filters by slug or UUID for bulk create (can be repeated or comma-separated)")
+	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.filterSlugs, "filter-entity", []string{}, "target specific filters by slug or UUID for bulk create (can be repeated or comma-separated)")
+	filterCreateCmd.Flags().StringVar(&filterCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	filterCmd.AddCommand(filterCreateCmd)
 }
 
 func checkFilterCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (len(filterCreateArgs.filterSlugs) > 0 || len(filterCreateArgs.destSpaces) > 0 || filterCreateArgs.whereSpace != "" || len(filterCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(filterCreateArgs.filterSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --filter flags")
-		}
 
 		if len(filterCreateArgs.filterSlugs) > 0 && where != "" {
-			return false, errors.New("--filter and --where flags are mutually exclusive")
+			return false, errors.New("--filter-entity and --where flags are mutually exclusive")
 		}
 
 		if len(filterCreateArgs.destSpaces) > 0 && filterCreateArgs.whereSpace != "" {
@@ -122,12 +124,12 @@ func checkFilterCreateConflictingArgs(args []string) (bool, error) {
 		}
 	} else {
 		// Single create mode validation
-		if len(args) < 2 {
+		if len(args) != 2 {
 			return false, errors.New("single filter creation requires: <slug> <from> [options...]")
 		}
 
-		if len(filterCreateArgs.filterSlugs) > 0 || len(filterCreateArgs.destSpaces) > 0 || filterCreateArgs.whereSpace != "" || len(filterCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(filterCreateArgs.filterSlugs) > 0 || len(filterCreateArgs.destSpaces) > 0 || filterCreateArgs.whereSpace != "" || len(filterCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --filter-entity, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -177,8 +179,8 @@ func runSingleFilterCreate(args []string) error {
 	newBody.From = args[1]
 
 	// Set optional fields from flags
-	if where != "" {
-		newBody.Where = where
+	if filterCreateArgs.whereField != "" {
+		newBody.Where = filterCreateArgs.whereField
 	}
 	if filterCreateArgs.whereData != "" {
 		newBody.WhereData = filterCreateArgs.whereData
@@ -205,6 +207,12 @@ func runSingleFilterCreate(args []string) error {
 }
 
 func runBulkFilterCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from filter identifiers or use provided where clause
 	var effectiveWhere string
 	if len(filterCreateArgs.filterSlugs) > 0 {
@@ -232,6 +240,9 @@ func runBulkFilterCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Add name prefixes if specified
 	if len(filterCreateArgs.namePrefixes) > 0 {
@@ -253,6 +264,15 @@ func runBulkFilterCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if filterCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(filterCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

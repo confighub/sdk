@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -14,9 +15,9 @@ import (
 )
 
 var revisionListCmd = &cobra.Command{
-	Use:   "list <unit>",
+	Use:   "list [unit]",
 	Short: "List revisions",
-	Long: `List revisions for a unit in a space. The output includes revision numbers, timestamps, usernames, sources, descriptions, and apply gates. Revisions track the history of changes made to a unit's configuration.
+	Long: `List revisions for a unit in a space, or across all spaces when selectedSpaceID is "*". The output includes revision numbers, timestamps, usernames, sources, descriptions, apply gates, and tags. Revisions track the history of changes made to a unit's configuration.
 
 Examples:
   # List all revisions for a unit
@@ -37,13 +38,17 @@ Examples:
   # List revisions with specific criteria
   cub revision list --space my-space --where 'RevisionNum > 1' my-ns
 
+  # List revisions across all spaces (organization-wide search, at most one revision per unit)
+  cub revision list --space '*' --where 'Tags.my-tag-id = "some-value"'
+
 `,
-	Args: cobra.ExactArgs(1),
-	RunE: revisionListCmdRun,
+	Args:        cobra.RangeArgs(0, 1),
+	RunE:        revisionListCmdRun,
+	Annotations: map[string]string{"OrgLevel": ""},
 }
 
 // Default columns to display when no custom columns are specified
-var defaultRevisionColumns = []string{"Revision.RevisionNum", "Revision.CreatedAt", "User.Username", "Revision.Source", "Revision.Description", "Revision.ApplyGates"}
+var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.CreatedAt", "User.Username", "Revision.Source", "Revision.Description", "Revision.ApplyGates", "Revision.Tags"}
 
 // Revision-specific aliases
 var revisionAliases = map[string]string{
@@ -54,24 +59,131 @@ var revisionAliases = map[string]string{
 // Revision custom column dependencies
 var revisionCustomColumnDependencies = map[string][]string{}
 
+// Flags for tag-based filtering
+var (
+	revisionTagSlug           string
+	revisionChangeSetStartTag string
+	revisionChangeSetEndTag   string
+)
+
 func init() {
 	addStandardListFlags(revisionListCmd)
+	revisionListCmd.Flags().StringVar(&revisionTagSlug, "tag", "", "filter revisions by tag slug or UUID")
+	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by changeset start tag slug or UUID")
+	revisionListCmd.Flags().StringVar(&revisionChangeSetEndTag, "changeset-endtag", "", "filter revisions by changeset end tag slug or UUID")
 	revisionCmd.AddCommand(revisionListCmd)
 }
 
 func revisionListCmdRun(cmd *cobra.Command, args []string) error {
-	var unit *goclientnew.Unit
-	var err error
-	unit, err = apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
-	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), where, selectFields)
+
+	// Build where clause from tag flags
+	effectiveWhere, err := buildRevisionWhereClause()
+	if err != nil {
+		return err
+	}
+
+	// Determine if we're in bulk mode (no positional argument)
+	isBulkMode := len(args) == 0
+
+	if isBulkMode {
+		// Add space constraint if not wildcard
+		if selectedSpaceID != "*" {
+			effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
+		}
+
+		// Use the SearchList API for bulk revision search
+		revisions, err := apiSearchListRevisions(effectiveWhere, selectFields, filterID)
+		if err != nil {
+			return err
+		}
+		displayListResults(revisions, getRevisionSlug, displayRevisionList)
+		return nil
+	}
+
+	// Regular unit-specific revision listing
+	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	if err != nil {
+		return err
+	}
+	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), effectiveWhere, selectFields, filterID)
 	if err != nil {
 		return err
 	}
 	displayListResults(revisions, getRevisionSlug, displayRevisionList)
 	return nil
+}
+
+// buildRevisionWhereClause constructs the where clause from tag flags and user-provided where expression
+func buildRevisionWhereClause() (string, error) {
+	var clauses []string
+
+	// Handle --tag flag
+	if revisionTagSlug != "" {
+		tag, err := parseEntityIdentifierSingleAsEntity[goclientnew.Tag](
+			revisionTagSlug,
+			EntityTypeTag,
+			"*", // selectParam to get all fields
+			apiGetTagFromSlugInSpace,
+			func(t *goclientnew.Tag) string { return t.TagID.String() },
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse tag '%s': %w", revisionTagSlug, err)
+		}
+		clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", tag.TagID.String()))
+	}
+
+	// Handle --changeset-starttag flag
+	if revisionChangeSetStartTag != "" {
+		changeset, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeSet](
+			revisionChangeSetStartTag,
+			EntityTypeChangeSet,
+			"*", // selectParam to get all fields
+			apiGetChangeSetFromSlugInSpace,
+			func(cs *goclientnew.ChangeSet) string { return cs.ChangeSetID.String() },
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse changeset start tag '%s': %w", revisionChangeSetStartTag, err)
+		}
+		if changeset.StartTagID != nil {
+			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.StartTagID.String()))
+		} else {
+			return "", fmt.Errorf("changeset '%s' does not have a start tag", revisionChangeSetStartTag)
+		}
+	}
+
+	// Handle --changeset-endtag flag
+	if revisionChangeSetEndTag != "" {
+		changeset, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeSet](
+			revisionChangeSetEndTag,
+			EntityTypeChangeSet,
+			"*", // selectParam to get all fields
+			apiGetChangeSetFromSlugInSpace,
+			func(cs *goclientnew.ChangeSet) string { return cs.ChangeSetID.String() },
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse changeset end tag '%s': %w", revisionChangeSetEndTag, err)
+		}
+		if changeset.EndTagID != nil {
+			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.EndTagID.String()))
+		} else {
+			return "", fmt.Errorf("changeset '%s' does not have an end tag", revisionChangeSetEndTag)
+		}
+	}
+
+	// Add user-provided where clause
+	if where != "" {
+		clauses = append(clauses, where)
+	}
+
+	// Combine all clauses with AND
+	if len(clauses) == 0 {
+		return "", nil
+	}
+	return strings.Join(clauses, " AND "), nil
 }
 
 func getRevisionSlug(extendedRevision *goclientnew.ExtendedRevision) string {
@@ -82,7 +194,7 @@ func getRevisionSlug(extendedRevision *goclientnew.ExtendedRevision) string {
 func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Num", "Time", "User", "Source", "Description", "Apply-Gates"})
+		table.SetHeader([]string{"Num", "Unit", "Time", "User", "Source", "Description", "Apply-Gates", "Tags"})
 	}
 	for _, extendedRev := range extendedRevisions {
 		rev := extendedRev.Revision
@@ -100,27 +212,46 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		if extendedRev.User != nil {
 			username = extendedRev.User.Username
 		}
+		unit := ""
+		if extendedRev.Unit != nil {
+			unit = extendedRev.Unit.Slug
+		}
+
+		// Resolve tags to slugs
+		tags := "None"
+		if rev.Tags != nil && len(rev.Tags) > 0 {
+			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
+			if len(tagSlugs) > 0 {
+				tags = strings.Join(tagSlugs, ", ")
+			}
+		}
+
 		table.Append([]string{
 			fmt.Sprintf("%d", rev.RevisionNum),
+			unit,
 			rev.CreatedAt.String(),
 			username,
 			rev.Source,
 			rev.Description,
 			applyGates,
+			tags,
 		})
 	}
 	table.Render()
 }
 
-func apiListRevisions(spaceID string, unitID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedRevision, error) {
+func apiListRevisions(spaceID string, unitID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.ListExtendedRevisionsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
+	}
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UserID"
+	include := "UserID,UnitID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
@@ -134,6 +265,44 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 		uuid.MustParse(unitID),
 		newParams,
 	)
+	if IsAPIError(err, revsRes) {
+		return nil, InterpretErrorGeneric(err, revsRes)
+	}
+
+	revisions := make([]*goclientnew.ExtendedRevision, len(*revsRes.JSON200))
+	for i, er := range *revsRes.JSON200 {
+		revisions[i] = &er
+	}
+
+	// Sort by RevisionNum descending
+	sort.Slice(revisions, func(i, j int) bool {
+		return revisions[i].Revision.RevisionNum > revisions[j].Revision.RevisionNum
+	})
+
+	return revisions, nil
+}
+
+func apiSearchListRevisions(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedRevision, error) {
+	newParams := &goclientnew.ListAllRevisionsParams{}
+	if whereFilter != "" {
+		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
+	}
+	if contains != "" {
+		newParams.Contains = &contains
+	}
+	include := "UserID,UnitID"
+	newParams.Include = &include
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
+		return buildSelectList("Revision", "", include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+	})
+	if selectValue != "" && selectValue != "*" {
+		newParams.Select = &selectValue
+	}
+	revsRes, err := cubClientNew.ListAllRevisionsWithResponse(ctx, newParams)
 	if IsAPIError(err, revsRes) {
 		return nil, InterpretErrorGeneric(err, revsRes)
 	}

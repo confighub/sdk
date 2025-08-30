@@ -49,30 +49,30 @@ var (
 func init() {
 	addStandardDeleteFlags(viewDeleteCmd)
 	enableWhereFlag(viewDeleteCmd)
+	enableFilterFlag(viewDeleteCmd)
 	viewDeleteCmd.Flags().StringSliceVar(&viewDeleteIdentifiers, "view", []string{}, "target specific views by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	viewCmd.AddCommand(viewDeleteCmd)
 }
 
 func checkViewDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --view)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(viewDeleteIdentifiers) > 0)
+	// Check for bulk delete mode (no positional args)
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(viewDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --view can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --view and --where flags
+		if len(viewDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--view and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single view delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single view delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --view and --where flags
-	if len(viewDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--view and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(viewDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --view flags"))
+		if filter != "" || where != "" || len(viewDeleteIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --view can only be specified with no positional arguments"))
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
@@ -83,6 +83,12 @@ func checkViewDeleteConflictingArgs(args []string) bool {
 }
 
 func runBulkViewDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from view identifiers or use provided where clause
 	var effectiveWhere string
 	if len(viewDeleteIdentifiers) > 0 {
@@ -103,6 +109,9 @@ func runBulkViewDelete() error {
 	params := &goclientnew.BulkDeleteViewsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

@@ -13,17 +13,15 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/glamour"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
-	"github.com/gosimple/slug"
 	"github.com/itchyny/gojq"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -41,10 +39,15 @@ var overviewFS embed.FS
 //go:embed cub-agent-overview.md
 var agentsFS embed.FS
 
-var ctx = context.Background()
-var cubClientNew *goclientnew.ClientWithResponses
-var authHeader goclientnew.RequestEditorFn
-var authSession AuthSession
+var (
+	// Global API client instance
+	cubClientNew *goclientnew.ClientWithResponses
+
+	// Global context manager instance
+	contextManager *ContextManager
+
+	ctx = context.Background()
+)
 
 type CubTransport struct {
 	RoundTripper http.RoundTripper
@@ -155,6 +158,9 @@ var rootCmd = &cobra.Command{
 	Long:  getSimpleHelp(),
 }
 
+// Global context flag
+var globalContextFlag string
+
 func globalPreRun(cmd *cobra.Command, args []string) error {
 	if debug {
 		err := os.Setenv("CONFIGHUB_DEBUG", "1")
@@ -166,22 +172,15 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("cub Debug mode enabled. version: %s, buildDate: %s\n", BuildTag, BuildDate)
 		debug = true
 	}
-
-	// Add an authentication check to all commands
 	var err error
-	authSession, err = LoadSession()
-	if err != nil {
-		tprint("No session. Only unauthenticated commands will work")
-	} else {
-		authHeader = setAuthHeader(&authSession)
+	if globalContextFlag != "" {
+		err = contextManager.OverrideCurrentContext(globalContextFlag)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Require authentication except for "login"
-	if !slices.Contains([]string{"login", "test-login"}, cmd.Name()) && authSession.BasicAuthPassword == "" && authSession.AccessToken == "" {
-		return errors.New("you must be authenticated to execute this command. Log in with the command: cub auth login")
-	}
-
-	cubClientNew, err = initializeClient()
+	cubClientNew, err = InitializeClient(contextManager.ActiveContext())
 	if err != nil {
 		return err
 	}
@@ -189,48 +188,16 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getEnvURL() *url.URL {
-	baseURL := &url.URL{
-		Scheme: "https",
-		Host:   "hub.confighub.com",
-		Path:   "/api",
-	}
-	if os.Getenv("CONFIGHUB_URL") != "" {
-		cubContext.ConfigHubURL = os.Getenv("CONFIGHUB_URL")
-		splitHost := strings.Split(os.Getenv("CONFIGHUB_URL"), "://")
-		baseURL = &url.URL{
-			Scheme: splitHost[0],
-			Host:   splitHost[1],
-			Path:   "/api",
-		}
-	} else {
-		if cubContext.ConfigHubURLSaved != "" {
-			// Part of experimental multi-context
-			// If "ConfigHubURLSaved" exists in context.json and CONFIGHUB_URL is not set, then we use it.
-			// This should get cleaned up later.
-			cubContext.ConfigHubURL = cubContext.ConfigHubURLSaved
-			var err error
-			baseURL, err = url.Parse(cubContext.ConfigHubURL)
-			if err != nil {
-				failOnError(err)
-			}
-			baseURL.Path = "/api"
-		} else {
-			// Use default URL
-			cubContext.ConfigHubURL = baseURL.Scheme + "://" + baseURL.Host
-		}
-	}
-	// default to https if no scheme is provided
-	if baseURL.Scheme == "" {
-		baseURL.Scheme = "https"
-	}
-	return baseURL
-}
-
 func main() {
-	LoadCubContext()
-	_ = getEnvURL()
+	var err error
+	// CUB_CONFIG is optional. If not set, the default path will be used.
+
+	contextManager, err = NewContextManagerWithPath(os.Getenv("CUB_CONFIG"))
+	if err != nil {
+		failOnError(err)
+	}
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Debug output")
+	rootCmd.PersistentFlags().StringVar(&globalContextFlag, "context", "", "The context to use for this command")
 
 	// Add --help-overview flag
 	var helpOverview bool
@@ -256,7 +223,7 @@ func main() {
 
 	rootCmd.PersistentPreRunE = globalPreRun
 
-	err := rootCmd.Execute()
+	err = rootCmd.Execute()
 	failOnError(err)
 }
 
@@ -281,18 +248,33 @@ func setAuthHeaderToken(authSession *AuthSession) string {
 	return authHeaderToken
 }
 
-func initializeClient() (*goclientnew.ClientWithResponses, error) {
+// InitializeClient initializes the API client for the given context.
+// It sets the base URL and the authentication header if a token is present.
+// If the context is updated during the course of execution and further API calls are made,
+// then this function should be called again to update the API client.
+func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 	ct := &CubTransport{
 		RoundTripper: http.DefaultTransport,
 		Agent:        "cub",
 		Debug:        debug,
 	}
-	baseURL := getEnvURL()
+	baseURL := ctx.Coordinate.ServerURL + "/api"
+	hasToken := true
+	var authHeader string
+	tokenData, err := contextManager.LoadTokenData(ctx)
+	if err != nil {
+		hasToken = false
+	} else {
+		authHeader = fmt.Sprintf("Bearer %s", tokenData.AccessToken)
+	}
 
-	return goclientnew.NewClientWithResponses(baseURL.String(), func(c *goclientnew.Client) error {
+	return goclientnew.NewClientWithResponses(baseURL, func(c *goclientnew.Client) error {
 		c.Client = &http.Client{Transport: ct}
-		if authHeader != nil {
-			c.RequestEditors = append(c.RequestEditors, authHeader)
+		if hasToken {
+			c.RequestEditors = append(c.RequestEditors, func(ctx context.Context, req *http.Request) error {
+				req.Header.Set("Authorization", authHeader)
+				return nil
+			})
 		}
 		return nil
 	})
@@ -469,6 +451,7 @@ var flagPopulateModelFromStdin = false
 var flagReplace = false
 var flagFilename = ""
 var where = ""
+var filter = ""
 var contains = ""
 var verbose = false
 var quiet = false
@@ -558,6 +541,252 @@ func enableWhereFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\"")
 }
 
+func enableFilterFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&filter, "filter", "", "Filter entity to apply to the list. Specify as 'space/filter' for cross-space filters or just 'filter' for current space. Supports both slugs and UUIDs. The filter will be combined with any --where clause using AND logic. Examples: \"production-filters/security-check\", \"my-filter-uuid\", \"validation-rules\"")
+}
+
+// parseFilterFlag parses the filter flag and returns the filter ID
+// Supports formats:
+// - "filter-slug" (uses current space)
+// - "space-slug/filter-slug" (uses specified space)
+// - "filter-uuid" (direct UUID)
+// - "space-uuid/filter-slug" (uses specified space)
+func parseFilterFlag(filterValue string) (string, error) {
+	if filterValue == "" {
+		return "", nil
+	}
+	
+	uuid, err := parseEntityIdentifierSingle[goclientnew.Filter](
+		filterValue, 
+		EntityTypeFilter,
+		apiGetFilterFromSlugInSpace,
+		func(f *goclientnew.Filter) string { return f.FilterID.String() },
+	)
+	if err != nil {
+		return "", err
+	}
+	return uuid.String(), nil
+}
+
+// Entity type constants for consistent naming across the codebase
+const (
+	EntityTypeFilter       = "Filter"
+	EntityTypeView         = "View"
+	EntityTypeInvocation   = "Invocation"
+	EntityTypeTrigger      = "Trigger"
+	EntityTypeTag          = "Tag"
+	EntityTypeChangeSet    = "ChangeSet"
+	EntityTypeTarget       = "Target"
+	EntityTypeBridgeWorker = "BridgeWorker"
+	EntityTypeUnit         = "Unit"
+	EntityTypeLink         = "Link"
+	EntityTypeSet          = "Set"
+)
+
+// EntityInSpace type constraint for all entities that reside in spaces
+type EntityInSpace interface {
+	goclientnew.Filter | goclientnew.View | goclientnew.Invocation | 
+	goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet | 
+	goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit | 
+	goclientnew.Link | goclientnew.Set
+}
+
+// apiGetEntityFromSlugInSpaceFunc is a function type for getting entities by slug in a space
+type apiGetEntityFromSlugInSpaceFunc[T any] func(slug string, spaceID string, selectParam string) (*T, error)
+
+// parseEntityIdentifiersAsEntities parses entity identifiers in various formats:
+// - UUID (direct entity UUID)
+// - Slug (using current space)
+// - space/slug or space-uuid/slug
+// Returns the full entities
+func parseEntityIdentifiersAsEntities[T EntityInSpace](
+	identifiers []string, 
+	entityType string,
+	selectParam string,
+	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
+	getEntityID func(*T) string,
+) ([]T, error) {
+	var entities []T
+
+	// Default selectParam to entityType + "ID" if empty
+	if selectParam == "" {
+		selectParam = entityType + "ID"
+	}
+
+	for _, identifier := range identifiers {
+		// Try to parse as UUID directly first
+		if id, err := uuid.Parse(identifier); err == nil {
+			// For UUIDs, we need to get the entity from the current space
+			entity, err := apiGetFunc(id.String(), selectedSpaceID, selectParam)
+			if err != nil {
+				return nil, fmt.Errorf("%s with ID '%s' not found: %w", entityType, id.String(), err)
+			}
+			entities = append(entities, *entity)
+			continue
+		}
+
+		// Split on "/" to check for space/entity format
+		parts := strings.Split(identifier, "/")
+
+		var spaceID string
+		var entitySlug string
+
+		if len(parts) == 1 {
+			// Format: "entity-slug" - determine which space to use
+			entitySlug = parts[0]
+			
+			// Priority: selectedSpaceID (from --space flag) > context default space
+			if selectedSpaceID != "*" && selectedSpaceID != "" {
+				// Use explicitly selected space (from --space flag)
+				spaceID = selectedSpaceID
+			} else {
+				// Fall back to default space from context
+				cubContext := contextManager.CurrentContext()
+				if cubContext == nil || cubContext.Settings.DefaultSpace == "" {
+					return nil, fmt.Errorf("no space for %s selected, specified, or in current context", entityType)
+				}
+				// Look up space (handles both UUIDs and slugs)
+				space, err := apiGetSpaceFromSlug(cubContext.Settings.DefaultSpace, "SpaceID")
+				if err != nil {
+					return nil, fmt.Errorf("space '%s' not found: %w", cubContext.Settings.DefaultSpace, err)
+				}
+				spaceID = space.SpaceID.String()
+			}
+		} else if len(parts) == 2 {
+			// Format: "space/entity-slug"
+			// Look up space (handles both UUIDs and slugs)
+			space, err := apiGetSpaceFromSlug(parts[0], "SpaceID")
+			if err != nil {
+				return nil, fmt.Errorf("space '%s' not found: %w", parts[0], err)
+			}
+			spaceID = space.SpaceID.String()
+			entitySlug = parts[1]
+		} else {
+			return nil, fmt.Errorf("invalid %s identifier format: %s", entityType, identifier)
+		}
+
+		// Look up the entity by slug in the specified space
+		entity, err := apiGetFunc(entitySlug, spaceID, selectParam)
+		if err != nil {
+			return nil, fmt.Errorf("%s '%s' not found in space %s: %w", entityType, entitySlug, spaceID, err)
+		}
+
+		entities = append(entities, *entity)
+	}
+
+	return entities, nil
+}
+
+// parseEntityIdentifiers is a wrapper that returns UUIDs by extracting them from the entities
+func parseEntityIdentifiers[T EntityInSpace](
+	identifiers []string, 
+	entityType string,
+	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
+	getEntityID func(*T) string,
+) ([]uuid.UUID, error) {
+	// Get entities with minimal select (just ID field)
+	entities, err := parseEntityIdentifiersAsEntities(identifiers, entityType, "", apiGetFunc, getEntityID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract UUIDs from entities
+	uuids := make([]uuid.UUID, len(entities))
+	for i, entity := range entities {
+		entityIDStr := getEntityID(&entity)
+		entityUUID, err := uuid.Parse(entityIDStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid UUID from entity: %w", err)
+		}
+		uuids[i] = entityUUID
+	}
+
+	return uuids, nil
+}
+
+// parseEntityIdentifierSingle parses a single entity identifier using parseEntityIdentifiers
+// Returns the UUID directly
+func parseEntityIdentifierSingle[T EntityInSpace](
+	identifier string,
+	entityType string,
+	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
+	getEntityID func(*T) string,
+) (uuid.UUID, error) {
+	if identifier == "" {
+		return uuid.Nil, fmt.Errorf("%s value cannot be empty", entityType)
+	}
+	
+	uuids, err := parseEntityIdentifiers([]string{identifier}, entityType, apiGetFunc, getEntityID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	
+	if len(uuids) != 1 {
+		return uuid.Nil, fmt.Errorf("unexpected number of UUIDs returned for %s", entityType)
+	}
+	
+	return uuids[0], nil
+}
+
+// parseEntityIdentifierSingleAsEntity parses a single entity identifier and returns the full entity
+func parseEntityIdentifierSingleAsEntity[T EntityInSpace](
+	identifier string,
+	entityType string,
+	selectParam string,
+	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
+	getEntityID func(*T) string,
+) (*T, error) {
+	if identifier == "" {
+		return nil, fmt.Errorf("%s value cannot be empty", entityType)
+	}
+	
+	entities, err := parseEntityIdentifiersAsEntities([]string{identifier}, entityType, selectParam, apiGetFunc, getEntityID)
+	if err != nil {
+		return nil, err
+	}
+	
+	if len(entities) != 1 {
+		return nil, fmt.Errorf("unexpected number of entities returned for %s", entityType)
+	}
+	
+	return &entities[0], nil
+}
+
+func parseTagSlug(tagValue string) (string, error) {
+	uuid, err := parseEntityIdentifierSingle[goclientnew.Tag](
+		tagValue, 
+		EntityTypeTag,
+		apiGetTagFromSlugInSpace,
+		func(t *goclientnew.Tag) string { return t.TagID.String() },
+	)
+	if err != nil {
+		return "", err
+	}
+	return uuid.String(), nil
+}
+
+func parseChangeSetSlug(changesetValue string) (string, error) {
+	uuid, err := parseEntityIdentifierSingle[goclientnew.ChangeSet](
+		changesetValue, 
+		EntityTypeChangeSet,
+		apiGetChangeSetFromSlugInSpace,
+		func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
+	)
+	if err != nil {
+		return "", err
+	}
+	return uuid.String(), nil
+}
+
+func parseInvocationSlug(invocationValue string) (uuid.UUID, error) {
+	return parseEntityIdentifierSingle[goclientnew.Invocation](
+		invocationValue, 
+		EntityTypeInvocation,
+		apiGetInvocationFromSlugInSpace,
+		func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
+	)
+}
+
 func enableContainsFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&contains, "contains", "", "Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with --where using AND logic. Example: \"backend\" to find entities with backend in any searchable field")
 }
@@ -573,6 +802,7 @@ type Unmarshalable interface {
 
 func addStandardListFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
+	enableFilterFlag(cmd)
 	enableContainsFlag(cmd)
 	enableSelectFlag(cmd)
 	enableNamesFlag(cmd)
@@ -614,8 +844,32 @@ func addStandardDeleteFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 }
 
-func makeSlug(name string) string {
-	return slug.Make(name)
+// TODO: Move to a reusable library
+
+var SlugCoreChars string = "\\-_.A-Za-z0-9"
+var SlugInvalidRegexpString string = "[^" + SlugCoreChars + "]"
+var SlugInvalidRegexp = regexp.MustCompile(SlugInvalidRegexpString)
+var multipleDashesString = "---*"
+var multipleDashesRegexp = regexp.MustCompile(multipleDashesString)
+
+func makeSlug(providedText string) string {
+	// Note: Not lowercased and not converted to kabob-case
+	// Also not internationalized.
+
+	// Remove leading and trailing spaces
+	slug := strings.TrimSpace(providedText)
+	// Remove invalid characters
+	slug = SlugInvalidRegexp.ReplaceAllString(slug, "-")
+	// Collapse multiple consecutive dashes. There could be consecutive punctuation.
+	slug = multipleDashesRegexp.ReplaceAllString(slug, "-")
+	// Trim leading and trailing punctuation
+	slug = strings.Trim(slug, "-._")
+	// Don't allow UUIDs
+	_, err := uuid.Parse(slug)
+	if err == nil {
+		slug = "id" + slug
+	}
+	return slug
 }
 
 // Functionality for populating entities from stdin.
@@ -748,7 +1002,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedChangeSet |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
-		goclientnew.ExtendedUnit
+		goclientnew.ExtendedUnit |
+		Context
 }
 
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
@@ -830,4 +1085,16 @@ func displayDeleteResults(entityName, slug, id string) {
 	if !quiet {
 		tprint("Successfully deleted %s %s (%s)", entityName, slug, id)
 	}
+}
+
+// addSpaceIDToWhereClause adds space constraint to where clause, for reuse across commands
+func addSpaceIDToWhereClause(whereClause, spaceID string) string {
+	if spaceID == "*" {
+		return whereClause
+	}
+	spaceConstraint := fmt.Sprintf("SpaceID = '%s'", spaceID)
+	if whereClause != "" {
+		return fmt.Sprintf("%s AND %s", whereClause, spaceConstraint)
+	}
+	return spaceConstraint
 }

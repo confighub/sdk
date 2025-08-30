@@ -49,7 +49,12 @@ func init() {
 }
 
 func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMembers, err := apiListOrganizationMembers(where, selectFields)
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
+	organizationMembers, err := apiListOrganizationMembers(where, selectFields, filterID)
 	if err != nil {
 		return err
 	}
@@ -82,11 +87,14 @@ func displayOrganizationMemberList(organizationMembers []*goclientnew.Organizati
 
 // apiListOrganizationMembers
 // TODO: where filter not implemented yet
-func apiListOrganizationMembers(whereFilter string, selectParam string) ([]*goclientnew.OrganizationMember, error) {
+func apiListOrganizationMembers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.OrganizationMember, error) {
 	newParams := &goclientnew.ListOrganizationMembersParams{}
 	if whereFilter != "" {
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

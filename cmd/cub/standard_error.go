@@ -92,7 +92,10 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 			code := res[0].Int()
 			stdErrRes, ok := field.Interface().(*goclientnew.StandardErrorResponse)
 			if !ok {
-				return fmt.Errorf("Unexpected response type for %s status %d req %s: %v", name, code, requestID, field.Type())
+				return fmt.Errorf("unexpected response type for %s status %d req %s: %v", name, code, requestID, field.Type())
+			}
+			if code == 401 {
+				return fmt.Errorf("authentication problem. Try logging in (again).\nDetailed message: %s. ", stdErrRes.Message)
 			}
 			return fmt.Errorf("HTTP %d for req %s: %s", code, requestID, stdErrRes.Message)
 		}

@@ -270,7 +270,7 @@ type FunctionOutput struct {
 }
 ```
 
-Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and specifies `CastStringArgsToScalars: true` so that the function executor handler knows it should convert them prior to invoking the functions.
+Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and the function executor handler knows it should convert them prior to invoking the functions.
 
 ```
 const (
@@ -323,10 +323,8 @@ type FunctionInvocationRequest struct {
 	FunctionContext
 	ConfigData               []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
 	LiveState                []byte                 `swaggertype:"string" format:"byte" description:"The most recent live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit."`
-	CastStringArgsToScalars  bool                   `description:"If true, expect integer and boolean arguments to be passed as strings"`
 	NumFilters               int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
 	StopOnError              bool                   `description:"If true, stop executing functions on the first error"`
-	CombineValidationResults bool                   `description:"If true, return a single ValidationResult for validating functions rather than a ValidationResultList"`
 	FunctionInvocations      FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }
 

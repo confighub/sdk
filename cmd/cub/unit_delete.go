@@ -39,30 +39,30 @@ Examples:
 func init() {
 	addStandardDeleteFlags(unitDeleteCmd)
 	enableWhereFlag(unitDeleteCmd)
+	enableFilterFlag(unitDeleteCmd)
 	unitDeleteCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	unitCmd.AddCommand(unitDeleteCmd)
 }
 
 func checkUnitDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --unit)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(unitIdentifiers) > 0)
+	// Check for bulk delete mode (no positional args)
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(unitIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --unit can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --unit and --where flags
+		if len(unitIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single unit delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single unit delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(unitIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --unit flags"))
+		if filter != "" || where != "" || len(unitIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with no positional arguments"))
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
@@ -73,6 +73,12 @@ func checkUnitDeleteConflictingArgs(args []string) bool {
 }
 
 func runBulkUnitDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from unit identifiers or use provided where clause
 	var effectiveWhere string
 	if len(unitIdentifiers) > 0 {
@@ -93,6 +99,9 @@ func runBulkUnitDelete() error {
 	params := &goclientnew.BulkDeleteUnitsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

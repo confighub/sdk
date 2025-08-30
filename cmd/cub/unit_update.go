@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -67,6 +68,14 @@ Examples:
   # Restore a unit to the last applied revision
   cub unit update --space my-space myunit --restore LastAppliedRevisionNum
 
+  # Restore a unit to a tagged revision (supports space/tag syntax)
+  cub unit update --space my-space myunit --restore Tag:release-v1.0
+  cub unit update --space my-space myunit --restore Tag:production/hotfix-patch
+
+  # Restore a unit to the end of a changeset (supports space/changeset syntax)
+  cub unit update --space my-space myunit --restore ChangeSet:feature-rollout
+  cub unit update --space my-space myunit --restore ChangeSet:dev-space/bug-fixes
+
   # Upgrade a unit to match its upstream unit
   cub unit update --space my-space myunit --upgrade
 
@@ -111,8 +120,10 @@ From stdin (useful for programmatic updates):
 Restore to previous revision:
   cub unit update --space SPACE my-unit --restore 3
 
-Restore using revision ID or special values:
+Restore using revision ID, tag, changeset, or special values:
   cub unit update --space SPACE my-unit --restore 550e8400-e29b-41d4-a716-446655440000
+  cub unit update --space SPACE my-unit --restore Tag:release-v1.0
+  cub unit update --space SPACE my-unit --restore ChangeSet:feature-deploy
   cub unit update --space SPACE my-unit --restore LiveRevisionNum
 
 Upgrade from upstream:
@@ -128,7 +139,7 @@ Key flags for agents:
 - --verbose: Show detailed update information
 - --from-stdin: Read additional metadata from stdin
 - --replace-from-stdin: Replace entire metadata from stdin
-- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
+- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
 - --change-desc: Add a description for this change
 - --label: Update labels for organization and filtering
@@ -157,28 +168,17 @@ var (
 func init() {
 	addStandardUpdateFlags(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
-	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
+	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	enableWhereFlag(unitUpdateCmd)
+	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	enableWaitFlag(unitUpdateCmd)
 	unitCmd.AddCommand(unitUpdateCmd)
 }
 
 // TODO: Add a --target flag, similar to cub unit create
-
-// addSpaceIDToWhereClause adds space constraint to where clause, for reuse across commands
-func addSpaceIDToWhereClause(whereClause, spaceID string) string {
-	if spaceID == "*" {
-		return whereClause
-	}
-	spaceConstraint := fmt.Sprintf("SpaceID = '%s'", spaceID)
-	if whereClause != "" {
-		return fmt.Sprintf("%s AND %s", whereClause, spaceConstraint)
-	}
-	return spaceConstraint
-}
 
 var restoreValues = map[string]struct{}{
 	"LiveRevisionNum":         struct{}{},
@@ -187,21 +187,62 @@ var restoreValues = map[string]struct{}{
 }
 
 func checkConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := isPatch && len(args) == 0
+	// Check for bulk patch mode (no positional args)
+	isBulkPatchMode := len(args) == 0
+
+	if isBulkPatchMode {
+		if !isPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
+
+		// Check for mutual exclusivity between --unit and --where flags
+		if len(unitIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
+		}
+
+		if restore != "" {
+			// In bulk mode, restore parameter can't be UUID or integer (only special strings and prefixed values)
+			if _, isValid := restoreValues[restore]; !isValid {
+				// Check for Before: prefix and remove it to validate the underlying value
+				checkRestore := restore
+				if strings.HasPrefix(restore, "Before:") {
+					checkRestore = strings.TrimPrefix(restore, "Before:")
+				}
+				
+				// Check for Tag:, ChangeSet:, or Revision: prefixed values, or special values
+				parts := strings.Split(checkRestore, ":")
+				var isValidPrefix bool
+				
+				switch len(parts) {
+				case 2:
+					// EntityType:Identifier format
+					isValidPrefix = parts[0] == "Tag" || parts[0] == "ChangeSet" || parts[0] == "Revision"
+				case 1:
+					// Simple identifier - check if it's a valid restore value
+					_, isValidPrefix = restoreValues[parts[0]]
+				default:
+					isValidPrefix = false
+				}
+				
+				if !isValidPrefix {
+					failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LiveRevisionNum, Tag:slug, ChangeSet:slug, Revision:uuid, or Before:value"))
+				}
+			}
+		}
+
+	} else {
+		if filter != "" || where != "" || len(unitIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
+		}
+
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, or --label"))
+		}
+	}
 
 	// Validate label removal only works with patch
 	if err := ValidateLabelRemoval(label, isPatch); err != nil {
 		failOnError(err)
-	}
-
-	if !isBulkPatchMode && (where != "" || len(unitIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --unit can only be specified with --patch and no unit positional argument"))
-	}
-
-	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
 	}
 
 	if restore != "" && isUpgrade {
@@ -215,17 +256,6 @@ func checkConflictingArgs(args []string) bool {
 
 	if isPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isPatch && !isBulkPatchMode && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 {
-		failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, or --label"))
-	}
-
-	if isBulkPatchMode && restore != "" {
-		// In bulk mode, restore parameter can't be UUID or integer (only special strings)
-		if _, isValid := restoreValues[restore]; !isValid {
-			failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LiveRevisionNum"))
-		}
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -308,25 +338,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if restore != "" {
-		// Parse restore parameter - could be UUID (revision ID), int64 (revision number), or special string
-		if revisionUUID, err := uuid.Parse(restore); err == nil {
-			// It's a UUID - use as revision ID directly
-			newParams.RevisionId = &revisionUUID
-		} else if revisionNum, err := strconv.ParseInt(restore, 10, 64); err == nil {
-			// It's an integer - treat as revision number
-			if revisionNum < 0 {
-				// A negative value means it's relative to head revision num
-				revisionNum = int64(currentUnit.HeadRevisionNum) + revisionNum
-			}
-			rev, err := apiGetRevisionFromNumber(revisionNum, currentUnit.UnitID.String(), "*") // get all fields for now
-			failOnError(err)
-			// TODO: this should read RevisionID, but stays revision_id in the query parameter call
-			newParams.RevisionId = &rev.RevisionID
-		} else if _, isValid := restoreValues[restore]; isValid {
-			// It's one of the special restore parameter values - use restore parameter instead of revision_id
-			newParams.Restore = &restore
-		} else {
-			return fmt.Errorf("invalid restore value '%s': must be a UUID (revision ID), integer (revision number), or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", restore)
+		// Parse restore parameter - enhanced to support Tag:slug, ChangeSet:slug formats
+		if err := parseRestoreParameter(restore, newParams, currentUnit); err != nil {
+			return err
 		}
 	}
 
@@ -371,6 +385,12 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func runBulkUnitUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from unit identifiers if provided
 	var effectiveWhere string
 	if len(unitIdentifiers) > 0 {
@@ -406,6 +426,9 @@ func runBulkUnitUpdate() error {
 	params := &goclientnew.BulkPatchUnitsParams{
 		Where: &effectiveWhere,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Set include parameter to expand UpstreamUnitID
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
@@ -413,7 +436,80 @@ func runBulkUnitUpdate() error {
 
 	// Add restore parameter if specified
 	if restore != "" {
-		params.Restore = &restore
+		// Check for Before: prefix and remove it
+		var isBeforeModifier bool
+		originalRestore := restore
+		if strings.HasPrefix(restore, "Before:") {
+			isBeforeModifier = true
+			restore = strings.TrimPrefix(restore, "Before:")
+		}
+		
+		// Parse the remaining restore parameter
+		parts := strings.Split(restore, ":")
+		var entityType, identifier string
+		
+		switch len(parts) {
+		case 2:
+			// EntityType:Identifier format
+			entityType = parts[0]
+			identifier = parts[1]
+		case 1:
+			// Simple identifier
+			identifier = parts[0]
+		default:
+			params.Restore = &originalRestore
+		}
+		
+		if entityType == "Tag" {
+			// Parse tag slug/ID and convert to UUID
+			tagUUID, err := parseTagSlug(identifier)
+			if err != nil {
+				return fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+			}
+			// Use the restore parameter format that the server expects
+			var restoreValue string
+			if isBeforeModifier {
+				restoreValue = fmt.Sprintf("Before:Tag:%s", tagUUID)
+			} else {
+				restoreValue = fmt.Sprintf("Tag:%s", tagUUID)
+			}
+			params.Restore = &restoreValue
+		} else if entityType == "ChangeSet" {
+			// Parse changeset slug/ID and convert to UUID
+			changesetUUID, err := parseChangeSetSlug(identifier)
+			if err != nil {
+				return fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
+			}
+			// Use the restore parameter format that the server expects
+			var restoreValue string
+			if isBeforeModifier {
+				restoreValue = fmt.Sprintf("Before:ChangeSet:%s", changesetUUID)
+			} else {
+				restoreValue = fmt.Sprintf("ChangeSet:%s", changesetUUID)
+			}
+			params.Restore = &restoreValue
+		} else if entityType == "Revision" {
+			// Parse revision UUID
+			revisionUUID, err := uuid.Parse(identifier)
+			if err != nil {
+				return fmt.Errorf("invalid revision UUID '%s': %w", identifier, err)
+			}
+			// Use the restore parameter format that the server expects
+			var restoreValue string
+			if isBeforeModifier {
+				restoreValue = fmt.Sprintf("Before:Revision:%s", revisionUUID.String())
+			} else {
+				restoreValue = fmt.Sprintf("Revision:%s", revisionUUID.String())
+			}
+			params.Restore = &restoreValue
+		} else if len(parts) == 1 && isBeforeModifier {
+			// Before:SimpleValue format (Before:LiveRevisionNum, etc.)
+			restoreValue := fmt.Sprintf("Before:%s", identifier)
+			params.Restore = &restoreValue
+		} else if params.Restore == nil {
+			// Use restore value as-is for other formats
+			params.Restore = &originalRestore
+		}
 	}
 
 	// Add upgrade parameter if specified
@@ -612,5 +708,114 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 		return fmt.Errorf("all bulk %s operations failed", operationName)
 	}
 
+	return nil
+}
+
+// parseRestoreParameter parses various restore formats and sets the appropriate parameters
+func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams, currentUnit *goclientnew.Unit) error {
+	// Check for Before: prefix and remove it
+	var isBeforeModifier bool
+	originalRestore := restore
+	if strings.HasPrefix(restore, "Before:") {
+		isBeforeModifier = true
+		restore = strings.TrimPrefix(restore, "Before:")
+	}
+	
+	// Parse the remaining restore parameter
+	parts := strings.Split(restore, ":")
+	var entityType, identifier string
+	
+	switch len(parts) {
+	case 2:
+		// EntityType:Identifier format
+		entityType = parts[0]
+		identifier = parts[1]
+	case 1:
+		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
+		identifier = parts[0]
+	default:
+		return fmt.Errorf("invalid restore specification: %s", originalRestore)
+	}
+	
+	// Handle entity type-specific parsing
+	if entityType == "Tag" {
+		// Parse tag slug/ID and convert to UUID
+		tagUUID, err := parseTagSlug(identifier)
+		if err != nil {
+			return fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+		}
+		// Use the restore parameter format that getSelectedRevision expects
+		var restoreValue string
+		if isBeforeModifier {
+			restoreValue = fmt.Sprintf("Before:Tag:%s", tagUUID)
+		} else {
+			restoreValue = fmt.Sprintf("Tag:%s", tagUUID)
+		}
+		params.Restore = &restoreValue
+		return nil
+		
+	} else if entityType == "ChangeSet" {
+		// Parse changeset slug/ID and convert to UUID
+		changesetUUID, err := parseChangeSetSlug(identifier)
+		if err != nil {
+			return fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
+		}
+		// Use the restore parameter format that getSelectedRevision expects
+		var restoreValue string
+		if isBeforeModifier {
+			restoreValue = fmt.Sprintf("Before:ChangeSet:%s", changesetUUID)
+		} else {
+			restoreValue = fmt.Sprintf("ChangeSet:%s", changesetUUID)
+		}
+		params.Restore = &restoreValue
+		return nil
+		
+	} else if entityType == "Revision" {
+		// Handle Revision:uuid format
+		if revisionUUID, err := uuid.Parse(identifier); err == nil {
+			// It's a UUID - use as revision ID directly
+			params.RevisionId = &revisionUUID
+			return nil
+		} else {
+			return fmt.Errorf("invalid revision identifier '%s': must be a UUID", identifier)
+		}
+		
+	} else if entityType != "" {
+		return fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
+	}
+	
+	// Handle simple identifiers (no entity type prefix)
+	if identifier == "LiveRevisionNum" || identifier == "LastAppliedRevisionNum" || identifier == "PreviousLiveRevisionNum" {
+		// Special restore values
+		var restoreValue string
+		if isBeforeModifier {
+			restoreValue = fmt.Sprintf("Before:%s", identifier)
+		} else {
+			restoreValue = identifier
+		}
+		params.Restore = &restoreValue
+		return nil
+	}
+	
+	// Fall back to original parsing logic for UUIDs and integers
+	if revisionUUID, err := uuid.Parse(identifier); err == nil {
+		// It's a UUID - use as revision ID directly
+		params.RevisionId = &revisionUUID
+	} else if revisionNum, err := strconv.ParseInt(identifier, 10, 64); err == nil {
+		// It's an integer - treat as revision number
+		if revisionNum < 0 {
+			// A negative value means it's relative to head revision num
+			revisionNum = int64(currentUnit.HeadRevisionNum) + revisionNum
+		}
+		rev, err := apiGetRevisionFromNumber(revisionNum, currentUnit.UnitID.String(), "*") // get all fields for now
+		if err != nil {
+			return err
+		}
+		// TODO: this should read RevisionID, but stays revision_id in the query parameter call
+		params.RevisionId = &rev.RevisionID
+	} else {
+		return fmt.Errorf("invalid restore value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", restore)
+	}
+	
 	return nil
 }

@@ -4,8 +4,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -21,6 +25,7 @@ var authTestLoginCmd = &cobra.Command{
 }
 
 func init() {
+	authTestLoginCmd.Flags().StringVar(&serverURL, "server", "", "Server URL to authenticate to (e.g., https://hub.confighub.com)")
 	authCmd.AddCommand(authTestLoginCmd)
 }
 
@@ -34,27 +39,74 @@ func authTestLoginCmdRun(cmd *cobra.Command, args []string) error {
 	if !ok {
 		return fmt.Errorf("no entry found for username %s in ~/.confighub/testusers.csv", username)
 	}
-	session := AuthSession{
-		User: User{
-			Email: username,
-		},
-		BasicAuthPassword: password,
-		AuthType:          "Basic",
+
+	// Create request body for the password authentication endpoint
+	requestBody := map[string]string{
+		"username": username,
+		"password": password,
 	}
-	err = SaveSession(session)
+
+	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	coordinate := Coordinate{}
+	coordinate.OrganizationID = contextManager.ActiveContext().Coordinate.OrganizationID
+
+	if os.Getenv("CONFIGHUB_URL") != "" {
+		if serverURL != "" {
+			return fmt.Errorf("cannot use both --server and CONFIGHUB_URL environment variable")
+		}
+		coordinate.ServerURL = os.Getenv("CONFIGHUB_URL")
+	} else if serverURL != "" {
+		coordinate.ServerURL = serverURL
+	} else {
+		coordinate.ServerURL = contextManager.ActiveContext().Coordinate.ServerURL
+	}
+
+	endpoint := fmt.Sprintf("%s/auth/password", coordinate.ServerURL)
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make authentication request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("authentication failed: %s", string(body))
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Parse the response into an AuthSession
+	session := AuthSession{}
+	session.AuthType = "JWT"
+
+	if err := json.Unmarshal(body, &session); err != nil {
+		return fmt.Errorf("failed to parse authentication response: %w", err)
+	}
+
+	// Update context with authentication results
+	if err := updateContextFromSession(coordinate, &session); err != nil {
+		return fmt.Errorf("failed to update context: %w", err)
+	}
+
+	// Preload builtin functions
+	if _, _, err := listAndSaveFunctions("", "", ""); err != nil {
 		return err
 	}
-	authSession = session
-	authHeader = setAuthHeader(&authSession)
-	cubClientNew, err = initializeClient()
-	if err != nil {
-		return err
-	}
-	err = setSpaceContext()
-	if err != nil {
-		return err
-	}
+
 	return nil
 }
 

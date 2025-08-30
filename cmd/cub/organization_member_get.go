@@ -71,7 +71,7 @@ func apiGetOrganizationMemberFromUsername(username string, selectParam string) (
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	organizationMembers, err := apiListOrganizationMembers("Username='"+username+"'", selectParam)
+	organizationMembers, err := apiListOrganizationMembers("Username='"+username+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -18,6 +20,12 @@ var unitApproveCmd = &cobra.Command{
 
 Single unit approve:
   cub unit approve my-unit
+  
+  # Approve a specific revision
+  cub unit approve my-unit --revision 5
+  cub unit approve my-unit --revision LiveRevisionNum
+  cub unit approve my-unit --revision Tag:release-v1.0
+  cub unit approve my-unit --revision ChangeSet:feature-rollout
 
 Bulk approve with --where:
 Approve multiple units at once based on search criteria.
@@ -25,6 +33,9 @@ Approve multiple units at once based on search criteria.
 Examples:
   # Approve all units with specific label
   cub unit approve --where "Labels.Tier = 'backend'"
+  
+  # Approve a specific revision for all matching units
+  cub unit approve --where "Labels.Tier = 'backend'" --revision LiveRevisionNum
 
   # Approve units across all spaces (requires --space "*")
   cub unit approve --space "*" --where "Slug = 'backend'"
@@ -36,38 +47,146 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
+var approveRevision string
+
 func init() {
 	enableWhereFlag(unitApproveCmd)
+	enableFilterFlag(unitApproveCmd)
 	unitApproveCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk approve (can be repeated or comma-separated)")
+	unitApproveCmd.Flags().StringVar(&approveRevision, "revision", "", "Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
 	unitCmd.AddCommand(unitApproveCmd)
 }
 
+// parseApproveRevisionParameter parses the revision parameter for approve operations
+// and returns the properly formatted revision string for the API.
+func parseApproveRevisionParameter(revision string) (*string, error) {
+	if revision == "" {
+		return nil, nil
+	}
+
+	// Check for Before: prefix (not supported for approve)
+	if strings.HasPrefix(revision, "Before:") {
+		return nil, fmt.Errorf("'Before:' modifier is not supported for approve operations")
+	}
+	
+	// Parse the revision parameter
+	parts := strings.Split(revision, ":")
+	var entityType, identifier string
+	
+	switch len(parts) {
+	case 2:
+		// EntityType:Identifier format
+		entityType = parts[0]
+		identifier = parts[1]
+	case 1:
+		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
+		identifier = parts[0]
+	default:
+		return nil, fmt.Errorf("invalid revision specification: %s", revision)
+	}
+	
+	// Handle entity type-specific parsing
+	if entityType == "Tag" {
+		// Parse tag slug/ID and convert to UUID
+		tagUUID, err := parseTagSlug(identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+		}
+		result := fmt.Sprintf("Tag:%s", tagUUID)
+		return &result, nil
+		
+	} else if entityType == "ChangeSet" {
+		// Parse changeset slug/ID and convert to UUID
+		changesetUUID, err := parseChangeSetSlug(identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
+		}
+		result := fmt.Sprintf("ChangeSet:%s", changesetUUID)
+		return &result, nil
+		
+	} else if entityType == "Revision" {
+		// Handle Revision:uuid format
+		if _, err := uuid.Parse(identifier); err != nil {
+			return nil, fmt.Errorf("invalid revision UUID: %s", identifier)
+		}
+		result := fmt.Sprintf("Revision:%s", identifier)
+		return &result, nil
+		
+	} else if entityType != "" {
+		return nil, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
+	}
+	
+	// Handle simple identifiers (no entity type prefix)
+	namedRevisions := map[string]bool{
+		"LiveRevisionNum":         true,
+		"LastAppliedRevisionNum":  true,
+		"PreviousLiveRevisionNum": true,
+		"HeadRevisionNum":         true,
+	}
+	
+	if namedRevisions[identifier] {
+		// Named revisions are passed as-is
+		return &identifier, nil
+	}
+	
+	// Check if it's a UUID
+	if _, err := uuid.Parse(identifier); err == nil {
+		// It's a UUID - format as Revision:uuid
+		result := fmt.Sprintf("Revision:%s", identifier)
+		return &result, nil
+	}
+	
+	// Check if it's a number (revision number)
+	if _, err := strconv.ParseInt(identifier, 10, 64); err == nil {
+		// It's a number - pass as-is (the API will handle it)
+		return &identifier, nil
+	}
+	
+	// Not a valid revision specification
+	return nil, fmt.Errorf("invalid revision specification: %s. Must be a revision number, named revision (LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum), UUID, or EntityType:identifier format", revision)
+}
+
 func checkUnitApproveConflictingArgs(args []string) bool {
-	// Check for bulk approve mode (no positional args with --where or --unit)
-	isBulkApproveMode := len(args) == 0 && (where != "" || len(unitIdentifiers) > 0)
+	// Check for bulk approve mode: no positional args
+	isBulkApproveMode := len(args) == 0
 
-	if !isBulkApproveMode && (where != "" || len(unitIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --unit can only be specified with no positional arguments"))
+	if isBulkApproveMode {
+		// Check for mutual exclusivity between --unit and --where flags
+		if len(unitIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
+		}
+
+	} else {
+		// Single approve mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single unit approve requires exactly one argument: <slug or id>"))
+		}
+
+		if filter != "" || where != "" || len(unitIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with no positional arguments"))
+		}
 	}
 
-	// Single approve mode validation
-	if !isBulkApproveMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single unit approve requires exactly one argument: <slug or id>"))
-	}
-
-	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
-	}
-
-	if isBulkApproveMode && (where == "" && len(unitIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk approve mode requires --where or --unit flags"))
+	if err := validateSpaceFlag(isBulkApproveMode); err != nil {
+		failOnError(err)
 	}
 
 	return isBulkApproveMode
 }
 
 func runBulkUnitApprove() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+	
+	// Parse revision parameter
+	revisionParam, err := parseApproveRevisionParameter(approveRevision)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from unit identifiers or use provided where clause
 	var effectiveWhere string
 	if len(unitIdentifiers) > 0 {
@@ -88,6 +207,12 @@ func runBulkUnitApprove() error {
 	params := &goclientnew.BulkApproveUnitsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
+	if revisionParam != nil {
+		params.Revision = revisionParam
 	}
 
 	// Call the bulk approve API
@@ -112,13 +237,29 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	
+	// Parse revision parameter
+	revisionParam, err := parseApproveRevisionParameter(approveRevision)
+	if err != nil {
+		return err
+	}
+	
+	// Build approve parameters
+	params := &goclientnew.ApproveUnitParams{}
+	if revisionParam != nil {
+		params.Revision = revisionParam
+	}
 
-	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
+	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if IsAPIError(err, approveRes) {
 		return InterpretErrorGeneric(err, approveRes)
 	}
 
-	fmt.Printf("Unit %s (%s) has been approved\n", args[0], configUnit.UnitID.String())
+	if revisionParam != nil {
+		fmt.Printf("Unit %s (%s) revision %s has been approved\n", args[0], configUnit.UnitID.String(), *revisionParam)
+	} else {
+		fmt.Printf("Unit %s (%s) has been approved\n", args[0], configUnit.UnitID.String())
+	}
 	return nil
 }
 

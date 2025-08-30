@@ -20,7 +20,8 @@ var functionDoCmd = &cobra.Command{
 	Use:         "do <function> [<arg1> ...]",
 	Short:       "Invoke one function",
 	Long:        getFunctionDoHelp(),
-	Args:        cobra.MinimumNArgs(1),
+	Args:        cobra.MinimumNArgs(0),
+	Aliases:     []string{"invoke"},
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        functionDoCommandRun,
 }
@@ -135,7 +136,6 @@ Error handling:
 }
 
 var useWorker bool
-var combine bool
 var outputOnly bool
 var outputValuesOnly bool
 var outputRaw bool
@@ -143,11 +143,13 @@ var dataOnly bool
 var outputJQ string
 var unitIdentifiers []string
 var dryRun bool
+var functionTriggerIdentifiers []string
+var functionInvocationIdentifiers []string
+var revisionIdentifier string
 
 func init() {
 	functionDoCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
-	functionDoCmd.Flags().BoolVar(&combine, "combine", false, "combine results")
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionDoCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
 	functionDoCmd.Flags().BoolVar(&outputValuesOnly, "output-values-only", false, "show output values (from functions returning AttributeValueList) without other response details")
@@ -155,8 +157,12 @@ func init() {
 	// Same flag as unit update
 	functionDoCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
+	functionDoCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
+	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
+	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	enableWhereFlag(functionDoCmd)
+	enableFilterFlag(functionDoCmd)
 	enableQuietFlag(functionDoCmd)
 	enableJsonFlag(functionDoCmd)
 	enableJqFlag(functionDoCmd)
@@ -167,11 +173,9 @@ func init() {
 
 func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req := &goclientnew.FunctionInvocationsRequest{}
-	req.CastStringArgsToScalars = true
 	req.NumFilters = 0
 	req.StopOnError = false
 	req.UseFunctionWorker = useWorker
-	req.CombineResults = combine
 	req.ChangeDescription = changeDescription
 	if workerSlug != "" {
 		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "") // default select is fine
@@ -180,6 +184,35 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 		}
 		req.BridgeWorkerID = &worker.BridgeWorkerID
 	}
+
+	// Parse and add trigger identifiers
+	if len(functionTriggerIdentifiers) > 0 {
+		triggers, err := parseEntityIdentifiersForTrigger(functionTriggerIdentifiers)
+		if err != nil {
+			failOnError(err)
+		}
+		// Convert []uuid.UUID to []goclientnew.UUID
+		triggerUUIDs := make([]goclientnew.UUID, len(triggers))
+		for i, t := range triggers {
+			triggerUUIDs[i] = goclientnew.UUID(t)
+		}
+		req.Triggers = triggerUUIDs
+	}
+
+	// Parse and add invocation identifiers
+	if len(functionInvocationIdentifiers) > 0 {
+		invocations, err := parseEntityIdentifiersForInvocation(functionInvocationIdentifiers)
+		if err != nil {
+			failOnError(err)
+		}
+		// Convert []uuid.UUID to []goclientnew.UUID
+		invocationUUIDs := make([]goclientnew.UUID, len(invocations))
+		for i, inv := range invocations {
+			invocationUUIDs[i] = goclientnew.UUID(inv)
+		}
+		req.Invocations = invocationUUIDs
+	}
+
 	return req
 }
 
@@ -218,6 +251,26 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 
 // buildWhereClauseFromIdentifiers generates a WHERE clause from entity identifiers
 // uuidField and slugField specify the field names for UUIDs and slugs respectively
+// parseEntityIdentifiersForTrigger wraps the generic function for trigger parsing
+func parseEntityIdentifiersForTrigger(identifiers []string) ([]uuid.UUID, error) {
+	return parseEntityIdentifiers[goclientnew.Trigger](
+		identifiers,
+		EntityTypeTrigger,
+		apiGetTriggerFromSlugInSpaceCore,
+		func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
+	)
+}
+
+// parseEntityIdentifiersForInvocation wraps the generic function for invocation parsing
+func parseEntityIdentifiersForInvocation(identifiers []string) ([]uuid.UUID, error) {
+	return parseEntityIdentifiers[goclientnew.Invocation](
+		identifiers,
+		EntityTypeInvocation,
+		apiGetInvocationFromSlugInSpace,
+		func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
+	)
+}
+
 func buildWhereClauseFromIdentifiers(identifiers []string, uuidField, slugField string) (string, error) {
 	if len(identifiers) == 0 {
 		return "", nil
@@ -266,21 +319,102 @@ func initializeFunctionInvocation(functionName string, args []string) *goclientn
 	}
 }
 
-func initializeFunctionInvocationsRequest(cmdArgs []string) *goclientnew.FunctionInvocationsRequest {
+func initializeFunctionInvocationsRequest(cmdArgs []string) (*goclientnew.FunctionInvocationsRequest, error) {
 	req := newFunctionInvocationsRequest()
-	functionName := cmdArgs[0]
-	invokeArgs := cmdArgs[1:]
-	invocation := initializeFunctionInvocation(functionName, invokeArgs)
-	req.FunctionInvocations = &[]goclientnew.FunctionInvocation{*invocation}
-	return req
+	if len(cmdArgs) > 0 {
+		functionName := cmdArgs[0]
+		invokeArgs := cmdArgs[1:]
+		invocation := initializeFunctionInvocation(functionName, invokeArgs)
+		req.FunctionInvocations = &[]goclientnew.FunctionInvocation{*invocation}
+	}
+	if (req.FunctionInvocations == nil || len(*req.FunctionInvocations) == 0) && len(req.Triggers) == 0 && len(req.Invocations) == 0 {
+		return nil, fmt.Errorf("A function file and/or triggers and/or invocations must be specified")
+	}
+	return req, nil
+}
+
+// invokeFunctionOnRevision handles function invocation on a specific revision
+func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
+	// Parse revision identifier (format: unit-slug/revision-number)
+	parts := strings.Split(revisionIdentifier, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid revision format: expected unit-slug/revision-number, got %s", revisionIdentifier)
+	}
+	
+	unitSlug := parts[0]
+	revisionNumStr := parts[1]
+	
+	// Parse revision number
+	var revisionNum int64
+	fmt.Sscanf(revisionNumStr, "%d", &revisionNum)
+	if revisionNum <= 0 {
+		return nil, fmt.Errorf("invalid revision number: %s", revisionNumStr)
+	}
+	
+	// Get unit from slug
+	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
+	}
+	
+	// Get revision from number
+	revision, err := apiGetRevisionFromNumber(revisionNum, unit.UnitID.String(), "RevisionID")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get revision %d for unit '%s': %w", revisionNum, unitSlug, err)
+	}
+	
+	// Call the API with revision parameters
+	newParams := &goclientnew.InvokeFunctionsParams{}
+	unitUUID := goclientnew.UUID(unit.UnitID)
+	revisionUUID := goclientnew.UUID(revision.RevisionID)
+	newParams.UnitId = &unitUUID
+	newParams.RevisionId = &revisionUUID
+	if dryRun {
+		dryRunStr := "true"
+		newParams.DryRun = &dryRunStr
+	}
+	
+	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
+	if IsAPIError(err, funcRes) {
+		return nil, InterpretErrorGeneric(err, funcRes)
+	}
+	
+	// Handle both successful (200) and partial success/failure (207) responses
+	var resp *[]goclientnew.FunctionInvocationsResponse
+	if funcRes.JSON200 != nil {
+		resp = funcRes.JSON200
+	} else if funcRes.JSON207 != nil {
+		resp = funcRes.JSON207
+	}
+	
+	return resp, nil
 }
 
 func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	var resp *[]goclientnew.FunctionInvocationsResponse
 
-	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitIdentifiers) > 0 && where != "" {
-		return fmt.Errorf("--unit and --where flags are mutually exclusive")
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
+	// Check for mutual exclusivity between flags
+	flagCount := 0
+	if len(unitIdentifiers) > 0 {
+		flagCount++
+	}
+	if where != "" {
+		flagCount++
+	}
+	if revisionIdentifier != "" {
+		flagCount++
+	}
+	if filterID != "" {
+		flagCount++
+	}
+	if flagCount > 1 {
+		return fmt.Errorf("--unit, --where, --filter, and --revision flags are mutually exclusive")
 	}
 
 	// Build WHERE clause from unit identifiers if provided
@@ -302,11 +436,22 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	// That makes it more difficult to look up the FunctionSignature in order to validate arguments,
 	// and support optional arguments. run sort of merges all functions together.
 
-	newBody := initializeFunctionInvocationsRequest(args)
-	if selectedSpaceID == "*" {
+	newBody, err := initializeFunctionInvocationsRequest(args)
+	failOnError(err)
+
+	// Handle revision flag
+	if revisionIdentifier != "" {
+		resp, err = invokeFunctionOnRevision(revisionIdentifier, *newBody, dryRun)
+		if err != nil {
+			return err
+		}
+	} else if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
 		if effectiveWhere != "" {
 			newParams.Where = &effectiveWhere
+		}
+		if filterID != "" {
+			newParams.Filter = &filterID
 		}
 		if dryRun {
 			dryRunStr := "true"
@@ -326,6 +471,9 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		newParams := &goclientnew.InvokeFunctionsParams{}
 		if effectiveWhere != "" {
 			newParams.Where = &effectiveWhere
+		}
+		if filterID != "" {
+			newParams.Filter = &filterID
 		}
 		if dryRun {
 			dryRunStr := "true"
@@ -481,8 +629,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				var payload api.ValidationResultList
 				err := json.Unmarshal(outputBytes, &payload)
 				if err != nil || outputRaw {
-					// Try parsing as a single result
-					// TODO: check CombineValidationResults
+					// Try parsing as a single result. Shouldn't happen now.
 					var payload api.ValidationResult
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output

@@ -86,32 +86,31 @@ var invocationCreateArgs struct {
 	whereSpace      string
 	namePrefixes    []string
 	invocationSlugs []string
+	filterSpace     string
 }
 
 func init() {
 	addStandardCreateFlags(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	enableWhereFlag(invocationCreateCmd)
+	enableFilterFlag(invocationCreateCmd)
 
 	// Bulk create specific flags
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.invocationSlugs, "invocation", []string{}, "target specific invocations by slug or UUID for bulk create (can be repeated or comma-separated)")
+	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	invocationCmd.AddCommand(invocationCreateCmd)
 }
 
 func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
-	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0 && (where != "" || len(invocationCreateArgs.invocationSlugs) > 0 || len(invocationCreateArgs.destSpaces) > 0 || invocationCreateArgs.whereSpace != "" || len(invocationCreateArgs.namePrefixes) > 0)
+	// Determine if bulk create mode: no positional args
+	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && len(invocationCreateArgs.invocationSlugs) == 0 {
-			return false, errors.New("bulk create mode requires --where or --invocation flags")
-		}
-
 		if len(invocationCreateArgs.invocationSlugs) > 0 && where != "" {
 			return false, errors.New("--invocation and --where flags are mutually exclusive")
 		}
@@ -129,8 +128,8 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...]")
 		}
 
-		if where != "" || len(invocationCreateArgs.invocationSlugs) > 0 || len(invocationCreateArgs.destSpaces) > 0 || invocationCreateArgs.whereSpace != "" || len(invocationCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --invocation, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(invocationCreateArgs.invocationSlugs) > 0 || len(invocationCreateArgs.destSpaces) > 0 || invocationCreateArgs.whereSpace != "" || len(invocationCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --invocation, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
 		}
 	}
 
@@ -199,6 +198,12 @@ func runSingleInvocationCreate(args []string) error {
 }
 
 func runBulkInvocationCreate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from invocation identifiers or use provided where clause
 	var effectiveWhere string
 	if len(invocationCreateArgs.invocationSlugs) > 0 {
@@ -226,6 +231,9 @@ func runBulkInvocationCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Add name prefixes if specified
 	if len(invocationCreateArgs.namePrefixes) > 0 {
@@ -247,6 +255,15 @@ func runBulkInvocationCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	// Parse and set filter_space parameter if specified
+	if invocationCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(invocationCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
 	}
 
 	// Call the bulk create API

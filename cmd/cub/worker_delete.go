@@ -46,30 +46,34 @@ var (
 func init() {
 	addStandardDeleteFlags(bridgeworkerDeleteCmd)
 	enableWhereFlag(bridgeworkerDeleteCmd)
+	enableFilterFlag(bridgeworkerDeleteCmd)
 	bridgeworkerDeleteCmd.Flags().StringSliceVar(&workerDeleteIdentifiers, "worker", []string{}, "target specific bridgeworkers by name or UUID for bulk delete (can be repeated or comma-separated)")
 	workerCmd.AddCommand(bridgeworkerDeleteCmd)
 }
 
 func checkWorkerDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --worker)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(workerDeleteIdentifiers) > 0)
+	// Check for bulk delete mode (no positional args)
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(workerDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --worker can only be specified with no positional arguments"))
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --worker and --where flags
+		if len(workerDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--worker and --where flags are mutually exclusive"))
+		}
+
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single bridgeworker delete requires exactly one argument: <name>"))
+		}
+
+		if filter != "" || where != "" || len(workerDeleteIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--where or --worker can only be specified with no positional arguments"))
+		}
 	}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single bridgeworker delete requires exactly one argument: <name>"))
-	}
-
-	// Check for mutual exclusivity between --worker and --where flags
-	if len(workerDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--worker and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(workerDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --worker flags"))
+	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
+		failOnError(err)
 	}
 
 	return isBulkDeleteMode
@@ -80,6 +84,12 @@ func buildWhereClauseFromWorkers(workerIds []string) (string, error) {
 }
 
 func runBulkWorkerDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from worker identifiers or use provided where clause
 	var effectiveWhere string
 	if len(workerDeleteIdentifiers) > 0 {
@@ -100,6 +110,9 @@ func runBulkWorkerDelete() error {
 	params := &goclientnew.BulkDeleteBridgeWorkersParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -20,6 +21,50 @@ var authCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(authCmd)
+}
+
+// LoginURL returns the login URL used to start an authentication flow for a context coordinate
+// It respects the CONFIGHUB_URL environment variable if set.
+// If the server URL is not set in this context, it defaults to https://hub.confighub.com.
+func LoginURL(coordinate Coordinate) string {
+	serverURL := coordinate.ServerURL
+	// Parse the server URL
+	parsedURL, err := url.Parse(serverURL)
+	if err != nil {
+		// Fallback to default if parsing fails
+		parsedURL = &url.URL{
+			Scheme: "https",
+			Host:   "hub.confighub.com",
+		}
+	}
+
+	loginURL := fmt.Sprintf("%s://%s/auth/login", parsedURL.Scheme, parsedURL.Host)
+
+	params := url.Values{}
+	params.Set("client_type", "api")
+	params.Set("redirect_uri", "http://127.0.0.1:3000/") // TODO: This should probably be adjustable
+
+	if coordinate.OrganizationID != "" {
+		params.Set("org", coordinate.OrganizationID)
+	}
+
+	return loginURL + "?" + params.Encode()
+}
+
+// LogoutURL returns the logout URL used to log out of a session for a context coordinate.
+func LogoutURL(coordinate Coordinate) string {
+	serverURL := coordinate.ServerURL
+
+	parsedURL, err := url.Parse(serverURL)
+	if err != nil {
+		// Fallback to default if parsing fails
+		parsedURL = &url.URL{
+			Scheme: "https",
+			Host:   "hub.confighub.com",
+		}
+	}
+
+	return fmt.Sprintf("%s://%s/auth/logout", parsedURL.Scheme, parsedURL.Host)
 }
 
 func LoadSession() (AuthSession, error) {

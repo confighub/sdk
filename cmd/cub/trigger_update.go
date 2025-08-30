@@ -57,6 +57,7 @@ var (
 	workerSlug         string
 	triggerPatch       bool
 	triggerIdentifiers []string
+	invocationSlug     string
 )
 
 func init() {
@@ -68,26 +69,43 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
+	enableFilterFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().StringSliceVar(&triggerIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	triggerUpdateCmd.Flags().StringVar(&invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerCmd.AddCommand(triggerUpdateCmd)
 }
 
 func checkTriggerConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := triggerPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(triggerIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --trigger can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !triggerPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) < 4 {
-		failOnError(errors.New("single trigger update requires: <slug> <event> <config type> <function> [arguments...]"))
-	}
+		// Check for mutual exclusivity between --trigger and --where flags
+		if len(triggerIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --trigger and --where flags
-	if len(triggerIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
+	} else {
+		// Single update mode validation
+		if invocationSlug != "" {
+			// When using invocation, we need 4 args: slug, event, config type (no function needed)
+			if len(args) != 3 {
+				failOnError(errors.New("single trigger update with --invocation requires: <slug> <event> <config type>"))
+			}
+		} else {
+			// Traditional mode requires function and arguments
+			if len(args) < 4 {
+				failOnError(errors.New("single trigger update requires: <slug> <event> <config type> <function> [arguments...]"))
+			}
+		}
+
+		if filter != "" || where != "" || len(triggerIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --trigger can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if disableTrigger && enableTrigger {
@@ -102,10 +120,6 @@ func checkTriggerConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if isBulkPatchMode && (where == "" && len(triggerIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --trigger flags"))
-	}
-
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
 		failOnError(err)
 	}
@@ -118,6 +132,12 @@ func checkTriggerConflictingArgs(args []string) bool {
 }
 
 func runBulkTriggerUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from trigger identifiers or use provided where clause
 	var effectiveWhere string
 	if len(triggerIdentifiers) > 0 {
@@ -157,6 +177,18 @@ func runBulkTriggerUpdate() error {
 			return err
 		}
 		patchData["BridgeWorkerID"] = worker.BridgeWorkerID.String()
+	}
+
+	// Add invocation if specified
+	if invocationSlug != "" {
+		invocationIDStr, err := parseInvocationSlug(invocationSlug)
+		if err != nil {
+			return err
+		}
+		patchData["InvocationID"] = invocationIDStr
+		// Clear function-related fields when using invocation
+		patchData["FunctionName"] = ""
+		patchData["Arguments"] = nil
 	}
 
 	// Merge with stdin data if provided
@@ -209,6 +241,9 @@ func runBulkTriggerUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchTriggersWithBodyWithResponse(
@@ -233,8 +268,16 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single trigger update logic
-	if len(args) < 4 {
-		return errors.New("single trigger update requires: <slug or id> <event> <config type> <function> [arguments...]")
+	if invocationSlug != "" {
+		// When using invocation, we need 3 args: slug, event, config type
+		if len(args) != 3 {
+			return errors.New("single trigger update with --invocation requires: <slug or id> <event> <config type>")
+		}
+	} else {
+		// Traditional mode requires function and arguments
+		if len(args) < 4 {
+			return errors.New("single trigger update requires: <slug or id> <event> <config type> <function> [arguments...]")
+		}
 	}
 
 	currentTrigger, err := apiGetTriggerFromSlug(args[0], "*") // get all fields for RMW
@@ -248,127 +291,166 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Single trigger patch mode - we'll apply changes directly to the trigger object
 		// Handle --from-stdin or --filename
 		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingTrigger := currentTrigger
-			if err := populateModelFromFlags(currentTrigger); err != nil {
+			existingTrigger := currentTrigger.Trigger
+			if err := populateModelFromFlags(currentTrigger.Trigger); err != nil {
 				return err
 			}
 			// Ensure essential fields can't be clobbered
-			currentTrigger.OrganizationID = existingTrigger.OrganizationID
-			currentTrigger.SpaceID = existingTrigger.SpaceID
-			currentTrigger.TriggerID = existingTrigger.TriggerID
+			currentTrigger.Trigger.OrganizationID = existingTrigger.OrganizationID
+			currentTrigger.Trigger.SpaceID = existingTrigger.SpaceID
+			currentTrigger.Trigger.TriggerID = existingTrigger.TriggerID
 		}
 
 		// Add flags to patch
 		if disableTrigger {
-			currentTrigger.Disabled = true
+			currentTrigger.Trigger.Disabled = true
 		} else if enableTrigger {
-			currentTrigger.Disabled = false
+			currentTrigger.Trigger.Disabled = false
 		}
 		if enforceTrigger {
-			currentTrigger.Enforced = true
+			currentTrigger.Trigger.Enforced = true
 		} else if unenforceTrigger {
-			currentTrigger.Enforced = false
+			currentTrigger.Trigger.Enforced = false
 		}
 		if workerSlug != "" {
 			worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
 			if err != nil {
 				return err
 			}
-			currentTrigger.BridgeWorkerID = &worker.BridgeWorkerID
+			currentTrigger.Trigger.BridgeWorkerID = &worker.BridgeWorkerID
 		}
 
 		// Add labels if specified
 		if len(label) > 0 {
-			err := setLabels(&currentTrigger.Labels)
+			err := setLabels(&currentTrigger.Trigger.Labels)
 			if err != nil {
 				return err
 			}
 		}
 
 		// Add function details from args
-		currentTrigger.Event = args[1]
-		currentTrigger.ToolchainType = args[2]
-		currentTrigger.FunctionName = args[3]
-		if len(args) > 4 {
-			invokeArgs := args[4:]
-			newArgs := parseFunctionArguments(invokeArgs)
-			currentTrigger.Arguments = newArgs
+		currentTrigger.Trigger.Event = args[1]
+		currentTrigger.Trigger.ToolchainType = args[2]
+		
+		if invocationSlug != "" {
+			// Use invocation instead of function and arguments
+			invocationID, err := parseInvocationSlug(invocationSlug)
+			if err != nil {
+				return err
+			}
+			currentTrigger.Trigger.InvocationID = &invocationID
+			// Clear function-related fields when using invocation
+			currentTrigger.Trigger.FunctionName = ""
+			currentTrigger.Trigger.Arguments = nil
+		} else {
+			// Traditional function and arguments approach
+			currentTrigger.Trigger.FunctionName = args[3]
+			if len(args) > 4 {
+				invokeArgs := args[4:]
+				newArgs := parseFunctionArguments(invokeArgs)
+				currentTrigger.Trigger.Arguments = newArgs
+			}
 		}
 
 		// Convert trigger to patch data
-		patchData, err := json.Marshal(currentTrigger)
+		patchData, err := json.Marshal(currentTrigger.Trigger)
 		if err != nil {
 			return fmt.Errorf("failed to marshal patch data: %w", err)
 		}
 
-		triggerDetails, err := patchTrigger(spaceID, currentTrigger.TriggerID, patchData)
+		triggerDetails, err := patchTrigger(spaceID, currentTrigger.Trigger.TriggerID, patchData)
 		if err != nil {
 			return err
 		}
 
-		displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
+		displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
+			extendedTriggerWrapper := &goclientnew.ExtendedTrigger{
+				Trigger: trigger,
+			}
+			displayTriggerDetails(extendedTriggerWrapper)
+		})
 		return nil
 	}
 
 	// Traditional update mode
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
-		existingTrigger := currentTrigger
+		existingTrigger := currentTrigger.Trigger
 		if flagReplace {
 			// Replace mode - create new entity, allow Version to be overwritten
-			currentTrigger = new(goclientnew.Trigger)
-			currentTrigger.Version = existingTrigger.Version
+			newTrigger := new(goclientnew.Trigger)
+			newTrigger.Version = existingTrigger.Version
+			currentTrigger.Trigger = newTrigger
 		}
 
-		if err := populateModelFromFlags(currentTrigger); err != nil {
+		if err := populateModelFromFlags(currentTrigger.Trigger); err != nil {
 			return err
 		}
 
 		// Ensure essential fields can't be clobbered
-		currentTrigger.OrganizationID = existingTrigger.OrganizationID
-		currentTrigger.SpaceID = existingTrigger.SpaceID
-		currentTrigger.TriggerID = existingTrigger.TriggerID
+		currentTrigger.Trigger.OrganizationID = existingTrigger.OrganizationID
+		currentTrigger.Trigger.SpaceID = existingTrigger.SpaceID
+		currentTrigger.Trigger.TriggerID = existingTrigger.TriggerID
 	}
-	err = setLabels(&currentTrigger.Labels)
+	err = setLabels(&currentTrigger.Trigger.Labels)
 	if err != nil {
 		return err
 	}
 
 	// If this was set from stdin, it will be overridden
-	currentTrigger.SpaceID = spaceID
+	currentTrigger.Trigger.SpaceID = spaceID
 	if disableTrigger {
-		currentTrigger.Disabled = true
+		currentTrigger.Trigger.Disabled = true
 	} else if enableTrigger {
-		currentTrigger.Disabled = false
+		currentTrigger.Trigger.Disabled = false
 	}
 	if enforceTrigger {
-		currentTrigger.Enforced = true
+		currentTrigger.Trigger.Enforced = true
 	} else if unenforceTrigger {
-		currentTrigger.Enforced = false
+		currentTrigger.Trigger.Enforced = false
 	}
 	if workerSlug != "" {
 		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		currentTrigger.BridgeWorkerID = &worker.BridgeWorkerID
+		currentTrigger.Trigger.BridgeWorkerID = &worker.BridgeWorkerID
 	}
 
 	// TODO: update with overriden string type TriggerEvent
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])
-	currentTrigger.Event = args[1]
-	currentTrigger.ToolchainType = args[2]
-	currentTrigger.FunctionName = args[3]
-	invokeArgs := args[4:]
-	newArgs := parseFunctionArguments(invokeArgs)
-	currentTrigger.Arguments = newArgs
-	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.TriggerID, *currentTrigger)
+	currentTrigger.Trigger.Event = args[1]
+	currentTrigger.Trigger.ToolchainType = args[2]
+	
+	if invocationSlug != "" {
+		// Use invocation instead of function and arguments
+		invocationID, err := parseInvocationSlug(invocationSlug)
+		if err != nil {
+			return err
+		}
+		currentTrigger.Trigger.InvocationID = &invocationID
+		// Clear function-related fields when using invocation
+		currentTrigger.Trigger.FunctionName = ""
+		currentTrigger.Trigger.Arguments = nil
+	} else {
+		// Traditional function and arguments approach
+		currentTrigger.Trigger.FunctionName = args[3]
+		invokeArgs := args[4:]
+		newArgs := parseFunctionArguments(invokeArgs)
+		currentTrigger.Trigger.Arguments = newArgs
+	}
+	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, *currentTrigger.Trigger)
 	if IsAPIError(err, triggerRes) {
 		return InterpretErrorGeneric(err, triggerRes)
 	}
 
 	triggerDetails := triggerRes.JSON200
-	displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
+	displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
+		extendedTriggerWrapper := &goclientnew.ExtendedTrigger{
+			Trigger: trigger,
+		}
+		displayTriggerDetails(extendedTriggerWrapper)
+	})
 	return nil
 }
 

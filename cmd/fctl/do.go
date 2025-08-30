@@ -24,7 +24,7 @@ import (
 func parseArguments(args []string) []api.FunctionArgument {
 	var funcArgs []api.FunctionArgument
 	namedArgMode := false
-	
+
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "--") && strings.Contains(arg, "=") {
 			// This is a named argument
@@ -32,12 +32,12 @@ func parseArguments(args []string) []api.FunctionArgument {
 			parts := strings.SplitN(arg, "=", 2)
 			paramName := strings.TrimPrefix(parts[0], "--")
 			value := parts[1]
-			
+
 			funcArgs = append(funcArgs, api.FunctionArgument{
 				ParameterName: paramName,
 				Value:         value,
 			})
-			
+
 		} else if namedArgMode {
 			// Once we've seen a named argument, all subsequent arguments must be named
 			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
@@ -65,18 +65,16 @@ func InvokeFunction(
 	if !regexp.MustCompile(`^[a-z0-9-_]*$`).MatchString(functionName) {
 		return nil, fmt.Errorf("function name '%s' contains invalid characters", functionName)
 	}
-	
+
 	funcArgs := parseArguments(args)
 	functions := []api.FunctionInvocation{{FunctionName: functionName, Arguments: funcArgs}}
-	
+
 	return client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
-		ConfigData:               data,
-		FunctionContext:          *functionContext,
-		FunctionInvocations:      functions,
-		CastStringArgsToScalars:  true,
-		NumFilters:               0,
-		StopOnError:              false,
-		CombineValidationResults: true,
+		ConfigData:          data,
+		FunctionContext:     *functionContext,
+		FunctionInvocations: functions,
+		NumFilters:          0,
+		StopOnError:         false,
 	})
 }
 
@@ -160,13 +158,11 @@ func newDoSeqCommand() *cobra.Command {
 			failOnError(err)
 
 			respMsg, err := client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
-				FunctionContext:          *fakeFunctionContext(unitName),
-				ConfigData:               content,
-				CastStringArgsToScalars:  true,
-				NumFilters:               numFilters,
-				StopOnError:              stop,
-				CombineValidationResults: true,
-				FunctionInvocations:      functionList,
+				FunctionContext:     *fakeFunctionContext(unitName),
+				ConfigData:          content,
+				NumFilters:          numFilters,
+				StopOnError:         stop,
+				FunctionInvocations: functionList,
 			})
 			failOnError(err)
 			outputFunctionInvocationResponse(content, respMsg)

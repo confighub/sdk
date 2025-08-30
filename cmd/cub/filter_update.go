@@ -20,7 +20,7 @@ var filterUpdateCmd = &cobra.Command{
 	Long: `Update a filter or multiple filters using bulk operations.
 
 Single filter update:
-  cub filter update my-filter Unit --where "Labels.Environment = 'staging'"
+  cub filter update my-filter Unit --where-field "Labels.Environment = 'staging'"
 
 Bulk update with --patch:
 Update multiple filters at once based on search criteria. Requires --patch flag with no positional arguments.
@@ -30,7 +30,7 @@ Examples:
   cub filter update --patch --where "From = 'Space'" --from-stdin < patch.json
 
   # Update where clause for specific filters
-  echo '{"Where": "Labels.Environment = 'production'"}' | cub filter update --patch --filter my-filter,another-filter --from-stdin
+  echo '{"Where": "Labels.Environment = 'production'"}' | cub filter update --patch --filter-entity my-filter,another-filter --from-stdin
 
   # Update resource type for Unit filters
   echo '{"ResourceType": "apps/v1/StatefulSet"}' | cub filter update --patch --where "From = 'Unit'" --from-stdin`,
@@ -43,6 +43,7 @@ var (
 	filterPatch       bool
 	filterIdentifiers []string
 	filterUpdateArgs  struct {
+		whereField   string
 		whereData    string
 		resourceType string
 		fromSpace    string
@@ -53,9 +54,11 @@ func init() {
 	addStandardUpdateFlags(filterUpdateCmd)
 	filterUpdateCmd.Flags().BoolVar(&filterPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(filterUpdateCmd)
-	filterUpdateCmd.Flags().StringSliceVar(&filterIdentifiers, "filter", []string{}, "target specific filters by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	enableFilterFlag(filterUpdateCmd)
+	filterUpdateCmd.Flags().StringSliceVar(&filterIdentifiers, "filter-entity", []string{}, "target specific filters by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
+	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.whereField, "where-field", "", "where expression for filter entity")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.whereData, "where-data", "", "where filter expression for configuration data (valid only for Units)")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.resourceType, "resource-type", "", "resource type to match (e.g., apps/v1/Deployment, valid only for Units)")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.fromSpace, "from-space", "", "space to filter within (slug or UUID, only relevant for spaced entity types)")
@@ -64,29 +67,32 @@ func init() {
 }
 
 func checkFilterConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := filterPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(filterIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --filter can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !filterPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) < 2 {
-		failOnError(errors.New("single filter update requires: <slug> <from> [options...]"))
-	}
+		// Check for mutual exclusivity between --filter-entity and --where flags
+		if len(filterIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--filter-entity and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --filter and --where flags
-	if len(filterIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--filter and --where flags are mutually exclusive"))
+	} else {
+		// Single create mode validation
+		if len(args) != 2 {
+			failOnError(errors.New("single filter update requires: <slug> <from> [options...]"))
+		}
+
+		if filter != "" || where != "" || len(filterIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--where or --filter-entity can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if filterPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isBulkPatchMode && (where == "" && len(filterIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --filter flags"))
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -101,6 +107,12 @@ func checkFilterConflictingArgs(args []string) bool {
 }
 
 func runBulkFilterUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from filter identifiers or use provided where clause
 	var effectiveWhere string
 	if len(filterIdentifiers) > 0 {
@@ -184,6 +196,9 @@ func runBulkFilterUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchFiltersWithBodyWithResponse(
@@ -212,7 +227,7 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single filter update requires: <slug or id> <from> [options...]")
 	}
 
-	currentFilter, err := apiGetFilterFromSlug(args[0], "*") // get all fields for RMW
+	currentFilter, err := apiGetFilterFromSlug(args[0], "*", selectedSpaceID) // get all fields for RMW
 	if err != nil {
 		return err
 	}

@@ -6,11 +6,11 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -81,18 +81,22 @@ func init() {
 	addStandardGetFlags(unitGetCmd)
 	enableVerboseFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
 	unitCmd.AddCommand(unitGetCmd)
 }
 
 func unitGetCmdRun(cmd *cobra.Command, args []string) error {
-	// TODO: just get extended details
-	unitDetails, err := apiGetUnitFromSlug(args[0], selectFields)
+	unitDetails, err := apiGetExtendedUnitFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(unitDetails, displayUnitDetails)
+	displayGetResults(unitDetails, displayExtendedUnitDetails)
 	return nil
+}
+
+func countResourcesFromExtended(unitDetails *goclientnew.ExtendedUnit) int {
+	return countResources(unitDetails.Unit)
 }
 
 func countResources(unitDetails *goclientnew.Unit) int {
@@ -101,7 +105,7 @@ func countResources(unitDetails *goclientnew.Unit) int {
 	}
 	count := 0
 	for i := range *unitDetails.MutationSources {
-		if *(*unitDetails.MutationSources)[i].ResourceMutationInfo.MutationType == goclientnew.MutationType(api.MutationTypeDelete) {
+		if *(*unitDetails.MutationSources)[i].ResourceMutationInfo.MutationType == goclientnew.Delete {
 			continue
 		}
 		count++
@@ -109,83 +113,120 @@ func countResources(unitDetails *goclientnew.Unit) int {
 	return count
 }
 
-func displayUnitDetails(unitDetails *goclientnew.Unit) {
+func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 	if !dataOnly {
 		view := tableView()
-		view.Append([]string{"ID", unitDetails.UnitID.String()})
-		view.Append([]string{"Name", unitDetails.Slug})
-		view.Append([]string{"Toolchain Type", unitDetails.ToolchainType})
-		if unitDetails.SetID != nil && *unitDetails.SetID != uuid.Nil {
-			view.Append([]string{"Set", unitDetails.SetID.String()})
+		view.Append([]string{"Name", unitDetails.Unit.Slug})
+		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
+
+		// Show Set name if available
+		if unitDetails.Set != nil {
+			view.Append([]string{"Set", unitDetails.Set.Slug})
 		}
-		if unitDetails.TargetID != nil && *unitDetails.TargetID != uuid.Nil {
-			view.Append([]string{"Target", unitDetails.TargetID.String()})
+
+		// Show Target name if available
+		if unitDetails.Target != nil {
+			view.Append([]string{"Target", unitDetails.Target.Slug})
 		}
-		view.Append([]string{"Created At", unitDetails.CreatedAt.String()})
-		view.Append([]string{"Updated At", unitDetails.UpdatedAt.String()})
-		view.Append([]string{"Labels", labelsToString(unitDetails.Labels)})
-		view.Append([]string{"Annotations", annotationsToString(unitDetails.Annotations)})
-		view.Append([]string{"Organization ID", unitDetails.OrganizationID.String()})
-		view.Append([]string{"Last Change Description", unitDetails.LastChangeDescription})
-		view.Append([]string{"Head Revision Num", fmt.Sprintf("%d", unitDetails.HeadRevisionNum)})
-		view.Append([]string{"Last Applied Revision Num", fmt.Sprintf("%d", unitDetails.LastAppliedRevisionNum)})
-		view.Append([]string{"Live Revision Num", fmt.Sprintf("%d", unitDetails.LiveRevisionNum)})
-		view.Append([]string{"Previous Live Revision Num", fmt.Sprintf("%d", unitDetails.PreviousLiveRevisionNum)})
-		if unitDetails.UpstreamUnitID != nil && *unitDetails.UpstreamUnitID != uuid.Nil {
-			view.Append([]string{"Upstream Organization ID", unitDetails.UpstreamOrganizationID.String()})
-			view.Append([]string{"Upstream Space ID", unitDetails.UpstreamSpaceID.String()})
-			view.Append([]string{"Upstream Unit ID", unitDetails.UpstreamUnitID.String()})
-			view.Append([]string{"Upstream Revision Num", fmt.Sprintf("%d", unitDetails.UpstreamRevisionNum)})
+
+		view.Append([]string{"Created At", unitDetails.Unit.CreatedAt.String()})
+		view.Append([]string{"Updated At", unitDetails.Unit.UpdatedAt.String()})
+		view.Append([]string{"Labels", labelsToString(unitDetails.Unit.Labels)})
+		view.Append([]string{"Annotations", annotationsToString(unitDetails.Unit.Annotations)})
+		view.Append([]string{"Last Change Description", unitDetails.Unit.LastChangeDescription})
+		view.Append([]string{"Head Revision Num", fmt.Sprintf("%d", unitDetails.Unit.HeadRevisionNum)})
+		view.Append([]string{"Last Applied Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LastAppliedRevisionNum)})
+		view.Append([]string{"Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LiveRevisionNum)})
+		view.Append([]string{"Previous Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.PreviousLiveRevisionNum)})
+
+		// Show upstream unit info if available
+		if unitDetails.Unit.UpstreamUnitID != nil && *unitDetails.Unit.UpstreamUnitID != uuid.Nil {
+			view.Append([]string{"Upstream Organization ID", unitDetails.Unit.UpstreamOrganizationID.String()})
+			view.Append([]string{"Upstream Space ID", unitDetails.Unit.UpstreamSpaceID.String()})
+			view.Append([]string{"Upstream Unit ID", unitDetails.Unit.UpstreamUnitID.String()})
+			view.Append([]string{"Upstream Revision Num", fmt.Sprintf("%d", unitDetails.Unit.UpstreamRevisionNum)})
 		}
-		if len(unitDetails.ApplyGates) != 0 {
+
+		if len(unitDetails.Unit.ApplyGates) != 0 {
 			gates := ""
-			for gate, failed := range unitDetails.ApplyGates {
+			for gate, failed := range unitDetails.Unit.ApplyGates {
 				if failed {
 					gates += gate + " "
 				}
 			}
 			view.Append([]string{"Apply Gates", strings.TrimSpace(gates)})
 		}
-		if len(unitDetails.ApprovedBy) != 0 {
+
+		if len(unitDetails.Unit.ApprovedBy) != 0 {
 			approverIDs := ""
-			for _, approverID := range unitDetails.ApprovedBy {
+			for _, approverID := range unitDetails.Unit.ApprovedBy {
 				approverIDs += " " + approverID.String()
 			}
 			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
 		}
-		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.HeadMutationNum)})
-		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(unitDetails))})
+
+		// Show From Links if available (expanded)
+		if unitDetails.FromLink != nil && len(unitDetails.FromLink) != 0 {
+			linkSlugs := ""
+			for _, link := range unitDetails.FromLink {
+				linkSlugs += " " + link.Slug
+			}
+			view.Append([]string{"From Links", strings.TrimSpace(linkSlugs)})
+		} else if unitDetails.Unit.FromLinkID != nil && len(unitDetails.Unit.FromLinkID) != 0 {
+			// Fallback to IDs if expansion not available
+			linkIDs := ""
+			for _, linkID := range unitDetails.Unit.FromLinkID {
+				linkIDs += " " + linkID.String()
+			}
+			view.Append([]string{"From Link IDs", strings.TrimSpace(linkIDs)})
+		}
+
+		// Show Bridge Worker if available (expanded)
+		if unitDetails.BridgeWorker != nil {
+			view.Append([]string{"Bridge Worker", unitDetails.BridgeWorker.Slug})
+		} else if unitDetails.Unit.BridgeWorkerID != nil && *unitDetails.Unit.BridgeWorkerID != uuid.Nil {
+			// Fallback to ID if expansion not available
+			view.Append([]string{"Bridge Worker ID", unitDetails.Unit.BridgeWorkerID.String()})
+		}
+
+		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
+		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResourcesFromExtended(unitDetails))})
 
 		view.Render()
 
-		if len(*unitDetails.MutationSources) != 0 && verbose {
+		if len(*unitDetails.Unit.MutationSources) != 0 && verbose {
 			tprintRaw("")
 			tprintRaw("Mutation Sources:")
 			tprintRaw("-----------------")
 			// TODO: Make this prettier
-			displayJSON(unitDetails.MutationSources)
+			displayJSON(unitDetails.Unit.MutationSources)
 		}
-
-		if unitDetails.LiveState != "" && verbose {
-			tprintRaw("")
-			tprintRaw("Live State:")
-			tprintRaw("-----------")
-			livestate, err := base64.StdEncoding.DecodeString(unitDetails.LiveState)
+	} else if dataOnly && flagFilename != "" {
+		yamlBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
+		if err != nil {
 			failOnError(err)
-			tprintRaw(string(livestate))
 		}
+		err = os.WriteFile(flagFilename, yamlBytes, 0644)
+		if err != nil {
+			failOnError(err)
+		}
+		tprintRaw(fmt.Sprintf("Config data written to %s", flagFilename))
+	} else if dataOnly {
+		yamlBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
+		if err != nil {
+			failOnError(err)
+		}
+		tprintRaw(string(yamlBytes))
 	}
+}
 
-	if dataOnly || verbose {
-		if verbose {
-			tprintRaw("")
-			tprintRaw("Config Data:")
-			tprintRaw("------------")
-		}
-		data, err := base64.StdEncoding.DecodeString(unitDetails.Data)
-		failOnError(err)
-		tprintRaw(string(data))
+func displayUnitDetails(unitDetails *goclientnew.Unit) {
+	// Create an ExtendedUnit wrapper with just the Unit set
+	extendedUnit := &goclientnew.ExtendedUnit{
+		Unit: unitDetails,
+		// All other fields (Set, Target, Space, etc.) will be nil, causing Extended display to show IDs
 	}
+	displayExtendedUnitDetails(extendedUnit)
 }
 
 func apiGetUnit(unitID string, selectParam string) (*goclientnew.Unit, error) {
@@ -210,7 +251,7 @@ func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*gocl
 
 func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.GetUnitParams{}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -225,6 +266,10 @@ func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string
 
 func apiGetUnitFromSlug(slug string, selectParam string) (*goclientnew.Unit, error) {
 	return apiGetUnitFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetExtendedUnitFromSlug(slug string, selectParam string) (*goclientnew.ExtendedUnit, error) {
+	return apiGetExtendedUnitFromSlugInSpace(slug, selectedSpaceID, selectParam)
 }
 
 func apiGetUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
@@ -260,7 +305,7 @@ func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam 
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	units, err := apiSearchUnits(where, "", "", selectParam)
+	units, err := apiSearchUnits(where, "", "", selectParam, "")
 	if err != nil {
 		return nil, err
 	}

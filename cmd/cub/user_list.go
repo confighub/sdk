@@ -50,7 +50,12 @@ func init() {
 }
 
 func userListCmdRun(cmd *cobra.Command, args []string) error {
-	users, err := apiListUsers(where)
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
+	users, err := apiListUsers(where, filterID)
 	if err != nil {
 		return err
 	}
@@ -79,11 +84,14 @@ func displayUserList(users []*goclientnew.User) {
 }
 
 // apiListUsers
-func apiListUsers(whereFilter string) ([]*goclientnew.User, error) {
+func apiListUsers(whereFilter string, filterParam string) ([]*goclientnew.User, error) {
 	newParams := &goclientnew.ListUsersParams{}
 	if whereFilter != "" {
 		log.Printf("where filter: %s", whereFilter)
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

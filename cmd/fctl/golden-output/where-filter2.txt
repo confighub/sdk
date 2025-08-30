@@ -1,7 +1,9 @@
 SUCCESS    true    
 OUTPUT
 ------
-{
-  "Passed": false,
-  "Index": 0
-}
+[
+  {
+    "Passed": false,
+    "Index": 0
+  }
+]

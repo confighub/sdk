@@ -35,13 +35,7 @@ func init() {
 }
 
 func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
-	spaceDetails, err := apiGetSpaceFromSlug(args[0], selectFields)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Just use extended entities everywhere so we can eliminate the extra calls and duplicate code
-	extendedSpace, err := apiGetExtendedSpace(spaceDetails.SpaceID.String(), selectFields)
+	extendedSpace, err := apiGetExtendedSpaceFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
@@ -60,9 +54,12 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 }
 
 func displaySpaceDetails(spaceDetails *goclientnew.Space) {
-	view := tableView()
-	displaySpaceDetailsInView(spaceDetails, view)
-	view.Render()
+	// Create an ExtendedSpace wrapper with just the Space set
+	extendedSpace := &goclientnew.ExtendedSpace{
+		Space: spaceDetails,
+		// All other fields (Organization, counts, etc.) will be nil/zero, causing Extended display to show basic info
+	}
+	displayExtendedSpaceDetails(extendedSpace)
 }
 
 func totalCountMap(counts map[string]int) int {
@@ -89,6 +86,11 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Recently Changed Units", fmt.Sprintf("%d", extendedSpace.RecentChangeUnitCount)})
 	view.Append([]string{"# Incomplete Applies", fmt.Sprintf("%d", extendedSpace.IncompleteApplyUnitCount)})
 	view.Append([]string{"# Workers", fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount)})
+	view.Append([]string{"# Filters", fmt.Sprintf("%d", extendedSpace.TotalFilterCount)})
+	view.Append([]string{"# Views", fmt.Sprintf("%d", extendedSpace.TotalViewCount)})
+	view.Append([]string{"# Tags", fmt.Sprintf("%d", extendedSpace.TotalTagCount)})
+	view.Append([]string{"# ChangeSets", fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount)})
+	view.Append([]string{"# Invocations", fmt.Sprintf("%d", extendedSpace.TotalInvocationCount)})
 	view.Append([]string{"# Targets", fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))})
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})
 	view.Render()
@@ -138,6 +140,27 @@ func apiGetSpaceFromSlug(slug string, selectParam string) (*goclientnew.Space, e
 	for _, space := range spaces {
 		if space.Slug == slug {
 			return space, nil
+		}
+	}
+	return nil, fmt.Errorf("space %s not found", slug)
+}
+
+func apiGetExtendedSpaceFromSlug(slug string, selectParam string) (*goclientnew.ExtendedSpace, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedSpace(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	spaces, err := apiListSpaces("Slug = '"+slug+"'", selectParam)
+	if err != nil {
+		return nil, err
+	}
+	for _, space := range spaces {
+		if space.Slug == slug {
+			return apiGetExtendedSpace(space.SpaceID.String(), selectParam)
 		}
 	}
 	return nil, fmt.Errorf("space %s not found", slug)

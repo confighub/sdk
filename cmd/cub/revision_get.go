@@ -46,28 +46,52 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String(), selectFields)
+	rev, err := apiGetExtendedRevisionFromNumber(num, unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(rev, displayRevisionDetails)
+	displayGetResults(rev, displayExtendedRevisionDetails)
 	return nil
 }
 
 func displayRevisionDetails(rev *goclientnew.Revision) {
+	// Create an ExtendedRevision wrapper with just the Revision set
+	extendedRevision := &goclientnew.ExtendedRevision{
+		Revision: rev,
+		// All other fields (Unit, Space, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedRevisionDetails(extendedRevision)
+}
+
+func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
+	rev := extendedRev.Revision
 	if !dataOnly {
 		view := tableView()
 		view.Append([]string{"ID", rev.RevisionID.String()})
-		view.Append([]string{"Unit ID", rev.UnitID.String()})
+		
+		// Show Unit slug instead of Unit ID when available
+		if extendedRev.Unit != nil {
+			view.Append([]string{"Unit", extendedRev.Unit.Slug})
+		} else {
+			view.Append([]string{"Unit ID", rev.UnitID.String()})
+		}
+		
 		view.Append([]string{"Revision Num", fmt.Sprintf("%d", rev.RevisionNum)})
 		view.Append([]string{"Source", rev.Source})
 		view.Append([]string{"Description", rev.Description})
 		view.Append([]string{"Created At", rev.CreatedAt.String()})
 		view.Append([]string{"Live At", rev.LiveAt.String()})
 		view.Append([]string{"User ID", rev.UserID.String()})
-		view.Append([]string{"Space ID", rev.SpaceID.String()})
+		
+		// Show Space slug instead of Space ID when available
+		if extendedRev.Space != nil {
+			view.Append([]string{"Space", extendedRev.Space.Slug})
+		} else {
+			view.Append([]string{"Space ID", rev.SpaceID.String()})
+		}
 		view.Append([]string{"Organization ID", rev.OrganizationID.String()})
+		
 		if rev.ApplyGates != nil && len(rev.ApplyGates) != 0 {
 			gates := ""
 			for gate, failed := range rev.ApplyGates {
@@ -76,6 +100,18 @@ func displayRevisionDetails(rev *goclientnew.Revision) {
 				}
 			}
 			view.Append([]string{"Apply Gates", strings.TrimSpace(gates)})
+		}
+		if len(rev.ApprovedBy) != 0 {
+			approverIDs := ""
+			for _, approverID := range rev.ApprovedBy {
+				approverIDs += " " + approverID.String()
+			}
+			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
+		}
+		// Display tags if present
+		if rev.Tags != nil && len(rev.Tags) > 0 {
+			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
+			view.Append([]string{"Tags", strings.Join(tagSlugs, ", ")})
 		}
 		view.Render()
 		tprintRaw("---")
@@ -92,7 +128,17 @@ func displayRevisionDetails(rev *goclientnew.Revision) {
 }
 
 func apiGetRevision(revisionID string, unitID string, selectParam string) (*goclientnew.Revision, error) {
+	extendedRev, err := apiGetExtendedRevision(revisionID, unitID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedRev.Revision, nil
+}
+
+func apiGetExtendedRevision(revisionID string, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.GetExtendedRevisionParams{}
+	include := "UnitID,SpaceID"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -110,7 +156,7 @@ func apiGetRevision(revisionID string, unitID string, selectParam string) (*gocl
 		return nil, fmt.Errorf("SERVER DIDN'T CHECK: revision %s not found", revisionID)
 	}
 
-	return revRes.JSON200.Revision, nil
+	return revRes.JSON200, nil
 }
 
 func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.Revision, error) {
@@ -118,7 +164,7 @@ func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam)
+	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -128,4 +174,63 @@ func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*
 		}
 	}
 	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
+}
+
+func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, extendedRev := range revisions {
+		if int64(extendedRev.Revision.RevisionNum) == revNo {
+			return extendedRev, nil
+		}
+	}
+	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
+}
+
+// resolveTagSlugs converts a map of tag IDs to their slugs
+func resolveTagSlugs(tags map[string]string, spaceID string) []string {
+	if len(tags) == 0 {
+		return []string{}
+	}
+
+	var tagSlugs []string
+	for tagID := range tags {
+		// Try to get tag by ID and resolve to slug
+		parsedTagID, err := uuid.Parse(tagID)
+		if err != nil {
+			// If parsing fails, use the tagID as-is
+			tagSlugs = append(tagSlugs, tagID)
+			continue
+		}
+
+		// Search for the tag at organization level using ListAllTags
+		whereClause := fmt.Sprintf("TagID = '%s'", parsedTagID.String())
+		params := &goclientnew.ListAllTagsParams{
+			Where: &whereClause,
+		}
+		
+		tagRes, err := cubClientNew.ListAllTagsWithResponse(ctx, params)
+		if err != nil || tagRes.JSON200 == nil || len(*tagRes.JSON200) == 0 {
+			// If we can't resolve the tag, use the UUID
+			tagSlugs = append(tagSlugs, tagID)
+			continue
+		}
+
+		// Get the first (should be only) tag found
+		foundTags := *tagRes.JSON200
+		if len(foundTags) > 0 && foundTags[0].Tag != nil && foundTags[0].Tag.Slug != "" {
+			tagSlugs = append(tagSlugs, foundTags[0].Tag.Slug)
+		} else {
+			// Fallback to tag ID if no slug
+			tagSlugs = append(tagSlugs, tagID)
+		}
+	}
+
+	return tagSlugs
 }

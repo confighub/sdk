@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -41,36 +42,42 @@ var (
 func init() {
 	addStandardDeleteFlags(spaceDeleteCmd)
 	enableWhereFlag(spaceDeleteCmd)
+	enableFilterFlag(spaceDeleteCmd)
 	spaceDeleteCmd.Flags().StringSliceVar(&spaceDeleteIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	spaceCmd.AddCommand(spaceDeleteCmd)
 }
 
 func checkSpaceDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --space)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(spaceDeleteIdentifiers) > 0)
+	// Check for bulk delete mode: no positional args
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(spaceDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --space can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --space and --where flags
+		if len(spaceDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--space and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single space delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single space delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --space and --where flags
-	if len(spaceDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--space and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(spaceDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --space flags"))
+		if filter != "" || where != "" || len(spaceDeleteIdentifiers) > 0 {
+			failOnError(errors.New("--filter, --where, or --space can only be specified with no positional arguments"))
+		}
 	}
 
 	return isBulkDeleteMode
 }
 
 func runBulkSpaceDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from space identifiers or use provided where clause
 	var effectiveWhere string
 	if len(spaceDeleteIdentifiers) > 0 {
@@ -89,6 +96,9 @@ func runBulkSpaceDelete() error {
 	params := &goclientnew.BulkDeleteSpacesParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

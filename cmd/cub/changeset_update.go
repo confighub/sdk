@@ -20,7 +20,7 @@ var changesetUpdateCmd = &cobra.Command{
 	Long: `Update a changeset or multiple changesets using bulk operations.
 
 Single changeset update:
-  cub changeset update my-changeset --description "Updated description" --filter new-filter
+  cub changeset update my-changeset --description "Updated description" --filter-field new-filter
 
 Bulk update with --patch:
 Update multiple changesets at once based on search criteria. Requires --patch flag with no positional arguments.
@@ -30,7 +30,7 @@ Examples:
   echo '{"Description": "Archived changeset"}' | cub changeset update --patch --where "CreatedAt < '2024-01-01'" --from-stdin
 
   # Update filter for specific changesets
-  cub changeset update --patch --changeset cs1,cs2 --filter new-filter
+  cub changeset update --patch --changeset cs1,cs2 --filter-field new-filter
 
   # Update tags for changesets using JSON patch
   echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeset update --patch --where "FilterID IS NOT NULL" --from-stdin`,
@@ -54,10 +54,11 @@ func init() {
 	addStandardUpdateFlags(changesetUpdateCmd)
 	changesetUpdateCmd.Flags().BoolVar(&changesetPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(changesetUpdateCmd)
+	enableFilterFlag(changesetUpdateCmd)
 	changesetUpdateCmd.Flags().StringSliceVar(&changesetIdentifiers, "changeset", []string{}, "target specific changesets by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
-	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.filter, "filter", "", "filter to identify units whose revisions are included (slug or UUID)")
+	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.filter, "filter-field", "", "filter to identify units whose revisions are included (slug or UUID)")
 	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.startTag, "start-tag", "", "tag identifying the set of revisions that begin the changeset (slug or UUID)")
 	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.endTag, "end-tag", "", "tag identifying the set of revisions that end the changeset (slug or UUID)")
 	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.description, "description", "", "human-readable description of the change")
@@ -66,29 +67,32 @@ func init() {
 }
 
 func checkChangeSetConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := changesetPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(changesetIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --changeset can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !changesetPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) != 1 {
-		failOnError(errors.New("single changeset update requires exactly one argument: <slug or id>"))
-	}
+		// Check for mutual exclusivity between --changeset and --where flags
+		if len(changesetIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--changeset and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --changeset and --where flags
-	if len(changesetIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--changeset and --where flags are mutually exclusive"))
+	} else {
+		// Single create mode validation
+		if len(args) != 1 {
+			failOnError(errors.New("single changeset update requires exactly one argument: <slug or id>"))
+		}
+
+		if filter != "" || where != "" || len(changesetIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --changeset can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if changesetPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isBulkPatchMode && (where == "" && len(changesetIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --changeset flags"))
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -103,6 +107,12 @@ func checkChangeSetConflictingArgs(args []string) bool {
 }
 
 func runBulkChangeSetUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from changeset identifiers or use provided where clause
 	var effectiveWhere string
 	if len(changesetIdentifiers) > 0 {
@@ -123,11 +133,11 @@ func runBulkChangeSetUpdate() error {
 
 	// Add changeset-specific fields
 	if changesetUpdateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(changesetUpdateArgs.filter, "FilterID")
+		filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
 		if err != nil {
 			return err
 		}
-		patchData["FilterID"] = filter.FilterID.String()
+		patchData["FilterID"] = filterFieldString
 	}
 
 	if changesetUpdateArgs.startTag != "" {
@@ -200,6 +210,9 @@ func runBulkChangeSetUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
 
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchChangeSetsWithBodyWithResponse(
@@ -259,11 +272,15 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Add changeset details from flags
 		if changesetUpdateArgs.filter != "" {
-			filter, err := apiGetFilterFromSlug(changesetUpdateArgs.filter, "FilterID")
+			filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
 			if err != nil {
 				return err
 			}
-			currentChangeSet.FilterID = &filter.FilterID
+			filterFieldID, err := uuid.Parse(filterFieldString)
+			if err != nil {
+				return err
+			}
+			currentChangeSet.FilterID = &filterFieldID
 		}
 
 		if changesetUpdateArgs.startTag != "" {
@@ -330,11 +347,15 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Set changeset-specific fields from flags
 	if changesetUpdateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(changesetUpdateArgs.filter, "FilterID")
+		filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
 		if err != nil {
 			return err
 		}
-		currentChangeSet.FilterID = &filter.FilterID
+		filterFieldID, err := uuid.Parse(filterFieldString)
+		if err != nil {
+			return err
+		}
+		currentChangeSet.FilterID = &filterFieldID
 	}
 
 	if changesetUpdateArgs.startTag != "" {

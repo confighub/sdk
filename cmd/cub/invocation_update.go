@@ -53,34 +53,38 @@ func init() {
 	invocationUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
+	enableFilterFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringSliceVar(&invocationIdentifiers, "invocation", []string{}, "target specific invocations by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	invocationCmd.AddCommand(invocationUpdateCmd)
 }
 
 func checkInvocationConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := invocationPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(invocationIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --invocation can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !invocationPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) < 3 {
-		failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...]"))
-	}
+		// Check for mutual exclusivity between --invocation and --where flags
+		if len(invocationIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--invocation and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --invocation and --where flags
-	if len(invocationIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--invocation and --where flags are mutually exclusive"))
+	} else {
+		// Single create mode validation
+		if len(args) < 3 {
+			failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...]"))
+		}
+
+		if filter != "" || where != "" || len(invocationIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --invocation can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if invocationPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isBulkPatchMode && (where == "" && len(invocationIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --invocation flags"))
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -95,6 +99,12 @@ func checkInvocationConflictingArgs(args []string) bool {
 }
 
 func runBulkInvocationUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from invocation identifiers or use provided where clause
 	var effectiveWhere string
 	if len(invocationIdentifiers) > 0 {
@@ -171,6 +181,9 @@ func runBulkInvocationUpdate() error {
 	params := &goclientnew.BulkPatchInvocationsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk patch API

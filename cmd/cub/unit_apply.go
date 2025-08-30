@@ -5,6 +5,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -16,6 +19,7 @@ var unitApplyArgs struct {
 	whereClause     string
 	dryRun          bool
 	unitIdentifiers []string
+	revision        string
 }
 
 var unitApplyCmd = &cobra.Command{
@@ -27,6 +31,11 @@ var unitApplyCmd = &cobra.Command{
 Examples:
   # Apply a single unit by slug
   cub unit apply my-unit
+  
+  # Apply a specific revision
+  cub unit apply my-unit --revision 5
+  cub unit apply my-unit --revision LiveRevisionNum
+  cub unit apply my-unit --revision Tag:release-v1.0
 
   # Apply multiple specific units
   cub unit apply --space my-space --unit unit1,unit2,unit3
@@ -34,6 +43,9 @@ Examples:
 
   # Bulk apply units using a WHERE clause with labels
   cub unit apply --space my-space --where "Labels.Tier = 'backend'"
+  
+  # Apply specific revision for multiple units
+  cub unit apply --space my-space --where "Labels.Tier = 'backend'" --revision LiveRevisionNum
 
   # Apply units with multiple label conditions
   cub unit apply --space my-space --where "Labels.App = 'api' AND Labels.Tier = 'backend'"
@@ -57,7 +69,97 @@ func init() {
 	unitApplyCmd.Flags().StringVar(&unitApplyArgs.whereClause, "where", "", "WHERE clause to filter units for bulk apply")
 	unitApplyCmd.Flags().BoolVar(&unitApplyArgs.dryRun, "dry-run", false, "Perform a dry run without actually applying")
 	unitApplyCmd.Flags().StringSliceVar(&unitApplyArgs.unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
+	unitApplyCmd.Flags().StringVar(&unitApplyArgs.revision, "revision", "", "Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
 	unitCmd.AddCommand(unitApplyCmd)
+}
+
+// parseApplyRevisionParameter parses the revision parameter for apply operations
+// and returns the properly formatted revision string for the API.
+func parseApplyRevisionParameter(revision string) (*string, error) {
+	if revision == "" {
+		return nil, nil
+	}
+
+	// Check for Before: prefix (not supported for apply)
+	if strings.HasPrefix(revision, "Before:") {
+		return nil, fmt.Errorf("'Before:' modifier is not supported for apply operations")
+	}
+	
+	// Parse the revision parameter
+	parts := strings.Split(revision, ":")
+	var entityType, identifier string
+	
+	switch len(parts) {
+	case 2:
+		// EntityType:Identifier format
+		entityType = parts[0]
+		identifier = parts[1]
+	case 1:
+		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
+		identifier = parts[0]
+	default:
+		return nil, fmt.Errorf("invalid revision specification: %s", revision)
+	}
+	
+	// Handle entity type-specific parsing
+	if entityType == "Tag" {
+		// Parse tag slug/ID and convert to UUID
+		tagUUID, err := parseTagSlug(identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+		}
+		result := fmt.Sprintf("Tag:%s", tagUUID)
+		return &result, nil
+		
+	} else if entityType == "ChangeSet" {
+		// Parse changeset slug/ID and convert to UUID
+		changesetUUID, err := parseChangeSetSlug(identifier)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
+		}
+		result := fmt.Sprintf("ChangeSet:%s", changesetUUID)
+		return &result, nil
+		
+	} else if entityType == "Revision" {
+		// Handle Revision:uuid format
+		if _, err := uuid.Parse(identifier); err != nil {
+			return nil, fmt.Errorf("invalid revision UUID: %s", identifier)
+		}
+		result := fmt.Sprintf("Revision:%s", identifier)
+		return &result, nil
+		
+	} else if entityType != "" {
+		return nil, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
+	}
+	
+	// Handle simple identifiers (no entity type prefix)
+	namedRevisions := map[string]bool{
+		"LiveRevisionNum":         true,
+		"LastAppliedRevisionNum":  true,
+		"PreviousLiveRevisionNum": true,
+		"HeadRevisionNum":         true,
+	}
+	
+	if namedRevisions[identifier] {
+		// Named revisions are passed as-is
+		return &identifier, nil
+	}
+	
+	// Check if it's a UUID
+	if _, err := uuid.Parse(identifier); err == nil {
+		// It's a UUID - format as Revision:uuid
+		result := fmt.Sprintf("Revision:%s", identifier)
+		return &result, nil
+	}
+	
+	// Check if it's a number (revision number)
+	if _, err := strconv.ParseInt(identifier, 10, 64); err == nil {
+		// It's a number - pass as-is (the API will handle it)
+		return &identifier, nil
+	}
+	
+	// Not a valid revision specification
+	return nil, fmt.Errorf("invalid revision specification: %s. Must be a revision number, named revision (LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum), UUID, or EntityType:identifier format", revision)
 }
 
 func unitApplyCmdRun(_ *cobra.Command, args []string) error {
@@ -78,8 +180,20 @@ func runSingleUnitApply(unitSlug string) error {
 	if err != nil {
 		return err
 	}
+	
+	// Parse revision parameter
+	revisionParam, err := parseApplyRevisionParameter(unitApplyArgs.revision)
+	if err != nil {
+		return err
+	}
+	
+	// Build apply parameters
+	params := &goclientnew.ApplyUnitParams{}
+	if revisionParam != nil {
+		params.Revision = revisionParam
+	}
 
-	applyRes, err := cubClientNew.ApplyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
+	applyRes, err := cubClientNew.ApplyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if IsAPIError(err, applyRes) {
 		return InterpretErrorGeneric(err, applyRes)
 	}
@@ -113,6 +227,12 @@ func runBulkUnitApply() error {
 	if len(unitApplyArgs.unitIdentifiers) == 0 && unitApplyArgs.whereClause == "" {
 		return errors.New("either --unit or --where flag is required for bulk apply")
 	}
+	
+	// Parse revision parameter
+	revisionParam, err := parseApplyRevisionParameter(unitApplyArgs.revision)
+	if err != nil {
+		return err
+	}
 
 	// Build WHERE clause from unit identifiers if provided
 	var effectiveWhere string
@@ -137,6 +257,9 @@ func runBulkUnitApply() error {
 	}
 	if unitApplyArgs.dryRun {
 		params.DryRun = &unitApplyArgs.dryRun
+	}
+	if revisionParam != nil {
+		params.Revision = revisionParam
 	}
 
 	// Call the bulk apply endpoint
@@ -306,7 +429,7 @@ func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error
 	for time.Since(startTime) < timeoutDuration {
 		if !started {
 			// Check that the queued operation has posted events
-			events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp)
+			events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp, "")
 			if err == nil && len(events) > 0 {
 				// tprint(string(*queuedOp.Action) + " started")
 				started = true
@@ -350,7 +473,7 @@ func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error
 	if err != nil {
 		return err
 	}
-	events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp)
+	events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp, "")
 	if err != nil {
 		return err
 	}

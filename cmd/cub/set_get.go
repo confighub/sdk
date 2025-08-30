@@ -31,20 +31,37 @@ func init() {
 }
 
 func setGetCmdRun(cmd *cobra.Command, args []string) error {
-	setDetails, err := apiGetSetFromSlug(args[0], selectFields)
+	setDetails, err := apiGetExtendedSetFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(setDetails, displaySetDetails)
+	displayGetResults(setDetails, displayExtendedSetDetails)
 	return nil
 }
 
 func displaySetDetails(setDetails *goclientnew.Set) {
+	// Create an ExtendedSet wrapper with just the Set set
+	extendedSet := &goclientnew.ExtendedSet{
+		Set: setDetails,
+		// All other fields (Space, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedSetDetails(extendedSet)
+}
+
+func displayExtendedSetDetails(extendedSet *goclientnew.ExtendedSet) {
+	setDetails := extendedSet.Set
 	view := tableView()
 	view.Append([]string{"ID", setDetails.SetID.String()})
 	view.Append([]string{"Name", setDetails.Slug})
-	view.Append([]string{"Space ID", setDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedSet.Space != nil {
+		view.Append([]string{"Space", extendedSet.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", setDetails.SpaceID.String()})
+	}
+	
 	view.Append([]string{"Created At", setDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", setDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(setDetails.Labels)})
@@ -54,7 +71,17 @@ func displaySetDetails(setDetails *goclientnew.Set) {
 }
 
 func apiGetSet(setID string, selectParam string) (*goclientnew.Set, error) {
+	extendedSet, err := apiGetExtendedSet(setID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedSet.Set, nil
+}
+
+func apiGetExtendedSet(setID string, selectParam string) (*goclientnew.ExtendedSet, error) {
 	newParams := goclientnew.GetSetParams{}
+	include := "SpaceID"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -63,14 +90,14 @@ func apiGetSet(setID string, selectParam string) (*goclientnew.Set, error) {
 	if IsAPIError(err, setDetails) {
 		return nil, InterpretErrorGeneric(err, setDetails)
 	}
-
-	if setDetails.JSON200 == nil || setDetails.JSON200.Set == nil {
-		return nil, fmt.Errorf("unexpected response: %v", setDetails)
-	}
-	return setDetails.JSON200.Set, nil
+	return setDetails.JSON200, nil
 }
 
 func apiGetSetFromSlug(slug string, selectParam string) (*goclientnew.Set, error) {
+	return apiGetSetFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetSetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Set, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetSet(id.String(), selectParam)
@@ -79,7 +106,7 @@ func apiGetSetFromSlug(slug string, selectParam string) (*goclientnew.Set, error
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	sets, err := apiListSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	sets, err := apiListSets(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -88,5 +115,34 @@ func apiGetSetFromSlug(slug string, selectParam string) (*goclientnew.Set, error
 			return set, nil
 		}
 	}
-	return nil, fmt.Errorf("set %s not found in space %s", slug, selectedSpaceSlug)
+	
+	// Get space slug for error message
+	spaceSlug := spaceID
+	if spaceUUID, err := uuid.Parse(spaceID); err == nil {
+		if space, err := apiGetSpace(spaceUUID.String(), "Slug"); err == nil && space != nil {
+			spaceSlug = space.Slug
+		}
+	}
+	return nil, fmt.Errorf("set %s not found in space %s", slug, spaceSlug)
+}
+
+func apiGetExtendedSetFromSlug(slug string, selectParam string) (*goclientnew.ExtendedSet, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedSet(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	sets, err := apiListSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, set := range sets {
+		if set.Slug == slug {
+			return apiGetExtendedSet(set.SetID.String(), selectParam)
+		}
+	}
+	return nil, fmt.Errorf("set %s not found in space %s", slug, selectedSpaceID)
 }

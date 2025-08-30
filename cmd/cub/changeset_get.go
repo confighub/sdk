@@ -33,46 +33,71 @@ func init() {
 }
 
 func changesetGetCmdRun(cmd *cobra.Command, args []string) error {
-	changesetDetails, err := apiGetChangeSetFromSlug(args[0], selectFields)
+	changesetDetails, err := apiGetExtendedChangeSetFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(changesetDetails, displayChangeSetDetails)
+	displayGetResults(changesetDetails, displayExtendedChangeSetDetails)
 	return nil
 }
 
 func displayChangeSetDetails(changesetDetails *goclientnew.ChangeSet) {
+	// Create an ExtendedChangeSet wrapper with just the ChangeSet set
+	extendedChangeSet := &goclientnew.ExtendedChangeSet{
+		ChangeSet: changesetDetails,
+		// All other fields (Space, Filter, StartTag, EndTag, etc.) will be nil, causing Extended display to show IDs
+	}
+	displayExtendedChangeSetDetails(extendedChangeSet)
+}
+
+func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChangeSet) {
+	changesetDetails := extendedChangeSet.ChangeSet
 	view := tableView()
 	view.Append([]string{"ID", changesetDetails.ChangeSetID.String()})
 	view.Append([]string{"Name", changesetDetails.Slug})
-	view.Append([]string{"Display Name", changesetDetails.DisplayName})
-	view.Append([]string{"Space ID", changesetDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedChangeSet.Space != nil {
+		view.Append([]string{"Space", extendedChangeSet.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", changesetDetails.SpaceID.String()})
+	}
+	
 	view.Append([]string{"Created At", changesetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", changesetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(changesetDetails.Labels)})
 	view.Append([]string{"Annotations", annotationsToString(changesetDetails.Annotations)})
 	view.Append([]string{"Organization ID", changesetDetails.OrganizationID.String()})
-	
-	if changesetDetails.FilterID != nil && *changesetDetails.FilterID != uuid.Nil {
-		view.Append([]string{"Filter ID", changesetDetails.FilterID.String()})
+
+	// Show related entities by slug when available
+	if extendedChangeSet.Filter != nil {
+		view.Append([]string{"Filter", extendedChangeSet.Filter.Slug})
 	}
-	if changesetDetails.StartTagID != nil && *changesetDetails.StartTagID != uuid.Nil {
-		view.Append([]string{"Start Tag ID", changesetDetails.StartTagID.String()})
+	if extendedChangeSet.StartTag != nil {
+		view.Append([]string{"Start Tag", extendedChangeSet.StartTag.Slug})
 	}
-	if changesetDetails.EndTagID != nil && *changesetDetails.EndTagID != uuid.Nil {
-		view.Append([]string{"End Tag ID", changesetDetails.EndTagID.String()})
+	if extendedChangeSet.EndTag != nil {
+		view.Append([]string{"End Tag", extendedChangeSet.EndTag.Slug})
 	}
 	if changesetDetails.Description != "" {
 		view.Append([]string{"Description", changesetDetails.Description})
 	}
-	
+
 	view.Render()
 }
 
 func apiGetChangeSet(changesetID string, selectParam string) (*goclientnew.ChangeSet, error) {
+	extendedChangeSet, err := apiGetExtendedChangeSet(changesetID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedChangeSet.ChangeSet, nil
+}
+
+func apiGetExtendedChangeSet(changesetID string, selectParam string) (*goclientnew.ExtendedChangeSet, error) {
 	newParams := &goclientnew.GetChangeSetParams{}
-	include := "FilterID,StartTagID,EndTagID"
+	include := "SpaceID,FilterID,StartTagID,EndTagID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -82,10 +107,18 @@ func apiGetChangeSet(changesetID string, selectParam string) (*goclientnew.Chang
 	if IsAPIError(err, changesetRes) {
 		return nil, InterpretErrorGeneric(err, changesetRes)
 	}
-	return changesetRes.JSON200.ChangeSet, nil
+	return changesetRes.JSON200, nil
 }
 
 func apiGetChangeSetFromSlug(slug string, selectParam string) (*goclientnew.ChangeSet, error) {
+	return apiGetChangeSetFromSlugInSpace(slug, selectedSpaceID, selectParam)
+}
+
+func apiGetChangeSetFromSlugWithSpace(slug string, selectParam string, spaceID string) (*goclientnew.ChangeSet, error) {
+	return apiGetChangeSetFromSlugInSpace(slug, spaceID, selectParam)
+}
+
+func apiGetChangeSetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ChangeSet, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetChangeSet(id.String(), selectParam)
@@ -94,7 +127,7 @@ func apiGetChangeSetFromSlug(slug string, selectParam string) (*goclientnew.Chan
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	changesets, err := apiListChangeSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam)
+	changesets, err := apiListChangeSets(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -104,5 +137,27 @@ func apiGetChangeSetFromSlug(slug string, selectParam string) (*goclientnew.Chan
 			return changeset.ChangeSet, nil
 		}
 	}
-	return nil, fmt.Errorf("changeset %s not found in space %s", slug, selectedSpaceSlug)
+	return nil, fmt.Errorf("changeset %s not found in space %s", slug, spaceID)
+}
+
+func apiGetExtendedChangeSetFromSlug(slug string, selectParam string) (*goclientnew.ExtendedChangeSet, error) {
+	id, err := uuid.Parse(slug)
+	if err == nil {
+		return apiGetExtendedChangeSet(id.String(), selectParam)
+	}
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	changesets, err := apiListChangeSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	// find changeset by slug
+	for _, changeset := range changesets {
+		if changeset.ChangeSet != nil && changeset.ChangeSet.Slug == slug {
+			return changeset, nil
+		}
+	}
+	return nil, fmt.Errorf("changeset %s not found in space %s", slug, selectedSpaceID)
 }

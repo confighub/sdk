@@ -71,7 +71,7 @@ func apiGetUserFromUsername(username string) (*goclientnew.User, error) {
 	if err == nil {
 		return apiGetUser(id.String())
 	}
-	users, err := apiListUsers("Username = '" + username + "'")
+	users, err := apiListUsers("Username = '" + username + "'", "")
 	if err != nil {
 		return nil, err
 	}

@@ -43,30 +43,30 @@ var (
 func init() {
 	addStandardDeleteFlags(targetDeleteCmd)
 	enableWhereFlag(targetDeleteCmd)
+	enableFilterFlag(targetDeleteCmd)
 	targetDeleteCmd.Flags().StringSliceVar(&targetDeleteIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	targetCmd.AddCommand(targetDeleteCmd)
 }
 
 func checkTargetDeleteConflictingArgs(args []string) bool {
-	// Check for bulk delete mode (no positional args with --where or --target)
-	isBulkDeleteMode := len(args) == 0 && (where != "" || len(targetDeleteIdentifiers) > 0)
+	// Check for bulk delete mode: no positional args
+	isBulkDeleteMode := len(args) == 0
 
-	if !isBulkDeleteMode && (where != "" || len(targetDeleteIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --target can only be specified with no positional arguments"))
-	}
+	if isBulkDeleteMode {
+		// Check for mutual exclusivity between --target and --where flags
+		if len(targetDeleteIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--target and --where flags are mutually exclusive"))
+		}
 
-	// Single delete mode validation
-	if !isBulkDeleteMode && len(args) != 1 {
-		failOnError(fmt.Errorf("single target delete requires exactly one argument: <slug or id>"))
-	}
+	} else {
+		// Single delete mode validation
+		if len(args) != 1 {
+			failOnError(fmt.Errorf("single target delete requires exactly one argument: <slug or id>"))
+		}
 
-	// Check for mutual exclusivity between --target and --where flags
-	if len(targetDeleteIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--target and --where flags are mutually exclusive"))
-	}
-
-	if isBulkDeleteMode && (where == "" && len(targetDeleteIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk delete mode requires --where or --target flags"))
+		if filter != "" || where != "" || len(targetDeleteIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --target can only be specified with no positional arguments"))
+		}
 	}
 
 	return isBulkDeleteMode
@@ -77,6 +77,12 @@ func buildWhereClauseFromTargets(targetIds []string) (string, error) {
 }
 
 func runBulkTargetDelete() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from target identifiers or use provided where clause
 	var effectiveWhere string
 	if len(targetDeleteIdentifiers) > 0 {
@@ -97,6 +103,9 @@ func runBulkTargetDelete() error {
 	params := &goclientnew.BulkDeleteTargetsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk delete API

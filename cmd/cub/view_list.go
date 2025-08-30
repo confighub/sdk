@@ -64,13 +64,18 @@ func viewListCmdRun(cmd *cobra.Command, args []string) error {
 	var extendedViews []*goclientnew.ExtendedView
 	var err error
 
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if selectedSpaceID == "*" {
-		extendedViews, err = apiSearchViews(where, selectFields)
+		extendedViews, err = apiSearchViews(where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedViews, err = apiListViews(selectedSpaceID, where, selectFields)
+		extendedViews, err = apiListViews(selectedSpaceID, where, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -88,12 +93,12 @@ func formatColumnsForDisplay(columns []goclientnew.Column) string {
 	if len(columns) == 0 {
 		return ""
 	}
-	
+
 	columnNames := make([]string, len(columns))
 	for i, col := range columns {
 		columnNames[i] = col.Name
 	}
-	
+
 	result := strings.Join(columnNames, ", ")
 	if len(result) > 40 {
 		return result[:37] + "..."
@@ -121,7 +126,7 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 		}
 
 		columnsDisplay := formatColumnsForDisplay(view.Columns)
-		
+
 		orderByDisplay := view.OrderBy
 		if view.OrderByDirection != "" && view.OrderByDirection != "OrderByDirectionNone" {
 			orderByDisplay = fmt.Sprintf("%s %s", view.OrderBy, view.OrderByDirection)
@@ -139,12 +144,15 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 	table.Render()
 }
 
-func apiListViews(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedView, error) {
+func apiListViews(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
 	newParams := &goclientnew.ListViewsParams{}
 	include := "SpaceID,FilterID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains
@@ -169,10 +177,13 @@ func apiListViews(spaceID string, whereFilter string, selectParam string) ([]*go
 	return views, nil
 }
 
-func apiSearchViews(whereFilter string, selectParam string) ([]*goclientnew.ExtendedView, error) {
+func apiSearchViews(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
 	newParams := &goclientnew.ListAllViewsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
+	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
 	}
 	if contains != "" {
 		newParams.Contains = &contains

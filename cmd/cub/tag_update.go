@@ -48,34 +48,38 @@ func init() {
 	addStandardUpdateFlags(tagUpdateCmd)
 	tagUpdateCmd.Flags().BoolVar(&tagPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(tagUpdateCmd)
+	enableFilterFlag(tagUpdateCmd)
 	tagUpdateCmd.Flags().StringSliceVar(&tagIdentifiers, "tag", []string{}, "target specific tags by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	tagCmd.AddCommand(tagUpdateCmd)
 }
 
 func checkTagConflictingArgs(args []string) bool {
-	// Check for bulk patch mode (no positional args with --patch)
-	isBulkPatchMode := tagPatch && len(args) == 0
+	// Check for bulk patch mode: no positional args
+	isBulkPatchMode := len(args) == 0
 
-	if !isBulkPatchMode && (where != "" || len(tagIdentifiers) > 0) {
-		failOnError(fmt.Errorf("--where or --tag can only be specified with --patch and no positional arguments"))
-	}
+	if isBulkPatchMode {
+		if !tagPatch {
+			failOnError(errors.New("--patch is required in bulk mode"))
+		}
 
-	// Single create mode validation
-	if !isBulkPatchMode && len(args) != 1 {
-		failOnError(errors.New("single tag update requires exactly one argument: <slug or id>"))
-	}
+		// Check for mutual exclusivity between --tag and --where flags
+		if len(tagIdentifiers) > 0 && where != "" {
+			failOnError(fmt.Errorf("--tag and --where flags are mutually exclusive"))
+		}
 
-	// Check for mutual exclusivity between --tag and --where flags
-	if len(tagIdentifiers) > 0 && where != "" {
-		failOnError(fmt.Errorf("--tag and --where flags are mutually exclusive"))
+	} else {
+		// Single create mode validation
+		if len(args) != 1 {
+			failOnError(errors.New("single tag update requires exactly one argument: <slug or id>"))
+		}
+
+		if filter != "" || where != "" || len(tagIdentifiers) > 0 {
+			failOnError(fmt.Errorf("--filter, --where, or --tag can only be specified with --patch and no positional arguments"))
+		}
 	}
 
 	if tagPatch && flagReplace {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
-	}
-
-	if isBulkPatchMode && (where == "" && len(tagIdentifiers) == 0) {
-		failOnError(fmt.Errorf("bulk patch mode requires --where or --tag flags"))
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -90,6 +94,12 @@ func checkTagConflictingArgs(args []string) bool {
 }
 
 func runBulkTagUpdate() error {
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build WHERE clause from tag identifiers or use provided where clause
 	var effectiveWhere string
 	if len(tagIdentifiers) > 0 {
@@ -157,6 +167,9 @@ func runBulkTagUpdate() error {
 	params := &goclientnew.BulkPatchTagsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 
 	// Call the bulk patch API

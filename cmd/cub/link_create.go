@@ -15,11 +15,15 @@ import (
 )
 
 var linkCreateArgs struct {
-	destSpaces   []string
-	whereSpace   string
-	whereFrom    string
-	whereTo      string
-	whereToSpace string
+	destSpaces    []string
+	whereSpace    string
+	whereFrom     string
+	whereTo       string
+	whereToSpace  string
+	filterSpace   string
+	filterFrom    string
+	filterTo      string
+	filterToSpace string
 }
 
 var linkCreateCmd = &cobra.Command{
@@ -52,6 +56,12 @@ Bulk Create Examples:
   # Create links between all deployments and a namespace in a space
   cub link create --where-space "Slug = 'my-space'" --where-from "Labels.type = 'deployment'" --where-to "Slug = 'my-ns'"
 
+  # Create links using filter entities to select spaces and units
+  cub link create --filter-space deployment-spaces --filter-from frontend-units --filter-to backend-units
+
+  # Combine where and filter expressions for complex selections
+  cub link create --where-space "Labels.env = 'prod'" --filter-from prod-deployments --where-to "Slug LIKE 'ns-%'"
+
   # Create links between units across different spaces
   cub link create --dest-space dev-space,staging-space --where-from "Labels.app = 'frontend'" --where-to "Labels.app = 'backend'" --where-to-space "Slug = 'services-space'"
 
@@ -69,9 +79,13 @@ func init() {
 	// Bulk create specific flags
 	linkCreateCmd.Flags().StringSliceVar(&linkCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereSpace, "where-space", "", "where expression to select spaces for bulk create")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereFrom, "where-from", "", "where expression to select from units within each space (required in bulk mode)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereTo, "where-to", "", "where expression to select to units within each space (required in bulk mode)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereFrom, "where-from", "", "where expression to select from units within each space")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereTo, "where-to", "", "where expression to select to units within each space")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereToSpace, "where-to-space", "", "where expression to select to spaces for bulk create (optional)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select spaces for bulk create (slug or UUID)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterFrom, "filter-from", "", "filter entity containing WHERE expression to select from units (slug or UUID)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterTo, "filter-to", "", "filter entity containing WHERE expression to select to units (slug or UUID)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterToSpace, "filter-to-space", "", "filter entity containing WHERE expression to select to spaces (slug or UUID)")
 
 	linkCmd.AddCommand(linkCreateCmd)
 }
@@ -81,27 +95,34 @@ func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 	isBulkCreateMode := len(args) == 0
 
 	if isBulkCreateMode {
-		// Validate bulk create requirements
-		if linkCreateArgs.whereFrom == "" || linkCreateArgs.whereTo == "" {
-			return false, errors.New("bulk create mode requires --where-from and --where-to flags")
+		// Validate bulk create requirements - require at least one from, to, and space selection
+		if linkCreateArgs.whereFrom == "" && linkCreateArgs.filterFrom == "" {
+			return false, errors.New("bulk create mode requires --where-from and/or --filter-from flags")
 		}
 
-		if linkCreateArgs.whereSpace == "" && len(linkCreateArgs.destSpaces) == 0 {
-			return false, errors.New("bulk create mode requires either --where-space or --dest-space flag")
+		if linkCreateArgs.whereTo == "" && linkCreateArgs.filterTo == "" {
+			return false, errors.New("bulk create mode requires --where-to and/or --filter-to flags")
+		}
+
+		if linkCreateArgs.whereSpace == "" && linkCreateArgs.filterSpace == "" && len(linkCreateArgs.destSpaces) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --where-space, --filter-space, or --dest-space flags")
 		}
 
 		if linkCreateArgs.whereSpace != "" && len(linkCreateArgs.destSpaces) > 0 {
 			return false, errors.New("--where-space and --dest-space flags are mutually exclusive")
 		}
+
 	} else {
 		// Single create mode validation
-		if len(args) < 3 {
+		if len(args) < 3 || len(args) > 4 {
 			return false, errors.New("single link creation requires: <slug> <from unit> <to unit> [to space]")
 		}
 
 		if linkCreateArgs.whereFrom != "" || linkCreateArgs.whereTo != "" || linkCreateArgs.whereSpace != "" ||
-			linkCreateArgs.whereToSpace != "" || len(linkCreateArgs.destSpaces) > 0 {
-			return false, errors.New("bulk create flags (--where-from, --where-to, --where-space, --where-to-space, --dest-space) can only be used without positional arguments")
+			linkCreateArgs.whereToSpace != "" || len(linkCreateArgs.destSpaces) > 0 ||
+			linkCreateArgs.filterFrom != "" || linkCreateArgs.filterTo != "" || linkCreateArgs.filterSpace != "" ||
+			linkCreateArgs.filterToSpace != "" {
+			return false, errors.New("bulk create flags (--where-from, --where-to, --where-space, --where-to-space, --dest-space, --filter-from, --filter-to, --filter-space, --filter-to-space) can only be used without positional arguments")
 		}
 	}
 
@@ -204,9 +225,17 @@ func runBulkLinkCreate() error {
 	}
 
 	// Build bulk create parameters
-	params := &goclientnew.BulkCreateLinksParams{
-		WhereFrom: &linkCreateArgs.whereFrom,
-		WhereTo:   &linkCreateArgs.whereTo,
+	params := &goclientnew.BulkCreateLinksParams{}
+
+	// Set where parameters if specified
+	if linkCreateArgs.whereFrom != "" {
+		params.WhereFrom = &linkCreateArgs.whereFrom
+	}
+	if linkCreateArgs.whereTo != "" {
+		params.WhereTo = &linkCreateArgs.whereTo
+	}
+	if linkCreateArgs.whereToSpace != "" {
+		params.WhereToSpace = &linkCreateArgs.whereToSpace
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space
@@ -220,11 +249,38 @@ func runBulkLinkCreate() error {
 			return errors.Wrapf(err, "error converting destination spaces to where expression")
 		}
 	}
-	params.WhereSpace = &whereSpaceExpr
+	if whereSpaceExpr != "" {
+		params.WhereSpace = &whereSpaceExpr
+	}
 
-	// Set where_to_space if specified
-	if linkCreateArgs.whereToSpace != "" {
-		params.WhereToSpace = &linkCreateArgs.whereToSpace
+	// Parse and set filter parameters if specified
+	if linkCreateArgs.filterSpace != "" {
+		filterSpaceID, err := parseFilterFlag(linkCreateArgs.filterSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-space")
+		}
+		params.FilterSpace = &filterSpaceID
+	}
+	if linkCreateArgs.filterFrom != "" {
+		filterFromID, err := parseFilterFlag(linkCreateArgs.filterFrom)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-from")
+		}
+		params.FilterFrom = &filterFromID
+	}
+	if linkCreateArgs.filterTo != "" {
+		filterToID, err := parseFilterFlag(linkCreateArgs.filterTo)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-to")
+		}
+		params.FilterTo = &filterToID
+	}
+	if linkCreateArgs.filterToSpace != "" {
+		filterToSpaceID, err := parseFilterFlag(linkCreateArgs.filterToSpace)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter-to-space")
+		}
+		params.FilterToSpace = &filterToSpaceID
 	}
 
 	// Call the bulk create API

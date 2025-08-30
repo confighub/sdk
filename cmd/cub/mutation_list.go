@@ -45,7 +45,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultMutationColumns = []string{"Mutation.MutationNum", "Mutation.RevisionNum", "Link.Slug", "Mutation.ProvidedResource", "Mutation.ProvidedPath", "Trigger.Slug", "Mutation.FunctionInvocation"}
+var defaultMutationColumns = []string{"Mutation.MutationNum", "Mutation.RevisionNum", "Link.Slug", "Mutation.ProvidedResource.ResourceName", "Mutation.ProvidedPath", "Trigger.Slug", "Invocation.Slug", "Mutation.FunctionInvocation.FunctionName"}
 
 // Mutation-specific aliases
 var mutationAliases = map[string]string{
@@ -65,6 +65,12 @@ func init() {
 func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 	var unit *goclientnew.Unit
 	var err error
+
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	if byUnitID {
 		unit, err = apiGetUnit(args[0], "*")
 	} else {
@@ -73,7 +79,7 @@ func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where, selectFields)
+	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where, selectFields, filterID)
 	if err != nil {
 		return err
 	}
@@ -89,16 +95,19 @@ func getMutationSlugFromExtended(mutationDetails *goclientnew.ExtendedMutation) 
 func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Num", "RevisionNum", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "FunctionName"})
+		table.SetHeader([]string{"Num", "RevisionNum", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "Invocation", "FunctionName"})
 	}
 	for _, extendedMutation := range extendedMutations {
 		mutationDetails := extendedMutation.Mutation
-		var linkSlug, triggerSlug string
+		var linkSlug, triggerSlug, invocationSlug string
 		if extendedMutation.Link != nil {
 			linkSlug = extendedMutation.Link.Slug
 		}
 		if extendedMutation.Trigger != nil {
 			triggerSlug = extendedMutation.Trigger.Slug
+		}
+		if extendedMutation.Invocation != nil {
+			invocationSlug = extendedMutation.Invocation.Slug
 		}
 		table.Append([]string{
 			fmt.Sprintf("%d", mutationDetails.MutationNum),
@@ -107,21 +116,25 @@ func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 			mutationDetails.ProvidedResource.ResourceName,
 			mutationDetails.ProvidedPath,
 			triggerSlug,
+			invocationSlug,
 			mutationDetails.FunctionInvocation.FunctionName,
 		})
 	}
 	table.Render()
 }
 
-func apiListMutations(spaceID string, unitID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedMutation, error) {
+func apiListMutations(spaceID string, unitID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.ListExtendedMutationsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
 	}
+	if filterParam != "" {
+		newParams.Filter = &filterParam
+	}
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "RevisionID,LinkID,TriggerID"
+	include := "SpaceID,RevisionID,LinkID,TriggerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"MutationNum", "MutationID", "UnitID", "SpaceID", "OrganizationID"}

@@ -23,7 +23,7 @@ func init() {
 func infoCmdRun(cmd *cobra.Command, args []string) error {
 	apiInfo := GetApiInfo()
 	detail := detailView()
-	detail.Append([]string{"Server URL:", cubContext.ConfigHubURL})
+	detail.Append([]string{"Server URL:", contextManager.ActiveContext().Coordinate.ServerURL})
 	detail.Append([]string{"Client ID:", apiInfo.ClientID})
 	detail.Append([]string{"Build:", apiInfo.Build})
 	detail.Append([]string{"BuiltAt:", apiInfo.BuiltAt})

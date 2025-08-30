@@ -45,7 +45,21 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view := tableView()
 	view.Append([]string{"ID", targetDetails.TargetID.String()})
 	view.Append([]string{"Name", targetDetails.Slug})
-	view.Append([]string{"Space ID", targetDetails.SpaceID.String()})
+	
+	// Show Space slug instead of Space ID when available
+	if extendedTarget.Space != nil {
+		view.Append([]string{"Space", extendedTarget.Space.Slug})
+	} else {
+		view.Append([]string{"Space ID", targetDetails.SpaceID.String()})
+	}
+
+	// Show Bridge Worker slug if available (expanded), otherwise show BridgeWorkerID
+	if extendedTarget.BridgeWorker != nil {
+		view.Append([]string{"Bridge Worker", extendedTarget.BridgeWorker.Slug})
+	} else if targetDetails.BridgeWorkerID != uuid.Nil {
+		view.Append([]string{"Bridge Worker ID", targetDetails.BridgeWorkerID.String()})
+	}
+	
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(targetDetails.Labels)})
@@ -56,6 +70,8 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 
 func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.GetTargetParams{}
+	include := "SpaceID,BridgeWorkerID"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -68,6 +84,19 @@ func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTar
 }
 
 func apiGetTargetFromSlug(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
+	return apiGetTargetFromSlugInSpace(slug, spaceID, selectParam)
+}
+
+// apiGetTargetFromSlugInSpaceCore returns just the Target, for use with parseEntityIdentifiers
+func apiGetTargetFromSlugInSpaceCore(slug string, spaceID string, selectParam string) (*goclientnew.Target, error) {
+	extendedTarget, err := apiGetTargetFromSlugInSpace(slug, spaceID, selectParam)
+	if err != nil {
+		return nil, err
+	}
+	return extendedTarget.Target, nil
+}
+
+func apiGetTargetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
 		return apiGetTarget(id.String(), selectParam)
@@ -76,7 +105,7 @@ func apiGetTargetFromSlug(slug string, spaceID string, selectParam string) (*goc
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	targets, err := apiListTargets(spaceID, "Slug = '"+slug+"'", selectParam)
+	targets, err := apiListTargets(spaceID, "Slug = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
