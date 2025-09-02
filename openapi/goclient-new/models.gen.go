@@ -114,8 +114,10 @@ type ApiInfo struct {
 	BuiltAt string `json:"BuiltAt,omitempty"`
 
 	// ClientID ClientID for identity provider service.
-	ClientID    string `json:"ClientID,omitempty"`
-	RedirectURI string `json:"RedirectURI,omitempty"`
+	ClientID       string `json:"ClientID,omitempty"`
+	DeviceAuthURL  string `json:"DeviceAuthURL,omitempty"`
+	DeviceTokenURL string `json:"DeviceTokenURL,omitempty"`
+	RedirectURI    string `json:"RedirectURI,omitempty"`
 
 	// Revision Service revision identifier for support cases.
 	Revision string `json:"Revision,omitempty"`
@@ -717,6 +719,9 @@ type ExtendedUnit struct {
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty"`
+
+	// PreviousLiveRevision Revision is a historial view of a Config Unit.
+	PreviousLiveRevision *Revision `json:"PreviousLiveRevision,omitempty"`
 
 	// Set A group of related Units that can be cloned, upgraded, applied, refreshed, or destroyed as a group.
 	Set *Set `json:"Set,omitempty"`
@@ -3165,6 +3170,12 @@ type ListAllFiltersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
+	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
+	Entity *string `form:"entity,omitempty" json:"entity,omitempty"`
+
+	// Id Entity ID to filter for. Must be specified together with 'entity' parameter.
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
 }
 
 // BulkPatchFiltersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchFilters.
@@ -4547,7 +4558,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -5069,6 +5080,12 @@ type ListFiltersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty"`
+
+	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
+	Entity *string `form:"entity,omitempty" json:"entity,omitempty"`
+
+	// Id Entity ID to filter for. Must be specified together with 'entity' parameter.
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
 }
 
 // GetFilterParams defines parameters for GetFilter.
@@ -6014,7 +6031,7 @@ type ListUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -6109,7 +6126,7 @@ type ListExtendedUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -6131,7 +6148,7 @@ type GetUnitParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -6351,7 +6368,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, CreatedAt, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty"`
@@ -7762,7 +7779,7 @@ type BulkDeleteUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7838,7 +7855,7 @@ type ListAllUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -7963,7 +7980,7 @@ type BulkPatchUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -8078,7 +8095,7 @@ type BulkCreateUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -8204,7 +8221,7 @@ type BulkApplyUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -8286,7 +8303,7 @@ type BulkApproveUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -8365,7 +8382,7 @@ type BulkDestroyUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
@@ -8444,7 +8461,7 @@ type BulkTagUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`

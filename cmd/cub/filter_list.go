@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -34,7 +36,13 @@ Examples:
   cub filter list --space my-space --where "From = 'Unit'"
 
   # List filters with resource type
-  cub filter list --space my-space --where "ResourceType LIKE 'apps/v1/%'"`,
+  cub filter list --space my-space --where "ResourceType LIKE 'apps/v1/%'"
+
+  # List filters that match a specific entity
+  cub filter list --space my-space --entity-type Unit --entity-id my-unit
+
+  # List filters that match a space (works across all spaces)
+  cub filter list --space "*" --entity-type Space --entity-id my-space`,
 	Args:        cobra.ExactArgs(0),
 	RunE:        filterListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
@@ -52,12 +60,27 @@ var filterAliases = map[string]string{
 // Filter custom column dependencies
 var filterCustomColumnDependencies = map[string][]string{}
 
+var (
+	entityType string
+	entityID   string
+)
+
 func init() {
 	addStandardListFlags(filterListCmd)
+	
+	// Add entity-type and entity-id flags for filtering
+	filterListCmd.Flags().StringVar(&entityType, "entity-type", "", "Entity type to filter for (e.g., Space). Must be specified together with --entity-id.")
+	filterListCmd.Flags().StringVar(&entityID, "entity-id", "", "Entity ID or slug to filter for. Must be specified together with --entity-type.")
+	
 	filterCmd.AddCommand(filterListCmd)
 }
 
 func filterListCmdRun(cmd *cobra.Command, args []string) error {
+	// Validate entity parameters
+	if err := validateEntityParameters(); err != nil {
+		return err
+	}
+
 	var extendedFilters []*goclientnew.ExtendedFilter
 	var err error
 
@@ -134,6 +157,17 @@ func apiListFilters(spaceID string, whereFilter string, selectParam string) ([]*
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	
+	// Add entity parameters if specified
+	if entityType != "" && entityID != "" {
+		resolvedEntityType, resolvedEntityID, err := parseEntityIdentifierForFilter(entityID, entityType, "")
+		if err != nil {
+			return nil, err
+		}
+		newParams.Entity = &resolvedEntityType
+		newParams.Id = &resolvedEntityID
+	}
+	
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
 		return buildSelectList("Filter", "", include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
@@ -163,6 +197,16 @@ func apiSearchFilters(whereFilter string, selectParam string) ([]*goclientnew.Ex
 		newParams.Contains = &contains
 	}
 
+	// Add entity parameters if specified
+	if entityType != "" && entityID != "" {
+		resolvedEntityType, resolvedEntityID, err := parseEntityIdentifierForFilter(entityID, entityType, "")
+		if err != nil {
+			return nil, err
+		}
+		newParams.Entity = &resolvedEntityType
+		newParams.Id = &resolvedEntityID
+	}
+
 	include := "SpaceID,FromSpaceID"
 	newParams.Include = &include
 
@@ -189,4 +233,183 @@ func apiSearchFilters(whereFilter string, selectParam string) ([]*goclientnew.Ex
 	}
 
 	return extendedFilters, nil
+}
+
+// validateEntityParameters validates that both or neither of entity-type and entity-id are specified
+func validateEntityParameters() error {
+	if (entityType == "") != (entityID == "") {
+		return fmt.Errorf("both --entity-type and --entity-id must be specified together, or neither")
+	}
+	
+	if entityType != "" {
+		supportedTypes := []string{"Space", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "Target", "BridgeWorker", "Unit", "Link", "Set"}
+		found := false
+		for _, supported := range supportedTypes {
+			if entityType == supported {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("unsupported entity type: %s. Supported types: %v", entityType, supportedTypes)
+		}
+	}
+	return nil
+}
+
+// parseEntityIdentifierForFilter parses a single entity identifier for both organization-level and space-resident entities
+// Supports: Space (organization-level) and all space-resident entities
+func parseEntityIdentifierForFilter(
+	identifier string,
+	entityType string,
+	selectParam string,
+) (string, string, error) {
+	if identifier == "" {
+		return "", "", fmt.Errorf("%s value cannot be empty", entityType)
+	}
+
+	switch entityType {
+	case "Space":
+		// Organization-level entity
+		space, err := apiGetSpaceFromSlug(identifier, selectParam)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Space %s: %w", identifier, err)
+		}
+		return entityType, space.SpaceID.String(), nil
+	
+	case "Filter":
+		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
+			identifier, 
+			EntityTypeFilter,
+			apiGetFilterFromSlugInSpace,
+			func(f *goclientnew.Filter) string { return f.FilterID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Filter %s: %w", identifier, err)
+		}
+		return entityType, filterUUID.String(), nil
+		
+	case "View":
+		viewUUID, err := parseEntityIdentifierSingle[goclientnew.View](
+			identifier,
+			EntityTypeView,
+			apiGetViewFromSlugInSpace,
+			func(v *goclientnew.View) string { return v.ViewID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve View %s: %w", identifier, err)
+		}
+		return entityType, viewUUID.String(), nil
+		
+	case "Invocation":
+		invocationUUID, err := parseEntityIdentifierSingle[goclientnew.Invocation](
+			identifier,
+			EntityTypeInvocation,
+			apiGetInvocationFromSlugInSpace,
+			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Invocation %s: %w", identifier, err)
+		}
+		return entityType, invocationUUID.String(), nil
+		
+	case "Trigger":
+		triggerUUID, err := parseEntityIdentifierSingle[goclientnew.Trigger](
+			identifier,
+			EntityTypeTrigger,
+			apiGetTriggerFromSlugInSpaceCore,
+			func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Trigger %s: %w", identifier, err)
+		}
+		return entityType, triggerUUID.String(), nil
+		
+	case "Tag":
+		tagUUID, err := parseEntityIdentifierSingle[goclientnew.Tag](
+			identifier,
+			EntityTypeTag,
+			apiGetTagFromSlugInSpace,
+			func(t *goclientnew.Tag) string { return t.TagID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Tag %s: %w", identifier, err)
+		}
+		return entityType, tagUUID.String(), nil
+		
+	case "ChangeSet":
+		changeSetUUID, err := parseEntityIdentifierSingle[goclientnew.ChangeSet](
+			identifier,
+			EntityTypeChangeSet,
+			apiGetChangeSetFromSlugInSpace,
+			func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve ChangeSet %s: %w", identifier, err)
+		}
+		return entityType, changeSetUUID.String(), nil
+		
+	case "Target":
+		targetUUID, err := parseEntityIdentifierSingle[goclientnew.Target](
+			identifier,
+			EntityTypeTarget,
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Target %s: %w", identifier, err)
+		}
+		return entityType, targetUUID.String(), nil
+		
+	case "BridgeWorker":
+		bridgeWorkerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			identifier,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve BridgeWorker %s: %w", identifier, err)
+		}
+		return entityType, bridgeWorkerUUID.String(), nil
+		
+	case "Unit":
+		unitUUID, err := parseEntityIdentifierSingle[goclientnew.Unit](
+			identifier,
+			EntityTypeUnit,
+			apiGetUnitFromSlugInSpace,
+			func(u *goclientnew.Unit) string { return u.UnitID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Unit %s: %w", identifier, err)
+		}
+		return entityType, unitUUID.String(), nil
+		
+	case "Link":
+		linkUUID, err := parseEntityIdentifierSingle[goclientnew.Link](
+			identifier,
+			EntityTypeLink,
+			apiGetLinkFromSlugInSpace,
+			func(l *goclientnew.Link) string { return l.LinkID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Link %s: %w", identifier, err)
+		}
+		return entityType, linkUUID.String(), nil
+		
+	case "Set":
+		setUUID, err := parseEntityIdentifierSingle[goclientnew.Set](
+			identifier,
+			EntityTypeSet,
+			apiGetSetFromSlugInSpace,
+			func(s *goclientnew.Set) string { return s.SetID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Set %s: %w", identifier, err)
+		}
+		return entityType, setUUID.String(), nil
+		
+	default:
+		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)
+	}
 }

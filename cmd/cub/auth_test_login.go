@@ -101,6 +101,7 @@ func authTestLoginCmdRun(cmd *cobra.Command, args []string) error {
 	if err := updateContextFromSession(coordinate, &session); err != nil {
 		return fmt.Errorf("failed to update context: %w", err)
 	}
+	displayContextDetails(contextManager.ActiveContext())
 
 	// Preload builtin functions
 	if _, _, err := listAndSaveFunctions("", "", ""); err != nil {
