@@ -123,6 +123,7 @@ var unitCreateArgs struct {
 	importUnitSlug    string
 	toolchainType     string
 	targetSlug        string
+	changesetSlug     string
 	// Bulk create specific flags
 	destSpaces   []string
 	whereSpace   string
@@ -138,6 +139,7 @@ func init() {
 
 	// Single unit create flags
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.targetSlug, "target", "", "target for the unit")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changesetSlug, "changeset", "", "changeset to associate the unit with")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
@@ -282,6 +284,13 @@ func runSingleUnitCreate(args []string) error {
 		}
 		newUnit.TargetID = &id
 	}
+	if unitCreateArgs.changesetSlug != "" {
+		changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
+		if err != nil {
+			return err
+		}
+		newUnit.ChangeSetID = &changesetUUID
+	}
 
 	// If these were set from stdin, they will be overridden
 	newUnit.SpaceID = spaceID
@@ -339,6 +348,16 @@ func createBulkCreatePatch() ([]byte, error) {
 		// Add change description if specified
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription
+		}
+		
+		// Add changeset if specified
+		if unitCreateArgs.changesetSlug != "" {
+			changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
+			if err != nil {
+				failOnError(fmt.Errorf("failed to get changeset: %w", err))
+				return
+			}
+			patchMap["ChangeSetID"] = changesetUUID
 		}
 	}
 

@@ -765,17 +765,13 @@ func parseTagSlug(tagValue string) (string, error) {
 	return uuid.String(), nil
 }
 
-func parseChangeSetSlug(changesetValue string) (string, error) {
-	uuid, err := parseEntityIdentifierSingle[goclientnew.ChangeSet](
+func parseChangeSetSlug(changesetValue string) (uuid.UUID, error) {
+	return parseEntityIdentifierSingle[goclientnew.ChangeSet](
 		changesetValue, 
 		EntityTypeChangeSet,
 		apiGetChangeSetFromSlugInSpace,
 		func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
 	)
-	if err != nil {
-		return "", err
-	}
-	return uuid.String(), nil
 }
 
 func parseInvocationSlug(invocationValue string) (uuid.UUID, error) {

@@ -20,7 +20,7 @@ var changesetUpdateCmd = &cobra.Command{
 	Long: `Update a changeset or multiple changesets using bulk operations.
 
 Single changeset update:
-  cub changeset update my-changeset --description "Updated description" --filter-field new-filter
+  cub changeset update my-changeset --description "Updated description"
 
 Bulk update with --patch:
 Update multiple changesets at once based on search criteria. Requires --patch flag with no positional arguments.
@@ -29,11 +29,11 @@ Examples:
   # Update description for all changesets matching a pattern
   echo '{"Description": "Archived changeset"}' | cub changeset update --patch --where "CreatedAt < '2024-01-01'" --from-stdin
 
-  # Update filter for specific changesets
-  cub changeset update --patch --changeset cs1,cs2 --filter-field new-filter
+  # Update description for specific changesets
+  cub changeset update --patch --changeset cs1,cs2 --description "Updated description"
 
   # Update tags for changesets using JSON patch
-  echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeset update --patch --where "FilterID IS NOT NULL" --from-stdin`,
+  echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeset update --patch --where "Description LIKE 'Release%'" --from-stdin`,
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        changesetUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
@@ -43,9 +43,6 @@ var (
 	changesetPatch       bool
 	changesetIdentifiers []string
 	changesetUpdateArgs  struct {
-		filter      string
-		startTag    string
-		endTag      string
 		description string
 	}
 )
@@ -58,9 +55,6 @@ func init() {
 	changesetUpdateCmd.Flags().StringSliceVar(&changesetIdentifiers, "changeset", []string{}, "target specific changesets by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
-	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.filter, "filter-field", "", "filter to identify units whose revisions are included (slug or UUID)")
-	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.startTag, "start-tag", "", "tag identifying the set of revisions that begin the changeset (slug or UUID)")
-	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.endTag, "end-tag", "", "tag identifying the set of revisions that end the changeset (slug or UUID)")
 	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.description, "description", "", "human-readable description of the change")
 
 	changesetCmd.AddCommand(changesetUpdateCmd)
@@ -132,30 +126,6 @@ func runBulkChangeSetUpdate() error {
 	patchData := make(map[string]interface{})
 
 	// Add changeset-specific fields
-	if changesetUpdateArgs.filter != "" {
-		filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
-		if err != nil {
-			return err
-		}
-		patchData["FilterID"] = filterFieldString
-	}
-
-	if changesetUpdateArgs.startTag != "" {
-		startTag, err := apiGetTagFromSlug(changesetUpdateArgs.startTag, "TagID")
-		if err != nil {
-			return err
-		}
-		patchData["StartTagID"] = startTag.TagID.String()
-	}
-
-	if changesetUpdateArgs.endTag != "" {
-		endTag, err := apiGetTagFromSlug(changesetUpdateArgs.endTag, "TagID")
-		if err != nil {
-			return err
-		}
-		patchData["EndTagID"] = endTag.TagID.String()
-	}
-
 	if changesetUpdateArgs.description != "" {
 		patchData["Description"] = changesetUpdateArgs.description
 	}
@@ -271,34 +241,6 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		// Add changeset details from flags
-		if changesetUpdateArgs.filter != "" {
-			filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
-			if err != nil {
-				return err
-			}
-			filterFieldID, err := uuid.Parse(filterFieldString)
-			if err != nil {
-				return err
-			}
-			currentChangeSet.FilterID = &filterFieldID
-		}
-
-		if changesetUpdateArgs.startTag != "" {
-			startTag, err := apiGetTagFromSlug(changesetUpdateArgs.startTag, "TagID")
-			if err != nil {
-				return err
-			}
-			currentChangeSet.StartTagID = &startTag.TagID
-		}
-
-		if changesetUpdateArgs.endTag != "" {
-			endTag, err := apiGetTagFromSlug(changesetUpdateArgs.endTag, "TagID")
-			if err != nil {
-				return err
-			}
-			currentChangeSet.EndTagID = &endTag.TagID
-		}
-
 		if changesetUpdateArgs.description != "" {
 			currentChangeSet.Description = changesetUpdateArgs.description
 		}
@@ -346,34 +288,6 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentChangeSet.SpaceID = spaceID
 
 	// Set changeset-specific fields from flags
-	if changesetUpdateArgs.filter != "" {
-		filterFieldString, err := parseFilterFlag(changesetUpdateArgs.filter)
-		if err != nil {
-			return err
-		}
-		filterFieldID, err := uuid.Parse(filterFieldString)
-		if err != nil {
-			return err
-		}
-		currentChangeSet.FilterID = &filterFieldID
-	}
-
-	if changesetUpdateArgs.startTag != "" {
-		startTag, err := apiGetTagFromSlug(changesetUpdateArgs.startTag, "TagID")
-		if err != nil {
-			return err
-		}
-		currentChangeSet.StartTagID = &startTag.TagID
-	}
-
-	if changesetUpdateArgs.endTag != "" {
-		endTag, err := apiGetTagFromSlug(changesetUpdateArgs.endTag, "TagID")
-		if err != nil {
-			return err
-		}
-		currentChangeSet.EndTagID = &endTag.TagID
-	}
-
 	if changesetUpdateArgs.description != "" {
 		currentChangeSet.Description = changesetUpdateArgs.description
 	}

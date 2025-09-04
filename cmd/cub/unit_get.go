@@ -129,6 +129,13 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Target", unitDetails.Target.Slug})
 		}
 
+		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
+		if unitDetails.ChangeSet != nil {
+			view.Append([]string{"ChangeSet", unitDetails.ChangeSet.Slug})
+		} else if unitDetails.Unit.ChangeSetID != nil && *unitDetails.Unit.ChangeSetID != uuid.Nil {
+			view.Append([]string{"ChangeSet ID", unitDetails.Unit.ChangeSetID.String()})
+		}
+
 		view.Append([]string{"Created At", unitDetails.Unit.CreatedAt.String()})
 		view.Append([]string{"Updated At", unitDetails.Unit.UpdatedAt.String()})
 		view.Append([]string{"Labels", labelsToString(unitDetails.Unit.Labels)})
@@ -251,7 +258,7 @@ func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*gocl
 
 func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.GetUnitParams{}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

@@ -163,11 +163,13 @@ var (
 	restore           string
 	isUpgrade         bool
 	isPatch           bool
+	changesetSlug     string
 )
 
 func init() {
 	addStandardUpdateFlags(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
+	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
@@ -208,11 +210,11 @@ func checkConflictingArgs(args []string) bool {
 				if strings.HasPrefix(restore, "Before:") {
 					checkRestore = strings.TrimPrefix(restore, "Before:")
 				}
-				
+
 				// Check for Tag:, ChangeSet:, or Revision: prefixed values, or special values
 				parts := strings.Split(checkRestore, ":")
 				var isValidPrefix bool
-				
+
 				switch len(parts) {
 				case 2:
 					// EntityType:Identifier format
@@ -223,7 +225,7 @@ func checkConflictingArgs(args []string) bool {
 				default:
 					isValidPrefix = false
 				}
-				
+
 				if !isValidPrefix {
 					failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LiveRevisionNum, Tag:slug, ChangeSet:slug, Revision:uuid, or Before:value"))
 				}
@@ -235,8 +237,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, or --label"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --label, or --changeset"))
 		}
 	}
 
@@ -289,10 +291,22 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	var patchData []byte
 	if isPatch {
 		// Create enhancer for unit-specific fields
-		var enhancer PatchEnhancer
-		if changeDescription != "" {
-			enhancer = func(patchMap map[string]interface{}) {
+		var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+			if changeDescription != "" {
 				patchMap["LastChangeDescription"] = changeDescription
+			}
+			if changesetSlug != "" {
+				if changesetSlug == "-" {
+					// Special value to remove the changeset
+					patchMap["ChangeSetID"] = nil
+				} else {
+					changesetUUID, err := parseChangeSetSlug(changesetSlug)
+					if err != nil {
+						failOnError(fmt.Errorf("failed to get changeset: %w", err))
+						return
+					}
+					patchMap["ChangeSetID"] = changesetUUID
+				}
 			}
 		}
 		// Build patch data using consolidated function. It reads from stdin/file and sets labels, if any.
@@ -328,6 +342,18 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// For non-patch operations, handle change description in the traditional way
 		if changeDescription != "" {
 			currentUnit.LastChangeDescription = changeDescription
+		}
+		// For non-patch operations, handle changeset in the traditional way
+		if changesetSlug != "" {
+			if changesetSlug == "-" {
+				// Special value to remove the changeset (only valid in patch mode)
+				return errors.New("use --patch mode to remove a changeset (--changeset -)")
+			}
+			changesetUUID, err := parseChangeSetSlug(changesetSlug)
+			if err != nil {
+				return err
+			}
+			currentUnit.ChangeSetID = &changesetUUID
 		}
 	}
 
@@ -409,10 +435,22 @@ func runBulkUnitUpdate() error {
 	}
 
 	// Create enhancer for unit-specific fields
-	var enhancer PatchEnhancer
-	if changeDescription != "" {
-		enhancer = func(patchMap map[string]interface{}) {
+	var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription
+		}
+		if changesetSlug != "" {
+			if changesetSlug == "-" {
+				// Special value to remove the changeset
+				patchMap["ChangeSetID"] = nil
+			} else {
+				changesetUUID, err := parseChangeSetSlug(changesetSlug)
+				if err != nil {
+					failOnError(fmt.Errorf("failed to get changeset: %w", err))
+					return
+				}
+				patchMap["ChangeSetID"] = changesetUUID
+			}
 		}
 	}
 
@@ -443,11 +481,11 @@ func runBulkUnitUpdate() error {
 			isBeforeModifier = true
 			restore = strings.TrimPrefix(restore, "Before:")
 		}
-		
+
 		// Parse the remaining restore parameter
 		parts := strings.Split(restore, ":")
 		var entityType, identifier string
-		
+
 		switch len(parts) {
 		case 2:
 			// EntityType:Identifier format
@@ -459,7 +497,7 @@ func runBulkUnitUpdate() error {
 		default:
 			params.Restore = &originalRestore
 		}
-		
+
 		if entityType == "Tag" {
 			// Parse tag slug/ID and convert to UUID
 			tagUUID, err := parseTagSlug(identifier)
@@ -720,11 +758,11 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		isBeforeModifier = true
 		restore = strings.TrimPrefix(restore, "Before:")
 	}
-	
+
 	// Parse the remaining restore parameter
 	parts := strings.Split(restore, ":")
 	var entityType, identifier string
-	
+
 	switch len(parts) {
 	case 2:
 		// EntityType:Identifier format
@@ -736,7 +774,7 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 	default:
 		return fmt.Errorf("invalid restore specification: %s", originalRestore)
 	}
-	
+
 	// Handle entity type-specific parsing
 	if entityType == "Tag" {
 		// Parse tag slug/ID and convert to UUID
@@ -753,7 +791,7 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		}
 		params.Restore = &restoreValue
 		return nil
-		
+
 	} else if entityType == "ChangeSet" {
 		// Parse changeset slug/ID and convert to UUID
 		changesetUUID, err := parseChangeSetSlug(identifier)
@@ -769,7 +807,7 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		}
 		params.Restore = &restoreValue
 		return nil
-		
+
 	} else if entityType == "Revision" {
 		// Handle Revision:uuid format
 		if revisionUUID, err := uuid.Parse(identifier); err == nil {
@@ -779,11 +817,11 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		} else {
 			return fmt.Errorf("invalid revision identifier '%s': must be a UUID", identifier)
 		}
-		
+
 	} else if entityType != "" {
 		return fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
 	}
-	
+
 	// Handle simple identifiers (no entity type prefix)
 	if identifier == "LiveRevisionNum" || identifier == "LastAppliedRevisionNum" || identifier == "PreviousLiveRevisionNum" {
 		// Special restore values
@@ -796,7 +834,7 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		params.Restore = &restoreValue
 		return nil
 	}
-	
+
 	// Fall back to original parsing logic for UUIDs and integers
 	if revisionUUID, err := uuid.Parse(identifier); err == nil {
 		// It's a UUID - use as revision ID directly
@@ -816,6 +854,6 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 	} else {
 		return fmt.Errorf("invalid restore value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", restore)
 	}
-	
+
 	return nil
 }

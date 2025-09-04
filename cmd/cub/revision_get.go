@@ -69,29 +69,37 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 	if !dataOnly {
 		view := tableView()
 		view.Append([]string{"ID", rev.RevisionID.String()})
-		
+
 		// Show Unit slug instead of Unit ID when available
 		if extendedRev.Unit != nil {
 			view.Append([]string{"Unit", extendedRev.Unit.Slug})
 		} else {
 			view.Append([]string{"Unit ID", rev.UnitID.String()})
 		}
-		
+
 		view.Append([]string{"Revision Num", fmt.Sprintf("%d", rev.RevisionNum)})
 		view.Append([]string{"Source", rev.Source})
 		view.Append([]string{"Description", rev.Description})
 		view.Append([]string{"Created At", rev.CreatedAt.String()})
 		view.Append([]string{"Live At", rev.LiveAt.String()})
 		view.Append([]string{"User ID", rev.UserID.String()})
-		
+
 		// Show Space slug instead of Space ID when available
 		if extendedRev.Space != nil {
 			view.Append([]string{"Space", extendedRev.Space.Slug})
 		} else {
 			view.Append([]string{"Space ID", rev.SpaceID.String()})
 		}
+
+		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
+		if extendedRev.ChangeSet != nil {
+			view.Append([]string{"ChangeSet", extendedRev.ChangeSet.Slug})
+		} else if rev.ChangeSetID != nil && *rev.ChangeSetID != uuid.Nil {
+			view.Append([]string{"ChangeSet ID", rev.ChangeSetID.String()})
+		}
+
 		view.Append([]string{"Organization ID", rev.OrganizationID.String()})
-		
+
 		if rev.ApplyGates != nil && len(rev.ApplyGates) != 0 {
 			gates := ""
 			for gate, failed := range rev.ApplyGates {
@@ -109,7 +117,17 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
 		}
 		// Display tags if present
-		if rev.Tags != nil && len(rev.Tags) > 0 {
+		if extendedRev.Tags != nil && len(extendedRev.Tags) > 0 {
+			var tagSlugs []string
+			for _, tag := range extendedRev.Tags {
+				if tag.Slug != "" {
+					tagSlugs = append(tagSlugs, tag.Slug)
+				}
+			}
+			if len(tagSlugs) > 0 {
+				view.Append([]string{"Tags", strings.Join(tagSlugs, ", ")})
+			}
+		} else if rev.Tags != nil && len(rev.Tags) > 0 {
 			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
 			view.Append([]string{"Tags", strings.Join(tagSlugs, ", ")})
 		}
@@ -137,7 +155,7 @@ func apiGetRevision(revisionID string, unitID string, selectParam string) (*gocl
 
 func apiGetExtendedRevision(revisionID string, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.GetExtendedRevisionParams{}
-	include := "UnitID,SpaceID"
+	include := "UnitID,SpaceID,ChangeSetID,Tags"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -214,7 +232,7 @@ func resolveTagSlugs(tags map[string]string, spaceID string) []string {
 		params := &goclientnew.ListAllTagsParams{
 			Where: &whereClause,
 		}
-		
+
 		tagRes, err := cubClientNew.ListAllTagsWithResponse(ctx, params)
 		if err != nil || tagRes.JSON200 == nil || len(*tagRes.JSON200) == 0 {
 			// If we can't resolve the tag, use the UUID

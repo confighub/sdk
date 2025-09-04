@@ -48,7 +48,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.CreatedAt", "User.Username", "Revision.Source", "Revision.Description", "Revision.ApplyGates", "Revision.Tags"}
+var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "ChangeSet.Slug", "Revision.CreatedAt", "User.Username", "Revision.Source", "Revision.Description", "Revision.ApplyGates", "Revision.Tags"}
 
 // Revision-specific aliases
 var revisionAliases = map[string]string{
@@ -148,10 +148,10 @@ func buildRevisionWhereClause() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset start tag '%s': %w", revisionChangeSetStartTag, err)
 		}
-		if changeset.StartTagID != nil {
+		if changeset.State != "New" {
 			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.StartTagID.String()))
 		} else {
-			return "", fmt.Errorf("changeset '%s' does not have a start tag", revisionChangeSetStartTag)
+			return "", fmt.Errorf("changeset '%s' has not been added to any units yet", revisionChangeSetStartTag)
 		}
 	}
 
@@ -167,10 +167,10 @@ func buildRevisionWhereClause() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset end tag '%s': %w", revisionChangeSetEndTag, err)
 		}
-		if changeset.EndTagID != nil {
+		if changeset.State == "Closed" {
 			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.EndTagID.String()))
 		} else {
-			return "", fmt.Errorf("changeset '%s' does not have an end tag", revisionChangeSetEndTag)
+			return "", fmt.Errorf("changeset '%s' is not closed", revisionChangeSetEndTag)
 		}
 	}
 
@@ -194,7 +194,7 @@ func getRevisionSlug(extendedRevision *goclientnew.ExtendedRevision) string {
 func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Num", "Unit", "Time", "User", "Source", "Description", "Apply-Gates", "Tags"})
+		table.SetHeader([]string{"Num", "Unit", "ChangeSet", "Time", "User", "Source", "Description", "Apply-Gates", "Tags"})
 	}
 	for _, extendedRev := range extendedRevisions {
 		rev := extendedRev.Revision
@@ -217,9 +217,27 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 			unit = extendedRev.Unit.Slug
 		}
 
+		// Show ChangeSet slug if available, otherwise ChangeSetID if not nil and not uuid.Nil
+		changeSet := ""
+		if extendedRev.ChangeSet != nil {
+			changeSet = extendedRev.ChangeSet.Slug
+		} else if rev.ChangeSetID != nil && *rev.ChangeSetID != uuid.Nil {
+			changeSet = rev.ChangeSetID.String()
+		}
+
 		// Resolve tags to slugs
 		tags := "None"
-		if rev.Tags != nil && len(rev.Tags) > 0 {
+		if extendedRev.Tags != nil && len(extendedRev.Tags) > 0 {
+			var tagSlugs []string
+			for _, tag := range extendedRev.Tags {
+				if tag.Slug != "" {
+					tagSlugs = append(tagSlugs, tag.Slug)
+				}
+			}
+			if len(tagSlugs) > 0 {
+				tags = strings.Join(tagSlugs, ", ")
+			}
+		} else if rev.Tags != nil && len(rev.Tags) > 0 {
 			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
 			if len(tagSlugs) > 0 {
 				tags = strings.Join(tagSlugs, ", ")
@@ -229,6 +247,7 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		table.Append([]string{
 			fmt.Sprintf("%d", rev.RevisionNum),
 			unit,
+			changeSet,
 			rev.CreatedAt.String(),
 			username,
 			rev.Source,
@@ -251,7 +270,7 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UserID,UnitID"
+	include := "UserID,UnitID,ChangeSetID,Tags"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
@@ -293,7 +312,7 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UserID,UnitID"
+	include := "UserID,UnitID,ChangeSetID,Tags"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}

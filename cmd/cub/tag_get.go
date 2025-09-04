@@ -56,14 +56,21 @@ func displayExtendedTagDetails(extendedTag *goclientnew.ExtendedTag) {
 	view := tableView()
 	view.Append([]string{"ID", tagDetails.TagID.String()})
 	view.Append([]string{"Name", tagDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedTag.Space != nil {
 		view.Append([]string{"Space", extendedTag.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", tagDetails.SpaceID.String()})
 	}
-	
+
+	// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
+	if extendedTag.ChangeSet != nil {
+		view.Append([]string{"ChangeSet", extendedTag.ChangeSet.Slug})
+	} else if tagDetails.ChangeSetID != nil && *tagDetails.ChangeSetID != uuid.Nil {
+		view.Append([]string{"ChangeSet ID", tagDetails.ChangeSetID.String()})
+	}
+
 	view.Append([]string{"Created At", tagDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", tagDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(tagDetails.Labels)})
@@ -82,7 +89,7 @@ func apiGetTag(tagID string, selectParam string) (*goclientnew.Tag, error) {
 
 func apiGetExtendedTag(tagID string, selectParam string) (*goclientnew.ExtendedTag, error) {
 	newParams := &goclientnew.GetTagParams{}
-	include := "SpaceID"
+	include := "SpaceID,ChangeSetID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

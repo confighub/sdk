@@ -45,6 +45,7 @@ func init() {
 	runCmd.PersistentFlags().BoolVar(&wait, "wait", false, "wait for completion")
 	runCmd.PersistentFlags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
+	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 
 	RegisterFunctionsAsCobraCommands()
@@ -143,6 +144,14 @@ func RegisterFunctionsAsCobraCommands() {
 					if dryRun {
 						dryRunStr := "true"
 						newParams.DryRun = &dryRunStr
+					}
+					if functionChangesetSlug != "" {
+						changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+						if err != nil {
+							return err
+						}
+						changesetID := changesetUUID.String()
+						newParams.ChangeSetId = &changesetID
 					}
 
 					var funcParams []goclientnew.FunctionArgument

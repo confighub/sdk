@@ -146,6 +146,7 @@ var dryRun bool
 var functionTriggerIdentifiers []string
 var functionInvocationIdentifiers []string
 var revisionIdentifier string
+var functionChangesetSlug string
 
 func init() {
 	functionDoCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
@@ -156,6 +157,7 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	// Same flag as unit update
 	functionDoCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
+	functionDoCmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
@@ -373,6 +375,14 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 		dryRunStr := "true"
 		newParams.DryRun = &dryRunStr
 	}
+	if functionChangesetSlug != "" {
+		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+		if err != nil {
+			return nil, err
+		}
+		changesetID := changesetUUID.String()
+		newParams.ChangeSetId = &changesetID
+	}
 	
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
 	if IsAPIError(err, funcRes) {
@@ -457,6 +467,14 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
+		if functionChangesetSlug != "" {
+			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+			if err != nil {
+				return err
+			}
+			changesetID := changesetUUID.String()
+			newParams.ChangeSetId = &changesetID
+		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
 		if IsAPIError(err, funcRes) {
 			return fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
@@ -478,6 +496,14 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		if dryRun {
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
+		}
+		if functionChangesetSlug != "" {
+			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+			if err != nil {
+				return err
+			}
+			changesetID := changesetUUID.String()
+			newParams.ChangeSetId = &changesetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
 		if IsAPIError(err, funcRes) {

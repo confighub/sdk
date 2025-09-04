@@ -53,6 +53,7 @@ func init() {
 	functionExecCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	// Same flag as unit update
 	functionExecCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
+	functionExecCmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	functionExecCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionExecCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionExecCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
@@ -162,6 +163,14 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
+		if functionChangesetSlug != "" {
+			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+			if err != nil {
+				return nil, err
+			}
+			changesetID := changesetUUID.String()
+			newParams.ChangeSetId = &changesetID
+		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
 		if IsAPIError(err, funcRes) {
 			return nil, fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
@@ -183,6 +192,14 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		if dryRun {
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
+		}
+		if functionChangesetSlug != "" {
+			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+			if err != nil {
+				return nil, err
+			}
+			changesetID := changesetUUID.String()
+			newParams.ChangeSetId = &changesetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
 		if IsAPIError(err, funcRes) {

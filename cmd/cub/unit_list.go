@@ -113,7 +113,7 @@ var columns string
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
-var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
 
 // Unit-specific aliases
 var unitAliases = map[string]string{
@@ -242,7 +242,7 @@ func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
@@ -284,7 +284,7 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string, s
 	if whereData != "" {
 		newParams.WhereData = &whereData
 	}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID"
+	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

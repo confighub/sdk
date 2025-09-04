@@ -41,7 +41,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTagColumns = []string{"Tag.Slug", "Space.Slug", "Tag.DisplayName", "Tag.CreatedAt"}
+var defaultTagColumns = []string{"Tag.Slug", "Space.Slug", "ChangeSet.Slug", "Tag.DisplayName", "Tag.CreatedAt"}
 
 // Tag-specific aliases
 var tagAliases = map[string]string{
@@ -89,7 +89,7 @@ func getTagSlug(tag *goclientnew.ExtendedTag) string {
 func displayTagList(tags []*goclientnew.ExtendedTag) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Display-Name", "Created-At"})
+		table.SetHeader([]string{"Name", "Space", "ChangeSet", "Display-Name", "Created-At"})
 	}
 	for _, t := range tags {
 		tag := t.Tag
@@ -99,9 +99,19 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
 		}
+		
+		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
+		changeSetDisplay := ""
+		if t.ChangeSet != nil {
+			changeSetDisplay = t.ChangeSet.Slug
+		} else if tag.ChangeSetID != nil && *tag.ChangeSetID != uuid.Nil {
+			changeSetDisplay = tag.ChangeSetID.String()
+		}
+		
 		table.Append([]string{
 			tag.Slug,
 			spaceSlug,
+			changeSetDisplay,
 			tag.DisplayName,
 			tag.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
@@ -111,7 +121,7 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 
 func apiListTags(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
 	newParams := &goclientnew.ListTagsParams{}
-	include := "SpaceID"
+	include := "SpaceID,ChangeSetID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -154,7 +164,7 @@ func apiSearchTags(whereFilter string, selectParam string, filterParam string) (
 		newParams.Contains = &contains
 	}
 
-	include := "SpaceID"
+	include := "SpaceID,ChangeSetID"
 	newParams.Include = &include
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

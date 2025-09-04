@@ -14,7 +14,7 @@ import (
 )
 
 var changesetCreateCmd = &cobra.Command{
-	Use:         "create [<slug> [--filter-field <filter>] [--start-tag <start-tag>] [--end-tag <end-tag>] [--description <description>]]",
+	Use:         "create [<slug> [--description <description>]]",
 	Short:       "Create a new changeset or bulk create changesets",
 	Long:        getChangeSetCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -29,14 +29,8 @@ SINGLE CHANGESET CREATION:
 Create a new changeset to record an entity changeset specification.
 
 Examples:
-  # Create a changeset with a filter
-  cub changeset create --space my-space release-changeset --filter-field unit-filter --description "Release 1.0 changes"
-
-  # Create a changeset with start and end tags
-  cub changeset create --space my-space hotfix-changeset --start-tag v1.0 --end-tag v1.1 --description "Hotfix changes"
-
-  # Create a changeset with all parameters
-  cub changeset create --space my-space full-changeset --filter-field deployment-filter --start-tag baseline --end-tag current --description "Full deployment changes"
+  # Create a changeset
+  cub changeset create --space my-space hotfix-changeset --description "Hotfix changes"
 
   # Create a changeset from JSON
   cub changeset create --space my-space --json my-changeset --from-stdin < changeset.json
@@ -53,7 +47,7 @@ Bulk Create Examples:
   cub changeset create --changeset my-changeset --dest-space dev-space,staging-space
 
   # Clone changesets using a where expression for destination spaces
-  cub changeset create --where "StartTagID IS NOT NULL" --where-space "Labels.Environment IN ('dev', 'staging')"
+  cub changeset create --where "Description LIKE 'Release%'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone changesets with modifications via JSON patch
   echo '{"Description": "Archived changeset"}' | cub changeset create --where "CreatedAt < '2024-01-01'" --name-prefix old- --from-stdin`
@@ -66,9 +60,6 @@ var changesetCreateArgs struct {
 	whereSpace     string
 	namePrefixes   []string
 	changesetSlugs []string
-	filterField    string
-	startTag       string
-	endTag         string
 	description    string
 	filterSpace    string
 }
@@ -79,9 +70,6 @@ func init() {
 	enableFilterFlag(changesetCreateCmd)
 
 	// Single create specific flags
-	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.filterField, "filter-field", "", "filter to identify units whose revisions are included (slug or UUID)")
-	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.startTag, "start-tag", "", "tag identifying the set of revisions that begin the changeset (slug or UUID)")
-	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.endTag, "end-tag", "", "tag identifying the set of revisions that end the changeset (slug or UUID)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.description, "description", "", "human-readable description of the change")
 
 	// Bulk create specific flags
@@ -162,37 +150,6 @@ func runSingleChangeSetCreate(args []string) error {
 	newBody.Slug = makeSlug(args[0])
 	if newBody.DisplayName == "" {
 		newBody.DisplayName = args[0]
-	}
-
-	// Set filter reference if provided
-	if changesetCreateArgs.filterField != "" {
-		filterIDString, err := parseFilterFlag(changesetCreateArgs.filterField)
-		if err != nil {
-			return err
-		}
-		filterID, err := uuid.Parse(filterIDString)
-		if err != nil {
-			return err
-		}
-		newBody.FilterID = &filterID
-	}
-
-	// Set start tag reference if provided
-	if changesetCreateArgs.startTag != "" {
-		startTag, err := apiGetTagFromSlug(changesetCreateArgs.startTag, "TagID")
-		if err != nil {
-			return err
-		}
-		newBody.StartTagID = &startTag.TagID
-	}
-
-	// Set end tag reference if provided
-	if changesetCreateArgs.endTag != "" {
-		endTag, err := apiGetTagFromSlug(changesetCreateArgs.endTag, "TagID")
-		if err != nil {
-			return err
-		}
-		newBody.EndTagID = &endTag.TagID
 	}
 
 	// Set description if provided

@@ -30,18 +30,15 @@ Examples:
   # List only changeset names
   cub changeset list --space my-space --no-header --names
 
-  # List changesets with specific filters
-  cub changeset list --space my-space --where "FilterID IS NOT NULL"
-
-  # List changesets with tags
-  cub changeset list --space my-space --where "StartTagID IS NOT NULL AND EndTagID IS NOT NULL"`,
+  # List changesets with matching Descriptions
+  cub changeset list --space my-space --where "Description LIKE 'Release%'"`,
 	Args:        cobra.ExactArgs(0),
 	RunE:        changesetListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
 // Default columns to display when no custom columns are specified
-var defaultChangeSetColumns = []string{"ChangeSet.Slug", "Space.Slug", "Filter.Slug", "StartTag.Slug", "EndTag.Slug", "ChangeSet.Description"}
+var defaultChangeSetColumns = []string{"ChangeSet.Slug", "Space.Slug", "ChangeSet.State", "StartTag.Slug", "EndTag.Slug", "ChangeSet.Description"}
 
 // ChangeSet-specific aliases
 var changesetAliases = map[string]string{
@@ -89,7 +86,7 @@ func getChangeSetSlug(changeset *goclientnew.ExtendedChangeSet) string {
 func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Filter", "Start-Tag", "End-Tag", "Description"})
+		table.SetHeader([]string{"Name", "Space", "State", "Start-Tag", "End-Tag", "Description"})
 	}
 	for _, cs := range changesets {
 		changeset := cs.ChangeSet
@@ -98,11 +95,6 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 			spaceSlug = cs.Space.Slug
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
-		}
-
-		filterSlug := ""
-		if cs.Filter != nil {
-			filterSlug = cs.Filter.Slug
 		}
 
 		startTagSlug := ""
@@ -124,7 +116,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 		table.Append([]string{
 			changeset.Slug,
 			spaceSlug,
-			filterSlug,
+			changeset.State,
 			startTagSlug,
 			endTagSlug,
 			descriptionDisplay,
@@ -135,7 +127,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 
 func apiListChangeSets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
 	newParams := &goclientnew.ListChangeSetsParams{}
-	include := "SpaceID,FilterID,StartTagID,EndTagID"
+	include := "SpaceID,StartTagID,EndTagID"
 	newParams.Include = &include
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -178,7 +170,7 @@ func apiSearchChangeSets(whereFilter string, selectParam string, filterParam str
 		newParams.Contains = &contains
 	}
 
-	include := "SpaceID,FilterID,StartTagID,EndTagID"
+	include := "SpaceID,StartTagID,EndTagID"
 	newParams.Include = &include
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

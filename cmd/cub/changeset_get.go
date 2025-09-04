@@ -15,7 +15,7 @@ var changesetGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a changeset",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a changeset in a space including its ID, slug, display name, filter, tags, and description.
+	Long: `Get detailed information about a changeset in a space including its ID, slug, display name, tags, and description.
 
 Examples:
   # Get details about a release changeset
@@ -46,7 +46,7 @@ func displayChangeSetDetails(changesetDetails *goclientnew.ChangeSet) {
 	// Create an ExtendedChangeSet wrapper with just the ChangeSet set
 	extendedChangeSet := &goclientnew.ExtendedChangeSet{
 		ChangeSet: changesetDetails,
-		// All other fields (Space, Filter, StartTag, EndTag, etc.) will be nil, causing Extended display to show IDs
+		// All other fields (Space, StartTag, EndTag, etc.) will be nil, causing Extended display to show IDs
 	}
 	displayExtendedChangeSetDetails(extendedChangeSet)
 }
@@ -56,14 +56,19 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	view := tableView()
 	view.Append([]string{"ID", changesetDetails.ChangeSetID.String()})
 	view.Append([]string{"Name", changesetDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedChangeSet.Space != nil {
 		view.Append([]string{"Space", extendedChangeSet.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", changesetDetails.SpaceID.String()})
 	}
-	
+
+	// Show State field
+	if changesetDetails.State != "" {
+		view.Append([]string{"State", changesetDetails.State})
+	}
+
 	view.Append([]string{"Created At", changesetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", changesetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(changesetDetails.Labels)})
@@ -71,9 +76,6 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	view.Append([]string{"Organization ID", changesetDetails.OrganizationID.String()})
 
 	// Show related entities by slug when available
-	if extendedChangeSet.Filter != nil {
-		view.Append([]string{"Filter", extendedChangeSet.Filter.Slug})
-	}
 	if extendedChangeSet.StartTag != nil {
 		view.Append([]string{"Start Tag", extendedChangeSet.StartTag.Slug})
 	}
@@ -97,7 +99,7 @@ func apiGetChangeSet(changesetID string, selectParam string) (*goclientnew.Chang
 
 func apiGetExtendedChangeSet(changesetID string, selectParam string) (*goclientnew.ExtendedChangeSet, error) {
 	newParams := &goclientnew.GetChangeSetParams{}
-	include := "SpaceID,FilterID,StartTagID,EndTagID"
+	include := "SpaceID,StartTagID,EndTagID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
