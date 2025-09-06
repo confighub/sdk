@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	cubbyname "github.com/confighub/sdk/cubbyname"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -406,11 +407,13 @@ func (cm *ContextManager) CreateContext(name, serverURL, organization, defaultSp
 }
 
 func (cm *ContextManager) pickName() string {
+	// TODO: Switch to using cubbyname.Unused(used) but wait until it's been tested for a bit.
+
 	// Get all in-use context names
 	inUse := cm.GetAllContextNames()
 
 	// Subtract in-use names from predefined names
-	available := cm.difference(predefinedContextNames, inUse)
+	available := cm.difference(cubbyname.List(), inUse)
 
 	// If we have available predefined names, pick one randomly
 	if len(available) > 0 {

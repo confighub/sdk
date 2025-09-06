@@ -29,7 +29,6 @@ func init() {
 	runCmd.Flags().BoolVar(&reload, "reset", false, "Reset the function list")
 
 	addSpaceFlags(runCmd)
-	runCmd.PersistentFlags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
@@ -47,6 +46,7 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
+	runCmd.PersistentFlags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 
 	RegisterFunctionsAsCobraCommands()
 

@@ -202,42 +202,25 @@ func handleBulkSpaceCreateOrUpdateResponse(responses []goclientnew.SpaceCreateOr
 		return nil
 	}
 
-	successCount := 0
-	errorCount := 0
-
-	for i, response := range responses {
-		fmt.Printf("Space %d:\n", i+1)
-		if response.Error != nil {
-			errorCount++
-			fmt.Printf("  Error: %s\n", response.Error.Message)
-			if response.Space != nil {
-				fmt.Printf("  Space ID: %s\n", response.Space.SpaceID.String())
-				fmt.Printf("  Slug: %s\n", response.Space.Slug)
-			}
-		} else if response.Space != nil {
-			successCount++
-			fmt.Printf("  Successfully %sd space:\n", operation)
-			fmt.Printf("  Space ID: %s\n", response.Space.SpaceID.String())
-			fmt.Printf("  Slug: %s\n", response.Space.Slug)
-			if response.Space.DisplayName != "" {
-				fmt.Printf("  Display Name: %s\n", response.Space.DisplayName)
-			}
-		}
-		fmt.Println()
+	// Convert slice to pointer for generic function
+	var responses200 *[]goclientnew.SpaceCreateOrUpdateResponse
+	var responses207 *[]goclientnew.SpaceCreateOrUpdateResponse
+	if statusCode == 200 {
+		responses200 = &responses
+	} else if statusCode == 207 {
+		responses207 = &responses
 	}
 
-	fmt.Printf("Summary: %d succeeded, %d failed out of %d total spaces\n", successCount, errorCount, len(responses))
-
-	// Return error for complete failure (status 400+) but not for partial success (207)
-	if statusCode == 207 {
-		if errorCount == len(responses) {
-			return fmt.Errorf("all %s operations failed", operation)
-		}
-	} else if statusCode >= 400 {
-		return fmt.Errorf("bulk %s operation failed", operation)
-	}
-
-	return nil
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "space", operation, changeDescription,
+		func(r *goclientnew.SpaceCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.SpaceCreateOrUpdateResponse) string {
+			if r.Space != nil {
+				return fmt.Sprintf("%s (ID: %s)", r.Space.Slug, r.Space.SpaceID)
+			}
+			return ""
+		},
+	)
 }
 
 // UnmarshalBinary interface implementation

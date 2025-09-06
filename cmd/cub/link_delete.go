@@ -54,63 +54,7 @@ func init() {
 }
 
 func handleBulkLinkDeleteResponse(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, operationName, contextInfo string) error {
-	var responses *[]goclientnew.DeleteResponse
-	if statusCode == 200 && responses200 != nil {
-		responses = responses200
-	} else if statusCode == 207 && responses207 != nil {
-		responses = responses207
-	} else {
-		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
-	}
-
-	if responses == nil {
-		return fmt.Errorf("no response data received")
-	}
-
-	successCount := 0
-	failureCount := 0
-	var failures []string
-
-	for _, resp := range *responses {
-		if resp.Error == nil {
-			successCount++
-			if verbose {
-				fmt.Printf("Successfully %sd link: %s\n", operationName, resp.Message)
-			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			failures = append(failures, fmt.Sprintf("  - %s", errorMsg))
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d link(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d link(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
-	return nil
+	return displayBulkDeleteResults(responses200, responses207, statusCode, "link", operationName, contextInfo)
 }
 
 func checkLinkDeleteConflictingArgs(args []string) bool {
@@ -175,9 +119,57 @@ func runBulkLinkDelete() error {
 		params.Contains = &contains
 	}
 
+	// If wait is requested, we need to fetch the links first to get their FromUnitIDs and SpaceIDs
+	var fromUnits []struct {
+		UnitID  string
+		SpaceID string
+	}
+	if wait {
+		// Use apiSearchLinks to fetch links that will be deleted
+		links, err := apiSearchLinks(effectiveWhere, "*", filterID)
+		if err != nil {
+			return err
+		}
+		
+		// Extract unique FromUnitID/SpaceID pairs
+		uniqueUnits := make(map[string]bool)
+		for _, link := range links {
+			unitID := link.Link.FromUnitID.String()
+			spaceID := link.Link.SpaceID.String()
+			key := unitID + ":" + spaceID
+			if !uniqueUnits[key] {
+				uniqueUnits[key] = true
+				fromUnits = append(fromUnits, struct {
+					UnitID  string
+					SpaceID string
+				}{
+					UnitID:  unitID,
+					SpaceID: spaceID,
+				})
+			}
+		}
+	}
+
 	res, err := cubClientNew.BulkDeleteLinksWithResponse(ctx, params)
 	if IsAPIError(err, res) {
 		return InterpretErrorGeneric(err, res)
+	}
+
+	// Wait for triggers BEFORE displaying results (for successful deletes)
+	if wait && len(fromUnits) > 0 && res.StatusCode() == 200 {
+		hasAlternativeOutput := jsonOutput || jq != ""
+		if !quiet && !hasAlternativeOutput {
+			tprintRaw("Awaiting triggers...")
+		}
+		// Await triggers on each affected from unit
+		for _, unit := range fromUnits {
+			unitDetails, err := apiGetUnitInSpace(unit.UnitID, unit.SpaceID, "*") // get all fields for now
+			if err != nil {
+				// Continue with other units if one fails
+				continue
+			}
+			_ = awaitTriggersRemoval(unitDetails)
+		}
 	}
 
 	// Handle the response
@@ -201,11 +193,11 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	linkRes, err := cubClientNew.DeleteLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), linkDetails.LinkID)
-	if IsAPIError(err, linkRes) {
-		return InterpretErrorGeneric(err, linkRes)
+	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), linkDetails.LinkID)
+	if IsAPIError(err, deleteRes) {
+		return InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("link", args[0], linkDetails.LinkID.String())
+	displayDeleteResults("link", args[0], linkDetails.LinkID.String(), deleteRes)
 	if wait {
 		if !quiet {
 			tprint("Awaiting triggers...")

@@ -30,6 +30,6 @@ func setDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if IsAPIError(err, deleteRes) {
 		return InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("set", args[0], setDetails.SetID.String())
+	displayDeleteResults("set", args[0], setDetails.SetID.String(), deleteRes)
 	return nil
 }

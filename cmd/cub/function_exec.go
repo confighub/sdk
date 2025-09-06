@@ -47,7 +47,6 @@ set-namespace myns`,
 }
 
 func init() {
-	functionExecCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	functionExecCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionExecCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionExecCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
@@ -66,6 +65,7 @@ func init() {
 	enableJqFlag(functionExecCmd)
 	enableWaitFlag(functionExecCmd)
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	functionExecCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionCmd.AddCommand(functionExecCmd)
 }
 
@@ -144,7 +144,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 
 	// Execute functions
 	var resp *[]goclientnew.FunctionInvocationsResponse
-	
+
 	// Handle revision flag
 	if revisionIdentifier != "" {
 		resp, err = invokeFunctionOnRevision(revisionIdentifier, *newBody, dryRun)

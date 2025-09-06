@@ -281,67 +281,16 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func handleBulkTagCreateOrUpdateResponse(responses200 *[]goclientnew.TagCreateOrUpdateResponse, responses207 *[]goclientnew.TagCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
-	var responses *[]goclientnew.TagCreateOrUpdateResponse
-	if statusCode == 200 && responses200 != nil {
-		responses = responses200
-	} else if statusCode == 207 && responses207 != nil {
-		responses = responses207
-	} else {
-		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
-	}
-
-	if responses == nil {
-		return fmt.Errorf("no response data received")
-	}
-
-	successCount := 0
-	failureCount := 0
-	var failures []string
-
-	for _, resp := range *responses {
-		if resp.Error == nil && resp.Tag != nil {
-			successCount++
-			if verbose {
-				fmt.Printf("Successfully %sd tag: %s (ID: %s)\n", operationName, resp.Tag.Slug, resp.Tag.TagID)
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "tag", operationName, contextInfo,
+		func(r *goclientnew.TagCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.TagCreateOrUpdateResponse) string {
+			if r.Tag != nil {
+				return fmt.Sprintf("%s (ID: %s)", r.Tag.Slug, r.Tag.TagID)
 			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			if resp.Tag != nil {
-				failures = append(failures, fmt.Sprintf("  - %s: %s", resp.Tag.Slug, errorMsg))
-			} else {
-				failures = append(failures, fmt.Sprintf("  - (unknown tag): %s", errorMsg))
-			}
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d tag(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d tag(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
-	return nil
+			return ""
+		},
+	)
 }
 
 func patchTag(spaceID uuid.UUID, tagID uuid.UUID, patchData []byte) (*goclientnew.Tag, error) {

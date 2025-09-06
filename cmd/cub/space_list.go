@@ -79,7 +79,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "TotalUnitCount", "GatedUnitCount", "UpgradableUnitCount", "TotalBridgeWorkerCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TargetCountByToolchainType", "TriggerCountByEventType"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType"}
 
 // Space-specific aliases
 var spaceAliases = map[string]string{
@@ -117,7 +117,7 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Environment", "#Units", "#Gated", "#Upgradable", "#Workers", "#Filters", "#Views", "#Tags", "#ChangeSets", "#Invocations", "#Targets", "#Triggers"})
+		table.SetHeader([]string{"Name", "Environment", "#Units", "#Links", "#Tags", "#ChangeSets", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets"})
 	}
 	for _, extendedSpace := range extendedSpaces {
 		environment := ""
@@ -130,16 +130,15 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 			extendedSpace.Space.Slug,
 			environment,
 			fmt.Sprintf("%d", extendedSpace.TotalUnitCount),
-			fmt.Sprintf("%d", extendedSpace.GatedUnitCount),
-			fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount),
-			fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
-			fmt.Sprintf("%d", extendedSpace.TotalFilterCount),
-			fmt.Sprintf("%d", extendedSpace.TotalViewCount),
+			fmt.Sprintf("%d", extendedSpace.TotalLinkCount),
 			fmt.Sprintf("%d", extendedSpace.TotalTagCount),
 			fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount),
+			fmt.Sprintf("%d", extendedSpace.TotalFilterCount),
+			fmt.Sprintf("%d", extendedSpace.TotalViewCount),
 			fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),
-			fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
 			fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
+			fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
+			fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
 		})
 	}
 	table.Render()

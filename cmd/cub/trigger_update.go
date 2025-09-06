@@ -172,11 +172,16 @@ func runBulkTriggerUpdate() error {
 
 	// Add worker if specified
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		patchData["BridgeWorkerID"] = worker.BridgeWorkerID.String()
+		patchData["BridgeWorkerID"] = workerUUID.String()
 	}
 
 	// Add invocation if specified
@@ -313,11 +318,17 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			currentTrigger.Trigger.Enforced = false
 		}
 		if workerSlug != "" {
-			worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+				workerSlug,
+				EntityTypeBridgeWorker,
+				apiGetBridgeWorkerFromSlugInSpace,
+				func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+			)
 			if err != nil {
 				return err
 			}
-			currentTrigger.Trigger.BridgeWorkerID = &worker.BridgeWorkerID
+			workerID := goclientnew.UUID(workerUUID)
+			currentTrigger.Trigger.BridgeWorkerID = &workerID
 		}
 
 		// Add labels if specified
@@ -410,11 +421,17 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.Enforced = false
 	}
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		currentTrigger.Trigger.BridgeWorkerID = &worker.BridgeWorkerID
+		workerID := goclientnew.UUID(workerUUID)
+		currentTrigger.Trigger.BridgeWorkerID = &workerID
 	}
 
 	// TODO: update with overriden string type TriggerEvent
@@ -455,67 +472,16 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func handleBulkTriggerCreateOrUpdateResponse(responses200 *[]goclientnew.TriggerCreateOrUpdateResponse, responses207 *[]goclientnew.TriggerCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
-	var responses *[]goclientnew.TriggerCreateOrUpdateResponse
-	if statusCode == 200 && responses200 != nil {
-		responses = responses200
-	} else if statusCode == 207 && responses207 != nil {
-		responses = responses207
-	} else {
-		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
-	}
-
-	if responses == nil {
-		return fmt.Errorf("no response data received")
-	}
-
-	successCount := 0
-	failureCount := 0
-	var failures []string
-
-	for _, resp := range *responses {
-		if resp.Error == nil && resp.Trigger != nil {
-			successCount++
-			if verbose {
-				fmt.Printf("Successfully %sd trigger: %s (ID: %s)\n", operationName, resp.Trigger.Slug, resp.Trigger.TriggerID)
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "trigger", operationName, contextInfo,
+		func(r *goclientnew.TriggerCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.TriggerCreateOrUpdateResponse) string {
+			if r.Trigger != nil {
+				return fmt.Sprintf("%s (ID: %s)", r.Trigger.Slug, r.Trigger.TriggerID)
 			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			if resp.Trigger != nil {
-				failures = append(failures, fmt.Sprintf("  - %s: %s", resp.Trigger.Slug, errorMsg))
-			} else {
-				failures = append(failures, fmt.Sprintf("  - (unknown trigger): %s", errorMsg))
-			}
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d trigger(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d trigger(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
-	return nil
+			return ""
+		},
+	)
 }
 
 func patchTrigger(spaceID uuid.UUID, triggerID uuid.UUID, patchData []byte) (*goclientnew.Trigger, error) {

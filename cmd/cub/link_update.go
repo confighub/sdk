@@ -79,56 +79,25 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 		return fmt.Errorf("no response data received")
 	}
 
-	successCount := 0
-	failureCount := 0
-	var failures []string
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
 
-	for _, resp := range *responses {
-		if resp.Error == nil {
-			successCount++
-			if verbose && resp.Link != nil {
-				fmt.Printf("Successfully %sd link: %s\n", operationName, resp.Link.Slug)
-			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			failures = append(failures, fmt.Sprintf("  - %s", errorMsg))
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d link(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d link(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
+	// Wait for triggers BEFORE calling the generic display function
 	if wait {
-		if !quiet {
-			tprint("Awaiting triggers...")
-		}
+		successfulLinks := []*goclientnew.Link{}
 		for _, resp := range *responses {
 			if resp.Error == nil && resp.Link != nil {
-				unitDetails, err := apiGetUnitInSpace(resp.Link.FromUnitID.String(), resp.Link.SpaceID.String(), "*") // get all fields for now
+				successfulLinks = append(successfulLinks, resp.Link)
+			}
+		}
+
+		if len(successfulLinks) > 0 {
+			if !quiet && !hasAlternativeOutput {
+				tprintRaw("Awaiting triggers...")
+			}
+			// Wait for triggers on each affected unit
+			for _, link := range successfulLinks {
+				unitDetails, err := apiGetUnitInSpace(link.FromUnitID.String(), link.SpaceID.String(), "*")
 				if err != nil {
 					return err
 				}
@@ -140,7 +109,17 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 		}
 	}
 
-	return nil
+	// Call the generic display function
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "link", operationName, contextInfo,
+		func(r *goclientnew.LinkCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.LinkCreateOrUpdateResponse) string {
+			if r.Link != nil {
+				return r.Link.Slug
+			}
+			return ""
+		},
+	)
 }
 
 func checkLinkConflictingArgs(args []string) bool {

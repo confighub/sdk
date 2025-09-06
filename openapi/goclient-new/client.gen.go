@@ -251,7 +251,7 @@ type ClientInterface interface {
 	CreateSpace(ctx context.Context, body CreateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteSpace request
-	DeleteSpace(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteSpace(ctx context.Context, spaceId openapi_types.UUID, params *DeleteSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSpace request
 	GetSpace(ctx context.Context, spaceId openapi_types.UUID, params *GetSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -527,6 +527,9 @@ type ClientInterface interface {
 	// ApproveUnit request
 	ApproveUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ApproveUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DownloadUnitData request
+	DownloadUnitData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DestroyUnit request
 	DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -538,8 +541,8 @@ type ClientInterface interface {
 
 	ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DownloadLiveStateUnit request
-	DownloadLiveStateUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DownloadUnitLiveState request
+	DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedMutations request
 	ListExtendedMutations(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -556,8 +559,8 @@ type ClientInterface interface {
 	// GetExtendedRevision request
 	GetExtendedRevision(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, params *GetExtendedRevisionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetRevisionData request
-	GetRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DownloadRevisionData request
+	DownloadRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUnitEvents request
 	ListUnitEvents(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1381,8 +1384,8 @@ func (c *Client) CreateSpace(ctx context.Context, body CreateSpaceJSONRequestBod
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteSpace(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteSpaceRequest(c.Server, spaceId)
+func (c *Client) DeleteSpace(ctx context.Context, spaceId openapi_types.UUID, params *DeleteSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteSpaceRequest(c.Server, spaceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2617,6 +2620,18 @@ func (c *Client) ApproveUnit(ctx context.Context, spaceId openapi_types.UUID, un
 	return c.Client.Do(req)
 }
 
+func (c *Client) DownloadUnitData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadUnitDataRequest(c.Server, spaceId, unitId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDestroyUnitRequest(c.Server, spaceId, unitId)
 	if err != nil {
@@ -2665,8 +2680,8 @@ func (c *Client) ImportUnit(ctx context.Context, spaceId openapi_types.UUID, uni
 	return c.Client.Do(req)
 }
 
-func (c *Client) DownloadLiveStateUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDownloadLiveStateUnitRequest(c.Server, spaceId, unitId)
+func (c *Client) DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadUnitLiveStateRequest(c.Server, spaceId, unitId)
 	if err != nil {
 		return nil, err
 	}
@@ -2737,8 +2752,8 @@ func (c *Client) GetExtendedRevision(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRevisionDataRequest(c.Server, spaceId, unitId, revisionId)
+func (c *Client) DownloadRevisionData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadRevisionDataRequest(c.Server, spaceId, unitId, revisionId)
 	if err != nil {
 		return nil, err
 	}
@@ -3374,6 +3389,22 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Recursive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "recursive", runtime.ParamLocationQuery, *params.Recursive); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7026,7 +7057,7 @@ func NewCreateSpaceRequestWithBody(server string, contentType string, body io.Re
 }
 
 // NewDeleteSpaceRequest generates requests for DeleteSpace
-func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID, params *DeleteSpaceParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7049,6 +7080,28 @@ func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID) (*http.Req
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Recursive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "recursive", runtime.ParamLocationQuery, *params.Recursive); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -11912,6 +11965,47 @@ func NewApproveUnitRequest(server string, spaceId openapi_types.UUID, unitId ope
 	return req, nil
 }
 
+// NewDownloadUnitDataRequest generates requests for DownloadUnitData
+func NewDownloadUnitDataRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/data", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDestroyUnitRequest generates requests for DestroyUnit
 func NewDestroyUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
 	var err error
@@ -12048,8 +12142,8 @@ func NewImportUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 	return req, nil
 }
 
-// NewDownloadLiveStateUnitRequest generates requests for DownloadLiveStateUnit
-func NewDownloadLiveStateUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+// NewDownloadUnitLiveStateRequest generates requests for DownloadUnitLiveState
+func NewDownloadUnitLiveStateRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12556,8 +12650,8 @@ func NewGetExtendedRevisionRequest(server string, spaceId openapi_types.UUID, un
 	return req, nil
 }
 
-// NewGetRevisionDataRequest generates requests for GetRevisionData
-func NewGetRevisionDataRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID) (*http.Request, error) {
+// NewDownloadRevisionDataRequest generates requests for DownloadRevisionData
+func NewDownloadRevisionDataRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16211,7 +16305,7 @@ type ClientWithResponsesInterface interface {
 	CreateSpaceWithResponse(ctx context.Context, body CreateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateSpaceResponse, error)
 
 	// DeleteSpaceWithResponse request
-	DeleteSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteSpaceResponse, error)
+	DeleteSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *DeleteSpaceParams, reqEditors ...RequestEditorFn) (*DeleteSpaceResponse, error)
 
 	// GetSpaceWithResponse request
 	GetSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *GetSpaceParams, reqEditors ...RequestEditorFn) (*GetSpaceResponse, error)
@@ -16487,6 +16581,9 @@ type ClientWithResponsesInterface interface {
 	// ApproveUnitWithResponse request
 	ApproveUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ApproveUnitParams, reqEditors ...RequestEditorFn) (*ApproveUnitResponse, error)
 
+	// DownloadUnitDataWithResponse request
+	DownloadUnitDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitDataResponse, error)
+
 	// DestroyUnitWithResponse request
 	DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error)
 
@@ -16498,8 +16595,8 @@ type ClientWithResponsesInterface interface {
 
 	ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
 
-	// DownloadLiveStateUnitWithResponse request
-	DownloadLiveStateUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadLiveStateUnitResponse, error)
+	// DownloadUnitLiveStateWithResponse request
+	DownloadUnitLiveStateWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveStateResponse, error)
 
 	// ListExtendedMutationsWithResponse request
 	ListExtendedMutationsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*ListExtendedMutationsResponse, error)
@@ -16516,8 +16613,8 @@ type ClientWithResponsesInterface interface {
 	// GetExtendedRevisionWithResponse request
 	GetExtendedRevisionWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, params *GetExtendedRevisionParams, reqEditors ...RequestEditorFn) (*GetExtendedRevisionResponse, error)
 
-	// GetRevisionDataWithResponse request
-	GetRevisionDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionDataResponse, error)
+	// DownloadRevisionDataWithResponse request
+	DownloadRevisionDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadRevisionDataResponse, error)
 
 	// ListUnitEventsWithResponse request
 	ListUnitEventsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*ListUnitEventsResponse, error)
@@ -19797,6 +19894,32 @@ func (r ApproveUnitResponse) StatusCode() int {
 	return 0
 }
 
+type DownloadUnitDataResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadUnitDataResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadUnitDataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DestroyUnitResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -19881,7 +20004,7 @@ func (r ImportUnitResponse) StatusCode() int {
 	return 0
 }
 
-type DownloadLiveStateUnitResponse struct {
+type DownloadUnitLiveStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *StandardErrorResponse
@@ -19892,7 +20015,7 @@ type DownloadLiveStateUnitResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r DownloadLiveStateUnitResponse) Status() string {
+func (r DownloadUnitLiveStateResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -19900,7 +20023,7 @@ func (r DownloadLiveStateUnitResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DownloadLiveStateUnitResponse) StatusCode() int {
+func (r DownloadUnitLiveStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -20047,7 +20170,7 @@ func (r GetExtendedRevisionResponse) StatusCode() int {
 	return 0
 }
 
-type GetRevisionDataResponse struct {
+type DownloadRevisionDataResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *StandardErrorResponse
@@ -20058,7 +20181,7 @@ type GetRevisionDataResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetRevisionDataResponse) Status() string {
+func (r DownloadRevisionDataResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -20066,7 +20189,7 @@ func (r GetRevisionDataResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetRevisionDataResponse) StatusCode() int {
+func (r DownloadRevisionDataResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21524,8 +21647,8 @@ func (c *ClientWithResponses) CreateSpaceWithResponse(ctx context.Context, body 
 }
 
 // DeleteSpaceWithResponse request returning *DeleteSpaceResponse
-func (c *ClientWithResponses) DeleteSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteSpaceResponse, error) {
-	rsp, err := c.DeleteSpace(ctx, spaceId, reqEditors...)
+func (c *ClientWithResponses) DeleteSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *DeleteSpaceParams, reqEditors ...RequestEditorFn) (*DeleteSpaceResponse, error) {
+	rsp, err := c.DeleteSpace(ctx, spaceId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -22418,6 +22541,15 @@ func (c *ClientWithResponses) ApproveUnitWithResponse(ctx context.Context, space
 	return ParseApproveUnitResponse(rsp)
 }
 
+// DownloadUnitDataWithResponse request returning *DownloadUnitDataResponse
+func (c *ClientWithResponses) DownloadUnitDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitDataResponse, error) {
+	rsp, err := c.DownloadUnitData(ctx, spaceId, unitId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadUnitDataResponse(rsp)
+}
+
 // DestroyUnitWithResponse request returning *DestroyUnitResponse
 func (c *ClientWithResponses) DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error) {
 	rsp, err := c.DestroyUnit(ctx, spaceId, unitId, reqEditors...)
@@ -22453,13 +22585,13 @@ func (c *ClientWithResponses) ImportUnitWithResponse(ctx context.Context, spaceI
 	return ParseImportUnitResponse(rsp)
 }
 
-// DownloadLiveStateUnitWithResponse request returning *DownloadLiveStateUnitResponse
-func (c *ClientWithResponses) DownloadLiveStateUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadLiveStateUnitResponse, error) {
-	rsp, err := c.DownloadLiveStateUnit(ctx, spaceId, unitId, reqEditors...)
+// DownloadUnitLiveStateWithResponse request returning *DownloadUnitLiveStateResponse
+func (c *ClientWithResponses) DownloadUnitLiveStateWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveStateResponse, error) {
+	rsp, err := c.DownloadUnitLiveState(ctx, spaceId, unitId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDownloadLiveStateUnitResponse(rsp)
+	return ParseDownloadUnitLiveStateResponse(rsp)
 }
 
 // ListExtendedMutationsWithResponse request returning *ListExtendedMutationsResponse
@@ -22507,13 +22639,13 @@ func (c *ClientWithResponses) GetExtendedRevisionWithResponse(ctx context.Contex
 	return ParseGetExtendedRevisionResponse(rsp)
 }
 
-// GetRevisionDataWithResponse request returning *GetRevisionDataResponse
-func (c *ClientWithResponses) GetRevisionDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionDataResponse, error) {
-	rsp, err := c.GetRevisionData(ctx, spaceId, unitId, revisionId, reqEditors...)
+// DownloadRevisionDataWithResponse request returning *DownloadRevisionDataResponse
+func (c *ClientWithResponses) DownloadRevisionDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadRevisionDataResponse, error) {
+	rsp, err := c.DownloadRevisionData(ctx, spaceId, unitId, revisionId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetRevisionDataResponse(rsp)
+	return ParseDownloadRevisionDataResponse(rsp)
 }
 
 // ListUnitEventsWithResponse request returning *ListUnitEventsResponse
@@ -30645,6 +30777,60 @@ func ParseApproveUnitResponse(rsp *http.Response) (*ApproveUnitResponse, error) 
 	return response, nil
 }
 
+// ParseDownloadUnitDataResponse parses an HTTP response from a DownloadUnitDataWithResponse call
+func ParseDownloadUnitDataResponse(rsp *http.Response) (*DownloadUnitDataResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadUnitDataResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDestroyUnitResponse parses an HTTP response from a DestroyUnitWithResponse call
 func ParseDestroyUnitResponse(rsp *http.Response) (*DestroyUnitResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -30849,15 +31035,15 @@ func ParseImportUnitResponse(rsp *http.Response) (*ImportUnitResponse, error) {
 	return response, nil
 }
 
-// ParseDownloadLiveStateUnitResponse parses an HTTP response from a DownloadLiveStateUnitWithResponse call
-func ParseDownloadLiveStateUnitResponse(rsp *http.Response) (*DownloadLiveStateUnitResponse, error) {
+// ParseDownloadUnitLiveStateResponse parses an HTTP response from a DownloadUnitLiveStateWithResponse call
+func ParseDownloadUnitLiveStateResponse(rsp *http.Response) (*DownloadUnitLiveStateResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &DownloadLiveStateUnitResponse{
+	response := &DownloadUnitLiveStateResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -31243,15 +31429,15 @@ func ParseGetExtendedRevisionResponse(rsp *http.Response) (*GetExtendedRevisionR
 	return response, nil
 }
 
-// ParseGetRevisionDataResponse parses an HTTP response from a GetRevisionDataWithResponse call
-func ParseGetRevisionDataResponse(rsp *http.Response) (*GetRevisionDataResponse, error) {
+// ParseDownloadRevisionDataResponse parses an HTTP response from a DownloadRevisionDataWithResponse call
+func ParseDownloadRevisionDataResponse(rsp *http.Response) (*DownloadRevisionDataResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetRevisionDataResponse{
+	response := &DownloadRevisionDataResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

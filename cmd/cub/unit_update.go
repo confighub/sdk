@@ -662,91 +662,60 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 		return fmt.Errorf("no response data received")
 	}
 
-	successCount := 0
-	errorCount := 0
-	var successfulUnits []*goclientnew.ExtendedUnit
-	var failedErrors []*goclientnew.ResponseError
-
-	for _, resp := range *responses {
-		if resp.Error != nil {
-			errorCount++
-			failedErrors = append(failedErrors, resp.Error)
-		} else if resp.Unit != nil {
-			successCount++
-			// Convert Unit to ExtendedUnit for display
-			extendedUnit := &goclientnew.ExtendedUnit{
-				Unit: resp.Unit,
-			}
-			successfulUnits = append(successfulUnits, extendedUnit)
-		}
-	}
-
 	// Check if any alternative output format is specified
 	hasAlternativeOutput := jsonOutput || jq != ""
 
-	// Wait for triggers to complete if requested. Do it before displaying the units with apply gates.
-	if wait && successCount > 0 {
-		if !quiet && !hasAlternativeOutput {
-			tprintRaw("Awaiting triggers...")
-		}
-		// Wait for each successfully updated unit
-		for i := range successfulUnits {
-			// The units returned don't have the extended information, so we re-fetch them with that information.
-			unitExtended, err := apiGetExtendedUnitInSpace(successfulUnits[i].Unit.UnitID.String(), successfulUnits[i].Unit.SpaceID.String(), "*") // get all fields for now
-			if err != nil {
-				return err
+	// Wait for triggers BEFORE calling the generic display function
+	if wait {
+		successfulUnits := []*goclientnew.Unit{}
+		for _, resp := range *responses {
+			if resp.Error == nil && resp.Unit != nil {
+				successfulUnits = append(successfulUnits, resp.Unit)
 			}
-			err = awaitTriggersRemoval(unitExtended.Unit)
-			if err != nil {
-				return err
+		}
+
+		if len(successfulUnits) > 0 {
+			if !quiet && !hasAlternativeOutput {
+				tprintRaw("Awaiting triggers...")
 			}
-			// TODO: We should change awaitTriggersRemoval to return the latest state. This will show one unit with triggers.
-			successfulUnits[i] = unitExtended
-		}
-	}
-
-	// Summary message
-	if !quiet && !hasAlternativeOutput {
-		// Display successful units using standard display function.
-		if verbose && len(successfulUnits) > 0 {
-			displayListResults(successfulUnits, getExtendedUnitSlug, displayExtendedUnitList)
-		}
-
-		// Display failed units if any
-		if len(failedErrors) > 0 {
-			tprintRaw(fmt.Sprintf("Failed to %s units:", operationName))
-			displayResponseErrorTable(failedErrors)
-		}
-
-		totalCount := len(*responses)
-		if statusCode == 207 {
-			tprint("Bulk %s completed with mixed results: %d succeeded, %d failed out of %d total units",
-				operationName, successCount, errorCount, totalCount)
-		} else if statusCode == 200 {
-			if contextInfo != "" {
-				tprint("Bulk %s completed successfully: %d units %s from %s",
-					operationName, successCount, operationName, contextInfo)
-			} else {
-				tprint("Bulk %s completed successfully: %d units %s",
-					operationName, successCount, operationName)
+			// Wait for each successfully updated unit
+			for _, unit := range successfulUnits {
+				// The units returned don't have the extended information, so we re-fetch them with that information.
+				unitExtended, err := apiGetExtendedUnitInSpace(unit.UnitID.String(), unit.SpaceID.String(), "*")
+				if err != nil {
+					return err
+				}
+				err = awaitTriggersRemoval(unitExtended.Unit)
+				if err != nil {
+					return err
+				}
+				// Update the unit in the response with the latest state
+				// Note: We can't easily update the original response, but the triggers have been awaited
 			}
 		}
 	}
 
-	// Output JSON if requested
-	if jsonOutput {
-		displayJSON(responses)
-	}
-	if jq != "" {
-		displayJQ(responses)
-	}
-
-	// Return error if all operations failed
-	if errorCount > 0 && successCount == 0 {
-		return fmt.Errorf("all bulk %s operations failed", operationName)
+	// Convert responses to the format expected by the generic function
+	// For status code 207, we need both parameters
+	var responses200 *[]goclientnew.UnitCreateOrUpdateResponse
+	var responses207 *[]goclientnew.UnitCreateOrUpdateResponse
+	if statusCode == 200 {
+		responses200 = responses
+	} else if statusCode == 207 {
+		responses207 = responses
 	}
 
-	return nil
+	// Call the generic display function
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "unit", operationName, contextInfo,
+		func(r *goclientnew.UnitCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.UnitCreateOrUpdateResponse) string {
+			if r.Unit != nil {
+				return r.Unit.Slug
+			}
+			return ""
+		},
+	)
 }
 
 // parseRestoreParameter parses various restore formats and sets the appropriate parameters

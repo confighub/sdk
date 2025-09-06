@@ -125,11 +125,16 @@ func runBulkInvocationUpdate() error {
 
 	// Add worker if specified
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		patchData["BridgeWorkerID"] = worker.BridgeWorkerID.String()
+		patchData["BridgeWorkerID"] = workerUUID.String()
 	}
 
 	// Merge with stdin data if provided
@@ -236,11 +241,17 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Add flags to patch
 		if workerSlug != "" {
-			worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+				workerSlug,
+				EntityTypeBridgeWorker,
+				apiGetBridgeWorkerFromSlugInSpace,
+				func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+			)
 			if err != nil {
 				return err
 			}
-			currentInvocation.BridgeWorkerID = &worker.BridgeWorkerID
+			workerID := goclientnew.UUID(workerUUID)
+			currentInvocation.BridgeWorkerID = &workerID
 		}
 
 		// Add labels if specified
@@ -302,11 +313,17 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentInvocation.SpaceID = spaceID
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		currentInvocation.BridgeWorkerID = &worker.BridgeWorkerID
+		workerID := goclientnew.UUID(workerUUID)
+		currentInvocation.BridgeWorkerID = &workerID
 	}
 
 	currentInvocation.ToolchainType = args[1]
@@ -325,67 +342,16 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func handleBulkInvocationCreateOrUpdateResponse(responses200 *[]goclientnew.InvocationCreateOrUpdateResponse, responses207 *[]goclientnew.InvocationCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
-	var responses *[]goclientnew.InvocationCreateOrUpdateResponse
-	if statusCode == 200 && responses200 != nil {
-		responses = responses200
-	} else if statusCode == 207 && responses207 != nil {
-		responses = responses207
-	} else {
-		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
-	}
-
-	if responses == nil {
-		return fmt.Errorf("no response data received")
-	}
-
-	successCount := 0
-	failureCount := 0
-	var failures []string
-
-	for _, resp := range *responses {
-		if resp.Error == nil && resp.Invocation != nil {
-			successCount++
-			if verbose {
-				fmt.Printf("Successfully %sd invocation: %s (ID: %s)\n", operationName, resp.Invocation.Slug, resp.Invocation.InvocationID)
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "invocation", operationName, contextInfo,
+		func(r *goclientnew.InvocationCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.InvocationCreateOrUpdateResponse) string {
+			if r.Invocation != nil {
+				return fmt.Sprintf("%s (ID: %s)", r.Invocation.Slug, r.Invocation.InvocationID)
 			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			if resp.Invocation != nil {
-				failures = append(failures, fmt.Sprintf("  - %s: %s", resp.Invocation.Slug, errorMsg))
-			} else {
-				failures = append(failures, fmt.Sprintf("  - (unknown invocation): %s", errorMsg))
-			}
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d invocation(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d invocation(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
-	return nil
+			return ""
+		},
+	)
 }
 
 func patchInvocation(spaceID uuid.UUID, invocationID uuid.UUID, patchData []byte) (*goclientnew.Invocation, error) {

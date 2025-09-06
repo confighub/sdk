@@ -194,57 +194,23 @@ func runBulkUnitSetTarget(targetSlug string) error {
 }
 
 func handleBulkSetTargetResponse(responses *[]goclientnew.UnitCreateOrUpdateResponse, statusCode int, targetSlug string) error {
-	if responses == nil {
-		return fmt.Errorf("no response data received")
+	// Convert responses to the format expected by the generic function
+	var responses200 *[]goclientnew.UnitCreateOrUpdateResponse
+	var responses207 *[]goclientnew.UnitCreateOrUpdateResponse
+	if statusCode == 200 {
+		responses200 = responses
+	} else if statusCode == 207 {
+		responses207 = responses
 	}
 
-	successCount := 0
-	errorCount := 0
-
-	for _, resp := range *responses {
-		if resp.Error != nil {
-			errorCount++
-			if !quiet {
-				if resp.Unit != nil {
-					tprint("ERROR: Failed to set target for unit %s (%s): %s", resp.Unit.Slug, resp.Unit.UnitID, resp.Error.Message)
-				} else {
-					tprint("ERROR: %s", resp.Error.Message)
-				}
+	return displayBulkGenericCreateOrUpdateResults(
+		responses200, responses207, statusCode, "unit", "set-target", fmt.Sprintf("target %s", targetSlug),
+		func(r *goclientnew.UnitCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+		func(r *goclientnew.UnitCreateOrUpdateResponse) string {
+			if r.Unit != nil {
+				return fmt.Sprintf("%s (%s)", r.Unit.Slug, r.Unit.UnitID)
 			}
-		} else {
-			successCount++
-			if resp.Unit != nil && !quiet {
-				tprint("Successfully set target of unit %s (%s)", resp.Unit.Slug, resp.Unit.UnitID)
-				if verbose {
-					displayUnitDetails(resp.Unit)
-				}
-			}
-		}
-	}
-
-	// Summary message
-	if !quiet {
-		totalCount := len(*responses)
-		if statusCode == 207 {
-			tprint("Bulk operation completed with mixed results: %d succeeded, %d failed out of %d total",
-				successCount, errorCount, totalCount)
-		} else if statusCode == 200 {
-			tprint("Bulk operation completed successfully: %d units updated", successCount)
-		}
-	}
-
-	// Output JSON if requested
-	if jsonOutput {
-		displayJSON(responses)
-	}
-	if jq != "" {
-		displayJQ(responses)
-	}
-
-	// Return error if any operations failed and it was a complete failure
-	if errorCount > 0 && successCount == 0 {
-		return fmt.Errorf("all bulk operations failed")
-	}
-
-	return nil
+			return ""
+		},
+	)
 }

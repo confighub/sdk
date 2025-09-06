@@ -141,66 +141,10 @@ func filterDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("filter", args[0], filterDetails.FilterID.String())
+	displayDeleteResults("filter", args[0], filterDetails.FilterID.String(), deleteRes)
 	return nil
 }
 
 func handleBulkFilterDeleteResponse(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, operationName, contextInfo string) error {
-	var responses *[]goclientnew.DeleteResponse
-	if statusCode == 200 && responses200 != nil {
-		responses = responses200
-	} else if statusCode == 207 && responses207 != nil {
-		responses = responses207
-	} else {
-		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
-	}
-
-	if responses == nil {
-		return fmt.Errorf("no response data received")
-	}
-
-	successCount := 0
-	failureCount := 0
-	var failures []string
-
-	for _, resp := range *responses {
-		if resp.Error == nil {
-			successCount++
-			if verbose {
-				fmt.Printf("Successfully %sd filter: %s\n", operationName, resp.Message)
-			}
-		} else {
-			failureCount++
-			errorMsg := "unknown error"
-			if resp.Error != nil && resp.Error.Message != "" {
-				errorMsg = resp.Error.Message
-			}
-			failures = append(failures, fmt.Sprintf("  - %s", errorMsg))
-		}
-	}
-
-	// Display summary
-	if !jsonOutput {
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
-		fmt.Printf("  Success: %d filter(s)\n", successCount)
-		if failureCount > 0 {
-			fmt.Printf("  Failed: %d filter(s)\n", failureCount)
-			if verbose && len(failures) > 0 {
-				fmt.Println("\nFailures:")
-				for _, failure := range failures {
-					fmt.Println(failure)
-				}
-			}
-		}
-		if contextInfo != "" {
-			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-	}
-
-	// Return success only if all operations succeeded
-	if statusCode == 207 || failureCount > 0 {
-		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
-	}
-
-	return nil
+	return displayBulkDeleteResults(responses200, responses207, statusCode, "filter", operationName, contextInfo)
 }

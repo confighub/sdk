@@ -135,7 +135,6 @@ Error handling:
 	return getCommandHelp(baseHelp, agentContext)
 }
 
-var useWorker bool
 var outputOnly bool
 var outputValuesOnly bool
 var outputRaw bool
@@ -149,7 +148,6 @@ var revisionIdentifier string
 var functionChangesetSlug string
 
 func init() {
-	functionDoCmd.Flags().BoolVar(&useWorker, "use-worker", false, "use the attached worker to execute the function")
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionDoCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
@@ -170,6 +168,7 @@ func init() {
 	enableJqFlag(functionDoCmd)
 	enableWaitFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionCmd.AddCommand(functionDoCmd)
 }
 
@@ -177,14 +176,20 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req := &goclientnew.FunctionInvocationsRequest{}
 	req.NumFilters = 0
 	req.StopOnError = false
-	req.UseFunctionWorker = useWorker
 	req.ChangeDescription = changeDescription
+	req.ToolchainType = toolchainType
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "") // default select is fine
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			failOnError(err)
 		}
-		req.BridgeWorkerID = &worker.BridgeWorkerID
+		workerID := goclientnew.UUID(workerUUID)
+		req.BridgeWorkerID = &workerID
 	}
 
 	// Parse and add trigger identifiers
@@ -342,29 +347,29 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid revision format: expected unit-slug/revision-number, got %s", revisionIdentifier)
 	}
-	
+
 	unitSlug := parts[0]
 	revisionNumStr := parts[1]
-	
+
 	// Parse revision number
 	var revisionNum int64
 	fmt.Sscanf(revisionNumStr, "%d", &revisionNum)
 	if revisionNum <= 0 {
 		return nil, fmt.Errorf("invalid revision number: %s", revisionNumStr)
 	}
-	
+
 	// Get unit from slug
 	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
 	}
-	
+
 	// Get revision from number
 	revision, err := apiGetRevisionFromNumber(revisionNum, unit.UnitID.String(), "RevisionID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get revision %d for unit '%s': %w", revisionNum, unitSlug, err)
 	}
-	
+
 	// Call the API with revision parameters
 	newParams := &goclientnew.InvokeFunctionsParams{}
 	unitUUID := goclientnew.UUID(unit.UnitID)
@@ -383,12 +388,12 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 		changesetID := changesetUUID.String()
 		newParams.ChangeSetId = &changesetID
 	}
-	
+
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
 	if IsAPIError(err, funcRes) {
 		return nil, InterpretErrorGeneric(err, funcRes)
 	}
-	
+
 	// Handle both successful (200) and partial success/failure (207) responses
 	var resp *[]goclientnew.FunctionInvocationsResponse
 	if funcRes.JSON200 != nil {
@@ -396,7 +401,7 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 	} else if funcRes.JSON207 != nil {
 		resp = funcRes.JSON207
 	}
-	
+
 	return resp, nil
 }
 

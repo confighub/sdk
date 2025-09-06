@@ -206,11 +206,17 @@ func runSingleTriggerCreate(args []string) error {
 		newBody.Enforced = true
 	}
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		newBody.BridgeWorkerID = &worker.BridgeWorkerID
+		workerID := goclientnew.UUID(workerUUID)
+		newBody.BridgeWorkerID = &workerID
 	}
 
 	// TODO: update with overriden string type TriggerEvent

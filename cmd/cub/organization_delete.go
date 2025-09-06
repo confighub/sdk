@@ -31,6 +31,6 @@ func organizationDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if IsAPIError(err, deleteRes) {
 		return InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("organization", args[0], organizationDetails.OrganizationID.String())
+	displayDeleteResults("organization", args[0], organizationDetails.OrganizationID.String(), deleteRes)
 	return nil
 }

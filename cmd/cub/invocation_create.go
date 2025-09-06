@@ -175,11 +175,17 @@ func runSingleInvocationCreate(args []string) error {
 		newBody.DisplayName = args[0]
 	}
 	if workerSlug != "" {
-		worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+			workerSlug,
+			EntityTypeBridgeWorker,
+			apiGetBridgeWorkerFromSlugInSpace,
+			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
+		)
 		if err != nil {
 			return err
 		}
-		newBody.BridgeWorkerID = &worker.BridgeWorkerID
+		workerID := goclientnew.UUID(workerUUID)
+		newBody.BridgeWorkerID = &workerID
 	}
 
 	newBody.ToolchainType = args[1]

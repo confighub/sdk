@@ -604,6 +604,7 @@ type ExtendedSpace struct {
 	TotalChangeSetCount        int64          `json:"TotalChangeSetCount,omitempty"`
 	TotalFilterCount           int64          `json:"TotalFilterCount,omitempty"`
 	TotalInvocationCount       int64          `json:"TotalInvocationCount,omitempty"`
+	TotalLinkCount             int64          `json:"TotalLinkCount,omitempty"`
 	TotalTagCount              int64          `json:"TotalTagCount,omitempty"`
 	TotalUnitCount             int64          `json:"TotalUnitCount,omitempty"`
 	TotalViewCount             int64          `json:"TotalViewCount,omitempty"`
@@ -905,11 +906,11 @@ type FunctionInvocationsRequest struct {
 	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
 	StopOnError bool `json:"StopOnError,omitempty"`
 
+	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process.
+	ToolchainType string `json:"ToolchainType,omitempty"`
+
 	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
 	Triggers []UUID `json:"Triggers,omitempty"`
-
-	// UseFunctionWorker UseFunctionWorker indicates whether to use the function worker or the builtin function executor, which is the default. The FunctionInvocations are forwarded to the executor/worker, so all must be executable by the same executor/worker currently.
-	UseFunctionWorker bool `json:"UseFunctionWorker,omitempty"`
 }
 
 // FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
@@ -1826,7 +1827,7 @@ type Unit struct {
 	// CursorID An auto-incrementing sequence number used for pagination.
 	CursorID int64 `json:"CursorID,omitempty"`
 
-	// Data The full configuration data for this unit.
+	// Data The full configuration data for this unit. The maximum size is 67108864 bytes.
 	Data string `json:"Data,omitempty"`
 
 	// DisplayName Friendly name for the entity.
@@ -2195,6 +2196,9 @@ type BulkDeleteSpacesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
+
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).
+	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty"`
 }
 
 // BulkPatchSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchSpaces.
@@ -4711,6 +4715,12 @@ type ListSpacesParams struct {
 
 	// Summary Flag parameter for enabling summary
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty"`
+}
+
+// DeleteSpaceParams defines parameters for DeleteSpace.
+type DeleteSpaceParams struct {
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).
+	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty"`
 }
 
 // GetSpaceParams defines parameters for GetSpace.

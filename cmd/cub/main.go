@@ -555,9 +555,9 @@ func parseFilterFlag(filterValue string) (string, error) {
 	if filterValue == "" {
 		return "", nil
 	}
-	
+
 	uuid, err := parseEntityIdentifierSingle[goclientnew.Filter](
-		filterValue, 
+		filterValue,
 		EntityTypeFilter,
 		apiGetFilterFromSlugInSpace,
 		func(f *goclientnew.Filter) string { return f.FilterID.String() },
@@ -585,10 +585,10 @@ const (
 
 // EntityInSpace type constraint for all entities that reside in spaces
 type EntityInSpace interface {
-	goclientnew.Filter | goclientnew.View | goclientnew.Invocation | 
-	goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet | 
-	goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit | 
-	goclientnew.Link | goclientnew.Set
+	goclientnew.Filter | goclientnew.View | goclientnew.Invocation |
+		goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet |
+		goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit |
+		goclientnew.Link | goclientnew.Set
 }
 
 // apiGetEntityFromSlugInSpaceFunc is a function type for getting entities by slug in a space
@@ -600,7 +600,7 @@ type apiGetEntityFromSlugInSpaceFunc[T any] func(slug string, spaceID string, se
 // - space/slug or space-uuid/slug
 // Returns the full entities
 func parseEntityIdentifiersAsEntities[T EntityInSpace](
-	identifiers []string, 
+	identifiers []string,
 	entityType string,
 	selectParam string,
 	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
@@ -634,7 +634,7 @@ func parseEntityIdentifiersAsEntities[T EntityInSpace](
 		if len(parts) == 1 {
 			// Format: "entity-slug" - determine which space to use
 			entitySlug = parts[0]
-			
+
 			// Priority: selectedSpaceID (from --space flag) > context default space
 			if selectedSpaceID != "*" && selectedSpaceID != "" {
 				// Use explicitly selected space (from --space flag)
@@ -679,7 +679,7 @@ func parseEntityIdentifiersAsEntities[T EntityInSpace](
 
 // parseEntityIdentifiers is a wrapper that returns UUIDs by extracting them from the entities
 func parseEntityIdentifiers[T EntityInSpace](
-	identifiers []string, 
+	identifiers []string,
 	entityType string,
 	apiGetFunc apiGetEntityFromSlugInSpaceFunc[T],
 	getEntityID func(*T) string,
@@ -715,16 +715,16 @@ func parseEntityIdentifierSingle[T EntityInSpace](
 	if identifier == "" {
 		return uuid.Nil, fmt.Errorf("%s value cannot be empty", entityType)
 	}
-	
+
 	uuids, err := parseEntityIdentifiers([]string{identifier}, entityType, apiGetFunc, getEntityID)
 	if err != nil {
 		return uuid.Nil, err
 	}
-	
+
 	if len(uuids) != 1 {
 		return uuid.Nil, fmt.Errorf("unexpected number of UUIDs returned for %s", entityType)
 	}
-	
+
 	return uuids[0], nil
 }
 
@@ -739,22 +739,22 @@ func parseEntityIdentifierSingleAsEntity[T EntityInSpace](
 	if identifier == "" {
 		return nil, fmt.Errorf("%s value cannot be empty", entityType)
 	}
-	
+
 	entities, err := parseEntityIdentifiersAsEntities([]string{identifier}, entityType, selectParam, apiGetFunc, getEntityID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if len(entities) != 1 {
 		return nil, fmt.Errorf("unexpected number of entities returned for %s", entityType)
 	}
-	
+
 	return &entities[0], nil
 }
 
 func parseTagSlug(tagValue string) (string, error) {
 	uuid, err := parseEntityIdentifierSingle[goclientnew.Tag](
-		tagValue, 
+		tagValue,
 		EntityTypeTag,
 		apiGetTagFromSlugInSpace,
 		func(t *goclientnew.Tag) string { return t.TagID.String() },
@@ -767,7 +767,7 @@ func parseTagSlug(tagValue string) (string, error) {
 
 func parseChangeSetSlug(changesetValue string) (uuid.UUID, error) {
 	return parseEntityIdentifierSingle[goclientnew.ChangeSet](
-		changesetValue, 
+		changesetValue,
 		EntityTypeChangeSet,
 		apiGetChangeSetFromSlugInSpace,
 		func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
@@ -776,7 +776,7 @@ func parseChangeSetSlug(changesetValue string) (uuid.UUID, error) {
 
 func parseInvocationSlug(invocationValue string) (uuid.UUID, error) {
 	return parseEntityIdentifierSingle[goclientnew.Invocation](
-		invocationValue, 
+		invocationValue,
 		EntityTypeInvocation,
 		apiGetInvocationFromSlugInSpace,
 		func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
@@ -837,7 +837,10 @@ func addStandardUpdateFlags(cmd *cobra.Command) {
 }
 
 func addStandardDeleteFlags(cmd *cobra.Command) {
+	enableVerboseFlag(cmd)
 	enableQuietFlag(cmd)
+	enableJsonFlag(cmd)
+	enableJqFlag(cmd)
 }
 
 // TODO: Move to a reusable library
@@ -1002,6 +1005,24 @@ type ModelConstraint interface {
 		Context
 }
 
+type DeleteConstraint interface {
+	goclientnew.DeleteResponse |
+		goclientnew.DeleteBridgeWorkerResponse |
+		goclientnew.DeleteChangeSetResponse |
+		goclientnew.DeleteFilterResponse |
+		goclientnew.DeleteInvocationResponse |
+		goclientnew.DeleteLinkResponse |
+		goclientnew.DeleteOrganizationResponse |
+		goclientnew.DeleteOrganizationMemberResponse |
+		goclientnew.DeleteSetResponse |
+		goclientnew.DeleteSpaceResponse |
+		goclientnew.DeleteTagResponse |
+		goclientnew.DeleteTargetResponse |
+		goclientnew.DeleteTriggerResponse |
+		goclientnew.DeleteUnitResponse |
+		goclientnew.DeleteViewResponse
+}
+
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
 	// Check if any alternative output format is specified
 	hasAlternativeOutput := jsonOutput || jq != ""
@@ -1077,9 +1098,18 @@ func displayGetResults[Entity ModelConstraint](entity *Entity, display func(enti
 	}
 }
 
-func displayDeleteResults(entityName, slug, id string) {
-	if !quiet {
+func displayDeleteResults[ResponseType DeleteConstraint](entityName, slug, id string, response *ResponseType) {
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully deleted %s %s (%s)", entityName, slug, id)
+	}
+	if jsonOutput {
+		displayJSON(response)
+	}
+	if jq != "" {
+		displayJQ(response)
 	}
 }
 
@@ -1093,4 +1123,170 @@ func addSpaceIDToWhereClause(whereClause, spaceID string) string {
 		return fmt.Sprintf("%s AND %s", whereClause, spaceConstraint)
 	}
 	return spaceConstraint
+}
+
+// displayBulkDeleteResults handles the display of bulk delete operation results
+func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, entityName, operationName, contextInfo string) error {
+	var responses *[]goclientnew.DeleteResponse
+	if statusCode == 200 && responses200 != nil {
+		responses = responses200
+	} else if statusCode == 207 && responses207 != nil {
+		responses = responses207
+	} else {
+		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
+	}
+
+	if responses == nil {
+		return fmt.Errorf("no response data received")
+	}
+
+	successCount := 0
+	failureCount := 0
+	var failedErrors []*goclientnew.ResponseError
+	var successMessages []string
+
+	for _, resp := range *responses {
+		if resp.Error == nil {
+			successCount++
+			if verbose && resp.Message != "" {
+				successMessages = append(successMessages, resp.Message)
+			}
+		} else {
+			failureCount++
+			failedErrors = append(failedErrors, resp.Error)
+		}
+	}
+
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	// Display output based on format flags
+	if jsonOutput {
+		displayJSON(responses)
+	}
+	if jq != "" {
+		displayJQ(responses)
+	}
+
+	// Display regular output unless quiet or alternative output is specified
+	if !quiet && !hasAlternativeOutput {
+		// Display verbose success messages
+		if verbose && len(successMessages) > 0 {
+			for _, msg := range successMessages {
+				fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, msg)
+			}
+		}
+
+		// Display summary
+		fmt.Printf("\nBulk %s operation completed:\n", operationName)
+		fmt.Printf("  Success: %d %s(s)\n", successCount, entityName)
+		if failureCount > 0 {
+			fmt.Printf("  Failed: %d %s(s)\n", failureCount, entityName)
+		}
+		if contextInfo != "" {
+			fmt.Printf("  Context: %s\n", contextInfo)
+		}
+
+		// Display detailed errors if verbose
+		if verbose && len(failedErrors) > 0 {
+			fmt.Printf("\nFailures:\n")
+			displayResponseErrorTable(failedErrors)
+		}
+	}
+
+	// Return error based on status code and failure count
+	if statusCode == 207 || failureCount > 0 {
+		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
+	}
+
+	return nil
+}
+
+// Generic display function for entity types
+func displayBulkGenericCreateOrUpdateResults[T any](
+	responses200 *[]T,
+	responses207 *[]T,
+	statusCode int,
+	entityName string,
+	operationName string,
+	contextInfo string,
+	getError func(*T) *goclientnew.ResponseError,
+	getName func(*T) string,
+) error {
+	var responses *[]T
+	if statusCode == 200 && responses200 != nil {
+		responses = responses200
+	} else if statusCode == 207 && responses207 != nil {
+		responses = responses207
+	} else {
+		return fmt.Errorf("unexpected status code %d or no response data", statusCode)
+	}
+
+	if responses == nil {
+		return fmt.Errorf("no response data received")
+	}
+
+	successCount := 0
+	failureCount := 0
+	var successNames []string
+	var failedErrors []*goclientnew.ResponseError
+
+	for i := range *responses {
+		resp := &(*responses)[i]
+		if err := getError(resp); err != nil {
+			failureCount++
+			failedErrors = append(failedErrors, err)
+		} else {
+			successCount++
+			if verbose {
+				if name := getName(resp); name != "" {
+					successNames = append(successNames, name)
+				}
+			}
+		}
+	}
+
+	// Check if any alternative output format is specified
+	hasAlternativeOutput := jsonOutput || jq != ""
+
+	// Display output based on format flags
+	if jsonOutput {
+		displayJSON(responses)
+	}
+	if jq != "" {
+		displayJQ(responses)
+	}
+
+	// Display regular output unless quiet or alternative output is specified
+	if !quiet && !hasAlternativeOutput {
+		// Display verbose success messages
+		if verbose && len(successNames) > 0 {
+			for _, name := range successNames {
+				fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, name)
+			}
+		}
+
+		// Display failed entities if any
+		if len(failedErrors) > 0 {
+			fmt.Printf("\nFailed to %s %ss:\n", operationName, entityName)
+			displayResponseErrorTable(failedErrors)
+		}
+
+		// Display summary
+		fmt.Printf("\nBulk %s operation completed:\n", operationName)
+		fmt.Printf("  Success: %d %s(s)\n", successCount, entityName)
+		if failureCount > 0 {
+			fmt.Printf("  Failed: %d %s(s)\n", failureCount, entityName)
+		}
+		if contextInfo != "" {
+			fmt.Printf("  Context: %s\n", contextInfo)
+		}
+	}
+
+	// Return error based on status code and failure count
+	if statusCode == 207 || failureCount > 0 {
+		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
+	}
+
+	return nil
 }
