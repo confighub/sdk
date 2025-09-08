@@ -131,8 +131,18 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		}
 
 		invocationInfo := fmt.Sprintf("invoke %s", invocation.FunctionName)
-		for _, arg := range invocation.Arguments {
-			invocationInfo += fmt.Sprintf(" %v", arg.Value)
+		if log.Level() == log.DEBUG {
+			// TODO: Decide whether sensitive Arguments should be supported
+			for _, arg := range invocation.Arguments {
+				// Note: Values can be quite large, such as for compute-mutations and patch-mutations
+				valueStr := fmt.Sprintf(" %v", arg.Value)
+				const maxValueLogLength = 1024
+				if len(valueStr) > maxValueLogLength {
+					// Truncate. This will break parsing of JSON or YAML, but it seems better than just a digest or length.
+					valueStr = valueStr[:maxValueLogLength] + "..."
+				}
+				invocationInfo += valueStr
+			}
 		}
 
 		arguments, validationErr := ValidateAndBuildArguments(&invocation, &f.FunctionSignature)

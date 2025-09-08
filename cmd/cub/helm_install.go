@@ -245,6 +245,13 @@ func createUnitLink(ctx context.Context, client *goclientnew.ClientWithResponses
 	if linkRes.JSON200 != nil {
 		linkDetails := linkRes.JSON200
 		displayCreateResults(linkDetails, "link", linkDetails.Slug, linkDetails.LinkID.String(), displayLinkDetails)
+		if wait { // global wait flag
+			// Since we most likely re-use the create result, the awaiting triggers gate should be set and will cause the await loop
+			// to wait and re-fetch the unit to check the apply gate again.
+			if err := awaitTriggersRemoval(fromUnit); err != nil {
+				return fmt.Errorf("failed to wait for triggers on unit '%s': %w", fromUnit.Slug, err)
+			}
+		}
 		return nil
 	}
 

@@ -110,11 +110,6 @@ func runBulkUnitDestroy() error {
 		return errors.New("--unit and --where flags are mutually exclusive")
 	}
 
-	// Must have either --unit or --where
-	if len(unitDestroyArgs.unitIdentifiers) == 0 && unitDestroyArgs.whereClause == "" {
-		return errors.New("either --unit or --where flag is required for bulk destroy")
-	}
-
 	// Build WHERE clause from unit identifiers if provided
 	var effectiveWhere string
 	if len(unitDestroyArgs.unitIdentifiers) > 0 {
