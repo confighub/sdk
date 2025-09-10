@@ -460,7 +460,7 @@ func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error
 	if failed {
 		return errors.New(string(*queuedOp.Action) + " failed on unit " + unitIDString)
 	}
-	unitDetails, err := apiGetUnit(unitIDString, "*") // get all fields for now
+	unitDetails, err := apiGetUnitInSpace(unitIDString, spaceIDString, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
