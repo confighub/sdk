@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -128,6 +127,15 @@ func checkTriggerConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, triggerPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, triggerPatch); err != nil {
+		failOnError(err)
+	}
+
 	return isBulkPatchMode
 }
 
@@ -153,26 +161,10 @@ func runBulkTriggerUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Add enable/disable flags
-	if disableTrigger {
-		patchData["Disabled"] = true
-	} else if enableTrigger {
-		patchData["Disabled"] = false
-	}
-
-	// Add enforce/unenforce flags
-	if enforceTrigger {
-		patchData["Enforced"] = true
-	} else if unenforceTrigger {
-		patchData["Enforced"] = false
-	}
-
-	// Add worker if specified
+	// Validate and resolve entity references early
+	var workerUUID *uuid.UUID
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+		workerID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 			workerSlug,
 			EntityTypeBridgeWorker,
 			apiGetBridgeWorkerFromSlugInSpace,
@@ -181,61 +173,50 @@ func runBulkTriggerUpdate() error {
 		if err != nil {
 			return err
 		}
-		patchData["BridgeWorkerID"] = workerUUID.String()
+		workerUUID = &workerID
 	}
 
-	// Add invocation if specified
+	var invocationIDStr string
 	if invocationSlug != "" {
-		invocationIDStr, err := parseInvocationSlug(invocationSlug)
+		invocationID, err := parseInvocationSlug(invocationSlug)
 		if err != nil {
 			return err
 		}
-		patchData["InvocationID"] = invocationIDStr
-		// Clear function-related fields when using invocation
-		patchData["FunctionName"] = ""
-		patchData["Arguments"] = nil
+		invocationIDStr = invocationID.String()
 	}
 
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
+	// Create enhancer function for trigger-specific fields
+	enhancer := func(patchMap map[string]interface{}) {
+		// Add enable/disable flags
+		if disableTrigger {
+			patchMap["Disabled"] = true
+		} else if enableTrigger {
+			patchMap["Disabled"] = false
 		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
-			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
+
+		// Add enforce/unenforce flags
+		if enforceTrigger {
+			patchMap["Enforced"] = true
+		} else if unenforceTrigger {
+			patchMap["Enforced"] = false
+		}
+
+		// Add worker if specified
+		if workerUUID != nil {
+			patchMap["BridgeWorkerID"] = workerUUID.String()
+		}
+
+		// Add invocation if specified
+		if invocationIDStr != "" {
+			patchMap["InvocationID"] = invocationIDStr
+			// Clear function-related fields when using invocation
+			patchMap["FunctionName"] = ""
+			patchMap["Arguments"] = nil
 		}
 	}
 
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}
@@ -293,30 +274,9 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	if triggerPatch {
-		// Single trigger patch mode - we'll apply changes directly to the trigger object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingTrigger := currentTrigger.Trigger
-			if err := populateModelFromFlags(currentTrigger.Trigger); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentTrigger.Trigger.OrganizationID = existingTrigger.OrganizationID
-			currentTrigger.Trigger.SpaceID = existingTrigger.SpaceID
-			currentTrigger.Trigger.TriggerID = existingTrigger.TriggerID
-		}
-
-		// Add flags to patch
-		if disableTrigger {
-			currentTrigger.Trigger.Disabled = true
-		} else if enableTrigger {
-			currentTrigger.Trigger.Disabled = false
-		}
-		if enforceTrigger {
-			currentTrigger.Trigger.Enforced = true
-		} else if unenforceTrigger {
-			currentTrigger.Trigger.Enforced = false
-		}
+		// Single trigger patch mode
+		// Handle error-prone operations before enhancer
+		var workerID *goclientnew.UUID
 		if workerSlug != "" {
 			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 				workerSlug,
@@ -327,46 +287,67 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-			workerID := goclientnew.UUID(workerUUID)
-			currentTrigger.Trigger.BridgeWorkerID = &workerID
+			workerUUIDConverted := goclientnew.UUID(workerUUID)
+			workerID = &workerUUIDConverted
 		}
 
-		// Add labels if specified
-		if len(label) > 0 {
-			err := setLabels(&currentTrigger.Trigger.Labels)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Add function details from args
-		currentTrigger.Trigger.Event = args[1]
-		currentTrigger.Trigger.ToolchainType = args[2]
-		
+		var invocationID *uuid.UUID
 		if invocationSlug != "" {
-			// Use invocation instead of function and arguments
-			invocationID, err := parseInvocationSlug(invocationSlug)
+			id, err := parseInvocationSlug(invocationSlug)
 			if err != nil {
 				return err
 			}
-			currentTrigger.Trigger.InvocationID = &invocationID
-			// Clear function-related fields when using invocation
-			currentTrigger.Trigger.FunctionName = ""
-			currentTrigger.Trigger.Arguments = nil
-		} else {
-			// Traditional function and arguments approach
-			currentTrigger.Trigger.FunctionName = args[3]
-			if len(args) > 4 {
-				invokeArgs := args[4:]
-				newArgs := parseFunctionArguments(invokeArgs)
-				currentTrigger.Trigger.Arguments = newArgs
+			invocationID = &id
+		}
+
+		// Parse function arguments if needed
+		var newArgs []goclientnew.FunctionArgument
+		if invocationSlug == "" && len(args) > 4 {
+			invokeArgs := args[4:]
+			newArgs = parseFunctionArguments(invokeArgs)
+		}
+
+		// Build patch data using BuildPatchData with trigger enhancer
+		triggerEnhancer := func(patchData map[string]interface{}) {
+			// Add trigger-specific fields
+			if enforceTrigger {
+				patchData["Enforced"] = true
+			} else if unenforceTrigger {
+				patchData["Enforced"] = false
+			}
+
+			if disableTrigger {
+				patchData["Disabled"] = true
+			} else if enableTrigger {
+				patchData["Disabled"] = false
+			}
+
+			if workerID != nil {
+				patchData["BridgeWorkerID"] = *workerID
+			}
+
+			// Add function details from args
+			patchData["Event"] = args[1]
+			patchData["ToolchainType"] = args[2]
+
+			if invocationID != nil {
+				// Use invocation instead of function and arguments
+				patchData["InvocationID"] = *invocationID
+				// Clear function-related fields when using invocation
+				patchData["FunctionName"] = ""
+				patchData["Arguments"] = nil
+			} else {
+				// Traditional function and arguments approach
+				patchData["FunctionName"] = args[3]
+				if newArgs != nil {
+					patchData["Arguments"] = newArgs
+				}
 			}
 		}
 
-		// Convert trigger to patch data
-		patchData, err := json.Marshal(currentTrigger.Trigger)
+		patchData, err := BuildPatchData(triggerEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		triggerDetails, err := patchTrigger(spaceID, currentTrigger.Trigger.TriggerID, patchData)
@@ -438,7 +419,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])
 	currentTrigger.Trigger.Event = args[1]
 	currentTrigger.Trigger.ToolchainType = args[2]
-	
+
 	if invocationSlug != "" {
 		// Use invocation instead of function and arguments
 		invocationID, err := parseInvocationSlug(invocationSlug)

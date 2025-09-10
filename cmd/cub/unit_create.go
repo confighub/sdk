@@ -136,6 +136,7 @@ func init() {
 	enableWaitFlag(unitCreateCmd)
 	enableWhereFlag(unitCreateCmd)
 	enableFilterFlag(unitCreateCmd)
+	enableDestroyGateFlag(unitCreateCmd)
 
 	// Single unit create flags
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.targetSlug, "target", "", "target for the unit")
@@ -201,10 +202,23 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
-		failOnError(err)
+		return isBulkCreateMode, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no destroy gate removal
+	if err := ValidateDestroyGateRemoval(destroyGate, false); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -250,6 +264,14 @@ func runSingleUnitCreate(args []string) error {
 	}
 
 	err := setLabels(&newUnit.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newUnit.DeleteGates)
+	if err != nil {
+		return err
+	}
+	err = setDestroyGatesField(&newUnit.DestroyGates)
 	if err != nil {
 		return err
 	}
@@ -322,6 +344,11 @@ func runSingleUnitCreate(args []string) error {
 func createBulkCreatePatch() ([]byte, error) {
 	// Create enhancer for unit-specific fields
 	var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+		// Handle destroy gates for units
+		err := setDestroyGatesInPatch(patchMap)
+		if err != nil {
+			failOnError(err)
+		}
 		// Add target if specified
 		if unitCreateArgs.targetSlug != "" {
 			var targetID uuid.UUID
@@ -349,7 +376,7 @@ func createBulkCreatePatch() ([]byte, error) {
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription
 		}
-		
+
 		// Add changeset if specified
 		if unitCreateArgs.changesetSlug != "" {
 			changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)

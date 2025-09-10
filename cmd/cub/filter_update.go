@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -66,7 +65,7 @@ func init() {
 	filterCmd.AddCommand(filterUpdateCmd)
 }
 
-func checkFilterConflictingArgs(args []string) bool {
+func checkFilterUpdateConflictingArgs(args []string) bool {
 	// Check for bulk patch mode: no positional args
 	isBulkPatchMode := len(args) == 0
 
@@ -103,6 +102,15 @@ func checkFilterConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, filterPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, filterPatch); err != nil {
+		failOnError(err)
+	}
+
 	return isBulkPatchMode
 }
 
@@ -128,64 +136,35 @@ func runBulkFilterUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Add filter-specific fields
-	if filterUpdateArgs.whereData != "" {
-		patchData["WhereData"] = filterUpdateArgs.whereData
-	}
-	if filterUpdateArgs.resourceType != "" {
-		patchData["ResourceType"] = filterUpdateArgs.resourceType
-	}
+	// Validate and resolve fromSpace early if needed
+	var fromSpaceID uuid.UUID
 	if filterUpdateArgs.fromSpace != "" {
 		fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
 		if err != nil {
 			return err
 		}
-		patchData["FromSpaceID"] = fromSpace.SpaceID.String()
+		fromSpaceID = fromSpace.SpaceID
 	}
 
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
+	// Create enhancer function for filter-specific fields
+	enhancer := func(patchMap map[string]interface{}) {
+		// Add filter-specific fields
+		if filterUpdateArgs.whereField != "" {
+			patchMap["Where"] = filterUpdateArgs.whereField
 		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
-			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
+		if filterUpdateArgs.whereData != "" {
+			patchMap["WhereData"] = filterUpdateArgs.whereData
+		}
+		if filterUpdateArgs.resourceType != "" {
+			patchMap["ResourceType"] = filterUpdateArgs.resourceType
+		}
+		if filterUpdateArgs.fromSpace != "" {
+			patchMap["FromSpaceID"] = fromSpaceID
 		}
 	}
 
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}
@@ -216,7 +195,7 @@ func runBulkFilterUpdate() error {
 }
 
 func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
-	isBulkPatchMode := checkFilterConflictingArgs(args)
+	isBulkPatchMode := checkFilterUpdateConflictingArgs(args)
 
 	if isBulkPatchMode {
 		return runBulkFilterUpdate()
@@ -231,59 +210,45 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
 	spaceID := uuid.MustParse(selectedSpaceID)
 
-	if filterPatch {
-		// Single filter patch mode - we'll apply changes directly to the filter object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingFilter := currentFilter
-			if err := populateModelFromFlags(currentFilter); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentFilter.OrganizationID = existingFilter.OrganizationID
-			currentFilter.SpaceID = existingFilter.SpaceID
-			currentFilter.FilterID = existingFilter.FilterID
-		}
-
-		// Add labels if specified
-		if len(label) > 0 {
-			err := setLabels(&currentFilter.Labels)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Add filter details from args
-		currentFilter.From = args[1]
-
-		// Set optional fields from flags
-		if where != "" {
-			currentFilter.Where = where
-		}
-		if filterUpdateArgs.whereData != "" {
-			currentFilter.WhereData = filterUpdateArgs.whereData
-		}
-		if filterUpdateArgs.resourceType != "" {
-			currentFilter.ResourceType = filterUpdateArgs.resourceType
-		}
-		if filterUpdateArgs.fromSpace != "" {
-			fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
-			if err != nil {
-				return err
-			}
-			currentFilter.FromSpaceID = &fromSpace.SpaceID
-		}
-
-		// Convert filter to patch data
-		patchData, err := json.Marshal(currentFilter)
+	// Validate and resolve fromSpace early if needed
+	var fromSpaceID uuid.UUID
+	if filterUpdateArgs.fromSpace != "" {
+		fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return err
+		}
+		fromSpaceID = fromSpace.SpaceID
+	}
+
+	if filterPatch {
+
+		// Create enhancer function for filter-specific fields
+		enhancer := func(patchMap map[string]interface{}) {
+			// Add filter-specific fields
+			patchMap["From"] = args[1]
+			if filterUpdateArgs.whereField != "" {
+				patchMap["Where"] = filterUpdateArgs.whereField
+			}
+			if filterUpdateArgs.whereData != "" {
+				patchMap["WhereData"] = filterUpdateArgs.whereData
+			}
+			if filterUpdateArgs.resourceType != "" {
+				patchMap["ResourceType"] = filterUpdateArgs.resourceType
+			}
+			if filterUpdateArgs.fromSpace != "" {
+				patchMap["FromSpaceID"] = fromSpaceID
+			}
 		}
 
-		filterDetails, err := patchFilter(spaceID, currentFilter.FilterID, patchData)
+		// Build patch data using consolidated function
+		patchJSON, err := BuildPatchData(enhancer)
+		if err != nil {
+			return err
+		}
+
+		filterDetails, err := patchFilter(spaceID, currentFilter.FilterID, patchJSON)
 		if err != nil {
 			return err
 		}
@@ -315,14 +280,18 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	err = setDeleteGates(&currentFilter.DeleteGates)
+	if err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentFilter.SpaceID = spaceID
 	currentFilter.From = args[1]
 
 	// Set optional fields from flags
-	if where != "" {
-		currentFilter.Where = where
+	if filterUpdateArgs.whereField != "" {
+		currentFilter.Where = filterUpdateArgs.whereField
 	}
 	if filterUpdateArgs.whereData != "" {
 		currentFilter.WhereData = filterUpdateArgs.whereData
@@ -331,11 +300,7 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentFilter.ResourceType = filterUpdateArgs.resourceType
 	}
 	if filterUpdateArgs.fromSpace != "" {
-		fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
-		if err != nil {
-			return err
-		}
-		currentFilter.FromSpaceID = &fromSpace.SpaceID
+		currentFilter.FromSpaceID = &fromSpaceID
 	}
 
 	filterRes, err := cubClientNew.UpdateFilterWithResponse(ctx, spaceID, currentFilter.FilterID, *currentFilter)

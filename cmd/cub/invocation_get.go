@@ -66,6 +66,7 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	view.Append([]string{"Created At", invocationDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", invocationDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(invocationDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(invocationDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(invocationDetails.Annotations)})
 	view.Append([]string{"Organization ID", invocationDetails.OrganizationID.String()})
 	

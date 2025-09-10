@@ -42,7 +42,21 @@ func setCreateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return err
+	}
+
 	err := setLabels(&newSet.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newSet.DeleteGates)
 	if err != nil {
 		return err
 	}

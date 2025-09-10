@@ -63,6 +63,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(targetDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(targetDetails.Annotations)})
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -135,6 +136,8 @@ func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
 	table.Render()
 }
 
+var verboseErrors = os.Getenv("CONFIGHUB_DEBUG") == "errors"
+
 // displayResponseErrorTable displays a table of multiple ResponseErrors
 func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
 	table := tableView()
@@ -168,4 +171,10 @@ func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
 	}
 
 	table.Render()
+
+	if verboseErrors {
+		for _, respError := range errors {
+			displayResponseErrorDetails(respError)
+		}
+	}
 }

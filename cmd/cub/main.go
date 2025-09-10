@@ -333,6 +333,17 @@ func labelsToString(labels map[string]string) string {
 	return mapToString(labels)
 }
 
+func deleteGatesToString(deleteGates map[string]bool) string {
+	if deleteGates == nil || len(deleteGates) == 0 {
+		return ""
+	}
+	var keys []string
+	for key := range deleteGates {
+		keys = append(keys, key)
+	}
+	return strings.Join(keys, ", ")
+}
+
 func annotationsToString(annotations map[string]string) string {
 	return mapToString(annotations)
 }
@@ -464,10 +475,15 @@ var noheader = false
 var wait = true
 var timeout = "2m"
 var label []string
+var deleteGate []string
 var spaceIdentifiers []string
 
 func enableLabelFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&label, "label", []string{}, "labels in key=value format; can separate by commas and/or use multiple instances of the flag")
+}
+
+func enableDeleteGateFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&deleteGate, "delete-gate", []string{}, "delete gates in key[=true] format; can separate by commas and/or use multiple instances of the flag")
 }
 
 func setLabels(labelMap *map[string]string) error {
@@ -487,6 +503,32 @@ func setLabels(labelMap *map[string]string) error {
 				(*labelMap)[keyValue[0]] = keyValue[1]
 			default:
 				return fmt.Errorf("invalid label; expected key=value: %s", labelString)
+			}
+		}
+	}
+	return nil
+}
+
+func setDeleteGates(deleteGateMap *map[string]bool) error {
+	if deleteGate != nil && len(deleteGate) != 0 {
+		if *deleteGateMap == nil {
+			*deleteGateMap = map[string]bool{}
+		}
+		for _, deleteGateString := range deleteGate {
+			keyValue := strings.Split(deleteGateString, "=")
+			switch len(keyValue) {
+			case 1:
+				(*deleteGateMap)[keyValue[0]] = true
+			case 2:
+				// Note: For patch operations, value "-" indicates removal and is handled
+				// by BuildPatchData and EnhancePatchData functions. This function only
+				// handles non-patch (Put) operations where removal is not supported.
+				if keyValue[1] != "true" {
+					return fmt.Errorf("invalid delete-gate value; only 'true' is allowed: %s", deleteGateString)
+				}
+				(*deleteGateMap)[keyValue[0]] = true
+			default:
+				return fmt.Errorf("invalid delete-gate; expected key or key=true: %s", deleteGateString)
 			}
 		}
 	}
@@ -810,6 +852,7 @@ func addStandardListFlags(cmd *cobra.Command) {
 
 func addStandardCreateFlags(cmd *cobra.Command) {
 	enableLabelFlag(cmd)
+	enableDeleteGateFlag(cmd)
 	enableFromStdinFlag(cmd)
 	enableFilenameFlag(cmd)
 	enableVerboseFlag(cmd)
@@ -827,6 +870,7 @@ func addStandardGetFlags(cmd *cobra.Command) {
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
 	enableLabelFlag(cmd)
+	enableDeleteGateFlag(cmd)
 	enableFromStdinFlag(cmd)
 	enableReplaceFlag(cmd)
 	enableFilenameFlag(cmd)

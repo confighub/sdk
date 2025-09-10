@@ -53,6 +53,10 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	err = setDeleteGates(&workerDetails.DeleteGates)
+	if err != nil {
+		return err
+	}
 	workerDetails.Slug = makeSlug(args[0])
 	workerDetails.SpaceID = uuid.MustParse(selectedSpaceID)
 

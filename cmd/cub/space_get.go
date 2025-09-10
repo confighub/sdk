@@ -49,6 +49,7 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	view.Append([]string{"Created At", spaceDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", spaceDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(spaceDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(spaceDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
 }

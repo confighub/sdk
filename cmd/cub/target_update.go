@@ -63,6 +63,10 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := ValidateLabelRemoval(label, targetPatch); err != nil {
 		return err
 	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, targetPatch); err != nil {
+		return err
+	}
 
 	// Check for bulk patch mode (no positional args with --patch)
 	isBulkPatchMode := len(args) == 0
@@ -125,6 +129,10 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	err = setLabels(&currentTarget.Target.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&currentTarget.Target.DeleteGates)
 	if err != nil {
 		return err
 	}

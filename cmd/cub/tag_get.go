@@ -74,6 +74,7 @@ func displayExtendedTagDetails(extendedTag *goclientnew.ExtendedTag) {
 	view.Append([]string{"Created At", tagDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", tagDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(tagDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(tagDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(tagDetails.Annotations)})
 	view.Append([]string{"Organization ID", tagDetails.OrganizationID.String()})
 	view.Render()

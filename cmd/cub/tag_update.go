@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -90,6 +89,15 @@ func checkTagConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, tagPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, tagPatch); err != nil {
+		failOnError(err)
+	}
+
 	return isBulkPatchMode
 }
 
@@ -115,49 +123,8 @@ func runBulkTagUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
-		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
-			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
-		}
-	}
-
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	// Build patch data using BuildPatchData
+	patchJSON, err := BuildPatchData(nil)
 	if err != nil {
 		return err
 	}
@@ -207,18 +174,7 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	if tagPatch {
-		// Single tag patch mode - we'll apply changes directly to the tag object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingTag := currentTag
-			if err := populateModelFromFlags(currentTag); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentTag.OrganizationID = existingTag.OrganizationID
-			currentTag.SpaceID = existingTag.SpaceID
-			currentTag.TagID = existingTag.TagID
-		}
+		// Single tag patch mode
 
 		// Add labels if specified
 		if len(label) > 0 {
@@ -228,10 +184,14 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		// Convert tag to patch data
-		patchData, err := json.Marshal(currentTag)
+		// Build patch data using BuildPatchData with tag enhancer
+		tagEnhancer := func(patchData map[string]interface{}) {
+			// No tag-specific fields to add
+		}
+
+		patchData, err := BuildPatchData(tagEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		tagDetails, err := patchTag(spaceID, currentTag.TagID, patchData)

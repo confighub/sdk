@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -60,7 +59,7 @@ func init() {
 	changesetCmd.AddCommand(changesetUpdateCmd)
 }
 
-func checkChangeSetConflictingArgs(args []string) bool {
+func checkChangeSetUpdateConflictingArgs(args []string) bool {
 	// Check for bulk patch mode: no positional args
 	isBulkPatchMode := len(args) == 0
 
@@ -97,6 +96,15 @@ func checkChangeSetConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, changesetPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, changesetPatch); err != nil {
+		failOnError(err)
+	}
+
 	return isBulkPatchMode
 }
 
@@ -122,54 +130,16 @@ func runBulkChangeSetUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Add changeset-specific fields
-	if changesetUpdateArgs.description != "" {
-		patchData["Description"] = changesetUpdateArgs.description
-	}
-
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
-		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
-			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
+	// Create enhancer function for changeset-specific fields
+	enhancer := func(patchMap map[string]interface{}) {
+		// Add changeset-specific fields
+		if changesetUpdateArgs.description != "" {
+			patchMap["Description"] = changesetUpdateArgs.description
 		}
 	}
 
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}
@@ -200,7 +170,7 @@ func runBulkChangeSetUpdate() error {
 }
 
 func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
-	isBulkPatchMode := checkChangeSetConflictingArgs(args)
+	isBulkPatchMode := checkChangeSetUpdateConflictingArgs(args)
 
 	if isBulkPatchMode {
 		return runBulkChangeSetUpdate()
@@ -219,36 +189,19 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	if changesetPatch {
-		// Single changeset patch mode - we'll apply changes directly to the changeset object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingChangeSet := currentChangeSet
-			if err := populateModelFromFlags(currentChangeSet); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentChangeSet.OrganizationID = existingChangeSet.OrganizationID
-			currentChangeSet.SpaceID = existingChangeSet.SpaceID
-			currentChangeSet.ChangeSetID = existingChangeSet.ChangeSetID
-		}
+		// Single changeset patch mode
 
-		// Add labels if specified
-		if len(label) > 0 {
-			err := setLabels(&currentChangeSet.Labels)
-			if err != nil {
-				return err
+		// Build patch data using BuildPatchData with changeset enhancer
+		changesetEnhancer := func(patchData map[string]interface{}) {
+			// Add changeset-specific fields
+			if changesetUpdateArgs.description != "" {
+				patchData["Description"] = changesetUpdateArgs.description
 			}
 		}
 
-		// Add changeset details from flags
-		if changesetUpdateArgs.description != "" {
-			currentChangeSet.Description = changesetUpdateArgs.description
-		}
-
-		// Convert changeset to patch data
-		patchData, err := json.Marshal(currentChangeSet)
+		patchData, err := BuildPatchData(changesetEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		changesetDetails, err := patchChangeSet(spaceID, currentChangeSet.ChangeSetID, patchData)

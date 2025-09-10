@@ -149,8 +149,11 @@ func checkLinkConflictingArgs(args []string) bool {
 
 	// Validate label removal only works with patch
 	if err := ValidateLabelRemoval(label, linkPatch); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return false
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, linkPatch); err != nil {
+		failOnError(err)
 	}
 
 	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
@@ -167,8 +170,8 @@ func runBulkLinkUpdate() error {
 		return err
 	}
 
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 {
-		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, or --label")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 {
+		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, or --delete-gate")
 	}
 
 	var effectiveWhere string
@@ -217,8 +220,8 @@ func runBulkLinkUpdate() error {
 }
 
 func runIndividualLinkPatch(linkSlug string) error {
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 {
-		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, or --label")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 {
+		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, or --delete-gate")
 	}
 
 	// Get the current link for space and link ID
@@ -232,16 +235,6 @@ func runIndividualLinkPatch(linkSlug string) error {
 
 	// Get patch data from stdin/filename or use empty patch
 	var patchData []byte
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		patchData, err = getBytesFromFlags()
-		if err != nil {
-			return fmt.Errorf("failed to read patch data: %w", err)
-		}
-	}
-	if patchData == nil {
-		// Null patch for operations with labels only
-		patchData = []byte("null")
-	}
 
 	// Build patch data using consolidated function
 	patchData, err = BuildPatchData(nil)
@@ -330,6 +323,10 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentLink.LinkID = existingLink.LinkID
 	}
 	err = setLabels(&currentLink.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&currentLink.DeleteGates)
 	if err != nil {
 		return err
 	}

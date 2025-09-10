@@ -39,33 +39,36 @@ func workerGetCmdRun(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	displayGetResults(extendedWorker, displayExtendedBridgeWorkerDetails)
 	return nil
 }
 
 func displayExtendedBridgeWorkerDetails(extendedWorker *goclientnew.ExtendedBridgeWorker) {
 	worker := extendedWorker.BridgeWorker
-	
+
 	// Handle secret masking
 	displayWorker := *worker
 	if !includeSecret {
 		displayWorker.Secret = "********"
 	}
-	
+
 	view := tableView()
 	view.Append([]string{"ID", displayWorker.BridgeWorkerID.String()})
 	view.Append([]string{"Name", displayWorker.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedWorker.Space != nil {
 		view.Append([]string{"Space", extendedWorker.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", displayWorker.SpaceID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", displayWorker.CreatedAt.String()})
 	view.Append([]string{"Updated At", displayWorker.UpdatedAt.String()})
+	view.Append([]string{"Labels", labelsToString(displayWorker.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(displayWorker.DeleteGates)})
+	view.Append([]string{"Annotations", annotationsToString(displayWorker.Annotations)})
 	view.Append([]string{"Secret", displayWorker.Secret})
 	view.Append([]string{"Condition", displayWorker.Condition})
 	view.Append([]string{"Last Message", displayWorker.LastMessage})

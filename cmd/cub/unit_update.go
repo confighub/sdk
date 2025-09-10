@@ -168,6 +168,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(unitUpdateCmd)
+	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
@@ -237,13 +238,21 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --label, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --label, --delete-gate, --destroy-gate, or --changeset"))
 		}
 	}
 
 	// Validate label removal only works with patch
 	if err := ValidateLabelRemoval(label, isPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, isPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate destroy gate removal only works with patch
+	if err := ValidateDestroyGateRemoval(destroyGate, isPatch); err != nil {
 		failOnError(err)
 	}
 
@@ -265,6 +274,19 @@ func checkConflictingArgs(args []string) bool {
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		failOnError(err)
+	}
+
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, isPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, isPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate destroy gate removal only works with patch
+	if err := ValidateDestroyGateRemoval(destroyGate, isPatch); err != nil {
 		failOnError(err)
 	}
 
@@ -292,6 +314,11 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if isPatch {
 		// Create enhancer for unit-specific fields
 		var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+			// Handle destroy gates for units
+			err := setDestroyGatesInPatch(patchMap)
+			if err != nil {
+				failOnError(err)
+			}
 			if changeDescription != "" {
 				patchMap["LastChangeDescription"] = changeDescription
 			}
@@ -336,6 +363,14 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		// For non-patch operations, handle labels in the traditional way
 		err = setLabels(&currentUnit.Labels)
+		if err != nil {
+			return err
+		}
+		err = setDeleteGates(&currentUnit.DeleteGates)
+		if err != nil {
+			return err
+		}
+		err = setDestroyGatesField(&currentUnit.DestroyGates)
 		if err != nil {
 			return err
 		}
@@ -436,6 +471,11 @@ func runBulkUnitUpdate() error {
 
 	// Create enhancer for unit-specific fields
 	var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
+		// Handle destroy gates for units
+		err := setDestroyGatesInPatch(patchMap)
+		if err != nil {
+			failOnError(err)
+		}
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription
 		}

@@ -75,11 +75,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "get-resources",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "body",
-					Required:      false,
-					Description:   "Format for resource body output: yaml (default), none, json, or native",
-					DataType:      api.DataTypeEnum,
-					Example:       "yaml",
+					ParameterName:    "body",
+					Required:         false,
+					Description:      "Format for resource body output: yaml (default), none, json, or native",
+					DataType:         api.DataTypeEnum,
+					Example:          "yaml",
 					ValueConstraints: api.ValueConstraints{EnumValues: []string{"yaml", "none", "json", "native"}},
 				},
 			},
@@ -1389,7 +1389,14 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 		val, _, err := program.Eval(obj)
 		if err != nil {
 			passed = false
-			multiErrors = append(multiErrors, errors.Wrap(err, "validation expression "+validationExpr+" resulted in error on resource "+string(resourceName)))
+			// Treat evaluation errors as expected and just fail the check, rather than parsing or expression errors.
+			// There are many such error strings that the evaluator can return, so don't check them all.
+			// Example prefixes:
+			// "no such key:"
+			// "index out of bounds:"
+			// "no such attribute(s):"
+			errorString := err.Error()
+			details = append(details, "validation expression "+validationExpr+" could not be evaluated on resource "+string(resourceName)+": "+errorString)
 			continue
 		}
 		if val != types.True {

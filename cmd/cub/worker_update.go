@@ -60,6 +60,10 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := ValidateLabelRemoval(label, workerPatch); err != nil {
 		return err
 	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, workerPatch); err != nil {
+		return err
+	}
 
 	// Check for bulk patch mode (no positional args with --patch)
 	isBulkPatchMode := len(args) == 0
@@ -110,6 +114,10 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentBridgeworker.BridgeWorkerID = existingBridgeworker.BridgeWorkerID
 	}
 	err = setLabels(&currentBridgeworker.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&currentBridgeworker.DeleteGates)
 	if err != nil {
 		return err
 	}

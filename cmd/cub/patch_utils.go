@@ -26,21 +26,21 @@ func BuildPatchData(enhancer PatchEnhancer) ([]byte, error) {
 		patchData = []byte("null")
 	}
 
-	// Enhance with labels and entity-specific fields
-	return EnhancePatchData(patchData, label, enhancer)
+	// Enhance with labels, delete gates, and entity-specific fields
+	return EnhancePatchData(patchData, label, deleteGate, enhancer)
 }
 
 // PatchEnhancer is a function that adds entity-specific fields to patch data.
 // It receives the patch map and should modify it in place.
 type PatchEnhancer func(patchMap map[string]interface{})
 
-// EnhancePatchData adds labels and entity-specific fields to existing patch data.
+// EnhancePatchData adds labels, delete gates, and entity-specific fields to existing patch data.
 // This is used when patch data is already constructed and needs to be enhanced.
-// It handles the special case of "-" value for label removal in patch operations.
+// It handles the special case of "-" value for label/delete gate removal in patch operations.
 // The enhancer parameter is optional and can be used to add entity-specific fields.
-func EnhancePatchData(patchData []byte, labels []string, enhancer PatchEnhancer) ([]byte, error) {
+func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, enhancer PatchEnhancer) ([]byte, error) {
 	// Check if we need to enhance the patch
-	needsEnhancement := len(labels) > 0 || enhancer != nil
+	needsEnhancement := len(labels) > 0 || len(deleteGates) > 0 || enhancer != nil
 	if !needsEnhancement {
 		return patchData, nil
 	}
@@ -92,8 +92,45 @@ func EnhancePatchData(patchData []byte, labels []string, enhancer PatchEnhancer)
 				return nil, fmt.Errorf("invalid label; expected key=value or key=-: %s", labelString)
 			}
 		}
-		
+
 		patchMap["Labels"] = labelMap
+	}
+
+	// Add delete gates if specified
+	if len(deleteGates) > 0 {
+		var deleteGateMap map[string]interface{}
+
+		// Preserve existing delete gates from the patch if any
+		if existingDeleteGates, ok := patchMap["DeleteGates"]; ok {
+			deleteGateMap = existingDeleteGates.(map[string]interface{})
+		} else {
+			deleteGateMap = make(map[string]interface{})
+		}
+
+		// Process new delete gates from command line
+		for _, deleteGateString := range deleteGates {
+			keyValue := strings.Split(deleteGateString, "=")
+			switch len(keyValue) {
+			case 1:
+				// Key without value sets true
+				deleteGateMap[keyValue[0]] = true
+			case 2:
+				key := keyValue[0]
+				value := keyValue[1]
+				if value == "-" {
+					// Mark for removal by setting to null in JSON Merge Patch
+					deleteGateMap[key] = nil
+				} else if value == "true" {
+					deleteGateMap[key] = true
+				} else {
+					return nil, fmt.Errorf("invalid delete-gate value; only 'true' or '-' is allowed: %s", deleteGateString)
+				}
+			default:
+				return nil, fmt.Errorf("invalid delete-gate; expected key, key=true, or key=-: %s", deleteGateString)
+			}
+		}
+
+		patchMap["DeleteGates"] = deleteGateMap
 	}
 
 	// Re-marshal the enhanced patch
@@ -108,6 +145,20 @@ func ValidateLabelRemoval(labels []string, isPatch bool) error {
 			keyValue := strings.Split(labelString, "=")
 			if len(keyValue) == 2 && keyValue[1] == "-" {
 				return fmt.Errorf("label removal (--label %s) requires --patch flag", labelString)
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateDeleteGateRemoval checks if delete gate removal is being attempted without patch mode.
+// Returns an error if --delete-gate key=- is used without --patch.
+func ValidateDeleteGateRemoval(deleteGates []string, isPatch bool) error {
+	if !isPatch {
+		for _, deleteGateString := range deleteGates {
+			keyValue := strings.Split(deleteGateString, "=")
+			if len(keyValue) == 2 && keyValue[1] == "-" {
+				return fmt.Errorf("delete gate removal (--delete-gate %s) requires --patch flag", deleteGateString)
 			}
 		}
 	}

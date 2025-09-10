@@ -78,6 +78,16 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 	if err := validateStdinFlags(); err != nil {
 		return isBulkCreateMode, err
 	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return isBulkCreateMode, err
+	}
+
 	return isBulkCreateMode, nil
 }
 
@@ -101,6 +111,10 @@ func runSingleSpaceCreate(args []string) error {
 		}
 	}
 	err := setLabels(&newBody.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
 	}

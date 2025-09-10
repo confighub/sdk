@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -118,6 +117,15 @@ func checkViewConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
+	// Validate label removal only works with patch
+	if err := ValidateLabelRemoval(label, viewPatch); err != nil {
+		failOnError(err)
+	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, viewPatch); err != nil {
+		failOnError(err)
+	}
+
 	return isBulkPatchMode
 }
 
@@ -143,80 +151,47 @@ func runBulkViewUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Add view-specific fields
+	// Handle view-specific field parsing that can fail
+	var filterField string
 	if viewUpdateArgs.filter != "" {
-		filterField, err := parseFilterFlag(viewUpdateArgs.filter)
+		var err error
+		filterField, err = parseFilterFlag(viewUpdateArgs.filter)
 		if err != nil {
 			return err
 		}
-		patchData["FilterID"] = filterField
 	}
 
-	if len(viewUpdateArgs.columns) > 0 {
-		columns := make([]map[string]interface{}, 0, len(viewUpdateArgs.columns))
-		for _, columnName := range viewUpdateArgs.columns {
-			columns = append(columns, map[string]interface{}{
-				"Name": columnName,
-			})
+	// Build patch data using BuildPatchData with view enhancer
+	viewEnhancer := func(patchData map[string]interface{}) {
+		// Add view-specific fields
+		if filterField != "" {
+			patchData["FilterID"] = filterField
 		}
-		patchData["Columns"] = columns
-	}
 
-	if viewUpdateArgs.groupBy != "" {
-		patchData["GroupBy"] = viewUpdateArgs.groupBy
-	}
-
-	if viewUpdateArgs.orderBy != "" {
-		patchData["OrderBy"] = viewUpdateArgs.orderBy
-	}
-
-	if viewUpdateArgs.orderByDirection != "" {
-		patchData["OrderByDirection"] = viewUpdateArgs.orderByDirection
-	}
-
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
-		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
+		if len(viewUpdateArgs.columns) > 0 {
+			columns := make([]map[string]interface{}, 0, len(viewUpdateArgs.columns))
+			for _, columnName := range viewUpdateArgs.columns {
+				columns = append(columns, map[string]interface{}{
+					"Name": columnName,
+				})
 			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
+			patchData["Columns"] = columns
+		}
+
+		if viewUpdateArgs.groupBy != "" {
+			patchData["GroupBy"] = viewUpdateArgs.groupBy
+		}
+
+		if viewUpdateArgs.orderBy != "" {
+			patchData["OrderBy"] = viewUpdateArgs.orderBy
+		}
+
+		if viewUpdateArgs.orderByDirection != "" {
+			patchData["OrderByDirection"] = viewUpdateArgs.orderByDirection
 		}
 	}
 
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	patchJSON, err := BuildPatchData(viewEnhancer)
 	if err != nil {
 		return err
 	}
@@ -266,18 +241,7 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	if viewPatch {
-		// Single view patch mode - we'll apply changes directly to the view object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingView := currentView
-			if err := populateModelFromFlags(currentView); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentView.OrganizationID = existingView.OrganizationID
-			currentView.SpaceID = existingView.SpaceID
-			currentView.ViewID = existingView.ViewID
-		}
+		// Single view patch mode
 
 		// Add labels if specified
 		if len(label) > 0 {
@@ -287,41 +251,50 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		// Add view details from flags
+
+		// Handle view-specific field parsing that can fail
+		var filterID *uuid.UUID
 		if viewUpdateArgs.filter != "" {
 			filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID", selectedSpaceID)
 			if err != nil {
 				return err
 			}
-			currentView.FilterID = filter.FilterID
+			filterID = &filter.FilterID
 		}
 
-		if len(viewUpdateArgs.columns) > 0 {
-			columns := make([]goclientnew.Column, 0, len(viewUpdateArgs.columns))
-			for _, columnName := range viewUpdateArgs.columns {
-				columns = append(columns, goclientnew.Column{
-					Name: columnName,
-				})
+		// Build patch data using BuildPatchData with view enhancer
+		viewEnhancer := func(patchData map[string]interface{}) {
+			// Add view-specific fields from flags
+			if filterID != nil {
+				patchData["FilterID"] = *filterID
 			}
-			currentView.Columns = columns
+
+			if len(viewUpdateArgs.columns) > 0 {
+				columns := make([]map[string]interface{}, 0, len(viewUpdateArgs.columns))
+				for _, columnName := range viewUpdateArgs.columns {
+					columns = append(columns, map[string]interface{}{
+						"Name": columnName,
+					})
+				}
+				patchData["Columns"] = columns
+			}
+
+			if viewUpdateArgs.groupBy != "" {
+				patchData["GroupBy"] = viewUpdateArgs.groupBy
+			}
+
+			if viewUpdateArgs.orderBy != "" {
+				patchData["OrderBy"] = viewUpdateArgs.orderBy
+			}
+
+			if viewUpdateArgs.orderByDirection != "" {
+				patchData["OrderByDirection"] = viewUpdateArgs.orderByDirection
+			}
 		}
 
-		if viewUpdateArgs.groupBy != "" {
-			currentView.GroupBy = viewUpdateArgs.groupBy
-		}
-
-		if viewUpdateArgs.orderBy != "" {
-			currentView.OrderBy = viewUpdateArgs.orderBy
-		}
-
-		if viewUpdateArgs.orderByDirection != "" {
-			currentView.OrderByDirection = viewUpdateArgs.orderByDirection
-		}
-
-		// Convert view to patch data
-		patchData, err := json.Marshal(currentView)
+		patchData, err := BuildPatchData(viewEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		viewDetails, err := patchView(spaceID, currentView.ViewID, patchData)

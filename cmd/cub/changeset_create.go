@@ -111,10 +111,19 @@ func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
-		failOnError(err)
+		return isBulkCreateMode, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -143,6 +152,10 @@ func runSingleChangeSetCreate(args []string) error {
 		}
 	}
 	err := setLabels(&newBody.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
 	}
@@ -189,8 +202,16 @@ func runBulkChangeSetCreate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for changeset)
-	patchJSON, err := BuildPatchData(nil)
+	// Create enhancer function for changeset-specific fields
+	enhancer := func(patchMap map[string]interface{}) {
+		// Add changeset-specific fields
+		if changesetCreateArgs.description != "" {
+			patchMap["Description"] = changesetCreateArgs.description
+		}
+	}
+
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}

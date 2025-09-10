@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/cockroachdb/errors"
@@ -120,12 +119,10 @@ func runBulkInvocationUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Create patch data
-	patchData := make(map[string]interface{})
-
-	// Add worker if specified
+	// Validate and resolve worker early if specified
+	var workerUUID *uuid.UUID
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
+		workerID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 			workerSlug,
 			EntityTypeBridgeWorker,
 			apiGetBridgeWorkerFromSlugInSpace,
@@ -134,49 +131,19 @@ func runBulkInvocationUpdate() error {
 		if err != nil {
 			return err
 		}
-		patchData["BridgeWorkerID"] = workerUUID.String()
+		workerUUID = &workerID
 	}
 
-	// Merge with stdin data if provided
-	if flagPopulateModelFromStdin || flagFilename != "" {
-		stdinBytes, err := getBytesFromFlags()
-		if err != nil {
-			return err
-		}
-		if len(stdinBytes) > 0 && string(stdinBytes) != "null" {
-			var stdinData map[string]interface{}
-			if err := json.Unmarshal(stdinBytes, &stdinData); err != nil {
-				return fmt.Errorf("failed to parse stdin data: %w", err)
-			}
-			// Merge stdinData into patchData
-			for k, v := range stdinData {
-				patchData[k] = v
-			}
+	// Create enhancer function for invocation-specific fields
+	enhancer := func(patchMap map[string]interface{}) {
+		// Add worker if specified
+		if workerUUID != nil {
+			patchMap["BridgeWorkerID"] = workerUUID.String()
 		}
 	}
 
-	// Add labels if specified
-	if len(label) > 0 {
-		labelMap := make(map[string]string)
-		// Preserve existing labels if any
-		if existingLabels, ok := patchData["Labels"]; ok {
-			if labelMapInterface, ok := existingLabels.(map[string]interface{}); ok {
-				for k, v := range labelMapInterface {
-					if strVal, ok := v.(string); ok {
-						labelMap[k] = strVal
-					}
-				}
-			}
-		}
-		err := setLabels(&labelMap)
-		if err != nil {
-			return err
-		}
-		patchData["Labels"] = labelMap
-	}
-
-	// Convert to JSON
-	patchJSON, err := json.Marshal(patchData)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}
@@ -226,20 +193,10 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	if invocationPatch {
-		// Single invocation patch mode - we'll apply changes directly to the invocation object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingInvocation := currentInvocation
-			if err := populateModelFromFlags(currentInvocation); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentInvocation.OrganizationID = existingInvocation.OrganizationID
-			currentInvocation.SpaceID = existingInvocation.SpaceID
-			currentInvocation.InvocationID = existingInvocation.InvocationID
-		}
+		// Single invocation patch mode
 
-		// Add flags to patch
+		// Handle error-prone operations before enhancer
+		var workerID *goclientnew.UUID
 		if workerSlug != "" {
 			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 				workerSlug,
@@ -250,31 +207,35 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return err
 			}
-			workerID := goclientnew.UUID(workerUUID)
-			currentInvocation.BridgeWorkerID = &workerID
+			workerUUIDConverted := goclientnew.UUID(workerUUID)
+			workerID = &workerUUIDConverted
 		}
 
-		// Add labels if specified
-		if len(label) > 0 {
-			err := setLabels(&currentInvocation.Labels)
-			if err != nil {
-				return err
+		// Parse function arguments if needed
+		var newArgs []goclientnew.FunctionArgument
+		if len(args) > 3 {
+			invokeArgs := args[3:]
+			newArgs = parseFunctionArguments(invokeArgs)
+		}
+
+		// Build patch data using BuildPatchData with invocation enhancer
+		invocationEnhancer := func(patchData map[string]interface{}) {
+			// Add invocation-specific fields
+			if workerID != nil {
+				patchData["BridgeWorkerID"] = *workerID
+			}
+
+			// Add function details from args
+			patchData["ToolchainType"] = args[1]
+			patchData["FunctionName"] = args[2]
+			if newArgs != nil {
+				patchData["Arguments"] = newArgs
 			}
 		}
 
-		// Add function details from args
-		currentInvocation.ToolchainType = args[1]
-		currentInvocation.FunctionName = args[2]
-		if len(args) > 3 {
-			invokeArgs := args[3:]
-			newArgs := parseFunctionArguments(invokeArgs)
-			currentInvocation.Arguments = newArgs
-		}
-
-		// Convert invocation to patch data
-		patchData, err := json.Marshal(currentInvocation)
+		patchData, err := BuildPatchData(invocationEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		invocationDetails, err := patchInvocation(spaceID, currentInvocation.InvocationID, patchData)

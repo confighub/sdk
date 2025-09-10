@@ -127,10 +127,19 @@ func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
-		failOnError(err)
+		return isBulkCreateMode, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -158,6 +167,10 @@ func runSingleLinkCreate(args []string) error {
 		}
 	}
 	err := setLabels(&newLink.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newLink.DeleteGates)
 	if err != nil {
 		return err
 	}

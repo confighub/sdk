@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -77,6 +76,10 @@ func checkSpaceUpdateConflictingArgs(args []string) (bool, error) {
 	if err := ValidateLabelRemoval(label, isPatch); err != nil {
 		return false, err
 	}
+	// Validate delete gate removal only works with patch
+	if err := ValidateDeleteGateRemoval(deleteGate, isPatch); err != nil {
+		return false, err
+	}
 
 	if err := validateStdinFlags(); err != nil {
 		return isBulkPatchMode, err
@@ -111,30 +114,16 @@ func runSingleSpaceUpdate(args []string) error {
 	currentSpaceID := currentSpace.SpaceID
 
 	if isPatch {
-		// Single space patch mode - we'll apply changes directly to the space object
-		// Handle --from-stdin or --filename
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			existingSpace := currentSpace
-			if err := populateModelFromFlags(currentSpace); err != nil {
-				return err
-			}
-			// Ensure essential fields can't be clobbered
-			currentSpace.OrganizationID = existingSpace.OrganizationID
-			currentSpace.SpaceID = existingSpace.SpaceID
+		// Single space patch mode
+
+		// Build patch data using BuildPatchData with space enhancer
+		spaceEnhancer := func(patchData map[string]interface{}) {
+			// No space-specific fields to add beyond labels and delete gates
 		}
 
-		// Add labels if specified
-		if len(label) > 0 {
-			err := setLabels(&currentSpace.Labels)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Convert space to patch data
-		patchData, err := json.Marshal(currentSpace)
+		patchData, err := BuildPatchData(spaceEnhancer)
 		if err != nil {
-			return fmt.Errorf("failed to marshal patch data: %w", err)
+			return fmt.Errorf("failed to build patch data: %w", err)
 		}
 
 		spaceDetails, err := patchSpace(currentSpaceID, patchData)
@@ -169,6 +158,10 @@ func runSingleSpaceUpdate(args []string) error {
 	if err != nil {
 		return err
 	}
+	err = setDeleteGates(&newBody.DeleteGates)
+	if err != nil {
+		return err
+	}
 
 	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, *newBody)
 	if IsAPIError(err, spaceRes) {
@@ -195,26 +188,6 @@ func patchSpace(spaceID uuid.UUID, patchData []byte) (*goclientnew.Space, error)
 	return spaceRes.JSON200, nil
 }
 
-func createSpacePatchData(currentSpace, newSpace *goclientnew.Space) ([]byte, error) {
-	// Build patch data using consolidated function (no entity-specific fields for space)
-	patchData, err := BuildPatchData(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse the patch data to filter out protected fields
-	var patchMap map[string]interface{}
-	if err := json.Unmarshal(patchData, &patchMap); err != nil {
-		return nil, fmt.Errorf("failed to parse patch data: %w", err)
-	}
-
-	// Don't allow changing IDs
-	delete(patchMap, "SpaceID")
-	delete(patchMap, "OrganizationID")
-
-	return json.Marshal(patchMap)
-}
-
 func runBulkSpaceUpdate() error {
 	// Parse filter parameter
 	filterID, err := parseFilterFlag(filter)
@@ -239,21 +212,6 @@ func runBulkSpaceUpdate() error {
 	patchData, err := BuildPatchData(nil)
 	if err != nil {
 		return err
-	}
-
-	// Parse the patch data to filter out protected fields
-	var patchMap map[string]interface{}
-	if err := json.Unmarshal(patchData, &patchMap); err != nil {
-		return fmt.Errorf("failed to parse patch data: %w", err)
-	}
-
-	// Don't allow changing IDs
-	delete(patchMap, "SpaceID")
-	delete(patchMap, "OrganizationID")
-
-	patchData, err = json.Marshal(patchMap)
-	if err != nil {
-		return fmt.Errorf("error marshaling patch data: %w", err)
 	}
 
 	// Build bulk patch parameters

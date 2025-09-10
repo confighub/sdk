@@ -44,6 +44,14 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return err
+	}
 
 	spaceID := uuid.MustParse(selectedSpaceID)
 	newTarget := goclientnew.Target{}
@@ -84,6 +92,10 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	err = setLabels(&newTarget.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newTarget.DeleteGates)
 	if err != nil {
 		return err
 	}

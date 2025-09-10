@@ -65,6 +65,7 @@ func displayExtendedSetDetails(extendedSet *goclientnew.ExtendedSet) {
 	view.Append([]string{"Created At", setDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", setDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(setDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(setDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(setDetails.Annotations)})
 	view.Append([]string{"Organization ID", setDetails.OrganizationID.String()})
 	view.Render()

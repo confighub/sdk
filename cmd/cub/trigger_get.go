@@ -83,6 +83,7 @@ func displayTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {
 	view.Append([]string{"Created At", trigger.CreatedAt.String()})
 	view.Append([]string{"Updated At", trigger.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(trigger.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(trigger.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
 	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
 	

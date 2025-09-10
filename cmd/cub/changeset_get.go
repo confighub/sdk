@@ -72,6 +72,7 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	view.Append([]string{"Created At", changesetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", changesetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(changesetDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(changesetDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(changesetDetails.Annotations)})
 	view.Append([]string{"Organization ID", changesetDetails.OrganizationID.String()})
 

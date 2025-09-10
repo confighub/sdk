@@ -139,6 +139,8 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Created At", unitDetails.Unit.CreatedAt.String()})
 		view.Append([]string{"Updated At", unitDetails.Unit.UpdatedAt.String()})
 		view.Append([]string{"Labels", labelsToString(unitDetails.Unit.Labels)})
+		view.Append([]string{"Delete Gates", deleteGatesToString(unitDetails.Unit.DeleteGates)})
+		view.Append([]string{"Destroy Gates", destroyGatesToString(unitDetails.Unit.DestroyGates)})
 		view.Append([]string{"Annotations", annotationsToString(unitDetails.Unit.Annotations)})
 		view.Append([]string{"Last Change Description", unitDetails.Unit.LastChangeDescription})
 		view.Append([]string{"Head Revision Num", fmt.Sprintf("%d", unitDetails.Unit.HeadRevisionNum)})

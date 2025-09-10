@@ -33,14 +33,28 @@ func organizationCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
-	
+
 	newBody := goclientnew.Organization{}
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		if err := populateModelFromFlags(&newBody); err != nil {
 			return err
 		}
 	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return err
+	}
+
 	err := setLabels(&newBody.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
 	}

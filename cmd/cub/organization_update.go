@@ -26,6 +26,15 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Validate label removal (organization doesn't support patch mode)
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return err
+	}
+	// Validate delete gate removal (organization doesn't support patch mode)
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return err
+	}
+
 	currentOrganization, err := apiGetOrganizationFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
@@ -47,6 +56,10 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentOrganization.OrganizationID = existingOrganization.OrganizationID
 	}
 	err = setLabels(&currentOrganization.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&currentOrganization.DeleteGates)
 	if err != nil {
 		return err
 	}

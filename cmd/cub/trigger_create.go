@@ -95,12 +95,12 @@ Bulk Create Examples:
 }
 
 var triggerCreateArgs struct {
-	destSpaces      []string
-	whereSpace      string
-	namePrefixes    []string
-	triggerSlugs    []string
-	filterSpace     string
-	invocationSlug  string
+	destSpaces     []string
+	whereSpace     string
+	namePrefixes   []string
+	triggerSlugs   []string
+	filterSpace    string
+	invocationSlug string
 }
 
 func init() {
@@ -159,10 +159,19 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
-		failOnError(err)
+		return isBulkCreateMode, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -191,6 +200,10 @@ func runSingleTriggerCreate(args []string) error {
 		}
 	}
 	err := setLabels(&newBody.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
 	}
@@ -223,7 +236,7 @@ func runSingleTriggerCreate(args []string) error {
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])
 	newBody.Event = args[1]
 	newBody.ToolchainType = args[2]
-	
+
 	if triggerCreateArgs.invocationSlug != "" {
 		// Use invocation instead of function and arguments
 		invocationID, err := parseInvocationSlug(triggerCreateArgs.invocationSlug)

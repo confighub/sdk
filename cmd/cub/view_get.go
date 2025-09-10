@@ -81,6 +81,7 @@ func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
 	view.Append([]string{"Created At", viewDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", viewDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(viewDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(viewDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(viewDetails.Annotations)})
 	view.Append([]string{"Organization ID", viewDetails.OrganizationID.String()})
 	

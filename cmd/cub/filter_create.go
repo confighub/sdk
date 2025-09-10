@@ -134,10 +134,19 @@ func checkFilterCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
-		failOnError(err)
+		return isBulkCreateMode, err
 	}
 
 	if err := validateStdinFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
+	// Validate no label removal
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return isBulkCreateMode, err
+	}
+	// Validate no delete gate removal
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -166,6 +175,10 @@ func runSingleFilterCreate(args []string) error {
 		}
 	}
 	err := setLabels(&newBody.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
 	}
@@ -228,8 +241,32 @@ func runBulkFilterCreate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
+	var fromSpaceID uuid.UUID
+	if filterCreateArgs.fromSpace != "" {
+		fromSpace, err := apiGetSpaceFromSlug(filterCreateArgs.fromSpace, "SpaceID")
+		if err != nil {
+			return err
+		}
+		fromSpaceID = fromSpace.SpaceID
+	}
+
+	enhancer := func(patchMap map[string]interface{}) {
+		if filterCreateArgs.whereField != "" {
+			patchMap["Where"] = filterCreateArgs.whereField
+		}
+		if filterCreateArgs.whereData != "" {
+			patchMap["WhereData"] = filterCreateArgs.whereData
+		}
+		if filterCreateArgs.resourceType != "" {
+			patchMap["ResourceType"] = filterCreateArgs.resourceType
+		}
+		if filterCreateArgs.fromSpace != "" {
+			patchMap["FromSpaceID"] = fromSpaceID
+		}
+	}
+
 	// Build patch data using consolidated function (no entity-specific fields for filter)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}

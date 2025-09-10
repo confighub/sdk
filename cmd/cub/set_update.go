@@ -27,6 +27,15 @@ func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Validate label removal (set doesn't support patch mode)
+	if err := ValidateLabelRemoval(label, false); err != nil {
+		return err
+	}
+	// Validate delete gate removal (set doesn't support patch mode)
+	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+		return err
+	}
+
 	currentSet, err := apiGetSetFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
@@ -52,6 +61,10 @@ func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentSet.SetID = existingSet.SetID
 	}
 	err = setLabels(&currentSet.Labels)
+	if err != nil {
+		return err
+	}
+	err = setDeleteGates(&currentSet.DeleteGates)
 	if err != nil {
 		return err
 	}
