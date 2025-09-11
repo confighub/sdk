@@ -20,7 +20,6 @@ var helmCmd = &cobra.Command{
 const (
 	HelmChartLabel   = "HelmChart"
 	HelmReleaseLabel = "HelmRelease"
-	AbstractLabel    = "Abstract"
 )
 
 func init() {

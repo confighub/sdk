@@ -254,7 +254,14 @@ func runSingleTriggerCreate(args []string) error {
 		newArgs := parseFunctionArguments(invokeArgs)
 		newBody.Arguments = newArgs
 	}
-	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateTriggerParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, triggerRes) {
 		return InterpretErrorGeneric(err, triggerRes)
 	}
@@ -305,6 +312,12 @@ func runBulkTriggerCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

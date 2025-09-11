@@ -42,23 +42,16 @@ CRDs are always rendered and splitted if exist.
 Examples:
   # Render nginx chart (ensure 'bitnami' repo is added via 'helm repo add')
   # This command would create:
-  # 1. my-nginx-ns containing nginx Namespace definition
-  # 2. my-nginx-base containing nginx resources
+  # 1. my-nginx containing nginx Namespace definition + nginx resources
+  # 2. my-nginx-crds containing CRDs (if any)
   #
 
   cub helm install --namespace nginx my-nginx bitnami/nginx --version 15.5.2 --set image.tag=latest
 
-  # Render the cert-manager chart using ConfigHub clone-based deployment
-  # This creates 4 units:
-  # 1. cert-manager-ns: Namespace definition
-  # 2. cert-manager-crds: Custom Resource Definitions  
-  # 3. cert-manager-base: Main resources (rendered directly from Helm)
-  # 4. cert-manager: Clone of base unit for customizations
-  #
-  # Why using the clone-based deployment? This preserves manual changes when re-rendering charts.
-  # The base unit gets replaced on updates, while the clone retains customizations.
-  # To get the new updates to the clone, we will perform an "upgrade".
-  # CRDs and namespaces typically don't need clones as they rarely require modification.
+  # Render the cert-manager chart
+  # This creates 2 units:
+  # 1. cert-manager-crds: Custom Resource Definitions  
+  # 2. cert-manager: Namespace definition + Main resources (rendered directly from Helm)
   #
 
   cub helm install \
@@ -81,7 +74,6 @@ var helmInstallArgs struct {
 	namespace      string // This will be used for k8s namespace object for the release
 	chartName      string
 	releaseName    string
-	clone          bool // Support clone as downstream
 	usePlaceholder bool // Use confighubplaceholder placeholder for rendering
 	skipCRDs       bool // Skip CRDs from crds/ directory only (mirrors helm install --skip-crds)
 }
@@ -93,7 +85,7 @@ func init() {
 	helmInstallCmd.Flags().StringVar(&helmInstallArgs.version, "version", "", "specify a version constraint for the chart version to use. This constraint can be a specific tag (e.g. 1.1.1) or range (e.g. ^2.0.0)")
 	helmInstallCmd.Flags().StringVar(&helmInstallArgs.repo, "repo", "", "specify the chart repository URL where to locate the requested chart")
 	helmInstallCmd.Flags().StringVar(&helmInstallArgs.namespace, "namespace", "default", "namespace to install the release into (only used for metadata if not actually installing)")
-	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.clone, "clone", true, "clone as downstream unit")
+
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.usePlaceholder, "use-placeholder", true, "use confighubplaceholder placeholder")
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm install --skip-crds'")
 
@@ -180,9 +172,9 @@ func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 	return createdUnit, nil
 }
 
-// createBaseUnit creates a new unit representing the regular resources from a Helm chart.
-func createBaseUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, chartName string, unitLabels map[string]string) (*goclientnew.Unit, error) {
-	unitSlug := releaseName + "-base"
+// createResourceUnit creates a new unit representing the regular resources from a Helm chart.
+func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, chartName string, unitLabels map[string]string, namespace string) (*goclientnew.Unit, error) {
+	unitSlug := releaseName
 	toolchainType := "Kubernetes/YAML"
 
 	parsedSpaceID, err := uuid.Parse(spaceIDStr)
@@ -190,19 +182,26 @@ func createBaseUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 		return nil, fmt.Errorf("internal error: selected space ID '%s' is not a valid UUID: %w", spaceIDStr, err)
 	}
 
-	// Add abstract label to base unit
-	baseLabels := make(map[string]string)
-	for k, v := range unitLabels {
-		baseLabels[k] = v
+	// Prepend namespace YAML if namespace is specified and not default
+	var finalYAMLContent string
+	if namespace != "" && namespace != "default" {
+		namespaceResource := fmt.Sprintf(`apiVersion: v1
+kind: Namespace
+metadata:
+  name: %s
+---
+`, namespace)
+		finalYAMLContent = namespaceResource + resourceYAMLContent
+	} else {
+		finalYAMLContent = resourceYAMLContent
 	}
-	baseLabels[AbstractLabel] = "true"
 
 	apiUnit := goclientnew.Unit{
 		SpaceID:       parsedSpaceID,
 		Slug:          unitSlug,
 		ToolchainType: toolchainType,
-		Data:          base64.StdEncoding.EncodeToString([]byte(resourceYAMLContent)),
-		Labels:        baseLabels,
+		Data:          base64.StdEncoding.EncodeToString([]byte(finalYAMLContent)),
+		Labels:        unitLabels,
 	}
 
 	createParams := goclientnew.CreateUnitParams{}
@@ -236,7 +235,7 @@ func createUnitLink(ctx context.Context, client *goclientnew.ClientWithResponses
 		ToSpaceID:  toUnit.SpaceID,
 	}
 
-	linkRes, linkErr := client.CreateLinkWithResponse(ctx, spaceID, linkToCreate)
+	linkRes, linkErr := client.CreateLinkWithResponse(ctx, spaceID, nil, linkToCreate)
 
 	if IsAPIError(linkErr, linkRes) {
 		return InterpretErrorGeneric(linkErr, linkRes)
@@ -403,20 +402,7 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
 	}
 
-	// Create the unit for the namespace if specified
-	var nsUnit *goclientnew.Unit
-	if helmInstallArgs.namespace != "" && helmInstallArgs.namespace != "default" {
-		nsUnit, err = createNamespaceUnit(ctx, cubClientNew, selectedSpaceID, helmInstallArgs.namespace, helmInstallArgs.releaseName, unitLabels)
-		if err != nil {
-			return fmt.Errorf("failed to create namespace unit: %w", err)
-		}
-		if wait {
-			if err := awaitTriggersRemoval(nsUnit); err != nil {
-				return err
-			}
-		}
-		displayCreateResults(nsUnit, "unit", nsUnit.Slug, nsUnit.UnitID.String(), displayUnitDetails)
-	}
+	// Namespace is now prepended to the main resource unit instead of creating a separate unit
 
 	// Create a unit for CRDs if any were found
 	var crdUnit *goclientnew.Unit
@@ -440,7 +426,7 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Create a unit for regular resources if any were found
 	if len(splitResult.Resources) > 0 {
-		createdResourceUnit, err := createBaseUnit(ctx, cubClientNew, selectedSpaceID, splitResult.Resources, helmInstallArgs.releaseName, helmInstallArgs.chartName, unitLabels)
+		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, splitResult.Resources, helmInstallArgs.releaseName, helmInstallArgs.chartName, unitLabels, helmInstallArgs.namespace)
 		if err != nil {
 			return fmt.Errorf("failed to create resources unit: %w", err)
 		}
@@ -451,71 +437,13 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		displayCreateResults(createdResourceUnit, "unit", createdResourceUnit.Slug, createdResourceUnit.UnitID.String(), displayUnitDetails)
 
-		// Clone the createdResourceUnit
-		if !helmInstallArgs.clone {
-			tprint("Skipping cloning: clone flag is not set.")
-		} else if createdResourceUnit == nil {
-			// This implies helmInstallArgs.clone is true.
-			tprint("Skipping cloning: source resource unit is nil (it might not have been created if no regular resources were found or due to an error during its creation).")
-		} else if createdResourceUnit.UnitID == uuid.Nil {
-			// This implies helmInstallArgs.clone is true AND createdResourceUnit is not nil.
-			tprint("Skipping cloning: source resource unit '%s' has a nil/invalid ID (%s).", createdResourceUnit.Slug, createdResourceUnit.UnitID.String())
-		} else {
-			// All prerequisites met: helmInstallArgs.clone is true, createdResourceUnit is not nil, and createdResourceUnit.UnitID is not nil.
-			clonedUnitSlug := helmInstallArgs.releaseName
-
-			spaceID, parseErr := uuid.Parse(selectedSpaceID)
-			if parseErr != nil {
-				return fmt.Errorf("failed to parse space ID '%s' for cloning: %w", selectedSpaceID, parseErr)
-			}
-			clonedUnitToCreate := goclientnew.Unit{
-				SpaceID:       spaceID, // This is the spaceID parsed for cloning operations
-				Slug:          makeSlug(clonedUnitSlug),
-				ToolchainType: createdResourceUnit.ToolchainType,
-				Labels:        unitLabels,
-			}
-
-			upstreamUnitID := createdResourceUnit.UnitID
-			upstreamSpaceID := spaceID // Cloning into the same space
-
-			cloningParams := goclientnew.CreateUnitParams{
-				UpstreamUnitId:  &upstreamUnitID,
-				UpstreamSpaceId: &upstreamSpaceID,
-			}
-
-			clonedUnitRes, cloneErr := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &cloningParams, clonedUnitToCreate)
-
-			if IsAPIError(cloneErr, clonedUnitRes) {
-				return fmt.Errorf("failed to clone unit '%s': %w", createdResourceUnit.Slug, InterpretErrorGeneric(cloneErr, clonedUnitRes))
-			}
-			if clonedUnitRes.JSON200 != nil {
-				clonedUnitDetails := clonedUnitRes.JSON200
-				if wait { // global wait flag
-					if err := awaitTriggersRemoval(clonedUnitDetails); err != nil {
-						return fmt.Errorf("failed to wait for triggers on cloned unit '%s': %w", clonedUnitDetails.Slug, err)
-					}
-				}
-				displayCreateResults(clonedUnitDetails, "unit", clonedUnitDetails.Slug, clonedUnitDetails.UnitID.String(), displayUnitDetails)
-
-				// Link the cloned unit to the namespace unit
-				if err := createUnitLink(ctx, cubClientNew, clonedUnitDetails, nsUnit, linkSuffixNamespace, spaceID); err != nil {
-					return err
-				}
-
-				// TODO call set-namespace or making sure the value is propagated from the namespace object correctly
-
-				// Link the cloned unit to the CRDs unit
-				if err := createUnitLink(ctx, cubClientNew, clonedUnitDetails, crdUnit, linkSuffixCRDs, spaceID); err != nil {
-					return err
-				}
-
-			} else {
-				// Handle unexpected response
-				if clonedUnitRes == nil {
-					return fmt.Errorf("failed to clone unit '%s': no response received", createdResourceUnit.Slug)
-				}
-				return fmt.Errorf("failed to clone unit '%s': unexpected response status %s", createdResourceUnit.Slug, clonedUnitRes.Status())
-			}
+		// Link the main unit to the CRDs unit
+		spaceID, parseErr := uuid.Parse(selectedSpaceID)
+		if parseErr != nil {
+			return fmt.Errorf("failed to parse space ID '%s' for linking: %w", selectedSpaceID, parseErr)
+		}
+		if err := createUnitLink(ctx, cubClientNew, createdResourceUnit, crdUnit, linkSuffixCRDs, spaceID); err != nil {
+			return err
 		}
 	} else {
 		if !quiet {

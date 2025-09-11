@@ -231,7 +231,14 @@ func runSingleViewCreate(args []string) error {
 		newBody.OrderByDirection = viewCreateArgs.orderByDirection
 	}
 
-	viewRes, err := cubClientNew.CreateViewWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateViewParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	viewRes, err := cubClientNew.CreateViewWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, viewRes) {
 		return InterpretErrorGeneric(err, viewRes)
 	}
@@ -279,6 +286,12 @@ func runBulkViewCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

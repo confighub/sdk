@@ -287,7 +287,7 @@ func (c *ConfighubApi) GetLink(spaceSlug, slug string) (*goclientnew.Link, bool)
 }
 
 func (c *ConfighubApi) CreateSpace(spaceDetails goclientnew.Space) (*goclientnew.Space, error) {
-	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, spaceDetails)
+	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, nil, spaceDetails)
 	if IsAPIError(err, spaceRes) {
 		tprint("Error creating space: %v", err)
 		return nil, err
@@ -332,7 +332,7 @@ func (c *ConfighubApi) CreateTarget(slug, spaceSlug, workerSlug string) (*goclie
 		ProviderType:   "Kubernetes",
 		BridgeWorkerID: worker.BridgeWorkerID,
 	}
-	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, space.SpaceID, targetDetails)
+	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, space.SpaceID, nil, targetDetails)
 	if IsAPIError(err, targetRes) {
 		return nil, InterpretErrorGeneric(err, targetRes)
 	}
@@ -396,7 +396,7 @@ func (c *ConfighubApi) CreateLink(slug, fromSlug, fromSpaceSlug, toSlug, toSpace
 		ToUnitID:    toUnit.UnitID,
 		ToSpaceID:   toSpace.SpaceID,
 	}
-	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, fromSpace.SpaceID, linkDetails)
+	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, fromSpace.SpaceID, nil, linkDetails)
 	if IsAPIError(err, linkRes) {
 		return nil, InterpretErrorGeneric(err, linkRes)
 	}

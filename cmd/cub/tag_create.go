@@ -164,7 +164,14 @@ func runSingleTagCreate(args []string) error {
 		newBody.DisplayName = args[0]
 	}
 
-	tagRes, err := cubClientNew.CreateTagWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateTagParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	tagRes, err := cubClientNew.CreateTagWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, tagRes) {
 		return InterpretErrorGeneric(err, tagRes)
 	}
@@ -210,6 +217,12 @@ func runBulkTagCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

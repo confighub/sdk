@@ -31,8 +31,8 @@ It processes values from files and --set flags.
 
 The upgrade process:
 1. Renders the new chart version
-2. Checks if <release-name>-base unit exists
-3. If it exists, updates the base config with the new resources
+2. Checks if <release-name> unit exists
+3. If it exists, updates the unit with the new resources
 4. Optionally updates CRDs unit if --update-crds flag is set
 
 Examples:
@@ -219,39 +219,51 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 6. Check if base unit exists
-	baseUnitSlug := fmt.Sprintf("%s-base", helmUpgradeArgs.releaseName)
-	baseUnit, err := apiGetUnitFromSlug(baseUnitSlug, "*")
+	// 6. Check if unit exists
+	unitSlug := helmUpgradeArgs.releaseName
+	unitToUpdate, err := apiGetUnitFromSlug(unitSlug, "*")
 	if err != nil {
-		return fmt.Errorf("base unit '%s' not found: %w", baseUnitSlug, err)
+		return fmt.Errorf("unit '%s' not found: %w", unitSlug, err)
 	}
 
-	// 7. Update the base unit with new resources
+	// 7. Update the unit with new resources
 	if len(splitResult.Resources) > 0 {
-		// Encode the resources content
-		encodedContent := base64.StdEncoding.EncodeToString([]byte(splitResult.Resources))
-		baseUnit.Data = encodedContent
-		for k, v := range unitLabels {
-			baseUnit.Labels[k] = v
+		// Prepend namespace YAML if namespace is specified and not default
+		var finalYAMLContent string
+		if helmUpgradeArgs.namespace != "" && helmUpgradeArgs.namespace != "default" {
+			namespaceResource := fmt.Sprintf(`apiVersion: v1
+kind: Namespace
+metadata:
+  name: %s
+---
+`, helmUpgradeArgs.namespace)
+			finalYAMLContent = namespaceResource + splitResult.Resources
+		} else {
+			finalYAMLContent = splitResult.Resources
 		}
-		// Add abstract label to base unit
-		baseUnit.Labels[AbstractLabel] = "true"
+
+		// Encode the resources content
+		encodedContent := base64.StdEncoding.EncodeToString([]byte(finalYAMLContent))
+		unitToUpdate.Data = encodedContent
+		for k, v := range unitLabels {
+			unitToUpdate.Labels[k] = v
+		}
 
 		// Update the unit
 		params := &goclientnew.UpdateUnitParams{}
-		updatedUnit, err := updateUnit(baseUnit.SpaceID, baseUnit, params)
+		updatedUnit, err := updateUnit(unitToUpdate.SpaceID, unitToUpdate, params)
 		if err != nil {
-			return fmt.Errorf("failed to update base unit: %w", err)
+			return fmt.Errorf("failed to update unit: %w", err)
 		}
 		if wait {
 			if err := awaitTriggersRemoval(updatedUnit); err != nil {
-				return fmt.Errorf("failed to wait for base unit triggers: %w", err)
+				return fmt.Errorf("failed to wait for unit triggers: %w", err)
 			}
 		}
 		displayUpdateResults(updatedUnit, "unit", updatedUnit.Slug, updatedUnit.UnitID.String(), displayUnitDetails)
 	} else {
 		if !quiet {
-			tprint("No resources found in chart '%s', skipping update of base unit.", helmUpgradeArgs.chartName)
+			tprint("No resources found in chart '%s', skipping update of unit.", helmUpgradeArgs.chartName)
 		}
 	}
 

@@ -170,7 +170,14 @@ func runSingleChangeSetCreate(args []string) error {
 		newBody.Description = changesetCreateArgs.description
 	}
 
-	changesetRes, err := cubClientNew.CreateChangeSetWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateChangeSetParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	changesetRes, err := cubClientNew.CreateChangeSetWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, changesetRes) {
 		return InterpretErrorGeneric(err, changesetRes)
 	}
@@ -224,6 +231,12 @@ func runBulkChangeSetCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

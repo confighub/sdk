@@ -208,7 +208,14 @@ func runSingleLinkCreate(args []string) error {
 	newLink.ToUnitID = toUnitID
 	newLink.ToSpaceID = uuid.MustParse(toSpaceID)
 
-	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), *newLink)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateLinkParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), params, *newLink)
 	if IsAPIError(err, linkRes) {
 		return InterpretErrorGeneric(err, linkRes)
 	}
@@ -239,6 +246,12 @@ func runBulkLinkCreate() error {
 
 	// Build bulk create parameters
 	params := &goclientnew.BulkCreateLinksParams{}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
 
 	// Set where parameters if specified
 	if linkCreateArgs.whereFrom != "" {

@@ -243,6 +243,12 @@ func runSingleUnitCreate(args []string) error {
 	newUnit := &goclientnew.Unit{}
 	newParams := &goclientnew.CreateUnitParams{}
 
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		newParams.AllowExists = &allowExistsStr
+	}
+
 	// Handle --from-stdin or --filename
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		if err := populateModelFromFlags(newUnit); err != nil {
@@ -426,6 +432,12 @@ func runBulkUnitCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Set include parameter to expand UpstreamUnitID

@@ -116,7 +116,14 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newTarget.BridgeWorkerID = workerID
 	}
 
-	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, newTarget)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateTargetParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, params, newTarget)
 	if IsAPIError(err, targetRes) {
 		return InterpretErrorGeneric(err, targetRes)
 	}

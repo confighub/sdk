@@ -206,7 +206,14 @@ func runSingleInvocationCreate(args []string) error {
 	invokeArgs := args[3:]
 	newArgs := parseFunctionArguments(invokeArgs)
 	newBody.Arguments = newArgs
-	invocationRes, err := cubClientNew.CreateInvocationWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateInvocationParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	invocationRes, err := cubClientNew.CreateInvocationWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, invocationRes) {
 		return InterpretErrorGeneric(err, invocationRes)
 	}
@@ -252,6 +259,12 @@ func runBulkInvocationCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

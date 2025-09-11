@@ -67,7 +67,14 @@ func setCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newSet.DisplayName = args[0]
 	}
 
-	setRes, err := cubClientNew.CreateSetWithResponse(ctx, spaceID, *newSet)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateSetParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	setRes, err := cubClientNew.CreateSetWithResponse(ctx, spaceID, params, *newSet)
 	if IsAPIError(err, setRes) {
 		return InterpretErrorGeneric(err, setRes)
 	}

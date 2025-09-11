@@ -8,14 +8,16 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/confighub"
 	"github.com/confighub/sdk/function/internal/handlers/kubernetes"
 	"github.com/confighub/sdk/function/internal/handlers/opentofu"
 	"github.com/confighub/sdk/function/internal/handlers/properties"
-	"github.com/confighub/sdk/function/handler"
 
 	"github.com/labstack/echo/v4"
 )
 
+var confighubHandler *handler.FunctionHandler
 var kubernetesHandler *handler.FunctionHandler
 var propertiesHandler *handler.FunctionHandler
 var opentofuHandler *handler.FunctionHandler
@@ -33,6 +35,7 @@ func echoSetup(rootRouter *echo.Echo) {
 	apiRouter := rootRouter.Group("/function")
 	setupAPIRootAPI(apiRouter)
 
+	registerFunctionHandler(apiRouter, &confighubHandler, confighub.ConfigHubRegistrar)
 	registerFunctionHandler(apiRouter, &kubernetesHandler, kubernetes.KubernetesRegistrar)
 	registerFunctionHandler(apiRouter, &propertiesHandler, properties.PropertiesRegistrar)
 	registerFunctionHandler(apiRouter, &opentofuHandler, opentofu.OpenTofuRegistrar)

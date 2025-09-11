@@ -54,7 +54,7 @@ var rootArgs struct {
 	inCluster            bool
 	authMethod           string // "kubernetes", "cloud", "docker-config", "keychain"
 	kubernetesSecretPath string
-	enableMultiplexer    bool   // Enable new multiplexer mode with prefixes
+	enableMultiplexer    bool // Enable new multiplexer mode with prefixes
 	// autoRefresh  bool
 }
 
@@ -159,6 +159,7 @@ func rootPreRunE(cmd *cobra.Command, args []string) error {
 // Convert worker type to toolchain type and provider type
 func workerTypeToToolchainAndProvider(workerType string) (workerapi.ToolchainType, api.ProviderType) {
 	switch workerType {
+	// TODO: WorkerTypeConfigHub, workerapi.ToolchainConfigHubYAML
 	case WorkerTypeKubernetes:
 		return workerapi.ToolchainKubernetesYAML, api.ProviderKubernetes
 	case WorkerTypeFluxOCIWriter:
@@ -176,18 +177,18 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	// Check if multiplexer mode is enabled
 	if !rootArgs.enableMultiplexer {
 		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer disabled by default)")
-		
+
 		// In legacy mode, only support single worker type
 		if strings.Contains(args[0], ",") {
 			return fmt.Errorf("multiple worker types not supported in legacy mode. Enable multiplexer with --enable-multiplexer or ENABLE_MULTIPLEXER=true")
 		}
-		
+
 		// Use the old behavior - direct worker without dispatcher
 		bridgeWorker, ok := availableBridgeWorkers[args[0]]
 		if !ok {
 			return fmt.Errorf("unknown bridge worker %s", args[0])
 		}
-		
+
 		if args[0] == WorkerTypeFluxOCIWriter {
 			// Additional initialization for FluxOCIWorker
 			if fluxWorker, ok := bridgeWorker.(*impl.FluxOCIWorker); ok {
@@ -201,12 +202,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-		
+
 		functionWorker, ok := availableFunctionWorkers[args[0]]
 		if !ok {
 			return fmt.Errorf("unknown function worker %s", args[0])
 		}
-		
+
 		// Use legacy mode without dispatcher
 		return runWorkerLegacy(bridgeWorker, functionWorker)
 	}

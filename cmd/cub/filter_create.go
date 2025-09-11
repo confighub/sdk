@@ -209,7 +209,14 @@ func runSingleFilterCreate(args []string) error {
 		newBody.FromSpaceID = &fromSpace.SpaceID
 	}
 
-	filterRes, err := cubClientNew.CreateFilterWithResponse(ctx, spaceID, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateFilterParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	filterRes, err := cubClientNew.CreateFilterWithResponse(ctx, spaceID, params, newBody)
 	if IsAPIError(err, filterRes) {
 		return InterpretErrorGeneric(err, filterRes)
 	}
@@ -279,6 +286,12 @@ func runBulkFilterCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Add name prefixes if specified

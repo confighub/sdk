@@ -64,7 +64,14 @@ func organizationCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// The slug cannot be set by the client. It is set from the ExternalID.
 
-	orgRes, err := cubClientNew.CreateOrganizationWithResponse(ctx, newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateOrganizationParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	orgRes, err := cubClientNew.CreateOrganizationWithResponse(ctx, params, newBody)
 	if IsAPIError(err, orgRes) {
 		return InterpretErrorGeneric(err, orgRes)
 	}

@@ -122,7 +122,14 @@ func runSingleSpaceCreate(args []string) error {
 	// Even if slug was set in stdin, we override it with the one from args
 	newBody.Slug = makeSlug(args[0])
 
-	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, *newBody)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateSpaceParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+	
+	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, params, *newBody)
 	if IsAPIError(err, spaceRes) {
 		return InterpretErrorGeneric(err, spaceRes)
 	}
@@ -170,6 +177,12 @@ func runBulkSpaceCreate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+
+	// Set allow_exists parameter if flag is set
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
 	}
 
 	// Set include parameter for filtering if needed

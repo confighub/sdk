@@ -74,7 +74,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		resp, err := cubClientNew.CreateSpaceWithResponse(ctx, *spaceDetails)
+		resp, err := cubClientNew.CreateSpaceWithResponse(ctx, nil, *spaceDetails)
 		if err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("worker %s not found for target %s", target.Worker, target.Slug)
 		}
 		targetDetails.BridgeWorkerID = worker.BridgeWorkerID
-		resp, err := cubClientNew.CreateTargetWithResponse(ctx, createdSpaces[target.SpaceSlug].SpaceID, *targetDetails)
+		resp, err := cubClientNew.CreateTargetWithResponse(ctx, createdSpaces[target.SpaceSlug].SpaceID, nil, *targetDetails)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			linkDetails.ToSpaceID = createdSpaces[toSpaceSlug].SpaceID
 		}
 		
-		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, *linkDetails)
+		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, nil, *linkDetails)
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			filterDetails.FromSpaceID = &fromSpaceID
 		}
 		
-		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, *filterDetails)
+		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, nil, *filterDetails)
 		if err != nil {
 			return err
 		}
@@ -275,7 +275,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 		
-		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, *viewDetails)
+		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, nil, *viewDetails)
 		if err != nil {
 			return err
 		}
@@ -296,7 +296,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		tagDetails.SpaceID = createdSpaces[tag.SpaceSlug].SpaceID
 		
-		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, *tagDetails)
+		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, nil, *tagDetails)
 		if err != nil {
 			return err
 		}
@@ -335,7 +335,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 		
-		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, *invocationDetails)
+		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, nil, *invocationDetails)
 		if err != nil {
 			return err
 		}
@@ -509,7 +509,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 		if err != nil {
 			return fmt.Errorf("failed to load remote space %s: %w", space.Slug, err)
 		}
-		resp, err := cubClientNew.CreateSpaceWithResponse(ctx, *spaceDetails)
+		resp, err := cubClientNew.CreateSpaceWithResponse(ctx, nil, *spaceDetails)
 		if err != nil {
 			return err
 		}
@@ -556,7 +556,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("worker %s not found for target %s", target.Worker, target.Slug)
 		}
 		targetDetails.BridgeWorkerID = worker.BridgeWorkerID
-		resp, err := cubClientNew.CreateTargetWithResponse(ctx, createdSpaces[target.SpaceSlug].SpaceID, *targetDetails)
+		resp, err := cubClientNew.CreateTargetWithResponse(ctx, createdSpaces[target.SpaceSlug].SpaceID, nil, *targetDetails)
 		if err != nil {
 			return err
 		}
@@ -648,7 +648,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			linkDetails.ToSpaceID = createdSpaces[toSpaceSlug].SpaceID
 		}
 		
-		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, *linkDetails)
+		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, nil, *linkDetails)
 		if err != nil {
 			return err
 		}
@@ -679,7 +679,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			filterDetails.FromSpaceID = &fromSpaceID
 		}
 		
-		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, *filterDetails)
+		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, nil, *filterDetails)
 		if err != nil {
 			return err
 		}
@@ -713,7 +713,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			}
 		}
 		
-		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, *viewDetails)
+		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, nil, *viewDetails)
 		if err != nil {
 			return err
 		}
@@ -734,7 +734,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 		}
 		tagDetails.SpaceID = createdSpaces[tag.SpaceSlug].SpaceID
 		
-		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, *tagDetails)
+		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, nil, *tagDetails)
 		if err != nil {
 			return err
 		}
@@ -773,7 +773,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			}
 		}
 		
-		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, *invocationDetails)
+		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, nil, *invocationDetails)
 		if err != nil {
 			return err
 		}

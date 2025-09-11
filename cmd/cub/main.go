@@ -25,7 +25,9 @@ import (
 	"github.com/itchyny/gojq"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 
+	"github.com/confighub/sdk/configkit/yamlkit"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -467,7 +469,9 @@ var contains = ""
 var verbose = false
 var quiet = false
 var jsonOutput = false
+var yamlOutput = false
 var jq = ""
+var yq = ""
 var names = false
 var selectFields = ""
 var debug = false
@@ -477,9 +481,14 @@ var timeout = "2m"
 var label []string
 var deleteGate []string
 var spaceIdentifiers []string
+var allowExists bool
 
 func enableLabelFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&label, "label", []string{}, "labels in key=value format; can separate by commas and/or use multiple instances of the flag")
+}
+
+func enableAllowExistsFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&allowExists, "allow-exists", false, "Allow creation of resources that already exist")
 }
 
 func enableDeleteGateFlag(cmd *cobra.Command) {
@@ -567,12 +576,20 @@ func enableJsonFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output, suppressing default output")
 }
 
+func enableYamlFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&yamlOutput, "yaml", false, "YAML output, suppressing default output")
+}
+
 func enableNamesFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&names, "names", false, "Only output names, suppressing default output")
 }
 
 func enableJqFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&jq, "jq", "", "jq expression, suppressing default output")
+}
+
+func enableYqFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&yq, "yq", "", "yq expression, suppressing default output")
 }
 
 func enableSelectFlag(cmd *cobra.Command) {
@@ -585,6 +602,10 @@ func enableWhereFlag(cmd *cobra.Command) {
 
 func enableFilterFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&filter, "filter", "", "Filter entity to apply to the list. Specify as 'space/filter' for cross-space filters or just 'filter' for current space. Supports both slugs and UUIDs. The filter will be combined with any --where clause using AND logic. Examples: \"production-filters/security-check\", \"my-filter-uuid\", \"validation-rules\"")
+}
+
+func hasAlternativeOutput() bool {
+	return jsonOutput || jq != "" || yamlOutput || yq != "" || names
 }
 
 // parseFilterFlag parses the filter flag and returns the filter ID
@@ -847,24 +868,31 @@ func addStandardListFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
 	enableNoheaderFlag(cmd)
 }
 
 func addStandardCreateFlags(cmd *cobra.Command) {
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)
+	enableAllowExistsFlag(cmd)
 	enableFromStdinFlag(cmd)
 	enableFilenameFlag(cmd)
 	enableVerboseFlag(cmd)
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
 }
 
 func addStandardGetFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
 	enableSelectFlag(cmd)
 }
 
@@ -878,6 +906,8 @@ func addStandardUpdateFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
 }
 
 func addStandardDeleteFlags(cmd *cobra.Command) {
@@ -885,6 +915,8 @@ func addStandardDeleteFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
 }
 
 // TODO: Move to a reusable library
@@ -926,7 +958,8 @@ func populateNewModelFromStdin(v interface{}) error {
 }
 
 func mergeEntityWithData(v any, data []byte) error {
-	return json.Unmarshal(data, v)
+	// Hopefully this also works fine for JSON
+	return yaml.Unmarshal(data, v)
 }
 
 func populateModelFromFile(v any, filename string) error {
@@ -1012,6 +1045,20 @@ func displayJQ(entity any) {
 	displayJQForBytes(outBytes, jq)
 }
 
+func displayYAML(entity any) {
+	outBytes, err := yaml.Marshal(entity)
+	failOnError(err)
+	tprintRaw(string(outBytes))
+}
+
+func displayYQ(entity any) {
+	outBytes, err := yaml.Marshal(entity)
+	failOnError(err)
+	yqBytes, err := yamlkit.EvalYQExpression(yq, string(outBytes))
+	failOnError(err)
+	tprintRaw(string(yqBytes))
+}
+
 type ModelConstraint interface {
 	goclientnew.Link |
 		goclientnew.ExtendedLink |
@@ -1069,7 +1116,7 @@ type DeleteConstraint interface {
 
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully created %s %s (%s)", entityName, slug, id)
@@ -1083,11 +1130,17 @@ func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 	if jq != "" {
 		displayJQ(entity)
 	}
+	if yamlOutput {
+		displayYAML(entity)
+	}
+	if yq != "" {
+		displayYQ(entity)
+	}
 }
 
 func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully updated %s %s (%s)", entityName, slug, id)
@@ -1101,11 +1154,17 @@ func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 	if jq != "" {
 		displayJQ(entity)
 	}
+	if yamlOutput {
+		displayYAML(entity)
+	}
+	if yq != "" {
+		displayYQ(entity)
+	}
 }
 
 func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func(entity *Entity) string, display func(entities []*Entity)) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := names || jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	if (!quiet || verbose) && !hasAlternativeOutput {
 		display(entities)
@@ -1125,11 +1184,17 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 	if jq != "" {
 		displayJQ(entities)
 	}
+	if yamlOutput {
+		displayYAML(entities)
+	}
+	if yq != "" {
+		displayYQ(entities)
+	}
 }
 
 func displayGetResults[Entity ModelConstraint](entity *Entity, display func(entity *Entity)) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	if !quiet && !hasAlternativeOutput {
 		display(entity)
@@ -1140,11 +1205,17 @@ func displayGetResults[Entity ModelConstraint](entity *Entity, display func(enti
 	if jq != "" {
 		displayJQ(entity)
 	}
+	if yamlOutput {
+		displayYAML(entity)
+	}
+	if yq != "" {
+		displayYQ(entity)
+	}
 }
 
 func displayDeleteResults[ResponseType DeleteConstraint](entityName, slug, id string, response *ResponseType) {
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	if !quiet && !hasAlternativeOutput {
 		tprint("Successfully deleted %s %s (%s)", entityName, slug, id)
@@ -1154,6 +1225,12 @@ func displayDeleteResults[ResponseType DeleteConstraint](entityName, slug, id st
 	}
 	if jq != "" {
 		displayJQ(response)
+	}
+	if yamlOutput {
+		displayYAML(response)
+	}
+	if yq != "" {
+		displayYQ(response)
 	}
 }
 
@@ -1202,7 +1279,7 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 	}
 
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	// Display output based on format flags
 	if jsonOutput {
@@ -1210,6 +1287,12 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 	}
 	if jq != "" {
 		displayJQ(responses)
+	}
+	if yamlOutput {
+		displayYAML(responses)
+	}
+	if yq != "" {
+		displayYQ(responses)
 	}
 
 	// Display regular output unless quiet or alternative output is specified
@@ -1291,7 +1374,7 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 	}
 
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
+	hasAlternativeOutput := hasAlternativeOutput()
 
 	// Display output based on format flags
 	if jsonOutput {
@@ -1299,6 +1382,12 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 	}
 	if jq != "" {
 		displayJQ(responses)
+	}
+	if yamlOutput {
+		displayYAML(responses)
+	}
+	if yq != "" {
+		displayYQ(responses)
 	}
 
 	// Display regular output unless quiet or alternative output is specified

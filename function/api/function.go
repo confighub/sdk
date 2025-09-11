@@ -33,6 +33,7 @@ func HashConfigData(data []byte) RevisionHash {
 // Kubernetes is ToolchainKubernetesYAML.
 
 var SupportedToolchains = map[workerapi.ToolchainType]string{
+	workerapi.ToolchainConfigHubYAML:       "/confighub",
 	workerapi.ToolchainKubernetesYAML:      "/kubernetes",
 	workerapi.ToolchainAppConfigProperties: "/properties",
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",

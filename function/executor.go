@@ -30,6 +30,7 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/configkit"
+	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/propkit"
@@ -45,12 +46,14 @@ import (
 // Some experimentation with the interface is expected and as well as some refactoring behind the scenes.
 
 var converters = map[workerapi.ToolchainType]configkit.ConfigConverter{
+	workerapi.ToolchainConfigHubYAML:       cubkit.ConfigHubResourceProvider,
 	workerapi.ToolchainKubernetesYAML:      k8skit.K8sResourceProvider,
 	workerapi.ToolchainOpenTofuHCL:         hclkit.HclResourceProvider,
 	workerapi.ToolchainAppConfigProperties: propkit.PropertiesResourceProvider,
 }
 
 var registrators = map[workerapi.ToolchainType]func(*handler.FunctionHandler){
+	workerapi.ToolchainConfigHubYAML:       RegisterConfigHub,
 	workerapi.ToolchainKubernetesYAML:      RegisterKubernetes,
 	workerapi.ToolchainOpenTofuHCL:         RegisterOpenTofu,
 	workerapi.ToolchainAppConfigProperties: RegisterProperties,
