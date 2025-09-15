@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -48,8 +49,8 @@ func unitEventGetRun(cmd *cobra.Command, args []string) error {
 func apiGetUnitEvent(spaceID uuid.UUID, unitID uuid.UUID, eventID uuid.UUID) (*goclientnew.UnitEvent, error) {
 	// No params yet
 	eventRes, err := cubClientNew.GetUnitEventWithResponse(ctx, spaceID, unitID, eventID)
-	if IsAPIError(err, eventRes) {
-		return nil, InterpretErrorGeneric(err, eventRes)
+	if cubapi.IsAPIError(err, eventRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, eventRes)
 	}
 	return eventRes.JSON200, nil
 }

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -31,9 +32,7 @@ Use "-" as target-slug to unset/clear the target.`,
 }
 
 func init() {
-	enableVerboseFlag(unitSetTargetCmd)
-	enableJsonFlag(unitSetTargetCmd)
-	enableJqFlag(unitSetTargetCmd)
+	addStandardDisplayFlags(unitSetTargetCmd)
 	enableWhereFlag(unitSetTargetCmd)
 	enableFilterFlag(unitSetTargetCmd)
 	unitSetTargetCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -103,21 +102,12 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if IsAPIError(err, unitRes) {
-		return InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	unitDetails := unitRes.JSON200
-	tprint("Successfully set target of unit %s (%s)", unitSlug, unitDetails.UnitID)
-	if verbose {
-		displayUnitDetails(unitDetails)
-	}
-	if jsonOutput {
-		displayJSON(unitDetails)
-	}
-	if jq != "" {
-		displayJQ(unitDetails)
-	}
+	displayUpdateResults(unitDetails, EntityTypeUnit, unitSlug, unitDetails.UnitID.String(), displayUnitDetails)
 	return nil
 }
 
@@ -172,8 +162,8 @@ func runBulkUnitSetTarget(targetSlug string) error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle response based on status code

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -36,8 +37,8 @@ func workerSecretCmdRun(_ *cobra.Command, args []string) error {
 	}
 	workerRes, err := cubClientNew.GetBridgeWorkerWithResponse(ctx, uuid.MustParse(selectedSpaceID),
 		entity.BridgeWorkerID, nil)
-	if IsAPIError(err, workerRes) {
-		return InterpretErrorGeneric(err, workerRes)
+	if cubapi.IsAPIError(err, workerRes) {
+		return cubapi.InterpretErrorGeneric(err, workerRes)
 	}
 
 	if workerRes.JSON200 == nil || workerRes.JSON200.BridgeWorker == nil {

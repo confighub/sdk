@@ -15,7 +15,6 @@ import (
 	"net/http/httputil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
+	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
@@ -283,7 +283,7 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 }
 
 // Do not call this directly from a command for error responses from API requests.
-// Call InterpretErrorGeneric and return the result instead.
+// Call cubapi.InterpretErrorGeneric and return the result instead.
 func failOnError(err error) {
 	if err != nil {
 		tprintErr("Failed: %s", err.Error())
@@ -633,6 +633,7 @@ func parseFilterFlag(filterValue string) (string, error) {
 
 // Entity type constants for consistent naming across the codebase
 const (
+	EntityTypeSpace        = "Space"
 	EntityTypeFilter       = "Filter"
 	EntityTypeView         = "View"
 	EntityTypeInvocation   = "Invocation"
@@ -859,18 +860,23 @@ type Unmarshalable interface {
 	UnmarshalBinary(data []byte) error
 }
 
+func addStandardDisplayFlags(cmd *cobra.Command) {
+	enableQuietFlag(cmd)
+	enableVerboseFlag(cmd)
+	enableJsonFlag(cmd)
+	enableJqFlag(cmd)
+	enableYamlFlag(cmd)
+	enableYqFlag(cmd)
+}
+
 func addStandardListFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
 	enableFilterFlag(cmd)
 	enableContainsFlag(cmd)
 	enableSelectFlag(cmd)
 	enableNamesFlag(cmd)
-	enableQuietFlag(cmd)
-	enableJsonFlag(cmd)
-	enableJqFlag(cmd)
-	enableYamlFlag(cmd)
-	enableYqFlag(cmd)
 	enableNoheaderFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
 func addStandardCreateFlags(cmd *cobra.Command) {
@@ -879,21 +885,12 @@ func addStandardCreateFlags(cmd *cobra.Command) {
 	enableAllowExistsFlag(cmd)
 	enableFromStdinFlag(cmd)
 	enableFilenameFlag(cmd)
-	enableVerboseFlag(cmd)
-	enableQuietFlag(cmd)
-	enableJsonFlag(cmd)
-	enableJqFlag(cmd)
-	enableYamlFlag(cmd)
-	enableYqFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
 func addStandardGetFlags(cmd *cobra.Command) {
-	enableQuietFlag(cmd)
-	enableJsonFlag(cmd)
-	enableJqFlag(cmd)
-	enableYamlFlag(cmd)
-	enableYqFlag(cmd)
 	enableSelectFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
@@ -902,49 +899,15 @@ func addStandardUpdateFlags(cmd *cobra.Command) {
 	enableFromStdinFlag(cmd)
 	enableReplaceFlag(cmd)
 	enableFilenameFlag(cmd)
-	enableVerboseFlag(cmd)
-	enableQuietFlag(cmd)
-	enableJsonFlag(cmd)
-	enableJqFlag(cmd)
-	enableYamlFlag(cmd)
-	enableYqFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
 func addStandardDeleteFlags(cmd *cobra.Command) {
-	enableVerboseFlag(cmd)
-	enableQuietFlag(cmd)
-	enableJsonFlag(cmd)
-	enableJqFlag(cmd)
-	enableYamlFlag(cmd)
-	enableYqFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
-// TODO: Move to a reusable library
-
-var SlugCoreChars string = "\\-_.A-Za-z0-9"
-var SlugInvalidRegexpString string = "[^" + SlugCoreChars + "]"
-var SlugInvalidRegexp = regexp.MustCompile(SlugInvalidRegexpString)
-var multipleDashesString = "---*"
-var multipleDashesRegexp = regexp.MustCompile(multipleDashesString)
-
 func makeSlug(providedText string) string {
-	// Note: Not lowercased and not converted to kabob-case
-	// Also not internationalized.
-
-	// Remove leading and trailing spaces
-	slug := strings.TrimSpace(providedText)
-	// Remove invalid characters
-	slug = SlugInvalidRegexp.ReplaceAllString(slug, "-")
-	// Collapse multiple consecutive dashes. There could be consecutive punctuation.
-	slug = multipleDashesRegexp.ReplaceAllString(slug, "-")
-	// Trim leading and trailing punctuation
-	slug = strings.Trim(slug, "-._")
-	// Don't allow UUIDs
-	_, err := uuid.Parse(slug)
-	if err == nil {
-		slug = "id" + slug
-	}
-	return slug
+	return cubkit.ConfigHubResourceProvider.NormalizeName(providedText)
 }
 
 // Functionality for populating entities from stdin.
@@ -1057,6 +1020,80 @@ func displayYQ(entity any) {
 	yqBytes, err := yamlkit.EvalYQExpression(yq, string(outBytes))
 	failOnError(err)
 	tprintRaw(string(yqBytes))
+}
+
+// displayResponseErrorDetails displays detailed information for a single ResponseError
+func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
+	table := detailView()
+
+	table.Append([]string{"Message:", respError.Message})
+	table.Append([]string{"Status:", fmt.Sprintf("%d", respError.Status)})
+
+	if respError.Type != "" {
+		table.Append([]string{"Type:", respError.Type})
+	}
+
+	if respError.ErrorCategory != "" {
+		table.Append([]string{"Category:", respError.ErrorCategory})
+	}
+
+	if respError.ErrorMetadata != nil {
+		if respError.ErrorMetadata.EntityType != "" {
+			table.Append([]string{"Entity Type:", respError.ErrorMetadata.EntityType})
+		}
+		if respError.ErrorMetadata.EntityID != "" {
+			table.Append([]string{"Entity ID:", respError.ErrorMetadata.EntityID})
+		}
+	}
+
+	if len(respError.Details) > 0 {
+		table.Append([]string{"Details:", strings.Join(respError.Details, "; ")})
+	}
+
+	table.Render()
+}
+
+var verboseErrors = os.Getenv("CONFIGHUB_DEBUG") == "errors"
+
+// displayResponseErrorTable displays a table of multiple ResponseErrors
+func displayResponseErrorTable(errors []*goclientnew.ResponseError) {
+	table := tableView()
+	if !noheader {
+		table.SetHeader([]string{"Entity Type", "Entity ID", "Status", "Message"})
+	}
+
+	for _, respError := range errors {
+		entityType := ""
+		entityID := ""
+
+		if respError.ErrorMetadata != nil {
+			entityType = respError.ErrorMetadata.EntityType
+			entityID = respError.ErrorMetadata.EntityID
+		}
+
+		// If no entity metadata, show "unknown"
+		if entityType == "" {
+			entityType = "unknown"
+		}
+		if entityID == "" {
+			entityID = "unknown"
+		}
+
+		table.Append([]string{
+			entityType,
+			entityID,
+			fmt.Sprintf("%d", respError.Status),
+			respError.Message,
+		})
+	}
+
+	table.Render()
+
+	if verboseErrors {
+		for _, respError := range errors {
+			displayResponseErrorDetails(respError)
+		}
+	}
 }
 
 type ModelConstraint interface {
@@ -1213,7 +1250,7 @@ func displayGetResults[Entity ModelConstraint](entity *Entity, display func(enti
 	}
 }
 
-func displayDeleteResults[ResponseType DeleteConstraint](entityName, slug, id string, response *ResponseType) {
+func displayDeleteResults(entityName, slug, id string, response any) {
 	// Check if any alternative output format is specified
 	hasAlternativeOutput := hasAlternativeOutput()
 

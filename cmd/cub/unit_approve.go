@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -68,11 +69,11 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 	if strings.HasPrefix(revision, "Before:") {
 		return nil, fmt.Errorf("'Before:' modifier is not supported for approve operations")
 	}
-	
+
 	// Parse the revision parameter
 	parts := strings.Split(revision, ":")
 	var entityType, identifier string
-	
+
 	switch len(parts) {
 	case 2:
 		// EntityType:Identifier format
@@ -84,7 +85,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 	default:
 		return nil, fmt.Errorf("invalid revision specification: %s", revision)
 	}
-	
+
 	// Handle entity type-specific parsing
 	if entityType == "Tag" {
 		// Parse tag slug/ID and convert to UUID
@@ -94,7 +95,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		}
 		result := fmt.Sprintf("Tag:%s", tagUUID)
 		return &result, nil
-		
+
 	} else if entityType == "ChangeSet" {
 		// Parse changeset slug/ID and convert to UUID
 		changesetUUID, err := parseChangeSetSlug(identifier)
@@ -103,7 +104,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		}
 		result := fmt.Sprintf("ChangeSet:%s", changesetUUID)
 		return &result, nil
-		
+
 	} else if entityType == "Revision" {
 		// Handle Revision:uuid format
 		if _, err := uuid.Parse(identifier); err != nil {
@@ -111,11 +112,11 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		}
 		result := fmt.Sprintf("Revision:%s", identifier)
 		return &result, nil
-		
+
 	} else if entityType != "" {
 		return nil, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
 	}
-	
+
 	// Handle simple identifiers (no entity type prefix)
 	namedRevisions := map[string]bool{
 		"LiveRevisionNum":         true,
@@ -123,25 +124,25 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		"PreviousLiveRevisionNum": true,
 		"HeadRevisionNum":         true,
 	}
-	
+
 	if namedRevisions[identifier] {
 		// Named revisions are passed as-is
 		return &identifier, nil
 	}
-	
+
 	// Check if it's a UUID
 	if _, err := uuid.Parse(identifier); err == nil {
 		// It's a UUID - format as Revision:uuid
 		result := fmt.Sprintf("Revision:%s", identifier)
 		return &result, nil
 	}
-	
+
 	// Check if it's a number (revision number)
 	if _, err := strconv.ParseInt(identifier, 10, 64); err == nil {
 		// It's a number - pass as-is (the API will handle it)
 		return &identifier, nil
 	}
-	
+
 	// Not a valid revision specification
 	return nil, fmt.Errorf("invalid revision specification: %s. Must be a revision number, named revision (LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum), UUID, or EntityType:identifier format", revision)
 }
@@ -180,7 +181,7 @@ func runBulkUnitApprove() error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Parse revision parameter
 	revisionParam, err := parseApproveRevisionParameter(approveRevision)
 	if err != nil {
@@ -237,13 +238,13 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Parse revision parameter
 	revisionParam, err := parseApproveRevisionParameter(approveRevision)
 	if err != nil {
 		return err
 	}
-	
+
 	// Build approve parameters
 	params := &goclientnew.ApproveUnitParams{}
 	if revisionParam != nil {
@@ -251,8 +252,8 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
-	if IsAPIError(err, approveRes) {
-		return InterpretErrorGeneric(err, approveRes)
+	if cubapi.IsAPIError(err, approveRes) {
+		return cubapi.InterpretErrorGeneric(err, approveRes)
 	}
 
 	if revisionParam != nil {

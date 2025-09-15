@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -603,8 +604,8 @@ func runBulkUnitUpdate() error {
 		bytes.NewReader(patchData),
 	)
 
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle response based on status code
@@ -626,8 +627,8 @@ func runBulkUnitUpdate() error {
 
 func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclientnew.UpdateUnitParams) (*goclientnew.Unit, error) {
 	updatedRes, err := cubClientNew.UpdateUnitWithResponse(ctx, spaceID, currentUnit.UnitID, params, *currentUnit)
-	if IsAPIError(err, updatedRes) {
-		return nil, InterpretErrorGeneric(err, updatedRes)
+	if cubapi.IsAPIError(err, updatedRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, updatedRes)
 	}
 
 	return updatedRes.JSON200, nil
@@ -654,8 +655,8 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	return unitRes.JSON200, nil

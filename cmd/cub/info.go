@@ -6,6 +6,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -34,8 +35,8 @@ func infoCmdRun(cmd *cobra.Command, args []string) error {
 
 func GetApiInfo() goclientnew.ApiInfo {
 	payloadRes, err := cubClientNew.ApiInfoWithResponse(ctx)
-	if IsAPIError(err, payloadRes) {
-		failOnError(InterpretErrorGeneric(err, payloadRes))
+	if cubapi.IsAPIError(err, payloadRes) {
+		failOnError(cubapi.InterpretErrorGeneric(err, payloadRes))
 	}
 
 	// empty 200 response from server shouldn't happen

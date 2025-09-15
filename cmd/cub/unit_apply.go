@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -194,8 +195,8 @@ func runSingleUnitApply(unitSlug string) error {
 	}
 
 	applyRes, err := cubClientNew.ApplyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
-	if IsAPIError(err, applyRes) {
-		return InterpretErrorGeneric(err, applyRes)
+	if cubapi.IsAPIError(err, applyRes) {
+		return cubapi.InterpretErrorGeneric(err, applyRes)
 	}
 
 	// Handle wait flag
@@ -259,8 +260,8 @@ func runBulkUnitApply() error {
 
 	// Call the bulk apply endpoint
 	resp, err := cubClientNew.BulkApplyUnitsWithResponse(ctx, params)
-	if IsAPIError(err, resp) {
-		return InterpretErrorGeneric(err, resp)
+	if cubapi.IsAPIError(err, resp) {
+		return cubapi.InterpretErrorGeneric(err, resp)
 	}
 
 	// Handle the response - could be 200 (all success) or 207 (mixed results)

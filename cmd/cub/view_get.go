@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -47,12 +48,12 @@ func formatColumnsForDetails(columns []goclientnew.Column) string {
 	if len(columns) == 0 {
 		return ""
 	}
-	
+
 	columnNames := make([]string, len(columns))
 	for i, col := range columns {
 		columnNames[i] = col.Name
 	}
-	
+
 	return strings.Join(columnNames, ", ")
 }
 
@@ -70,44 +71,44 @@ func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
 	view := tableView()
 	view.Append([]string{"ID", viewDetails.ViewID.String()})
 	view.Append([]string{"Name", viewDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedView.Space != nil {
 		view.Append([]string{"Space", extendedView.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", viewDetails.SpaceID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", viewDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", viewDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(viewDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(viewDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(viewDetails.Annotations)})
 	view.Append([]string{"Organization ID", viewDetails.OrganizationID.String()})
-	
+
 	// Show Filter slug when available
 	if extendedView.Filter != nil {
 		view.Append([]string{"Filter", extendedView.Filter.Slug})
 	} else {
 		view.Append([]string{"Filter ID", viewDetails.FilterID.String()})
 	}
-	
+
 	if len(viewDetails.Columns) > 0 {
 		view.Append([]string{"Columns", formatColumnsForDetails(viewDetails.Columns)})
 		view.Append([]string{"Column Count", fmt.Sprintf("%d", len(viewDetails.Columns))})
 	}
-	
+
 	if viewDetails.GroupBy != "" {
 		view.Append([]string{"Group By", viewDetails.GroupBy})
 	}
-	
+
 	if viewDetails.OrderBy != "" {
 		view.Append([]string{"Order By", viewDetails.OrderBy})
 		if viewDetails.OrderByDirection != "" && viewDetails.OrderByDirection != "OrderByDirectionNone" {
 			view.Append([]string{"Order By Direction", string(viewDetails.OrderByDirection)})
 		}
 	}
-	
+
 	view.Render()
 }
 
@@ -128,8 +129,8 @@ func apiGetExtendedView(viewID string, selectParam string) (*goclientnew.Extende
 		newParams.Select = &selectValue
 	}
 	viewRes, err := cubClientNew.GetViewWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(viewID), newParams)
-	if IsAPIError(err, viewRes) {
-		return nil, InterpretErrorGeneric(err, viewRes)
+	if cubapi.IsAPIError(err, viewRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, viewRes)
 	}
 	return viewRes.JSON200, nil
 }
@@ -179,7 +180,7 @@ func apiGetViewFromSlugInSpace(slug string, spaceID string, selectParam string) 
 			return view.View, nil
 		}
 	}
-	
+
 	// Get space slug for error message
 	spaceSlug := spaceID
 	if spaceUUID, err := uuid.Parse(spaceID); err == nil {

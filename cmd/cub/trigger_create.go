@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -260,19 +261,14 @@ func runSingleTriggerCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, params, newBody)
-	if IsAPIError(err, triggerRes) {
-		return InterpretErrorGeneric(err, triggerRes)
+	if cubapi.IsAPIError(err, triggerRes) {
+		return cubapi.InterpretErrorGeneric(err, triggerRes)
 	}
 
 	triggerDetails := triggerRes.JSON200
-	displayCreateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
-		extendedTrigger := &goclientnew.ExtendedTrigger{
-			Trigger: trigger,
-		}
-		displayTriggerDetails(extendedTrigger)
-	})
+	displayCreateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
 	return nil
 }
 

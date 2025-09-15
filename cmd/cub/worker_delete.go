@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -117,8 +118,8 @@ func runBulkWorkerDelete() error {
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteBridgeWorkersWithResponse(ctx, params)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -138,8 +139,8 @@ func bridgeworkerDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteBridgeWorkerWithResponse(ctx, uuid.MustParse(selectedSpaceID), worker.BridgeWorkerID)
-	if IsAPIError(err, deleteRes) {
-		return InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, deleteRes) {
+		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
 	displayDeleteResults("bridge_worker", args[0], worker.BridgeWorkerID.String(), deleteRes)

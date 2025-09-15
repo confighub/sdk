@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -144,8 +145,8 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 		newParams.Select = &selectValue
 	}
 	muteRes, err := cubClientNew.ListExtendedMutationsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
-	if IsAPIError(err, muteRes) {
-		return nil, InterpretErrorGeneric(err, muteRes)
+	if cubapi.IsAPIError(err, muteRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, muteRes)
 	}
 
 	muteSlice := make([]*goclientnew.ExtendedMutation, len(*muteRes.JSON200))

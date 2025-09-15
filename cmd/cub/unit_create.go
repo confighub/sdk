@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/workerapi"
 )
@@ -331,8 +332,8 @@ func runSingleUnitCreate(args []string) error {
 	}
 
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
-	if IsAPIError(err, unitRes) {
-		return InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	unitDetails := unitRes.JSON200
@@ -482,8 +483,8 @@ func runBulkUnitCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle response based on status code

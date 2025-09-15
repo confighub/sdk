@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -55,8 +56,8 @@ func packageCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	unitsRes, err := goclientnew.ParseListAllUnitsResponse(res)
-	if IsAPIError(err, unitsRes) {
-		return InterpretErrorGeneric(err, unitsRes)
+	if cubapi.IsAPIError(err, unitsRes) {
+		return cubapi.InterpretErrorGeneric(err, unitsRes)
 	}
 
 	// Fetch links based on the units we got
@@ -119,6 +120,7 @@ func addSpaceIfNotDone(dir string, manifest *PackageManifest, space *goclientnew
 
 // small optimization to avoid fetching same worker multiple times
 var addedWorkersByID = map[string]*goclientnew.BridgeWorker{}
+
 // Track which space each worker belongs to
 var workerSpaceMap = map[string]string{} // workerID -> spaceSlug
 
@@ -373,7 +375,7 @@ func addLink(dir string, manifest *PackageManifest, extendedLink *goclientnew.Ex
 
 	// Prune the link (remove IDs, timestamps, etc.)
 	pruneLink(extendedLink.Link)
-	
+
 	// Serialize the entire pruned Link object (preserving all remaining fields)
 	fileName := "/links/" + spaceSlug + "/" + extendedLink.Link.Slug + ".json"
 	jsonBytes, err := json.MarshalIndent(extendedLink.Link, "", "  ")
@@ -389,8 +391,8 @@ func addLink(dir string, manifest *PackageManifest, extendedLink *goclientnew.Ex
 	linkEntry := LinkEntry{
 		Slug:       extendedLink.Link.Slug,
 		SpaceSlug:  spaceSlug,
-		FromUnit:   spaceSlug + "/" + extendedLink.FromUnit.Slug,  // FromUnit is always in the link's space
-		ToUnit:     extendedLink.ToSpace.Slug + "/" + extendedLink.ToUnit.Slug,  // ToUnit with its space
+		FromUnit:   spaceSlug + "/" + extendedLink.FromUnit.Slug,               // FromUnit is always in the link's space
+		ToUnit:     extendedLink.ToSpace.Slug + "/" + extendedLink.ToUnit.Slug, // ToUnit with its space
 		DetailsLoc: fileName,
 	}
 	manifest.Links = append(manifest.Links, linkEntry)
@@ -443,7 +445,7 @@ func fetchAndSerializeViews(dir string, manifest *PackageManifest, spaceID strin
 			SpaceSlug:  spaceSlug,
 			DetailsLoc: fileName,
 		}
-		
+
 		// Record filter reference if present
 		if extendedView.Filter != nil {
 			// Use the filter's SpaceID to find its space slug
@@ -456,7 +458,7 @@ func fetchAndSerializeViews(dir string, manifest *PackageManifest, spaceID strin
 			}
 			viewEntry.FilterSlug = filterSpaceSlug + "/" + extendedView.Filter.Slug
 		}
-		
+
 		manifest.Views = append(manifest.Views, viewEntry)
 	}
 	return nil
@@ -494,12 +496,12 @@ func fetchAndSerializeFilters(dir string, manifest *PackageManifest, spaceID str
 			SpaceSlug:  spaceSlug,
 			DetailsLoc: fileName,
 		}
-		
+
 		// Record FromSpace reference if present
 		if extendedFilter.FromSpace != nil {
 			filterEntry.FromSpaceSlug = extendedFilter.FromSpace.Slug
 		}
-		
+
 		manifest.Filters = append(manifest.Filters, filterEntry)
 	}
 	return nil
@@ -574,7 +576,7 @@ func fetchAndSerializeInvocations(dir string, manifest *PackageManifest, spaceID
 			SpaceSlug:  spaceSlug,
 			DetailsLoc: fileName,
 		}
-		
+
 		// Track BridgeWorker reference if present
 		if extendedInvocation.BridgeWorker != nil {
 			// Use the worker's ID to find its space slug from our tracking map
@@ -592,7 +594,7 @@ func fetchAndSerializeInvocations(dir string, manifest *PackageManifest, spaceID
 			}
 			invocationEntry.WorkerSlug = workerSpaceSlug + "/" + extendedInvocation.BridgeWorker.Slug
 		}
-		
+
 		manifest.Invocations = append(manifest.Invocations, invocationEntry)
 	}
 	return nil

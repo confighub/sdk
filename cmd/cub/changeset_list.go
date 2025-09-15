@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -146,8 +147,8 @@ func apiListChangeSets(spaceID string, whereFilter string, selectParam string, f
 		newParams.Select = &selectValue
 	}
 	changesetsRes, err := cubClientNew.ListChangeSetsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, changesetsRes) {
-		return nil, InterpretErrorGeneric(err, changesetsRes)
+	if cubapi.IsAPIError(err, changesetsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, changesetsRes)
 	}
 
 	changesets := make([]*goclientnew.ExtendedChangeSet, 0, len(*changesetsRes.JSON200))
@@ -186,8 +187,8 @@ func apiSearchChangeSets(whereFilter string, selectParam string, filterParam str
 		return nil, err
 	}
 	changesetsRes, err := goclientnew.ParseListAllChangeSetsResponse(res)
-	if IsAPIError(err, changesetsRes) {
-		return nil, InterpretErrorGeneric(err, changesetsRes)
+	if cubapi.IsAPIError(err, changesetsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, changesetsRes)
 	}
 
 	extendedChangeSets := make([]*goclientnew.ExtendedChangeSet, 0, len(*changesetsRes.JSON200))

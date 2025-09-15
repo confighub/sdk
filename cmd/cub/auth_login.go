@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
@@ -301,8 +302,8 @@ func getApiInfo(coordinate Coordinate) (*goclientnew.ApiInfo, error) {
 		return nil, err
 	}
 	apiinfo, err := apiclient.ApiInfoWithResponse(ctx)
-	if IsAPIError(err, apiinfo) {
-		return nil, InterpretErrorGeneric(err, apiinfo)
+	if cubapi.IsAPIError(err, apiinfo) {
+		return nil, cubapi.InterpretErrorGeneric(err, apiinfo)
 	}
 	if apiinfo.JSON200 == nil {
 		return nil, fmt.Errorf("API info not available from server")

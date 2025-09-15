@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -112,8 +113,8 @@ func apiListTargets(spaceID string, whereFilter string, selectParam string, filt
 		newParams.Select = &selectValue
 	}
 	targetsRes, err := cubClientNew.ListTargetsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, targetsRes) {
-		return nil, InterpretErrorGeneric(err, targetsRes)
+	if cubapi.IsAPIError(err, targetsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, targetsRes)
 	}
 
 	targets := make([]*goclientnew.ExtendedTarget, 0, len(*targetsRes.JSON200))
@@ -145,8 +146,8 @@ func apiListAllTargets(whereFilter string, selectParam string, filterParam strin
 		newParams.Select = &selectValue
 	}
 	targetsRes, err := cubClientNew.ListAllTargetsWithResponse(ctx, newParams)
-	if IsAPIError(err, targetsRes) {
-		return nil, InterpretErrorGeneric(err, targetsRes)
+	if cubapi.IsAPIError(err, targetsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, targetsRes)
 	}
 
 	targets := make([]*goclientnew.ExtendedTarget, 0, len(*targetsRes.JSON200))

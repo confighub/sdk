@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/workerapi"
 	"github.com/google/uuid"
@@ -122,10 +123,10 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, params, newTarget)
-	if IsAPIError(err, targetRes) {
-		return InterpretErrorGeneric(err, targetRes)
+	if cubapi.IsAPIError(err, targetRes) {
+		return cubapi.InterpretErrorGeneric(err, targetRes)
 	}
 
 	targetDetails := targetRes.JSON200

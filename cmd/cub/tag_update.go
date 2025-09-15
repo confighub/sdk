@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -231,8 +232,8 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentTag.SpaceID = spaceID
 
 	tagRes, err := cubClientNew.UpdateTagWithResponse(ctx, spaceID, currentTag.TagID, *currentTag)
-	if IsAPIError(err, tagRes) {
-		return InterpretErrorGeneric(err, tagRes)
+	if cubapi.IsAPIError(err, tagRes) {
+		return cubapi.InterpretErrorGeneric(err, tagRes)
 	}
 
 	tagDetails := tagRes.JSON200
@@ -261,8 +262,8 @@ func patchTag(spaceID uuid.UUID, tagID uuid.UUID, patchData []byte) (*goclientne
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, tagRes) {
-		return nil, InterpretErrorGeneric(err, tagRes)
+	if cubapi.IsAPIError(err, tagRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, tagRes)
 	}
 
 	return tagRes.JSON200, nil

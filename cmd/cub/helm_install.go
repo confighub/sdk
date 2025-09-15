@@ -20,6 +20,7 @@ import (
 	"helm.sh/helm/v3/pkg/engine"
 	"helm.sh/helm/v3/pkg/strvals"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -128,13 +129,13 @@ metadata:
 
 	// API Call to create the unit
 	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if IsAPIError(err, unitRes) { // Use the standard error handling
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) { // Use the standard error handling
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	createdUnit := unitRes.JSON200
 	if createdUnit == nil {
-		// This case should ideally be caught by IsAPIError or InterpretErrorGeneric
+		// This case should ideally be caught by IsAPIError or cubapi.InterpretErrorGeneric
 		return nil, fmt.Errorf("failed to create unit '%s', API response was not successful. Status: %s. Body: %s", unitSlug, unitRes.Status(), string(unitRes.Body))
 	}
 	return createdUnit, nil
@@ -161,8 +162,8 @@ func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 	createParams := goclientnew.CreateUnitParams{}
 
 	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	createdUnit := unitRes.JSON200
@@ -207,8 +208,8 @@ metadata:
 	createParams := goclientnew.CreateUnitParams{}
 
 	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	createdUnit := unitRes.JSON200
@@ -237,8 +238,8 @@ func createUnitLink(ctx context.Context, client *goclientnew.ClientWithResponses
 
 	linkRes, linkErr := client.CreateLinkWithResponse(ctx, spaceID, nil, linkToCreate)
 
-	if IsAPIError(linkErr, linkRes) {
-		return InterpretErrorGeneric(linkErr, linkRes)
+	if cubapi.IsAPIError(linkErr, linkRes) {
+		return cubapi.InterpretErrorGeneric(linkErr, linkRes)
 	}
 
 	if linkRes.JSON200 != nil {

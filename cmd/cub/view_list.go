@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -165,8 +166,8 @@ func apiListViews(spaceID string, whereFilter string, selectParam string, filter
 		newParams.Select = &selectValue
 	}
 	viewsRes, err := cubClientNew.ListViewsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, viewsRes) {
-		return nil, InterpretErrorGeneric(err, viewsRes)
+	if cubapi.IsAPIError(err, viewsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, viewsRes)
 	}
 
 	views := make([]*goclientnew.ExtendedView, 0, len(*viewsRes.JSON200))
@@ -205,8 +206,8 @@ func apiSearchViews(whereFilter string, selectParam string, filterParam string) 
 		return nil, err
 	}
 	viewsRes, err := goclientnew.ParseListAllViewsResponse(res)
-	if IsAPIError(err, viewsRes) {
-		return nil, InterpretErrorGeneric(err, viewsRes)
+	if cubapi.IsAPIError(err, viewsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, viewsRes)
 	}
 
 	extendedViews := make([]*goclientnew.ExtendedView, 0, len(*viewsRes.JSON200))

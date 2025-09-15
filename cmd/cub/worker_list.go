@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -82,8 +83,8 @@ func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string
 		newParams.Select = &selectValue
 	}
 	workersRes, err := cubClientNew.ListBridgeWorkersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, workersRes) {
-		return nil, InterpretErrorGeneric(err, workersRes)
+	if cubapi.IsAPIError(err, workersRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, workersRes)
 	}
 
 	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))
@@ -113,8 +114,8 @@ func apiListAllBridgeWorkers(whereFilter string, selectParam string, filterParam
 		newParams.Select = &selectValue
 	}
 	workersRes, err := cubClientNew.ListAllBridgeWorkersWithResponse(ctx, newParams)
-	if IsAPIError(err, workersRes) {
-		return nil, InterpretErrorGeneric(err, workersRes)
+	if cubapi.IsAPIError(err, workersRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, workersRes)
 	}
 
 	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -27,8 +28,8 @@ func setDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), setDetails.SetID)
-	if IsAPIError(err, deleteRes) {
-		return InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, deleteRes) {
+		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 	displayDeleteResults("set", args[0], setDetails.SetID.String(), deleteRes)
 	return nil

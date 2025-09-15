@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -140,8 +141,8 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentTarget.Target.SpaceID = spaceID
 
 	targetRes, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, currentTarget.Target.TargetID, *currentTarget.Target)
-	if IsAPIError(err, targetRes) {
-		return InterpretErrorGeneric(err, targetRes)
+	if cubapi.IsAPIError(err, targetRes) {
+		return cubapi.InterpretErrorGeneric(err, targetRes)
 	}
 
 	targetDetails := targetRes.JSON200
@@ -169,8 +170,8 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	targetRes, err := cubClientNew.PatchTargetWithBodyWithResponse(ctx, spaceID, currentTarget.Target.TargetID, "application/merge-patch+json", bytes.NewReader(patchJSON))
-	if IsAPIError(err, targetRes) {
-		return InterpretErrorGeneric(err, targetRes)
+	if cubapi.IsAPIError(err, targetRes) {
+		return cubapi.InterpretErrorGeneric(err, targetRes)
 	}
 
 	targetDetails := targetRes.JSON200
@@ -222,8 +223,8 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	params.Include = &include
 
 	res, err := cubClientNew.BulkPatchTargetsWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchJSON))
-	if IsAPIError(err, res) {
-		return InterpretErrorGeneric(err, res)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	// Handle 207 Multi-Status or 200 OK

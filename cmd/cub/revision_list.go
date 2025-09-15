@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -284,8 +285,8 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 		uuid.MustParse(unitID),
 		newParams,
 	)
-	if IsAPIError(err, revsRes) {
-		return nil, InterpretErrorGeneric(err, revsRes)
+	if cubapi.IsAPIError(err, revsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, revsRes)
 	}
 
 	revisions := make([]*goclientnew.ExtendedRevision, len(*revsRes.JSON200))
@@ -322,8 +323,8 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 		newParams.Select = &selectValue
 	}
 	revsRes, err := cubClientNew.ListAllRevisionsWithResponse(ctx, newParams)
-	if IsAPIError(err, revsRes) {
-		return nil, InterpretErrorGeneric(err, revsRes)
+	if cubapi.IsAPIError(err, revsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, revsRes)
 	}
 
 	revisions := make([]*goclientnew.ExtendedRevision, len(*revsRes.JSON200))

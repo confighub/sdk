@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -125,8 +126,8 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentBridgeworker.SpaceID = spaceID
 
 	bridgeWorkerRes, err := cubClientNew.UpdateBridgeWorkerWithResponse(ctx, spaceID, currentBridgeworker.BridgeWorkerID, *currentBridgeworker)
-	if IsAPIError(err, bridgeWorkerRes) {
-		return InterpretErrorGeneric(err, bridgeWorkerRes)
+	if cubapi.IsAPIError(err, bridgeWorkerRes) {
+		return cubapi.InterpretErrorGeneric(err, bridgeWorkerRes)
 	}
 
 	bridgeworkerDetails := bridgeWorkerRes.JSON200
@@ -153,8 +154,8 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	workerRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, spaceID, currentWorker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(patchJSON))
-	if IsAPIError(err, workerRes) {
-		return InterpretErrorGeneric(err, workerRes)
+	if cubapi.IsAPIError(err, workerRes) {
+		return cubapi.InterpretErrorGeneric(err, workerRes)
 	}
 
 	workerDetails := workerRes.JSON200
@@ -205,8 +206,8 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	params.Include = &include
 
 	res, err := cubClientNew.BulkPatchBridgeWorkersWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchJSON))
-	if IsAPIError(err, res) {
-		return InterpretErrorGeneric(err, res)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	// Handle 207 Multi-Status or 200 OK

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -251,7 +252,6 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-
 		// Handle view-specific field parsing that can fail
 		var filterID *uuid.UUID
 		if viewUpdateArgs.filter != "" {
@@ -365,8 +365,8 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	viewRes, err := cubClientNew.UpdateViewWithResponse(ctx, spaceID, currentView.ViewID, *currentView)
-	if IsAPIError(err, viewRes) {
-		return InterpretErrorGeneric(err, viewRes)
+	if cubapi.IsAPIError(err, viewRes) {
+		return cubapi.InterpretErrorGeneric(err, viewRes)
 	}
 
 	viewDetails := viewRes.JSON200
@@ -395,8 +395,8 @@ func patchView(spaceID uuid.UUID, viewID uuid.UUID, patchData []byte) (*goclient
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, viewRes) {
-		return nil, InterpretErrorGeneric(err, viewRes)
+	if cubapi.IsAPIError(err, viewRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, viewRes)
 	}
 
 	return viewRes.JSON200, nil

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -81,8 +82,8 @@ func runSingleUnitDestroy(unitSlug string) error {
 	}
 
 	destroyRes, err := cubClientNew.DestroyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
-	if IsAPIError(err, destroyRes) {
-		return InterpretErrorGeneric(err, destroyRes)
+	if cubapi.IsAPIError(err, destroyRes) {
+		return cubapi.InterpretErrorGeneric(err, destroyRes)
 	}
 
 	// Handle wait flag
@@ -137,8 +138,8 @@ func runBulkUnitDestroy() error {
 
 	// Call the bulk destroy endpoint
 	resp, err := cubClientNew.BulkDestroyUnitsWithResponse(ctx, params)
-	if IsAPIError(err, resp) {
-		return InterpretErrorGeneric(err, resp)
+	if cubapi.IsAPIError(err, resp) {
+		return cubapi.InterpretErrorGeneric(err, resp)
 	}
 
 	// Handle the response - could be 200 (all success) or 207 (mixed results)

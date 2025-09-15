@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -118,8 +119,8 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 
 	if selectedSpaceID == "*" {
 		orgFuncsRes, err := cubClientNew.ListOrgFunctionsWithResponse(ctx)
-		if IsAPIError(err, orgFuncsRes) {
-			return entity, funcs, InterpretErrorGeneric(err, orgFuncsRes)
+		if cubapi.IsAPIError(err, orgFuncsRes) {
+			return entity, funcs, cubapi.InterpretErrorGeneric(err, orgFuncsRes)
 		}
 		// This shouldn't happen
 		if orgFuncsRes.JSON200 == nil {
@@ -128,8 +129,8 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 		funcs = *orgFuncsRes.JSON200
 	} else {
 		funcsRes, err := cubClientNew.ListFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), params)
-		if IsAPIError(err, funcsRes) {
-			return entity, funcs, InterpretErrorGeneric(err, funcsRes)
+		if cubapi.IsAPIError(err, funcsRes) {
+			return entity, funcs, cubapi.InterpretErrorGeneric(err, funcsRes)
 		}
 		// This shouldn't happen
 		if funcsRes.JSON200 == nil {

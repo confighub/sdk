@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -161,8 +162,8 @@ func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space
 		newParams.Select = &selectValue
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
-	if IsAPIError(err, spacesRes) {
-		return nil, InterpretErrorGeneric(err, spacesRes)
+	if cubapi.IsAPIError(err, spacesRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, spacesRes)
 	}
 
 	spaces := make([]*goclientnew.Space, 0, len(*spacesRes.JSON200))
@@ -196,8 +197,8 @@ func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam s
 		newParams.Select = &selectValue
 	}
 	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
-	if IsAPIError(err, spacesRes) {
-		return nil, InterpretErrorGeneric(err, spacesRes)
+	if cubapi.IsAPIError(err, spacesRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, spacesRes)
 	}
 
 	extendedSpaces := make([]*goclientnew.ExtendedSpace, 0, len(*spacesRes.JSON200))

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -56,7 +57,7 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	view := tableView()
 	view.Append([]string{"ID", invocationDetails.InvocationID.String()})
 	view.Append([]string{"Name", invocationDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedInvocation.Space != nil {
 		view.Append([]string{"Space", extendedInvocation.Space.Slug})
@@ -69,14 +70,14 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	view.Append([]string{"Delete Gates", deleteGatesToString(invocationDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(invocationDetails.Annotations)})
 	view.Append([]string{"Organization ID", invocationDetails.OrganizationID.String()})
-	
+
 	// Show BridgeWorker slug instead of BridgeWorkerID when available
 	if extendedInvocation.BridgeWorker != nil {
 		view.Append([]string{"Worker", extendedInvocation.BridgeWorker.Slug})
 	} else if invocationDetails.BridgeWorkerID != nil && *invocationDetails.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", invocationDetails.BridgeWorkerID.String()})
 	}
-	
+
 	view.Append([]string{"Toolchain Type", invocationDetails.ToolchainType})
 	view.Append([]string{"Function Name", invocationDetails.FunctionName})
 	for i := range invocationDetails.Arguments {
@@ -109,8 +110,8 @@ func apiGetExtendedInvocation(invocationID string, selectParam string) (*goclien
 		newParams.Select = &selectValue
 	}
 	invocationRes, err := cubClientNew.GetInvocationWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(invocationID), newParams)
-	if IsAPIError(err, invocationRes) {
-		return nil, InterpretErrorGeneric(err, invocationRes)
+	if cubapi.IsAPIError(err, invocationRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, invocationRes)
 	}
 	return invocationRes.JSON200, nil
 }

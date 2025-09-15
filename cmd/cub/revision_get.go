@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -167,8 +168,8 @@ func apiGetExtendedRevision(revisionID string, unitID string, selectParam string
 		uuid.MustParse(revisionID),
 		newParams,
 	)
-	if IsAPIError(err, revRes) {
-		return nil, InterpretErrorGeneric(err, revRes)
+	if cubapi.IsAPIError(err, revRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, revRes)
 	}
 	if revRes.JSON200.Revision.SpaceID.String() != selectedSpaceID {
 		return nil, fmt.Errorf("SERVER DIDN'T CHECK: revision %s not found", revisionID)

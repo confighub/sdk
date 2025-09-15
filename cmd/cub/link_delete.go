@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -130,7 +131,7 @@ func runBulkLinkDelete() error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Extract unique FromUnitID/SpaceID pairs
 		uniqueUnits := make(map[string]bool)
 		for _, link := range links {
@@ -151,8 +152,8 @@ func runBulkLinkDelete() error {
 	}
 
 	res, err := cubClientNew.BulkDeleteLinksWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return InterpretErrorGeneric(err, res)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	// Wait for triggers BEFORE displaying results (for successful deletes)
@@ -194,8 +195,8 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), linkDetails.LinkID)
-	if IsAPIError(err, deleteRes) {
-		return InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, deleteRes) {
+		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 	displayDeleteResults("link", args[0], linkDetails.LinkID.String(), deleteRes)
 	if wait {

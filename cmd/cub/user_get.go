@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -60,8 +61,8 @@ func apiGetUser(userID string) (*goclientnew.User, error) {
 	// No params currently
 	// newParams := &goclientnew.GetUserParams{}
 	orgMemberRes, err := cubClientNew.GetUserWithResponse(ctx, uuid.MustParse(userID) /*, newParams*/)
-	if IsAPIError(err, orgMemberRes) {
-		return nil, InterpretErrorGeneric(err, orgMemberRes)
+	if cubapi.IsAPIError(err, orgMemberRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, orgMemberRes)
 	}
 	return orgMemberRes.JSON200, nil
 }
@@ -71,7 +72,7 @@ func apiGetUserFromUsername(username string) (*goclientnew.User, error) {
 	if err == nil {
 		return apiGetUser(id.String())
 	}
-	users, err := apiListUsers("Username = '" + username + "'", "")
+	users, err := apiListUsers("Username = '"+username+"'", "")
 	if err != nil {
 		return nil, err
 	}

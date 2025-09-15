@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -164,8 +165,8 @@ func runSingleSpaceUpdate(args []string) error {
 	}
 
 	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, *newBody)
-	if IsAPIError(err, spaceRes) {
-		return InterpretErrorGeneric(err, spaceRes)
+	if cubapi.IsAPIError(err, spaceRes) {
+		return cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
 
 	spaceDetails := spaceRes.JSON200
@@ -181,8 +182,8 @@ func patchSpace(spaceID uuid.UUID, patchData []byte) (*goclientnew.Space, error)
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, spaceRes) {
-		return nil, InterpretErrorGeneric(err, spaceRes)
+	if cubapi.IsAPIError(err, spaceRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
 
 	return spaceRes.JSON200, nil
@@ -233,8 +234,8 @@ func runBulkSpaceUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle response based on status code

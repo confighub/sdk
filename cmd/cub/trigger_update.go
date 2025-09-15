@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -355,12 +356,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
-			extendedTriggerWrapper := &goclientnew.ExtendedTrigger{
-				Trigger: trigger,
-			}
-			displayTriggerDetails(extendedTriggerWrapper)
-		})
+		displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
 		return nil
 	}
 
@@ -438,17 +434,12 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.Arguments = newArgs
 	}
 	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, *currentTrigger.Trigger)
-	if IsAPIError(err, triggerRes) {
-		return InterpretErrorGeneric(err, triggerRes)
+	if cubapi.IsAPIError(err, triggerRes) {
+		return cubapi.InterpretErrorGeneric(err, triggerRes)
 	}
 
 	triggerDetails := triggerRes.JSON200
-	displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), func(trigger *goclientnew.Trigger) {
-		extendedTriggerWrapper := &goclientnew.ExtendedTrigger{
-			Trigger: trigger,
-		}
-		displayTriggerDetails(extendedTriggerWrapper)
-	})
+	displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
 	return nil
 }
 
@@ -473,8 +464,8 @@ func patchTrigger(spaceID uuid.UUID, triggerID uuid.UUID, patchData []byte) (*go
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, triggerRes) {
-		return nil, InterpretErrorGeneric(err, triggerRes)
+	if cubapi.IsAPIError(err, triggerRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, triggerRes)
 	}
 
 	return triggerRes.JSON200, nil

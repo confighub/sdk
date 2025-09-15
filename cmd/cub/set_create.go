@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -73,10 +74,10 @@ func setCreateCmdRun(cmd *cobra.Command, args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	setRes, err := cubClientNew.CreateSetWithResponse(ctx, spaceID, params, *newSet)
-	if IsAPIError(err, setRes) {
-		return InterpretErrorGeneric(err, setRes)
+	if cubapi.IsAPIError(err, setRes) {
+		return cubapi.InterpretErrorGeneric(err, setRes)
 	}
 	setDetails := setRes.JSON200
 	displayCreateResults(setDetails, "set", args[0], setDetails.SetID.String(), displaySetDetails)

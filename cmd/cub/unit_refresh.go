@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -29,8 +30,8 @@ func unitRefreshCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	refreshRes, err := cubClientNew.RefreshUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
-	if IsAPIError(err, refreshRes) {
-		return InterpretErrorGeneric(err, refreshRes)
+	if cubapi.IsAPIError(err, refreshRes) {
+		return cubapi.InterpretErrorGeneric(err, refreshRes)
 	}
 	if wait {
 		return awaitCompletion("refresh", refreshRes.JSON200)

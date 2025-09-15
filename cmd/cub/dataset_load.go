@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
@@ -288,7 +289,7 @@ func (c *ConfighubApi) GetLink(spaceSlug, slug string) (*goclientnew.Link, bool)
 
 func (c *ConfighubApi) CreateSpace(spaceDetails goclientnew.Space) (*goclientnew.Space, error) {
 	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, nil, spaceDetails)
-	if IsAPIError(err, spaceRes) {
+	if cubapi.IsAPIError(err, spaceRes) {
 		tprint("Error creating space: %v", err)
 		return nil, err
 	}
@@ -333,8 +334,8 @@ func (c *ConfighubApi) CreateTarget(slug, spaceSlug, workerSlug string) (*goclie
 		BridgeWorkerID: worker.BridgeWorkerID,
 	}
 	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, space.SpaceID, nil, targetDetails)
-	if IsAPIError(err, targetRes) {
-		return nil, InterpretErrorGeneric(err, targetRes)
+	if cubapi.IsAPIError(err, targetRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, targetRes)
 	}
 	c.targets[spaceSlug+"/"+targetDetails.Slug] = targetRes.JSON200
 	return targetRes.JSON200, nil
@@ -364,8 +365,8 @@ func (c *ConfighubApi) CreateUnit(slug, spaceSlug, targetSlug, upstream string, 
 		}
 	}
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, space.SpaceID, unitParams, *unitDetails)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 	c.units[spaceSlug+"/"+unitDetails.Slug] = unitRes.JSON200
 	return unitRes.JSON200, nil
@@ -397,8 +398,8 @@ func (c *ConfighubApi) CreateLink(slug, fromSlug, fromSpaceSlug, toSlug, toSpace
 		ToSpaceID:   toSpace.SpaceID,
 	}
 	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, fromSpace.SpaceID, nil, linkDetails)
-	if IsAPIError(err, linkRes) {
-		return nil, InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 	return linkRes.JSON200, nil
 }

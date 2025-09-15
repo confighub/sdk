@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -65,8 +66,8 @@ func apiGetOrganization(organizationID string, selectParam string) (*goclientnew
 		newParams.Select = &selectValue
 	}
 	orgRes, err := cubClientNew.GetOrganizationWithResponse(ctx, uuid.MustParse(organizationID), newParams)
-	if IsAPIError(err, orgRes) {
-		return nil, InterpretErrorGeneric(err, orgRes)
+	if cubapi.IsAPIError(err, orgRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, orgRes)
 	}
 	return orgRes.JSON200, nil
 }

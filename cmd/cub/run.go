@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -226,8 +227,8 @@ func RegisterFunctionsAsCobraCommands() {
 
 					funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx,
 						uuid.MustParse(selectedSpaceID), newParams, *newBody)
-					if IsAPIError(err, funcRes) {
-						return InterpretErrorGeneric(err, funcRes)
+					if cubapi.IsAPIError(err, funcRes) {
+						return cubapi.InterpretErrorGeneric(err, funcRes)
 					}
 					// Handle both successful (200) and partial success/failure (207) responses
 					var respMsgs *[]goclientnew.FunctionInvocationsResponse

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -138,8 +139,8 @@ func apiListInvocations(spaceID string, whereFilter string, selectParam string, 
 		newParams.Select = &selectValue
 	}
 	invocationsRes, err := cubClientNew.ListInvocationsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, invocationsRes) {
-		return nil, InterpretErrorGeneric(err, invocationsRes)
+	if cubapi.IsAPIError(err, invocationsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, invocationsRes)
 	}
 
 	invocations := make([]*goclientnew.ExtendedInvocation, 0, len(*invocationsRes.JSON200))
@@ -178,8 +179,8 @@ func apiSearchInvocations(whereFilter string, selectParam string, filterParam st
 		return nil, err
 	}
 	invocationsRes, err := goclientnew.ParseListAllInvocationsResponse(res)
-	if IsAPIError(err, invocationsRes) {
-		return nil, InterpretErrorGeneric(err, invocationsRes)
+	if cubapi.IsAPIError(err, invocationsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, invocationsRes)
 	}
 
 	extendedInvocations := make([]*goclientnew.ExtendedInvocation, 0, len(*invocationsRes.JSON200))

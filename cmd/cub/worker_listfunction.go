@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/confighub/sdk/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -31,8 +32,8 @@ func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	funcsRes, err := cubClientNew.ListBridgeWorkerFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorkerID)
-	if IsAPIError(err, funcsRes) {
-		return InterpretErrorGeneric(err, funcsRes)
+	if cubapi.IsAPIError(err, funcsRes) {
+		return cubapi.InterpretErrorGeneric(err, funcsRes)
 	}
 
 	// TODO: Reuse cub function list display function

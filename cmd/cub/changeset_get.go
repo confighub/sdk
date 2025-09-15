@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -107,8 +108,8 @@ func apiGetExtendedChangeSet(changesetID string, selectParam string) (*goclientn
 		newParams.Select = &selectValue
 	}
 	changesetRes, err := cubClientNew.GetChangeSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(changesetID), newParams)
-	if IsAPIError(err, changesetRes) {
-		return nil, InterpretErrorGeneric(err, changesetRes)
+	if cubapi.IsAPIError(err, changesetRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, changesetRes)
 	}
 	return changesetRes.JSON200, nil
 }

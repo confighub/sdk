@@ -48,7 +48,7 @@ Create a unit with some Kubernetes compliant YAML content:
 
 Apply the unit to your bridge target:
 
-    cub unit apply myapp --target dev
+    cub unit apply myapp
 
 The bridge will write the configuration to `/tmp/confighub-example-bridge/dev/myapp.yaml`.
 

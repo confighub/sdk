@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -237,10 +238,10 @@ func runSingleViewCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	viewRes, err := cubClientNew.CreateViewWithResponse(ctx, spaceID, params, newBody)
-	if IsAPIError(err, viewRes) {
-		return InterpretErrorGeneric(err, viewRes)
+	if cubapi.IsAPIError(err, viewRes) {
+		return cubapi.InterpretErrorGeneric(err, viewRes)
 	}
 
 	viewDetails := viewRes.JSON200

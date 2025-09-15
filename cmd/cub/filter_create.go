@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -215,10 +216,10 @@ func runSingleFilterCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	filterRes, err := cubClientNew.CreateFilterWithResponse(ctx, spaceID, params, newBody)
-	if IsAPIError(err, filterRes) {
-		return InterpretErrorGeneric(err, filterRes)
+	if cubapi.IsAPIError(err, filterRes) {
+		return cubapi.InterpretErrorGeneric(err, filterRes)
 	}
 
 	filterDetails := filterRes.JSON200

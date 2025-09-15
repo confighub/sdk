@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -111,8 +112,8 @@ func apiListSets(spaceID string, whereFilter string, selectParam string, filterP
 	}
 
 	setsRes, err := cubClientNew.ListSetsWithResponse(ctx, uuid.MustParse(spaceID), &newParams)
-	if IsAPIError(err, setsRes) {
-		return nil, InterpretErrorGeneric(err, setsRes)
+	if cubapi.IsAPIError(err, setsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, setsRes)
 	}
 
 	sets := make([]*goclientnew.Set, 0, len(*setsRes.JSON200))

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -70,28 +71,28 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 		view.Append([]string{"Link ID", mutationDetails.LinkID.String()})
 	}
 	view.Append([]string{"Provided Path", mutationDetails.ProvidedPath})
-	
+
 	// Show Trigger slug when available
 	if extendedMutationDetails.Trigger != nil {
 		view.Append([]string{"Trigger", extendedMutationDetails.Trigger.Slug})
 	} else if mutationDetails.TriggerID != nil {
 		view.Append([]string{"Trigger ID", mutationDetails.TriggerID.String()})
 	}
-	
+
 	// Show Invocation slug when available
 	if extendedMutationDetails.Invocation != nil {
 		view.Append([]string{"Invocation", extendedMutationDetails.Invocation.Slug})
 	} else if mutationDetails.InvocationID != nil {
 		view.Append([]string{"Invocation ID", mutationDetails.InvocationID.String()})
 	}
-	
+
 	if mutationDetails.FunctionInvocation.FunctionName != "" {
 		view.Append([]string{"Function Name", mutationDetails.FunctionInvocation.FunctionName})
 		for i := range mutationDetails.FunctionInvocation.Arguments {
 			view.Append([]string{fmt.Sprintf("Argument %d", i), fmt.Sprintf("%v", (mutationDetails.FunctionInvocation.Arguments)[i].Value)})
 		}
 	}
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedMutationDetails.Space != nil {
 		view.Append([]string{"Space", extendedMutationDetails.Space.Slug})
@@ -100,7 +101,7 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	}
 	view.Append([]string{"Organization ID", mutationDetails.OrganizationID.String()})
 	view.Render()
-	
+
 	// Display Link details if present
 	if extendedMutationDetails.Link != nil {
 		tprintRaw("")
@@ -108,19 +109,15 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 		tprintRaw("-------------")
 		displayLinkDetails(extendedMutationDetails.Link)
 	}
-	
+
 	// Display Trigger details if present
 	if extendedMutationDetails.Trigger != nil {
 		tprintRaw("")
 		tprintRaw("Trigger Details:")
 		tprintRaw("----------------")
-		// Create an ExtendedTrigger wrapper
-		extendedTrigger := &goclientnew.ExtendedTrigger{
-			Trigger: extendedMutationDetails.Trigger,
-		}
-		displayTriggerDetails(extendedTrigger)
+		displayTriggerDetails(extendedMutationDetails.Trigger)
 	}
-	
+
 	// Display Invocation details if present
 	if extendedMutationDetails.Invocation != nil {
 		tprintRaw("")
@@ -146,8 +143,8 @@ func apiGetMutation(mutationID string, unitID string, selectParam string) (*gocl
 		uuid.MustParse(selectedSpaceID),
 		uuid.MustParse(unitID),
 		uuid.MustParse(mutationID), newParams)
-	if IsAPIError(err, muteRes) {
-		return nil, InterpretErrorGeneric(err, muteRes)
+	if cubapi.IsAPIError(err, muteRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, muteRes)
 	}
 
 	mutation := muteRes.JSON200

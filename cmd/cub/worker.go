@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 
@@ -79,8 +80,8 @@ func apiGetExtendedBridgeWorker(spaceID, workerID uuid.UUID, selectParam string)
 		newParams.Select = &selectValue
 	}
 	workerRes, err := cubClientNew.GetBridgeWorkerWithResponse(ctx, spaceID, workerID, newParams)
-	if IsAPIError(err, workerRes) {
-		return nil, InterpretErrorGeneric(err, workerRes)
+	if cubapi.IsAPIError(err, workerRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, workerRes)
 	}
 
 	return workerRes.JSON200, nil

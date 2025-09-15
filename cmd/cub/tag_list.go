@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -99,7 +100,7 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
 		}
-		
+
 		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
 		changeSetDisplay := ""
 		if t.ChangeSet != nil {
@@ -107,7 +108,7 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 		} else if tag.ChangeSetID != nil && *tag.ChangeSetID != uuid.Nil {
 			changeSetDisplay = tag.ChangeSetID.String()
 		}
-		
+
 		table.Append([]string{
 			tag.Slug,
 			spaceSlug,
@@ -140,8 +141,8 @@ func apiListTags(spaceID string, whereFilter string, selectParam string, filterP
 		newParams.Select = &selectValue
 	}
 	tagsRes, err := cubClientNew.ListTagsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, tagsRes) {
-		return nil, InterpretErrorGeneric(err, tagsRes)
+	if cubapi.IsAPIError(err, tagsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, tagsRes)
 	}
 
 	tags := make([]*goclientnew.ExtendedTag, 0, len(*tagsRes.JSON200))
@@ -180,8 +181,8 @@ func apiSearchTags(whereFilter string, selectParam string, filterParam string) (
 		return nil, err
 	}
 	tagsRes, err := goclientnew.ParseListAllTagsResponse(res)
-	if IsAPIError(err, tagsRes) {
-		return nil, InterpretErrorGeneric(err, tagsRes)
+	if cubapi.IsAPIError(err, tagsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, tagsRes)
 	}
 
 	extendedTags := make([]*goclientnew.ExtendedTag, 0, len(*tagsRes.JSON200))

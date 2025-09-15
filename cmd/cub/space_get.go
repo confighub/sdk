@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
@@ -106,8 +107,8 @@ func apiGetExtendedSpace(spaceID string, selectParam string) (*goclientnew.Exten
 		newParams.Select = &selectValue
 	}
 	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, spaceRes) {
-		return nil, InterpretErrorGeneric(err, spaceRes)
+	if cubapi.IsAPIError(err, spaceRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
 	return spaceRes.JSON200, nil
 }
@@ -119,8 +120,8 @@ func apiGetSpace(spaceID string, selectParam string) (*goclientnew.Space, error)
 		newParams.Select = &selectValue
 	}
 	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, spaceRes) {
-		return nil, InterpretErrorGeneric(err, spaceRes)
+	if cubapi.IsAPIError(err, spaceRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
 	return spaceRes.JSON200.Space, nil
 }

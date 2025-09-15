@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -97,8 +98,8 @@ func apiGetExtendedTag(tagID string, selectParam string) (*goclientnew.ExtendedT
 		newParams.Select = &selectValue
 	}
 	tagRes, err := cubClientNew.GetTagWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(tagID), newParams)
-	if IsAPIError(err, tagRes) {
-		return nil, InterpretErrorGeneric(err, tagRes)
+	if cubapi.IsAPIError(err, tagRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, tagRes)
 	}
 	return tagRes.JSON200, nil
 }

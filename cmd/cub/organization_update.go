@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -64,8 +65,8 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	orgRes, err := cubClientNew.UpdateOrganizationWithResponse(ctx, currentOrganization.OrganizationID, *currentOrganization)
-	if IsAPIError(err, orgRes) {
-		return InterpretErrorGeneric(err, orgRes)
+	if cubapi.IsAPIError(err, orgRes) {
+		return cubapi.InterpretErrorGeneric(err, orgRes)
 	}
 	organizationDetails := orgRes.JSON200
 	displayUpdateResults(organizationDetails, "organization", args[0], organizationDetails.OrganizationID.String(), displayOrganizationDetails)

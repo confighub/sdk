@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -37,8 +38,8 @@ func workerListStatusCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	statusRes, err := cubClientNew.ListBridgeWorkerStatusesWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorkerID)
-	if IsAPIError(err, statusRes) {
-		return InterpretErrorGeneric(err, statusRes)
+	if cubapi.IsAPIError(err, statusRes) {
+		return cubapi.InterpretErrorGeneric(err, statusRes)
 	}
 
 	statuses := make([]*goclientnew.BridgeWorkerStatus, 0, len(*statusRes.JSON200))

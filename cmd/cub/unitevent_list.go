@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -111,8 +112,8 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, 
 	//     newParams.Select = &selectFields
 	// }
 	eventsRes, err := cubClientNew.ListUnitEventsWithResponse(ctx, spaceID, unitID, newParams)
-	if IsAPIError(err, eventsRes) {
-		return nil, InterpretErrorGeneric(err, eventsRes)
+	if cubapi.IsAPIError(err, eventsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, eventsRes)
 	}
 	events := make([]*goclientnew.UnitEvent, 0, len(*eventsRes.JSON200))
 	for _, event := range *eventsRes.JSON200 {

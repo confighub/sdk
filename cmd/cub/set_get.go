@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -54,14 +55,14 @@ func displayExtendedSetDetails(extendedSet *goclientnew.ExtendedSet) {
 	view := tableView()
 	view.Append([]string{"ID", setDetails.SetID.String()})
 	view.Append([]string{"Name", setDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedSet.Space != nil {
 		view.Append([]string{"Space", extendedSet.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", setDetails.SpaceID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", setDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", setDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(setDetails.Labels)})
@@ -88,8 +89,8 @@ func apiGetExtendedSet(setID string, selectParam string) (*goclientnew.ExtendedS
 		newParams.Select = &selectValue
 	}
 	setDetails, err := cubClientNew.GetSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(setID), &newParams)
-	if IsAPIError(err, setDetails) {
-		return nil, InterpretErrorGeneric(err, setDetails)
+	if cubapi.IsAPIError(err, setDetails) {
+		return nil, cubapi.InterpretErrorGeneric(err, setDetails)
 	}
 	return setDetails.JSON200, nil
 }
@@ -116,7 +117,7 @@ func apiGetSetFromSlugInSpace(slug string, spaceID string, selectParam string) (
 			return set, nil
 		}
 	}
-	
+
 	// Get space slug for error message
 	spaceSlug := spaceID
 	if spaceUUID, err := uuid.Parse(spaceID); err == nil {

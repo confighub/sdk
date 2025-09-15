@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -98,8 +99,8 @@ func apiListOrganizations(whereFilter string, selectParam string, filterParam st
 		newParams.Select = &selectValue
 	}
 	orgsRes, err := cubClientNew.ListOrganizationsWithResponse(ctx, newParams)
-	if IsAPIError(err, orgsRes) {
-		return nil, InterpretErrorGeneric(err, orgsRes)
+	if cubapi.IsAPIError(err, orgsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, orgsRes)
 	}
 
 	organizations := make([]*goclientnew.Organization, 0, len(*orgsRes.JSON200))

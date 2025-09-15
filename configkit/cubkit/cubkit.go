@@ -5,9 +5,13 @@
 package cubkit
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/google/uuid"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -37,11 +41,11 @@ func (*ConfigHubResourceProviderType) ResourceCategoryGetter(doc *gaby.YamlDoc) 
 	return api.ResourceCategoryResource, nil
 }
 
-var ConfigHubNonSpaceScopedEntityTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("Organization"):       {},
-	api.ResourceType("OrganizationMember"): {},
-	api.ResourceType("User"):               {},
-	api.ResourceType("Space"):              {},
+var ConfigHubNonSpaceScopedEntityTypes = map[api.ResourceType]bool{
+	api.ResourceType("Organization"):       true,
+	api.ResourceType("OrganizationMember"): true,
+	api.ResourceType("User"):               true,
+	api.ResourceType("Space"):              true,
 }
 
 const (
@@ -49,6 +53,7 @@ const (
 	ResourceNameNoName       = api.ResourceName("NoName")
 	EntityTypePath           = api.ResolvedPath("EntityType")
 	EntityNamePath           = api.ResolvedPath("Slug")
+	EntityScopePath          = api.ResolvedPath("SpaceSlug")
 )
 
 // ResourceTypeGetter extracts the property EntityType, and returns NoEntityType if not present.
@@ -65,13 +70,16 @@ func (*ConfigHubResourceProviderType) ResourceTypeGetter(doc *gaby.YamlDoc) (api
 
 // ResourceNameGetter extracts the property Slug, and returns NoName if not present.
 func (*ConfigHubResourceProviderType) ResourceNameGetter(doc *gaby.YamlDoc) (api.ResourceName, error) {
-	// TODO: SpaceSlug
 	name, hasName, err := yamlkit.YamlSafePathGetValue[string](doc, EntityNamePath, true)
 	if err != nil {
 		return "", err
 	}
+	spaceName, _, err := yamlkit.YamlSafePathGetValue[string](doc, EntityScopePath, true)
+	if err != nil {
+		return "", err
+	}
 	if hasName {
-		return api.ResourceName(name), nil
+		return api.ResourceName(spaceName + "/" + name), nil
 	}
 	return ResourceNameNoName, nil
 }
@@ -89,11 +97,37 @@ func (*ConfigHubResourceProviderType) TypeDescription() string {
 	return "EntityType"
 }
 
-const nameSeparatorString = "" // TODO: "/"
+const nameSeparatorString = "/"
+
+var slugCoreChars string = "\\-_.A-Za-z0-9"
+var slugInvalidRegexpString string = "[^" + slugCoreChars + "]"
+var slugInvalidRegexp = regexp.MustCompile(slugInvalidRegexpString)
+var multipleDashesString = "---*"
+var multipleDashesRegexp = regexp.MustCompile(multipleDashesString)
+
+func makeSlug(providedText string) string {
+	// Note: Not lowercased and not converted to kabob-case
+	// Also not internationalized.
+
+	// Remove leading and trailing spaces
+	slug := strings.TrimSpace(providedText)
+	// Remove invalid characters
+	slug = slugInvalidRegexp.ReplaceAllString(slug, "-")
+	// Collapse multiple consecutive dashes. There could be consecutive punctuation.
+	slug = multipleDashesRegexp.ReplaceAllString(slug, "-")
+	// Trim leading and trailing punctuation
+	slug = strings.Trim(slug, "-._")
+	// Don't allow UUIDs
+	_, err := uuid.Parse(slug)
+	if err == nil {
+		slug = "id" + slug
+	}
+	return slug
+}
 
 func (*ConfigHubResourceProviderType) NormalizeName(name string) string {
-	// Virtually all characters are valid
-	return name
+	// TODO: use
+	return makeSlug(name)
 }
 
 func (*ConfigHubResourceProviderType) NameSeparator() string {
@@ -117,8 +151,18 @@ func (*ConfigHubResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Cont
 	return yamlkit.ResourceAndCategoryTypeMaps(docs, ConfigHubResourceProvider)
 }
 
-func (*ConfigHubResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {
-	return resourceName
+func (c *ConfigHubResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {
+	_, justResourceName := c.ParseResourceName(resourceName)
+	return api.ResourceName(justResourceName)
+}
+
+func (*ConfigHubResourceProviderType) ParseResourceName(resourceName api.ResourceName) (string, string) {
+	spaceSlug, unscopedResourceName, found := strings.Cut(string(resourceName), "/")
+	if !found {
+		unscopedResourceName = spaceSlug
+		spaceSlug = ""
+	}
+	return spaceSlug, unscopedResourceName
 }
 
 // TODO: Trigger and Invocation?

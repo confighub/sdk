@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -250,8 +251,8 @@ func runIndividualLinkPatch(linkSlug string) error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, res) {
-		return InterpretErrorGeneric(err, res)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	linkDetails := res.JSON200
@@ -358,8 +359,8 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentLink.ToSpaceID = uuid.MustParse(toSpaceID)
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)
-	if IsAPIError(err, linkRes) {
-		return InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 
 	linkDetails := linkRes.JSON200

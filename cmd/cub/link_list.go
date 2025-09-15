@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -156,8 +157,8 @@ func apiSearchLinks(whereFilter string, selectParam string, filterParam string) 
 		return nil, err
 	}
 	linkRes, err := goclientnew.ParseSearchListLinksResponse(res)
-	if IsAPIError(err, linkRes) {
-		return nil, InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 
 	extendedLinks := make([]*goclientnew.ExtendedLink, 0, len(*linkRes.JSON200))
@@ -190,8 +191,8 @@ func apiListLinks(spaceID string, whereFilter string, selectParam string, filter
 		newParams.Select = &selectValue
 	}
 	linkRes, err := cubClientNew.ListLinksWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, linkRes) {
-		return nil, InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 
 	links := make([]*goclientnew.ExtendedLink, 0, len(*linkRes.JSON200))

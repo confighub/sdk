@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -54,41 +55,41 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	view := tableView()
 	view.Append([]string{"ID", linkDetails.LinkID.String()})
 	view.Append([]string{"Name", linkDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedLink.Space != nil {
 		view.Append([]string{"Space", extendedLink.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", linkDetails.SpaceID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", linkDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", linkDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(linkDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(linkDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(linkDetails.Annotations)})
 	view.Append([]string{"Organization ID", linkDetails.OrganizationID.String()})
-	
+
 	// Show related units by slug when available
 	if extendedLink.FromUnit != nil {
 		view.Append([]string{"From Unit", extendedLink.FromUnit.Slug})
 	} else {
 		view.Append([]string{"From Unit ID", linkDetails.FromUnitID.String()})
 	}
-	
+
 	if extendedLink.ToUnit != nil {
 		view.Append([]string{"To Unit", extendedLink.ToUnit.Slug})
 	} else {
 		view.Append([]string{"To Unit ID", linkDetails.ToUnitID.String()})
 	}
-	
+
 	// Show To Space slug when available
 	if extendedLink.ToSpace != nil {
 		view.Append([]string{"To Space", extendedLink.ToSpace.Slug})
 	} else {
 		view.Append([]string{"To Space ID", linkDetails.ToSpaceID.String()})
 	}
-	
+
 	view.Render()
 }
 
@@ -110,8 +111,8 @@ func apiGetExtendedLink(linkID string, selectParam string) (*goclientnew.Extende
 	}
 	linkRes, err := cubClientNew.GetLinkWithResponse(ctx,
 		uuid.MustParse(selectedSpaceID), uuid.MustParse(linkID), newParams)
-	if IsAPIError(err, linkRes) {
-		return nil, InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 	return linkRes.JSON200, nil
 }
@@ -138,7 +139,7 @@ func apiGetLinkFromSlugInSpace(slug string, spaceID string, selectParam string) 
 			return extendedLink.Link, nil
 		}
 	}
-	
+
 	// Get space slug for error message
 	spaceSlug := spaceID
 	if spaceUUID, err := uuid.Parse(spaceID); err == nil {

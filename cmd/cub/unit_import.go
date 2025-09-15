@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -83,8 +84,8 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	importRes, err := cubClientNew.ImportUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, importRequest)
-	if IsAPIError(err, importRes) {
-		return InterpretErrorGeneric(err, importRes)
+	if cubapi.IsAPIError(err, importRes) {
+		return cubapi.InterpretErrorGeneric(err, importRes)
 	}
 	if wait {
 		return awaitCompletion("import", importRes.JSON200)

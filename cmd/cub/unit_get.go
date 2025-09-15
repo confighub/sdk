@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -79,7 +80,6 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 
 func init() {
 	addStandardGetFlags(unitGetCmd)
-	enableVerboseFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
 	unitCmd.AddCommand(unitGetCmd)
@@ -267,8 +267,8 @@ func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string
 		newParams.Select = &selectValue
 	}
 	unitRes, err := cubClientNew.GetUnitWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 	return unitRes.JSON200, nil
 }

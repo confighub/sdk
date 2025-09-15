@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -73,8 +74,8 @@ func setUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentSet.SpaceID = spaceID
 
 	setRes, err := cubClientNew.UpdateSetWithResponse(ctx, spaceID, currentSet.SetID, *currentSet)
-	if IsAPIError(err, setRes) {
-		return InterpretErrorGeneric(err, setRes)
+	if cubapi.IsAPIError(err, setRes) {
+		return cubapi.InterpretErrorGeneric(err, setRes)
 	}
 	setDetails := setRes.JSON200
 	displayUpdateResults(setDetails, "set", args[0], setDetails.SetID.String(), displaySetDetails)

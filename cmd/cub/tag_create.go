@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -170,10 +171,10 @@ func runSingleTagCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	tagRes, err := cubClientNew.CreateTagWithResponse(ctx, spaceID, params, newBody)
-	if IsAPIError(err, tagRes) {
-		return InterpretErrorGeneric(err, tagRes)
+	if cubapi.IsAPIError(err, tagRes) {
+		return cubapi.InterpretErrorGeneric(err, tagRes)
 	}
 
 	tagDetails := tagRes.JSON200

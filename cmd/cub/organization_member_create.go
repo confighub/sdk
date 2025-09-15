@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -45,8 +46,8 @@ func organizationMemberCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	orgMemberRes, err := cubClientNew.CreateOrganizationMemberWithResponse(ctx,
 		uuid.MustParse(selectedOrganizationID), *member)
-	if IsAPIError(err, orgMemberRes) {
-		return InterpretErrorGeneric(err, orgMemberRes)
+	if cubapi.IsAPIError(err, orgMemberRes) {
+		return cubapi.InterpretErrorGeneric(err, orgMemberRes)
 	}
 	organizationMemberDetails := orgMemberRes.JSON200
 	displayCreateResults(organizationMemberDetails, "organization-member", args[0], organizationMemberDetails.UserID.String(), displayOrganizationMemberDetails)

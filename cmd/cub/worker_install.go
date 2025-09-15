@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/workerapi"
 	"github.com/google/uuid"
@@ -307,8 +308,8 @@ func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew
 	// Create the unit
 	newParams := &goclientnew.CreateUnitParams{}
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
-	if IsAPIError(err, unitRes) {
-		return nil, InterpretErrorGeneric(err, unitRes)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
 	return unitRes.JSON200, nil

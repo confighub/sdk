@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -304,8 +305,8 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	filterRes, err := cubClientNew.UpdateFilterWithResponse(ctx, spaceID, currentFilter.FilterID, *currentFilter)
-	if IsAPIError(err, filterRes) {
-		return InterpretErrorGeneric(err, filterRes)
+	if cubapi.IsAPIError(err, filterRes) {
+		return cubapi.InterpretErrorGeneric(err, filterRes)
 	}
 
 	filterDetails := filterRes.JSON200
@@ -334,8 +335,8 @@ func patchFilter(spaceID uuid.UUID, filterID uuid.UUID, patchData []byte) (*gocl
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, filterRes) {
-		return nil, InterpretErrorGeneric(err, filterRes)
+	if cubapi.IsAPIError(err, filterRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, filterRes)
 	}
 
 	return filterRes.JSON200, nil

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -55,11 +56,11 @@ Examples:
 }
 
 func init() {
-	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum", 
+	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum",
 		"Which revision to tag: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, Remove, or -")
 	enableWhereFlag(unitTagCmd)
 	enableFilterFlag(unitTagCmd)
-	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, 
+	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{},
 		"target specific units by slug or UUID for bulk tag (can be repeated or comma-separated)")
 	unitCmd.AddCommand(unitTagCmd)
 }
@@ -77,8 +78,8 @@ func checkUnitTagConflictingArgs(args []string) error {
 
 	// Validate revision flag value
 	switch tagRevision {
-	case "HeadRevisionNum", "LiveRevisionNum", "LastAppliedRevisionNum", 
-		 "PreviousLiveRevisionNum", "Remove", "-":
+	case "HeadRevisionNum", "LiveRevisionNum", "LastAppliedRevisionNum",
+		"PreviousLiveRevisionNum", "Remove", "-":
 		// Valid values
 	default:
 		return fmt.Errorf("invalid --revision value: %s", tagRevision)
@@ -154,15 +155,15 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Call the bulk tag API
 	bulkRes, err := cubClientNew.BulkTagUnitsWithResponse(ctx, params, body)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
 	return handleBulkUnitTagResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), revision, tagSlugOrID, effectiveWhere)
 }
 
-func handleBulkUnitTagResponse(responses200 *[]goclientnew.UnitTagResponse, responses207 *[]goclientnew.UnitTagResponse, 
+func handleBulkUnitTagResponse(responses200 *[]goclientnew.UnitTagResponse, responses207 *[]goclientnew.UnitTagResponse,
 	statusCode int, revision, tagIdentifier, contextInfo string) error {
 	var responses *[]goclientnew.UnitTagResponse
 	if statusCode == 200 && responses200 != nil {
@@ -205,7 +206,7 @@ func handleBulkUnitTagResponse(responses200 *[]goclientnew.UnitTagResponse, resp
 		} else {
 			operation = "Tagging"
 		}
-		
+
 		fmt.Printf("\n%s operation completed for tag '%s':\n", operation, tagIdentifier)
 		fmt.Printf("  Success: %d unit(s)\n", successCount)
 		if failureCount > 0 {
@@ -232,4 +233,3 @@ func handleBulkUnitTagResponse(responses200 *[]goclientnew.UnitTagResponse, resp
 
 	return nil
 }
-

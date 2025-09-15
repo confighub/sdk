@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -255,8 +256,8 @@ func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string
 		newParams.Select = &selectValue
 	}
 	unitsRes, err := cubClientNew.ListUnitsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, unitsRes) {
-		return nil, InterpretErrorGeneric(err, unitsRes)
+	if cubapi.IsAPIError(err, unitsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitsRes)
 	}
 
 	extendedUnits := make([]*goclientnew.ExtendedUnit, 0, len(*unitsRes.JSON200))
@@ -301,8 +302,8 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string, s
 		return nil, err
 	}
 	unitsRes, err := goclientnew.ParseListAllUnitsResponse(res)
-	if IsAPIError(err, unitsRes) {
-		return nil, InterpretErrorGeneric(err, unitsRes)
+	if cubapi.IsAPIError(err, unitsRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitsRes)
 	}
 	extendedUnits := make([]*goclientnew.ExtendedUnit, 0, len(*unitsRes.JSON200))
 	for _, unit := range *unitsRes.JSON200 {

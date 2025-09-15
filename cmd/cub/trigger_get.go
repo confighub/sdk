@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -40,7 +41,7 @@ func triggerGetCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	displayGetResults(triggerDetails, displayTriggerDetails)
+	displayGetResults(triggerDetails, displayExtendedTriggerDetails)
 	return nil
 }
 
@@ -68,12 +69,12 @@ func formatFunctionArgumentValue(value *goclientnew.FunctionArgument_Value) stri
 	return fmt.Sprintf("%v", value)
 }
 
-func displayTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {
+func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {
 	trigger := extendedTrigger.Trigger
 	view := tableView()
 	view.Append([]string{"ID", trigger.TriggerID.String()})
 	view.Append([]string{"Name", trigger.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedTrigger.Space != nil {
 		view.Append([]string{"Space", extendedTrigger.Space.Slug})
@@ -86,24 +87,62 @@ func displayTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {
 	view.Append([]string{"Delete Gates", deleteGatesToString(trigger.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
 	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
-	
+
 	// Show BridgeWorker slug instead of BridgeWorkerID when available
 	if extendedTrigger.BridgeWorker != nil {
 		view.Append([]string{"Worker", extendedTrigger.BridgeWorker.Slug})
 	} else if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
 	}
-	
+
 	view.Append([]string{"Event", trigger.Event})
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Enforced", strconv.FormatBool(trigger.Enforced)})
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
-	
+
 	// Show Invocation slug instead of InvocationID when available
 	if extendedTrigger.Invocation != nil {
 		view.Append([]string{"Invocation", extendedTrigger.Invocation.Slug})
 	} else if trigger.InvocationID != nil && *trigger.InvocationID != uuid.Nil {
+		view.Append([]string{"Invocation ID", trigger.InvocationID.String()})
+	}
+	if trigger.FunctionName != "" {
+		view.Append([]string{"Function Name", (trigger.FunctionName)})
+		for i := range trigger.Arguments {
+			argLabel := fmt.Sprintf("Argument %d", i)
+			if trigger.Arguments[i].ParameterName != nil {
+				argLabel = fmt.Sprintf("Argument %d (%s)", i, *trigger.Arguments[i].ParameterName)
+			}
+			view.Append([]string{argLabel, formatFunctionArgumentValue(trigger.Arguments[i].Value)})
+		}
+	}
+	view.Render()
+}
+
+func displayTriggerDetails(trigger *goclientnew.Trigger) {
+	view := tableView()
+	view.Append([]string{"ID", trigger.TriggerID.String()})
+	view.Append([]string{"Name", trigger.Slug})
+	view.Append([]string{"Space ID", trigger.SpaceID.String()})
+	view.Append([]string{"Created At", trigger.CreatedAt.String()})
+	view.Append([]string{"Updated At", trigger.UpdatedAt.String()})
+	view.Append([]string{"Labels", labelsToString(trigger.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(trigger.DeleteGates)})
+	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
+	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
+
+	if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
+		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
+	}
+
+	view.Append([]string{"Event", trigger.Event})
+	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
+	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
+	view.Append([]string{"Enforced", strconv.FormatBool(trigger.Enforced)})
+	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
+
+	if trigger.InvocationID != nil && *trigger.InvocationID != uuid.Nil {
 		view.Append([]string{"Invocation ID", trigger.InvocationID.String()})
 	}
 	if trigger.FunctionName != "" {
@@ -128,8 +167,8 @@ func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.ExtendedT
 		newParams.Select = &selectValue
 	}
 	triggerRes, err := cubClientNew.GetTriggerWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(triggerID), newParams)
-	if IsAPIError(err, triggerRes) {
-		return nil, InterpretErrorGeneric(err, triggerRes)
+	if cubapi.IsAPIError(err, triggerRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, triggerRes)
 	}
 	return triggerRes.JSON200, nil
 }

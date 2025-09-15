@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -113,8 +114,8 @@ func runBulkInvocationDelete() error {
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteInvocationsWithResponse(ctx, params)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -134,8 +135,8 @@ func invocationDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteInvocationWithResponse(ctx, uuid.MustParse(selectedSpaceID), invocationDetails.InvocationID)
-	if IsAPIError(err, deleteRes) {
-		return InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, deleteRes) {
+		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
 	displayDeleteResults("invocation", args[0], invocationDetails.InvocationID.String(), deleteRes)

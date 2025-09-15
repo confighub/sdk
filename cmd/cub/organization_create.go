@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -70,10 +71,10 @@ func organizationCreateCmdRun(cmd *cobra.Command, args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	orgRes, err := cubClientNew.CreateOrganizationWithResponse(ctx, params, newBody)
-	if IsAPIError(err, orgRes) {
-		return InterpretErrorGeneric(err, orgRes)
+	if cubapi.IsAPIError(err, orgRes) {
+		return cubapi.InterpretErrorGeneric(err, orgRes)
 	}
 
 	organizationDetails := orgRes.JSON200

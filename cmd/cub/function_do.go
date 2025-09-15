@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -390,8 +391,8 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 	}
 
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
-	if IsAPIError(err, funcRes) {
-		return nil, InterpretErrorGeneric(err, funcRes)
+	if cubapi.IsAPIError(err, funcRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, funcRes)
 	}
 
 	// Handle both successful (200) and partial success/failure (207) responses
@@ -481,8 +482,8 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			newParams.ChangeSetId = &changesetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
-		if IsAPIError(err, funcRes) {
-			return fmt.Errorf("failed to invoke function on org: %s", InterpretErrorGeneric(err, funcRes).Error())
+		if cubapi.IsAPIError(err, funcRes) {
+			return fmt.Errorf("failed to invoke function on org: %s", cubapi.InterpretErrorGeneric(err, funcRes).Error())
 		}
 		// Handle both successful (200) and partial success/failure (207) responses
 		if funcRes.JSON200 != nil {
@@ -511,8 +512,8 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			newParams.ChangeSetId = &changesetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
-		if IsAPIError(err, funcRes) {
-			return InterpretErrorGeneric(err, funcRes)
+		if cubapi.IsAPIError(err, funcRes) {
+			return cubapi.InterpretErrorGeneric(err, funcRes)
 		}
 		// Handle both successful (200) and partial success/failure (207) responses
 		if funcRes.JSON200 != nil {

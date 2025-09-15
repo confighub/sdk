@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -70,8 +71,8 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 func apiCreateWorker(details *goclientnew.BridgeWorker, spaceID uuid.UUID) (*goclientnew.BridgeWorker, error) {
 	workerRes, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, spaceID, *details)
-	if IsAPIError(err, workerRes) {
-		return nil, InterpretErrorGeneric(err, workerRes)
+	if cubapi.IsAPIError(err, workerRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, workerRes)
 	}
 
 	return workerRes.JSON200, nil

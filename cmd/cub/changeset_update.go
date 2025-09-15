@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -246,8 +247,8 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	changesetRes, err := cubClientNew.UpdateChangeSetWithResponse(ctx, spaceID, currentChangeSet.ChangeSetID, *currentChangeSet)
-	if IsAPIError(err, changesetRes) {
-		return InterpretErrorGeneric(err, changesetRes)
+	if cubapi.IsAPIError(err, changesetRes) {
+		return cubapi.InterpretErrorGeneric(err, changesetRes)
 	}
 
 	changesetDetails := changesetRes.JSON200
@@ -276,8 +277,8 @@ func patchChangeSet(spaceID uuid.UUID, changesetID uuid.UUID, patchData []byte) 
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, changesetRes) {
-		return nil, InterpretErrorGeneric(err, changesetRes)
+	if cubapi.IsAPIError(err, changesetRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, changesetRes)
 	}
 
 	return changesetRes.JSON200, nil

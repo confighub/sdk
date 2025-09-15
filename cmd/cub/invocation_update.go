@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -293,8 +294,8 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	newArgs := parseFunctionArguments(invokeArgs)
 	currentInvocation.Arguments = newArgs
 	invocationRes, err := cubClientNew.UpdateInvocationWithResponse(ctx, spaceID, currentInvocation.InvocationID, *currentInvocation)
-	if IsAPIError(err, invocationRes) {
-		return InterpretErrorGeneric(err, invocationRes)
+	if cubapi.IsAPIError(err, invocationRes) {
+		return cubapi.InterpretErrorGeneric(err, invocationRes)
 	}
 
 	invocationDetails := invocationRes.JSON200
@@ -323,8 +324,8 @@ func patchInvocation(spaceID uuid.UUID, invocationID uuid.UUID, patchData []byte
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
-	if IsAPIError(err, invocationRes) {
-		return nil, InterpretErrorGeneric(err, invocationRes)
+	if cubapi.IsAPIError(err, invocationRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, invocationRes)
 	}
 
 	return invocationRes.JSON200, nil

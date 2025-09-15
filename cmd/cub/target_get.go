@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -45,7 +46,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view := tableView()
 	view.Append([]string{"ID", targetDetails.TargetID.String()})
 	view.Append([]string{"Name", targetDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedTarget.Space != nil {
 		view.Append([]string{"Space", extendedTarget.Space.Slug})
@@ -59,7 +60,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	} else if targetDetails.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Bridge Worker ID", targetDetails.BridgeWorkerID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(targetDetails.Labels)})
@@ -78,8 +79,8 @@ func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTar
 		newParams.Select = &selectValue
 	}
 	targetRes, err := cubClientNew.GetTargetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(targetID), newParams)
-	if IsAPIError(err, targetRes) {
-		return nil, InterpretErrorGeneric(err, targetRes)
+	if cubapi.IsAPIError(err, targetRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, targetRes)
 	}
 	return targetRes.JSON200, nil
 }

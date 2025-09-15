@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -212,10 +213,10 @@ func runSingleInvocationCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	invocationRes, err := cubClientNew.CreateInvocationWithResponse(ctx, spaceID, params, newBody)
-	if IsAPIError(err, invocationRes) {
-		return InterpretErrorGeneric(err, invocationRes)
+	if cubapi.IsAPIError(err, invocationRes) {
+		return cubapi.InterpretErrorGeneric(err, invocationRes)
 	}
 
 	invocationDetails := invocationRes.JSON200

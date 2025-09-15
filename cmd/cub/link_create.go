@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -214,10 +215,10 @@ func runSingleLinkCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), params, *newLink)
-	if IsAPIError(err, linkRes) {
-		return InterpretErrorGeneric(err, linkRes)
+	if cubapi.IsAPIError(err, linkRes) {
+		return cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 	linkDetails := linkRes.JSON200
 	displayCreateResults(linkDetails, "link", linkDetails.Slug, linkDetails.LinkID.String(), displayLinkDetails)

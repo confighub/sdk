@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -128,10 +129,10 @@ func runSingleSpaceCreate(args []string) error {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
-	
+
 	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, params, *newBody)
-	if IsAPIError(err, spaceRes) {
-		return InterpretErrorGeneric(err, spaceRes)
+	if cubapi.IsAPIError(err, spaceRes) {
+		return cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
 
 	spaceDetails := spaceRes.JSON200
@@ -202,8 +203,8 @@ func runBulkSpaceCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if IsAPIError(err, bulkRes) {
-		return InterpretErrorGeneric(err, bulkRes)
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle response based on status code

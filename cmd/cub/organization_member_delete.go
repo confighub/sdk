@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/confighub/sdk/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -29,8 +30,8 @@ func organizationMemberDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	deleteRes, err := cubClientNew.DeleteOrganizationMemberWithResponse(ctx,
 		uuid.MustParse(selectedOrganizationID),
 		organizationMemberDetails.UserID)
-	if IsAPIError(err, deleteRes) {
-		return InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, deleteRes) {
+		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 	displayDeleteResults("organization-member", args[0], organizationMemberDetails.UserID.String(), deleteRes)
 	return nil

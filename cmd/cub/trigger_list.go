@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -154,8 +155,8 @@ func apiListTriggers(spaceID string, whereFilter string, selectParam string, fil
 		newParams.Select = &selectValue
 	}
 	triggersRes, err := cubClientNew.ListTriggersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if IsAPIError(err, triggersRes) {
-		return nil, InterpretErrorGeneric(err, triggersRes)
+	if cubapi.IsAPIError(err, triggersRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, triggersRes)
 	}
 
 	triggers := make([]*goclientnew.ExtendedTrigger, 0, len(*triggersRes.JSON200))
@@ -194,8 +195,8 @@ func apiSearchTriggers(whereFilter string, selectParam string, filterParam strin
 		return nil, err
 	}
 	triggersRes, err := goclientnew.ParseListAllTriggersResponse(res)
-	if IsAPIError(err, triggersRes) {
-		return nil, InterpretErrorGeneric(err, triggersRes)
+	if cubapi.IsAPIError(err, triggersRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, triggersRes)
 	}
 
 	extendedTriggers := make([]*goclientnew.ExtendedTrigger, 0, len(*triggersRes.JSON200))

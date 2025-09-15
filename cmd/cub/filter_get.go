@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -56,14 +57,14 @@ func displayExtendedFilterDetails(extendedFilter *goclientnew.ExtendedFilter) {
 	view := tableView()
 	view.Append([]string{"ID", filterDetails.FilterID.String()})
 	view.Append([]string{"Name", filterDetails.Slug})
-	
+
 	// Show Space slug instead of Space ID when available
 	if extendedFilter.Space != nil {
 		view.Append([]string{"Space", extendedFilter.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", filterDetails.SpaceID.String()})
 	}
-	
+
 	view.Append([]string{"Created At", filterDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", filterDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(filterDetails.Labels)})
@@ -71,14 +72,14 @@ func displayExtendedFilterDetails(extendedFilter *goclientnew.ExtendedFilter) {
 	view.Append([]string{"Annotations", annotationsToString(filterDetails.Annotations)})
 	view.Append([]string{"Organization ID", filterDetails.OrganizationID.String()})
 	view.Append([]string{"From", filterDetails.From})
-	
+
 	// Show From Space slug when available
 	if extendedFilter.FromSpace != nil {
 		view.Append([]string{"From Space", extendedFilter.FromSpace.Slug})
 	} else if filterDetails.FromSpaceID != nil && *filterDetails.FromSpaceID != uuid.Nil {
 		view.Append([]string{"From Space ID", filterDetails.FromSpaceID.String()})
 	}
-	
+
 	if filterDetails.Where != "" {
 		view.Append([]string{"Where", filterDetails.Where})
 	}
@@ -111,8 +112,8 @@ func apiGetExtendedFilter(filterID string, selectParam string) (*goclientnew.Ext
 		newParams.Select = &selectValue
 	}
 	filterRes, err := cubClientNew.GetFilterWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(filterID), newParams)
-	if IsAPIError(err, filterRes) {
-		return nil, InterpretErrorGeneric(err, filterRes)
+	if cubapi.IsAPIError(err, filterRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, filterRes)
 	}
 	return filterRes.JSON200, nil
 }
