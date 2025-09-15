@@ -140,6 +140,47 @@ func (m *MockK8sClient) Delete(ctx context.Context, obj client.Object, opts ...c
 	return args.Error(0)
 }
 
+// MockK8sApplier is a mock implementation of the K8sApplier interface
+type MockK8sApplier struct {
+	mock.Mock
+}
+
+func (m *MockK8sApplier) Apply(ctx context.Context, objects []*unstructured.Unstructured) ApplyResult {
+	args := m.Called(ctx, objects)
+	return args.Get(0).(ApplyResult)
+}
+
+func (m *MockK8sApplier) WaitForApply(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
+	args := m.Called(ctx, objects, timeout)
+	return args.Get(0).(WaitResult)
+}
+
+func (m *MockK8sApplier) Refresh(ctx context.Context, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+	args := m.Called(ctx, objects)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*unstructured.Unstructured), args.Error(1)
+}
+
+func (m *MockK8sApplier) Destroy(ctx context.Context, objects []*unstructured.Unstructured) DestroyResult {
+	args := m.Called(ctx, objects)
+	return args.Get(0).(DestroyResult)
+}
+
+func (m *MockK8sApplier) WaitForDestroy(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
+	args := m.Called(ctx, objects, timeout)
+	return args.Get(0).(WaitResult)
+}
+
+func (m *MockK8sApplier) BuildLiveState(ctx context.Context) ([]*unstructured.Unstructured, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*unstructured.Unstructured), args.Error(1)
+}
+
 // MockResourceManager is a mock implementation of the ResourceManager
 type MockResourceManager struct {
 	mock.Mock
@@ -495,6 +536,13 @@ func setupApplyOperationMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, mo
 	if applyErr != nil {
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "Failed to apply resources")
 	} else {
+		// Add mock for the LiveState status that Apply now sends
+		mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
+			// This is the third status sent by Apply with LiveState
+			return status.Status == api.ActionStatusProgressing &&
+				status.Message == "Resources applied successfully"
+		})).Return(nil).Once()
+
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "resources successfully")
 	}
 

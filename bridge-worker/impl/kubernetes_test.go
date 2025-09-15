@@ -12,50 +12,101 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/bridge-worker/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/fluxcd/pkg/ssa"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func TestKubernetesBridgeWorker_Apply_Success(t *testing.T) {
-	mockCtx, mockManager, _, restoreFunc := setupFullApplyTest(t, nil, nil)
-	defer restoreFunc()
+	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
 
-	worker := &KubernetesBridgeWorker{}
+	// Setup mock expectations
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
+	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
+		return status.Status == api.ActionStatusProgressing &&
+			status.Message == "Resources applied successfully"
+	})).Return(nil).Once()
+
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
+
+	// Setup mock applier behavior
+	resourceSet := &SimpleResourceSet{
+		Entries: []SimpleResourceSetEntry{
+			{
+				Name:      "test-configmap",
+				Namespace: "default",
+				Kind:      "ConfigMap",
+				Action:    "configured",
+			},
+		},
+	}
+	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
+		ResourceSet: resourceSet,
+		LiveObjects: []*unstructured.Unstructured{testConfigMap},
+		LiveState:   []byte("mock-live-state"),
+		Error:       nil,
+	})
+
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := createStandardTestPayload(testTargetParams, testConfigMapYAML)
 
 	err := worker.Apply(mockCtx, payload)
-	assertStandardApplyResults(t, err, mockCtx, mockManager, false, 2, 1)
+	assert.NoError(t, err)
+	mockCtx.AssertNumberOfCalls(t, "SendStatus", 3)
+	mockApplier.AssertNumberOfCalls(t, "Apply", 1)
 }
 
 func TestKubernetesBridgeWorker_Apply_Failure(t *testing.T) {
 	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
+
+	// Setup mock expectations
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
-	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "Failed to apply resources")
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
+	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "mock apply error")
 
-	mockManager, mockClient := setupMockResourceManager(t)
-	setupMockApplyAllStaged(t, mockManager, errors.New("mock apply error"))
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
-	defer restoreFunc()
+	// Setup mock applier behavior to return an error
+	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
+		ResourceSet: nil,
+		LiveObjects: nil,
+		LiveState:   nil,
+		Error:       errors.New("mock apply error"),
+	})
 
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := api.BridgeWorkerPayload{
-		Data: testConfigMapYAML,
+		TargetParams: testTargetParams,
+		Data:         testConfigMapYAML,
 	}
 
 	err := worker.Apply(mockCtx, payload)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "mock apply error")
-	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
-	mockManager.AssertNumberOfCalls(t, "ApplyAllStaged", 1)
+	mockCtx.AssertNumberOfCalls(t, "SendStatus", 3)
+	mockApplier.AssertNumberOfCalls(t, "Apply", 1)
 }
 
 func TestKubernetesBridgeWorker_Apply_InvalidTargetParams(t *testing.T) {
 	mockCtx := setupMockContext(t)
 	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "failed to parse target params")
 
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
 	payload := api.BridgeWorkerPayload{
 		TargetParams: []byte("invalid-json"),
 	}
@@ -67,74 +118,118 @@ func TestKubernetesBridgeWorker_Apply_InvalidTargetParams(t *testing.T) {
 
 func TestKubernetesBridgeWorker_Apply_ParseObjectsError(t *testing.T) {
 	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
+
+	// The error should happen before reaching the applier, during parseObjects
 	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "failed to parse YAML resources")
 
-	mockManager, _ := setupMockResourceManager(t)
-	mockManager.On("Wait", mock.Anything, mock.Anything).
-		Return(errors.New("mock wait error"))
+	// Mock the applier factory (even though it shouldn't be called)
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	restoreFunc := setupKubernetesClientFactory(t, new(MockK8sClient), mockManager)
-	defer restoreFunc()
-
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := api.BridgeWorkerPayload{
-		Data: []byte("invalid-yaml"),
+		TargetParams: testTargetParams,
+		Data:         []byte("invalid-yaml"),
 	}
 
 	err := worker.Apply(mockCtx, payload)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse YAML resources")
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 1)
+	// Apply should not be called because parsing failed
+	mockApplier.AssertNotCalled(t, "Apply")
 }
 
 func TestKubernetesBridgeWorker_Apply_EmptyPayload(t *testing.T) {
 	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
+
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
+	// Add mock for the LiveState status that Apply now sends
+	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
+		return status.Status == api.ActionStatusProgressing &&
+			status.Message == "Resources applied successfully"
+	})).Return(nil).Once()
 
-	mockManager, mockK8sClient := setupMockResourceManager(t)
-	mockManager.On("ApplyAllStaged", mock.Anything, mock.Anything, mock.Anything).
-		Return(&ssa.ChangeSet{Entries: []ssa.ChangeSetEntry{}}, nil)
-	mockManager.On("Client").Return(mockK8sClient)
-	restoreFunc := setupKubernetesClientFactory(t, mockK8sClient, mockManager)
-	defer restoreFunc()
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	worker := &KubernetesBridgeWorker{}
+	// Setup mock applier behavior for empty payload
+	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
+		ResourceSet: &SimpleResourceSet{Entries: []SimpleResourceSetEntry{}},
+		LiveObjects: []*unstructured.Unstructured{},
+		LiveState:   []byte(""),
+		Error:       nil,
+	})
+
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := api.BridgeWorkerPayload{
-		Data: []byte(""),
+		TargetParams: testTargetParams,
+		Data:         []byte(""),
 	}
 
 	err := worker.Apply(mockCtx, payload)
 	assert.NoError(t, err)
-	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
+	mockCtx.AssertNumberOfCalls(t, "SendStatus", 3)
 }
 
 func TestKubernetesBridgeWorker_WatchForApply_Success(t *testing.T) {
 	mockCtx := setupMockContext(t)
-	mockManager, mockClient := setupMockResourceManager(t)
+	mockApplier := new(MockK8sApplier)
 
-	setupWatchOperationMocks(t, mockCtx, mockManager, nil)
-	setupMockApplyAllStaged(t, mockManager, nil)
-	setupMockClientGet(t, mockClient, testNamespace, testName, nil)
-	mockManager.On("Client").Return(mockClient)
+	// Setup mock expectations
+	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
+	setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "Applied 1 resources successfully")
 
-	restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
-	defer restoreFunc()
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	worker := &KubernetesBridgeWorker{}
+	// Setup mock applier behavior
+	mockApplier.On("WaitForApply", mock.Anything, mock.Anything, mock.Anything).Return(WaitResult{
+		LiveObjects: []*unstructured.Unstructured{testConfigMap},
+		ResourceSet: &SimpleResourceSet{
+			Entries: []SimpleResourceSetEntry{
+				{
+					Name:      "test-configmap",
+					Namespace: "default",
+					Kind:      "ConfigMap",
+					Action:    "configured",
+				},
+			},
+		},
+		Error: nil,
+	})
+
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := createStandardTestPayload(testTargetParams, testConfigMapYAML)
 
 	err := worker.WatchForApply(mockCtx, payload)
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
-	mockManager.AssertNumberOfCalls(t, "Wait", 1)
-	mockClient.AssertNumberOfCalls(t, "Get", 1)
+	mockApplier.AssertNumberOfCalls(t, "WaitForApply", 1)
 }
 
 func TestKubernetesBridgeWorker_WatchForApply_Failure(t *testing.T) {
 	mockCtx := setupMockContext(t)
 	mockCtx.On("SendStatus", mock.Anything).Return(errors.New("mock send status error"))
 
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
 	payload := api.BridgeWorkerPayload{
 		Data: testConfigMapYAML,
 	}
@@ -146,19 +241,29 @@ func TestKubernetesBridgeWorker_WatchForApply_Failure(t *testing.T) {
 
 func TestKubernetesBridgeWorker_WatchForApply_InvalidWaitTimeout(t *testing.T) {
 	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
+
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
-	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyWaitFailed, "Failed to wait for resources")
+	setupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyWaitFailed, "mock wait error")
 
-	mockManager, _ := setupMockResourceManager(t)
-	mockManager.On("Wait", mock.Anything, mock.Anything).
-		Return(errors.New("mock wait error"))
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	restoreFunc := setupKubernetesClientFactory(t, new(MockK8sClient), mockManager)
-	defer restoreFunc()
+	// Setup mock applier behavior to return an error
+	mockApplier.On("WaitForApply", mock.Anything, mock.Anything, mock.Anything).Return(WaitResult{
+		LiveObjects: nil,
+		ResourceSet: nil,
+		Error:       errors.New("mock wait error"),
+	})
 
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"WaitTimeout":"invalid-duration"}`), // Invalid WaitTimeout
+		TargetParams: []byte(`{"KubeContext":"test-context","WaitTimeout":"invalid-duration"}`), // Invalid WaitTimeout
 		Data:         testConfigMapYAML,
 	}
 
@@ -166,22 +271,33 @@ func TestKubernetesBridgeWorker_WatchForApply_InvalidWaitTimeout(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "mock wait error")
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
-	mockManager.AssertNumberOfCalls(t, "Wait", 1)
+	mockApplier.AssertNumberOfCalls(t, "WaitForApply", 1)
 }
 
 func TestKubernetesBridgeWorker_WatchForApply_ContextDeadlineExceeded(t *testing.T) {
 	mockCtx := setupMockContext(t)
+	mockApplier := new(MockK8sApplier)
+
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
-	setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Failed to wait for resources")
+	// When deadline is exceeded, it sends two messages: one for the error and one for the retry
+	setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Failed to wait for resources: context deadline exceeded")
 
-	mockManager, mockClient := setupMockResourceManager(t)
-	setupMockApplyAllStaged(t, mockManager, nil)
-	setupMockWait(t, mockManager, context.DeadlineExceeded)
+	// Mock the applier factory to return our mock applier
+	originalFactory := k8sApplierFactory
+	k8sApplierFactory = func(name ApplierName, config ApplierConfig) (K8sApplier, error) {
+		return mockApplier, nil
+	}
+	defer func() { k8sApplierFactory = originalFactory }()
 
-	restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
-	defer restoreFunc()
+	// Setup mock applier behavior to return context deadline exceeded
+	mockApplier.On("WaitForApply", mock.Anything, mock.Anything, mock.Anything).Return(WaitResult{
+		LiveObjects: nil,
+		ResourceSet: nil,
+		Error:       context.DeadlineExceeded,
+	})
 
-	worker := &KubernetesBridgeWorker{}
+	worker := NewKubernetesBridgeWorker()
+	worker.applierType = CLIUtilsSSA
 	payload := api.BridgeWorkerPayload{
 		TargetParams: testTargetParams,
 		Data:         testConfigMapYAML,
@@ -193,7 +309,7 @@ func TestKubernetesBridgeWorker_WatchForApply_ContextDeadlineExceeded(t *testing
 	assert.ErrorAs(t, err, &retryErr, "error should be of type *backoff.RetryAfterError")
 	assert.Contains(t, err.Error(), "retry after 30s")
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
-	mockManager.AssertNumberOfCalls(t, "Wait", 1)
+	mockApplier.AssertNumberOfCalls(t, "WaitForApply", 1)
 }
 
 // Import operation test cases
@@ -278,7 +394,7 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 			restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
 			defer restoreFunc()
 
-			worker := &KubernetesBridgeWorker{}
+			worker := NewKubernetesBridgeWorker()
 			err := worker.Import(mockCtx, tt.payload)
 
 			if tt.expectedError {

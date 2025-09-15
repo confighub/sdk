@@ -10,15 +10,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fluxcd/cli-utils/pkg/kstatus/polling"
 	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-worker/api"
@@ -35,48 +32,6 @@ func parseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams,
 	}
 
 	return params, params.KubeContext, nil
-}
-
-// kubernetesClientFactory is a function type that creates a Kubernetes client and resource manager
-// It is used for dependency injection in tests.
-
-var kubernetesConfigFactory = setupKubernetesConfig
-
-func setupKubernetesConfig(kubeContext string) (*rest.Config, error) {
-	return config.GetConfigWithContext(kubeContext)
-}
-
-var kubernetesClientFactory = setupKubernetesClient
-
-// setupKubernetesClient creates a Kubernetes client and resource manager
-// use the kubernetesClientFactory variable instead of calling this function directly
-func setupKubernetesClient(kubeContext string) (KubernetesClient, ResourceManager, error) {
-	cfg, err := kubernetesConfigFactory(kubeContext)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get Kubernetes config: %v", err)
-	}
-	log.Log.Info("✅ Got Kubernetes config")
-
-	k8sClient, err := client.New(cfg, client.Options{})
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create Kubernetes client: %v", err)
-	}
-	log.Log.Info("✅ Created Kubernetes client")
-
-	kubePoller := polling.NewStatusPoller(k8sClient, k8sClient.RESTMapper(), polling.Options{})
-	man := ssa.NewResourceManager(k8sClient, kubePoller, ssa.Owner{
-		Field: "confighub",
-		Group: "confighub.com",
-	})
-	log.Log.Info("✅ Created resource manager")
-
-	// Wrap the resource manager
-	wrappedManager := &WrappedResourceManager{
-		ResourceManager: man,
-		client:          k8sClient,
-	}
-
-	return k8sClient, wrappedManager, nil
 }
 
 // parseObjects parses YAML objects from payload data

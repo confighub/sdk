@@ -10,15 +10,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
 	"github.com/gosimple/slug"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/cli-utils/pkg/inventory"
+	"sigs.k8s.io/cli-utils/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-worker/api"
@@ -31,11 +34,21 @@ import (
 )
 
 type KubernetesBridgeWorker struct {
-	cfg *rest.Config
+	cfg          *rest.Config
+	applier      K8sApplier // Deprecated: for backward compatibility, will be removed
+	applierType  ApplierName
+	applierCache sync.Map // key: unit ID (string), value: K8sApplier
 }
 
 var _ api.BridgeWorker = (*KubernetesBridgeWorker)(nil)
 var _ api.WatchableWorker = (*KubernetesBridgeWorker)(nil)
+
+// NewKubernetesBridgeWorker creates a new KubernetesBridgeWorker with CLI Utils SSA as default
+func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
+	return &KubernetesBridgeWorker{
+		applierType: CLIUtilsSSA, // Default to CLI Utils SSA for inventory support
+	}
+}
 
 type KubernetesWorkerParams struct {
 	KubeContext string `json:",omitempty"`
@@ -145,16 +158,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 }
 
 func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	_, kubeContext, err := parseTargetParams(payload)
-	if err != nil {
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultApplyFailed,
-			err.Error(),
-		), err)
-	}
-
-	k8sclient, man, err := kubernetesClientFactory(kubeContext)
+	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -172,25 +176,12 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 		), err)
 	}
 
-	// If namespace is not declared in the unit, it will be set to default on namespaced resources
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
-
 	if err := wctx.SendStatus(newActionResult(
 		api.ActionStatusProgressing,
 		api.ActionResultNone,
 		"Starting to apply resources...",
 	)); err != nil {
 		return err
-	}
-
-	changeSet, err := man.ApplyAllStaged(context.Background(), objects, ssa.DefaultApplyOptions())
-	if err != nil {
-		log.Log.Error(err, "Failed to apply resources")
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultApplyFailed,
-			fmt.Sprintf("Failed to apply resources: %v", err),
-		), err)
 	}
 
 	log.Log.Info("🔄 Applying resources...", "count", len(objects))
@@ -202,24 +193,32 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 		return err
 	}
 
-	log.Log.Info("✅ Successfully initiated applying resources", "changeset_entries", len(changeSet.Entries))
-	return nil
-}
-
-func setDefaultNamespaceIfNotDeclared(objects []*unstructured.Unstructured, k8sclient KubernetesClient) {
-	for _, obj := range objects {
-		// obj.GetNamespace() returns empty string for cluster scoped objects
-		// and namespaced objects where namespace is not set
-		if obj.GetNamespace() == "" {
-			// check if it is a namespaced object so we don't set namespace on cluster scoped objects
-			isns, err := k8sclient.IsObjectNamespaced(obj)
-			if err == nil && isns {
-				log.Log.Info("🔄 Setting namespace to default on ", "name", obj.GetName())
-				// This is currently not configurable.
-				obj.SetNamespace("default")
-			}
-		}
+	result := applier.Apply(wctx.Context(), objects)
+	if result.Error != nil {
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			result.Error.Error(),
+		), result.Error)
 	}
+
+	// Log changeset entries if available (will be empty for non-blocking Apply)
+	changesetCount := 0
+	if result.ResourceSet != nil {
+		changesetCount = len(result.ResourceSet.GetEntries())
+	}
+	log.Log.Info("✅ Successfully initiated applying resources", "changeset_entries", changesetCount)
+
+	// Don't send LiveState here - it's just the input LiveState, not the actual state
+	// The real LiveState will be sent after WaitForApply when we have live resources
+	actionResult := newActionResult(
+		api.ActionStatusProgressing,
+		api.ActionResultNone,
+		"Resources applied successfully",
+	)
+	// Don't set LiveState - let backend keep using its current state
+
+	return wctx.SendStatus(actionResult)
 }
 
 func objectsToYAML(objects []*unstructured.Unstructured) (string, error) {
@@ -231,9 +230,87 @@ func objectsToYAML(objects []*unstructured.Unstructured) (string, error) {
 	return gaby.NormalizeYAML(yamlData), err
 }
 
+// createApplierConfig creates an ApplierConfig from the payload
+func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error) {
+	_, kubeContext, err := parseTargetParams(payload)
+	if err != nil {
+		return ApplierConfig{}, fmt.Errorf("failed to parse target params: %v", err)
+	}
+
+	return ApplierConfig{
+		KubeContext: kubeContext,
+		LiveState:   payload.LiveState,
+		SpaceID:     payload.SpaceID.String(),
+		UnitSlug:    payload.UnitSlug,
+	}, nil
+}
+
+// getOrCreateApplier returns the applier instance, creating it if needed
+func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayload) (K8sApplier, error) {
+	// Default to CLIUtilsSSA if applierType is not set (defensive programming)
+	if w.applierType == "" {
+		w.applierType = CLIUtilsSSA
+		log.Log.Info("⚠️ Applier type was not set, defaulting to CLIUtilsSSA")
+	}
+
+	// For CLI Utils SSA, use cached applier per unit ID
+	if w.applierType == CLIUtilsSSA {
+		unitID := payload.UnitID.String()
+
+		// Check cache first
+		if unitID != "" {
+			if cached, ok := w.applierCache.Load(unitID); ok {
+				log.Log.Info("📦 Using cached applier for unit", "unitID", unitID)
+				return cached.(K8sApplier), nil
+			}
+		}
+
+		// Create new applier if not cached
+		applierConfig, err := createApplierConfig(payload)
+		if err != nil {
+			return nil, err
+		}
+		applier, err := NewK8sApplier(CLIUtilsSSA, applierConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create applier: %v", err)
+		}
+
+		// Cache the applier for future use
+		if unitID != "" {
+			w.applierCache.Store(unitID, applier)
+			log.Log.Info("📦 Cached new applier for unit", "unitID", unitID)
+		}
+
+		return applier, nil
+	}
+
+	// For other applier types, use cached instance
+	if w.applier != nil {
+		return w.applier, nil
+	}
+
+	applierConfig, err := createApplierConfig(payload)
+	if err != nil {
+		return nil, err
+	}
+	// Ensure we have a valid applier type (defensive)
+	applierType := w.applierType
+	if applierType == "" {
+		applierType = CLIUtilsSSA
+		log.Log.Info("⚠️ Applier type was empty, using CLIUtilsSSA as fallback")
+	}
+	applier, err := NewK8sApplier(applierType, applierConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create applier: %v", err)
+	}
+
+	w.applier = applier
+	return w.applier, nil
+}
+
 func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	log.Log.Info("🔄 Waiting for resources to be ready...")
-	workerParams, kubeContext, err := parseTargetParams(payload)
+	workerParams, _, err := parseTargetParams(payload)
 	if err != nil {
 		// if we can't parse the target params, we cannot look for the resources
 		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
@@ -243,7 +320,7 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		), err))
 	}
 
-	k8sclient, man, err := kubernetesClientFactory(kubeContext)
+	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -261,7 +338,6 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 			err.Error(),
 		), err))
 	}
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
 
 	if err := wctx.SendStatus(newActionResult(
 		api.ActionStatusProgressing,
@@ -271,50 +347,39 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		return err
 	}
 
-	// Set up wait options with timeout if specified
-	waitOpts := ssa.DefaultWaitOptions()
+	// Parse timeout from worker params
+	var timeout time.Duration
 	if workerParams.WaitTimeout != "" {
-		timeout, err := time.ParseDuration(workerParams.WaitTimeout)
-		if err != nil {
+		if t, err := time.ParseDuration(workerParams.WaitTimeout); err != nil {
 			log.Log.Error(err, "Invalid wait timeout format, using default", "timeout", workerParams.WaitTimeout)
 		} else {
-			waitOpts.Timeout = timeout
-			log.Log.Info("Using custom wait timeout", "timeout", timeout.String())
+			timeout = t
 		}
 	}
 
 	// TODO: do we throw an error if the wait times out?
 	// Default behavior is to wait 2m0s
-	if err := man.Wait(objects, waitOpts); err != nil {
-		log.Log.Error(err, "Failed to wait for resources")
-		if errors.Is(err, context.DeadlineExceeded) {
+	waitResult := applier.WaitForApply(wctx.Context(), objects, timeout)
+	if waitResult.Error != nil {
+		log.Log.Error(waitResult.Error, "Failed to wait for resources")
+		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
 			// log the error but don't return it
 			lib.SafeSendStatus(wctx, newActionResult(
 				api.ActionStatusProgressing,
 				api.ActionResultNone,
-				fmt.Sprintf("Failed to wait for resources: %v", err),
-			), err)
+				fmt.Sprintf("Failed to wait for resources: %v", waitResult.Error),
+			), waitResult.Error)
 			// set retry back to initial interval 30s
 			return backoff.RetryAfter(30)
 		}
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultApplyWaitFailed,
-			fmt.Sprintf("Failed to wait for resources: %v", err),
-		), err)
-	}
-	log.Log.Info("✅ All resources are ready")
-
-	liveObjects, err := getLiveObjects(wctx, man, objects, true)
-	if err != nil {
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultApplyWaitFailed,
-			fmt.Sprintf("Failed to get Live Objects: %v", err),
-		), err)
+			waitResult.Error.Error(),
+		), waitResult.Error)
 	}
 
-	yamlData, err := objectsToYAML(liveObjects)
+	yamlData, err := objectsToYAML(waitResult.LiveObjects)
 	if err != nil {
 		log.Log.Error(err, "Failed to convert objects to YAML")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -324,27 +389,98 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		), err)
 	}
 
+	// Handle inventory in LiveState for CLI Utils applier
+	liveStateData := []byte(yamlData)
+	if w.applierType == CLIUtilsSSA {
+		// Update LiveState with inventory for CLI Utils SSA applier
+		liveStateData, err = w.updateLiveStateWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+		if err != nil {
+			log.Log.Error(err, "⚠️ Failed to update LiveState with inventory, using raw YAML")
+			liveStateData = []byte(yamlData)
+		}
+	}
+
 	status := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultApplyCompleted,
-		fmt.Sprintf("Applied %d resources successfully at %s", len(liveObjects), time.Now().Format(time.RFC3339)),
+		fmt.Sprintf("Applied %d resources successfully at %s", len(waitResult.LiveObjects), time.Now().Format(time.RFC3339)),
 	)
-	status.LiveState = []byte(yamlData)
+	status.LiveState = liveStateData
+
+	// Clean up cached applier after successful WatchForApply
+	unitID := payload.UnitID.String()
+	if unitID != "" && w.applierType == CLIUtilsSSA {
+		w.applierCache.Delete(unitID)
+		log.Log.Info("🧹 Cleaned up cached applier after WatchForApply", "unitID", unitID)
+	}
+
 	wctx.SendStatus(status)
 	return nil
 }
 
-func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	_, kubeContext, err := parseTargetParams(payload)
-	if err != nil {
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			err.Error(),
-		), err)
+// updateLiveStateWithInventory updates the LiveState to include inventory ConfigMap as the first document
+func (w *KubernetesBridgeWorker) updateLiveStateWithInventory(ctx context.Context, payload api.BridgeWorkerPayload, liveObjects []*unstructured.Unstructured, yamlResources []byte) ([]byte, error) {
+	// Create inventory info
+	invInfo := &SimpleInventoryInfo{
+		namespace: "default",
+		name:      "confighub-inventory",
+		id:        fmt.Sprintf("%s-%s", payload.SpaceID.String(), payload.UnitSlug),
 	}
 
-	k8sclient, man, err := kubernetesClientFactory(kubeContext)
+	// Create a new inventory client for this operation
+	invClient := NewInMemInventoryClient()
+
+	// Extract existing inventory ConfigMap from LiveState if present
+	var inventoryCM *InventoryConfigMap
+	if len(payload.LiveState) > 0 {
+		_, existingCM, _, err := CreateInventoryFromLiveState(ctx, payload.LiveState, invInfo)
+		if err != nil {
+			log.Log.Error(err, "Failed to extract inventory from LiveState")
+			// Create new inventory ConfigMap
+			inventoryCM = NewInventoryConfigMap(invInfo)
+		} else {
+			inventoryCM = existingCM
+		}
+	} else {
+		inventoryCM = NewInventoryConfigMap(invInfo)
+	}
+
+	// Update inventory with current objects
+	var objRefs object.ObjMetadataSet
+	for _, obj := range liveObjects {
+		objRefs = append(objRefs, object.ObjMetadata{
+			GroupKind: schema.GroupKind{
+				Group: obj.GroupVersionKind().Group,
+				Kind:  obj.GetKind(),
+			},
+			Namespace: obj.GetNamespace(),
+			Name:      obj.GetName(),
+		})
+	}
+
+	// Update inventory client
+	inv, err := invClient.NewInventory(invInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new inventory: %w", err)
+	}
+	inv.SetObjectRefs(objRefs)
+	err = invClient.CreateOrUpdate(ctx, inv, inventory.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update inventory: %w", err)
+	}
+
+	// Save inventory to LiveState
+	liveState, err := SaveInventoryToLiveState(invClient, inventoryCM, invInfo, yamlResources)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save inventory to LiveState: %w", err)
+	}
+
+	log.Log.Info("📦 Updated LiveState with inventory", "inventoryID", invInfo.GetID(), "objects", len(objRefs))
+	return liveState, nil
+}
+
+func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -362,24 +498,12 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
-
 	if err := wctx.SendStatus(newActionResult(
 		api.ActionStatusProgressing,
 		api.ActionResultNone,
 		"Starting to retrieve resources...",
 	)); err != nil {
 		return err
-	}
-
-	retrievedObjects, err := getLiveObjects(wctx, man, objects, true)
-	if err != nil {
-		log.Log.Error(err, "Failed to retrieve live objects")
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			fmt.Sprintf("Failed to retrieve live objects: %v", err),
-		), err)
 	}
 
 	log.Log.Info("🔄 Retrieving resources...", "count", len(objects))
@@ -389,6 +513,15 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		"Retrieving resources...",
 	)); err != nil {
 		return err
+	}
+
+	retrievedObjects, err := applier.Refresh(wctx.Context(), objects)
+	if err != nil {
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			err.Error(),
+		), err)
 	}
 
 	yamlData, err := objectsToYAML(retrievedObjects)
@@ -401,7 +534,21 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
-	patched, drifted, err := yamlkit.DiffPatch(payload.LiveState, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider)
+	// Extract inventory from LiveState if present and preserve it
+	inventoryCM, resourcesOnly, err := SplitInventoryFromLiveState(payload.LiveState)
+	if err != nil {
+		log.Log.Error(err, "Failed to split inventory from LiveState, continuing without inventory")
+		resourcesOnly = payload.LiveState // Use the full LiveState if we can't split
+	}
+
+	// TODO: Known issue - namespace handling is not optimal here.
+	// When we split inventory from LiveState, we may lose namespace context
+	// for resources that don't explicitly specify a namespace in their YAML.
+	// This could lead to resources being applied to the wrong namespace.
+	// Future improvement: Ensure namespace is properly preserved during split.
+	//
+	// Perform diff patch on resources only (without inventory) to detect drift
+	patched, drifted, err := yamlkit.DiffPatch(resourcesOnly, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider)
 	if err != nil {
 		log.Log.Error(err, "Failed to diff patch")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -418,10 +565,34 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 			api.ActionResultRefreshAndNoDrift,
 			"Live state matches - no drift detected",
 		)
+		// Even when there's no drift, update LiveState with refreshed resources but preserve inventory
+		if inventoryCM != nil {
+			updatedLiveState, err := CombineInventoryWithResources(inventoryCM, []byte(yamlData))
+			if err != nil {
+				log.Log.Error(err, "Failed to combine inventory with refreshed resources")
+				result.LiveState = []byte(yamlData)
+			} else {
+				result.LiveState = updatedLiveState
+			}
+		} else {
+			result.LiveState = []byte(yamlData)
+		}
 		return wctx.SendStatus(result)
 	}
 
 	log.Log.Info("✅ Successfully retrieved resources", "count", len(retrievedObjects))
+
+	// Combine inventory with refreshed resources for the final LiveState
+	var updatedLiveState []byte
+	if inventoryCM != nil {
+		updatedLiveState, err = CombineInventoryWithResources(inventoryCM, []byte(yamlData))
+		if err != nil {
+			log.Log.Error(err, "Failed to combine inventory with refreshed resources")
+			updatedLiveState = []byte(yamlData)
+		}
+	} else {
+		updatedLiveState = []byte(yamlData)
+	}
 
 	result := newActionResult(
 		api.ActionStatusCompleted,
@@ -429,7 +600,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		fmt.Sprintf("Retrieved %d resources successfully at %s", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 	)
 	result.Data = patched
-	result.LiveState = []byte(yamlData)
+	result.LiveState = updatedLiveState // Use LiveState with preserved inventory
 	return wctx.SendStatus(result)
 }
 
@@ -511,7 +682,6 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			objects = append(objects, u)
 		}
 
-		setDefaultNamespaceIfNotDeclared(objects, k8sclient)
 		// Only get live objects if we're importing from stdin/file (legacy flow)
 		if err := wctx.SendStatus(newActionResult(
 			api.ActionStatusProgressing,
@@ -579,27 +749,96 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		), err)
 	}
 
+	// Create inventory for imported resources
+
+	// Create inventory info
+	// Use default values for SpaceID and UnitSlug since they're not in KubernetesWorkerParams
+	invInfo := SimpleInventoryInfo{
+		id:        DefaultInventoryID,
+		name:      DefaultInventoryName,
+		namespace: DefaultNamespace,
+	}
+
+	// Create a new inventory client for this operation
+	invClient := NewInMemInventoryClient()
+	inventoryCM := NewInventoryConfigMap(&invInfo)
+
+	// Add imported objects to inventory
+	var objRefs object.ObjMetadataSet
+	for _, obj := range retrievedObjects {
+		objRefs = append(objRefs, object.ObjMetadata{
+			GroupKind: schema.GroupKind{
+				Group: obj.GroupVersionKind().Group,
+				Kind:  obj.GetKind(),
+			},
+			// For cluster-scoped resources (like ClusterRole, PersistentVolume),
+			// GetNamespace() returns an empty string which is correct.
+			// The inventory client handles this properly by not setting namespace
+			// metadata for cluster-scoped resources.
+			Namespace: obj.GetNamespace(),
+			Name:      obj.GetName(),
+		})
+	}
+
+	// Replace inventory with imported objects
+	inv, err := invClient.NewInventory(&invInfo)
+	if err != nil {
+		log.Log.Error(err, "Failed to create new inventory")
+		// Continue without inventory tracking
+		result := newActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultImportCompleted,
+			fmt.Sprintf("Imported %d resources successfully at %s (inventory tracking failed but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
+		)
+		result.Data = []byte(yamlForData)
+		result.LiveState = []byte(yamlForLiveState)
+		return wctx.SendStatus(result)
+	}
+
+	inv.SetObjectRefs(objRefs)
+	err = invClient.CreateOrUpdate(wctx.Context(), inv, inventory.UpdateOptions{})
+	if err != nil {
+		log.Log.Error(err, "Failed to update inventory with imported objects")
+		// Continue without inventory tracking
+		result := newActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultImportCompleted,
+			fmt.Sprintf("Imported %d resources successfully at %s (inventory update failed but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
+		)
+		result.Data = []byte(yamlForData)
+		result.LiveState = []byte(yamlForLiveState)
+		return wctx.SendStatus(result)
+	}
+
+	// Save inventory to LiveState
+	liveStateWithInventory, err := SaveInventoryToLiveState(invClient, inventoryCM, &invInfo, []byte(yamlForLiveState))
+	if err != nil {
+		log.Log.Error(err, "Failed to save inventory to LiveState")
+		// Continue without inventory in LiveState
+		result := newActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultImportCompleted,
+			fmt.Sprintf("Imported %d resources successfully at %s (inventory not saved to LiveState but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
+		)
+		result.Data = []byte(yamlForData)
+		result.LiveState = []byte(yamlForLiveState)
+		return wctx.SendStatus(result)
+	}
+
+	log.Log.Info("📦 Created inventory for imported resources", "inventoryID", invInfo.id, "objects", len(objRefs))
+
 	result := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultImportCompleted,
 		fmt.Sprintf("Imported %d resources successfully at %s", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 	)
 	result.Data = []byte(yamlForData)
-	result.LiveState = []byte(yamlForLiveState)
+	result.LiveState = liveStateWithInventory
 	return wctx.SendStatus(result)
 }
 
 func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	_, kubeContext, err := parseTargetParams(payload)
-	if err != nil {
-		return lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultDestroyFailed,
-			err.Error(),
-		), err)
-	}
-
-	k8sclient, man, err := kubernetesClientFactory(kubeContext)
+	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -617,7 +856,6 @@ func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
 	if err = wctx.SendStatus(newActionResult(
 		api.ActionStatusProgressing,
 		api.ActionResultNone,
@@ -626,23 +864,27 @@ func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload a
 		return err
 	}
 
-	log.Log.Info("🔄 Starting resource destruction...")
-	changeSet, err := man.DeleteAll(context.Background(), objects, ssa.DefaultDeleteOptions())
-	if err != nil {
-		log.Log.Error(err, "Failed to delete resources")
+	result := applier.Destroy(wctx.Context(), objects)
+	if result.Error != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyFailed,
-			fmt.Sprintf("Failed to delete resources: %v", err),
-		), err)
+			result.Error.Error(),
+		), result.Error)
 	}
-	log.Log.Info("✅ Successfully initiated destruction of resources", "changeset_entries", len(changeSet.Entries))
+
+	// Log changeset entries if available (will be empty for non-blocking Destroy)
+	changesetCount := 0
+	if result.ResourceSet != nil {
+		changesetCount = len(result.ResourceSet.GetEntries())
+	}
+	log.Log.Info("✅ Successfully initiated destruction of resources", "changeset_entries", changesetCount)
 	return nil
 }
 
 func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	log.Log.Info("🔄 Waiting for resources to be terminated...")
-	workerParams, kubeContext, err := parseTargetParams(payload)
+	workerParams, _, err := parseTargetParams(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -651,7 +893,7 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 		), err)
 	}
 
-	k8sclient, man, err := kubernetesClientFactory(kubeContext)
+	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -668,7 +910,6 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 			err.Error(),
 		), err)
 	}
-	setDefaultNamespaceIfNotDeclared(objects, k8sclient)
 
 	if err = wctx.SendStatus(newActionResult(
 		api.ActionStatusProgressing,
@@ -678,33 +919,86 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 		return err
 	}
 
-	// Set up wait options with timeout if specified
-	waitOpts := ssa.DefaultWaitOptions()
+	// Parse timeout from worker params
+	var timeout time.Duration
 	if workerParams.WaitTimeout != "" {
-		timeout, err := time.ParseDuration(workerParams.WaitTimeout)
-		if err != nil {
+		if t, err := time.ParseDuration(workerParams.WaitTimeout); err != nil {
 			log.Log.Error(err, "Invalid wait timeout format, using default", "timeout", workerParams.WaitTimeout)
 		} else {
-			waitOpts.Timeout = timeout
-			log.Log.Info("Using custom wait timeout", "timeout", timeout.String())
+			timeout = t
 		}
 	}
-	if err := man.WaitForTermination(objects, waitOpts); err != nil {
-		log.Log.Error(err, "Failed to wait for resource termination")
+
+	waitResult := applier.WaitForDestroy(wctx.Context(), objects, timeout)
+	if waitResult.Error != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyWaitFailed,
-			fmt.Sprintf("Failed to wait for resource termination: %v", err),
-		), err)
+			waitResult.Error.Error(),
+		), waitResult.Error)
 	}
-	log.Log.Info("✅ All resources terminated successfully")
+
+	// For CLIUtils applier, use the LiveState from LiveStateBuilder
+	// For other appliers, build LiveState from the returned LiveObjects
+	var liveStateData []byte
+	if w.applierType == CLIUtilsSSA {
+		// CLIUtils already built the LiveState with LiveStateBuilder
+		// Convert LiveObjects to YAML and add inventory
+		if len(waitResult.LiveObjects) > 0 {
+			yamlData, err := objectsToYAML(waitResult.LiveObjects)
+			if err != nil {
+				log.Log.Error(err, "Failed to convert remaining objects to YAML")
+				liveStateData = []byte{}
+			} else {
+				// Add inventory for remaining resources
+				liveStateData, err = w.updateLiveStateWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+				if err != nil {
+					log.Log.Error(err, "Failed to update LiveState with inventory")
+					liveStateData = []byte(yamlData)
+				}
+			}
+		} else {
+			// All resources destroyed - return empty LiveState
+			liveStateData = []byte{}
+		}
+	} else {
+		// For other appliers, check if anything remains
+		if len(waitResult.LiveObjects) > 0 {
+			yamlData, err := objectsToYAML(waitResult.LiveObjects)
+			if err != nil {
+				log.Log.Error(err, "Failed to convert remaining objects to YAML")
+				liveStateData = []byte{}
+			} else {
+				liveStateData = []byte(yamlData)
+			}
+		} else {
+			liveStateData = []byte{}
+		}
+	}
+
+	// Log the ResourceSet if available
+	changesetCount := 0
+	if waitResult.ResourceSet != nil {
+		changesetCount = len(waitResult.ResourceSet.GetEntries())
+	}
+	log.Log.Info("📦 Destroy completed",
+		"deletedResources", changesetCount,
+		"remainingResources", len(waitResult.LiveObjects))
 
 	result := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultDestroyCompleted,
 		fmt.Sprintf("Destroyed resources successfully at %s", time.Now().Format(time.RFC3339)),
 	)
-	result.LiveState = []byte{}
+	result.LiveState = liveStateData
+
+	// Clean up cached applier after successful WatchForDestroy
+	unitID := payload.UnitID.String()
+	if unitID != "" && w.applierType == CLIUtilsSSA {
+		w.applierCache.Delete(unitID)
+		log.Log.Info("🧹 Cleaned up cached applier after WatchForDestroy", "unitID", unitID)
+	}
+
 	return wctx.SendStatus(result)
 }
 

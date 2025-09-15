@@ -405,7 +405,15 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 	// Do not log ActionResult of Hearbeat.
 	// It's too noisy.
 	if result.Action != api.ActionHeartbeat {
-		log.Printf("Result body: %s", string(resultJSON))
+		// Create a copy for logging with sensitive data redacted
+		logResult := *result
+		// Clear the large/sensitive fields and replace with size info
+		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
+		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
+		logResult.Outputs = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Outputs)))
+		
+		filteredJSON, _ := json.Marshal(logResult)
+		log.Printf("Result body: %s", string(filteredJSON))
 	} else {
 		log.Printf("Sending Heartbeat acknowledged")
 	}

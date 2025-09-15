@@ -191,7 +191,7 @@ func handleBulkDestroyResponse(results *[]goclientnew.UnitActionResponse) error 
 			queuedOps = append(queuedOps, result.Action)
 			if !quiet && !wait {
 				// Fetch unit details to get the slug
-				unitDetails, err := apiGetUnit(result.Action.UnitID.String(), "Slug")
+				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
 				if err != nil {
 					// Fallback to UUID if we can't get the slug
 					tprint("Queued destroy for unit (%s)", result.Action.UnitID)
@@ -235,7 +235,13 @@ func handleBulkDestroyResponse(results *[]goclientnew.UnitActionResponse) error 
 				if err != nil {
 					hasErrors = true
 					if !quiet {
-						tprint("Destroy operation failed for unit %s: %v", op.UnitID, err)
+						// Try to get unit slug for better error message
+						unitDetails, fetchErr := apiGetUnitInSpace(op.UnitID.String(), op.SpaceID.String(), "Slug")
+						if fetchErr == nil && unitDetails != nil {
+							tprint("Destroy operation failed for unit %s (%s): %v", unitDetails.Slug, op.UnitID, err)
+						} else {
+							tprint("Destroy operation failed for unit %s: %v", op.UnitID, err)
+						}
 					}
 				}
 			}

@@ -123,7 +123,7 @@ const (
 
 // TODO: worker types should map to combinations of ToolchainType and ProviderType
 var availableBridgeWorkers = map[string]api.BridgeWorker{
-	WorkerTypeKubernetes:          &impl.KubernetesBridgeWorker{},
+	WorkerTypeKubernetes:          impl.NewKubernetesBridgeWorker(),
 	WorkerTypeFluxOCIWriter:       impl.NewFluxOCIWorker(),
 	WorkerTypeOpenTofuAWS:         &impl.OpenTofuAWSWorker{},
 	WorkerTypePropertiesConfigMap: &impl.ConfigMapBridgeWorker{},
