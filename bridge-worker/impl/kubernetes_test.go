@@ -346,18 +346,21 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 		{
 			name: "legacy resource info list",
 			payload: func() api.BridgeWorkerPayload {
-				resourceInfoList := []api.ResourceInfo{
+				resourceInfoList := goclientnew.ResourceInfoList{
 					{ResourceType: "v1/ConfigMap", ResourceName: "default/test-configmap"},
 				}
-				resourceInfoListBytes, _ := json.Marshal(resourceInfoList)
+				importRequest := &goclientnew.ImportRequest{
+					ResourceInfoList: &resourceInfoList,
+				}
+				extraParamsBytes, _ := json.Marshal(importRequest)
 				return api.BridgeWorkerPayload{
 					TargetParams: testTargetParams,
-					Data:         resourceInfoListBytes,
+					ExtraParams:  extraParamsBytes,
 				}
 			}(),
 			setupMockFunc:       setupMockGetLiveObjects,
 			expectedError:       false,
-			expectedStatusCalls: 6,
+			expectedStatusCalls: 4,
 		},
 		{
 			name: "default behavior",

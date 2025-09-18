@@ -94,7 +94,7 @@ func init() {
 	enableWaitFlag(helmInstallCmd)
 
 	// Enable quiet flag for this command
-	enableQuietFlagForOperation(helmInstallCmd)
+	enableQuietFlag(helmInstallCmd)
 
 	// Compose command hierarchy
 	helmCmd.AddCommand(helmInstallCmd) // helmCmd here refers to the package-level variable

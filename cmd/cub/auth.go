@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/confighub/sdk/cubapi"
 	"github.com/spf13/cobra"
 )
 
@@ -67,8 +68,8 @@ func LogoutURL(coordinate Coordinate) string {
 	return fmt.Sprintf("%s://%s/auth/logout", parsedURL.Scheme, parsedURL.Host)
 }
 
-func LoadSession() (AuthSession, error) {
-	var session AuthSession
+func LoadSession() (cubapi.AuthSession, error) {
+	var session cubapi.AuthSession
 
 	// Define the config file path
 	configFile := filepath.Join(os.Getenv("HOME"), ".confighub", "session.json")
@@ -87,7 +88,7 @@ func LoadSession() (AuthSession, error) {
 	return session, nil
 }
 
-func SaveSession(session AuthSession) error {
+func SaveSession(session cubapi.AuthSession) error {
 	// Define the config directory and file path
 	configDir := filepath.Join(os.Getenv("HOME"), ".confighub")
 	configFile := filepath.Join(configDir, "session.json")

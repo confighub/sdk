@@ -33,8 +33,8 @@ import (
 
 // Constants for annotations and labels
 const (
-	SpaceIDAnnotation    = "confighub.com/SpaceID"
-	UnitSlugAnnotation   = "confighub.com/UnitSlug"
+	SpaceIDAnnotation  = "confighub.com/SpaceID"
+	UnitSlugAnnotation = "confighub.com/UnitSlug"
 	// Using a nil UUID (all zeros) as the default when SpaceID is not provided
 	// This is a valid UUID format that won't cause parsing errors
 	DefaultSpaceID       = "00000000-0000-0000-0000-000000000000"
@@ -384,6 +384,7 @@ func (a *CLIUtilsApplier) Refresh(ctx context.Context, objects []*unstructured.U
 	}
 
 	a.setDefaultNamespaces(objects)
+	// TODO: This should not return an error in the case of Not Found
 	return a.getLiveObjects(ctx, objects, true)
 }
 

@@ -156,15 +156,15 @@ func GetResourceInfo(doc *gaby.YamlDoc, resourceProvider ResourceProvider) (*api
 	var err error
 	resourceCategory, err = resourceProvider.ResourceCategoryGetter(doc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get resource category for config resource/element")
 	}
 	resourceType, err = resourceProvider.ResourceTypeGetter(doc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get resource type for config "+string(resourceCategory))
 	}
 	resourceName, err = resourceProvider.ResourceNameGetter(doc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get resource name for config "+string(resourceCategory)+" type "+string(resourceType))
 	}
 	resourceInfo := &api.ResourceInfo{
 		ResourceName:             resourceName,
@@ -185,7 +185,7 @@ func VisitResources(parsedData gaby.Container, output any, resourceProvider Reso
 	for index, doc := range parsedData {
 		resourceInfo, err := GetResourceInfo(doc, resourceProvider)
 		if err != nil {
-			multiErrs = append(multiErrs, err)
+			multiErrs = append(multiErrs, errors.Wrap(err, fmt.Sprintf("error in resource/element %d", index)))
 			continue
 		}
 		newOutput, errs := visitor(doc, output, index, resourceInfo)
@@ -1843,7 +1843,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		modifiedDoc := modifiedParsedData[modifiedDocIndex]
 		modifiedResourceCategory, modifiedResourceType, modifiedResourceName, err := GetResourceCategoryTypeName(modifiedDoc, resourceProvider)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, fmt.Sprintf("error in modified resource/element %d", modifiedDocIndex))
 		}
 		modifiedResourceNameOnly := resourceProvider.RemoveScopeFromResourceName(modifiedResourceName)
 
@@ -1868,7 +1868,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			previousDoc := previousParsedData[previousDocIndex]
 			previousResourceCategory, previousResourceType, previousResourceName, err := GetResourceCategoryTypeName(previousDoc, resourceProvider)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, fmt.Sprintf("error in previous resource/element %d", previousDocIndex))
 			}
 			if previousResourceCategory != modifiedResourceCategory {
 				continue
@@ -2151,12 +2151,9 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			parsedData[docIndex] = valueDoc
 			// Some paths also could have been modified
 		case api.MutationTypeDelete:
-			// TODO: Make sure this works
-			// TODO: Probably should eliminate empty docs in gaby_multidoc.go
-			err := doc.DeleteP(".")
-			if err != nil {
-				log.Infof("error deleting root path: %v", err)
-			}
+			// Mark the document as deleted by setting it to nil
+			// The document will be filtered out when serializing the result
+			parsedData[docIndex] = nil
 			// Shouldn't be any modified paths
 			continue
 		case api.MutationTypeNone:

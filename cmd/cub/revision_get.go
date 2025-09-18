@@ -195,6 +195,23 @@ func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*
 	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
 }
 
+func apiGetRevisionFromNumberInSpace(revNo int64, unitID string, spaceID string, selectParam string) (*goclientnew.Revision, error) {
+	// The default for get is "*" rather than auto-selected list columns
+	if selectParam == "" {
+		selectParam = "*"
+	}
+	revisions, err := apiListRevisions(spaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
+	if err != nil {
+		return nil, err
+	}
+	for _, extendedRev := range revisions {
+		if int64(extendedRev.Revision.RevisionNum) == revNo {
+			return extendedRev.Revision, nil
+		}
+	}
+	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, spaceID)
+}
+
 func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {

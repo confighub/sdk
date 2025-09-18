@@ -80,7 +80,7 @@ func init() {
 	enableWaitFlag(helmUpgradeCmd)
 
 	// Enable quiet flag for this command
-	enableQuietFlagForOperation(helmUpgradeCmd)
+	enableQuietFlag(helmUpgradeCmd)
 
 	// Compose command hierarchy
 	helmCmd.AddCommand(helmUpgradeCmd)

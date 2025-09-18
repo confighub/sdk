@@ -78,9 +78,12 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 	return getCommandHelp(baseHelp, agentContext)
 }
 
+var liveStateOnly bool
+
 func init() {
 	addStandardGetFlags(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	unitGetCmd.Flags().BoolVar(&liveStateOnly, "live-state-only", false, "show live state without other response details")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
 	unitCmd.AddCommand(unitGetCmd)
 }
@@ -114,7 +117,7 @@ func countResources(unitDetails *goclientnew.Unit) int {
 }
 
 func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
-	if !dataOnly {
+	if !dataOnly && !liveStateOnly {
 		view := tableView()
 		view.Append([]string{"Name", unitDetails.Unit.Slug})
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
@@ -210,7 +213,8 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			// TODO: Make this prettier
 			displayJSON(unitDetails.Unit.MutationSources)
 		}
-	} else if dataOnly && flagFilename != "" {
+	}
+	if dataOnly && flagFilename != "" {
 		yamlBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
 		if err != nil {
 			failOnError(err)
@@ -220,12 +224,19 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			failOnError(err)
 		}
 		tprintRaw(fmt.Sprintf("Config data written to %s", flagFilename))
-	} else if dataOnly {
-		yamlBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
+	} else if dataOnly { // TODO: also when verbose?
+		dataBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
 		if err != nil {
 			failOnError(err)
 		}
-		tprintRaw(string(yamlBytes))
+		tprintRaw(string(dataBytes))
+	}
+	if liveStateOnly { // TODO: also when verbose?
+		liveStateBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.LiveState)
+		if err != nil {
+			failOnError(err)
+		}
+		tprintRaw(string(liveStateBytes))
 	}
 }
 

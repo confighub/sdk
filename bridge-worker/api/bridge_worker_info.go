@@ -28,6 +28,7 @@ type Target struct {
 // ProviderType corresponds to the service API and client implementation
 // TODO: Revisit whether this makes sense
 const (
+	ProviderConfigHub     ProviderType = "ConfigHub"
 	ProviderKubernetes    ProviderType = "Kubernetes"
 	ProviderFluxOCIWriter ProviderType = "FluxOCIWriter"
 	ProviderConfigMap     ProviderType = "ConfigMap"

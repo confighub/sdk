@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
@@ -16,6 +17,7 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/google/uuid"
+	"sigs.k8s.io/yaml"
 )
 
 // Entity types
@@ -35,6 +37,9 @@ const (
 	// Pseudo-EntityType
 	EntityTypeInventory = "Inventory"
 )
+
+// ErrEntityNotFound is used to mark entities that are not found during refresh
+var ErrEntityNotFound = errors.New("entity not found")
 
 // Apply processes the configuration data and returns the results and updated inventory.
 func Apply(
@@ -72,10 +77,7 @@ func Apply(
 
 	// Track results and build new inventory
 	var results []ApplyResult
-	newInventory := &Inventory{
-		EntityType: EntityTypeInventory,
-		Resources:  []InventoryResource{},
-	}
+	newInventory := newInventory()
 
 	// Create visitor function
 	visitor := func(yamlDoc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
@@ -178,6 +180,14 @@ func Apply(
 	return results, newInventory, nil
 }
 
+func newInventory() *Inventory {
+	newInventory := &Inventory{
+		EntityType: EntityTypeInventory,
+		Resources:  []InventoryResource{},
+	}
+	return newInventory
+}
+
 type ApplyResult struct {
 	EntityType string
 	EntityName string
@@ -196,6 +206,36 @@ type InventoryResource struct {
 type Inventory struct {
 	EntityType string              `yaml:"EntityType"`
 	Resources  []InventoryResource `yaml:"Resources"`
+}
+
+// GetRevisionByNum fetches a revision by its RevisionNum for a specific unit
+func GetRevisionByNum(ctx context.Context, client *goclientnew.ClientWithResponses, spaceID, unitID string, revisionNum int64) (*goclientnew.ExtendedRevision, error) {
+	spaceUUID, err := uuid.Parse(spaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid space ID: %w", err)
+	}
+
+	unitUUID, err := uuid.Parse(unitID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid unit ID: %w", err)
+	}
+
+	whereFilter := fmt.Sprintf("RevisionNum = %d", revisionNum)
+	params := &goclientnew.ListExtendedRevisionsParams{
+		Where: &whereFilter,
+	}
+
+	resp, err := client.ListExtendedRevisionsWithResponse(ctx, spaceUUID, unitUUID, params)
+	if IsAPIError(err, resp) {
+		return nil, InterpretErrorGeneric(err, resp)
+	}
+	if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
+		return nil, fmt.Errorf("revision %d not found for unit %s in space %s", revisionNum, unitID, spaceID)
+	}
+
+	// Return the first match (there should only be one)
+	extendedRevision := (*resp.JSON200)[0]
+	return &extendedRevision, nil
 }
 
 // getSpaceIDFromSlug fetches only the SpaceID of a space by its slug
@@ -217,9 +257,9 @@ func getSpaceIDFromSlug(ctx context.Context, client *goclientnew.ClientWithRespo
 	return (*resp.JSON200)[0].Space.SpaceID.String(), nil
 }
 
-// getEntityBySlug fetches an entity by its slug, similar to the old apiGet* functions
+// GetEntityBySlug fetches an entity by its slug, similar to the old apiGet* functions
 // but using direct client library calls without global variable dependencies
-func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponses, entityType, slug, spaceID string) (interface{}, error) {
+func GetEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponses, entityType, slug, spaceID string) (interface{}, error) {
 	// For apply operations, we need all fields (no select parameter)
 	// This is the default behavior when no Select parameter is provided
 
@@ -237,7 +277,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("space %s not found", slug)
+			return nil, errors.Mark(fmt.Errorf("space %s not found", slug), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Space, nil
 
@@ -251,7 +291,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("unit %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("unit %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Unit, nil
 
@@ -265,7 +305,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("link %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("link %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Link, nil
 
@@ -279,7 +319,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("view %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("view %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].View, nil
 
@@ -293,7 +333,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("filter %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("filter %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Filter, nil
 
@@ -307,7 +347,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("trigger %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("trigger %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Trigger, nil
 
@@ -321,7 +361,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("invocation %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("invocation %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Invocation, nil
 
@@ -335,7 +375,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("changeset %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("changeset %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].ChangeSet, nil
 
@@ -349,7 +389,7 @@ func getEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 			return nil, InterpretErrorGeneric(err, resp)
 		}
 		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
-			return nil, fmt.Errorf("tag %s not found in space %s", slug, spaceID)
+			return nil, errors.Mark(fmt.Errorf("tag %s not found in space %s", slug, spaceID), ErrEntityNotFound)
 		}
 		return (*resp.JSON200)[0].Tag, nil
 
@@ -386,8 +426,8 @@ func processEntity(ctx context.Context, client *goclientnew.ClientWithResponses,
 		return "", nil, "", fmt.Errorf("failed to get space '%s' for %s: %w", spaceSlug, entityName, err)
 	}
 
-	// Check if entity exists using the new getEntityBySlug function
-	existingEntity, err := getEntityBySlug(ctx, client, entityType, entityName, spaceID)
+	// Check if entity exists using the new GetEntityBySlug function
+	existingEntity, err := GetEntityBySlug(ctx, client, entityType, entityName, spaceID)
 	entityExists := err == nil && existingEntity != nil
 
 	// Create or update the entity
@@ -422,7 +462,7 @@ func isPatchEmpty(patch []byte) bool {
 
 func processSpace(ctx context.Context, client *goclientnew.ClientWithResponses, jsonData []byte, spaceName string, lastAppliedJSON []byte) (string, interface{}, string, error) {
 	// Check if space exists
-	existingEntity, err := getEntityBySlug(ctx, client, EntityTypeSpace, spaceName, "")
+	existingEntity, err := GetEntityBySlug(ctx, client, EntityTypeSpace, spaceName, "")
 	existingSpace, _ := existingEntity.(*goclientnew.Space)
 	spaceExists := err == nil && existingSpace != nil
 
@@ -660,14 +700,176 @@ func updateEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 	}
 }
 
+func Destroy(ctx context.Context, client *goclientnew.ClientWithResponses, inventory *Inventory, defaultSpaceSlug string) []ApplyResult {
+	return pruneResources(ctx, client, inventory, newInventory(), defaultSpaceSlug)
+}
+
+// Refresh gets the current state of entities in the inventory and updates the config data, inventory, and live state.
+// It returns the same ApplyResult structure as Apply, along with updated inventory and refreshed config data.
+func Refresh(
+	ctx context.Context,
+	client *goclientnew.ClientWithResponses,
+	currentData []byte,
+	oldInventory *Inventory,
+	defaultSpaceSlug string,
+	liveRevisionNum int64,
+	spaceID, unitID string,
+) ([]ApplyResult, *Inventory, []byte, error) {
+	var results []ApplyResult
+	newInventory := newInventory()
+
+	// If there's no old inventory, nothing to refresh
+	if oldInventory == nil || oldInventory.Resources == nil {
+		return results, newInventory, currentData, nil
+	}
+
+	// Track successful entities for building LiveState
+	type entityWithType struct {
+		Entity     interface{}
+		EntityType string
+		SpaceSlug  string
+	}
+	var successfulEntities []entityWithType
+
+	// Process each resource in the inventory
+	for _, resource := range oldInventory.Resources {
+		spaceSlug, resourceName := cubkit.ConfigHubResourceProvider.ParseResourceName(api.ResourceName(resource.ResourceName))
+		result := ApplyResult{
+			EntityType: resource.ResourceType,
+			EntityName: resourceName,
+			SpaceSlug:  spaceSlug,
+		}
+
+		// Get space ID if not a Space entity
+		var entitySpaceID string
+		if resource.ResourceType != EntityTypeSpace {
+			if spaceSlug == "" {
+				spaceSlug = defaultSpaceSlug
+			}
+			result.SpaceSlug = spaceSlug
+			var err error
+			entitySpaceID, err = getSpaceIDFromSlug(ctx, client, spaceSlug)
+			if err != nil {
+				result.Action = "failed"
+				result.Error = fmt.Errorf("failed to get space '%s': %w", spaceSlug, err)
+				results = append(results, result)
+				continue
+			}
+		}
+
+		// Get the current entity state
+		entity, err := GetEntityBySlug(ctx, client, resource.ResourceType, resourceName, entitySpaceID)
+		if err != nil {
+			// If entity is not found, omit it from the new inventory, config data, and live state
+			if errors.Is(err, ErrEntityNotFound) {
+				result.Action = "deleted"
+				result.Error = nil
+				// Don't add to new inventory since entity no longer exists
+			} else {
+				result.Action = "failed"
+				result.Error = err
+			}
+			results = append(results, result)
+			continue
+		}
+
+		// Entity exists - include it in the refresh
+		result.Action = "refreshed"
+		result.Entity = entity
+
+		// Extract entity ID based on type
+		switch resource.ResourceType {
+		case EntityTypeSpace:
+			if space, ok := entity.(*goclientnew.Space); ok {
+				result.EntityID = space.SpaceID.String()
+			}
+		case EntityTypeUnit:
+			if unit, ok := entity.(*goclientnew.Unit); ok {
+				result.EntityID = unit.UnitID.String()
+			}
+		case EntityTypeLink:
+			if link, ok := entity.(*goclientnew.Link); ok {
+				result.EntityID = link.LinkID.String()
+			}
+		case EntityTypeView:
+			if view, ok := entity.(*goclientnew.View); ok {
+				result.EntityID = view.ViewID.String()
+			}
+		case EntityTypeFilter:
+			if filter, ok := entity.(*goclientnew.Filter); ok {
+				result.EntityID = filter.FilterID.String()
+			}
+		case EntityTypeTrigger:
+			if trigger, ok := entity.(*goclientnew.Trigger); ok {
+				result.EntityID = trigger.TriggerID.String()
+			}
+		case EntityTypeInvocation:
+			if invocation, ok := entity.(*goclientnew.Invocation); ok {
+				result.EntityID = invocation.InvocationID.String()
+			}
+		case EntityTypeChangeSet:
+			if changeSet, ok := entity.(*goclientnew.ChangeSet); ok {
+				result.EntityID = changeSet.ChangeSetID.String()
+			}
+		case EntityTypeTag:
+			if tag, ok := entity.(*goclientnew.Tag); ok {
+				result.EntityID = tag.TagID.String()
+			}
+		}
+
+		results = append(results, result)
+
+		// Add to new inventory and successful entities
+		newInventory.Resources = append(newInventory.Resources, InventoryResource{
+			ResourceType: resource.ResourceType,
+			ResourceName: resource.ResourceName,
+		})
+
+		successfulEntities = append(successfulEntities, entityWithType{
+			Entity:     entity,
+			EntityType: resource.ResourceType,
+			SpaceSlug:  spaceSlug,
+		})
+	}
+
+	// Build the updated config data from refreshed entities
+	// Refresh should reflect the current state in ConfigHub, so we rebuild from successful entities
+	var updatedConfigData []byte
+	if len(successfulEntities) > 0 {
+		var configDataDocs []string
+		for _, item := range successfulEntities {
+			// Use MarshalYAMLWithoutReadonlyFields to filter out readonly fields and add SpaceSlug
+			entityYAML, err := MarshalYAMLWithoutReadonlyFields(item.EntityType, item.Entity, item.SpaceSlug)
+			if err != nil {
+				return nil, nil, nil, fmt.Errorf("failed to marshal entity to YAML: %w", err)
+			}
+			configDataDocs = append(configDataDocs, strings.TrimSpace(string(entityYAML)))
+		}
+		// Join all documents with YAML document separator
+		updatedConfigData = []byte(strings.Join(configDataDocs, "\n---\n"))
+	} else {
+		// No entities exist anymore
+		updatedConfigData = []byte{}
+	}
+
+	return results, newInventory, updatedConfigData, nil
+}
+
 func pruneResources(ctx context.Context, client *goclientnew.ClientWithResponses, oldInventory, newInventory *Inventory, defaultSpaceSlug string) []ApplyResult {
 	var results []ApplyResult
 
+	// If there's no old inventory, nothing to prune
+	if oldInventory == nil || oldInventory.Resources == nil {
+		return results
+	}
+
 	// Create a map of new resources for quick lookup
 	newResources := make(map[string]bool)
-	for _, resource := range newInventory.Resources {
-		key := fmt.Sprintf("%s:%s", resource.ResourceType, resource.ResourceName)
-		newResources[key] = true
+	if newInventory != nil && newInventory.Resources != nil {
+		for _, resource := range newInventory.Resources {
+			key := fmt.Sprintf("%s:%s", resource.ResourceType, resource.ResourceName)
+			newResources[key] = true
+		}
 	}
 
 	// Check each resource in old inventory
@@ -706,8 +908,8 @@ func deleteResource(ctx context.Context, client *goclientnew.ClientWithResponses
 		}
 	}
 
-	// Get the entity to delete using the new getEntityBySlug function
-	existingEntity, err := getEntityBySlug(ctx, client, resource.ResourceType, resourceName, spaceID)
+	// Get the entity to delete using the new GetEntityBySlug function
+	existingEntity, err := GetEntityBySlug(ctx, client, resource.ResourceType, resourceName, spaceID)
 	if err != nil {
 		// If entity is not found, consider it already deleted (success)
 		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
@@ -831,4 +1033,190 @@ func deleteResource(ctx context.Context, client *goclientnew.ClientWithResponses
 	}
 
 	return result
+}
+
+// MarshalYAMLWithoutReadonlyFields marshals an entity to YAML while excluding readonly fields.
+// It uses the Patch types which contain only the mutable fields that should be included in LiveState.
+// It also removes null fields, the Version field, and adds SpaceSlug for space-resident entities.
+func MarshalYAMLWithoutReadonlyFields(entityType string, entity interface{}, spaceSlug string) ([]byte, error) {
+	// Helper function to clean up the map representation
+	cleanupMap := func(data map[string]interface{}, isSpaceResident bool, entType string) map[string]interface{} {
+		cleaned := make(map[string]interface{})
+
+		for key, value := range data {
+			// Skip Version field
+			if key == "Version" {
+				continue
+			}
+
+			// Skip null values
+			if value == nil {
+				continue
+			}
+
+			// Handle nested maps (like Labels, Annotations, DeleteGates, etc.)
+			if mapValue, ok := value.(map[string]interface{}); ok {
+				cleanedMap := make(map[string]interface{})
+				hasNonNullValue := false
+				for k, v := range mapValue {
+					if v != nil {
+						cleanedMap[k] = v
+						hasNonNullValue = true
+					}
+				}
+				// Only include the map if it has non-null values
+				if hasNonNullValue {
+					cleaned[key] = cleanedMap
+				}
+			} else {
+				cleaned[key] = value
+			}
+		}
+
+		// Add SpaceSlug for space-resident entities (not for Space itself)
+		if isSpaceResident && spaceSlug != "" && entType != EntityTypeSpace {
+			cleaned["SpaceSlug"] = spaceSlug
+		}
+
+		return cleaned
+	}
+
+	// Determine if entity is space-resident
+	isSpaceResident := entityType != EntityTypeSpace && entityType != EntityTypeInventory
+
+	// First marshal the entity to get into a map form
+	var entityMap map[string]interface{}
+	yamlData, err := yaml.Marshal(entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal entity to YAML: %w", err)
+	}
+	if err := yaml.Unmarshal(yamlData, &entityMap); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal entity to map: %w", err)
+	}
+
+	// Based on the entity type, unmarshal into the appropriate Patch type, then to map for cleaning
+	switch entityType {
+	case EntityTypeUnit:
+		var patchUnit goclientnew.PatchUnitApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchUnit); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Unit to patch type: %w", err)
+		}
+		// Marshal to map for cleaning
+		patchData, _ := yaml.Marshal(patchUnit)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeSpace:
+		var patchSpace goclientnew.PatchSpaceApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchSpace); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Space to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchSpace)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeTarget:
+		var patchTarget goclientnew.PatchTargetApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchTarget); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Target to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchTarget)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeBridgeWorker:
+		var patchBridgeWorker goclientnew.PatchBridgeWorkerApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchBridgeWorker); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal BridgeWorker to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchBridgeWorker)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeChangeSet:
+		var patchChangeSet goclientnew.PatchChangeSetApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchChangeSet); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal ChangeSet to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchChangeSet)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeFilter:
+		var patchFilter goclientnew.PatchFilterApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchFilter); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Filter to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchFilter)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeInvocation:
+		var patchInvocation goclientnew.PatchInvocationApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchInvocation); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Invocation to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchInvocation)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeLink:
+		var patchLink goclientnew.PatchLinkApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchLink); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Link to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchLink)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeTag:
+		var patchTag goclientnew.PatchTagApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchTag); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Tag to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchTag)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeTrigger:
+		var patchTrigger goclientnew.PatchTriggerApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchTrigger); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal Trigger to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchTrigger)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeView:
+		var patchView goclientnew.PatchViewApplicationMergePatchPlusJSONBody
+		if err := yaml.Unmarshal(yamlData, &patchView); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal View to patch type: %w", err)
+		}
+		patchData, _ := yaml.Marshal(patchView)
+		var patchMap map[string]interface{}
+		yaml.Unmarshal(patchData, &patchMap)
+		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
+
+	case EntityTypeSet:
+		// Set doesn't have a Patch type, but we still want to clean it up
+		return yaml.Marshal(cleanupMap(entityMap, isSpaceResident, entityType))
+
+	case EntityTypeInventory:
+		// Inventory is a pseudo-entity that doesn't need filtering
+		return yamlData, nil
+
+	default:
+		// For unknown entity types, still clean up the map
+		return yaml.Marshal(cleanupMap(entityMap, isSpaceResident, entityType))
+	}
 }

@@ -67,8 +67,32 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	view.Append([]string{"Unit ID", mutationDetails.UnitID.String()})
 	view.Append([]string{"Revision ID", mutationDetails.RevisionID.String()})
 	view.Append([]string{"Mutation Num", fmt.Sprintf("%d", mutationDetails.MutationNum)})
-	if mutationDetails.LinkID != nil {
+	if mutationDetails.RestoredRevisionNum != 0 {
+		view.Append([]string{"Restored Revision Num", fmt.Sprintf("%d", mutationDetails.RestoredRevisionNum)})
+	}
+	if mutationDetails.UpgradedFromUpstreamRevisionNum != 0 {
+		view.Append([]string{"Upgraded From Upstream Revision Num", fmt.Sprintf("%d", mutationDetails.UpgradedFromUpstreamRevisionNum)})
+	}
+	if extendedMutationDetails.MergeSource != nil {
+		view.Append([]string{"Merge Source", extendedMutationDetails.MergeSource.Slug})
+	} else if mutationDetails.MergeSourceID != nil && *mutationDetails.MergeSourceID != uuid.Nil {
+		view.Append([]string{"Merge Source ID", mutationDetails.MergeSourceID.String()})
+	}
+	if mutationDetails.MergeBaseRevisionNum != 0 {
+		view.Append([]string{"Merge Base Revision Num", fmt.Sprintf("%d", mutationDetails.MergeBaseRevisionNum)})
+	}
+	if mutationDetails.MergeEndRevisionNum != 0 {
+		view.Append([]string{"Merge End Revision Num", fmt.Sprintf("%d", mutationDetails.MergeEndRevisionNum)})
+	}
+
+	if extendedMutationDetails.Link != nil {
+		view.Append([]string{"Link", extendedMutationDetails.Link.Slug})
+	} else if mutationDetails.LinkID != nil {
 		view.Append([]string{"Link ID", mutationDetails.LinkID.String()})
+	}
+	if mutationDetails.ProvidedResource != nil {
+		view.Append([]string{"Provided Resource Type", mutationDetails.ProvidedResource.ResourceType})
+		view.Append([]string{"Provided Resource Name", mutationDetails.ProvidedResource.ResourceName})
 	}
 	view.Append([]string{"Provided Path", mutationDetails.ProvidedPath})
 
@@ -133,7 +157,7 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 
 func apiGetMutation(mutationID string, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
 	newParams := &goclientnew.GetExtendedMutationParams{}
-	include := "SpaceID,RevisionID,LinkID,TriggerID,InvocationID"
+	include := "SpaceID,RevisionID,MergeSourceID,LinkID,TriggerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

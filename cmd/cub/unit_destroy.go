@@ -5,8 +5,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"time"
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -15,7 +13,6 @@ import (
 )
 
 var unitDestroyArgs struct {
-	whereClause     string
 	dryRun          bool
 	unitIdentifiers []string
 }
@@ -54,25 +51,20 @@ Examples:
 
 func init() {
 	enableWaitFlag(unitDestroyCmd)
-	enableQuietFlagForOperation(unitDestroyCmd)
-	enableJsonFlag(unitDestroyCmd)
-	unitDestroyCmd.Flags().StringVar(&unitDestroyArgs.whereClause, "where", "", "WHERE clause to filter units for bulk destroy")
+	addStandardDisplayFlags(unitDestroyCmd)
+	enableWhereFlag(unitDestroyCmd)
+	enableFilterFlag(unitDestroyCmd)
 	unitDestroyCmd.Flags().BoolVar(&unitDestroyArgs.dryRun, "dry-run", false, "Perform a dry run without actually destroying")
 	unitDestroyCmd.Flags().StringSliceVar(&unitDestroyArgs.unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	unitCmd.AddCommand(unitDestroyCmd)
 }
 
 func unitDestroyCmdRun(_ *cobra.Command, args []string) error {
-	// Determine operation mode based on arguments and flags
-	if len(args) == 1 && unitDestroyArgs.whereClause == "" && len(unitDestroyArgs.unitIdentifiers) == 0 {
-		// Single unit mode
-		return runSingleUnitDestroy(args[0])
-	} else if len(args) == 0 {
-		// Bulk mode
+	if len(args) == 0 {
 		return runBulkUnitDestroy()
-	} else {
-		return errors.New("invalid arguments: use either a single unit slug, --unit flag, or --where flag")
 	}
+
+	return runSingleUnitDestroy(args[0])
 }
 
 func runSingleUnitDestroy(unitSlug string) error {
@@ -101,13 +93,19 @@ func runSingleUnitDestroy(unitSlug string) error {
 	if jq != "" {
 		displayJQ(destroyRes.JSON200)
 	}
+	if yamlOutput {
+		displayYAML(destroyRes.JSON200)
+	}
+	if yq != "" {
+		displayYQ(destroyRes.JSON200)
+	}
 
 	return nil
 }
 
 func runBulkUnitDestroy() error {
 	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitDestroyArgs.unitIdentifiers) > 0 && unitDestroyArgs.whereClause != "" {
+	if len(unitDestroyArgs.unitIdentifiers) > 0 && where != "" {
 		return errors.New("--unit and --where flags are mutually exclusive")
 	}
 
@@ -120,7 +118,7 @@ func runBulkUnitDestroy() error {
 		}
 		effectiveWhere = whereClause
 	} else {
-		effectiveWhere = unitDestroyArgs.whereClause
+		effectiveWhere = where
 	}
 
 	// Add space constraint to the where clause if not org level
@@ -131,6 +129,9 @@ func runBulkUnitDestroy() error {
 	params := &goclientnew.BulkDestroyUnitsParams{
 		Where:   effectiveWhere,
 		Include: &include,
+	}
+	if filter != "" {
+		params.Filter = &filter
 	}
 	if unitDestroyArgs.dryRun {
 		params.DryRun = &unitDestroyArgs.dryRun
@@ -152,124 +153,5 @@ func runBulkUnitDestroy() error {
 		return errors.New("unexpected response from bulk destroy API")
 	}
 
-	return handleBulkDestroyResponse(responses)
-}
-
-func handleBulkDestroyResponse(results *[]goclientnew.UnitActionResponse) error {
-	if results == nil || len(*results) == 0 {
-		if !quiet {
-			tprint("No units found matching the filter")
-		}
-		if jsonOutput {
-			displayJSON(results)
-		}
-		if jq != "" {
-			displayJQ(results)
-		}
-		return nil
-	}
-
-	// Count successes and failures
-	var successCount, failureCount int
-	var queuedOps []*goclientnew.QueuedOperation
-	var hasErrors bool
-
-	for _, result := range *results {
-		if result.Error != nil {
-			failureCount++
-			hasErrors = true
-			if !quiet {
-				// Display error for this unit
-				if result.Error.ErrorMetadata != nil && result.Error.ErrorMetadata.EntityID != "" {
-					tprint("Failed to destroy unit %s: %s", result.Error.ErrorMetadata.EntityID, result.Error.Message)
-				} else {
-					tprint("Failed: %s", result.Error.Message)
-				}
-			}
-		} else if result.Action != nil {
-			successCount++
-			queuedOps = append(queuedOps, result.Action)
-			if !quiet && !wait {
-				// Fetch unit details to get the slug
-				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
-				if err != nil {
-					// Fallback to UUID if we can't get the slug
-					tprint("Queued destroy for unit (%s)", result.Action.UnitID)
-				} else {
-					tprint("Queued destroy for unit %s (%s)", unitDetails.Slug, result.Action.UnitID)
-				}
-			}
-		}
-	}
-
-	// Display summary
-	if !quiet {
-		if unitDestroyArgs.dryRun {
-			tprint("") // blank line before summary
-			tprint("Dry run completed (no changes made)")
-			tprint("Units that would be destroyed: %d", successCount)
-			if failureCount > 0 {
-				tprint("Units that would fail: %d", failureCount)
-			}
-		} else {
-			tprint("Bulk destroy completed")
-			tprint("Units queued for destroy: %d", successCount)
-			if failureCount > 0 {
-				tprint("Units failed: %d", failureCount)
-			}
-		}
-	}
-
-	// Handle wait flag - wait for all successful operations
-	if wait && len(queuedOps) > 0 && !unitDestroyArgs.dryRun {
-		if !quiet {
-			tprint("\nWaiting for destroy operations to complete...")
-		}
-
-		// Wait for all operations in parallel
-		for _, op := range queuedOps {
-			if op != nil {
-				// Note: awaitCompletion might need to be adapted for parallel waiting
-				// For now, we'll wait sequentially
-				err := awaitCompletionWithTimeout("destroy", op, 5*time.Minute)
-				if err != nil {
-					hasErrors = true
-					if !quiet {
-						// Try to get unit slug for better error message
-						unitDetails, fetchErr := apiGetUnitInSpace(op.UnitID.String(), op.SpaceID.String(), "Slug")
-						if fetchErr == nil && unitDetails != nil {
-							tprint("Destroy operation failed for unit %s (%s): %v", unitDetails.Slug, op.UnitID, err)
-						} else {
-							tprint("Destroy operation failed for unit %s: %v", op.UnitID, err)
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Output JSON if requested
-	if jsonOutput {
-		displayJSON(results)
-	}
-	if jq != "" {
-		displayJQ(results)
-	}
-
-	// Return error if there were any failures
-	if hasErrors && !unitDestroyArgs.dryRun {
-		return fmt.Errorf("some units failed to destroy: %d succeeded, %d failed", successCount, failureCount)
-	}
-
-	return nil
-}
-
-// Helper function with timeout for await completion
-func awaitCompletionWithTimeout(operation string, op *goclientnew.QueuedOperation, timeout time.Duration) error {
-	if op == nil {
-		return errors.New("no queued operation to wait for")
-	}
-	// This function would need to be implemented based on the existing awaitCompletion function
-	// For now, using the standard awaitCompletion
-	return awaitCompletion(operation, op)
+	return handleBulkUnitActionResponse(responses, "destroy", unitDestroyArgs.dryRun)
 }

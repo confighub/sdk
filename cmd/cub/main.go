@@ -28,6 +28,7 @@ import (
 
 	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
 
@@ -229,7 +230,7 @@ func main() {
 	failOnError(err)
 }
 
-func setAuthHeader(authSession *AuthSession) goclientnew.RequestEditorFn {
+func setAuthHeader(authSession *cubapi.AuthSession) goclientnew.RequestEditorFn {
 	return func(ctx context.Context, r *http.Request) error {
 		authHeaderToken := setAuthHeaderToken(authSession)
 		if authHeaderToken != "" {
@@ -239,9 +240,9 @@ func setAuthHeader(authSession *AuthSession) goclientnew.RequestEditorFn {
 	}
 }
 
-func setAuthHeaderToken(authSession *AuthSession) string {
+func setAuthHeaderToken(authSession *cubapi.AuthSession) string {
 	var authHeaderToken string
-	if authSession.AuthType == AuthTypeBasic {
+	if authSession.AuthType == cubapi.AuthTypeBasic {
 		encoded := base64.StdEncoding.EncodeToString([]byte(authSession.User.Email + ":" + authSession.BasicAuthPassword))
 		authHeaderToken = fmt.Sprintf("Basic %s", encoded)
 	} else {
@@ -561,10 +562,6 @@ func enableVerboseFlag(cmd *cobra.Command) {
 }
 
 func enableQuietFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&quiet, "quiet", false, "No default output. Use with --jq to get specific output")
-}
-
-func enableQuietFlagForOperation(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&quiet, "quiet", false, "No default output.")
 }
 
@@ -1129,6 +1126,7 @@ type ModelConstraint interface {
 		goclientnew.ExtendedChangeSet |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
+		goclientnew.UnitAction |
 		goclientnew.ExtendedUnit |
 		Context
 }
@@ -1456,6 +1454,121 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 	// Return error based on status code and failure count
 	if statusCode == 207 || failureCount > 0 {
 		return fmt.Errorf("bulk %s partially failed: %d succeeded, %d failed", operationName, successCount, failureCount)
+	}
+
+	return nil
+}
+
+// handleBulkUnitActionResponse handles responses from bulk unit action operations (apply, destroy, refresh)
+func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, action string, isDryRun bool) error {
+	if results == nil || len(*results) == 0 {
+		if !quiet && !hasAlternativeOutput() {
+			tprint("No units found matching the filter")
+		}
+		if jsonOutput {
+			displayJSON(results)
+		}
+		if jq != "" {
+			displayJQ(results)
+		}
+		if yamlOutput {
+			displayYAML(results)
+		}
+		if yq != "" {
+			displayYQ(results)
+		}
+		return nil
+	}
+
+	// Count successes and failures
+	var successCount, failureCount int
+	var queuedOps []*goclientnew.QueuedOperation
+	var hasErrors bool
+
+	for _, result := range *results {
+		if result.Error != nil {
+			failureCount++
+			hasErrors = true
+			if !quiet {
+				// Display error for this unit
+				if result.Error.ErrorMetadata != nil && result.Error.ErrorMetadata.EntityID != "" {
+					tprint("Failed to %s unit %s: %s", action, result.Error.ErrorMetadata.EntityID, result.Error.Message)
+				} else {
+					tprint("Failed: %s", result.Error.Message)
+				}
+			}
+		} else if result.Action != nil {
+			successCount++
+			queuedOps = append(queuedOps, result.Action)
+			if !quiet && !wait {
+				// Fetch unit details to get the slug
+				unitDetails, err := apiGetUnit(result.Action.UnitID.String(), "Slug")
+				unitSlug := result.Action.UnitID.String()
+				if err == nil && unitDetails != nil && unitDetails.Slug != "" {
+					unitSlug = unitDetails.Slug
+				}
+				tprint("%s queued for %s (operation: %s)",
+					strings.Title(action), unitSlug, result.Action.QueuedOperationID)
+			}
+		}
+	}
+
+	// Handle wait flag by awaiting operations (skip if dry run)
+	if wait && len(queuedOps) > 0 && !isDryRun {
+		if !quiet {
+			tprint("Awaiting %d %s operations...", len(queuedOps), action)
+		}
+		// Wait for all operations to complete
+		for _, op := range queuedOps {
+			err := awaitCompletion(action, op)
+			if err != nil {
+				if !quiet {
+					tprint("Operation %s failed: %v", op.QueuedOperationID, err)
+				}
+				hasErrors = true
+			}
+		}
+	}
+
+	// Display results in alternative formats
+	if jsonOutput {
+		displayJSON(results)
+	}
+	if jq != "" {
+		displayJQ(results)
+	}
+	if yamlOutput {
+		displayYAML(results)
+	}
+	if yq != "" {
+		displayYQ(results)
+	}
+
+	// Display summary
+	if !quiet && !hasAlternativeOutput() {
+		if isDryRun {
+			tprint("") // blank line before summary
+			tprint("Dry run completed (no changes made)")
+			if successCount > 0 {
+				tprint("Units that would be %sed: %d", action, successCount)
+			}
+			if failureCount > 0 {
+				tprint("Units that would fail: %d", failureCount)
+			}
+			tprint("Total units processed: %d", successCount + failureCount)
+		} else {
+			if successCount > 0 && failureCount > 0 {
+				tprint("Bulk %s completed with partial success: %d succeeded, %d failed", action, successCount, failureCount)
+			} else if successCount > 0 {
+				tprint("Bulk %s completed successfully: %d units", action, successCount)
+			} else if failureCount > 0 {
+				tprint("Bulk %s failed: %d units", action, failureCount)
+			}
+		}
+	}
+
+	if hasErrors {
+		return fmt.Errorf("bulk %s had failures", action)
 	}
 
 	return nil

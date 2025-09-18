@@ -27,6 +27,7 @@ var rootCmd = &cobra.Command{
 	Short: "Start a worker process",
 	Long: `Start a worker process
 The available worker types are:
+- confighub
 - kubernetes
 - flux-oci-writer
 - opentofu-aws
@@ -48,6 +49,7 @@ const (
 
 var rootArgs struct {
 	configHubURL         string
+	mainPort             string
 	workerPort           string
 	workerID             string
 	workerSecret         string
@@ -60,6 +62,7 @@ var rootArgs struct {
 
 func init() {
 	url := defaultConfighubURL
+	mainPort := "443"
 	if envUrl := os.Getenv("CONFIGHUB_URL"); envUrl != "" {
 		parsedURL, err := neturl.Parse(envUrl)
 		if err != nil {
@@ -71,6 +74,10 @@ func init() {
 			}
 			if parsedURL.Host == "" {
 				parsedURL.Host = defaultConfighubHost
+			}
+			port := parsedURL.Port()
+			if parsedURL.Port() != "" {
+				mainPort = port
 			}
 			// Drop any ports, paths, query params, etc.
 			url = parsedURL.Scheme + "://" + parsedURL.Hostname()
@@ -100,6 +107,7 @@ func init() {
 	}
 
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.configHubURL, "url", "u", url, "ConfigHub Server URL (CONFIGHUB_URL)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.mainPort, "main-port", "", mainPort, "ConfigHub Main Port (extracted from CONFIGHUB_URL by default)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerPort, "worker-port", "p", workerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerID, "worker-id", "w", os.Getenv("CONFIGHUB_WORKER_ID"), "Worker ID (CONFIGHUB_WORKER_ID)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerSecret, "worker-secret", "s", os.Getenv("CONFIGHUB_WORKER_SECRET"), "Worker Secret (CONFIGHUB_WORKER_SECRET)")
@@ -113,6 +121,7 @@ func init() {
 }
 
 const (
+	WorkerTypeConfigHub           = "confighub"
 	WorkerTypeKubernetes          = "kubernetes"
 	WorkerTypeFluxOCIWriter       = "flux-oci-writer"
 	WorkerTypeOpenTofuAWS         = "opentofu-aws"
@@ -122,7 +131,9 @@ const (
 )
 
 // TODO: worker types should map to combinations of ToolchainType and ProviderType
+// Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
 var availableBridgeWorkers = map[string]api.BridgeWorker{
+	// ConfigHub worker is special - it will be initialized in rootRunE with a client
 	WorkerTypeKubernetes:          impl.NewKubernetesBridgeWorker(),
 	WorkerTypeFluxOCIWriter:       impl.NewFluxOCIWorker(),
 	WorkerTypeOpenTofuAWS:         &impl.OpenTofuAWSWorker{},
@@ -130,12 +141,14 @@ var availableBridgeWorkers = map[string]api.BridgeWorker{
 }
 
 // Initialize individual function workers first
+var confighubFunctionWorker = impl.NewConfigHubFunctionWorker()
 var k8sFunctionWorker = impl.NewKubernetesFunctionWorker()
 var propertiesFunctionWorker = impl.NewPropertiesFunctionWorker()
 var opentofuFunctionWorker = impl.NewOpentofuFunctionWorker()
 
 // Map of available function workers by worker type
 var availableFunctionWorkers = map[string]api.FunctionWorker{
+	WorkerTypeConfigHub:           confighubFunctionWorker,
 	WorkerTypeKubernetes:          k8sFunctionWorker,
 	WorkerTypeFluxOCIWriter:       k8sFunctionWorker,
 	WorkerTypeOpenTofuAWS:         opentofuFunctionWorker,
@@ -159,7 +172,8 @@ func rootPreRunE(cmd *cobra.Command, args []string) error {
 // Convert worker type to toolchain type and provider type
 func workerTypeToToolchainAndProvider(workerType string) (workerapi.ToolchainType, api.ProviderType) {
 	switch workerType {
-	// TODO: WorkerTypeConfigHub, workerapi.ToolchainConfigHubYAML
+	case WorkerTypeConfigHub:
+		return workerapi.ToolchainConfigHubYAML, api.ProviderConfigHub
 	case WorkerTypeKubernetes:
 		return workerapi.ToolchainKubernetesYAML, api.ProviderKubernetes
 	case WorkerTypeFluxOCIWriter:
@@ -183,10 +197,19 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("multiple worker types not supported in legacy mode. Enable multiplexer with --enable-multiplexer or ENABLE_MULTIPLEXER=true")
 		}
 
-		// Use the old behavior - direct worker without dispatcher
-		bridgeWorker, ok := availableBridgeWorkers[args[0]]
-		if !ok {
-			return fmt.Errorf("unknown bridge worker %s", args[0])
+		// Handle ConfigHub worker specially - it needs authentication
+		var bridgeWorker api.BridgeWorker
+		var ok bool
+		if args[0] == WorkerTypeConfigHub {
+			// Create ConfigHub bridge worker with authentication
+			bridgeWorker = impl.NewConfigHubBridgeWorker(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
+			ok = true
+		} else {
+			// Use the old behavior - direct worker without dispatcher
+			bridgeWorker, ok = availableBridgeWorkers[args[0]]
+			if !ok {
+				return fmt.Errorf("unknown bridge worker %s", args[0])
+			}
 		}
 
 		if args[0] == WorkerTypeFluxOCIWriter {
@@ -241,7 +264,19 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		}
 
 		// Register bridge worker based on worker type
-		if directBridgeWorker, ok := availableBridgeWorkers[workerType]; ok {
+		var directBridgeWorker api.BridgeWorker
+		var ok bool
+
+		// Handle ConfigHub worker specially - it needs authentication
+		if workerType == WorkerTypeConfigHub {
+			// Create ConfigHub bridge worker with authentication
+			directBridgeWorker = impl.NewConfigHubBridgeWorker(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
+			ok = true
+		} else {
+			directBridgeWorker, ok = availableBridgeWorkers[workerType]
+		}
+
+		if ok {
 			// Special case for FluxOCIWriter - initialize it
 			if workerType == WorkerTypeFluxOCIWriter {
 				fluxWorker := impl.NewFluxOCIWorker()

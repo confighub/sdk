@@ -17,7 +17,6 @@ import (
 )
 
 var unitApplyArgs struct {
-	whereClause     string
 	dryRun          bool
 	unitIdentifiers []string
 	revision        string
@@ -65,9 +64,9 @@ Examples:
 
 func init() {
 	enableWaitFlag(unitApplyCmd)
-	enableQuietFlagForOperation(unitApplyCmd)
-	enableJsonFlag(unitApplyCmd)
-	unitApplyCmd.Flags().StringVar(&unitApplyArgs.whereClause, "where", "", "WHERE clause to filter units for bulk apply")
+	addStandardDisplayFlags(unitApplyCmd)
+	enableWhereFlag(unitApplyCmd)
+	enableFilterFlag(unitApplyCmd)
 	unitApplyCmd.Flags().BoolVar(&unitApplyArgs.dryRun, "dry-run", false, "Perform a dry run without actually applying")
 	unitApplyCmd.Flags().StringSliceVar(&unitApplyArgs.unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	unitApplyCmd.Flags().StringVar(&unitApplyArgs.revision, "revision", "", "Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
@@ -164,16 +163,11 @@ func parseApplyRevisionParameter(revision string) (*string, error) {
 }
 
 func unitApplyCmdRun(_ *cobra.Command, args []string) error {
-	// Determine operation mode based on arguments and flags
-	if len(args) == 1 && unitApplyArgs.whereClause == "" && len(unitApplyArgs.unitIdentifiers) == 0 {
-		// Single unit mode
-		return runSingleUnitApply(args[0])
-	} else if len(args) == 0 {
-		// Bulk mode
+	if len(args) == 0 {
 		return runBulkUnitApply()
-	} else {
-		return errors.New("invalid arguments: use either a single unit slug, --unit flag, or --where flag")
 	}
+
+	return runSingleUnitApply(args[0])
 }
 
 func runSingleUnitApply(unitSlug string) error {
@@ -207,12 +201,17 @@ func runSingleUnitApply(unitSlug string) error {
 		}
 	}
 
-	// Output JSON if requested
 	if jsonOutput {
 		displayJSON(applyRes.JSON200)
 	}
 	if jq != "" {
 		displayJQ(applyRes.JSON200)
+	}
+	if yamlOutput {
+		displayYAML(applyRes.JSON200)
+	}
+	if yq != "" {
+		displayYQ(applyRes.JSON200)
 	}
 
 	return nil
@@ -220,7 +219,7 @@ func runSingleUnitApply(unitSlug string) error {
 
 func runBulkUnitApply() error {
 	// Check for mutual exclusivity between --unit and --where flags
-	if len(unitApplyArgs.unitIdentifiers) > 0 && unitApplyArgs.whereClause != "" {
+	if len(unitApplyArgs.unitIdentifiers) > 0 && where != "" {
 		return errors.New("--unit and --where flags are mutually exclusive")
 	}
 
@@ -239,7 +238,7 @@ func runBulkUnitApply() error {
 		}
 		effectiveWhere = whereClause
 	} else {
-		effectiveWhere = unitApplyArgs.whereClause
+		effectiveWhere = where
 	}
 
 	// Add space constraint to the where clause if not org level
@@ -250,6 +249,9 @@ func runBulkUnitApply() error {
 	params := &goclientnew.BulkApplyUnitsParams{
 		Where:   effectiveWhere,
 		Include: &include,
+	}
+	if filter != "" {
+		params.Filter = &filter
 	}
 	if unitApplyArgs.dryRun {
 		params.DryRun = &unitApplyArgs.dryRun
@@ -274,97 +276,7 @@ func runBulkUnitApply() error {
 		return errors.New("unexpected response from bulk apply API")
 	}
 
-	return handleBulkApplyResponse(responses)
-}
-
-func handleBulkApplyResponse(results *[]goclientnew.UnitActionResponse) error {
-	if results == nil || len(*results) == 0 {
-		if !quiet {
-			tprint("No units found matching the filter")
-		}
-		if jsonOutput {
-			displayJSON(results)
-		}
-		if jq != "" {
-			displayJQ(results)
-		}
-		return nil
-	}
-
-	// Count successes and failures
-	var successCount, failureCount int
-	var queuedOps []*goclientnew.QueuedOperation
-
-	for _, result := range *results {
-		if result.Error != nil {
-			failureCount++
-			if !quiet {
-				// Display error for this unit
-				if result.Error.ErrorMetadata != nil && result.Error.ErrorMetadata.EntityID != "" {
-					tprint("Failed to apply unit %s: %s", result.Error.ErrorMetadata.EntityID, result.Error.Message)
-				} else {
-					tprint("Failed: %s", result.Error.Message)
-				}
-			}
-		} else if result.Action != nil {
-			successCount++
-			queuedOps = append(queuedOps, result.Action)
-			if !quiet && !wait {
-				// Fetch unit details to get the slug
-				unitDetails, err := apiGetUnit(result.Action.UnitID.String(), "Slug")
-				if err != nil {
-					// Fallback to UUID if we can't get the slug
-					tprint("Queued apply for unit (%s)", result.Action.UnitID)
-				} else {
-					tprint("Queued apply for unit %s (%s)", unitDetails.Slug, result.Action.UnitID)
-				}
-			}
-		}
-	}
-
-	// Display summary
-	if !quiet {
-		tprint("") // blank line before summary
-		if unitApplyArgs.dryRun {
-			tprint("Dry run completed (no changes made)")
-			tprint("Units that would be applied: %d", successCount)
-			if failureCount > 0 {
-				tprint("Units that would fail: %d", failureCount)
-			}
-		} else {
-			tprint("Bulk apply completed")
-			tprint("Units queued for apply: %d", successCount)
-			if failureCount > 0 {
-				tprint("Units failed: %d", failureCount)
-			}
-		}
-		tprint("Total units processed: %d", len(*results))
-	}
-
-	// If wait flag is set and not dry run, wait for all operations to complete
-	if wait && !unitApplyArgs.dryRun && len(queuedOps) > 0 {
-		if !quiet {
-			tprint("")
-			tprint("Waiting for %d operation(s) to complete...", len(queuedOps))
-		}
-		for _, op := range queuedOps {
-			if err := awaitCompletion("apply", op); err != nil {
-				if !quiet {
-					tprint("Warning: %v", err)
-				}
-			}
-		}
-	}
-
-	// Output JSON if requested
-	if jsonOutput {
-		displayJSON(results)
-	}
-	if jq != "" {
-		displayJQ(results)
-	}
-
-	return nil
+	return handleBulkUnitActionResponse(responses, "apply", unitApplyArgs.dryRun)
 }
 
 func actionType(action *goclientnew.ActionType) goclientnew.ActionType {

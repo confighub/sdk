@@ -615,10 +615,8 @@ func setupImportStatusMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, expe
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to unstructured format...")
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to YAML format...")
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultImportCompleted, "Imported")
-	case 6: // Legacy resource info list flow
-		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Parsing provided resource information...")
+	case 4: // Legacy resource info list flow
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Found")
-		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to unstructured format...")
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Retrieving live state of resources...")
 		setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Converting resources to YAML format...")
 		setupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultImportCompleted, "Imported")

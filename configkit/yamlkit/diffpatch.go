@@ -11,10 +11,14 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
-// TODO: move this to somewhere more appropriate; maybe yamlkit
-
 // DiffPatch compares original and modified YAML content, generates a patch, and applies it to target data
 func DiffPatch(original, modified, targetData []byte, resourceProvider ResourceProvider) ([]byte, bool, error) {
+	return DiffPatchWithOptions(original, modified, targetData, resourceProvider, false)
+}
+
+// DiffPatchWithOptions compares original and modified YAML content, generates a patch, and applies it to target data
+// If omitAdditions is true, mutations of type MutationTypeAdd are filtered out before applying the patch
+func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvider ResourceProvider, omitAdditions bool) ([]byte, bool, error) {
 	// Parse original YAML content
 	originalYAML, err := gaby.ParseAll(original)
 	if err != nil {
@@ -31,6 +35,31 @@ func DiffPatch(original, modified, targetData []byte, resourceProvider ResourceP
 	mutations, err := ComputeMutations(originalYAML, modifiedYAML, 0, resourceProvider)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to diff YAML resources: %v", err)
+	}
+
+	// Filter out Add mutations if omitAdditions is true
+	if omitAdditions {
+		filteredMutations := make(api.ResourceMutationList, 0, len(mutations))
+		for _, mutation := range mutations {
+			// Check if this is a resource-level Add mutation
+			if mutation.ResourceMutationInfo.MutationType == api.MutationTypeAdd {
+				continue // Skip this mutation
+			}
+
+			// For other mutations, filter out Add mutations from PathMutationMap
+			filteredPathMap := make(api.MutationMap)
+			for path, pathMutation := range mutation.PathMutationMap {
+				if pathMutation.MutationType != api.MutationTypeAdd {
+					filteredPathMap[path] = pathMutation
+				}
+			}
+
+			// Create a new mutation with filtered path mutations
+			filteredMutation := mutation
+			filteredMutation.PathMutationMap = filteredPathMap
+			filteredMutations = append(filteredMutations, filteredMutation)
+		}
+		mutations = filteredMutations
 	}
 
 	// If no differences found, return original target data unchanged

@@ -6,7 +6,6 @@ package impl
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
+	"github.com/cockroachdb/errors"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
 	"github.com/gosimple/slug"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -45,8 +45,13 @@ var _ api.WatchableWorker = (*KubernetesBridgeWorker)(nil)
 
 // NewKubernetesBridgeWorker creates a new KubernetesBridgeWorker with CLI Utils SSA as default
 func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
+	defaultApplier := FluxSSA
+	if os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER") == "true" ||
+		os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER") == "1" {
+		defaultApplier = CLIUtilsSSA
+	}
 	return &KubernetesBridgeWorker{
-		applierType: CLIUtilsSSA, // Default to CLI Utils SSA for inventory support
+		applierType: defaultApplier, // Default to CLI Utils SSA for inventory support
 	}
 }
 
@@ -57,20 +62,14 @@ type KubernetesWorkerParams struct {
 
 // getResourcesFromImportSource determines the appropriate resource fetching method
 // based on the provided ExtraParams and returns the resources
-func (w *KubernetesBridgeWorker) getResourcesFromImportSource(k8sclient KubernetesClient, extraParams []byte) ([]*unstructured.Unstructured, error) {
-	config := &ImportConfig{IncludeSystem: false, IncludeCustom: true, IncludeCluster: true, Filters: []goclientnew.ImportFilter{}}
-	if len(extraParams) > 0 {
-		// Try to parse ExtraParams as ImportRequest structure
-		var importRequest goclientnew.ImportRequest
-		if err := json.Unmarshal(extraParams, &importRequest); err == nil {
-			// Successfully parsed as ImportRequest - use new generic filters
-			config = NewImportConfigFromRequest(&importRequest)
-			return GetResourcesWithConfig(k8sclient, config, w.cfg)
-		}
-		// If parsing fails, fall through to default behavior
+func (w *KubernetesBridgeWorker) getResourcesFromImportSource(k8sclient KubernetesClient, importRequest *goclientnew.ImportRequest) ([]*unstructured.Unstructured, error) {
+	if importRequest != nil {
+		config := NewImportConfigFromRequest(importRequest)
+		return GetResourcesWithConfig(k8sclient, config, w.cfg)
 	}
 
 	// Fall back to default behavior (get all cluster resources)
+	config := &ImportConfig{IncludeSystem: false, IncludeCustom: true, IncludeCluster: true, Filters: []goclientnew.ImportFilter{}}
 	return GetResourcesWithConfig(k8sclient, config, w.cfg)
 }
 
@@ -249,7 +248,7 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayload) (K8sApplier, error) {
 	// Default to CLIUtilsSSA if applierType is not set (defensive programming)
 	if w.applierType == "" {
-		w.applierType = CLIUtilsSSA
+		w.applierType = FluxSSA
 		log.Log.Info("⚠️ Applier type was not set, defaulting to CLIUtilsSSA")
 	}
 
@@ -293,11 +292,12 @@ func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayl
 	if err != nil {
 		return nil, err
 	}
+
 	// Ensure we have a valid applier type (defensive)
 	applierType := w.applierType
 	if applierType == "" {
-		applierType = CLIUtilsSSA
-		log.Log.Info("⚠️ Applier type was empty, using CLIUtilsSSA as fallback")
+		applierType = FluxSSA
+		log.Log.Info("⚠️ Applier type was empty, using FluxSSA as fallback")
 	}
 	applier, err := NewK8sApplier(applierType, applierConfig)
 	if err != nil {
@@ -524,7 +524,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
-	yamlData, err := objectsToYAML(retrievedObjects)
+	yamlData, err := objectsToYAML(extraCleanupObjects(retrievedObjects))
 	if err != nil {
 		log.Log.Error(err, "Failed to convert objects to YAML")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -535,10 +535,9 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	}
 
 	// Extract inventory from LiveState if present and preserve it
-	inventoryCM, resourcesOnly, err := SplitInventoryFromLiveState(payload.LiveState)
+	inventoryCM, _, err := SplitInventoryFromLiveState(payload.LiveState)
 	if err != nil {
 		log.Log.Error(err, "Failed to split inventory from LiveState, continuing without inventory")
-		resourcesOnly = payload.LiveState // Use the full LiveState if we can't split
 	}
 
 	// TODO: Known issue - namespace handling is not optimal here.
@@ -548,7 +547,11 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	// Future improvement: Ensure namespace is properly preserved during split.
 	//
 	// Perform diff patch on resources only (without inventory) to detect drift
-	patched, drifted, err := yamlkit.DiffPatch(resourcesOnly, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider)
+	//
+	// Note: We could try to copy comments from the Data to the LiveState resources:
+	// https://github.com/kubernetes-sigs/kustomize/blob/master/kyaml/comments/comments.go
+	// But we'd still want to detect drift.
+	patched, drifted, err := yamlkit.DiffPatchWithOptions(payload.Data, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider, false)
 	if err != nil {
 		log.Log.Error(err, "Failed to diff patch")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -604,7 +607,17 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	return wctx.SendStatus(result)
 }
 
-func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) (retErr error) {
+	// Add panic recovery with stack trace when debugging
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		retErr = errors.WithStack(errors.Newf("panic in Kubernetes Import: %v", r))
+	// 		log.Log.Error(retErr, "Panic recovered in Kubernetes Import",
+	// 			"unitSlug", payload.UnitSlug,
+	// 			"panic", r)
+	// 	}
+	// }()
+
 	_, kubeContext, err := parseTargetParams(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -623,27 +636,22 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		), err)
 	}
 
-	// Determine import source and get resource list
-	var resourceInfoList []api.ResourceInfo
 	var retrievedObjects []*unstructured.Unstructured
-	if len(payload.Data) > 0 {
-		// Legacy flow: Data is provided via stdin/file
-		if err := wctx.SendStatus(newActionResult(
-			api.ActionStatusProgressing,
-			api.ActionResultNone,
-			"Parsing provided resource information...",
-		)); err != nil {
-			return err
-		}
 
-		if err := json.Unmarshal(payload.Data, &resourceInfoList); err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultImportFailed,
-				fmt.Sprintf("Failed to parse resource info list: %v", err),
-			), err)
+	// Determine import source and get resource list
+	var importRequest *goclientnew.ImportRequest
+	if len(payload.ExtraParams) > 0 {
+		// Try to parse ExtraParams as ImportRequest structure
+		importRequest = new(goclientnew.ImportRequest)
+		if err := json.Unmarshal(payload.ExtraParams, importRequest); err != nil {
+			importRequest = nil
 		}
+	}
 
+	if importRequest != nil && importRequest.ResourceInfoList != nil && len(*importRequest.ResourceInfoList) > 0 {
+		resourceInfoList := *importRequest.ResourceInfoList
+
+		// Legacy flow: ResourceInfoList is provided via stdin/file.
 		if err := wctx.SendStatus(newActionResult(
 			api.ActionStatusProgressing,
 			api.ActionResultNone,
@@ -652,13 +660,6 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			return err
 		}
 
-		if err := wctx.SendStatus(newActionResult(
-			api.ActionStatusProgressing,
-			api.ActionResultNone,
-			"Converting resources to unstructured format...",
-		)); err != nil {
-			return err
-		}
 		// Convert ResourceInfoList to Unstructured objects
 		objects := []*unstructured.Unstructured{}
 		for _, resourceInfo := range resourceInfoList {
@@ -710,7 +711,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			return err
 		}
 
-		retrievedObjects, err = w.getResourcesFromImportSource(k8sclient, payload.ExtraParams)
+		retrievedObjects, err = w.getResourcesFromImportSource(k8sclient, importRequest)
 		if err != nil {
 			return lib.SafeSendStatus(wctx, newActionResult(
 				api.ActionStatusFailed,

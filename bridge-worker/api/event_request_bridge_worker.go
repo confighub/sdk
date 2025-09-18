@@ -20,10 +20,12 @@ type BridgeWorkerPayload struct {
 	ProviderType      ProviderType            `description:"ProviderType of the Target attached to the Unit on which the action was performed"`
 	UnitSlug          string                  `description:"Slug of the Unit on which the action was performed"`
 	UnitID            uuid.UUID               `description:"UUID of the Unit on which the action was performed"`
+	SpaceSlug         string                  `description:"Slug of the Space of the Unit on which the action was performed"`
 	SpaceID           uuid.UUID               `description:"UUID of the Space of the Unit on which the action was performed"`
 	Data              []byte                  `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
 	LiveState         []byte                  `swaggertype:"string" format:"byte" description:"Live state corresponding to the Unit"`
 	TargetParams      []byte                  `swaggertype:"string" format:"byte" description:"Parameters of the Target attached to the Unit on which the action was performed"`
 	ExtraParams       []byte                  `swaggertype:"string" format:"byte" description:"Additional parameters associated with the action sent to the worker"`
 	RevisionNum       int64                   `description:"Sequence number of the revision of the Unit on which the action was performed"`
+	LiveRevisionNum   int64                   `description:"Sequence number of the current live revision of the Unit on which the action was performed"`
 }

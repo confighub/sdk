@@ -86,7 +86,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	var err error
-	var session *AuthSession
+	var session *cubapi.AuthSession
 	if asWorker {
 		// Handle worker authentication
 		session, err = performWorkerAuth(coordinate)
@@ -120,7 +120,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 // performUserAuth handles the PKCE device login authentication flow
-func performUserAuth(coordinate Coordinate, noBrowser bool) (*AuthSession, error) {
+func performUserAuth(coordinate Coordinate, noBrowser bool) (*cubapi.AuthSession, error) {
 	tprint("Authenticating to %s", coordinate.ServerURL)
 	tprint("Starting device login flow...")
 
@@ -171,68 +171,28 @@ func performUserAuth(coordinate Coordinate, noBrowser bool) (*AuthSession, error
 	}
 
 	tprint("Authentication successful")
-	session.AuthType = AuthTypeJWT
+	session.AuthType = cubapi.AuthTypeJWT
 
 	return session, nil
 }
 
 // performWorkerAuth handles worker authentication
-func performWorkerAuth(coordinate Coordinate) (*AuthSession, error) {
+func performWorkerAuth(coordinate Coordinate) (*cubapi.AuthSession, error) {
 	workerID := os.Getenv("CONFIGHUB_WORKER_ID")
 	workerSecret := os.Getenv("CONFIGHUB_WORKER_SECRET")
-
 	if workerID == "" || workerSecret == "" {
 		return nil, fmt.Errorf("CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables must be set")
 	}
 
-	// Create request body
-	requestBody := map[string]string{
-		"worker_id":     workerID,
-		"worker_secret": workerSecret,
-	}
-
-	jsonData, err := json.Marshal(requestBody)
+	session, err := cubapi.PerformWorkerAuth(coordinate.ServerURL, workerID, workerSecret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, err
 	}
-
-	// Make authentication request
-	endpoint := fmt.Sprintf("%s/auth/worker", coordinate.ServerURL)
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make authentication request: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(res.Body)
-		return nil, fmt.Errorf("authentication failed: %s", string(body))
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	session := AuthSession{}
-	session.AuthType = "Bearer"
-
-	if err := json.Unmarshal(body, &session); err != nil {
-		return nil, fmt.Errorf("failed to parse authentication response: %w", err)
-	}
-
 	tprint("Successfully logged in as worker %s (Organization: %s)", workerID, session.OrganizationID)
-	return &session, nil
+	return session, nil
 }
 
-func updateContextFromSession(coordinate Coordinate, session *AuthSession) error {
+func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession) error {
 	coordinate.User = session.User.Email
 	coordinate.OrganizationID = session.OrganizationID
 
@@ -374,7 +334,7 @@ func getDeviceLoginInfoFromWorkOS(clientID, codeChallenge, deviceAuthURL string)
 }
 
 // pollForDeviceTokenWithWorkOS polls WorkOS directly for token exchange
-func pollForDeviceTokenWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string, interval, expiresIn int) (*AuthSession, error) {
+func pollForDeviceTokenWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string, interval, expiresIn int) (*cubapi.AuthSession, error) {
 	startTime := time.Now()
 	expiryTime := startTime.Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
@@ -410,7 +370,7 @@ func pollForDeviceTokenWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL s
 }
 
 // exchangeDeviceCodeForTokensWithWorkOS exchanges the device code for tokens directly with WorkOS
-func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string) (*AuthSession, error) {
+func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string) (*cubapi.AuthSession, error) {
 	// Call WorkOS token endpoint
 	params := url.Values{}
 	params.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
@@ -460,10 +420,10 @@ func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, t
 	// tprint("Token exchange response: %s", string(body))
 	// Parse WorkOS token response
 	var tokenResp struct {
-		AccessToken    string `json:"access_token"`
-		RefreshToken   string `json:"refresh_token"`
-		OrganizationID string `json:"organization_id"`
-		User           User   `json:"user"`
+		AccessToken    string      `json:"access_token"`
+		RefreshToken   string      `json:"refresh_token"`
+		OrganizationID string      `json:"organization_id"`
+		User           cubapi.User `json:"user"`
 	}
 
 	err = json.Unmarshal(body, &tokenResp)
@@ -471,13 +431,13 @@ func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, t
 		return nil, fmt.Errorf("failed to unmarshal token response: %w", err)
 	}
 
-	// Convert to AuthSession
-	session := &AuthSession{
+	// Convert to cubapi.AuthSession
+	session := &cubapi.AuthSession{
 		AccessToken:    tokenResp.AccessToken,
 		RefreshToken:   tokenResp.RefreshToken,
 		OrganizationID: tokenResp.OrganizationID,
 		User:           tokenResp.User,
-		AuthType:       AuthTypeJWT,
+		AuthType:       cubapi.AuthTypeJWT,
 	}
 
 	return session, nil

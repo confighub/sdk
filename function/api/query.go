@@ -5,6 +5,7 @@ package api
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -492,7 +493,12 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 	case DataTypeString:
 		leftStringValue, ok := leftValue.(string)
 		if !ok {
-			return false, fmt.Errorf("internal error: expected string but got %T", leftValue)
+			// Try to convert using reflection for string type aliases
+			var err error
+			leftStringValue, err = valueToStringWithReflection(leftValue)
+			if err != nil {
+				return false, fmt.Errorf("internal error: expected string but got %T", leftValue)
+			}
 		}
 		// Check if any custom comparators match this path. They assume the right operand is a literal.
 		for _, comparator := range customComparators {
@@ -504,7 +510,12 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 		if rightValue != nil {
 			rightStringValue, ok = rightValue.(string)
 			if !ok {
-				return false, fmt.Errorf("internal error: expected string but got %T", rightValue)
+				// Try to convert using reflection for string type aliases
+				var err error
+				rightStringValue, err = valueToStringWithReflection(rightValue)
+				if err != nil {
+					return false, fmt.Errorf("internal error: expected string but got %T", rightValue)
+				}
 			}
 		} else {
 			rightStringValue = parseStringLiteral(expr.Literal)
@@ -902,24 +913,42 @@ func valueToString(value any) (string, error) {
 	return valueStr, nil
 }
 
+// valueToStringWithReflection uses reflection to handle type aliases and custom string types
+func valueToStringWithReflection(value any) (string, error) {
+	// Use reflection to check if the underlying type is string
+	v := reflect.ValueOf(value)
+
+	// Check if the kind is string (handles type aliases)
+	if v.Kind() == reflect.String {
+		return v.String(), nil
+	}
+
+	// Also handle other basic types via reflection
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(v.Uint(), 10), nil
+	case reflect.Float32, reflect.Float64:
+		// Convert all floats to integers since actual floats aren't supported
+		return strconv.Itoa(int(v.Float())), nil
+	case reflect.Bool:
+		return strconv.FormatBool(v.Bool()), nil
+	default:
+		return "", fmt.Errorf("unsupported value type for IN operation: %T", value)
+	}
+}
+
 // evaluateInExpression evaluates IN and NOT IN expressions against any value type
 func evaluateInExpression(operator string, value any, inValues []string) (bool, error) {
 	// Convert the value to string for comparison
-	var valueStr string
-	switch v := value.(type) {
-	case string:
-		valueStr = v
-	case int:
-		valueStr = strconv.Itoa(v)
-	case int64:
-		valueStr = strconv.FormatInt(v, 10)
-	case float64:
-		// Convert all floats to integers since actual floats aren't supported
-		valueStr = strconv.Itoa(int(v))
-	case bool:
-		valueStr = strconv.FormatBool(v)
-	default:
-		return false, fmt.Errorf("unsupported value type for IN operation: %T", value)
+	valueStr, err := valueToString(value)
+	if err != nil {
+		// If direct conversion fails, try using reflection for type aliases
+		valueStr, err = valueToStringWithReflection(value)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// Check if the value is in the list

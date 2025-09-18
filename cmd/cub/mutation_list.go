@@ -96,23 +96,35 @@ func getMutationSlugFromExtended(mutationDetails *goclientnew.ExtendedMutation) 
 func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Num", "RevisionNum", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "Invocation", "FunctionName"})
+		table.SetHeader([]string{"Num", "RevisionNum", "MergeSource", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "Invocation", "FunctionName"})
 	}
 	for _, extendedMutation := range extendedMutations {
 		mutationDetails := extendedMutation.Mutation
-		var linkSlug, triggerSlug, invocationSlug string
+		var mergeSourceSlug, linkSlug, triggerSlug, invocationSlug string
+		if extendedMutation.MergeSource != nil {
+			mergeSourceSlug = extendedMutation.MergeSource.Slug
+		} else if mutationDetails.MergeSourceID != nil && *mutationDetails.MergeSourceID != uuid.Nil {
+			mergeSourceSlug = mutationDetails.MergeSourceID.String()
+		}
 		if extendedMutation.Link != nil {
 			linkSlug = extendedMutation.Link.Slug
+		} else if mutationDetails.LinkID != nil && *mutationDetails.LinkID != uuid.Nil {
+			linkSlug = mutationDetails.LinkID.String()
 		}
 		if extendedMutation.Trigger != nil {
 			triggerSlug = extendedMutation.Trigger.Slug
+		} else if mutationDetails.TriggerID != nil && *mutationDetails.TriggerID != uuid.Nil {
+			triggerSlug = mutationDetails.TriggerID.String()
 		}
 		if extendedMutation.Invocation != nil {
 			invocationSlug = extendedMutation.Invocation.Slug
+		} else if mutationDetails.InvocationID != nil && *mutationDetails.InvocationID != uuid.Nil {
+			invocationSlug = mutationDetails.InvocationID.String()
 		}
 		table.Append([]string{
 			fmt.Sprintf("%d", mutationDetails.MutationNum),
 			fmt.Sprintf("%d", mutationDetails.RevisionNum),
+			mergeSourceSlug,
 			linkSlug,
 			mutationDetails.ProvidedResource.ResourceName,
 			mutationDetails.ProvidedPath,
@@ -135,7 +147,7 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "SpaceID,RevisionID,LinkID,TriggerID,InvocationID"
+	include := "SpaceID,RevisionID,MergeSourceID,LinkID,TriggerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"MutationNum", "MutationID", "UnitID", "SpaceID", "OrganizationID"}

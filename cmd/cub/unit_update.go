@@ -37,6 +37,7 @@ Unit configuration data can be provided in multiple ways:
   1. From a local or remote configuration file, or from stdin (by specifying "-")
   2. By restoring to a previous revision (using --restore)
   3. By upgrading from the upstream unit (using --upgrade)
+  4. By performing a 3-way merge with another unit (using --merge-source, --merge-base, --merge-end)
 
 Examples:
   # Update a unit from a local YAML file
@@ -82,6 +83,15 @@ Examples:
 
   # Update with a change description
   cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
+
+  # Perform a 3-way merge with another unit
+  cub unit update --space my-space myunit --merge-source other-unit --merge-base LiveRevisionNum --merge-end HeadRevisionNum
+
+  # Merge with specific revisions
+  cub unit update --space my-space myunit --merge-source upstream-unit --merge-base Tag:v1.0 --merge-end 42
+
+  # Merge with the unit itself (self-merge)
+  cub unit update --space my-space myunit --merge-source Self --merge-base LiveRevisionNum --merge-end HeadRevisionNum
 
 Patch Mode Examples:
   # Individual patch with labels
@@ -142,6 +152,9 @@ Key flags for agents:
 - --replace-from-stdin: Replace entire metadata from stdin
 - --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
+- --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
+- --merge-base: Base revision for merge (uses same format as --restore)
+- --merge-end: End revision for merge (uses same format as --restore)
 - --change-desc: Add a description for this change
 - --label: Update labels for organization and filtering
 - --patch: Use patch API for individual or bulk operations (enables --where and --unit flags for bulk mode)
@@ -154,7 +167,7 @@ Post-update workflow:
 3. Use 'unit approve' if approval is required
 4. Use 'unit apply' to deploy to live infrastructure
 
-Important: Only one of config-file, --restore, or --upgrade should be specified per update operation.`
+Important: Only one of config-file, --restore, --upgrade, or --merge-source (with --merge-base and --merge-end) should be specified per update operation.`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
@@ -165,6 +178,11 @@ var (
 	isUpgrade         bool
 	isPatch           bool
 	changesetSlug     string
+	mergeSource       string
+	mergeBase         string
+	mergeEnd          string
+	whereMutation     string
+	filterMutation    string
 )
 
 func init() {
@@ -175,6 +193,11 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
+	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
+	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore)")
+	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision for 3-way merge (uses same format as --restore)")
+	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
+	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -239,8 +262,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --label, --delete-gate, --destroy-gate, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && mergeSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset"))
 		}
 	}
 
@@ -257,13 +280,35 @@ func checkConflictingArgs(args []string) bool {
 		failOnError(err)
 	}
 
-	if restore != "" && isUpgrade {
-		failOnError(fmt.Errorf("only one of --restore and --upgrade should be specified"))
+	// Check for mutually exclusive options
+	optionsSet := 0
+	if restore != "" {
+		optionsSet++
+	}
+	if isUpgrade {
+		optionsSet++
+	}
+	if mergeSource != "" {
+		optionsSet++
+		if mergeBase == "" || mergeEnd == "" {
+			failOnError(fmt.Errorf("--merge-base and --merge-end must be provided with --merge-source"))
+		}
+	} else {
+		if mergeBase != "" || mergeEnd != "" {
+			failOnError(fmt.Errorf("--merge-source must be provided with --merge-base and --merge-end"))
+		}
+		if whereMutation != "" || filterMutation != "" {
+			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
+		}
 	}
 
-	dataFromEntity := restore != "" || isUpgrade
+	if optionsSet > 1 {
+		failOnError(fmt.Errorf("only one of --restore, --upgrade, or --merge-source should be specified"))
+	}
+
+	dataFromEntity := restore != "" || isUpgrade || mergeSource != ""
 	if dataFromEntity && len(args) > 1 {
-		failOnError(fmt.Errorf("only one of --restore, --upgrade, or config-file should be specified"))
+		failOnError(fmt.Errorf("only one of --restore, --upgrade, --merge-source, or config-file should be specified"))
 	}
 
 	if isPatch && flagReplace {
@@ -393,7 +438,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Prepare Unit Data. These 3 alternatives are ensured to be mutually exclusve by checkConflictingArgs above.
+	// Prepare Unit Data. These alternatives are ensured to be mutually exclusive by checkConflictingArgs above.
 
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
@@ -401,8 +446,67 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if restore != "" {
 		// Parse restore parameter - enhanced to support Tag:slug, ChangeSet:slug formats
-		if err := parseRestoreParameter(restore, newParams, currentUnit); err != nil {
+		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, currentUnit.UnitID, currentUnit.SpaceID.String(), currentUnit.HeadRevisionNum)
+		if err != nil {
 			return err
+		}
+		if restoreIsUUID {
+			// It's a revision ID - set RevisionId parameter
+			revisionUUID, _ := uuid.Parse(restoreFormatted)
+			newParams.RevisionId = &revisionUUID
+		} else {
+			// It's a formatted restore specification
+			newParams.Restore = &restoreFormatted
+		}
+	}
+
+	if mergeSource != "" {
+		var mergeSourceUnit *goclientnew.Unit
+		var mergeSourceStr string
+
+		// Check if merge source is "Self"
+		if mergeSource == "Self" {
+			// Pass "Self" directly to the API
+			mergeSourceStr = "Self"
+			mergeSourceUnit = currentUnit
+		} else {
+			// Parse merge source unit
+			mergeSourceUnit, err = parseEntityIdentifierSingleAsEntity[goclientnew.Unit](
+				mergeSource,
+				"unit",
+				"UnitID,SpaceID,HeadRevisionNum",
+				apiGetUnitFromSlugInSpace,
+				func(u *goclientnew.Unit) string { return u.UnitID.String() },
+			)
+			if err != nil {
+				return fmt.Errorf("failed to get merge source unit: %w", err)
+			}
+			mergeSourceStr = mergeSourceUnit.UnitID.String()
+		}
+		newParams.MergeSource = &mergeSourceStr
+
+		mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, mergeSourceUnit.UnitID, mergeSourceUnit.SpaceID.String(), mergeSourceUnit.HeadRevisionNum)
+		if err != nil {
+			return fmt.Errorf("invalid merge base specification: %w", err)
+		}
+		newParams.MergeBase = &mergeBaseFormatted
+
+		mergeEndFormatted, _, err := parseSelectedRevisionParameter(mergeEnd, mergeSourceUnit.UnitID, mergeSourceUnit.SpaceID.String(), mergeSourceUnit.HeadRevisionNum)
+		if err != nil {
+			return fmt.Errorf("invalid merge end specification: %w", err)
+		}
+		newParams.MergeEnd = &mergeEndFormatted
+
+		// Add mutation filtering parameters if provided
+		if whereMutation != "" {
+			newParams.WhereMutation = &whereMutation
+		}
+		if filterMutation != "" {
+			filterMutationUUID, err := parseFilterFlag(filterMutation)
+			if err != nil {
+				return fmt.Errorf("failed to parse filter-mutation: %w", err)
+			}
+			newParams.FilterMutation = &filterMutationUUID
 		}
 	}
 
@@ -513,82 +617,85 @@ func runBulkUnitUpdate() error {
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	params.Include = &include
 
+	// Add merge parameters if specified
+	if mergeSource != "" {
+		var mergeSourceStr string
+		var mergeUnitID uuid.UUID
+		var mergeSpaceIDStr string
+		var mergeHeadRevisionNum int64
+
+		// Note: For bulk operations, "Self" means different units for each item.
+		// Pass dummy values.
+		if mergeSource == "Self" {
+			mergeSourceStr = "Self"
+			mergeUnitID = uuid.Nil
+			mergeSpaceIDStr = "*"
+			mergeHeadRevisionNum = 0
+		} else {
+			// Parse merge source unit
+			mergeSourceUnit, err := parseEntityIdentifierSingleAsEntity[goclientnew.Unit](
+				mergeSource,
+				"unit",
+				"UnitID,SpaceID,HeadRevisionNum",
+				apiGetUnitFromSlugInSpace,
+				func(u *goclientnew.Unit) string { return u.UnitID.String() },
+			)
+			if err != nil {
+				return fmt.Errorf("failed to get merge source unit: %w", err)
+			}
+
+			mergeSourceStr = mergeSourceUnit.UnitID.String()
+			mergeUnitID = mergeSourceUnit.UnitID
+			mergeSpaceIDStr = mergeSourceUnit.SpaceID.String()
+			mergeHeadRevisionNum = mergeSourceUnit.HeadRevisionNum
+		}
+		params.MergeSource = &mergeSourceStr
+		mergeBaseFormatted, mergeBaseIsUUID, err := parseSelectedRevisionParameter(mergeBase, mergeUnitID, mergeSpaceIDStr, mergeHeadRevisionNum)
+		if err != nil {
+			return fmt.Errorf("invalid merge base specification: %w", err)
+		}
+		if mergeBaseIsUUID {
+			// Convert UUID back to Revision:UUID format for bulk API
+			mergeBaseFormatted = fmt.Sprintf("Revision:%s", mergeBaseFormatted)
+		}
+		params.MergeBase = &mergeBaseFormatted
+
+		mergeEndFormatted, mergeEndIsUUID, err := parseSelectedRevisionParameter(mergeEnd, mergeUnitID, mergeSpaceIDStr, mergeHeadRevisionNum)
+		if err != nil {
+			return fmt.Errorf("invalid merge end specification: %w", err)
+		}
+		if mergeEndIsUUID {
+			// Convert UUID back to Revision:UUID format for bulk API
+			mergeEndFormatted = fmt.Sprintf("Revision:%s", mergeEndFormatted)
+		}
+		params.MergeEnd = &mergeEndFormatted
+
+		// Add mutation filtering parameters if provided
+		if whereMutation != "" {
+			params.WhereMutation = &whereMutation
+		}
+		if filterMutation != "" {
+			filterMutationUUID, err := parseFilterFlag(filterMutation)
+			if err != nil {
+				return fmt.Errorf("failed to parse filter-mutation: %w", err)
+			}
+			params.FilterMutation = &filterMutationUUID
+		}
+	}
+
 	// Add restore parameter if specified
 	if restore != "" {
-		// Check for Before: prefix and remove it
-		var isBeforeModifier bool
-		originalRestore := restore
-		if strings.HasPrefix(restore, "Before:") {
-			isBeforeModifier = true
-			restore = strings.TrimPrefix(restore, "Before:")
+		// Parse restore using consolidated logic
+		// For bulk operations, use "*" as spaceID to prevent revision number resolution
+		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, uuid.Nil, "*", 0)
+		if err != nil {
+			return fmt.Errorf("invalid restore specification: %w", err)
 		}
-
-		// Parse the remaining restore parameter
-		parts := strings.Split(restore, ":")
-		var entityType, identifier string
-
-		switch len(parts) {
-		case 2:
-			// EntityType:Identifier format
-			entityType = parts[0]
-			identifier = parts[1]
-		case 1:
-			// Simple identifier
-			identifier = parts[0]
-		default:
-			params.Restore = &originalRestore
+		if restoreIsUUID {
+			// Convert UUID back to Revision:UUID format for bulk API
+			restoreFormatted = fmt.Sprintf("Revision:%s", restoreFormatted)
 		}
-
-		if entityType == "Tag" {
-			// Parse tag slug/ID and convert to UUID
-			tagUUID, err := parseTagSlug(identifier)
-			if err != nil {
-				return fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
-			}
-			// Use the restore parameter format that the server expects
-			var restoreValue string
-			if isBeforeModifier {
-				restoreValue = fmt.Sprintf("Before:Tag:%s", tagUUID)
-			} else {
-				restoreValue = fmt.Sprintf("Tag:%s", tagUUID)
-			}
-			params.Restore = &restoreValue
-		} else if entityType == "ChangeSet" {
-			// Parse changeset slug/ID and convert to UUID
-			changesetUUID, err := parseChangeSetSlug(identifier)
-			if err != nil {
-				return fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
-			}
-			// Use the restore parameter format that the server expects
-			var restoreValue string
-			if isBeforeModifier {
-				restoreValue = fmt.Sprintf("Before:ChangeSet:%s", changesetUUID)
-			} else {
-				restoreValue = fmt.Sprintf("ChangeSet:%s", changesetUUID)
-			}
-			params.Restore = &restoreValue
-		} else if entityType == "Revision" {
-			// Parse revision UUID
-			revisionUUID, err := uuid.Parse(identifier)
-			if err != nil {
-				return fmt.Errorf("invalid revision UUID '%s': %w", identifier, err)
-			}
-			// Use the restore parameter format that the server expects
-			var restoreValue string
-			if isBeforeModifier {
-				restoreValue = fmt.Sprintf("Before:Revision:%s", revisionUUID.String())
-			} else {
-				restoreValue = fmt.Sprintf("Revision:%s", revisionUUID.String())
-			}
-			params.Restore = &restoreValue
-		} else if len(parts) == 1 && isBeforeModifier {
-			// Before:SimpleValue format (Before:LiveRevisionNum, etc.)
-			restoreValue := fmt.Sprintf("Before:%s", identifier)
-			params.Restore = &restoreValue
-		} else if params.Restore == nil {
-			// Use restore value as-is for other formats
-			params.Restore = &originalRestore
-		}
+		params.Restore = &restoreFormatted
 	}
 
 	// Add upgrade parameter if specified
@@ -645,6 +752,21 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	}
 	if updateParams.Upgrade != nil {
 		patchParams.Upgrade = updateParams.Upgrade
+	}
+	if updateParams.MergeSource != nil {
+		patchParams.MergeSource = updateParams.MergeSource
+	}
+	if updateParams.MergeBase != nil {
+		patchParams.MergeBase = updateParams.MergeBase
+	}
+	if updateParams.MergeEnd != nil {
+		patchParams.MergeEnd = updateParams.MergeEnd
+	}
+	if updateParams.WhereMutation != nil {
+		patchParams.WhereMutation = updateParams.WhereMutation
+	}
+	if updateParams.FilterMutation != nil {
+		patchParams.FilterMutation = updateParams.FilterMutation
 	}
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
@@ -759,18 +881,22 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 	)
 }
 
-// parseRestoreParameter parses various restore formats and sets the appropriate parameters
-func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams, currentUnit *goclientnew.Unit) error {
+// parseSelectedRevisionParameter parses various revision formats and returns the formatted value
+// This renamed function can be used for restore, merge-base, merge-end and other revision specifications
+// Returns: (formatted string, isUUID bool, error)
+// If isUUID is true, the formatted string is a revision UUID that should be used as RevisionId
+// Otherwise, it's a formatted restore/revision specification string
+func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, spaceID string, headRevisionNum int64) (string, bool, error) {
 	// Check for Before: prefix and remove it
 	var isBeforeModifier bool
-	originalRestore := restore
-	if strings.HasPrefix(restore, "Before:") {
+	originalSpec := revisionSpec
+	if strings.HasPrefix(revisionSpec, "Before:") {
 		isBeforeModifier = true
-		restore = strings.TrimPrefix(restore, "Before:")
+		revisionSpec = strings.TrimPrefix(revisionSpec, "Before:")
 	}
 
-	// Parse the remaining restore parameter
-	parts := strings.Split(restore, ":")
+	// Parse the remaining revision specification
+	parts := strings.Split(revisionSpec, ":")
 	var entityType, identifier string
 
 	switch len(parts) {
@@ -782,7 +908,7 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
 		identifier = parts[0]
 	default:
-		return fmt.Errorf("invalid restore specification: %s", originalRestore)
+		return "", false, fmt.Errorf("invalid revision specification: %s", originalSpec)
 	}
 
 	// Handle entity type-specific parsing
@@ -790,80 +916,78 @@ func parseRestoreParameter(restore string, params *goclientnew.UpdateUnitParams,
 		// Parse tag slug/ID and convert to UUID
 		tagUUID, err := parseTagSlug(identifier)
 		if err != nil {
-			return fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+			return "", false, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 		}
-		// Use the restore parameter format that getSelectedRevision expects
-		var restoreValue string
+		// Return the formatted value
 		if isBeforeModifier {
-			restoreValue = fmt.Sprintf("Before:Tag:%s", tagUUID)
-		} else {
-			restoreValue = fmt.Sprintf("Tag:%s", tagUUID)
+			return fmt.Sprintf("Before:Tag:%s", tagUUID), false, nil
 		}
-		params.Restore = &restoreValue
-		return nil
+		return fmt.Sprintf("Tag:%s", tagUUID), false, nil
 
 	} else if entityType == "ChangeSet" {
 		// Parse changeset slug/ID and convert to UUID
 		changesetUUID, err := parseChangeSetSlug(identifier)
 		if err != nil {
-			return fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
+			return "", false, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
 		}
-		// Use the restore parameter format that getSelectedRevision expects
-		var restoreValue string
+		// Return the formatted value
 		if isBeforeModifier {
-			restoreValue = fmt.Sprintf("Before:ChangeSet:%s", changesetUUID)
-		} else {
-			restoreValue = fmt.Sprintf("ChangeSet:%s", changesetUUID)
+			return fmt.Sprintf("Before:ChangeSet:%s", changesetUUID), false, nil
 		}
-		params.Restore = &restoreValue
-		return nil
+		return fmt.Sprintf("ChangeSet:%s", changesetUUID), false, nil
 
 	} else if entityType == "Revision" {
 		// Handle Revision:uuid format
 		if revisionUUID, err := uuid.Parse(identifier); err == nil {
-			// It's a UUID - use as revision ID directly
-			params.RevisionId = &revisionUUID
-			return nil
+			// It's a UUID - return it to be used as revision ID
+			return revisionUUID.String(), true, nil
 		} else {
-			return fmt.Errorf("invalid revision identifier '%s': must be a UUID", identifier)
+			return "", false, fmt.Errorf("invalid revision identifier '%s': must be a UUID", identifier)
 		}
 
 	} else if entityType != "" {
-		return fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
+		return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
 	}
 
 	// Handle simple identifiers (no entity type prefix)
-	if identifier == "LiveRevisionNum" || identifier == "LastAppliedRevisionNum" || identifier == "PreviousLiveRevisionNum" {
-		// Special restore values
-		var restoreValue string
+	if identifier == "LiveRevisionNum" || identifier == "LastAppliedRevisionNum" ||
+		identifier == "PreviousLiveRevisionNum" || identifier == "HeadRevisionNum" {
+		// Special revision values
 		if isBeforeModifier {
-			restoreValue = fmt.Sprintf("Before:%s", identifier)
-		} else {
-			restoreValue = identifier
+			return fmt.Sprintf("Before:%s", identifier), false, nil
 		}
-		params.Restore = &restoreValue
-		return nil
+		return identifier, false, nil
 	}
 
 	// Fall back to original parsing logic for UUIDs and integers
 	if revisionUUID, err := uuid.Parse(identifier); err == nil {
-		// It's a UUID - use as revision ID directly
-		params.RevisionId = &revisionUUID
+		// It's a UUID - return it to be used as revision ID
+		return revisionUUID.String(), true, nil
 	} else if revisionNum, err := strconv.ParseInt(identifier, 10, 64); err == nil {
 		// It's an integer - treat as revision number
 		if revisionNum < 0 {
 			// A negative value means it's relative to head revision num
-			revisionNum = int64(currentUnit.HeadRevisionNum) + revisionNum
+			subtracted := headRevisionNum + revisionNum
+			if subtracted < 1 {
+				return "", false, fmt.Errorf("revision delta %d must be less than HeadRevisionNum %d", revisionNum, headRevisionNum)
+			}
+			revisionNum = subtracted
+			identifier = fmt.Sprintf("%d", revisionNum)
 		}
-		rev, err := apiGetRevisionFromNumber(revisionNum, currentUnit.UnitID.String(), "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		// TODO: this should read RevisionID, but stays revision_id in the query parameter call
-		params.RevisionId = &rev.RevisionID
+		// We don't actually need to pass a UUID. We can pass the number.
+		// // Check if this is a bulk operation (spaceID is "*")
+		// if spaceID == "*" {
+		// 	return "", false, fmt.Errorf("revision numbers not supported in bulk operations (use revision UUID, named revision, Tag:slug, or ChangeSet:slug instead): %s", originalSpec)
+		// }
+		// // Use the provided spaceID to resolve revision number
+		// rev, err := apiGetRevisionFromNumberInSpace(revisionNum, unitID.String(), spaceID, "RevisionID")
+		// if err != nil {
+		// 	return "", false, err
+		// }
+		// // Return the revision ID to be used
+		// return rev.RevisionID.String(), true, nil
+		return identifier, false, nil
 	} else {
-		return fmt.Errorf("invalid restore value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", restore)
+		return "", false, fmt.Errorf("invalid revision value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum/HeadRevisionNum", revisionSpec)
 	}
-
-	return nil
 }

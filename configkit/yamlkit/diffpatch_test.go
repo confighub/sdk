@@ -545,3 +545,169 @@ func TestDiffPatch_NoNullSuffixRegression(t *testing.T) {
 		assert.NoError(t, err, "Result should be valid YAML")
 	})
 }
+
+func TestDiffPatchWithOptions_OmitAdditions(t *testing.T) {
+	original := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  key1: value1`)
+
+	modified := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  key1: modified-value1
+  key2: value2`)
+
+	target := original
+
+	t.Run("without omitAdditions includes all changes", func(t *testing.T) {
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.K8sResourceProvider, false)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+		resultStr := string(result)
+		assert.Contains(t, resultStr, "modified-value1")
+		assert.Contains(t, resultStr, "key2: value2")
+	})
+
+	t.Run("with omitAdditions excludes new keys but includes modifications", func(t *testing.T) {
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.K8sResourceProvider, true)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+		resultStr := string(result)
+		assert.Contains(t, resultStr, "modified-value1")
+		assert.NotContains(t, resultStr, "key2: value2")
+	})
+
+	t.Run("no changes when original and modified are identical", func(t *testing.T) {
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, original, target, k8skit.K8sResourceProvider, true)
+
+		assert.NoError(t, err)
+		assert.False(t, changed)
+		assert.Equal(t, string(target), string(result))
+	})
+
+	t.Run("omitAdditions filters out new resources entirely", func(t *testing.T) {
+		originalMulti := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: existing-config
+data:
+  key1: value1`)
+
+		modifiedMulti := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: existing-config
+data:
+  key1: modified-value1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: new-secret
+data:
+  secret-key: c2VjcmV0`)
+
+		targetMulti := originalMulti
+
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalMulti, modifiedMulti, targetMulti, k8skit.K8sResourceProvider, true)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+		resultStr := string(result)
+		assert.Contains(t, resultStr, "modified-value1")
+		assert.NotContains(t, resultStr, "Secret")
+		assert.NotContains(t, resultStr, "new-secret")
+		assert.NotContains(t, resultStr, "secret-key")
+	})
+
+	t.Run("delete mutations remove entire resources", func(t *testing.T) {
+		originalWithTwo := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-one
+data:
+  key1: value1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-two
+data:
+  key2: value2`)
+
+		modifiedWithOne := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-one
+data:
+  key1: value1-modified`)
+
+		targetWithTwo := originalWithTwo
+
+		// Test that the second resource is deleted
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalWithTwo, modifiedWithOne, targetWithTwo, k8skit.K8sResourceProvider, false)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+		resultStr := string(result)
+		assert.Contains(t, resultStr, "config-one")
+		assert.Contains(t, resultStr, "value1-modified")
+		assert.NotContains(t, resultStr, "config-two")
+		assert.NotContains(t, resultStr, "key2: value2")
+
+		// Verify no stray YAML separators or null documents
+		assert.NotContains(t, resultStr, "---\nnull")
+		assert.NotContains(t, resultStr, "\nnull\n")
+		assert.NotContains(t, resultStr, "null\n")
+	})
+
+	t.Run("test omitAdditions with field-level additions", func(t *testing.T) {
+		originalFieldLevel := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+data:
+  existing-key: existing-value`)
+
+		modifiedFieldLevel := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+  labels:
+    app: test
+data:
+  existing-key: updated-value
+  new-key: new-value`)
+
+		targetFieldLevel := originalFieldLevel
+
+		// Test with omitAdditions=true - should only update existing fields
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.K8sResourceProvider, true)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+		resultStr := string(result)
+		assert.Contains(t, resultStr, "updated-value")
+		assert.NotContains(t, resultStr, "new-key: new-value")
+		assert.NotContains(t, resultStr, "labels:")
+		assert.NotContains(t, resultStr, "app: test")
+
+		// Test with omitAdditions=false - should include all changes
+		result2, changed2, err2 := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.K8sResourceProvider, false)
+
+		assert.NoError(t, err2)
+		assert.True(t, changed2)
+		resultStr2 := string(result2)
+		assert.Contains(t, resultStr2, "updated-value")
+		assert.Contains(t, resultStr2, "new-key: new-value")
+		assert.Contains(t, resultStr2, "labels:")
+		assert.Contains(t, resultStr2, "app: test")
+	})
+}

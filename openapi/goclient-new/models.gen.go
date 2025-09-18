@@ -507,6 +507,20 @@ type ExtendedMutation struct {
 	// They also imply an ordering when Applied or Destroyed as a Set.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
+	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
+	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
+	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
+	// the underlying configuration / deployment tool. The resources must belong to a single
+	// infrastructure provider and the actuation mechanism must be able to resolve references and
+	// ordering dependencies among the resources within the document. For example, if one resource
+	// needs to be fully provisioned to provide input to another resource, then the actuation code is
+	// responsible for handling this. Revisions store historical copies of the configuration data.
+	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
+	// new variants of a configuration.
+	MergeSource *Unit `json:"MergeSource,omitempty" yaml:"MergeSource,omitempty"`
+
 	// Mutation Mutation is a single source of mutation for a Revision.
 	Mutation *Mutation `json:"Mutation,omitempty" yaml:"Mutation,omitempty"`
 
@@ -1205,6 +1219,13 @@ type Mutation struct {
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 	InvocationID       *UUID               `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 	LinkID             *UUID               `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+
+	// MergeBaseRevisionNum MergeBaseRevisionNum is the sequence number of the revision preceding merged changes, if the change was due to a merge operation.
+	MergeBaseRevisionNum int64 `json:"MergeBaseRevisionNum,omitempty" yaml:"MergeBaseRevisionNum,omitempty"`
+
+	// MergeEndRevisionNum MergeEndRevisionNum is the sequence number of the revision ending merged changes, if the change was due to a merge operation.
+	MergeEndRevisionNum int64 `json:"MergeEndRevisionNum,omitempty" yaml:"MergeEndRevisionNum,omitempty"`
+	MergeSourceID       *UUID `json:"MergeSourceID,omitempty" yaml:"MergeSourceID,omitempty"`
 
 	// MutationID Unique identifier for a Mutation.
 	MutationID openapi_types.UUID `json:"MutationID,omitempty" yaml:"MutationID,omitempty"`
@@ -1936,6 +1957,22 @@ type Unit struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
+// UnitAction defines model for UnitAction.
+type UnitAction struct {
+	Action            *ActionType        `json:"Action,omitempty" yaml:"Action,omitempty"`
+	BridgeWorkerID    openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	CreatedAt         time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	ExtraParams       string             `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+	OrganizationID    openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+	SpaceID           openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	Status            string             `json:"Status,omitempty" yaml:"Status,omitempty"`
+	TargetID          openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	UnitID            openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	Version           int64              `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
 // UnitActionResponse defines model for UnitActionResponse.
 type UnitActionResponse struct {
 	// Action QueuedOperation is a record of an operation to be done by a bridge worker.
@@ -2590,9 +2627,8 @@ type ListAllBridgeWorkersParams struct {
 // BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchBridgeWorkers.
 type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *[]int              `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
-	Condition      *string             `json:"Condition" yaml:"Condition"`
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	Condition   *string             `json:"Condition" yaml:"Condition"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -2846,7 +2882,6 @@ type ListAllChangeSetsParams struct {
 type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	ChangeSetID *[]int              `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -2943,7 +2978,6 @@ type BulkPatchChangeSetsParams struct {
 type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	ChangeSetID *[]int              `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -3262,10 +3296,9 @@ type BulkPatchFiltersApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	From        *string `json:"From" yaml:"From"`
-	FromSpaceID *[]int  `json:"FromSpaceID" yaml:"FromSpaceID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	From        *string             `json:"From" yaml:"From"`
+	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -3363,10 +3396,9 @@ type BulkCreateFiltersApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	From        *string `json:"From" yaml:"From"`
-	FromSpaceID *[]int  `json:"FromSpaceID" yaml:"FromSpaceID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	From        *string             `json:"From" yaml:"From"`
+	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -3729,7 +3761,7 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -3739,7 +3771,6 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -3833,7 +3864,7 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -3843,7 +3874,6 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -4152,17 +4182,16 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *[]int  `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
-	LinkID *[]int              `json:"LinkID" yaml:"LinkID"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string `json:"Slug" yaml:"Slug"`
-	ToSpaceID *[]int  `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *[]int  `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug      *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -4253,17 +4282,16 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *[]int  `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
-	LinkID *[]int              `json:"LinkID" yaml:"LinkID"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string `json:"Slug" yaml:"Slug"`
-	ToSpaceID *[]int  `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *[]int  `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug      *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -4980,9 +5008,8 @@ type GetBridgeWorkerParams struct {
 // PatchBridgeWorkerApplicationMergePatchPlusJSONBody defines parameters for PatchBridgeWorker.
 type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *[]int              `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
-	Condition      *string             `json:"Condition" yaml:"Condition"`
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	Condition   *string             `json:"Condition" yaml:"Condition"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -5116,7 +5143,6 @@ type GetChangeSetParams struct {
 type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	ChangeSetID *[]int              `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -5262,10 +5288,9 @@ type PatchFilterApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	From        *string `json:"From" yaml:"From"`
-	FromSpaceID *[]int  `json:"FromSpaceID" yaml:"FromSpaceID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	From        *string             `json:"From" yaml:"From"`
+	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -5470,7 +5495,7 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -5480,7 +5505,6 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -5614,17 +5638,16 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *[]int  `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
-	LinkID *[]int              `json:"LinkID" yaml:"LinkID"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string `json:"Slug" yaml:"Slug"`
-	ToSpaceID *[]int  `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *[]int  `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug      *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -5869,8 +5892,7 @@ type PatchTagApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug  *string `json:"Slug" yaml:"Slug"`
-	TagID *[]int  `json:"TagID" yaml:"TagID"`
+	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -5992,7 +6014,7 @@ type GetTargetParams struct {
 type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *[]int              `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6007,7 +6029,6 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
-	TargetID      *[]int  `json:"TargetID" yaml:"TargetID"`
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -6133,7 +6154,7 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6145,8 +6166,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
+	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -6154,8 +6175,6 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
-	TriggerID     *[]int  `json:"TriggerID" yaml:"TriggerID"`
-	Validating    *bool   `json:"Validating" yaml:"Validating"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -6373,10 +6392,10 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
-	ChangeSetID *[]int `json:"ChangeSetID" yaml:"ChangeSetID"`
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// Data The full configuration data for this unit.
-	Data *[]int `json:"Data" yaml:"Data"`
+	Data *[]byte `json:"Data" yaml:"Data"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6394,13 +6413,13 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
 
 	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
-	SetID *[]int `json:"SetID" yaml:"SetID"`
+	SetID *openapi_types.UUID `json:"SetID" yaml:"SetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *[]int `json:"TargetID" yaml:"TargetID"`
+	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -6417,8 +6436,64 @@ type PatchUnitParams struct {
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
+
+	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
+	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
+
+	// MergeBase Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
+
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
+
+	// WhereMutation The specified string is an expression for the purpose of filtering
+	// the list of Mutations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	//
+	// Used to filter which mutations are affected during merge operations.
+	//
+	// The whole string must be query-encoded.
+	WhereMutation *string `form:"where_mutation,omitempty" json:"where_mutation,omitempty" yaml:"where_mutation,omitempty"`
+
+	// FilterMutation UUID of a Filter entity to apply to the Mutation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Mutation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
 }
 
 // UpdateUnitParams defines parameters for UpdateUnit.
@@ -6429,8 +6504,64 @@ type UpdateUnitParams struct {
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
+
+	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
+	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
+
+	// MergeBase Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
+
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
+
+	// WhereMutation The specified string is an expression for the purpose of filtering
+	// the list of Mutations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	//
+	// Used to filter which mutations are affected during merge operations.
+	//
+	// The whole string must be query-encoded.
+	WhereMutation *string `form:"where_mutation,omitempty" json:"where_mutation,omitempty" yaml:"where_mutation,omitempty"`
+
+	// FilterMutation UUID of a Filter entity to apply to the Mutation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Mutation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
 }
 
 // ApplyUnitParams defines parameters for ApplyUnit.
@@ -6474,7 +6605,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6513,7 +6644,7 @@ type ListExtendedMutationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Mutation are InvocationID, LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
+	// Supported attributes for Mutation are InvocationID, LinkID, MergeSourceID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6535,7 +6666,7 @@ type GetExtendedMutationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Mutation are InvocationID, LinkID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
+	// Supported attributes for Mutation are InvocationID, LinkID, MergeSourceID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6657,6 +6788,71 @@ type GetExtendedRevisionParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// ListUnitActionsParams defines parameters for ListUnitActions.
+type ListUnitActionsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of QueuedOperations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the QueuedOperation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (QueuedOperation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 }
 
 // ListUnitEventsParams defines parameters for ListUnitEvents.
@@ -6846,9 +7042,9 @@ type PatchViewApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	GroupBy     *string `json:"GroupBy" yaml:"GroupBy"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
+	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -6859,8 +7055,7 @@ type PatchViewApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int   `json:"Version" yaml:"Version"`
-	ViewID  *[]int `json:"ViewID" yaml:"ViewID"`
+	Version *int `json:"Version" yaml:"Version"`
 }
 
 // BulkDeleteTagsParams defines parameters for BulkDeleteTags.
@@ -7036,8 +7231,7 @@ type BulkPatchTagsApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug  *string `json:"Slug" yaml:"Slug"`
-	TagID *[]int  `json:"TagID" yaml:"TagID"`
+	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -7132,8 +7326,7 @@ type BulkCreateTagsApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug  *string `json:"Slug" yaml:"Slug"`
-	TagID *[]int  `json:"TagID" yaml:"TagID"`
+	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -7428,7 +7621,7 @@ type ListAllTargetsParams struct {
 type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *[]int              `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -7443,7 +7636,6 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
-	TargetID      *[]int  `json:"TargetID" yaml:"TargetID"`
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -7689,7 +7881,7 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -7701,8 +7893,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
+	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -7710,8 +7902,6 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
-	TriggerID     *[]int  `json:"TriggerID" yaml:"TriggerID"`
-	Validating    *bool   `json:"Validating" yaml:"Validating"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -7798,7 +7988,7 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *[]int                    `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -7810,8 +8000,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
-	InvocationID *[]int  `json:"InvocationID" yaml:"InvocationID"`
+	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -7819,8 +8009,6 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
-	TriggerID     *[]int  `json:"TriggerID" yaml:"TriggerID"`
-	Validating    *bool   `json:"Validating" yaml:"Validating"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -8127,10 +8315,10 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
-	ChangeSetID *[]int `json:"ChangeSetID" yaml:"ChangeSetID"`
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// Data The full configuration data for this unit.
-	Data *[]int `json:"Data" yaml:"Data"`
+	Data *[]byte `json:"Data" yaml:"Data"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -8148,13 +8336,13 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
 
 	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
-	SetID *[]int `json:"SetID" yaml:"SetID"`
+	SetID *openapi_types.UUID `json:"SetID" yaml:"SetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *[]int `json:"TargetID" yaml:"TargetID"`
+	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -8238,11 +8426,67 @@ type BulkPatchUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// Upgrade If true, upgrade units from upstream sources
+	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore mode: 'LiveRevisionNum', 'LastAppliedRevisionNum', or 'PreviousLiveRevisionNum'
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
+
+	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
+	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
+
+	// MergeBase Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
+
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
+
+	// WhereMutation The specified string is an expression for the purpose of filtering
+	// the list of Mutations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	//
+	// Used to filter which mutations are affected during merge operations.
+	//
+	// The whole string must be query-encoded.
+	WhereMutation *string `form:"where_mutation,omitempty" json:"where_mutation,omitempty" yaml:"where_mutation,omitempty"`
+
+	// FilterMutation UUID of a Filter entity to apply to the Mutation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Mutation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
 }
 
 // BulkCreateUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateUnits.
@@ -8251,10 +8495,10 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
-	ChangeSetID *[]int `json:"ChangeSetID" yaml:"ChangeSetID"`
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
 
 	// Data The full configuration data for this unit.
-	Data *[]int `json:"Data" yaml:"Data"`
+	Data *[]byte `json:"Data" yaml:"Data"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -8272,13 +8516,13 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
 
 	// SetID Unique identifier for the Set the Unit belongs to. Sets are used to group related units together. Optional. Units are not required to belong to sets. Cleared automatically when the Set is deleted.
-	SetID *[]int `json:"SetID" yaml:"SetID"`
+	SetID *openapi_types.UUID `json:"SetID" yaml:"SetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *[]int `json:"TargetID" yaml:"TargetID"`
+	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -8656,6 +8900,85 @@ type BulkDestroyUnitsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkRefreshUnitsParams defines parameters for BulkRefreshUnits.
+type BulkRefreshUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where string `form:"where" json:"where" yaml:"where"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun Dry run mode - validates which units would be refreshed without executing
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
 // BulkTagUnitsParams defines parameters for BulkTagUnits.
 type BulkTagUnitsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -8965,9 +9288,9 @@ type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	GroupBy     *string `json:"GroupBy" yaml:"GroupBy"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
+	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -8978,8 +9301,7 @@ type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int   `json:"Version" yaml:"Version"`
-	ViewID  *[]int `json:"ViewID" yaml:"ViewID"`
+	Version *int `json:"Version" yaml:"Version"`
 }
 
 // BulkPatchViewsParams defines parameters for BulkPatchViews.
@@ -9066,9 +9388,9 @@ type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	FilterID    *[]int  `json:"FilterID" yaml:"FilterID"`
-	GroupBy     *string `json:"GroupBy" yaml:"GroupBy"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
+	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -9079,8 +9401,7 @@ type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int   `json:"Version" yaml:"Version"`
-	ViewID  *[]int `json:"ViewID" yaml:"ViewID"`
+	Version *int `json:"Version" yaml:"Version"`
 }
 
 // BulkCreateViewsParams defines parameters for BulkCreateViews.

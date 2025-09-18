@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/confighub/sdk/cubapi"
 	"github.com/spf13/cobra"
 )
 
@@ -89,9 +90,9 @@ func authTestLoginCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Parse the response into an AuthSession
-	session := AuthSession{}
-	session.AuthType = "JWT"
+	// Parse the response into an cubapi.AuthSession
+	session := cubapi.AuthSession{}
+	session.AuthType = cubapi.AuthTypeJWT
 
 	if err := json.Unmarshal(body, &session); err != nil {
 		return fmt.Errorf("failed to parse authentication response: %w", err)
