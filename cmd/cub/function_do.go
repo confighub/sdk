@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/cubapi"
 	"github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -164,9 +165,7 @@ func init() {
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	enableWhereFlag(functionDoCmd)
 	enableFilterFlag(functionDoCmd)
-	enableQuietFlag(functionDoCmd)
-	enableJsonFlag(functionDoCmd)
-	enableJqFlag(functionDoCmd)
+	addStandardDisplayFlags(functionDoCmd)
 	enableWaitFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
@@ -224,6 +223,11 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	return req
 }
 
+const templateEvaluator = "template"
+const templatePrefix = templateEvaluator + ":"
+const celEvaluator = "cel"
+const celPrefix = celEvaluator + ":"
+
 func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 	var funcArgs []goclientnew.FunctionArgument
 	namedArgMode := false
@@ -235,10 +239,19 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 			parts := strings.SplitN(arg, "=", 2)
 			paramName := strings.TrimPrefix(parts[0], "--")
 			value := parts[1]
+			evaluator := ""
+			if strings.HasPrefix(value, templatePrefix) {
+				evaluator = templateEvaluator
+				value = strings.TrimPrefix(value, templatePrefix)
+			} else if strings.HasPrefix(value, celPrefix) {
+				evaluator = celEvaluator
+				value = strings.TrimPrefix(value, celPrefix)
+			}
 
 			funcArgs = append(funcArgs, goclientnew.FunctionArgument{
 				ParameterName: &paramName,
 				Value:         &goclientnew.FunctionArgument_Value{},
+				Evaluator:     &evaluator,
 			})
 			funcArgs[len(funcArgs)-1].Value.FromFunctionArgumentValue0(value)
 
@@ -246,9 +259,18 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 			// Once we've seen a named argument, all subsequent arguments must be named
 			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
 		} else {
+			evaluator := ""
+			if strings.HasPrefix(arg, templatePrefix) {
+				evaluator = templateEvaluator
+				arg = strings.TrimPrefix(arg, templatePrefix)
+			} else if strings.HasPrefix(arg, celPrefix) {
+				evaluator = celEvaluator
+				arg = strings.TrimPrefix(arg, celPrefix)
+			}
 			// This is a positional argument - no ParameterName
 			funcArgs = append(funcArgs, goclientnew.FunctionArgument{
-				Value: &goclientnew.FunctionArgument_Value{},
+				Value:     &goclientnew.FunctionArgument_Value{},
+				Evaluator: &evaluator,
 			})
 			funcArgs[len(funcArgs)-1].Value.FromFunctionArgumentValue0(arg)
 		}
@@ -341,8 +363,8 @@ func initializeFunctionInvocationsRequest(cmdArgs []string) (*goclientnew.Functi
 	return req, nil
 }
 
-// invokeFunctionOnRevision handles function invocation on a specific revision
-func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
+// invokeFunctiosnOnRevision handles function invocation on a specific revision
+func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	// Parse revision identifier (format: unit-slug/revision-number)
 	parts := strings.Split(revisionIdentifier, "/")
 	if len(parts) != 2 {
@@ -381,14 +403,6 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 		dryRunStr := "true"
 		newParams.DryRun = &dryRunStr
 	}
-	if functionChangesetSlug != "" {
-		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
-		if err != nil {
-			return nil, err
-		}
-		changesetID := changesetUUID.String()
-		newParams.ChangeSetId = &changesetID
-	}
 
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
 	if cubapi.IsAPIError(err, funcRes) {
@@ -403,6 +417,70 @@ func invokeFunctionOnRevision(revisionIdentifier string, body goclientnew.Functi
 		resp = funcRes.JSON207
 	}
 
+	return resp, nil
+}
+
+type invokeArgs struct {
+	Where       string
+	FilterID    string
+	DryRun      bool
+	ChangeSetID string
+	Body        *goclientnew.FunctionInvocationsRequest
+}
+
+func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvocationsResponse, error) {
+	var resp *[]goclientnew.FunctionInvocationsResponse
+	if selectedSpaceID == "*" {
+		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
+		if invokeArgs.Where != "" {
+			newParams.Where = &invokeArgs.Where
+		}
+		if invokeArgs.FilterID != "" {
+			newParams.Filter = &invokeArgs.FilterID
+		}
+		if invokeArgs.DryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
+		}
+		if invokeArgs.ChangeSetID != "" {
+			newParams.ChangeSetId = &invokeArgs.ChangeSetID
+		}
+		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *invokeArgs.Body)
+		if cubapi.IsAPIError(err, funcRes) {
+			return nil, errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke function(s) on org")
+		}
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
+	} else {
+		newParams := &goclientnew.InvokeFunctionsParams{}
+		if invokeArgs.Where != "" {
+			newParams.Where = &invokeArgs.Where
+		}
+		if invokeArgs.FilterID != "" {
+			newParams.Filter = &invokeArgs.FilterID
+		}
+		if invokeArgs.DryRun {
+			dryRunStr := "true"
+			newParams.DryRun = &dryRunStr
+		}
+		if invokeArgs.ChangeSetID != "" {
+			newParams.ChangeSetId = &invokeArgs.ChangeSetID
+		}
+		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *invokeArgs.Body)
+		if cubapi.IsAPIError(err, funcRes) {
+			return nil, errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke function(s) on space "+selectedSpaceID)
+		}
+		// Handle both successful (200) and partial success/failure (207) responses
+		if funcRes.JSON200 != nil {
+			resp = funcRes.JSON200
+		} else if funcRes.JSON207 != nil {
+			resp = funcRes.JSON207
+		}
+	}
 	return resp, nil
 }
 
@@ -445,6 +523,18 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		effectiveWhere = where
 	}
 
+	// Parse changeset once if specified
+	var changesetID string
+	if functionChangesetSlug != "" {
+		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+		if err != nil {
+			return err
+		}
+		changesetID = changesetUUID.String()
+		// Add changeset constraint to WHERE clause
+		effectiveWhere = addChangeSetIDToWhereClause(effectiveWhere, changesetID)
+	}
+
 	// Functions operate on lists of units. That makes it harder to know what ToolchainType(s)
 	// are having functions invoked on them and what workers the functions might be running in.
 	// There could be multiple of each.
@@ -457,69 +547,21 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 
 	// Handle revision flag
 	if revisionIdentifier != "" {
-		resp, err = invokeFunctionOnRevision(revisionIdentifier, *newBody, dryRun)
+		resp, err = invokeFunctionsOnRevision(revisionIdentifier, *newBody, dryRun)
 		if err != nil {
 			return err
 		}
-	} else if selectedSpaceID == "*" {
-		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		if effectiveWhere != "" {
-			newParams.Where = &effectiveWhere
-		}
-		if filterID != "" {
-			newParams.Filter = &filterID
-		}
-		if dryRun {
-			dryRunStr := "true"
-			newParams.DryRun = &dryRunStr
-		}
-		if functionChangesetSlug != "" {
-			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
-			if err != nil {
-				return err
-			}
-			changesetID := changesetUUID.String()
-			newParams.ChangeSetId = &changesetID
-		}
-		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
-		if cubapi.IsAPIError(err, funcRes) {
-			return fmt.Errorf("failed to invoke function on org: %s", cubapi.InterpretErrorGeneric(err, funcRes).Error())
-		}
-		// Handle both successful (200) and partial success/failure (207) responses
-		if funcRes.JSON200 != nil {
-			resp = funcRes.JSON200
-		} else if funcRes.JSON207 != nil {
-			resp = funcRes.JSON207
-		}
 	} else {
-		newParams := &goclientnew.InvokeFunctionsParams{}
-		if effectiveWhere != "" {
-			newParams.Where = &effectiveWhere
+		invokeArgs := &invokeArgs{
+			Where:       effectiveWhere,
+			FilterID:    filterID,
+			DryRun:      dryRun,
+			ChangeSetID: changesetID,
+			Body:        newBody,
 		}
-		if filterID != "" {
-			newParams.Filter = &filterID
-		}
-		if dryRun {
-			dryRunStr := "true"
-			newParams.DryRun = &dryRunStr
-		}
-		if functionChangesetSlug != "" {
-			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
-			if err != nil {
-				return err
-			}
-			changesetID := changesetUUID.String()
-			newParams.ChangeSetId = &changesetID
-		}
-		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
-		if cubapi.IsAPIError(err, funcRes) {
-			return cubapi.InterpretErrorGeneric(err, funcRes)
-		}
-		// Handle both successful (200) and partial success/failure (207) responses
-		if funcRes.JSON200 != nil {
-			resp = funcRes.JSON200
-		} else if funcRes.JSON207 != nil {
-			resp = funcRes.JSON207
+		resp, err = invokeFunctionsOnUnits(invokeArgs)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -529,7 +571,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+	hasAlternativeOutput := hasAlternativeOutput() || outputJQ != "" || outputValuesOnly
 
 	if !hasAlternativeOutput {
 		outputFunctionInvocationResponse(resp)
@@ -540,26 +582,34 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	if jq != "" {
 		displayJQ(resp)
 	}
+	if yamlOutput {
+		displayYAML(resp)
+	}
+	if yq != "" {
+		displayYQ(resp)
+	}
 	if outputJQ != "" {
 		for _, resp := range *resp {
-			if len(resp.Output) != 0 {
-				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
-				if err != nil {
-					tprintRaw(resp.Output)
-					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-				}
-				if strings.TrimSpace(string(outputBytes)) != "null" {
-					displayJQForBytes(outputBytes, outputJQ)
+			for _, outputData := range resp.Outputs {
+				if len(outputData) != 0 {
+					outputBytes, err := base64.StdEncoding.DecodeString(outputData)
+					if err != nil {
+						tprintRaw(outputData)
+						failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
+					}
+					if strings.TrimSpace(string(outputBytes)) != "null" {
+						displayJQForBytes(outputBytes, outputJQ)
+					}
 				}
 			}
 		}
 	}
 	if outputValuesOnly {
 		for _, resp := range *resp {
-			if len(resp.Output) != 0 {
-				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
+			if attributeOutput, exists := resp.Outputs[string(api.OutputTypeAttributeValueList)]; exists && len(attributeOutput) != 0 {
+				outputBytes, err := base64.StdEncoding.DecodeString(attributeOutput)
 				if err != nil {
-					tprintRaw(resp.Output)
+					tprintRaw(attributeOutput)
 					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 				}
 				if strings.TrimSpace(string(outputBytes)) != "null" {
@@ -583,8 +633,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		}
 		// Wait one at a time
 		for _, resp := range *resp {
-			selectedSpaceID = resp.SpaceID.String()
-			unitDetails, err := apiGetUnit(resp.UnitID.String(), "*")
+			unitDetails, err := apiGetUnitInSpace(resp.UnitID.String(), resp.SpaceID.String(), "*")
 			if err != nil {
 				return err
 			}
@@ -622,115 +671,131 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			}
 			tprintRaw(string(data))
 		}
-		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Output) != 0 {
-			// TODO: handle more output types
-			outputBytes, err := base64.StdEncoding.DecodeString(respMsg.Output)
-			if err != nil {
-				tprintRaw(respMsg.Output)
-				failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-			}
-			if strings.TrimSpace(string(outputBytes)) == "null" {
-				continue
-			}
+		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Outputs) != 0 {
 			// Don't use detailView to print the output because it pads the entire width with spaces.
 			if !outputOnly && !outputValuesOnly {
 				tprintRaw("OUTPUT\n------\n")
 			}
-			switch respMsg.OutputType {
-			case string(api.OutputTypeYAML):
-				var payload api.YAMLPayload
-				err := json.Unmarshal(outputBytes, &payload)
-				// If there's an error print the raw output
-				if err != nil || outputRaw {
-					tprintRaw(string(outputBytes))
-				} else {
-					tprintRaw(payload.Payload)
+
+			// Handle all output types
+			for outputType, outputData := range respMsg.Outputs {
+				if len(outputData) == 0 {
+					continue
 				}
-			case string(api.OutputTypeAttributeValueList):
-				var payload api.AttributeValueList
-				err := json.Unmarshal(outputBytes, &payload)
-				// If there's an error print the raw output
-				if err != nil || outputRaw {
-					tprintRaw(string(outputBytes))
-				} else {
-					for i := range payload {
-						tprint("%v %s %s %s %s", payload[i].Value, payload[i].DataType, payload[i].Path, payload[i].ResourceName, payload[i].ResourceType)
-					}
+
+				outputBytes, err := base64.StdEncoding.DecodeString(outputData)
+				if err != nil {
+					tprintRaw(outputData)
+					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
 				}
-			case string(api.OutputTypeValidationResultList), string(api.OutputTypeValidationResult):
-				var payload api.ValidationResultList
-				err := json.Unmarshal(outputBytes, &payload)
-				if err != nil || outputRaw {
-					// Try parsing as a single result. Shouldn't happen now.
-					var payload api.ValidationResult
+				if strings.TrimSpace(string(outputBytes)) == "null" {
+					continue
+				}
+
+				if len(respMsg.Outputs) > 1 {
+					tprintRaw(fmt.Sprintf("%s:\n", outputType))
+				}
+
+				switch outputType {
+				case string(api.OutputTypeYAML):
+					var payload api.YAMLPayload
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output
 					if err != nil || outputRaw {
 						tprintRaw(string(outputBytes))
 					} else {
-						// TODO: Factor this out
-						details := ""
-						for j, detail := range payload.Details {
-							if j > 0 {
-								details += ","
+						tprintRaw(payload.Payload)
+					}
+				case string(api.OutputTypeAttributeValueList):
+					var payload api.AttributeValueList
+					err := json.Unmarshal(outputBytes, &payload)
+					// If there's an error print the raw output
+					if err != nil || outputRaw {
+						tprintRaw(string(outputBytes))
+					} else {
+						for i := range payload {
+							tprint("%v %s %s %s %s", payload[i].Value, payload[i].DataType, payload[i].Path, payload[i].ResourceName, payload[i].ResourceType)
+						}
+					}
+				case string(api.OutputTypeValidationResultList), string(api.OutputTypeValidationResult):
+					var payload api.ValidationResultList
+					err := json.Unmarshal(outputBytes, &payload)
+					if err != nil || outputRaw {
+						// Try parsing as a single result. Shouldn't happen now.
+						var payload api.ValidationResult
+						err := json.Unmarshal(outputBytes, &payload)
+						// If there's an error print the raw output
+						if err != nil || outputRaw {
+							tprintRaw(string(outputBytes))
+						} else {
+							// TODO: Factor this out
+							details := ""
+							for j, detail := range payload.Details {
+								if j > 0 {
+									details += ","
+								}
+								details += " " + detail
 							}
-							details += " " + detail
-						}
-						tprint("%v%s", payload.Passed, details)
-						tprintRaw("Attributes:")
-						for j := range payload.FailedAttributes {
-							tprint("%v %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
-								payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
-						}
-					}
-				} else {
-					for i := range payload {
-						details := ""
-						for j, detail := range payload[i].Details {
-							if j > 0 {
-								details += ","
+							tprint("%v%s", payload.Passed, details)
+							tprintRaw("Attributes:")
+							for j := range payload.FailedAttributes {
+								tprint("%v %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
+									payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
 							}
-							details += " " + detail
 						}
-						tprint("%v %d%s", payload[i].Passed, payload[i].Index, details)
-						tprintRaw("Attributes:")
-						for j := range payload[i].FailedAttributes {
-							tprint("%v %s %s %s %s", payload[i].FailedAttributes[j].Value, payload[i].FailedAttributes[j].DataType,
-								payload[i].FailedAttributes[j].Path, payload[i].FailedAttributes[j].ResourceName, payload[i].FailedAttributes[j].ResourceType)
+					} else {
+						for i := range payload {
+							details := ""
+							for j, detail := range payload[i].Details {
+								if j > 0 {
+									details += ","
+								}
+								details += " " + detail
+							}
+							tprint("%v %d%s", payload[i].Passed, payload[i].Index, details)
+							tprintRaw("Attributes:")
+							for j := range payload[i].FailedAttributes {
+								tprint("%v %s %s %s %s", payload[i].FailedAttributes[j].Value, payload[i].FailedAttributes[j].DataType,
+									payload[i].FailedAttributes[j].Path, payload[i].FailedAttributes[j].ResourceName, payload[i].FailedAttributes[j].ResourceType)
+							}
 						}
 					}
-				}
-			case string(api.OutputTypeResourceInfoList):
-				var payload api.ResourceInfoList
-				err := json.Unmarshal(outputBytes, &payload)
-				// If there's an error print the raw output
-				if err != nil || outputRaw {
-					tprintRaw(string(outputBytes))
-				} else {
-					for i := range payload {
-						tprint("%s %s", payload[i].ResourceName, payload[i].ResourceType)
+				case string(api.OutputTypeResourceInfoList):
+					var payload api.ResourceInfoList
+					err := json.Unmarshal(outputBytes, &payload)
+					// If there's an error print the raw output
+					if err != nil || outputRaw {
+						tprintRaw(string(outputBytes))
+					} else {
+						for i := range payload {
+							tprint("%s %s", payload[i].ResourceName, payload[i].ResourceType)
+						}
+					}
+				case string(api.OutputTypeResourceList):
+					var payload api.ResourceList
+					err := json.Unmarshal(outputBytes, &payload)
+					// If there's an error print the raw output
+					if err != nil || outputRaw {
+						tprintRaw(string(outputBytes))
+					} else {
+						for i := range payload {
+							tprint("%s %s:", payload[i].ResourceName, payload[i].ResourceType)
+							tprintRaw(payload[i].ResourceBody)
+						}
+					}
+				default:
+					// Output should be JSON, but if there's an error print the raw output
+					var out bytes.Buffer
+					err := json.Indent(&out, outputBytes, "", "  ")
+					if err != nil || outputRaw {
+						tprintRaw(string(outputBytes))
+					} else {
+						tprintRaw(out.String())
 					}
 				}
-			case string(api.OutputTypeResourceList):
-				var payload api.ResourceList
-				err := json.Unmarshal(outputBytes, &payload)
-				// If there's an error print the raw output
-				if err != nil || outputRaw {
-					tprintRaw(string(outputBytes))
-				} else {
-					for i := range payload {
-						tprint("%s %s:", payload[i].ResourceName, payload[i].ResourceType)
-						tprintRaw(payload[i].ResourceBody)
-					}
-				}
-			default:
-				// Output should be JSON, but if there's an error print the raw output
-				var out bytes.Buffer
-				err := json.Indent(&out, outputBytes, "", "  ")
-				if err != nil || outputRaw {
-					tprintRaw(respMsg.Output)
-				} else {
-					tprintRaw(out.String())
+
+				if len(respMsg.Outputs) > 1 {
+					tprintRaw("\n")
 				}
 			}
 		}

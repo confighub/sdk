@@ -367,6 +367,20 @@ func columnToHeader(provider *DynamicColumnProvider, col string) string {
 	return header
 }
 
+var mapFields = map[string]bool{
+	"Labels":       true,
+	"Annotations":  true,
+	"Values":       true,
+	"ApplyGates":   true,
+	"DeleteGates":  true,
+	"DestroyGates": true,
+	"Tags":         true,
+}
+
+func fieldIsMap(field string) bool {
+	return mapFields[field]
+}
+
 // buildSelectList builds a select parameter based on specified columns
 func buildSelectList(entity string, columnsSpec string, include string, defaultCols []string, aliases map[string]string, customColumnDeps map[string][]string, baseFields []string) string {
 	columns := strings.Split(columnsSpec, ",")
@@ -396,7 +410,7 @@ func buildSelectList(entity string, columnsSpec string, include string, defaultC
 			if strings.Contains(actualCol, ".") {
 				actualCol = strings.TrimPrefix(actualCol, entity+".")
 				parts := strings.Split(actualCol, ".")
-				if parts[0] == "Labels" || parts[0] == "Annotations" {
+				if fieldIsMap(parts[0]) {
 					actualCol = parts[0]
 				} else if len(parts) > 1 {
 					// This is an included relationship field (Space.Slug, Target.Slug, etc.)

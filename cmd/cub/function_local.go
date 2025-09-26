@@ -175,10 +175,12 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 
 	// Handle output-only flag
 	if localOutputOnly {
-		if len(response.Output) > 0 {
-			outputBytes := response.Output
-			if strings.TrimSpace(string(outputBytes)) != "null" {
-				displayFunctionOutput(response, outputBytes, true)
+		for outputType, outputData := range response.Outputs {
+			if len(outputData) > 0 {
+				outputBytes := outputData
+				if strings.TrimSpace(string(outputBytes)) != "null" {
+					displayFunctionOutputByType(string(outputType), outputBytes, true, len(response.Outputs) > 1)
+				}
 			}
 		}
 		return
@@ -219,21 +221,29 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 	}
 
 	// Display function output if present
-	if len(response.Output) > 0 {
-		outputBytes := response.Output
-		if strings.TrimSpace(string(outputBytes)) != "null" {
-			if !quiet {
-				fmt.Println("\nFUNCTION OUTPUT:")
-				fmt.Println("----------------")
+	if len(response.Outputs) > 0 {
+		if !quiet {
+			fmt.Println("\nFUNCTION OUTPUT:")
+			fmt.Println("----------------")
+		}
+		for outputType, outputData := range response.Outputs {
+			if len(outputData) > 0 {
+				outputBytes := outputData
+				if strings.TrimSpace(string(outputBytes)) != "null" {
+					displayFunctionOutputByType(string(outputType), outputBytes, false, len(response.Outputs) > 1)
+				}
 			}
-			displayFunctionOutput(response, outputBytes, false)
 		}
 	}
 }
 
-func displayFunctionOutput(response *api.FunctionInvocationResponse, outputBytes []byte, outputOnly bool) {
+func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOnly bool, multipleTypes bool) {
+	if multipleTypes {
+		fmt.Printf("%s:\n", outputType)
+	}
+
 	// Handle different output types
-	switch response.OutputType {
+	switch api.OutputType(outputType) {
 	case api.OutputTypeYAML:
 		var payload api.YAMLPayload
 		if err := json.Unmarshal(outputBytes, &payload); err == nil {

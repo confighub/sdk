@@ -177,6 +177,10 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
 		}
 
+		if len(unitDetails.Unit.Values) != 0 {
+			view.Append([]string{"Values", mapToString(unitDetails.Unit.Values)})
+		}
+
 		// Show From Links if available (expanded)
 		if unitDetails.FromLink != nil && len(unitDetails.FromLink) != 0 {
 			linkSlugs := ""
@@ -249,18 +253,6 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	displayExtendedUnitDetails(extendedUnit)
 }
 
-func apiGetUnit(unitID string, selectParam string) (*goclientnew.Unit, error) {
-	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, selectedSpaceID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	if extendedUnit.Unit.SpaceID.String() != selectedSpaceID {
-		return nil, fmt.Errorf("SERVER DIDN'T CHECK: unit %s not found in space %s (%s)", unitID, selectedSpaceSlug, selectedSpaceID)
-	}
-
-	return extendedUnit.Unit, nil
-}
-
 func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
 	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, spaceID, selectParam)
 	if err != nil {
@@ -295,7 +287,11 @@ func apiGetExtendedUnitFromSlug(slug string, selectParam string) (*goclientnew.E
 func apiGetUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
 	id, err := uuid.Parse(slug)
 	if err == nil {
-		return apiGetUnit(id.String(), selectParam)
+		extendedUnit, err := apiGetExtendedUnitInSpace(id.String(), spaceID, selectParam)
+		if err != nil {
+			return nil, err
+		}
+		return extendedUnit.Unit, nil
 	}
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {

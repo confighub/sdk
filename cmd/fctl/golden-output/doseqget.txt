@@ -32,7 +32,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx:latest"
+    "Value": "nginx:latest",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -56,6 +57,7 @@ OUTPUT
       "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
     },
     "Value": 3,
-    "Comment": "# Line comment on replicas"
+    "Comment": "# Line comment on replicas",
+    "Index": 1
   }
 ]

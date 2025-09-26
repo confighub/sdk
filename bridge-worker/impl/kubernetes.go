@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -34,14 +33,75 @@ import (
 )
 
 type KubernetesBridgeWorker struct {
-	cfg          *rest.Config
-	applier      K8sApplier // Deprecated: for backward compatibility, will be removed
-	applierType  ApplierName
-	applierCache sync.Map // key: unit ID (string), value: K8sApplier
+	cfg         *rest.Config
+	applier     K8sApplier // Deprecated: for backward compatibility, will be removed
+	applierType ApplierName
+	// Removed retryCount - using stateless backoff library instead
 }
 
 var _ api.BridgeWorker = (*KubernetesBridgeWorker)(nil)
 var _ api.WatchableWorker = (*KubernetesBridgeWorker)(nil)
+
+// createRetryBackoff creates a standard exponential backoff policy for retrying operations
+// It derives retry parameters from the WaitTimeout to ensure proper scaling:
+// - For short timeouts (< 2m): quick retries starting at 5s
+// - For medium timeouts (2m-10m): standard retries starting at 10s
+// - For long timeouts (> 10m): slower retries starting at 30s
+func createRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackOff {
+	b := backoff.NewExponentialBackOff()
+
+	// Parse the wait timeout to derive backoff parameters
+	var waitTimeout time.Duration = 2 * time.Minute // default
+	if params.WaitTimeout != "" {
+		if t, err := time.ParseDuration(params.WaitTimeout); err == nil {
+			waitTimeout = t
+		}
+	}
+
+	// Derive backoff parameters based on wait timeout
+	// Formula: Scale initial interval and max interval based on timeout magnitude
+	switch {
+	case waitTimeout < 2*time.Minute:
+		// Short timeout: quick retries (5s, 10s, 20s, 40s...)
+		b.InitialInterval = 5 * time.Second
+		b.MaxInterval = 1 * time.Minute
+		b.Multiplier = 2.0
+
+	case waitTimeout <= 10*time.Minute:
+		// Medium timeout: standard retries (10s, 20s, 40s, 80s...)
+		b.InitialInterval = 10 * time.Second
+		b.MaxInterval = 5 * time.Minute
+		b.Multiplier = 2.0
+
+	default:
+		// Long timeout: slower retries (30s, 60s, 120s, 240s...)
+		b.InitialInterval = 30 * time.Second
+		b.MaxInterval = 10 * time.Minute
+		b.Multiplier = 2.0
+	}
+
+	// Allow override with explicit retry configuration if provided
+	if params.RetryInitialInterval != "" {
+		if duration, err := time.ParseDuration(params.RetryInitialInterval); err == nil {
+			b.InitialInterval = duration
+		}
+	}
+
+	if params.RetryMultiplier > 0 {
+		b.Multiplier = params.RetryMultiplier
+	}
+
+	if params.RetryMaxInterval != "" {
+		if duration, err := time.ParseDuration(params.RetryMaxInterval); err == nil {
+			b.MaxInterval = duration
+		}
+	}
+
+	b.RandomizationFactor = 0.1 // Small jitter to prevent thundering herd
+	// Note: MaxElapsedTime would need WithMaxRetries wrapper, keeping it simple for now
+	b.Reset()
+	return b
+}
 
 // NewKubernetesBridgeWorker creates a new KubernetesBridgeWorker with CLI Utils SSA as default
 func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
@@ -58,6 +118,12 @@ func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
 type KubernetesWorkerParams struct {
 	KubeContext string `json:",omitempty"`
 	WaitTimeout string `json:",omitempty"` // Duration string like "5m0s", "10h5m"
+
+	// Retry configuration
+	RetryInitialInterval string  `json:",omitempty"` // Initial retry interval (e.g., "10s")
+	RetryMultiplier      float64 `json:",omitempty"` // Backoff multiplier (e.g., 2.0)
+	RetryMaxInterval     string  `json:",omitempty"` // Max retry interval (e.g., "5m")
+	RetryMaxElapsedTime  string  `json:",omitempty"` // Max total time for retries (e.g., "30m")
 }
 
 // getResourcesFromImportSource determines the appropriate resource fetching method
@@ -231,7 +297,7 @@ func objectsToYAML(objects []*unstructured.Unstructured) (string, error) {
 
 // createApplierConfig creates an ApplierConfig from the payload
 func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error) {
-	_, kubeContext, err := parseTargetParams(payload)
+	workerParams, kubeContext, err := parseTargetParams(payload)
 	if err != nil {
 		return ApplierConfig{}, fmt.Errorf("failed to parse target params: %v", err)
 	}
@@ -241,6 +307,7 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 		LiveState:   payload.LiveState,
 		SpaceID:     payload.SpaceID.String(),
 		UnitSlug:    payload.UnitSlug,
+		WaitTimeout: workerParams.WaitTimeout,
 	}, nil
 }
 
@@ -252,19 +319,8 @@ func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayl
 		log.Log.Info("⚠️ Applier type was not set, defaulting to CLIUtilsSSA")
 	}
 
-	// For CLI Utils SSA, use cached applier per unit ID
+	// For CLI Utils SSA, create a fresh applier each time
 	if w.applierType == CLIUtilsSSA {
-		unitID := payload.UnitID.String()
-
-		// Check cache first
-		if unitID != "" {
-			if cached, ok := w.applierCache.Load(unitID); ok {
-				log.Log.Info("📦 Using cached applier for unit", "unitID", unitID)
-				return cached.(K8sApplier), nil
-			}
-		}
-
-		// Create new applier if not cached
 		applierConfig, err := createApplierConfig(payload)
 		if err != nil {
 			return nil, err
@@ -273,13 +329,7 @@ func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayl
 		if err != nil {
 			return nil, fmt.Errorf("failed to create applier: %v", err)
 		}
-
-		// Cache the applier for future use
-		if unitID != "" {
-			w.applierCache.Store(unitID, applier)
-			log.Log.Info("📦 Cached new applier for unit", "unitID", unitID)
-		}
-
+		log.Log.Info("📦 Created fresh applier for unit", "unitID", payload.UnitID.String())
 		return applier, nil
 	}
 
@@ -363,14 +413,32 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 	if waitResult.Error != nil {
 		log.Log.Error(waitResult.Error, "Failed to wait for resources")
 		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
-			// log the error but don't return it
+			// Use exponential backoff library for retry logic
+			unitID := payload.UnitID.String()
+			b := createRetryBackoff(workerParams)
+
+			// Get next backoff duration
+			nextBackoff := b.NextBackOff()
+			if nextBackoff == backoff.Stop {
+				// Max elapsed time reached, stop retrying
+				return lib.SafeSendStatus(wctx, newActionResult(
+					api.ActionStatusFailed,
+					api.ActionResultApplyWaitFailed,
+					fmt.Sprintf("Resources not ready after maximum retry time: %v", waitResult.Error),
+				), waitResult.Error)
+			}
+
+			log.Log.Info("Resources not ready, retrying with exponential backoff",
+				"unitID", unitID,
+				"nextRetryIn", nextBackoff.String())
+
 			lib.SafeSendStatus(wctx, newActionResult(
 				api.ActionStatusProgressing,
 				api.ActionResultNone,
-				fmt.Sprintf("Failed to wait for resources: %v", waitResult.Error),
+				fmt.Sprintf("Resources not ready, retrying in %v: %v", nextBackoff, waitResult.Error),
 			), waitResult.Error)
-			// set retry back to initial interval 30s
-			return backoff.RetryAfter(30)
+
+			return backoff.RetryAfter(int(nextBackoff.Seconds()))
 		}
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
@@ -378,6 +446,8 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 			waitResult.Error.Error(),
 		), waitResult.Error)
 	}
+
+	// Success - no retry state to clear since we're stateless now
 
 	yamlData, err := objectsToYAML(waitResult.LiveObjects)
 	if err != nil {
@@ -406,13 +476,6 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		fmt.Sprintf("Applied %d resources successfully at %s", len(waitResult.LiveObjects), time.Now().Format(time.RFC3339)),
 	)
 	status.LiveState = liveStateData
-
-	// Clean up cached applier after successful WatchForApply
-	unitID := payload.UnitID.String()
-	if unitID != "" && w.applierType == CLIUtilsSSA {
-		w.applierCache.Delete(unitID)
-		log.Log.Info("🧹 Cleaned up cached applier after WatchForApply", "unitID", unitID)
-	}
 
 	wctx.SendStatus(status)
 	return nil
@@ -932,12 +995,43 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 
 	waitResult := applier.WaitForDestroy(wctx.Context(), objects, timeout)
 	if waitResult.Error != nil {
+		log.Log.Error(waitResult.Error, "Failed to wait for resource termination")
+		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
+			// Use exponential backoff library for retry logic
+			unitID := payload.UnitID.String()
+			b := createRetryBackoff(workerParams)
+
+			// Get next backoff duration
+			nextBackoff := b.NextBackOff()
+			if nextBackoff == backoff.Stop {
+				// Max elapsed time reached, stop retrying
+				return lib.SafeSendStatus(wctx, newActionResult(
+					api.ActionStatusFailed,
+					api.ActionResultDestroyWaitFailed,
+					fmt.Sprintf("Resources not terminated after maximum retry time: %v", waitResult.Error),
+				), waitResult.Error)
+			}
+
+			log.Log.Info("Resources not terminated yet, retrying with exponential backoff",
+				"unitID", unitID,
+				"nextRetryIn", nextBackoff.String())
+
+			lib.SafeSendStatus(wctx, newActionResult(
+				api.ActionStatusProgressing,
+				api.ActionResultNone,
+				fmt.Sprintf("Resources not terminated, retrying in %v: %v", nextBackoff, waitResult.Error),
+			), waitResult.Error)
+
+			return backoff.RetryAfter(int(nextBackoff.Seconds()))
+		}
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyWaitFailed,
 			waitResult.Error.Error(),
 		), waitResult.Error)
 	}
+
+	// Success - no retry state to clear since we're stateless now
 
 	// For CLIUtils applier, use the LiveState from LiveStateBuilder
 	// For other appliers, build LiveState from the returned LiveObjects
@@ -993,31 +1087,13 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 	)
 	result.LiveState = liveStateData
 
-	// Clean up cached applier after successful WatchForDestroy
-	unitID := payload.UnitID.String()
-	if unitID != "" && w.applierType == CLIUtilsSSA {
-		w.applierCache.Delete(unitID)
-		log.Log.Info("🧹 Cleaned up cached applier after WatchForDestroy", "unitID", unitID)
-	}
-
 	return wctx.SendStatus(result)
 }
 
+// Finalize implements api.BridgeWorker.Finalize
+// This method is called when the worker is being shutdown or cleaned up
 func (w *KubernetesBridgeWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	if err := wctx.SendStatus(newActionResult(
-		api.ActionStatusProgressing,
-		api.ActionResultNone,
-		"Starting finalization...",
-	)); err != nil {
-		return err
-	}
-
-	log.Log.Info("✅ Finalization completed successfully")
-
-	result := newActionResult(
-		api.ActionStatusCompleted,
-		api.ActionResultNone,
-		"Finalization completed successfully",
-	)
-	return wctx.SendStatus(result)
+	// No cleanup needed for stateless applier
+	log.Log.Info("Finalizing Kubernetes bridge worker")
+	return nil
 }

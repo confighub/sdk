@@ -6,9 +6,9 @@ package properties
 import (
 	"github.com/confighub/sdk/configkit/propkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
@@ -41,15 +41,13 @@ const NamespaceProperty = "configHub.kubernetes.namespace"
 
 func initStandardFunctions() {
 	// In general we don't recommend changing names of configs since names are used for identifying
-	// configs across mutations, so it's unclear when this would be useful.
-	basicNameTemplate := generic.StandardNameTemplate(propkit.PropertiesResourceProvider.NameSeparator())
+	// configs across mutations, but it is necessary for "container" resources.
 	var defaultNames = api.ResourceTypeToPathToVisitorInfoType{
 		api.ResourceTypeAny: {
 			api.UnresolvedPath(propkit.PropertiesResourceProvider.ScopelessResourceNamePath()): {
 				Path:          api.UnresolvedPath(propkit.PropertiesResourceProvider.ScopelessResourceNamePath()),
 				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
-				Info:          &api.AttributeDetails{GenerationTemplate: basicNameTemplate},
 			},
 		},
 	}

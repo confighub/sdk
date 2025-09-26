@@ -93,7 +93,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 		}
-		result := fmt.Sprintf("Tag:%s", tagUUID)
+		result := fmt.Sprintf("Tag:%s", tagUUID.String())
 		return &result, nil
 
 	} else if entityType == "ChangeSet" {

@@ -663,13 +663,6 @@ func FunctionInvocationsEqual(fi1, fi2 *api.FunctionInvocation) bool {
 // AttributeDetailsEqual reports whether two sets of attribute details, optionally including
 // getter and setter invocations, match.
 func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunctions bool) bool {
-	isGenerationTemplate1 := (details1 != nil && details1.GenerationTemplate != "")
-	isGenerationTemplate2 := (details2 != nil && details2.GenerationTemplate != "")
-	if isGenerationTemplate1 != isGenerationTemplate2 ||
-		(isGenerationTemplate1 && isGenerationTemplate2 &&
-			details1.GenerationTemplate != details2.GenerationTemplate) {
-		return false
-	}
 	isDescription1 := (details1 != nil && details1.Description != "")
 	isDescription2 := (details2 != nil && details2.Description != "")
 	if isDescription1 != isDescription2 ||

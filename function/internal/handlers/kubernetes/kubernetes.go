@@ -33,6 +33,7 @@ func (r *KubernetesRegistrarType) RegisterFunctions(kh handler.FunctionRegistry)
 	registerContainerFunctions(kh)
 
 	kh.SetConverter(k8skit.K8sResourceProvider)
+	kh.SetResourceProvider(k8skit.K8sResourceProvider)
 }
 
 func (r *KubernetesRegistrarType) GetToolchainPath() string {

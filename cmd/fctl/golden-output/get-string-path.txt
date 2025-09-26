@@ -10,6 +10,7 @@ OUTPUT
     "Path": "spec.template.spec.dnsPolicy",
     "AttributeName": "attribute-value",
     "DataType": "string",
-    "Value": "ClusterFirst"
+    "Value": "ClusterFirst",
+    "Index": 0
   }
 ]

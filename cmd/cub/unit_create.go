@@ -244,6 +244,29 @@ func runSingleUnitCreate(args []string) error {
 	newUnit := &goclientnew.Unit{}
 	newParams := &goclientnew.CreateUnitParams{}
 
+	// Get upstream unit, if specified, so that we can use it as the starting point, similar
+	// to bulk create.
+	var upstreamSpaceID, upstreamUnitID uuid.UUID
+	if unitCreateArgs.upstreamSpaceSlug != "" {
+		upstreamSpace, err := apiGetSpaceFromSlug(unitCreateArgs.upstreamSpaceSlug, "*") // get all fields for now
+		if err != nil {
+			return err
+		}
+		upstreamSpaceID = upstreamSpace.SpaceID
+	}
+	if unitCreateArgs.upstreamUnitSlug != "" {
+		if unitCreateArgs.upstreamSpaceSlug == "" {
+			upstreamSpaceID = spaceID
+		}
+		upstreamUnit, err := apiGetUnitFromSlugInSpace(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
+		if err != nil {
+			return err
+		}
+		upstreamUnitID = upstreamUnit.UnitID
+		newUnit = upstreamUnit
+		newUnit.UnitID = uuid.Nil // the server will do this also
+	}
+
 	// Set allow_exists parameter if flag is set
 	if allowExists {
 		allowExistsStr := "true"
@@ -252,6 +275,7 @@ func runSingleUnitCreate(args []string) error {
 
 	// Handle --from-stdin or --filename
 	if flagPopulateModelFromStdin || flagFilename != "" {
+		// This can overwrite upstream attributes (deliberately)
 		if err := populateModelFromFlags(newUnit); err != nil {
 			return err
 		}
@@ -282,43 +306,33 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
-	var upstreamSpaceID, upstreamUnitID uuid.UUID
-	if unitCreateArgs.upstreamSpaceSlug != "" {
-		upstreamSpace, err := apiGetSpaceFromSlug(unitCreateArgs.upstreamSpaceSlug, "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		upstreamSpaceID = upstreamSpace.SpaceID
-	}
-	if unitCreateArgs.upstreamUnitSlug != "" {
-		if unitCreateArgs.upstreamSpaceSlug == "" {
-			upstreamSpaceID = spaceID
-		}
-		upstreamUnit, err := apiGetUnitFromSlugInSpace(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		upstreamUnitID = upstreamUnit.UnitID
-	}
 	if unitCreateArgs.targetSlug != "" {
-		// Use parseEntityIdentifierSingle to support cross-space target lookup
-		id, err := parseEntityIdentifierSingle[goclientnew.Target](
-			unitCreateArgs.targetSlug,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
-		if err != nil {
-			return err
+		if unitCreateArgs.targetSlug == "-" {
+			newUnit.TargetID = &uuid.Nil
+		} else {
+			// Use parseEntityIdentifierSingle to support cross-space target lookup
+			id, err := parseEntityIdentifierSingle[goclientnew.Target](
+				unitCreateArgs.targetSlug,
+				EntityTypeTarget,
+				apiGetTargetFromSlugInSpaceCore,
+				func(t *goclientnew.Target) string { return t.TargetID.String() },
+			)
+			if err != nil {
+				return err
+			}
+			newUnit.TargetID = &id
 		}
-		newUnit.TargetID = &id
 	}
 	if unitCreateArgs.changesetSlug != "" {
-		changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
-		if err != nil {
-			return err
+		if unitCreateArgs.changesetSlug == "-" {
+			newUnit.ChangeSetID = &uuid.Nil
+		} else {
+			changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
+			if err != nil {
+				return err
+			}
+			newUnit.ChangeSetID = &changesetUUID
 		}
-		newUnit.ChangeSetID = &changesetUUID
 	}
 
 	// If these were set from stdin, they will be overridden

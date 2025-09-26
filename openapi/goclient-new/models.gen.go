@@ -65,6 +65,18 @@ const (
 	Update  MutationType = "Update"
 )
 
+// Defines values for QueuedOperationStatus.
+const (
+	Aborted     QueuedOperationStatus = "Aborted"
+	Completed   QueuedOperationStatus = "Completed"
+	Delivered   QueuedOperationStatus = "Delivered"
+	Delivered1  QueuedOperationStatus = "delivered"
+	Failed      QueuedOperationStatus = "Failed"
+	Pending     QueuedOperationStatus = "Pending"
+	Pending1    QueuedOperationStatus = "pending"
+	Progressing QueuedOperationStatus = "Progressing"
+)
+
 // ActionResult defines model for ActionResult.
 type ActionResult struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
@@ -882,6 +894,7 @@ type FilterCreateOrUpdateResponse struct {
 
 // FunctionArgument defines model for FunctionArgument.
 type FunctionArgument struct {
+	Evaluator     *string                 `json:"Evaluator,omitempty" yaml:"Evaluator,omitempty"`
 	ParameterName *string                 `json:"ParameterName,omitempty" yaml:"ParameterName,omitempty"`
 	Value         *FunctionArgument_Value `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
@@ -949,11 +962,8 @@ type FunctionInvocationsResponse struct {
 	// OrganizationID ID of the Unit's Organization
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
-	// Output Output other than config data, as embedded JSON
-	Output string `json:"Output,omitempty" yaml:"Output,omitempty"`
-
-	// OutputType Type of structured function output, if any
-	OutputType string `json:"OutputType,omitempty" yaml:"OutputType,omitempty"`
+	// Outputs Map of output types to their corresponding output data as embedded JSON
+	Outputs map[string]string `json:"Outputs" yaml:"Outputs"`
 
 	// RevisionID ID of the Revision the configuration data is associated with
 	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
@@ -1379,8 +1389,8 @@ type QueuedOperation struct {
 	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
-	// Status Status indicates the current status of the queued operation.
-	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
+	// Status Status indicates the current status of the queued operation. v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+	Status QueuedOperationStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
 
 	// TargetID TargetID is the unique identifier of the target this operation is directed to.
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
@@ -1392,6 +1402,9 @@ type QueuedOperation struct {
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
+
+// QueuedOperationStatus Status indicates the current status of the queued operation. v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+type QueuedOperationStatus string
 
 // ResourceInfo defines model for ResourceInfo.
 type ResourceInfo struct {
@@ -1589,6 +1602,40 @@ type Space struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// WhereTrigger Filter expression to identify Triggers that should be invoked on Units within this Space. The specified string is an expression for the purpose of filtering
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// Currently other entities (e.g., Space.Slug) may not be referenced in the expression.
+	//
+	// The whole string must be query-encoded.
+	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
 }
 
 // SpaceCreateOrUpdateResponse defines model for SpaceCreateOrUpdateResponse.
@@ -1791,7 +1838,7 @@ type Trigger struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation, PreClone, and PostClone
+	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone
 	Event string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
@@ -1820,8 +1867,9 @@ type Trigger struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
-	// Validating Validating indicates whether this is a validating function (true) or mutating function (false).
-	// 		Validating functions check configuration validity without modifying it. Mutating functions can make changes to the configuration.
+	// Validating Validating indicates whether this is a validating function (true) or not (false).
+	// 		When false, the function can be either mutating (modifying configuration) or readonly returning an AttributeValueList (extracting values without modification).
+	// 		Validating functions check configuration validity without modifying it.
 	// 		This value is returned by ConfigHub based on the corresponding property of the specified function.
 	Validating bool `json:"Validating,omitempty" yaml:"Validating,omitempty"`
 
@@ -1952,6 +2000,9 @@ type Unit struct {
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty" yaml:"UpstreamRevisionNum,omitempty"`
 	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 	UpstreamUnitID      *UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
+
+	// Values Map from "<trigger slug>/<attribute name>" to the first output Value with that attribute name of the function invocation specified by the Trigger.
+	Values map[string]string `json:"Values,omitempty" yaml:"Values,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2298,7 +2349,8 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
 }
 
 // BulkPatchSpacesParams defines parameters for BulkPatchSpaces.
@@ -2393,7 +2445,8 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
 }
 
 // BulkCreateSpacesParams defines parameters for BulkCreateSpaces.
@@ -3575,7 +3628,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -4420,7 +4473,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select FromUnits for created links
 	//
@@ -4467,7 +4520,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select ToUnits for created links
 	//
@@ -4896,7 +4949,8 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
 }
 
 // ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
@@ -5355,7 +5409,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6209,7 +6263,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6307,7 +6361,7 @@ type ListExtendedUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6433,6 +6487,9 @@ type PatchUnitParams struct {
 	// RevisionId Unique identifier for a revision_id
 	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty" yaml:"revision_id,omitempty"`
 
+	// DryRun Flag parameter for enabling dry_run
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
@@ -6494,6 +6551,9 @@ type PatchUnitParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
+
+	// Tag Unique identifier for a tag
+	Tag *openapi_types.UUID `form:"tag,omitempty" json:"tag,omitempty" yaml:"tag,omitempty"`
 }
 
 // UpdateUnitParams defines parameters for UpdateUnit.
@@ -6501,6 +6561,9 @@ type UpdateUnitParams struct {
 	// RevisionId Unique identifier for a revision_id
 	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty" yaml:"revision_id,omitempty"`
 
+	// DryRun Flag parameter for enabling dry_run
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
@@ -6562,6 +6625,9 @@ type UpdateUnitParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
+
+	// Tag Unique identifier for a tag
+	Tag *openapi_types.UUID `form:"tag,omitempty" json:"tag,omitempty" yaml:"tag,omitempty"`
 }
 
 // ApplyUnitParams defines parameters for ApplyUnit.
@@ -8170,7 +8236,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8246,7 +8312,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8380,7 +8446,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8425,6 +8491,9 @@ type BulkPatchUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun Flag parameter for enabling dry_run
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Upgrade Flag parameter for enabling upgrade
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
@@ -8487,6 +8556,9 @@ type BulkPatchUnitsParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	FilterMutation *string `form:"filter_mutation,omitempty" json:"filter_mutation,omitempty" yaml:"filter_mutation,omitempty"`
+
+	// Tag Unique identifier for a tag
+	Tag *openapi_types.UUID `form:"tag,omitempty" json:"tag,omitempty" yaml:"tag,omitempty"`
 }
 
 // BulkCreateUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateUnits.
@@ -8560,7 +8632,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8689,7 +8761,7 @@ type BulkApplyUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8771,7 +8843,7 @@ type BulkApproveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8850,7 +8922,7 @@ type BulkDestroyUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8929,7 +9001,7 @@ type BulkRefreshUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9008,7 +9080,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//

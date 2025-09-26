@@ -13,13 +13,16 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alitto/pond"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/bridge-worker/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -43,6 +46,7 @@ type workerClient struct {
 	functionWorker api.FunctionWorker
 	watcherPool    *pond.WorkerPool
 	unitQueues     *UnitQueueManager
+	operationsWg   sync.WaitGroup // Track in-flight operations (Apply/Destroy/etc)
 }
 
 func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.BridgeWorker, functionWorker api.FunctionWorker) *workerClient {
@@ -109,7 +113,66 @@ func (c *workerClient) Start(ctx context.Context) error {
 	// Ensure cleanup on exit
 	defer c.unitQueues.Stop()
 
-	return c.startStream(ctx)
+	// Create exponential backoff for reconnection
+	eb := backoff.NewExponentialBackOff()
+	eb.InitialInterval = 1 * time.Second
+	eb.RandomizationFactor = 0.5
+	eb.Multiplier = 2.0
+	eb.MaxInterval = 60 * time.Second
+	// Note: By default, backoff v5 will stop after 15 minutes
+	// To retry forever, we need to reset the backoff on each iteration
+
+	attempt := 0
+	for {
+		attempt++
+		log.Printf("[INFO] Connection attempt #%d to ConfigHub server", attempt)
+
+		err := c.startStream(ctx)
+
+		if err == nil {
+			log.Printf("[INFO] Stream ended normally, will reconnect")
+		} else {
+			log.Printf("[ERROR] Stream error: %v", err)
+		}
+
+		// Check if context is cancelled
+		select {
+		case <-ctx.Done():
+			log.Printf("[INFO] Context cancelled, stopping reconnection attempts")
+			return ctx.Err()
+		default:
+		}
+
+		// Calculate backoff delay
+		delay := eb.NextBackOff()
+		if delay == backoff.Stop {
+			// Reset the backoff to continue retrying forever
+			eb.Reset()
+			delay = eb.NextBackOff()
+		}
+
+		// Add some jitter to prevent thundering herd
+		jitter := time.Duration(rand.Float64() * float64(delay) * 0.1)
+		totalDelay := delay + jitter
+
+		log.Printf("[INFO] Waiting %.1f seconds before reconnection attempt #%d", totalDelay.Seconds(), attempt+1)
+
+		// Wait with context cancellation
+		select {
+		case <-time.After(totalDelay):
+			// Continue to next iteration
+		case <-ctx.Done():
+			log.Printf("[INFO] Context cancelled during backoff, stopping reconnection attempts")
+			return ctx.Err()
+		}
+
+		// Reset backoff after successful long connection (>5 minutes)
+		if err == nil && attempt > 1 {
+			log.Printf("[INFO] Resetting backoff after successful connection")
+			eb.Reset()
+			attempt = 0
+		}
+	}
 }
 
 func (c *workerClient) startStream(ctx context.Context) error {
@@ -258,6 +321,13 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			log.Printf("[ERROR] Failed to unmarshal worker event: %v", err)
 			return
 		}
+		// Handle keepalive events from standby connections
+		if op.Action == "keepalive" || op.Action == "standby" {
+			// Log and discard keepalive/standby events - they're just to keep the connection alive
+			log.Printf("[DEBUG] Received %s event (connection keepalive)", op.Action)
+			return
+		}
+
 		if op.Action == api.ActionHeartbeat {
 			timestamp := time.UnixMicro(op.Payload.Timestamp)
 			latency := time.Since(timestamp)
@@ -329,8 +399,15 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 		log.Printf("[INFO] Queueing bridge worker event: Unit=%s, Action=%s", op.Payload.UnitID.String(), op.Action)
 		// Queue the bridge worker event for async processing
 		c.unitQueues.QueueBridgeEvent(ctx, op, func(event api.BridgeWorkerEventRequest) {
+			// Track this operation
+			c.operationsWg.Add(1)
+			defer c.operationsWg.Done()
+
+			// Use WithoutCancel to create an operation context that won't be cancelled when connection closes
+			// This allows ongoing operations to complete gracefully during shutdown
+			operationCtx := context.WithoutCancel(ctx)
 			var workerContext = &defaultBridgeWorkerContext{
-				ctx:       ctx,
+				ctx:       operationCtx,
 				serverURL: c.serverURL,
 				workerID:  c.workerID,
 			}
@@ -353,8 +430,15 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 		log.Printf("[INFO] Queueing function worker event: Unit=%s, Action=%s", op.Payload.InvocationRequest.UnitID.String(), op.Action)
 		// Queue the function worker event for async processing
 		c.unitQueues.QueueFunctionEvent(ctx, op, func(event api.FunctionWorkerEventRequest) {
+			// Track this operation
+			c.operationsWg.Add(1)
+			defer c.operationsWg.Done()
+
+			// Use WithoutCancel to create an operation context that won't be cancelled when connection closes
+			// This allows ongoing operations to complete gracefully during shutdown
+			operationCtx := context.WithoutCancel(ctx)
 			var workerContext = &defaultFunctionWorkerContext{
-				ctx:       ctx,
+				ctx:       operationCtx,
 				serverURL: c.serverURL,
 				workerID:  c.workerID,
 			}
@@ -411,7 +495,7 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
 		logResult.Outputs = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Outputs)))
-		
+
 		filteredJSON, _ := json.Marshal(logResult)
 		log.Printf("Result body: %s", string(filteredJSON))
 	} else {
@@ -439,4 +523,11 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 	}
 
 	return nil
+}
+
+// WaitForPendingOperations blocks until all in-flight operations are complete
+func (c *workerClient) WaitForPendingOperations() {
+	log.Printf("[INFO] Waiting for pending operations to complete...")
+	c.operationsWg.Wait()
+	log.Printf("[INFO] All operations completed")
 }

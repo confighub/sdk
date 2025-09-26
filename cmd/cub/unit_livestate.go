@@ -1,3 +1,6 @@
+// Copyright (C) ConfigHub, Inc.
+// SPDX-License-Identifier: MIT
+
 package main
 
 import (
@@ -40,13 +43,9 @@ func runUnitLiveState(cmd *cobra.Command, args []string) {
 	unitSlugOrID := args[0]
 
 	// Get the unit with LiveState field
-	unit, err := apiGetUnitFromSlug(unitSlugOrID, "Slug,LiveState")
+	unit, err := apiGetUnitFromSlugInSpace(unitSlugOrID, selectedSpaceID, "Slug,LiveState")
 	if err != nil {
-		// Try as ID if slug lookup fails
-		unit, err = apiGetUnit(unitSlugOrID, "Slug,LiveState")
-		if err != nil {
-			failOnError(fmt.Errorf("failed to get unit: %w", err))
-		}
+		failOnError(fmt.Errorf("failed to get unit: %w", err))
 	}
 
 	if unit.LiveState == "" {

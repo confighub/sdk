@@ -186,7 +186,7 @@ func runSingleLinkCreate(args []string) error {
 		}
 	}
 
-	fromUnit, err := apiGetUnitFromSlug(args[1], "*") // get all fields for now
+	fromUnit, err := apiGetUnitFromSlugInSpace(args[1], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func runSingleLinkCreate(args []string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnit(fromUnitID.String(), "*") // get all fields for now
+		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return err
 		}

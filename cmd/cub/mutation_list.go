@@ -59,7 +59,6 @@ var mutationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(mutationListCmd)
-	mutationListCmd.Flags().BoolVar(&byUnitID, "by-unit-id", false, "use unit id instead of slug")
 	mutationCmd.AddCommand(mutationListCmd)
 }
 
@@ -72,11 +71,7 @@ func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if byUnitID {
-		unit, err = apiGetUnit(args[0], "*")
-	} else {
-		unit, err = apiGetUnitFromSlug(args[0], "*")
-	}
+	unit, err = apiGetUnitFromSlugInSpace(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}

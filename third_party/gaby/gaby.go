@@ -265,6 +265,11 @@ func (c *YamlDoc) JSONPointer(path string) (*YamlDoc, error) {
 	return c.searchStrict(hierarchy...)
 }
 
+func JSONPointerToPath(path string) string {
+	// Start simple
+	return strings.ReplaceAll(path, "/", ".")
+}
+
 // Path searches the YAML structure following a path in dot notation,
 // segments of this path are searched according to the same rules as Search.
 func (c *YamlDoc) Path(path string) *YamlDoc {

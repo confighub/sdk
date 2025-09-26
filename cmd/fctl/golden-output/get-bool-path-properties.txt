@@ -10,6 +10,7 @@ OUTPUT
     "Path": "database.ssl.enabled",
     "AttributeName": "attribute-value",
     "DataType": "bool",
-    "Value": true
+    "Value": true,
+    "Index": 0
   }
 ]

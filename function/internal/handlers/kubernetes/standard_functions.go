@@ -99,7 +99,25 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 		Function: k8sFnResourceWhereMatch,
 	})
 
-	// validate is custom for each toolchain
+	fh.RegisterFunction("vet-schemas", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-schemas",
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if schema passes validation, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Returns true if schema passes validation",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: k8sFnVetSchemas,
+	})
+	// TODO: Deprecated in favor of vet-schemas. Remove this.
 	fh.RegisterFunction("validate", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "validate",
@@ -116,7 +134,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: k8sFnValidate,
+		Function: k8sFnVetSchemas,
 	})
 }
 
@@ -259,17 +277,14 @@ func initStandardFunctions() {
 		}
 	}
 
-	basicNameTemplate := generic.StandardNameTemplate(k8skit.K8sResourceProvider.NameSeparator())
 	var defaultNames = api.ResourceTypeToPathToVisitorInfoType{
 		api.ResourceTypeAny: {
 			// In general we don't recommend changing names of resources since names are used for identifying
-			// resources across mutations, but it can be useful for stamping out resources that represent
-			// resource containers, such as Kubernetes Namespaces.
+			// resources across mutations, but it is necessary for "container" resources, such as Kubernetes Namespaces.
 			api.UnresolvedPath(k8skit.K8sResourceProvider.ScopelessResourceNamePath()): {
 				Path:          api.UnresolvedPath(k8skit.K8sResourceProvider.ScopelessResourceNamePath()),
 				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
-				Info:          &api.AttributeDetails{GenerationTemplate: basicNameTemplate},
 			},
 		},
 	}
@@ -282,13 +297,11 @@ func initStandardFunctions() {
 				Path:          api.UnresolvedPath(pathPrefix + simpleAppLabel),
 				AttributeName: attributeNameAppLabel,
 				DataType:      api.DataTypeString,
-				Info:          &api.AttributeDetails{GenerationTemplate: basicNameTemplate},
 			}
 			defaultNames[resourceType][api.UnresolvedPath(pathPrefix+standardAppLabel)] = &api.PathVisitorInfo{
 				Path:          api.UnresolvedPath(pathPrefix + standardAppLabel),
 				AttributeName: attributeNameAppLabel,
 				DataType:      api.DataTypeString,
-				Info:          &api.AttributeDetails{GenerationTemplate: basicNameTemplate},
 			}
 		}
 	}
@@ -635,14 +648,20 @@ func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData ga
 	return generic.GenericFnResourceWhereMatchWithComparators(k8skit.K8sResourceProvider, customComparators, functionContext, parsedData, args, liveState)
 }
 
-func k8sFnValidate(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
-	// TODO: Get CRD schemas
-	v, err := validator.New(nil, validator.Opts{Strict: true, IgnoreMissingSchemas: true})
+func k8sFnVetSchemas(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	// See https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go
+	schemaLocations := []string{
+		"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json",
+		"https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json",
+	}
+	// TODO: Cache once an emptyDir is added
+	v, err := validator.New(schemaLocations, validator.Opts{Strict: true, IgnoreMissingSchemas: true})
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to initialize kubeconform validator")
 	}
 	var multiErrs []error
 	details := []string{}
+	failedPaths := api.AttributeValueList{}
 	passed := true
 	for _, doc := range parsedData {
 		res := resource.Resource{Bytes: doc.Bytes()}
@@ -654,8 +673,35 @@ func k8sFnValidate(_ *api.FunctionContext, parsedData gaby.Container, args []api
 			// Passed
 		case validator.Invalid:
 			passed = false
+			resourceInfo, err := yamlkit.GetResourceInfo(doc, k8skit.K8sResourceProvider)
+			if err != nil {
+				resourceInfo = &api.ResourceInfo{}
+				details = append(details, err.Error())
+			}
 			for _, validationError := range result.ValidationErrors {
 				details = append(details, validationError.Msg)
+				// This path will be the parent of a bogus path. Try to parse the field out of the message.
+				path := gaby.JSONPointerToPath(validationError.Path)
+				if strings.HasPrefix(validationError.Msg, "additionalProperties '") {
+					field, _, found := strings.Cut(strings.TrimPrefix(validationError.Msg, "additionalProperties '"), "'")
+					if found {
+						path += "." + field
+					}
+				}
+				failedPath := api.AttributeValue{
+					AttributeInfo: api.AttributeInfo{
+						AttributeIdentifier: api.AttributeIdentifier{
+							ResourceInfo: *resourceInfo,
+							Path:         api.ResolvedPath(path),
+						},
+						AttributeMetadata: api.AttributeMetadata{
+							AttributeName: api.AttributeNameGeneral, // TODO: look up possibly known attribute?
+						},
+					},
+					// Is Value relevant? Should the message go in the Value? For now, set the Value so that it's not null.
+					Value: "",
+				}
+				failedPaths = append(failedPaths, failedPath)
 			}
 		case validator.Error:
 			passed = false
@@ -669,6 +715,7 @@ func k8sFnValidate(_ *api.FunctionContext, parsedData gaby.Container, args []api
 
 	failureResult := api.ValidationResultFalse
 	failureResult.Details = details
+	failureResult.FailedAttributes = failedPaths
 
 	return parsedData, failureResult, join.Join(multiErrs...)
 }

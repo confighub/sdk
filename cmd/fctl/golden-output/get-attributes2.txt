@@ -16,10 +16,10 @@ OUTPUT
           "FunctionName": "set-default-names",
           "Arguments": null
         }
-      ],
-      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+      ]
     },
-    "Value": "mydep"
+    "Value": "mydep",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -35,10 +35,10 @@ OUTPUT
           "FunctionName": "set-default-names",
           "Arguments": null
         }
-      ],
-      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+      ]
     },
-    "Value": "mydep"
+    "Value": "mydep",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -61,7 +61,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "example"
+    "Value": "example",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -85,7 +86,8 @@ OUTPUT
       "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
     },
     "Value": 3,
-    "Comment": "# Line comment on replicas"
+    "Comment": "# Line comment on replicas",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -101,10 +103,10 @@ OUTPUT
           "FunctionName": "set-default-names",
           "Arguments": null
         }
-      ],
-      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+      ]
     },
-    "Value": "mydep"
+    "Value": "mydep",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -120,10 +122,10 @@ OUTPUT
           "FunctionName": "set-default-names",
           "Arguments": null
         }
-      ],
-      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+      ]
     },
-    "Value": "mydep"
+    "Value": "mydep",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -155,7 +157,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx:latest"
+    "Value": "nginx:latest",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -187,7 +190,8 @@ OUTPUT
         }
       ]
     },
-    "Value": ":latest"
+    "Value": ":latest",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -219,7 +223,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx"
+    "Value": "nginx",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -235,7 +240,8 @@ OUTPUT
         "Arguments": null
       }
     },
-    "Value": "nginx"
+    "Value": "nginx",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -267,7 +273,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "otel/opentelemetry-collector:latest-amd64"
+    "Value": "otel/opentelemetry-collector:latest-amd64",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -299,7 +306,8 @@ OUTPUT
         }
       ]
     },
-    "Value": ":latest-amd64"
+    "Value": ":latest-amd64",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -331,7 +339,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "otel/opentelemetry-collector"
+    "Value": "otel/opentelemetry-collector",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -347,6 +356,7 @@ OUTPUT
         "Arguments": null
       }
     },
-    "Value": "otel-sidecar"
+    "Value": "otel-sidecar",
+    "Index": 0
   }
 ]

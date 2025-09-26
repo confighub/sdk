@@ -21,6 +21,11 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
+const templateEvaluator = api.EvaluatorTemplate
+const templatePrefix = templateEvaluator + ":"
+const celEvaluator = api.EvaluatorCEL
+const celPrefix = celEvaluator + ":"
+
 func parseArguments(args []string) []api.FunctionArgument {
 	var funcArgs []api.FunctionArgument
 	namedArgMode := false
@@ -32,19 +37,38 @@ func parseArguments(args []string) []api.FunctionArgument {
 			parts := strings.SplitN(arg, "=", 2)
 			paramName := strings.TrimPrefix(parts[0], "--")
 			value := parts[1]
+			evaluator := ""
+			if strings.HasPrefix(value, templatePrefix) {
+				evaluator = templateEvaluator
+				value = strings.TrimPrefix(value, templatePrefix)
+			} else if strings.HasPrefix(value, celPrefix) {
+				evaluator = celEvaluator
+				value = strings.TrimPrefix(value, celPrefix)
+			}
 
 			funcArgs = append(funcArgs, api.FunctionArgument{
 				ParameterName: paramName,
 				Value:         value,
+				Evaluator:     evaluator,
 			})
 
 		} else if namedArgMode {
 			// Once we've seen a named argument, all subsequent arguments must be named
 			failOnError(fmt.Errorf("positional argument '%s' cannot follow named arguments", arg))
 		} else {
+			evaluator := ""
+			if strings.HasPrefix(arg, templatePrefix) {
+				evaluator = templateEvaluator
+				arg = strings.TrimPrefix(arg, templatePrefix)
+			} else if strings.HasPrefix(arg, celPrefix) {
+				evaluator = celEvaluator
+				arg = strings.TrimPrefix(arg, celPrefix)
+			}
+
 			// This is a positional argument - no ParameterName
 			funcArgs = append(funcArgs, api.FunctionArgument{
-				Value: arg,
+				Value:     arg,
+				Evaluator: evaluator,
 			})
 		}
 	}
@@ -196,29 +220,44 @@ func outputFunctionInvocationResponse(data []byte, respMsg *api.FunctionInvocati
 		}
 		fmt.Print(string(respMsg.ConfigData))
 	}
-	if !dataOnly && len(respMsg.Output) != 0 && string(respMsg.Output) != "null" {
+	if !dataOnly && len(respMsg.Outputs) != 0 {
 		// Don't use detailView to print the output because it pads the entire width with spaces.
 		if !outputOnly {
 			fmt.Printf("OUTPUT\n------\n")
 		}
-		switch respMsg.OutputType {
-		case api.OutputTypeYAML:
-			var payload api.YAMLPayload
-			err := json.Unmarshal(respMsg.Output, &payload)
-			// If there's an error print the raw output
-			if err != nil {
-				fmt.Print(string(respMsg.Output))
-			} else {
-				fmt.Print(payload.Payload)
+		// Display all available output types
+		for outputType, outputData := range respMsg.Outputs {
+			if len(outputData) == 0 || string(outputData) == "null" {
+				continue
 			}
-		default:
-			// Output should be JSON, but if there's an error print the raw output
-			var out bytes.Buffer
-			err := json.Indent(&out, respMsg.Output, "", "  ")
-			if err != nil {
-				fmt.Print(string(respMsg.Output))
-			} else {
-				fmt.Print(out.String())
+
+			if len(respMsg.Outputs) > 1 {
+				fmt.Printf("%s:\n", outputType)
+			}
+
+			switch outputType {
+			case api.OutputTypeYAML:
+				var payload api.YAMLPayload
+				err := json.Unmarshal(outputData, &payload)
+				// If there's an error print the raw output
+				if err != nil {
+					fmt.Print(string(outputData))
+				} else {
+					fmt.Print(payload.Payload)
+				}
+			default:
+				// Output should be JSON, but if there's an error print the raw output
+				var out bytes.Buffer
+				err := json.Indent(&out, outputData, "", "  ")
+				if err != nil {
+					fmt.Print(string(outputData))
+				} else {
+					fmt.Print(out.String())
+				}
+			}
+
+			if len(respMsg.Outputs) > 1 {
+				fmt.Printf("\n")
 			}
 		}
 	}

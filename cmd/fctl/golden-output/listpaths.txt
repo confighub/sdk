@@ -32,8 +32,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.namespace": {
@@ -138,8 +137,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app.kubernetes.io/name": {
@@ -152,8 +150,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app": {
@@ -166,8 +163,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app.kubernetes.io/name": {
@@ -180,8 +176,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -194,8 +189,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app.kubernetes.io/name": {
@@ -208,8 +202,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.spec.containers.*.image": {
@@ -422,8 +415,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app.kubernetes.io/name": {
@@ -436,8 +428,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.replicas": {
@@ -468,8 +459,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app.kubernetes.io/name": {
@@ -482,8 +472,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -496,8 +485,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app.kubernetes.io/name": {
@@ -510,8 +498,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.spec.containers.*.image": {
@@ -724,8 +711,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app.kubernetes.io/name": {
@@ -738,8 +724,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.replicas": {
@@ -770,8 +755,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app.kubernetes.io/name": {
@@ -784,8 +768,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -798,8 +781,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app.kubernetes.io/name": {
@@ -812,8 +794,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.spec.containers.*.image": {
@@ -1026,8 +1007,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app.kubernetes.io/name": {
@@ -1040,8 +1020,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.replicas": {
@@ -1072,8 +1051,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app.kubernetes.io/name": {
@@ -1086,8 +1064,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -1100,8 +1077,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app.kubernetes.io/name": {
@@ -1114,8 +1090,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.spec.containers.*.image": {
@@ -1865,8 +1840,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app.kubernetes.io/name": {
@@ -1879,8 +1853,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.containers.*.image": {
@@ -3849,8 +3822,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     },
@@ -3865,8 +3837,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app~1kubernetes~1io/name": {
@@ -3879,8 +3850,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app": {
@@ -3893,8 +3863,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app~1kubernetes~1io/name": {
@@ -3907,8 +3876,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -3921,8 +3889,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app~1kubernetes~1io/name": {
@@ -3935,8 +3902,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     },
@@ -3951,8 +3917,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app~1kubernetes~1io/name": {
@@ -3965,8 +3930,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app": {
@@ -3979,8 +3943,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app~1kubernetes~1io/name": {
@@ -3993,8 +3956,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -4007,8 +3969,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app~1kubernetes~1io/name": {
@@ -4021,8 +3982,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     },
@@ -4037,8 +3997,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app~1kubernetes~1io/name": {
@@ -4051,8 +4010,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app": {
@@ -4065,8 +4023,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app~1kubernetes~1io/name": {
@@ -4079,8 +4036,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -4093,8 +4049,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app~1kubernetes~1io/name": {
@@ -4107,8 +4062,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     },
@@ -4123,8 +4077,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app~1kubernetes~1io/name": {
@@ -4137,8 +4090,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app": {
@@ -4151,8 +4103,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.selector.matchLabels.app~1kubernetes~1io/name": {
@@ -4165,8 +4116,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app": {
@@ -4179,8 +4129,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "spec.template.metadata.labels.app~1kubernetes~1io/name": {
@@ -4193,8 +4142,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     },
@@ -4209,8 +4157,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       },
       "metadata.labels.app~1kubernetes~1io/name": {
@@ -4223,8 +4170,7 @@
               "FunctionName": "set-default-names",
               "Arguments": null
             }
-          ],
-          "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+          ]
         }
       }
     }

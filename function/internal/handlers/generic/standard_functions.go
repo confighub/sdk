@@ -4,12 +4,10 @@
 package generic
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
-	"text/template"
 
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
@@ -177,6 +175,27 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			return genericFnGetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
+	fh.RegisterFunction("vet-placeholders", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-placeholders",
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if no placeholders remain, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
+	// TODO: Deprecated in favor of vet-placeholders. Remove this.
 	fh.RegisterFunction("no-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "no-placeholders",
@@ -194,7 +213,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnNoPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
 	fh.RegisterFunction("search-replace", &handler.FunctionRegistration{
@@ -470,18 +489,55 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	})
 	fh.RegisterFunction("set-default-names", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName:          "set-default-names",
+			FunctionName: "set-default-names",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "name",
+					Required:      true,
+					Description:   "Name value to set in identified name fields containing placeholder values",
+					DataType:      api.DataTypeString,
+				},
+			},
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set identifying/uniquifying names to default patterns",
-			FunctionType:          api.FunctionTypeCustom,
+			Description:           "Set the values of identified name fields containing placeholder values",
+			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameDefaultName,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 			return genericFnSetDefaultNames(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
+	fh.RegisterFunction("get-attribute", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "get-attribute",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "attribute-name",
+					Required:      true,
+					Description:   "Name of the attribute get",
+					DataType:      api.DataTypeString,
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "attribute",
+				Description: "Specified attribute values",
+				OutputType:  api.OutputTypeAttributeValueList,
+			},
+			Mutating:     false,
+			Validating:   false,
+			Hermetic:     true,
+			Idempotent:   true,
+			Description:  "Returns values of a specified registered attribute",
+			FunctionType: api.FunctionTypePathVisitor,
+			// No AttributeName, since that's provided as a parameter
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnGetAttribute(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
 	fh.RegisterFunction("get-attributes", &handler.FunctionRegistration{
@@ -497,7 +553,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns a list of significant attributes",
-			FunctionType:          api.FunctionTypeCustom,
+			FunctionType:          api.FunctionTypePathVisitor,
+			AttributeName:         api.AttributeNameGeneral,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
@@ -540,7 +597,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns a list of needed attributes with setter functions",
-			FunctionType:          api.FunctionTypeCustom,
+			FunctionType:          api.FunctionTypePathVisitor,
+			AttributeName:         api.AttributeNameNeededValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
@@ -560,13 +618,45 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns a list of Provided attributes",
-			FunctionType:          api.FunctionTypeCustom,
+			FunctionType:          api.FunctionTypePathVisitor,
+			AttributeName:         api.AttributeNameProvidedValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
 			return genericFnGetProvided(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
+	fh.RegisterFunction("vet-celexpr", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-celexpr",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "validation-expr",
+					Required:      true,
+					Description:   "CEL (Common Expression Language) expression to validate each resource. The current resource is refenced with the prefix 'r.' See https://cel.dev/ for language details.",
+					DataType:      api.DataTypeCEL,
+					// TODO: Override this with ToolchainType-specific examples.
+					Example: "r.kind != 'Deployment' || r.spec.template.spec.containers.all(container, container.securityContext.runAsNonRoot == true)",
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if validation passed, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           `Returns true if validation expression evaluates to true for all resources`,
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnCELValidate(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
+	// TODO: Deprecated in favor of vet-celexpr. Remove this.
 	fh.RegisterFunction("cel-validate", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "cel-validate",
@@ -659,6 +749,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
+	// TODO: Depreciated in favor of vet-approvedby. Remove this.
 	fh.RegisterFunction("is-approved", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "is-approved",
@@ -684,7 +775,35 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnIsApproved(resourceProvider, functionContext, parsedData, args, liveState)
+			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
+	fh.RegisterFunction("vet-approvedby", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-approvedby",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "num-approvers",
+					Required:      true,
+					Description:   "Number of approvers",
+					DataType:      api.DataTypeInt,
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if approvers are present, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Returns true if sufficient approvers are present",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
 	fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
@@ -724,7 +843,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns a list of selected significant resource attributes",
-			FunctionType:          api.FunctionTypeCustom,
+			FunctionType:          api.FunctionTypePathVisitor,
+			AttributeName:         api.AttributeNameDetail,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
@@ -998,7 +1118,7 @@ func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.
 	return parsedData, paths, nil
 }
 
-func genericFnNoPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.DeprecatedPlaceHolderBlockApplyString)...)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
@@ -1124,86 +1244,48 @@ func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.F
 	return parsedData, nil, err
 }
 
-type NameConstructorArgs struct {
-	NormalizedUnitName     string
-	NormalizedSpaceName    string
-	NormalizedResourceName string
-	TrimmedResourceName    string
-	NormalizedResourceType string
-}
+// TODO: Remove if not still useful
+// func trimResourceName(resourceName, typeName, spaceName, unitName, separator string) string {
+// 	// The type may be used as a suffix
+// 	name := strings.TrimSuffix(strings.TrimSuffix(resourceName, typeName), separator)
+// 	// The unit and space may be used as prefixes
+// 	name = strings.TrimPrefix(strings.TrimPrefix(name, unitName), separator)
+// 	name = strings.TrimPrefix(strings.TrimPrefix(name, spaceName), separator)
+// 	return name
+// }
 
-const (
-	StandardNamePrefixTemplate1 = "{{.NormalizedUnitName}}"
-	StandardNamePrefixTemplate2 = "{{.NormalizedSpaceName}}"
-)
+func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	nameValue := args[0].Value.(string)
 
-func StandardNameTemplate(separator string) string {
-	return StandardNamePrefixTemplate1 + separator + StandardNamePrefixTemplate2
-}
-
-func trimResourceName(resourceName, typeName, spaceName, unitName, separator string) string {
-	// The type may be used as a suffix
-	name := strings.TrimSuffix(strings.TrimSuffix(resourceName, typeName), separator)
-	// The unit and space may be used as prefixes
-	name = strings.TrimPrefix(strings.TrimPrefix(name, unitName), separator)
-	name = strings.TrimPrefix(strings.TrimPrefix(name, spaceName), separator)
-	return name
-}
-
-func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentValue string) (any, error) {
+		// TODO: Support this condition in the string visitor.
 		if !strings.Contains(currentValue, yamlkit.PlaceHolderBlockApplyString) &&
 			!strings.Contains(currentValue, yamlkit.DeprecatedPlaceHolderBlockApplyString) {
 			return nil, nil
 		}
-		nameTemplate := context.Info.GenerationTemplate
-		if nameTemplate == "" {
-			log.Errorf("no name constructor template: %v", context.Info)
-			return nil, errors.New("internal error") // TODO: create error type
-		}
-		unitName := resourceProvider.NormalizeName(functionContext.UnitSlug)
-		spaceName := resourceProvider.NormalizeName(functionContext.SpaceSlug)
-		resourceName := resourceProvider.NormalizeName(string(context.ResourceName))
-		resourceType := resourceProvider.NormalizeName(string(context.ResourceType))
-		f := template.FuncMap{}
-		f["toUpper"] = strings.ToUpper
-		f["toLower"] = strings.ToLower
-		f["toUpper"] = strings.ToUpper
-		f["trimSpace"] = strings.TrimSpace
-		f["trimSuffix"] = strings.TrimSuffix
-		f["trimPrefix"] = strings.TrimPrefix
-		tmpl, err := template.New("name").Funcs(f).Parse(nameTemplate)
-		if err != nil {
-			log.Errorf("couldn't parse template %s: %v", nameTemplate, err)
-			return nil, errors.New("internal error") // TODO: create an error type
-		}
-		constructorArgs := NameConstructorArgs{
-			unitName,
-			spaceName,
-			resourceName,
-			trimResourceName(resourceName, resourceType, spaceName, unitName, resourceProvider.NameSeparator()),
-			resourceType,
-		}
-		var out bytes.Buffer
-		err = tmpl.Execute(&out, constructorArgs)
-		if err != nil {
-			log.Errorf("error evaluating template: %v", err)
-			return nil, errors.New("internal error") // TODO: create an error type
-		} else {
-			defaultName := out.String()
-			// We can't replace the placeholder string because reset doesn't restore the original
-			// string, it replaces the whole field with the placeholder value. The whole new value
-			// for each specific field is expected to be generated by the default name template.
-			// Once the template strings are made extensible via API they will be easier to customize.
-			// newValue := strings.ReplaceAll(currentValue, yamlkit.PlaceHolderBlockApplyString, defaultName)
-			newValue := defaultName
-			_, err = doc.SetP(newValue, string(context.Path))
-			return nil, errors.WithStack(err) // TODO: wrap error?
-		}
+		// We can't replace the placeholder string because reset doesn't restore the original
+		// string, it replaces the whole field with the placeholder value. The whole new value
+		// for each specific field is expected to be generated by the default name template.
+		// Substrings should be targeted using embedded accessors.
+		// Once the template strings are made extensible via API they will be easier to customize.
+		// newValue := strings.ReplaceAll(currentValue, yamlkit.PlaceHolderBlockApplyString, defaultName)
+		pathString := string(context.Path)
+		_, err := doc.SetP(nameValue, pathString)
+		return nil, errors.Wrap(err, "unable to set value of "+pathString)
 	}
 	nameConstructors := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDefaultName)
 	_, err := yamlkit.VisitPaths[string](parsedData, nameConstructors, []any{}, nil, resourceProvider, visitor, false)
 	return parsedData, nil, err
+}
+
+func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	attributeName := args[0].Value.(string)
+	attributePaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeName(attributeName))
+	if len(attributePaths) == 0 {
+		return parsedData, nil, errors.New("attribute " + attributeName + " not registered")
+	}
+	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false)
+	return parsedData, values, err
 }
 
 func genericFnGetAttributes(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
@@ -1649,7 +1731,7 @@ func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionConte
 	return parsedData, wrappedOutput, err
 }
 
-func genericFnIsApproved(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	numApprovers := args[0].Value.(int)
 
 	// If the data has changed, previous approvers will be cleared.

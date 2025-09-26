@@ -26,7 +26,7 @@ Key workflow for agents:
 Functions are categorized as:
 - Inspection (read-only): get-*, yq, get-placeholders
 - Modification (mutating): set-*, search-replace  
-- Validation (checking): no-placeholders, cel-validate, is-approved
+- Validation (checking): vet-placeholders, vet-celexpr, vet-approvedby
 
 Functions are toolchain-specific (Kubernetes/YAML, OpenTofu/HCL, etc.) and operate on units matching specified criteria.`
 

@@ -40,9 +40,11 @@ Examples:
 }
 
 func init() {
-	addSpaceFlags(applyCmd)
-	addStandardDisplayFlags(applyCmd)
-	rootCmd.AddCommand(applyCmd)
+	if os.Getenv("CONFIGHUB_EXPERIMENTAL") != "" {
+		addSpaceFlags(applyCmd)
+		addStandardDisplayFlags(applyCmd)
+		rootCmd.AddCommand(applyCmd)
+	}
 }
 
 func applyCmdRun(cmd *cobra.Command, args []string) error {

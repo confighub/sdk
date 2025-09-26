@@ -16,7 +16,8 @@ OUTPUT
         "Arguments": null
       }
     },
-    "Value": "nginx"
+    "Value": "nginx",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -32,6 +33,7 @@ OUTPUT
         "Arguments": null
       }
     },
-    "Value": "otel-sidecar"
+    "Value": "otel-sidecar",
+    "Index": 0
   }
 ]

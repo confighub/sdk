@@ -17,6 +17,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: Change to sha256
+
 // RevisionHash represents a crc32.ChecksumIEEE of configuration data.
 // In Go, conversion of uint32 to int32 doesn't lose information. The
 // 32 bits are retained. We use int32 because a number of languages and
@@ -148,10 +150,16 @@ type ResolvedPath string
 //   - .*. represents a wildcard for an array or map without recording any values for getter or setter parameters.
 type UnresolvedPath string
 
+// Valid function names. By convention we use kabob-case to match cub's convention.
+const FunctionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
+
+// Valid attribute names. By convention we use kabob-case to match cub's convention.
+const AttributeNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
+
 // AttributeName represents the category name of an attribute used for getter and setter functions, and for
 // matching Provided values to Needed values. There are some well known attribute names that are used across
 // resource/configuration providers, and some that are specific to each provider. The well known ones are
-// specified here.
+// specified here. For functions that use the path registry, they identify sets of related resource paths.
 type AttributeName string
 
 const (
@@ -262,6 +270,11 @@ type Scalar interface {
 	~string | ~int | ~bool
 }
 
+const (
+	EvaluatorTemplate = "template"
+	EvaluatorCEL      = "cel"
+)
+
 // FunctionArgument specifies the value of an argument in a function invocation and, optionally,
 // its corresponding parameter name. If the parameter name is not specified for any argument,
 // all of the arguments are expected to be passed in the same order as in the parameter list.
@@ -269,6 +282,7 @@ type FunctionArgument struct {
 	ParameterName string `json:",omitempty" description:"Name of parameter corresponding to this argument; optional: if not specified, expected to be in order"`
 	Value         any    `description:"Argument value; must be a Scalar type, currently string, int, or bool"`
 	// DataType is not needed here because it's in the function signature
+	Evaluator string `json:",omitempty" description:"Evaluate the provided Value with the specified Evaluator; supported values: template, cel"`
 }
 
 // FunctionInvocation specifies the name of the function to invoke and the arguments to pass
@@ -303,11 +317,10 @@ type FunctionIDs struct {
 
 // FunctionInvocationSuccessResponse contains the data returned from a successful function invocation.
 type FunctionInvocationSuccessResponse struct {
-	ConfigData []byte               `swaggertype:"string" format:"byte" description:"The resulting configuration data, potentially mutated"`
-	Output     []byte               `swaggertype:"string" format:"byte" description:"Output other than config data, as embedded JSON"`
-	OutputType OutputType           `swaggertype:"string" description:"Type of structured function output, if any"`
-	Mutations  ResourceMutationList `description:"List of mutations in the same order as the resources in ConfigData"`
-	Mutators   []int                `description:"List of function invocation indices that resulted in mutations"`
+	ConfigData []byte                `swaggertype:"string" format:"byte" description:"The resulting configuration data, potentially mutated"`
+	Outputs    map[OutputType][]byte `description:"Map of output types to their corresponding output data as embedded JSON"`
+	Mutations  ResourceMutationList  `description:"List of mutations in the same order as the resources in ConfigData"`
+	Mutators   []int                 `description:"List of function invocation indices that resulted in mutations"`
 }
 
 // A FunctionInvocationResponse is returned by the function executor in response to a
@@ -375,10 +388,9 @@ type AttributeInfo struct {
 // AttributeDetails provides the getter and (potentially multiple) setter functions for the
 // resource attribute, and other information.
 type AttributeDetails struct {
-	GetterInvocation   *FunctionInvocation  `json:",omitempty"` // used for matching
-	SetterInvocations  []FunctionInvocation `json:",omitempty"` // used for matching
-	GenerationTemplate string               `json:",omitempty"` // used for set-default-names
-	Description        string               `json:",omitempty"` // used by UI
+	GetterInvocation  *FunctionInvocation  `json:",omitempty"` // used for matching
+	SetterInvocations []FunctionInvocation `json:",omitempty"` // used for matching
+	Description       string               `json:",omitempty"` // documentation
 	// ValidationRegexp   string              `json:",omitempty"`   // not used yet
 	// ExtractionRegexp   string              `json:",omitempty"`   // not used yet
 	// PartitionRegexp    string              `json:",omitempty"`    // not used yet
@@ -389,6 +401,7 @@ type AttributeValue struct {
 	AttributeInfo
 	Value   any
 	Comment string `json:",omitempty"`
+	Index   int    // index of the function invocation corresponding to the result
 }
 type AttributeValueList []AttributeValue
 
@@ -539,16 +552,21 @@ func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 func CombineOutputs(
 	functionName string,
 	instance string,
-	outputType OutputType,
 	newOutputType OutputType,
-	output any,
+	outputs map[OutputType]any,
 	newOutput any,
 	functionInvocationIndex int,
 	messages []string,
-) (any, []string) {
-	if output == nil {
-		outputType = newOutputType
-		switch outputType {
+) (map[OutputType]any, []string) {
+	if outputs == nil {
+		outputs = make(map[OutputType]any)
+	}
+
+	// Get or initialize the output for this type
+	output, exists := outputs[newOutputType]
+	if !exists {
+		// Initialize the output based on type
+		switch newOutputType {
 		case OutputTypeValidationResult, OutputTypeValidationResultList:
 			output = ValidationResultList{}
 		case OutputTypeAttributeValueList:
@@ -561,129 +579,133 @@ func CombineOutputs(
 			output = YAMLPayload{}
 		default:
 			// includes OutputTypeJSON, etc.
-			output = newOutput
-			return output, messages
+			outputs[newOutputType] = newOutput
+			return outputs, messages
 		}
 	}
-	if outputType == newOutputType {
-		switch outputType {
-		case OutputTypeValidationResult:
-			// Should be a ValidationResultList in actuality
-			newResult, newExpectedType := newOutput.(ValidationResultList)
-			if !newExpectedType {
-				// Fall back to ValidationResult
-				newResult, newExpectedType := newOutput.(ValidationResult)
-				if !newExpectedType {
-					messages = append(messages, "couldn't convert new result to ValidationResultList or ValidationResult")
-					return output, messages
-				}
-				previousResults, previousExpectedType := output.(ValidationResultList)
-				if !previousExpectedType {
-					messages = append(messages, "couldn't convert previous result to ValidationResultList")
-					return output, messages
-				}
-				newResult.Index = functionInvocationIndex
-				previousResults = append(previousResults, newResult)
-				output = previousResults
-			} else {
-				previousResults, previousExpectedType := output.(ValidationResultList)
-				if !previousExpectedType {
-					messages = append(messages, "couldn't convert previous result to ValidationResultList")
-					return output, messages
-				}
-				for i := range newResult {
-					newResult[i].Index = functionInvocationIndex
-				}
-				previousResults = append(previousResults, newResult...)
-				output = previousResults
-			}
 
-		case OutputTypeValidationResultList:
-			newResult, newExpectedType := newOutput.(ValidationResultList)
+	// Combine outputs of the same type
+	switch newOutputType {
+	case OutputTypeValidationResult:
+		// Should be a ValidationResultList in actuality
+		newResult, newExpectedType := newOutput.(ValidationResultList)
+		if !newExpectedType {
+			// Fall back to ValidationResult
+			newResult, newExpectedType := newOutput.(ValidationResult)
 			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to ValidationResult")
-				return output, messages
-			}
-			for i := range newResult {
-				newResult[i].Index = functionInvocationIndex
+				messages = append(messages, "couldn't convert new result to ValidationResultList or ValidationResult")
+				return outputs, messages
 			}
 			previousResults, previousExpectedType := output.(ValidationResultList)
 			if !previousExpectedType {
 				messages = append(messages, "couldn't convert previous result to ValidationResultList")
-				return output, messages
+				return outputs, messages
+			}
+			newResult.Index = functionInvocationIndex
+			previousResults = append(previousResults, newResult)
+			output = previousResults
+		} else {
+			previousResults, previousExpectedType := output.(ValidationResultList)
+			if !previousExpectedType {
+				messages = append(messages, "couldn't convert previous result to ValidationResultList")
+				return outputs, messages
+			}
+			for i := range newResult {
+				newResult[i].Index = functionInvocationIndex
 			}
 			previousResults = append(previousResults, newResult...)
 			output = previousResults
-
-		case OutputTypeAttributeValueList:
-			previousOutput, previousExpectedType := output.(AttributeValueList)
-			if !previousExpectedType {
-				messages = append(messages, "couldn't convert previous result to AttributeValueList")
-				return output, messages
-			}
-			newOutput, newExpectedType := newOutput.(AttributeValueList)
-			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to AttributeValueList")
-				return output, messages
-			}
-			previousOutput = append(previousOutput, newOutput...)
-			output = previousOutput
-
-		case OutputTypeResourceInfoList:
-			previousOutput, previousExpectedType := output.(ResourceInfoList)
-			if !previousExpectedType {
-				messages = append(messages, "couldn't convert previous result to ResourceInfoList")
-				return output, messages
-			}
-			newOutput, newExpectedType := newOutput.(ResourceInfoList)
-			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to ResourceInfoList")
-				return output, messages
-			}
-			previousOutput = append(previousOutput, newOutput...)
-			output = previousOutput
-
-		case OutputTypeResourceList:
-			previousOutput, previousExpectedType := output.(ResourceList)
-			if !previousExpectedType {
-				messages = append(messages, "couldn't convert previous result to ResourceList")
-				return output, messages
-			}
-			newOutput, newExpectedType := newOutput.(ResourceList)
-			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to ResourceList")
-				return output, messages
-			}
-			previousOutput = append(previousOutput, newOutput...)
-			output = previousOutput
-
-		case OutputTypeYAML:
-			previousOutput, previousExpectedType := output.(YAMLPayload)
-			if !previousExpectedType {
-				messages = append(messages, "couldn't convert previous result to YAMLPayload")
-				return output, messages
-			}
-			newOutput, newExpectedType := newOutput.(YAMLPayload)
-			if !newExpectedType {
-				messages = append(messages, "couldn't convert new result to YAMLPayload")
-				return output, messages
-			}
-			// Concatenate YAML documents
-			if len(newOutput.Payload) > 0 {
-				if len(previousOutput.Payload) == 0 {
-					previousOutput.Payload = newOutput.Payload
-				} else {
-					payloads := []string{previousOutput.Payload, newOutput.Payload}
-					previousOutput.Payload = strings.Join(payloads, "\n---\n")
-				}
-			}
-			output = previousOutput
-
-		default:
-			messages = append(messages, fmt.Sprintf("functions with unmergeable output types; output of %s discarded", instance))
 		}
-	} else {
-		messages = append(messages, fmt.Sprintf("functions with incompatible output types; output of %s discarded", instance))
+
+	case OutputTypeValidationResultList:
+		newResult, newExpectedType := newOutput.(ValidationResultList)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to ValidationResult")
+			return outputs, messages
+		}
+		for i := range newResult {
+			newResult[i].Index = functionInvocationIndex
+		}
+		previousResults, previousExpectedType := output.(ValidationResultList)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to ValidationResultList")
+			return outputs, messages
+		}
+		previousResults = append(previousResults, newResult...)
+		output = previousResults
+
+	case OutputTypeAttributeValueList:
+		previousOutput, previousExpectedType := output.(AttributeValueList)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to AttributeValueList")
+			return outputs, messages
+		}
+		newOutput, newExpectedType := newOutput.(AttributeValueList)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to AttributeValueList")
+			return outputs, messages
+		}
+		for i := range newOutput {
+			newOutput[i].Index = functionInvocationIndex
+		}
+		previousOutput = append(previousOutput, newOutput...)
+		output = previousOutput
+
+	case OutputTypeResourceInfoList:
+		previousOutput, previousExpectedType := output.(ResourceInfoList)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to ResourceInfoList")
+			return outputs, messages
+		}
+		newOutput, newExpectedType := newOutput.(ResourceInfoList)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to ResourceInfoList")
+			return outputs, messages
+		}
+		previousOutput = append(previousOutput, newOutput...)
+		output = previousOutput
+
+	case OutputTypeResourceList:
+		previousOutput, previousExpectedType := output.(ResourceList)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to ResourceList")
+			return outputs, messages
+		}
+		newOutput, newExpectedType := newOutput.(ResourceList)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to ResourceList")
+			return outputs, messages
+		}
+		previousOutput = append(previousOutput, newOutput...)
+		output = previousOutput
+
+	case OutputTypeYAML:
+		previousOutput, previousExpectedType := output.(YAMLPayload)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to YAMLPayload")
+			return outputs, messages
+		}
+		newOutput, newExpectedType := newOutput.(YAMLPayload)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to YAMLPayload")
+			return outputs, messages
+		}
+		// Concatenate YAML documents
+		if len(newOutput.Payload) > 0 {
+			if len(previousOutput.Payload) == 0 {
+				previousOutput.Payload = newOutput.Payload
+			} else {
+				payloads := []string{previousOutput.Payload, newOutput.Payload}
+				previousOutput.Payload = strings.Join(payloads, "\n---\n")
+			}
+		}
+		output = previousOutput
+
+	default:
+		messages = append(messages, fmt.Sprintf("functions with unmergeable output types; output of %s discarded", instance))
 	}
-	return output, messages
+
+	// Store the combined output back in the map
+	outputs[newOutputType] = output
+	return outputs, messages
 }

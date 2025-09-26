@@ -204,7 +204,7 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 			tprint("Awaiting triggers...")
 		}
 		fromUnitID := linkDetails.FromUnitID
-		unitDetails, err := apiGetUnit(fromUnitID.String(), "*") // get all fields for now
+		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}

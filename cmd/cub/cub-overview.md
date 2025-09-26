@@ -2,22 +2,6 @@
 
 `cub` is the command-line tool for using ConfigHub.
 
-## Installation
-
-You can install the CLI with the following one-liner:
-
-    curl -fsSL https://hub.confighub.com/cub/install.sh | bash
-
-The CLI is a single binary which will be saved to `~/.confighub/bin/cub`. The script will also download the worker binary `cub-worker-run` and place it in the same directory. You need to add `cub` to your path. You can do that in a variety of ways:
-
-- `sudo ln -sf ~/.confighub/bin/cub /usr/local/bin/cub`
-- `ln -sf ~/.confighub/bin/cub ~/bin/cub`
-- `export PATH=~/.confighub/bin/cub:$PATH`
-
-etc.
-
-The CLI binary is available for Linux and Mac, ARM64 and AMD64 architectures as well as a Windows AMD64 binary which does not yet have an install script.
-
 ## Getting started
 
 To get credentials:
@@ -53,7 +37,7 @@ cub <entity/area> <verb> [<flags>] [<arguments>]
 For example:
 
 ```
-cub unit create --space space23846 --verbose --json --from-stdin deployment deployment.yaml
+cub unit create --space prod-eu deployment deployment.yaml
 ```
 
 ### Entities / areas (command groups)
@@ -65,6 +49,7 @@ The supported entities are:
 - `user`
 - `space`
 - `unit`
+- `unit-action`
 - `unit-event`
 - `revision`
 - `mutation`
@@ -72,17 +57,23 @@ The supported entities are:
 - `target`
 - `worker`
 - `trigger`
-- `set`
+- `invocation`
+- `filter`
+- `changeset`
+- `tag`
 
 In general, the CLI identifies entities using names.
 
 Other functional areas include:
 
 - `auth`
+- `completion`
 - `context`
+- `upgrade`
+- `version`
 - `function`
 - `run`
-- `completion`
+- `helm`
 
 `cub --help` will list all of the supported entities/areas.
 
@@ -96,24 +87,37 @@ The standard entity verbs are:
 - `update`
 - `delete`
 
-Some entities, such as `user`, `revision`, and `mutation`, are readonly and only support `list` and `get`.
+Some entities, such as `user`, `revision`, `mutation`, `unit-action`, and `unit-event`, are readonly and only support `list` and `get`.
 
 ### Flags
 
-There are also some common flags that affect the output, input, or operation:
+There are also some common flags that affect the output, input, or operation.
 
-- `--from-stdin`: Read the JSON entity body from standard input. Applies to `create` and `update`.
-- `--label`: Add a label or list of labels, comma-separated, using key=value syntax. Applies to `create` and `update`.
-- `--where`: The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`. String pattern operators include `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, and `!~~` for NOT LIKE. String regex operators include `~` for regex matching, `~*` for case-insensitive regex, and `!~`/`!~*` for regex not matching. Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. An example conjunction is: `CreatedAt >= '2025-01-07' AND DisplayName = 'test' AND Labels.mykey = 'myvalue'`. Applies to `list`.
+#### Selection/filtering flags
+
+- `--space`: Specify the slug of the space of the entity or functional area. Overrides the current context. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
+- `--where`: The specified string is an expression for the purpose of filtering the list of entities returned or operated upon. The expression syntax was inspired by SQL. For syntax details, see [our documentation](https://docs.confighub.com/concepts/filters/). Applies to `list` and to all [bulk operations](https://docs.confighub.com/concepts/bulk-operations/).
 - `--contains`: Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with `--where` using AND logic. Example: `--contains backend` to find entities with "backend" in any searchable field. Applies to `list`.
-- `--names`: Print only names, suppressing default output. Applies to `list`.
-- `--no-header`: Omit the header line. Applies to `list`.
+- `--filter`: Use a saved Filter entity in `<space>/<filter>` syntax to filter the operation.
+
+#### Display flags
+
 - `--debug`: Print API calls. Applies to all verbs.
 - `--quiet`: Do not print default output. Applies to all verbs.
 - `--verbose`: Print details of the returned entity, additive with default output. Applies to `create` and `update`.
-- `--json`: Print formatted JSON of the response payload, suppressing default output. Applies to `list`, `get`, `create`, and `update`.
-- `--jq`: Print the result of applying the specified `jq` expression to the response payload, suppressing default output. Applies to `list`, `get`, `create`, and `update`.
-- `--space`: Specify the slug of the space of the entity or other area. Overrides the current context. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
+- `--json`: Print formatted JSON of the response payload, suppressing default output. Applies to most commands.
+- `--jq`: Print the result of applying the specified `jq` expression to the response payload, suppressing default output. Applies to most commands.
+- `--yaml`: Print formatted YAML of the response payload, suppressing default output. Applies to most commands.
+- `--yq`: Print the result of applying the specified `yq` expression to the response payload, suppressing default output. Applies to most commands.
+- `--names`: Print only names, suppressing default output. Applies to `list`.
+- `--no-header`: Omit the header line. Applies to `list`.
+
+#### Other common flags
+
+- `--label`: Add a label or list of labels, comma-separated, using key=value syntax. Applies to `create` and `update`.
+- `--filename`: Read the JSON or YAML entity body from a file, URL, or standard input. Applies to `create` and `update`.
+- `--patch`: Use the PATCH API rather than PUT (Update). Applies to `update`.
+- `--wait`: Wait for completion of asynchronous operations. Applies to unit and link create, update, apply, destroy, and refresh.
 
 ## Sample commands
 
@@ -136,19 +140,19 @@ cub space create --json --from-stdin space-slug < spacemetadata.json
 Create a trigger that validates that all Kubernetes Deployments have more than one replica:
 
 ```
-cub trigger create --space $SPACE --verbose replicated Mutation "Kubernetes/YAML" cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1'
+cub trigger create --space $SPACE --verbose replicated Mutation "Kubernetes/YAML" vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 ```
 
 Create a trigger to ensure that no placeholder values remain before you apply:
 
 ```
-cub trigger create --space $SPACE complete Mutation "Kubernetes/YAML" no-placeholders
+cub trigger create --space $SPACE complete Mutation "Kubernetes/YAML" vet-placeholders
 ```
 
 Create a trigger to ensure that a unit has been reviewed and approved after any change by at least one person prior to apply:
 
 ```
-cub trigger create --space $SPACE require-approval Mutation "Kubernetes/YAML" is-approved 1
+cub trigger create --space $SPACE require-approval Mutation "Kubernetes/YAML" vet-approvedby 1
 ```
 
 Create a trigger to ensure that all Kubernetes resources are annotated with unit metadata:
@@ -250,7 +254,7 @@ cub unit list --space $SPACE --where 'LEN(ApplyGates) > 0'
 Get all apply gates of units with a specific apply gate:
 
 ```
-cub unit list --space $SPACE --where "ApplyGates.complete/no-placeholders = true" --jq '.[].ApplyGates'
+cub unit list --space $SPACE --where "ApplyGates.complete/vet-placeholders = true" --jq '.[].ApplyGates'
 ```
 
 Find units with names starting with "test":

@@ -20,6 +20,7 @@ func (r *OpenTofuRegistrarType) RegisterFunctions(fh handler.FunctionRegistry) {
 	initStandardFunctions()
 	registerStandardFunctions(fh)
 	fh.SetConverter(hclkit.HclResourceProvider)
+	fh.SetResourceProvider(hclkit.HclResourceProvider)
 }
 
 func (r *OpenTofuRegistrarType) GetToolchainPath() string {

@@ -80,7 +80,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType"}
 
 // Space-specific aliases
 var spaceAliases = map[string]string{

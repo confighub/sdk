@@ -50,6 +50,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   }
 ]

@@ -10,6 +10,7 @@ OUTPUT
     "Path": "database.port",
     "AttributeName": "attribute-value",
     "DataType": "int",
-    "Value": 5432
+    "Value": 5432,
+    "Index": 0
   }
 ]

@@ -40,6 +40,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "false"
+    "Value": "false",
+    "Index": 0
   }
 ]

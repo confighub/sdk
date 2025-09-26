@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -61,9 +59,7 @@ func init() {
 	functionExecCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	enableWhereFlag(functionExecCmd)
 	enableFilterFlag(functionExecCmd)
-	enableQuietFlag(functionExecCmd)
-	enableJsonFlag(functionExecCmd)
-	enableJqFlag(functionExecCmd)
+	addStandardDisplayFlags(functionExecCmd)
 	enableWaitFlag(functionExecCmd)
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionExecCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
@@ -108,6 +104,18 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		effectiveWhere = whereClause
 	}
 
+	// Parse changeset once if specified (not for revision-based invocations)
+	var changesetID string
+	if functionChangesetSlug != "" && revisionIdentifier == "" {
+		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+		if err != nil {
+			return nil, err
+		}
+		changesetID = changesetUUID.String()
+		// Add changeset constraint to WHERE clause
+		effectiveWhere = addChangeSetIDToWhereClause(effectiveWhere, changesetID)
+	}
+
 	// Create function invocations request. This also parses invocations and triggers.
 	newBody := newFunctionInvocationsRequest()
 
@@ -148,69 +156,21 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 
 	// Handle revision flag
 	if revisionIdentifier != "" {
-		resp, err = invokeFunctionOnRevision(revisionIdentifier, *newBody, dryRun)
+		resp, err = invokeFunctionsOnRevision(revisionIdentifier, *newBody, dryRun)
 		if err != nil {
-			return nil, err
-		}
-	} else if selectedSpaceID == "*" {
-		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		if effectiveWhere != "" {
-			newParams.Where = &effectiveWhere
-		}
-		if filterID != "" {
-			newParams.Filter = &filterID
-		}
-		if dryRun {
-			dryRunStr := "true"
-			newParams.DryRun = &dryRunStr
-		}
-		if functionChangesetSlug != "" {
-			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
-			if err != nil {
-				return nil, err
-			}
-			changesetID := changesetUUID.String()
-			newParams.ChangeSetId = &changesetID
-		}
-		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *newBody)
-		if cubapi.IsAPIError(err, funcRes) {
-			return nil, fmt.Errorf("failed to invoke function on org: %s", cubapi.InterpretErrorGeneric(err, funcRes).Error())
-		}
-		// Handle both successful (200) and partial success/failure (207) responses
-		if funcRes.JSON200 != nil {
-			resp = funcRes.JSON200
-		} else if funcRes.JSON207 != nil {
-			resp = funcRes.JSON207
+			return resp, err
 		}
 	} else {
-		newParams := &goclientnew.InvokeFunctionsParams{}
-		if effectiveWhere != "" {
-			newParams.Where = &effectiveWhere
+		invokeArgs := &invokeArgs{
+			Where:       effectiveWhere,
+			FilterID:    filterID,
+			DryRun:      dryRun,
+			ChangeSetID: changesetID,
+			Body:        newBody,
 		}
-		if filterID != "" {
-			newParams.Filter = &filterID
-		}
-		if dryRun {
-			dryRunStr := "true"
-			newParams.DryRun = &dryRunStr
-		}
-		if functionChangesetSlug != "" {
-			changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
-			if err != nil {
-				return nil, err
-			}
-			changesetID := changesetUUID.String()
-			newParams.ChangeSetId = &changesetID
-		}
-		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *newBody)
-		if cubapi.IsAPIError(err, funcRes) {
-			return nil, cubapi.InterpretErrorGeneric(err, funcRes)
-		}
-		// Handle both successful (200) and partial success/failure (207) responses
-		if funcRes.JSON200 != nil {
-			resp = funcRes.JSON200
-		} else if funcRes.JSON207 != nil {
-			resp = funcRes.JSON207
+		resp, err = invokeFunctionsOnUnits(invokeArgs)
+		if err != nil {
+			return resp, err
 		}
 	}
 
@@ -232,7 +192,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+	hasAlternativeOutput := hasAlternativeOutput() || outputJQ != ""
 
 	if !hasAlternativeOutput {
 		outputFunctionInvocationResponse(resp)
@@ -243,16 +203,24 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	if jq != "" {
 		displayJQ(resp)
 	}
+	if yamlOutput {
+		displayYAML(resp)
+	}
+	if yq != "" {
+		displayYQ(resp)
+	}
 	if outputJQ != "" {
 		for _, resp := range *resp {
-			if len(resp.Output) != 0 {
-				outputBytes, err := base64.StdEncoding.DecodeString(resp.Output)
-				if err != nil {
-					tprintRaw(resp.Output)
-					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-				}
-				if strings.TrimSpace(string(outputBytes)) != "null" {
-					displayJQForBytes(outputBytes, outputJQ)
+			for _, outputData := range resp.Outputs {
+				if len(outputData) != 0 {
+					outputBytes, err := base64.StdEncoding.DecodeString(outputData)
+					if err != nil {
+						tprintRaw(outputData)
+						failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
+					}
+					if strings.TrimSpace(string(outputBytes)) != "null" {
+						displayJQForBytes(outputBytes, outputJQ)
+					}
 				}
 			}
 		}
@@ -263,8 +231,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		}
 		// Wait one at a time
 		for _, resp := range *resp {
-			selectedSpaceID = resp.SpaceID.String()
-			unitDetails, err := apiGetUnit(resp.UnitID.String(), "*")
+			unitDetails, err := apiGetUnitInSpace(resp.UnitID.String(), resp.SpaceID.String(), "*")
 			if err != nil {
 				return err
 			}

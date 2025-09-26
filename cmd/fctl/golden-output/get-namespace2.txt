@@ -23,7 +23,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "example"
+    "Value": "example",
+    "Index": 0
   },
   {
     "ResourceName": "example/myrb",
@@ -46,7 +47,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "somens"
+    "Value": "somens",
+    "Index": 0
   },
   {
     "ResourceName": "example/myrb",
@@ -69,6 +71,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "somens"
+    "Value": "somens",
+    "Index": 0
   }
 ]

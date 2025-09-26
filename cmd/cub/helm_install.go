@@ -12,13 +12,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/engine"
-	"helm.sh/helm/v3/pkg/strvals"
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -319,34 +317,16 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load chart from %s: %w", cp, err)
 	}
 
-	// 2. Collect values.
-	userSuppliedValues := map[string]interface{}{}
-
-	// From --values files (later files override earlier ones)
-	for _, filePath := range helmInstallArgs.valuesFiles {
-		currentFileValues := map[string]interface{}{}
-		data, err := os.ReadFile(filePath)
-		if err != nil {
-			return fmt.Errorf("cannot read values file %s: %w", filePath, err)
-		}
-		if err := yaml.Unmarshal(data, &currentFileValues); err != nil {
-			return fmt.Errorf("cannot parse values file %s: %w", filePath, err)
-		}
-		userSuppliedValues = chartutil.CoalesceTables(userSuppliedValues, currentFileValues)
+	// 2. Collect values using the shared function
+	userSuppliedValues, err := loadHelmValues(helmInstallArgs.valuesFiles, helmInstallArgs.set)
+	if err != nil {
+		return err
 	}
 
-	// Removed forced installCRDs=true to allow user control over CRD installation
-	// Users can now set installCRDs=false or use --skip-crds flag as needed
-	// also make sure to set the chart's values to crds.create=true
-	// helmInstallArgs.set = append(helmInstallArgs.set, "crds.create=true")
-	// some charts may have a different key for CRDs
-	// helmInstallArgs.set = append(helmInstallArgs.set, "crds.enabled=true")
-
-	// From --set flags (these override file values)
-	for _, val := range helmInstallArgs.set {
-		if err := strvals.ParseInto(val, userSuppliedValues); err != nil {
-			return fmt.Errorf("failed to parse --set value %q: %w", val, err)
-		}
+	// 2.5. Process dependencies (this filters out disabled subcharts)
+	// This must be called BEFORE ToRenderValues to properly handle subchart conditions
+	if err := chartutil.ProcessDependencies(chrt, userSuppliedValues); err != nil {
+		return fmt.Errorf("failed to process chart dependencies: %w", err)
 	}
 
 	// 3. Build render-time values.

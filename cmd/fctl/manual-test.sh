@@ -24,7 +24,7 @@ done
 
 ${FCTL} list > ${DIR}/list.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" get-placeholders > ${DIR}/get-placeholders.txt
-${FCTL} do test-data/deployment-sample.yaml "MyDeployment" no-placeholders > ${DIR}/no-placeholders.txt
+${FCTL} do test-data/deployment-sample.yaml "MyDeployment" vet-placeholders > ${DIR}/vet-placeholders.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" search-replace confighubplaceholder replaceme > ${DIR}/search-replace.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-resources > ${DIR}/get-resources.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-resources none > ${DIR}/get-resources-none.txt
@@ -50,17 +50,17 @@ ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env-var nginx S
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" get-env-var nginx HOPE > ${DIR}/get-env-var.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-resources nginx all 500m 256Mi 2 > ${DIR}/set-container-resources.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults true true true true true > ${DIR}/set-pod-defaults.yaml
-${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp validate > ${DIR}/validate-set-pod-defaults.txt
+${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-schemas > ${DIR}/vet-schemas-set-pod-defaults.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
-${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-default-names > ${DIR}/set-default-names.txt
+${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-default-names "template:{{.UnitSlug | normalizeName}}-{{.SpaceSlug | normalizeName}}" > ${DIR}/set-default-names.txt
 ${FCTL} do test-data/service.yaml "MyApp" get-attributes > ${DIR}/get-attributes.txt
 ${FCTL} do test-data/deployment.yaml "MyApp" get-attributes > ${DIR}/get-attributes2.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyApp" get-needed > ${DIR}/get-needed.txt
 ${FCTL} do test-data/hpa.yaml "MyObj" get-needed > ${DIR}/get-needed2.txt
 ${FCTL} do test-data/kubernetes-headlamp.yaml "Headlamp" get-needed > ${DIR}/get-needed3.txt
 ${FCTL} do test-data/namespace.yaml "MyNS" get-provided > ${DIR}/get-provided.txt
-${FCTL} do test-data/deployment.yaml MyApp cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1' > ${DIR}/cel-validate.txt
-${FCTL} do test-data/deployment.yaml MyApp cel-validate 'r.kind != "Deployment" || r.spec.replicas > 5' > ${DIR}/cel-validate2.txt
+${FCTL} do test-data/deployment.yaml MyApp vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1' > ${DIR}/vet-celexpr.txt
+${FCTL} do test-data/deployment.yaml MyApp vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 5' > ${DIR}/vet-celexpr2.txt
 ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "spec.paused = false" > ${DIR}/where-filter1.txt
 ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "spec.paused = true" > ${DIR}/where-filter2.txt
 ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "spec.replicas > 2" > ${DIR}/where-filter3.txt
@@ -68,7 +68,7 @@ ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "sp
 
 # Test the .|syntax for where-filter (split path feature)
 ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true" > ${DIR}/where-filter-split-path.txt
-${FCTL} do test-data/deployment.yaml MyApp validate > ${DIR}/validate.txt
+${FCTL} do test-data/deployment.yaml MyApp vet-schemas > ${DIR}/vet-schemas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-replicas 5 > ${DIR}/set-replicas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-replicas > ${DIR}/get-replicas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-string-path apps/v1/Deployment spec.template.spec.dnsPolicy > ${DIR}/get-string-path.txt

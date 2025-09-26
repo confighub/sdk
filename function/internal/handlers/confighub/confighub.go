@@ -18,6 +18,7 @@ func (r *ConfigHubRegistrarType) RegisterFunctions(fh handler.FunctionRegistry) 
 	initStandardFunctions()
 	registerStandardFunctions(fh)
 	fh.SetConverter(cubkit.ConfigHubResourceProvider)
+	fh.SetResourceProvider(cubkit.ConfigHubResourceProvider)
 }
 
 func (r *ConfigHubRegistrarType) GetToolchainPath() string {

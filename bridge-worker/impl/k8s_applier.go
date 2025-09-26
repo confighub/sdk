@@ -79,8 +79,8 @@ type WaitResult struct {
 // DestroyResult contains the result of a destroy operation
 type DestroyResult struct {
 	ResourceSet ResourceSet
-	LiveState []byte // Updated LiveState including inventory after destroy
-	Error     error
+	LiveState   []byte // Updated LiveState including inventory after destroy
+	Error       error
 }
 
 // K8sApplier defines the interface for Kubernetes resource operations
@@ -111,6 +111,7 @@ type ApplierConfig struct {
 	LiveState   []byte // LiveState containing inventory and resources
 	SpaceID     string // SpaceID for inventory identification
 	UnitSlug    string // UnitSlug for inventory identification
+	WaitTimeout string // WaitTimeout duration string for resource readiness
 }
 
 type ApplierName string

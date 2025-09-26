@@ -32,7 +32,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx:latest"
+    "Value": "nginx:latest",
+    "Index": 0
   },
   {
     "ResourceName": "example/mydep",
@@ -64,6 +65,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "otel/opentelemetry-collector:latest-amd64"
+    "Value": "otel/opentelemetry-collector:latest-amd64",
+    "Index": 0
   }
 ]

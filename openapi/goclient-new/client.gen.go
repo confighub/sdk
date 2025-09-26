@@ -12047,6 +12047,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Upgrade != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upgrade", runtime.ParamLocationQuery, *params.Upgrade); err != nil {
@@ -12146,6 +12162,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 		if params.FilterMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_mutation", runtime.ParamLocationQuery, *params.FilterMutation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12235,6 +12267,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Upgrade != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upgrade", runtime.ParamLocationQuery, *params.Upgrade); err != nil {
@@ -12334,6 +12382,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.FilterMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_mutation", runtime.ParamLocationQuery, *params.FilterMutation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15569,6 +15633,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Upgrade != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upgrade", runtime.ParamLocationQuery, *params.Upgrade); err != nil {
@@ -15668,6 +15748,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 		if params.FilterMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_mutation", runtime.ParamLocationQuery, *params.FilterMutation); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Tag != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "tag", runtime.ParamLocationQuery, *params.Tag); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -17,6 +17,7 @@ import (
 
 var spaceCreateArgs struct {
 	namePrefixes []string
+	whereTrigger string
 }
 
 var spaceCreateCmd = &cobra.Command{
@@ -47,6 +48,7 @@ func init() {
 	// Bulk create specific flags
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	enableWhereFlag(spaceCreateCmd)
 	enableFilterFlag(spaceCreateCmd)
 	spaceCmd.AddCommand(spaceCreateCmd)
@@ -123,6 +125,13 @@ func runSingleSpaceCreate(args []string) error {
 	// Even if slug was set in stdin, we override it with the one from args
 	newBody.Slug = makeSlug(args[0])
 
+	// Set WhereTrigger if provided
+	if spaceCreateArgs.whereTrigger == "-" {
+		newBody.WhereTrigger = ""
+	} else if spaceCreateArgs.whereTrigger != "" {
+		newBody.WhereTrigger = spaceCreateArgs.whereTrigger
+	}
+
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateSpaceParams{}
 	if allowExists {
@@ -142,8 +151,21 @@ func runSingleSpaceCreate(args []string) error {
 
 // createBulkCreatePatch creates a JSON patch for bulk create operations
 func createBulkSpaceCreatePatch() ([]byte, error) {
-	// Build patch data using consolidated function (no entity-specific fields for space)
-	return BuildPatchData(nil)
+	// Build patch data with space enhancer
+	var spaceEnhancer PatchEnhancer
+
+	// Add WhereTrigger if provided
+	if spaceCreateArgs.whereTrigger == "-" || spaceCreateArgs.whereTrigger != "" {
+		spaceEnhancer = func(patchMap map[string]interface{}) {
+			if spaceCreateArgs.whereTrigger == "-" {
+				patchMap["WhereTrigger"] = ""
+			} else {
+				patchMap["WhereTrigger"] = spaceCreateArgs.whereTrigger
+			}
+		}
+	}
+
+	return BuildPatchData(spaceEnhancer)
 }
 
 func runBulkSpaceCreate() error {

@@ -39,6 +39,9 @@ var workerInstallArgs struct {
 	deploymentName   string
 	functionsFile    string
 	exportSecretOnly bool
+	image            string
+	imagePullPolicy  string
+	updateStrategy   string
 }
 
 func init() {
@@ -53,6 +56,9 @@ func init() {
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.deploymentName, "deployment-name", "", "custom name for the Deployment and labels (defaults to worker slug)")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.functionsFile, "functions", "", "file containing functions to execute on the created unit")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.exportSecretOnly, "export-secret-only", false, "export only the Secret resource to stdout")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.image, "image", "ghcr.io/confighubai/confighub-worker:latest", "Docker image for the worker")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.imagePullPolicy, "image-pull-policy", "Always", "Image pull policy (Always, IfNotPresent, Never)")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.updateStrategy, "update-strategy", "Recreate", "Deployment update strategy (RollingUpdate, Recreate)")
 	enableWaitFlag(workerInstallCmd)
 
 	workerCmd.AddCommand(workerInstallCmd)
@@ -82,7 +88,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Generate Kubernetes manifest
-	manifest, err := generateKubernetesManifest(worker, workerInstallArgs.includeSecret, workerInstallArgs.namespace, workerInstallArgs.hostNetwork, deploymentName)
+	manifest, err := generateKubernetesManifest(worker, workerInstallArgs.includeSecret, workerInstallArgs.namespace, workerInstallArgs.hostNetwork, deploymentName, workerInstallArgs.image, workerInstallArgs.imagePullPolicy, workerInstallArgs.updateStrategy)
 	if err != nil {
 		return err
 	}
@@ -119,7 +125,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 			// Wait for triggers after function execution
 			if wait {
 				// Get updated unit details after function execution
-				unitDetails, err = apiGetUnit(unitDetails.UnitID.String(), "*") // get all fields for now
+				unitDetails, err = apiGetUnitInSpace(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*") // get all fields for now
 				if err != nil {
 					return err
 				}
@@ -144,7 +150,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret bool, namespace string, hostNetwork bool, deploymentName string) (string, error) {
+func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret bool, namespace string, hostNetwork bool, deploymentName string, image string, imagePullPolicy string, updateStrategy string) (string, error) {
 	// Define the Kubernetes resources
 	namespaceResource := map[string]interface{}{
 		"apiVersion": "v1",
@@ -216,12 +222,13 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	// Create pod spec
 	podSpec := map[string]interface{}{
-		"serviceAccountName": "confighub-worker",
+		"serviceAccountName":            "confighub-worker",
+		"terminationGracePeriodSeconds": 60,
 		"containers": []map[string]interface{}{
 			{
 				"name":            "worker",
-				"image":           "ghcr.io/confighubai/confighub-worker:latest",
-				"imagePullPolicy": "Always",
+				"image":           image,
+				"imagePullPolicy": imagePullPolicy,
 				"args":            []string{workerInstallArgs.workerType},
 				"env":             containerEnvs,
 				"envFrom": []map[string]interface{}{
@@ -240,6 +247,42 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		podSpec["hostNetwork"] = true
 	}
 
+	// Build strategy based on type
+	strategy := map[string]interface{}{
+		"type": updateStrategy,
+	}
+
+	// When strategy type is Recreate, explicitly set rollingUpdate to null
+	// to ensure any existing rollingUpdate fields are removed
+	if updateStrategy == "Recreate" {
+		strategy["rollingUpdate"] = nil
+	} else if updateStrategy == "RollingUpdate" {
+		// For RollingUpdate, set maxSurge: 1 and maxUnavailable: 0
+		strategy["rollingUpdate"] = map[string]interface{}{
+			"maxSurge":       1,
+			"maxUnavailable": 0,
+		}
+	}
+
+	deploymentSpec := map[string]interface{}{
+		"replicas":        1,
+		"minReadySeconds": 10,
+		"selector": map[string]interface{}{
+			"matchLabels": map[string]interface{}{
+				"app": deploymentName,
+			},
+		},
+		"strategy": strategy,
+		"template": map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"labels": map[string]interface{}{
+					"app": deploymentName,
+				},
+			},
+			"spec": podSpec,
+		},
+	}
+
 	deployment := map[string]interface{}{
 		"apiVersion": "apps/v1",
 		"kind":       "Deployment",
@@ -247,22 +290,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 			"name":      deploymentName,
 			"namespace": namespace,
 		},
-		"spec": map[string]interface{}{
-			"replicas": 1,
-			"selector": map[string]interface{}{
-				"matchLabels": map[string]interface{}{
-					"app": deploymentName,
-				},
-			},
-			"template": map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"labels": map[string]interface{}{
-						"app": deploymentName,
-					},
-				},
-				"spec": podSpec,
-			},
-		},
+		"spec": deploymentSpec,
 	}
 
 	// Convert to YAML

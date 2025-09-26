@@ -183,6 +183,7 @@ var (
 	mergeEnd          string
 	whereMutation     string
 	filterMutation    string
+	tag               string
 )
 
 func init() {
@@ -191,6 +192,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
+	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
@@ -198,6 +200,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision for 3-way merge (uses same format as --restore)")
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
+	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -440,6 +443,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Prepare Unit Data. These alternatives are ensured to be mutually exclusive by checkConflictingArgs above.
 
+	if dryRun {
+		newParams.DryRun = &dryRun
+	}
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
 	}
@@ -521,6 +527,12 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		var base64Content strfmt.Base64 = content
 		currentUnit.Data = base64Content.String()
+	}
+
+	if tag != "" {
+		tagID, err := parseTagSlug(tag)
+		failOnError(err)
+		newParams.Tag = &tagID
 	}
 
 	// Perform the update
@@ -698,9 +710,18 @@ func runBulkUnitUpdate() error {
 		params.Restore = &restoreFormatted
 	}
 
+	if dryRun {
+		params.DryRun = &dryRun
+	}
 	// Add upgrade parameter if specified
 	if isUpgrade {
 		params.Upgrade = &isUpgrade
+	}
+
+	if tag != "" {
+		tagID, err := parseTagSlug(tag)
+		failOnError(err)
+		params.Tag = &tagID
 	}
 
 	// Call the bulk patch API (organization-level API that can be constrained by SpaceID in WHERE clause)
@@ -744,30 +765,16 @@ func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclie
 func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.UpdateUnitParams, patchData []byte) (*goclientnew.Unit, error) {
 	// Convert UpdateUnitParams to PatchUnitParams
 	patchParams := &goclientnew.PatchUnitParams{}
-	if updateParams.RevisionId != nil {
-		patchParams.RevisionId = updateParams.RevisionId
-	}
-	if updateParams.Restore != nil {
-		patchParams.Restore = updateParams.Restore
-	}
-	if updateParams.Upgrade != nil {
-		patchParams.Upgrade = updateParams.Upgrade
-	}
-	if updateParams.MergeSource != nil {
-		patchParams.MergeSource = updateParams.MergeSource
-	}
-	if updateParams.MergeBase != nil {
-		patchParams.MergeBase = updateParams.MergeBase
-	}
-	if updateParams.MergeEnd != nil {
-		patchParams.MergeEnd = updateParams.MergeEnd
-	}
-	if updateParams.WhereMutation != nil {
-		patchParams.WhereMutation = updateParams.WhereMutation
-	}
-	if updateParams.FilterMutation != nil {
-		patchParams.FilterMutation = updateParams.FilterMutation
-	}
+	patchParams.RevisionId = updateParams.RevisionId
+	patchParams.Restore = updateParams.Restore
+	patchParams.DryRun = updateParams.DryRun
+	patchParams.Upgrade = updateParams.Upgrade
+	patchParams.MergeSource = updateParams.MergeSource
+	patchParams.MergeBase = updateParams.MergeBase
+	patchParams.MergeEnd = updateParams.MergeEnd
+	patchParams.WhereMutation = updateParams.WhereMutation
+	patchParams.FilterMutation = updateParams.FilterMutation
+	patchParams.Tag = updateParams.Tag
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,

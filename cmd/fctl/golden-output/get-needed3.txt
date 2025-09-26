@@ -23,7 +23,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/headlamp",
@@ -46,6 +47,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   }
 ]

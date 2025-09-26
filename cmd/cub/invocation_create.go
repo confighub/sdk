@@ -33,9 +33,9 @@ Toolchain Types:
   - Kubernetes/YAML: For Kubernetes YAML configurations
 
 Example Functions:
-  - cel-validate: Validate resources using CEL expressions
-  - is-approved: Check if resource is approved
-  - no-placeholders: Ensure no placeholders exist
+  - vet-celexpr: Validate resources using CEL expressions
+  - vet-approvedby: Check if resource is approved
+  - vet-placeholders: Ensure no placeholders exist
   - set-default-names: Set default names for resources
   - set-annotation: Set annotations on resources
   - ensure-context: Ensure context annotations are present
@@ -49,16 +49,16 @@ invocations based on filters and creates multiple new invocations with optional 
 
 Single Invocation Examples:
   # Create an invocation to validate replicas > 1 for Deployments
-  cub invocation create --space my-space --json replicated Kubernetes/YAML cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub invocation create --space my-space --json replicated Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create an invocation to enforce low resource usage (replicas < 10)
-  cub invocation create --space my-space --json lowcost Kubernetes/YAML cel-validate 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub invocation create --space my-space --json lowcost Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create an invocation to ensure no placeholders exist in resources
-  cub invocation create --space my-space --json complete Kubernetes/YAML no-placeholders
+  cub invocation create --space my-space --json complete Kubernetes/YAML vet-placeholders
 
   # Create an invocation requiring approval before applying changes
-  cub invocation create --space my-space --json require-approval Kubernetes/YAML is-approved 1
+  cub invocation create --space my-space --json require-approval Kubernetes/YAML vet-approvedby 1
 
   # Create an invocation to add a "cloned=true" annotation
   cub invocation create --space my-space --json stamp Kubernetes/YAML set-annotation cloned true
@@ -68,7 +68,7 @@ Single Invocation Examples:
 
 Bulk Create Examples:
   # Clone all invocations matching a pattern with name prefixes
-  cub invocation create --where "FunctionName = 'cel-validate'" --name-prefix dev-,staging- --dest-space dev-space
+  cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix dev-,staging- --dest-space dev-space
 
   # Clone specific invocations to multiple spaces
   cub invocation create --invocation my-invocation --dest-space dev-space,staging-space
@@ -77,7 +77,7 @@ Bulk Create Examples:
   cub invocation create --where "ToolchainType = 'Kubernetes/YAML'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone invocations with modifications via JSON patch
-  echo '{"FunctionName": "no-placeholders"}' | cub invocation create --where "FunctionName = 'cel-validate'" --name-prefix v2- --from-stdin`
+  echo '{"FunctionName": "vet-placeholders"}' | cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix v2- --from-stdin`
 
 	return baseHelp
 }

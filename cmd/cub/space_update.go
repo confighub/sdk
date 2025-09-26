@@ -14,6 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var spaceUpdateArgs struct {
+	whereTrigger string
+}
+
 var spaceUpdateCmd = &cobra.Command{
 	Use:   "update [slug or id]",
 	Short: "Update a space",
@@ -40,6 +44,7 @@ func init() {
 	addStandardUpdateFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)
 	spaceCmd.AddCommand(spaceUpdateCmd)
@@ -118,8 +123,17 @@ func runSingleSpaceUpdate(args []string) error {
 		// Single space patch mode
 
 		// Build patch data using BuildPatchData with space enhancer
-		spaceEnhancer := func(patchData map[string]interface{}) {
-			// No space-specific fields to add beyond labels and delete gates
+		var spaceEnhancer PatchEnhancer
+
+		// Add WhereTrigger if provided
+		if spaceUpdateArgs.whereTrigger == "-" || spaceUpdateArgs.whereTrigger != "" {
+			spaceEnhancer = func(patchMap map[string]interface{}) {
+				if spaceUpdateArgs.whereTrigger == "-" {
+					patchMap["WhereTrigger"] = ""
+				} else {
+					patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
+				}
+			}
 		}
 
 		patchData, err := BuildPatchData(spaceEnhancer)
@@ -162,6 +176,13 @@ func runSingleSpaceUpdate(args []string) error {
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
+	}
+
+	// Set WhereTrigger if provided
+	if spaceUpdateArgs.whereTrigger == "-" {
+		newBody.WhereTrigger = ""
+	} else if spaceUpdateArgs.whereTrigger != "" {
+		newBody.WhereTrigger = spaceUpdateArgs.whereTrigger
 	}
 
 	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, *newBody)
@@ -209,8 +230,21 @@ func runBulkSpaceUpdate() error {
 		effectiveWhere = where
 	}
 
-	// Build patch data using consolidated function (no entity-specific fields for space)
-	patchData, err := BuildPatchData(nil)
+	// Build patch data with space enhancer
+	var spaceEnhancer PatchEnhancer
+
+	// Add WhereTrigger if provided
+	if spaceUpdateArgs.whereTrigger == "-" || spaceUpdateArgs.whereTrigger != "" {
+		spaceEnhancer = func(patchMap map[string]interface{}) {
+			if spaceUpdateArgs.whereTrigger == "-" {
+				patchMap["WhereTrigger"] = ""
+			} else {
+				patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
+			}
+		}
+	}
+
+	patchData, err := BuildPatchData(spaceEnhancer)
 	if err != nil {
 		return err
 	}

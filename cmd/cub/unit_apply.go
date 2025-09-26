@@ -108,7 +108,7 @@ func parseApplyRevisionParameter(revision string) (*string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 		}
-		result := fmt.Sprintf("Tag:%s", tagUUID)
+		result := fmt.Sprintf("Tag:%s", tagUUID.String())
 		return &result, nil
 
 	} else if entityType == "ChangeSet" {
@@ -298,7 +298,7 @@ func displayOperationResults(id string, event *goclientnew.UnitEvent) {
 		return
 	}
 	// Try to get the unit slug for better display
-	unitDetails, err := apiGetUnit(id, "Slug")
+	unitDetails, err := apiGetUnitInSpace(id, event.SpaceID.String(), "Slug")
 	if err != nil {
 		// Fallback to UUID if we can't get the slug
 		if actionStatus(event.Status) == goclientnew.ActionStatusTypeCompleted {

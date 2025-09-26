@@ -39,7 +39,7 @@ Examples:
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
 
   # List units with approval gates
-  cub unit list --space my-space --where "ApplyGates.require-approval/is-approved = true"
+  cub unit list --space my-space --where "ApplyGates.require-approval/vet-approvedby = true"
 
   # List units with any apply gates
   cub unit list --space my-space --where "LEN(ApplyGates) > 0"

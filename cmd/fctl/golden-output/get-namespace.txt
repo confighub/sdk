@@ -23,6 +23,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "example"
+    "Value": "example",
+    "Index": 0
   }
 ]

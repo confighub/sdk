@@ -38,6 +38,13 @@ func (b *Worker) WithFunctionWorker(functionWorker api.FunctionWorker) *Worker {
 	return b
 }
 
+// WaitForPendingOperations waits for all in-flight operations to complete
+func (b *Worker) WaitForPendingOperations() {
+	if b.client != nil {
+		b.client.WaitForPendingOperations()
+	}
+}
+
 func (b *Worker) Start(ctx context.Context) error {
 	client := newClient(b.confighubURL, b.workerId, b.workerSecret, b.bridgeWorker, b.functionWorker)
 	b.client = client

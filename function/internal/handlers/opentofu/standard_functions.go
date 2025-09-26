@@ -6,9 +6,9 @@ package opentofu
 import (
 	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/generic"
 )
 
 func registerStandardFunctions(fh handler.FunctionRegistry) {
@@ -17,15 +17,13 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 
 func initStandardFunctions() {
 	// In general we don't recommend changing names of resources since names are used for identifying
-	// resources across mutations.
-	basicNameTemplate := generic.StandardNameTemplate(hclkit.HclResourceProvider.NameSeparator())
+	// resources across mutations, but it is necessary for "container" resources.
 	var defaultNames = api.ResourceTypeToPathToVisitorInfoType{
 		api.ResourceTypeAny: {
 			api.UnresolvedPath(hclkit.HclResourceProvider.ScopelessResourceNamePath()): {
 				Path:          api.UnresolvedPath(hclkit.HclResourceProvider.ScopelessResourceNamePath()),
 				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
-				Info:          &api.AttributeDetails{GenerationTemplate: basicNameTemplate},
 			},
 		},
 	}

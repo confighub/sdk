@@ -32,6 +32,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx:latest"
+    "Value": "nginx:latest",
+    "Index": 0
   }
 ]

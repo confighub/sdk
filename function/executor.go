@@ -34,6 +34,7 @@ import (
 	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/propkit"
+	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/function/internal/handlers/generic"
@@ -46,6 +47,13 @@ import (
 // Some experimentation with the interface is expected and as well as some refactoring behind the scenes.
 
 var converters = map[workerapi.ToolchainType]configkit.ConfigConverter{
+	workerapi.ToolchainConfigHubYAML:       cubkit.ConfigHubResourceProvider,
+	workerapi.ToolchainKubernetesYAML:      k8skit.K8sResourceProvider,
+	workerapi.ToolchainOpenTofuHCL:         hclkit.HclResourceProvider,
+	workerapi.ToolchainAppConfigProperties: propkit.PropertiesResourceProvider,
+}
+
+var resourceProviders = map[workerapi.ToolchainType]yamlkit.ResourceProvider{
 	workerapi.ToolchainConfigHubYAML:       cubkit.ConfigHubResourceProvider,
 	workerapi.ToolchainKubernetesYAML:      k8skit.K8sResourceProvider,
 	workerapi.ToolchainOpenTofuHCL:         hclkit.HclResourceProvider,
@@ -81,6 +89,10 @@ func NewStandardExecutor() *FunctionExecutor {
 		// we could loop over registrators as well.
 		handler := handler.NewFunctionHandler()
 		handler.SetConverter(converter)
+		resourceProvider, ok := resourceProviders[toolchain]
+		if ok {
+			handler.SetResourceProvider(resourceProvider)
+		}
 		registrators[toolchain](handler)
 		executor.functionRegistry[toolchain] = *handler
 		executor.signatureRegistry[toolchain] = make(map[string]api.FunctionSignature)
@@ -113,6 +125,11 @@ func (e *FunctionExecutor) RegisterFunction(toolchain workerapi.ToolchainType, r
 			return fmt.Errorf("no converter found for toolchain %s", toolchain)
 		}
 		newHandler.SetConverter(converter)
+		resourceProvider, ok2 := resourceProviders[toolchain]
+		if ok2 {
+			newHandler.SetResourceProvider(resourceProvider)
+		}
+
 		// compute-mutations is a required standard function that will be used during execution of
 		// any function registered with this handler. Therefore we need to register it here.
 		generic.RegisterComputeMutations(newHandler, converter, k8skit.K8sResourceProvider)

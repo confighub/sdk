@@ -18,6 +18,7 @@ func (r *PropertiesRegistrarType) RegisterFunctions(fh handler.FunctionRegistry)
 	initStandardFunctions()
 	registerStandardFunctions(fh)
 	fh.SetConverter(propkit.PropertiesResourceProvider)
+	fh.SetResourceProvider(propkit.PropertiesResourceProvider)
 }
 
 func (r *PropertiesRegistrarType) GetToolchainPath() string {

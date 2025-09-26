@@ -5,18 +5,20 @@ package impl
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	ssautil "github.com/fluxcd/pkg/ssa/utils"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
@@ -26,6 +28,11 @@ import (
 	"sigs.k8s.io/cli-utils/pkg/apply/event"
 	"sigs.k8s.io/cli-utils/pkg/common"
 	"sigs.k8s.io/cli-utils/pkg/inventory"
+	"sigs.k8s.io/cli-utils/pkg/kstatus/polling"
+	"sigs.k8s.io/cli-utils/pkg/kstatus/polling/aggregator"
+	"sigs.k8s.io/cli-utils/pkg/kstatus/polling/collector"
+	pollingevent "sigs.k8s.io/cli-utils/pkg/kstatus/polling/event"
+	"sigs.k8s.io/cli-utils/pkg/kstatus/status"
 	"sigs.k8s.io/cli-utils/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -67,11 +74,26 @@ func (s *SimpleInventoryInfo) GetID() inventory.ID {
 	return inventory.ID(s.id)
 }
 
+// FreshDiscoveryClient is a wrapper around DiscoveryClient that implements CachedDiscoveryInterface
+// but always returns fresh data (no caching)
+type FreshDiscoveryClient struct {
+	*discovery.DiscoveryClient
+}
+
+// Fresh implements CachedDiscoveryInterface - always returns true since we don't cache
+func (f *FreshDiscoveryClient) Fresh() bool {
+	return true
+}
+
+// Invalidate implements CachedDiscoveryInterface - no-op since we don't cache
+func (f *FreshDiscoveryClient) Invalidate() {
+	// No-op: we always fetch fresh data
+}
+
 // SimpleRESTClientGetter implements genericclioptions.RESTClientGetter using our existing REST config
 type SimpleRESTClientGetter struct {
-	restConfig      *rest.Config
-	discoveryClient discovery.CachedDiscoveryInterface
-	restMapper      meta.RESTMapper
+	restConfig *rest.Config
+	restMapper meta.RESTMapper
 }
 
 func (r *SimpleRESTClientGetter) ToRESTConfig() (*rest.Config, error) {
@@ -79,25 +101,23 @@ func (r *SimpleRESTClientGetter) ToRESTConfig() (*rest.Config, error) {
 }
 
 func (r *SimpleRESTClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
-	if r.discoveryClient == nil {
-		discoveryClient, err := discovery.NewDiscoveryClientForConfig(r.restConfig)
-		if err != nil {
-			return nil, err
-		}
-		r.discoveryClient = memory.NewMemCacheClient(discoveryClient)
+	// Always create a fresh discovery client to avoid stale cache issues with CRDs
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(r.restConfig)
+	if err != nil {
+		return nil, err
 	}
-	return r.discoveryClient, nil
+	// Wrap in FreshDiscoveryClient to implement CachedDiscoveryInterface
+	// This ensures we always get the latest CRDs and API resources
+	return &FreshDiscoveryClient{DiscoveryClient: discoveryClient}, nil
 }
 
 func (r *SimpleRESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
-	if r.restMapper == nil {
-		discoveryClient, err := r.ToDiscoveryClient()
-		if err != nil {
-			return nil, err
-		}
-		r.restMapper = restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	// Always create a fresh REST mapper to ensure we can discover newly installed CRDs
+	discoveryClient, err := r.ToDiscoveryClient()
+	if err != nil {
+		return nil, err
 	}
-	return r.restMapper, nil
+	return restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient), nil
 }
 
 func (r *SimpleRESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
@@ -108,6 +128,7 @@ func (r *SimpleRESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig 
 type ApplierComponents struct {
 	KubernetesClient       KubernetesClient
 	DynamicClient          dynamic.Interface
+	DiscoveryClient        discovery.CachedDiscoveryInterface
 	RestConfig             *rest.Config
 	RestMapper             meta.RESTMapper
 	Applier                *apply.Applier
@@ -127,16 +148,16 @@ type CLIUtilsApplier struct {
 	liveState        []byte
 	spaceID          string
 	unitSlug         string
+	waitTimeout      string // WaitTimeout duration string for resource readiness
 	inventoryCM      *InventoryConfigMap
 	invInfo          inventory.Info
-	applyEventCh     <-chan event.Event           // Store event channel for WatchForApply
-	applyObjects     []*unstructured.Unstructured // Store objects for WatchForApply
+	applyObjects     []*unstructured.Unstructured // Store objects for WaitForApply
 	applyCompleted   bool                         // Flag to track if apply has been completed
-	destroyEventCh   <-chan event.Event           // Store event channel for WatchForDestroy
-	destroyObjects   []*unstructured.Unstructured // Store objects for WatchForDestroy
+	destroyObjects   []*unstructured.Unstructured // Store objects for WaitForDestroy
 	destroyCompleted bool                         // Flag to track if destroy has been completed
 	liveStateBuilder *LiveStateBuilder            // Optimized LiveState builder
 	lastResourceSet  ResourceSet                  // Store the last ResourceSet for retrieval
+	poller           *polling.StatusPoller        // Status poller for kstatus-based waiting
 }
 
 // InventoryMetadata contains extracted inventory metadata
@@ -169,6 +190,12 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 
 	a.setDefaultNamespaces(objects)
 	log.Log.Info("🚀 Starting apply operation", "count", len(objects))
+
+	// Step 1.5: Check CRD availability before attempting to apply
+	// This prevents failures when CRDs are being installed (e.g., by Crossplane)
+	if err := a.waitForCRDsAvailable(ctx, objects); err != nil {
+		return ApplyResult{Error: fmt.Errorf("CRDs not available: %w", err)}
+	}
 
 	// Step 2: Manifest processing - prepare inventory ConfigMap
 	// The inventory ConfigMap should be the first document in the manifests
@@ -265,28 +292,262 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 	}
 
 	// Run the applier - it returns an event channel
-	log.Log.Info("📋 Starting applier with inventory (non-blocking)", "namespace", invInfo.GetNamespace(), "id", invInfo.GetID())
+	log.Log.Info("📋 Starting applier with inventory", "namespace", invInfo.GetNamespace(), "id", invInfo.GetID())
 	eventChannel := a.comps.Applier.Run(ctx, invInfo, resourceObjects, applyOptions)
 
-	// Store event channel and objects for WatchForApply
-	a.applyEventCh = eventChannel
+	// Drain the event channel synchronously to wait for apply to complete
+	// This blocks until all apply operations are finished
+	log.Log.Info("📋 Waiting for apply to complete by draining event channel")
+	for range eventChannel {
+		// Discard events - we use kstatus polling for status tracking
+	}
+	log.Log.Info("📋 Apply operation completed, event channel closed")
+
+	// Now poll for resources to be ready using kstatus
+	// Use context deadline if available, otherwise use default timeout
+	var waitTimeout time.Duration
+	if deadline, ok := ctx.Deadline(); ok {
+		remainingTime := time.Until(deadline)
+		// Reserve some time for cleanup operations (5 seconds)
+		// But ensure we don't exceed the actual deadline
+		if remainingTime > 15*time.Second {
+			// If we have plenty of time, reserve 5 seconds for cleanup
+			waitTimeout = remainingTime - (5 * time.Second)
+		} else if remainingTime > 5*time.Second {
+			// If time is limited, use most of it but keep at least 1 second for cleanup
+			waitTimeout = remainingTime - time.Second
+		} else {
+			// If we have 5 seconds or less, use whatever time remains
+			waitTimeout = remainingTime
+		}
+		log.Log.Info("⏳ Using context deadline for wait timeout",
+			"deadline", deadline.Format(time.RFC3339),
+			"remaining", remainingTime.String(),
+			"timeout", waitTimeout.String())
+	} else {
+		waitTimeout = DefaultTimeout // Use the default timeout (60s)
+		log.Log.Info("⏳ Using default timeout", "timeout", waitTimeout.String())
+	}
+
+	log.Log.Info("⏳ Waiting for resources to be ready")
+	if err := a.waitForResourcesReady(ctx, resourceObjects, waitTimeout); err != nil {
+		log.Log.Error(err, "Some resources failed to become ready")
+		// Continue even if some resources aren't ready - let WaitForApply handle it
+	}
+
+	// Store metadata for WaitForApply if needed
 	a.applyObjects = resourceObjects
 	a.invInfo = invInfo
+	a.applyCompleted = true
 
-	// Return immediately without blocking
-	// The actual event processing will happen in WatchForApply
-	log.Log.Info("✅ Apply operation started, processing will continue in WatchForApply",
-		"inventoryID", invInfo.GetID())
+	// Get live objects to build ResourceSet
+	liveObjects, err := a.getLiveObjects(ctx, resourceObjects, true)
+	if err != nil {
+		log.Log.Error(err, "Failed to get live objects")
+		// Return with what we have
+		return ApplyResult{
+			LiveState:   a.liveState,
+			ResourceSet: NewSimpleResourceSet(),
+			Error:       nil, // Don't fail Apply, let WaitForApply handle it
+		}
+	}
+
+	// Build ResourceSet from live objects
+	simpleResourceSet := NewSimpleResourceSet()
+	for _, obj := range liveObjects {
+		simpleResourceSet.Add(SimpleResourceSetEntry{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+			Kind:      obj.GetKind(),
+			Action:    "Applied",
+		})
+	}
+	a.lastResourceSet = simpleResourceSet
+
+	// Build LiveState if builder is available
+	if a.liveStateBuilder != nil {
+		processor := &EventProcessor{} // Empty processor since we discarded events
+		updatedLiveState, resourceSet, err := a.liveStateBuilder.BuildLiveState(
+			ctx,
+			invInfo,
+			processor,
+			a.liveState,
+		)
+		if err == nil {
+			a.liveState = updatedLiveState
+			a.lastResourceSet = resourceSet
+		}
+	}
+
+	log.Log.Info("✅ Apply operation completed synchronously",
+		"inventoryID", invInfo.GetID(),
+		"liveObjectCount", len(liveObjects))
 
 	return ApplyResult{
-		// Don't return LiveState - it's just the input and not useful
-		// The actual LiveState will be built and returned in WaitForApply
-		LiveState: nil,
-		// Return empty ResourceSet to avoid nil pointer dereference
-		// The actual ResourceSet will be available in WaitForApply
-		ResourceSet: NewSimpleResourceSet(),
+		LiveState:   a.liveState,
+		ResourceSet: a.lastResourceSet,
 		Error:       nil,
 	}
+}
+
+// fmtObjMetadata formats object metadata for display
+func fmtObjMetadata(obj object.ObjMetadata) string {
+	if obj.Namespace != "" {
+		return fmt.Sprintf("%s/%s/%s", obj.GroupKind.String(), obj.Namespace, obj.Name)
+	}
+	return fmt.Sprintf("%s/%s", obj.GroupKind.String(), obj.Name)
+}
+
+// waitForResourcesTerminated waits for resources to be deleted from the cluster
+func (a *CLIUtilsApplier) waitForResourcesTerminated(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) error {
+	if len(objects) == 0 {
+		log.Log.Info("No objects to wait for termination")
+		return nil
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	pollInterval := 2 * time.Second
+
+	for _, obj := range objects {
+		// Create a polling function for each object
+		err := wait.PollUntilContextCancel(waitCtx, pollInterval, true, func(ctx context.Context) (bool, error) {
+			key := client.ObjectKey{
+				Namespace: obj.GetNamespace(),
+				Name:      obj.GetName(),
+			}
+			u := obj.DeepCopy()
+			err := a.comps.KubernetesClient.Get(ctx, key, u)
+			if apierrors.IsNotFound(err) {
+				// Object is deleted, we're done
+				log.Log.V(1).Info("✅ Resource terminated",
+					"name", obj.GetName(),
+					"namespace", obj.GetNamespace(),
+					"kind", obj.GetKind())
+				return true, nil
+			}
+			if err != nil {
+				// Other error, keep polling
+				log.Log.V(1).Info("⏳ Error checking resource, will retry",
+					"name", obj.GetName(),
+					"error", err)
+				return false, nil
+			}
+			// Object still exists
+			log.Log.V(1).Info("⏳ Resource still terminating",
+				"name", obj.GetName(),
+				"namespace", obj.GetNamespace(),
+				"kind", obj.GetKind())
+			return false, nil
+		})
+
+		if err != nil {
+			return fmt.Errorf("timeout waiting for %s/%s/%s termination (unit: %s): %w",
+				obj.GetKind(), obj.GetNamespace(), obj.GetName(), a.unitSlug, err)
+		}
+	}
+
+	log.Log.Info("✅ All resources terminated successfully")
+	return nil
+}
+
+// waitForResourcesReady waits for resources to be ready using kstatus polling
+func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) error {
+	// Convert to object metadata for polling
+	objectsMeta := object.UnstructuredSetToObjMetadataSet(objects)
+	if len(objectsMeta) == 0 {
+		log.Log.Info("No objects to wait for")
+		return nil
+	}
+	statusCollector := collector.NewResourceStatusCollector(objectsMeta)
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Use 2s interval for polling
+	pollingOpts := polling.PollOptions{
+		PollInterval: 2 * time.Second,
+	}
+
+	log.Log.Info("⏳ Starting kstatus polling for resources", "count", len(objects))
+	eventsChan := a.poller.Poll(waitCtx, objectsMeta, pollingOpts)
+
+	lastStatus := make(map[object.ObjMetadata]*pollingevent.ResourceStatus)
+	failFast := false // Could make this configurable
+
+	done := statusCollector.ListenWithObserver(eventsChan, collector.ObserverFunc(
+		func(statusCollector *collector.ResourceStatusCollector, e pollingevent.Event) {
+			var rss []*pollingevent.ResourceStatus
+			var countFailed int
+
+			for _, rs := range statusCollector.ResourceStatuses {
+				if rs == nil {
+					continue
+				}
+				// Skip DeadlineExceeded errors
+				if !errors.Is(rs.Error, context.DeadlineExceeded) {
+					lastStatus[rs.Identifier] = rs
+				}
+
+				if rs.Status == status.FailedStatus {
+					countFailed++
+				}
+				rss = append(rss, rs)
+			}
+
+			// Check if we've reached desired state
+			desired := status.CurrentStatus
+			aggStatus := aggregator.AggregateStatus(rss, desired)
+			if aggStatus == desired || (failFast && countFailed > 0) {
+				log.Log.Info("✅ Resources reached desired state")
+				cancel()
+				return
+			}
+		}),
+	)
+
+	<-done
+
+	// Check for errors
+	if statusCollector.Error != nil {
+		return statusCollector.Error
+	}
+
+	// Collect any error messages
+	var errs []string
+	for id, rs := range statusCollector.ResourceStatuses {
+		switch {
+		case rs == nil || lastStatus[id] == nil:
+			errs = append(errs, fmt.Sprintf("can't determine status for %s", fmtObjMetadata(id)))
+		case lastStatus[id].Status == status.FailedStatus:
+			var builder strings.Builder
+			builder.WriteString(fmt.Sprintf("%s status: '%s'",
+				fmtObjMetadata(rs.Identifier), lastStatus[id].Status))
+			if rs.Error != nil {
+				builder.WriteString(fmt.Sprintf(": %s", rs.Error))
+			}
+			errs = append(errs, builder.String())
+		case errors.Is(waitCtx.Err(), context.DeadlineExceeded) && lastStatus[id].Status != status.CurrentStatus:
+			var builder strings.Builder
+			builder.WriteString(fmt.Sprintf("%s status: '%s'",
+				fmtObjMetadata(rs.Identifier), lastStatus[id].Status))
+			if rs.Error != nil {
+				builder.WriteString(fmt.Sprintf(": %s", rs.Error))
+			}
+			errs = append(errs, builder.String())
+		}
+	}
+
+	if len(errs) > 0 {
+		msg := fmt.Sprintf("failed early due to stalled resources (unit: %s)", a.unitSlug)
+		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) {
+			msg = fmt.Sprintf("timeout waiting for resources (unit: %s)", a.unitSlug)
+		}
+		return fmt.Errorf("%s: [%s]", msg, strings.Join(errs, ", "))
+	}
+
+	return nil
 }
 
 // WaitForApply implements K8sApplier.WaitForApply
@@ -295,85 +556,63 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 		return WaitResult{Error: err}
 	}
 
-	// Check if apply has already been completed (for cached appliers)
-	if a.applyCompleted {
-		log.Log.Info("✅ Apply already completed for cached applier", "unitSlug", a.unitSlug)
-		// Get live objects for the already applied resources
-		liveObjects, err := a.getLiveObjects(ctx, a.applyObjects, true)
-		if err != nil {
-			return WaitResult{Error: fmt.Errorf("failed to get live objects: %w", err)}
-		}
-		return WaitResult{LiveObjects: liveObjects}
+	// Ensure we have objects to work with
+	if len(objects) == 0 && len(a.applyObjects) > 0 {
+		objects = a.applyObjects
+	}
+	a.setDefaultNamespaces(objects)
+
+	// Check if Apply has already completed
+	if !a.applyCompleted {
+		// Give Apply operation a moment to complete if it's running
+		log.Log.Info("⏳ Waiting for Apply to complete")
+		time.Sleep(2 * time.Second)
 	}
 
-	// Check if we have a pending apply operation
-	if a.applyEventCh == nil {
-		// Fallback to original behavior if no apply operation is pending
-		a.setDefaultNamespaces(objects)
-		waitCtx := a.createTimeoutContext(ctx, timeout)
-
-		if err := a.waitForResourceExistence(waitCtx, objects, true); err != nil {
-			return WaitResult{Error: err}
-		}
-
-		liveObjects, err := a.getLiveObjects(waitCtx, objects, true)
-		if err != nil {
-			return WaitResult{Error: fmt.Errorf("failed to get live objects: %w", err)}
-		}
-
-		return WaitResult{LiveObjects: liveObjects}
+	// Use the reusable wait function
+	if err := a.waitForResourcesReady(ctx, objects, timeout); err != nil {
+		return WaitResult{Error: err}
 	}
 
-	// Process events from the stored Apply operation
-	log.Log.Info("📋 Processing apply events from stored channel")
-	processor := &EventProcessor{}
-	processor.processApplyEvents(a.applyEventCh)
+	// Get live objects from cluster
+	liveObjects, err := a.getLiveObjects(ctx, objects, true)
+	if err != nil {
+		log.Log.Error(err, "Failed to get live objects after successful wait")
+		// Try to get whatever we can
+		liveObjects = make([]*unstructured.Unstructured, 0)
+		for _, obj := range objects {
+			key := client.ObjectKey{
+				Namespace: obj.GetNamespace(),
+				Name:      obj.GetName(),
+			}
+			u := obj.DeepCopyObject().(*unstructured.Unstructured)
+			if getErr := a.comps.KubernetesClient.Get(ctx, key, u); getErr == nil {
+				cleanup(u)
+				liveObjects = append(liveObjects, u)
+			}
+		}
+	}
 
-	// Clear the stored channel and mark as completed
-	a.applyEventCh = nil
+	// Build ResourceSet
+	simpleResourceSet := NewSimpleResourceSet()
+	for _, obj := range liveObjects {
+		simpleResourceSet.Add(SimpleResourceSetEntry{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+			Kind:      obj.GetKind(),
+			Action:    "Applied",
+		})
+	}
+	a.lastResourceSet = simpleResourceSet
 	a.applyCompleted = true
 
-	if processor.lastError != nil {
-		return WaitResult{Error: fmt.Errorf("apply operation failed: %w", processor.lastError)}
-	}
-
-	// Use the new LiveStateBuilder for optimal LiveState generation
-	var updatedLiveState []byte
-	var resourceSet ResourceSet
-
-	// Use optimized builder - should always be available
-	var err error
-	updatedLiveState, resourceSet, err = a.liveStateBuilder.BuildLiveState(
-		ctx,
-		a.invInfo,
-		processor,
-		a.liveState,
-	)
-	if err != nil {
-		log.Log.Error(err, "Failed to build LiveState with optimizer")
-		// Use previous state as fallback
-		updatedLiveState = a.liveState
-		resourceSet = processor.buildResourceSet()
-	}
-
-	log.Log.Info("✅ Apply operation completed",
-		"applied", len(processor.appliedObjects),
-		"pruned", len(processor.prunedObjects),
-		"inventoryID", a.invInfo.GetID(),
-		"changeSetEntries", len(resourceSet.GetEntries()))
-
-	// Get live objects after successful apply
-	liveObjects, err := a.getLiveObjects(ctx, a.applyObjects, true)
-	if err != nil {
-		return WaitResult{Error: fmt.Errorf("failed to get live objects: %w", err)}
-	}
-
-	// Update LiveState with the result
-	a.liveState = updatedLiveState
+	log.Log.Info("✅ WaitForApply completed",
+		"liveObjectCount", len(liveObjects),
+		"changeSetEntries", len(a.lastResourceSet.GetEntries()))
 
 	return WaitResult{
 		LiveObjects: liveObjects,
-		ResourceSet: resourceSet,
+		ResourceSet: a.lastResourceSet,
 	}
 }
 
@@ -396,8 +635,7 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 		"objectCount", len(objects),
 		"hasInventoryCM", a.inventoryCM != nil,
 		"hasInvInfo", a.invInfo != nil,
-		"destroyCompleted", a.destroyCompleted,
-		"hasExistingDestroyEventCh", a.destroyEventCh != nil)
+		"destroyCompleted", a.destroyCompleted)
 
 	// Step 1: Input validation
 	if err := a.validate(); err != nil {
@@ -449,70 +687,108 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 	}
 
 	// Step 5: Destroy Execution
-	// The destroyer will:
-	// a. Retrieve inventory from cluster (managed resources)
-	// b. Delete resources in reverse dependency order
-	// c. Wait for deletion (if timeout set)
-	// d. Delete inventory ConfigMap
-	log.Log.Info("📋 Starting destroyer with inventory (non-blocking)",
+	log.Log.Info("📋 Starting destroyer with inventory",
 		"namespace", invInfo.GetNamespace(),
 		"id", invInfo.GetID(),
 		"unitSlug", a.unitSlug)
 
 	eventChannel := a.comps.Destroyer.Run(ctx, invInfo, destroyOptions)
 
-	log.Log.Info("🔄 Destroyer.Run returned event channel",
-		"hasEventChannel", eventChannel != nil,
-		"unitSlug", a.unitSlug)
+	// Drain the event channel synchronously to wait for destroy to complete
+	// This blocks until all destroy operations are finished
+	log.Log.Info("📋 Waiting for destroy to complete by draining event channel")
+	for range eventChannel {
+		// Discard events - we use polling for status tracking
+	}
+	log.Log.Info("📋 Destroy operation completed, event channel closed")
 
-	// Store event channel and info for WatchForDestroy
-	a.destroyEventCh = eventChannel
-	a.destroyObjects = objects
+	// Now poll for resources to be terminated using polling
+	// Get list of objects to wait for termination
+	var objectsToDelete []*unstructured.Unstructured
+	if len(objects) > 0 {
+		objectsToDelete = objects
+	} else {
+		// If no objects provided, we should get them from inventory
+		// This would require reading the inventory from cluster
+		// For now, we'll just use what was provided
+		objectsToDelete = a.destroyObjects
+	}
+
+	// Use context deadline if available, otherwise use default timeout
+	var waitTimeout time.Duration
+	if deadline, ok := ctx.Deadline(); ok {
+		remainingTime := time.Until(deadline)
+		// Reserve some time for cleanup operations (5 seconds)
+		// But ensure we don't exceed the actual deadline
+		if remainingTime > 15*time.Second {
+			// If we have plenty of time, reserve 5 seconds for cleanup
+			waitTimeout = remainingTime - (5 * time.Second)
+		} else if remainingTime > 5*time.Second {
+			// If time is limited, use most of it but keep at least 1 second for cleanup
+			waitTimeout = remainingTime - time.Second
+		} else {
+			// If we have 5 seconds or less, use whatever time remains
+			waitTimeout = remainingTime
+		}
+		log.Log.Info("⏳ Using context deadline for wait timeout",
+			"deadline", deadline.Format(time.RFC3339),
+			"remaining", remainingTime.String(),
+			"timeout", waitTimeout.String())
+	} else {
+		waitTimeout = DefaultTimeout // Use the default timeout (60s)
+		log.Log.Info("⏳ Using default timeout", "timeout", waitTimeout.String())
+	}
+
+	log.Log.Info("⏳ Waiting for resources to be terminated")
+	if err := a.waitForResourcesTerminated(ctx, objectsToDelete, waitTimeout); err != nil {
+		log.Log.Error(err, "Some resources failed to terminate")
+		// Continue even if some resources aren't terminated - let WaitForDestroy handle it
+	}
+
+	// Store metadata for WaitForDestroy if needed
+	a.destroyObjects = objectsToDelete
 	a.invInfo = invInfo
+	a.destroyCompleted = true
 
-	log.Log.Info("💾 Stored destroy state for WatchForDestroy",
-		"hasDestroyEventCh", a.destroyEventCh != nil,
-		"objectCount", len(a.destroyObjects),
-		"unitSlug", a.unitSlug)
+	// Build ResourceSet for destroyed resources
+	simpleResourceSet := NewSimpleResourceSet()
+	for _, obj := range objectsToDelete {
+		simpleResourceSet.Add(SimpleResourceSetEntry{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+			Kind:      obj.GetKind(),
+			Action:    "Deleted",
+		})
+	}
+	a.lastResourceSet = simpleResourceSet
 
-	// Return immediately without blocking
-	// The actual event processing will happen in WatchForDestroy
-	log.Log.Info("✅ Destroy operation started, processing will continue in WatchForDestroy",
+	log.Log.Info("✅ Destroy operation completed synchronously",
 		"inventoryID", invInfo.GetID(),
-		"unitSlug", a.unitSlug)
+		"unitSlug", a.unitSlug,
+		"deletedCount", len(objectsToDelete))
 
 	return DestroyResult{
-		// Don't return LiveState - it's just the input and not useful
-		// The actual LiveState will be built and returned in WaitForDestroy
-		LiveState: nil,
-		// Return empty ResourceSet to avoid nil pointer dereference
-		// The actual ResourceSet will be available in WaitForDestroy
-		ResourceSet: NewSimpleResourceSet(),
+		LiveState:   nil, // No live state after destroy
+		ResourceSet: a.lastResourceSet,
 		Error:       nil,
 	}
 }
 
 // WaitForDestroy implements K8sApplier.WaitForDestroy
 func (a *CLIUtilsApplier) WaitForDestroy(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
-	log.Log.Info("🔍 WaitForDestroy called",
-		"unitSlug", a.unitSlug,
-		"spaceID", a.spaceID,
-		"destroyCompleted", a.destroyCompleted,
-		"hasDestroyEventCh", a.destroyEventCh != nil,
-		"objectCount", len(objects),
-		"timeout", timeout)
-
 	if err := a.validate(); err != nil {
-		log.Log.Error(err, "❌ WaitForDestroy validation failed")
 		return WaitResult{Error: err}
 	}
 
-	// Check if destroy has already been completed (for cached appliers)
+	// Ensure we have objects to work with
+	if len(objects) == 0 && len(a.destroyObjects) > 0 {
+		objects = a.destroyObjects
+	}
+	a.setDefaultNamespaces(objects)
+
+	// Check if destroy has already been completed
 	if a.destroyCompleted {
-		log.Log.Info("✅ Destroy already completed for cached applier",
-			"unitSlug", a.unitSlug,
-			"spaceID", a.spaceID)
-		// Return empty LiveState since destroy is complete
+		log.Log.Info("✅ Destroy already completed", "unitSlug", a.unitSlug)
 		return WaitResult{
 			LiveObjects: []*unstructured.Unstructured{},
 			ResourceSet: a.lastResourceSet,
@@ -520,102 +796,40 @@ func (a *CLIUtilsApplier) WaitForDestroy(ctx context.Context, objects []*unstruc
 		}
 	}
 
-	// Check if we have a pending destroy operation
-	if a.destroyEventCh == nil {
-		log.Log.Info("⚠️ No destroy event channel, falling back to waitForResourceExistence",
-			"unitSlug", a.unitSlug,
-			"objectCount", len(objects))
-		// Fallback to original behavior if no destroy operation is pending
-		a.setDefaultNamespaces(objects)
-		waitCtx := a.createTimeoutContext(ctx, timeout)
-		err := a.waitForResourceExistence(waitCtx, objects, false)
-		if err != nil {
-			log.Log.Error(err, "❌ waitForResourceExistence failed in WaitForDestroy fallback")
-			return WaitResult{Error: err}
-		}
-		// Return empty result for fallback case
-		return WaitResult{
-			LiveObjects: []*unstructured.Unstructured{},
-			ResourceSet: NewSimpleResourceSet(),
-			Error:       nil,
-		}
+	// Check if Destroy hasn't been called yet
+	if !a.destroyCompleted {
+		// Give Destroy operation a moment to complete if it's running
+		log.Log.Info("⏳ Waiting for Destroy to complete")
+		time.Sleep(2 * time.Second)
 	}
 
-	// Process events from the stored Destroy operation
-	log.Log.Info("📋 Processing destroy events from stored channel",
-		"unitSlug", a.unitSlug,
-		"inventoryID", a.invInfo.GetID())
-	processor := &EventProcessor{}
-	processor.processDestroyEvents(a.destroyEventCh)
+	// Use the reusable wait function for termination
+	if err := a.waitForResourcesTerminated(ctx, objects, timeout); err != nil {
+		return WaitResult{Error: err}
+	}
 
-	// Clear the stored channel and mark as completed
-	a.destroyEventCh = nil
+	// Build ResourceSet for destroyed resources
+	simpleResourceSet := NewSimpleResourceSet()
+	for _, obj := range objects {
+		simpleResourceSet.Add(SimpleResourceSetEntry{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+			Kind:      obj.GetKind(),
+			Action:    "Deleted",
+		})
+	}
+	a.lastResourceSet = simpleResourceSet
 	a.destroyCompleted = true
-	log.Log.Info("🔄 Marked destroy as completed and cleared event channel",
-		"unitSlug", a.unitSlug)
 
-	if processor.lastError != nil {
-		log.Log.Error(processor.lastError, "❌ Destroy processor reported error",
-			"unitSlug", a.unitSlug,
-			"deletedCount", len(processor.deletedObjects))
-		return WaitResult{Error: fmt.Errorf("destroy operation failed: %w", processor.lastError)}
-	}
-
-	// Use the new LiveStateBuilder for optimal LiveState generation
-	var updatedLiveState []byte
-	var resourceSet ResourceSet
-
-	if a.liveStateBuilder != nil {
-		// After destroy, inventory should be empty or deleted
-		var err error
-		updatedLiveState, resourceSet, err = a.liveStateBuilder.BuildLiveState(
-			ctx,
-			a.invInfo,
-			processor,
-			a.liveState,
-		)
-		if err != nil {
-			log.Log.Error(err, "Failed to build LiveState after destroy, using empty state")
-			updatedLiveState = a.createEmptyLiveState(ctx, a.invInfo)
-			resourceSet = processor.buildResourceSet()
-		}
-	} else {
-		// Fallback to empty state
-		updatedLiveState = a.createEmptyLiveState(ctx, a.invInfo)
-		resourceSet = processor.buildResourceSet()
-	}
-
-	log.Log.Info("✅ Destroy operation completed",
-		"deleted", len(processor.deletedObjects),
-		"inventoryID", a.invInfo.GetID(),
-		"unitSlug", a.unitSlug,
-		"changeSetEntries", len(resourceSet.GetEntries()))
-
-	// Update LiveState with the result
-	a.liveState = updatedLiveState
-
-	// Store the ResourceSet for retrieval
-	a.lastResourceSet = resourceSet
-
-	// Get live objects to return (should be empty or remaining resources)
-	liveObjects, err := a.getLiveObjects(ctx, nil, false)
-	if err != nil {
-		log.Log.Error(err, "Failed to get live objects after destroy")
-		liveObjects = []*unstructured.Unstructured{}
-	}
+	log.Log.Info("✅ WaitForDestroy completed",
+		"deletedCount", len(objects),
+		"changeSetEntries", len(a.lastResourceSet.GetEntries()))
 
 	return WaitResult{
-		LiveObjects: liveObjects,
-		ResourceSet: resourceSet,
+		LiveObjects: []*unstructured.Unstructured{}, // No live objects after destroy
+		ResourceSet: a.lastResourceSet,
 		Error:       nil,
 	}
-}
-
-// createEmptyLiveState creates an empty LiveState after destroy
-func (a *CLIUtilsApplier) createEmptyLiveState(_ context.Context, _ inventory.Info) []byte {
-	// After destroy, all resources and the inventory have been deleted
-	// Return empty LiveState to indicate clean state
-	return []byte{}
 }
 
 // Helper methods
@@ -675,16 +889,6 @@ func (a *CLIUtilsApplier) createInventoryConfigMap(metadata InventoryMetadata) *
 	}
 }
 
-func (a *CLIUtilsApplier) createTimeoutContext(ctx context.Context, timeout time.Duration) context.Context {
-	if timeout <= 0 {
-		return ctx
-	}
-
-	waitCtx, _ := context.WithTimeout(ctx, timeout)
-	log.Log.Info("⏱️ Using timeout", "timeout", timeout.String())
-	return waitCtx
-}
-
 func (a *CLIUtilsApplier) setDefaultNamespaces(objects []*unstructured.Unstructured) {
 	if a.comps.KubernetesClient == nil {
 		return
@@ -697,52 +901,6 @@ func (a *CLIUtilsApplier) setDefaultNamespaces(objects []*unstructured.Unstructu
 			}
 		}
 	}
-}
-
-// waitForResourceExistence waits for resources to either exist or be deleted based on the expectExist parameter
-// If expectExist is true, waits for resources to exist; if false, waits for resources to be deleted
-func (a *CLIUtilsApplier) waitForResourceExistence(ctx context.Context, objects []*unstructured.Unstructured, expectExist bool) error {
-	ticker := time.NewTicker(PollInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for resources")
-		case <-ticker.C:
-			allReady := true
-			for _, obj := range objects {
-				exists := a.resourceExists(ctx, obj)
-				if expectExist && !exists {
-					allReady = false
-					log.Log.Info("⏳ Resource not ready yet", "name", obj.GetName())
-					break
-				} else if !expectExist && exists {
-					allReady = false
-					log.Log.Info("⏳ Resource still terminating", "name", obj.GetName())
-					break
-				}
-			}
-
-			if allReady {
-				if expectExist {
-					log.Log.Info("✅ All resources are ready")
-				} else {
-					log.Log.Info("✅ All resources terminated")
-				}
-				return nil
-			}
-		}
-	}
-}
-
-func (a *CLIUtilsApplier) resourceExists(ctx context.Context, obj *unstructured.Unstructured) bool {
-	key := client.ObjectKey{
-		Namespace: obj.GetNamespace(),
-		Name:      obj.GetName(),
-	}
-	tempObj := obj.DeepCopyObject().(*unstructured.Unstructured)
-	return a.comps.KubernetesClient.Get(ctx, key, tempObj) == nil
 }
 
 func (a *CLIUtilsApplier) getLiveObjects(ctx context.Context, objects []*unstructured.Unstructured, doCleanup bool) ([]*unstructured.Unstructured, error) {
@@ -763,378 +921,6 @@ func (a *CLIUtilsApplier) getLiveObjects(ctx context.Context, objects []*unstruc
 		liveObjects[i] = u
 	}
 	return liveObjects, nil
-}
-
-// saveCurrentInventoryToLiveState saves the current inventory state to LiveState
-// The inventory has already been updated by CLI-Utils internally during apply/prune
-func (a *CLIUtilsApplier) saveCurrentInventoryToLiveState(ctx context.Context, invInfo inventory.Info) ([]byte, error) {
-	if a.comps.InventoryClient == nil {
-		return a.liveState, nil
-	}
-
-	// Get the current inventory that was already updated by CLI-Utils
-	inv, err := a.comps.InventoryClient.Get(ctx, invInfo, inventory.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get updated inventory: %w", err)
-	}
-
-	// Get the current object references from the updated inventory
-	// This includes applied objects but excludes successfully pruned objects
-	currentObjRefs := inv.GetObjectRefs()
-
-	// Get live objects for all resources currently in the inventory
-	liveObjects := make([]*unstructured.Unstructured, 0)
-
-	// Use dynamic client with REST mapper to fetch resources
-	for _, objMeta := range currentObjRefs {
-		// The REST mapper can resolve the proper GVR (GroupVersionResource) for a given GroupKind
-		gk := schema.GroupKind{
-			Group: objMeta.GroupKind.Group,
-			Kind:  objMeta.GroupKind.Kind,
-		}
-
-		// Get the REST mapping to find the resource and scope
-		mapping, err := a.comps.RestMapper.RESTMapping(gk)
-		if err != nil {
-			log.Log.V(1).Info("Could not find REST mapping for resource",
-				"groupKind", gk,
-				"error", err)
-			continue
-		}
-
-		// Use dynamic client with the resolved GVR
-		var fetchObj *unstructured.Unstructured
-		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-			// Namespaced resource
-			fetchObj, err = a.comps.DynamicClient.Resource(mapping.Resource).
-				Namespace(objMeta.Namespace).
-				Get(ctx, objMeta.Name, metav1.GetOptions{})
-		} else {
-			// Cluster-scoped resource
-			fetchObj, err = a.comps.DynamicClient.Resource(mapping.Resource).
-				Get(ctx, objMeta.Name, metav1.GetOptions{})
-		}
-
-		if err == nil {
-			cleanup(fetchObj)
-			liveObjects = append(liveObjects, fetchObj)
-		} else {
-			// This can happen if the object was deleted externally
-			log.Log.V(2).Info("Could not fetch object from cluster",
-				"object", objMeta,
-				"resource", mapping.Resource,
-				"error", err)
-		}
-	}
-
-	// Convert to YAML
-	yamlData, err := ssautil.ObjectsToYAML(liveObjects)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert objects to YAML: %w", err)
-	}
-
-	// Ensure inventory ConfigMap is updated
-	if a.inventoryCM == nil {
-		a.inventoryCM = NewInventoryConfigMapWithOptions(invInfo, InventoryOptions{
-			SpaceID:  a.spaceID,
-			UnitSlug: a.unitSlug,
-		})
-	}
-
-	// Update inventory ConfigMap with current objects from the inventory
-	if err := UpdateInventoryConfigMap(a.inventoryCM, currentObjRefs); err != nil {
-		return nil, fmt.Errorf("failed to update inventory ConfigMap: %w", err)
-	}
-
-	// Save inventory to LiveState
-	updatedLiveState, err := SaveInventoryToLiveState(
-		a.comps.InventoryClient.(*InMemInventoryClient),
-		a.inventoryCM,
-		invInfo,
-		[]byte(yamlData),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save inventory to LiveState: %w", err)
-	}
-
-	return updatedLiveState, nil
-}
-
-// EventProcessor methods
-
-func (p *EventProcessor) processApplyEvents(eventChannel <-chan event.Event) {
-	for ev := range eventChannel {
-		switch ev.Type {
-		case event.InitType:
-			log.Log.Info("📋 Apply operation initialized", "actionGroups", len(ev.InitEvent.ActionGroups))
-
-		case event.ErrorType:
-			p.lastError = ev.ErrorEvent.Err
-			log.Log.Error(p.lastError, "❌ Error during apply")
-
-		case event.ApplyType:
-			p.processApplyEvent(ev.ApplyEvent)
-
-		case event.StatusType:
-			p.statusEvents = append(p.statusEvents, ev.StatusEvent)
-			log.Log.V(1).Info("📊 Resource status",
-				"object", ev.StatusEvent.Identifier)
-
-		case event.PruneType:
-			p.processPruneEvent(ev.PruneEvent)
-
-		case event.WaitType:
-			log.Log.V(1).Info("⏳ Waiting for reconciliation",
-				"object", ev.WaitEvent.Identifier)
-
-		case event.ValidationType:
-			if ev.ValidationEvent.Error != nil {
-				log.Log.Error(ev.ValidationEvent.Error, "⚠️ Validation error")
-			}
-
-		case event.ActionGroupType:
-			log.Log.V(1).Info("🎯 Action group event",
-				"groupName", ev.ActionGroupEvent.GroupName,
-				"action", ev.ActionGroupEvent.Action,
-				"status", ev.ActionGroupEvent.Status)
-		}
-	}
-
-	log.Log.Info("🎉 Apply completed", "applied", len(p.appliedObjects), "pruned", len(p.prunedObjects))
-}
-
-func (p *EventProcessor) processDestroyEvents(eventChannel <-chan event.Event) {
-	eventCount := 0
-	log.Log.Info("🔄 Starting to process destroy events from channel")
-
-	// Add timeout to prevent hanging on unclosed channels
-	timeout := time.NewTimer(90 * time.Second)
-	defer timeout.Stop()
-
-	// Track expected vs completed deletions
-	var expectedDeletions int
-	var inventoryProcessed bool
-	lastEventTime := time.Now()
-
-	for {
-		select {
-		case ev, ok := <-eventChannel:
-			if !ok {
-				// Channel closed normally
-				log.Log.Info("📪 Event channel closed normally")
-				goto done
-			}
-
-			eventCount++
-			lastEventTime = time.Now()
-			log.Log.Info("📨 Received destroy event",
-				"eventNum", eventCount,
-				"eventType", ev.Type)
-
-			switch ev.Type {
-			case event.InitType:
-				log.Log.Info("📋 Destroy operation initialized",
-					"actionGroups", len(ev.InitEvent.ActionGroups))
-				for i, group := range ev.InitEvent.ActionGroups {
-					log.Log.Info("  Action group",
-						"groupNum", i,
-						"name", group.Name,
-						"action", group.Action,
-						"identifierCount", len(group.Identifiers))
-
-					// Count expected deletions
-					if group.Action == event.DeleteAction {
-						expectedDeletions += len(group.Identifiers)
-					}
-					// Check for inventory action (signals completion)
-					if group.Name == "inventory-delete-or-update-0" || group.Action == event.InventoryAction {
-						inventoryProcessed = true
-					}
-				}
-
-			case event.ErrorType:
-				p.lastError = ev.ErrorEvent.Err
-				log.Log.Error(p.lastError, "❌ Error during destroy",
-					"eventNum", eventCount)
-
-			case event.DeleteType:
-				log.Log.Info("🗑️ Processing delete event",
-					"eventNum", eventCount)
-				p.processDeleteEvent(ev.DeleteEvent)
-
-			case event.WaitType:
-				log.Log.Info("⏳ Waiting for termination",
-					"eventNum", eventCount,
-					"object", ev.WaitEvent.Identifier)
-
-			case event.StatusType:
-				p.statusEvents = append(p.statusEvents, ev.StatusEvent)
-				log.Log.V(1).Info("📊 Resource status during destroy",
-					"eventNum", eventCount,
-					"object", ev.StatusEvent.Identifier)
-
-			case event.ActionGroupType:
-				log.Log.Info("🎯 Action group event",
-					"eventNum", eventCount,
-					"groupName", ev.ActionGroupEvent.GroupName,
-					"action", ev.ActionGroupEvent.Action,
-					"status", ev.ActionGroupEvent.Status)
-				// Track when delete actions start/finish
-				if ev.ActionGroupEvent.Action == event.DeleteAction {
-					if ev.ActionGroupEvent.Status == event.Started {
-						log.Log.Info("🚀 Delete action group started",
-							"groupName", ev.ActionGroupEvent.GroupName)
-					} else if ev.ActionGroupEvent.Status == event.Finished {
-						log.Log.Info("✅ Delete action group finished",
-							"groupName", ev.ActionGroupEvent.GroupName,
-							"deleted", len(p.deletedObjects))
-					}
-				}
-				// Check for inventory action completion
-				if ev.ActionGroupEvent.Action == event.InventoryAction && ev.ActionGroupEvent.Status == event.Finished {
-					inventoryProcessed = true
-					log.Log.Info("📦 Inventory action completed")
-				}
-
-			case event.ValidationType:
-				if ev.ValidationEvent.Error != nil {
-					log.Log.Error(ev.ValidationEvent.Error, "⚠️ Validation error during destroy",
-						"eventNum", eventCount)
-				}
-
-			default:
-				log.Log.Info("❓ Unhandled event type",
-					"eventNum", eventCount,
-					"eventType", ev.Type)
-			}
-
-			// Check if we've processed all expected deletions and inventory
-			if expectedDeletions > 0 && len(p.deletedObjects) >= expectedDeletions && inventoryProcessed {
-				// Give it a small grace period for any final events
-				gracePeriod := time.NewTimer(2 * time.Second)
-				select {
-				case ev2, ok := <-eventChannel:
-					if ok {
-						// Process any remaining events
-						log.Log.Info("📨 Processing final event during grace period", "eventType", ev2.Type)
-					}
-					gracePeriod.Stop()
-				case <-gracePeriod.C:
-					log.Log.Info("✅ All expected deletions completed, ending event processing",
-						"expected", expectedDeletions,
-						"deleted", len(p.deletedObjects))
-					goto done
-				}
-			}
-
-			// Check for idle timeout (no events for 10 seconds after deletions started)
-			if len(p.deletedObjects) > 0 && time.Since(lastEventTime) > 10*time.Second {
-				log.Log.Info("⏱️ No events for 10 seconds, assuming completion",
-					"deleted", len(p.deletedObjects))
-				goto done
-			}
-
-		case <-timeout.C:
-			log.Log.Info("⏱️ Destroy event processing timeout after 90 seconds",
-				"eventCount", eventCount,
-				"deleted", len(p.deletedObjects))
-			goto done
-		}
-	}
-
-done:
-	log.Log.Info("🎉 Destroy event processing completed",
-		"totalEvents", eventCount,
-		"deleted", len(p.deletedObjects),
-		"expected", expectedDeletions,
-		"hasError", p.lastError != nil)
-}
-
-func (p *EventProcessor) processApplyEvent(e event.ApplyEvent) {
-	if e.Error != nil {
-		log.Log.Error(e.Error, "❌ Failed to apply",
-			"object", e.Identifier,
-			"status", e.Status)
-		// Don't set lastError for non-fatal errors (e.g., already exists)
-		if e.Status != event.ApplySkipped {
-			p.lastError = e.Error
-		}
-	} else {
-		log.Log.Info("✅ Applied",
-			"object", e.Identifier,
-			"status", e.Status)
-		p.appliedObjects = append(p.appliedObjects, e.Identifier)
-	}
-}
-
-// processPruneEvent handles pruning of resources that exist in the cluster but are no longer in the desired state.
-// Pruning occurs during apply operations when resources tracked in inventory are no longer part of the
-// configuration being applied. This is automatic cleanup of orphaned resources.
-func (p *EventProcessor) processPruneEvent(e event.PruneEvent) {
-	log.Log.Info("🔍 Prune event details",
-		"identifier", e.Identifier,
-		"status", e.Status,
-		"hasError", e.Error != nil,
-		"groupName", e.GroupName)
-
-	if e.Error != nil {
-		log.Log.Error(e.Error, "❌ Failed to prune",
-			"object", e.Identifier,
-			"status", e.Status,
-			"groupName", e.GroupName)
-		// Don't set lastError for non-fatal prune errors
-		if e.Status != event.PruneSkipped {
-			p.lastError = e.Error
-			log.Log.Info("💥 Setting lastError due to prune failure",
-				"status", e.Status)
-		} else {
-			log.Log.Info("⏭️ Prune skipped, not setting error",
-				"status", e.Status)
-		}
-	} else {
-		log.Log.Info("🗑️ Successfully pruned",
-			"object", e.Identifier,
-			"status", e.Status,
-			"groupName", e.GroupName,
-			"prunedCount", len(p.prunedObjects)+1)
-		p.prunedObjects = append(p.prunedObjects, e.Identifier)
-	}
-}
-
-// processDeleteEvent handles explicit deletion of resources during destroy operations.
-// Delete events occur when resources are intentionally removed, either through:
-// - Destroy operations that remove all resources in the inventory
-// - Explicit deletion of specific resources
-// Unlike pruning (which happens during apply), deletion is a deliberate removal action.
-func (p *EventProcessor) processDeleteEvent(e event.DeleteEvent) {
-	log.Log.Info("📊 Delete event details",
-		"identifier", e.Identifier,
-		"status", e.Status,
-		"hasError", e.Error != nil,
-		"groupName", e.GroupName)
-
-	if e.Error != nil {
-		log.Log.Error(e.Error, "❌ Failed to delete",
-			"object", e.Identifier,
-			"status", e.Status,
-			"groupName", e.GroupName)
-		// Don't set lastError for non-fatal delete errors (e.g., not found)
-		if e.Status != event.DeleteSkipped {
-			p.lastError = e.Error
-			log.Log.Info("💥 Setting lastError due to delete failure",
-				"status", e.Status)
-		} else {
-			log.Log.Info("⏭️ Delete skipped, not setting error",
-				"status", e.Status)
-		}
-	} else {
-		log.Log.Info("🗑️ Successfully deleted",
-			"object", e.Identifier,
-			"status", e.Status,
-			"groupName", e.GroupName,
-			"deletedCount", len(p.deletedObjects)+1)
-		p.deletedObjects = append(p.deletedObjects, e.Identifier)
-	}
 }
 
 func (p *EventProcessor) buildResourceSet() ResourceSet {
@@ -1199,7 +985,10 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
-	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient))
+	// Wrap discovery client to always return fresh data (no caching)
+	// This ensures we can discover newly installed CRDs
+	freshDiscovery := &FreshDiscoveryClient{DiscoveryClient: discoveryClient}
+	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(freshDiscovery)
 
 	// Create kubectl factory
 	configFlags := genericclioptions.NewConfigFlags(true)
@@ -1281,6 +1070,7 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	return &ApplierComponents{
 		KubernetesClient: k8sClient,
 		DynamicClient:    dynamicClient,
+		DiscoveryClient:  freshDiscovery,
 		RestConfig:       cfg,
 		RestMapper:       restMapper,
 		Applier:          applier,
@@ -1307,15 +1097,133 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 		config.UnitSlug,
 	)
 
-	log.Log.Info("🚀 Created CLIUtilsApplier with LiveStateBuilder")
+	// Create StatusPoller for kstatus-based waiting
+	poller := polling.NewStatusPoller(comps.KubernetesClient, comps.RestMapper, polling.Options{})
+
+	log.Log.Info("🚀 Created CLIUtilsApplier with LiveStateBuilder and StatusPoller")
 
 	return &CLIUtilsApplier{
 		comps:            comps,
 		liveState:        config.LiveState,
 		spaceID:          config.SpaceID,
 		unitSlug:         config.UnitSlug,
+		waitTimeout:      config.WaitTimeout,
 		inventoryCM:      inventoryCM,
 		invInfo:          invInfo,
 		liveStateBuilder: liveStateBuilder,
+		poller:           poller,
 	}, nil
+}
+
+// waitForCRDsAvailable checks and waits for all CRDs required by the objects to be available
+func (a *CLIUtilsApplier) waitForCRDsAvailable(ctx context.Context, objects []*unstructured.Unstructured) error {
+	// Extract unique GVKs from objects
+	gvkSet := make(map[string]schema.GroupVersionKind)
+	for _, obj := range objects {
+		gvk := obj.GroupVersionKind()
+		// Skip core resources (no group) as they don't need CRDs
+		if gvk.Group != "" {
+			key := fmt.Sprintf("%s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
+			gvkSet[key] = gvk
+		}
+	}
+
+	if len(gvkSet) == 0 {
+		log.Log.Info("No CRDs to check - all resources are core types")
+		return nil
+	}
+
+	log.Log.Info("Checking CRD availability", "count", len(gvkSet))
+
+	// Use the fresh discovery client we already have to avoid cache issues
+	discoveryClient := a.comps.DiscoveryClient
+
+	// Calculate timeout: use 2x the WaitTimeout to give CRDs time to be registered
+	// Default to 4 minutes (2x the default 2-minute WaitTimeout) if not specified
+	var crdCheckTimeout time.Duration = 4 * time.Minute
+	if a.waitTimeout != "" {
+		if waitDuration, err := time.ParseDuration(a.waitTimeout); err == nil {
+			crdCheckTimeout = 2 * waitDuration
+			log.Log.Info("Using 2x WaitTimeout for CRD checks", "timeout", crdCheckTimeout)
+		} else {
+			log.Log.Info("Invalid WaitTimeout, using default 4m for CRD checks", "timeout", a.waitTimeout, "error", err)
+		}
+	}
+
+	// Check with retries using exponential backoff
+	checkCtx, cancel := context.WithTimeout(ctx, crdCheckTimeout)
+	defer cancel()
+
+	retryCount := 0
+	for {
+		select {
+		case <-checkCtx.Done():
+			return fmt.Errorf("timeout waiting for CRDs to be available")
+		default:
+			// Check each GVK
+			missingCRDs := []string{}
+
+			// Force fresh discovery to check current state
+			if freshDiscovery, ok := discoveryClient.(*FreshDiscoveryClient); ok {
+				freshDiscovery.Invalidate()
+			}
+			_, apiResourceList, err := discoveryClient.ServerGroupsAndResources()
+			if err != nil {
+				// Partial discovery errors are common, continue checking
+				log.Log.V(2).Info("Discovery error (continuing)", "error", err)
+			}
+
+			for key, gvk := range gvkSet {
+				found := false
+				for _, apiResource := range apiResourceList {
+					gv, err := schema.ParseGroupVersion(apiResource.GroupVersion)
+					if err != nil {
+						continue
+					}
+					if gv.Group == gvk.Group && gv.Version == gvk.Version {
+						for _, resource := range apiResource.APIResources {
+							if resource.Kind == gvk.Kind {
+								found = true
+								break
+							}
+						}
+					}
+					if found {
+						break
+					}
+				}
+
+				if !found {
+					missingCRDs = append(missingCRDs, key)
+				}
+			}
+
+			if len(missingCRDs) == 0 {
+				log.Log.Info("✅ All required CRDs are available")
+				return nil
+			}
+
+			// Calculate backoff delay
+			var retryDelay time.Duration
+			if retryCount == 0 {
+				retryDelay = 2 * time.Second
+			} else if retryCount < 5 {
+				retryDelay = time.Duration(1<<uint(retryCount)) * time.Second // exponential: 2s, 4s, 8s, 16s, 32s
+			} else {
+				retryDelay = 30 * time.Second // cap at 30s
+			}
+
+			log.Log.Info("⏳ Waiting for CRDs to be available",
+				"missing", missingCRDs,
+				"retry", retryCount+1,
+				"nextCheck", retryDelay)
+
+			select {
+			case <-time.After(retryDelay):
+				retryCount++
+			case <-checkCtx.Done():
+				return fmt.Errorf("timeout waiting for CRDs: %v", missingCRDs)
+			}
+		}
+	}
 }

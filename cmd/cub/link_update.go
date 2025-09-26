@@ -261,7 +261,7 @@ func runIndividualLinkPatch(linkSlug string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnit(linkDetails.FromUnitID.String(), "*") // get all fields for now
+		unitDetails, err := apiGetUnitInSpace(linkDetails.FromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
@@ -335,7 +335,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentLink.SpaceID = spaceID
 
-	fromUnit, err := apiGetUnitFromSlug(args[1], "*") // get all fields for now
+	fromUnit, err := apiGetUnitFromSlugInSpace(args[1], spaceID.String(), "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -369,7 +369,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnit(fromUnitID.String(), "*") // get all fields for now
+		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), spaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}

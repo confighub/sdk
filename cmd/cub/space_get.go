@@ -52,6 +52,7 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	view.Append([]string{"Labels", labelsToString(spaceDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(spaceDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
+	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
 }
 

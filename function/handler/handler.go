@@ -8,15 +8,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/cel-go/cel"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 
 	"github.com/confighub/sdk/configkit"
+	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 )
@@ -36,12 +40,15 @@ type FunctionRegistry interface {
 	SetPathRegistry(pathRegistry api.AttributeNameToResourceTypeToPathToVisitorInfoType)
 	SetConverter(converter configkit.ConfigConverter)
 	GetConverter() configkit.ConfigConverter
+	SetResourceProvider(resourceProvider yamlkit.ResourceProvider)
+	GetResourceProvider() yamlkit.ResourceProvider
 }
 
 type FunctionHandler struct {
-	functionMap  map[string]*FunctionRegistration
-	pathRegistry api.AttributeNameToResourceTypeToPathToVisitorInfoType
-	converter    configkit.ConfigConverter
+	functionMap      map[string]*FunctionRegistration
+	pathRegistry     api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	converter        configkit.ConfigConverter
+	resourceProvider yamlkit.ResourceProvider
 }
 
 // Ensure FunctionHandler implements FunctionRegistry
@@ -68,6 +75,14 @@ func (fh *FunctionHandler) SetConverter(converter configkit.ConfigConverter) {
 
 func (fh *FunctionHandler) GetConverter() configkit.ConfigConverter {
 	return fh.converter
+}
+
+func (fh *FunctionHandler) SetResourceProvider(resourceProvider yamlkit.ResourceProvider) {
+	fh.resourceProvider = resourceProvider
+}
+
+func (fh *FunctionHandler) GetResourceProvider() yamlkit.ResourceProvider {
+	return fh.resourceProvider
 }
 
 func (fh *FunctionHandler) Invoke(c echo.Context) error {
@@ -110,8 +125,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	messages := []string{}
 	mutations := []api.ResourceMutation{}
 	mutators := []int{}
-	var output any
-	var outputType api.OutputType
+	outputs := make(map[api.OutputType]any)
 	for functionIndex, invocation := range functionInvocation.FunctionInvocations {
 		f, existed := fh.functionMap[invocation.FunctionName]
 		if !existed {
@@ -145,7 +159,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		}
 
-		arguments, validationErr := ValidateAndBuildArguments(&invocation, &f.FunctionSignature)
+		arguments, validationErr := ValidateAndBuildArguments(fh.GetResourceProvider(), &functionInvocation.FunctionContext, &invocation, &f.FunctionSignature)
 		if validationErr != nil {
 			invocationInfo += ": " + validationErr.Error()
 			log.Info(invocationInfo)
@@ -218,16 +232,11 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		}
 
 		if functionOutput != nil && f.OutputInfo != nil {
-			if output == nil {
-				outputType = f.OutputInfo.OutputType
-			}
-
-			output, messages = api.CombineOutputs(
+			outputs, messages = api.CombineOutputs(
 				f.FunctionName,
 				functionContext.InstanceString(),
-				outputType,
 				f.OutputInfo.OutputType,
-				output,
+				outputs,
 				functionOutput,
 				functionIndex,
 				messages,
@@ -249,12 +258,19 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	}
 	resp.ConfigData = nativeData
 
-	encodedOutput, err := json.Marshal(output)
-	if err != nil {
-		messages = append(messages, err.Error())
+	// Encode all outputs
+	encodedOutputs := make(map[api.OutputType][]byte)
+	for outputType, output := range outputs {
+		if output != nil {
+			encodedOutput, err := json.Marshal(output)
+			if err != nil {
+				messages = append(messages, fmt.Sprintf("failed to encode output for type %s: %v", outputType, err))
+			} else {
+				encodedOutputs[outputType] = encodedOutput
+			}
+		}
 	}
-	resp.Output = encodedOutput
-	resp.OutputType = outputType
+	resp.Outputs = encodedOutputs
 	resp.Success = success
 	resp.Mutations = mutations
 	resp.Mutators = mutators
@@ -287,9 +303,75 @@ func intConstraintString(constraints api.ValueConstraints) string {
 	return fmt.Sprintf("[%s,%s]", min, max)
 }
 
+func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, valueTemplate string) (string, error) {
+	f := template.FuncMap{}
+	if resourceProvider != nil {
+		f["normalizeName"] = resourceProvider.NormalizeName
+	}
+	f["toUpper"] = strings.ToUpper
+	f["toLower"] = strings.ToLower
+	f["toUpper"] = strings.ToUpper
+	f["trimSpace"] = strings.TrimSpace
+	f["trimSuffix"] = strings.TrimSuffix
+	f["trimPrefix"] = strings.TrimPrefix
+	tmpl, err := template.New("value").Funcs(f).Parse(valueTemplate)
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("couldn't parse template %s", valueTemplate))
+	}
+	var out bytes.Buffer
+	err = tmpl.Execute(&out, functionContext)
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("couldn't evaluate template %s", valueTemplate))
+	}
+	return out.String(), nil
+}
+
+// TODO: Add built-in functions, as with templates
+func evaluateCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, valueExpression string) (string, error) {
+	env, err := cel.NewEnv(
+		cel.Variable("functionContext", cel.DynType),
+	)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create CEL environment")
+	}
+	expr, issues := env.Compile(valueExpression)
+	if issues != nil {
+		return "", fmt.Errorf("failed to compile expression %s: %v", valueExpression, issues)
+	}
+	if !expr.OutputType().IsExactType(cel.StringType) {
+		return "", fmt.Errorf("expression %s does not evaluate to a string", valueExpression)
+	}
+	program, err := env.Program(expr)
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("failed to create program for expression %s", valueExpression))
+	}
+	functionContextData, err := json.Marshal(functionContext)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal function context")
+	}
+	var functionContextMap map[string]any
+	err = json.Unmarshal(functionContextData, &functionContextMap)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal function context")
+	}
+	obj := map[string]any{
+		"functionContext": functionContextMap,
+	}
+	val, _, err := program.Eval(obj)
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("failed to evaluate program for expression %s", valueExpression))
+	}
+	nativeVal := val.Value()
+	stringVal, ok := nativeVal.(string)
+	if !ok {
+		return "", fmt.Errorf("failed to convert result of expression %v to string", val.Value())
+	}
+	return stringVal, nil
+}
+
 // ValidateAndBuildArguments validates function arguments and builds an in-order argument list.
 // It returns the validated arguments or an error if validation fails.
-func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.FunctionSignature) ([]api.FunctionArgument, error) {
+func ValidateAndBuildArguments(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, invocation *api.FunctionInvocation, f *api.FunctionSignature) ([]api.FunctionArgument, error) {
 	nargs := len(invocation.Arguments)
 	if nargs < f.RequiredParameters {
 		usage := fmt.Sprintf("insufficient arguments: got %d, expected %d:", nargs, f.RequiredParameters)
@@ -368,6 +450,24 @@ func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.Functi
 		parameter := f.Parameters[parameterIndex]
 		switch v := arg.Value.(type) {
 		case string:
+			if arg.Evaluator != "" {
+				switch arg.Evaluator {
+				case "template":
+					renderedValue, err := evaluateTemplate(resourceProvider, functionContext, v)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("cannot evaluate template for parameter %s", parameter.ParameterName))
+					}
+					v = renderedValue
+				case "cel":
+					renderedValue, err := evaluateCEL(resourceProvider, functionContext, v)
+					if err != nil {
+						return nil, errors.Wrap(err, fmt.Sprintf("cannot evaluate CEL for parameter %s", parameter.ParameterName))
+					}
+					v = renderedValue
+				default:
+					return nil, errors.New("unsupported Evaluator " + arg.Evaluator)
+				}
+			}
 			switch parameter.DataType {
 			case api.DataTypeInt:
 				intVal, err := strconv.Atoi(v)
@@ -408,6 +508,7 @@ func ValidateAndBuildArguments(invocation *api.FunctionInvocation, f *api.Functi
 						}
 					}
 				}
+				invocation.Arguments[i].Value = v
 			}
 		case float64:
 			if parameter.DataType != api.DataTypeInt {

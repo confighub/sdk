@@ -37,9 +37,9 @@ Config Types:
   - Kubernetes/YAML: For Kubernetes YAML configurations
 
 Example Functions:
-  - cel-validate: Validate resources using CEL expressions
-  - is-approved: Check if resource is approved
-  - no-placeholders: Ensure no placeholders exist
+  - vet-celexpr: Validate resources using CEL expressions
+  - vet-approvedby: Check if resource is approved
+  - vet-placeholders: Ensure no placeholders exist
   - set-default-names: Set default names for cloned resources
   - set-annotation: Set annotations on resources
   - ensure-context: Ensure context annotations are present
@@ -53,16 +53,16 @@ triggers based on filters and creates multiple new triggers with optional modifi
 
 Single Trigger Examples:
   # Create a trigger to validate replicas > 1 for Deployments
-  cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create a trigger to enforce low resource usage (replicas < 10)
-  cub trigger create --space my-space --json lowcost Mutation Kubernetes/YAML cel-validate 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub trigger create --space my-space --json lowcost Mutation Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create a trigger to ensure no placeholders exist in resources
-  cub trigger create --space my-space --json complete Mutation Kubernetes/YAML no-placeholders
+  cub trigger create --space my-space --json complete Mutation Kubernetes/YAML vet-placeholders
 
   # Create a trigger requiring approval before applying changes
-  cub trigger create --space my-space --json require-approval Mutation Kubernetes/YAML is-approved 1
+  cub trigger create --space my-space --json require-approval Mutation Kubernetes/YAML vet-approvedby 1
 
   # Create a trigger to ensure context annotations
   cub trigger create --space my-space --json annotate-resources Mutation Kubernetes/YAML ensure-context true
@@ -90,7 +90,7 @@ Bulk Create Examples:
   echo '{"Disabled": false}' | cub trigger create --where "Event = 'Mutation'" --name-prefix active- --from-stdin
 
   # Clone triggers matching specific criteria
-  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'cel-validate'" --name-prefix v2-`
+  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'vet-celexpr'" --name-prefix v2-`
 
 	return baseHelp
 }

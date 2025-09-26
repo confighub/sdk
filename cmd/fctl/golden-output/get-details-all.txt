@@ -23,7 +23,8 @@ OUTPUT
       ],
       "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
     },
-    "Value": 1
+    "Value": 1,
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/mydep",
@@ -36,7 +37,8 @@ OUTPUT
     "Info": {
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
-    "Value": ":latest"
+    "Value": ":latest",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/mydep",
@@ -60,7 +62,8 @@ OUTPUT
       ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/myservice",
@@ -73,7 +76,8 @@ OUTPUT
     "Info": {
       "Description": "The port that will be exposed by this service."
     },
-    "Value": 80
+    "Value": 80,
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/myservice",
@@ -86,6 +90,7 @@ OUTPUT
     "Info": {
       "Description": "Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod's container ports. If this is not specified, the value of the 'port' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the 'port' field. More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service"
     },
-    "Value": 8080
+    "Value": 8080,
+    "Index": 0
   }
 ]

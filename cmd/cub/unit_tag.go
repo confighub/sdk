@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -141,15 +140,9 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 		params.Filter = &filterID
 	}
 
-	// Parse TagID from string
-	parsedTagID, err := uuid.Parse(tagID)
-	if err != nil {
-		return fmt.Errorf("invalid tag ID format: %w", err)
-	}
-
 	// Build request body
 	body := goclientnew.UnitTagRequest{
-		TagID:    parsedTagID,
+		TagID:    tagID,
 		Revision: revision,
 	}
 

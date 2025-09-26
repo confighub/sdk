@@ -23,7 +23,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/confighubplaceholder",
@@ -46,7 +47,8 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/confighubplaceholder",
@@ -70,7 +72,8 @@ OUTPUT
       ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   },
   {
     "ResourceName": "confighubplaceholder/confighubplaceholder",
@@ -93,6 +96,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "confighubplaceholder"
+    "Value": "confighubplaceholder",
+    "Index": 0
   }
 ]

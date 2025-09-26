@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -39,9 +37,11 @@ func init() {
 	//These flags don't make sense in the context of cub run because it assumes one function will be explicitly specified on the command line
 	//runCmd.PersistentFlags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	//runCmd.PersistentFlags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
-	runCmd.PersistentFlags().StringVar(&jq, "jq", "", "jq expression")
 	runCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "No output")
+	runCmd.PersistentFlags().StringVar(&jq, "jq", "", "jq expression")
 	runCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON output")
+	runCmd.PersistentFlags().StringVar(&yq, "yq", "", "yq expression")
+	runCmd.PersistentFlags().BoolVar(&yamlOutput, "yaml", false, "YAML output")
 	runCmd.PersistentFlags().BoolVar(&wait, "wait", false, "wait for completion")
 	runCmd.PersistentFlags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
@@ -107,8 +107,9 @@ func RegisterFunctionsAsCobraCommands() {
 				functionAttributes += " Validating."
 			}
 			cmd = &cobra.Command{
-				Use:   cmdDef.FunctionName,
-				Short: fmt.Sprintf("%s%s Supported toolchains: %s", description, functionAttributes, toolchain),
+				Use:         cmdDef.FunctionName,
+				Short:       fmt.Sprintf("%s%s Supported toolchains: %s", description, functionAttributes, toolchain),
+				Annotations: map[string]string{"OrgLevel": ""},
 				RunE: func(cmd *cobra.Command, args []string) error {
 					// Parse filter parameter
 					filterID, err := parseFilterFlag(filter)
@@ -133,27 +134,19 @@ func RegisterFunctionsAsCobraCommands() {
 						effectiveWhere = where
 					}
 
-					newParams := &goclientnew.InvokeFunctionsParams{}
-					newBody := newFunctionInvocationsRequest()
-
-					if effectiveWhere != "" {
-						newParams.Where = &effectiveWhere
-					}
-					if filterID != "" {
-						newParams.Filter = &filterID
-					}
-					if dryRun {
-						dryRunStr := "true"
-						newParams.DryRun = &dryRunStr
-					}
+					// Parse changeset once if specified
+					var changesetID string
 					if functionChangesetSlug != "" {
 						changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
 						if err != nil {
 							return err
 						}
-						changesetID := changesetUUID.String()
-						newParams.ChangeSetId = &changesetID
+						changesetID = changesetUUID.String()
+						// Add changeset constraint to WHERE clause
+						effectiveWhere = addChangeSetIDToWhereClause(effectiveWhere, changesetID)
 					}
+
+					newBody := newFunctionInvocationsRequest()
 
 					var funcParams []goclientnew.FunctionArgument
 
@@ -225,24 +218,24 @@ func RegisterFunctionsAsCobraCommands() {
 						},
 					}
 
-					funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx,
-						uuid.MustParse(selectedSpaceID), newParams, *newBody)
-					if cubapi.IsAPIError(err, funcRes) {
-						return cubapi.InterpretErrorGeneric(err, funcRes)
+					invokeArgs := &invokeArgs{
+						Where:       effectiveWhere,
+						FilterID:    filterID,
+						DryRun:      dryRun,
+						ChangeSetID: changesetID,
+						Body:        newBody,
 					}
-					// Handle both successful (200) and partial success/failure (207) responses
-					var respMsgs *[]goclientnew.FunctionInvocationsResponse
-					if funcRes.JSON200 != nil {
-						respMsgs = funcRes.JSON200
-					} else if funcRes.JSON207 != nil {
-						respMsgs = funcRes.JSON207
+					respMsgs, err := invokeFunctionsOnUnits(invokeArgs)
+					if err != nil {
+						return err
 					}
+
 					// Shouldn't happen
 					if respMsgs == nil {
 						respMsgs = &[]goclientnew.FunctionInvocationsResponse{}
 					}
 					// Check if any alternative output format is specified
-					hasAlternativeOutput := jsonOutput || jq != "" || outputJQ != ""
+					hasAlternativeOutput := hasAlternativeOutput() || outputJQ != ""
 
 					if !hasAlternativeOutput {
 						outputFunctionInvocationResponse(respMsgs)
@@ -253,15 +246,23 @@ func RegisterFunctionsAsCobraCommands() {
 					if jq != "" {
 						displayJQ(respMsgs)
 					}
+					if yamlOutput {
+						displayYAML(respMsgs)
+					}
+					if yq != "" {
+						displayYQ(respMsgs)
+					}
 					if outputJQ != "" {
 						for _, respMsg := range *respMsgs {
-							if len(respMsg.Output) != 0 {
-								outputBytes, err := base64.StdEncoding.DecodeString(respMsg.Output)
-								if err != nil {
-									return err
-								}
-								if strings.TrimSpace(string(outputBytes)) != "null" {
-									displayJQForBytes(outputBytes, outputJQ)
+							for _, outputData := range respMsg.Outputs {
+								if len(outputData) != 0 {
+									outputBytes, err := base64.StdEncoding.DecodeString(outputData)
+									if err != nil {
+										return err
+									}
+									if strings.TrimSpace(string(outputBytes)) != "null" {
+										displayJQForBytes(outputBytes, outputJQ)
+									}
 								}
 							}
 						}
@@ -272,7 +273,7 @@ func RegisterFunctionsAsCobraCommands() {
 						}
 						// Wait one at a time
 						for _, respMsg := range *respMsgs {
-							unitDetails, err := apiGetUnit(respMsg.UnitID.String(), "*") // get all fields for now
+							unitDetails, err := apiGetUnitInSpace(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*") // get all fields for now
 							if err != nil {
 								return err
 							}

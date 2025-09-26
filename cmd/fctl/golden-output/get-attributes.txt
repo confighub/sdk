@@ -16,10 +16,10 @@ OUTPUT
           "FunctionName": "set-default-names",
           "Arguments": null
         }
-      ],
-      "GenerationTemplate": "{{.NormalizedUnitName}}-{{.NormalizedSpaceName}}"
+      ]
     },
-    "Value": "my-service"
+    "Value": "my-service",
+    "Index": 0
   },
   {
     "ResourceName": "/my-service",
@@ -29,6 +29,7 @@ OUTPUT
     "Path": "spec.type",
     "AttributeName": "service-type",
     "DataType": "string",
-    "Value": "ClusterIP"
+    "Value": "ClusterIP",
+    "Index": 0
   }
 ]

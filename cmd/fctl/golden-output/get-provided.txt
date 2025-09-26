@@ -21,6 +21,7 @@ OUTPUT
         ]
       }
     },
-    "Value": "foobar"
+    "Value": "foobar",
+    "Index": 0
   }
 ]

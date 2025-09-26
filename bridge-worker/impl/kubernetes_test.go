@@ -279,8 +279,8 @@ func TestKubernetesBridgeWorker_WatchForApply_ContextDeadlineExceeded(t *testing
 	mockApplier := new(MockK8sApplier)
 
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
-	// When deadline is exceeded, it sends two messages: one for the error and one for the retry
-	setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Failed to wait for resources: context deadline exceeded")
+	// When deadline is exceeded, it sends a retry message with the error (with jitter in timing)
+	setupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Resources not ready, retrying in")
 
 	// Mock the applier factory to return our mock applier
 	originalFactory := k8sApplierFactory
@@ -307,7 +307,7 @@ func TestKubernetesBridgeWorker_WatchForApply_ContextDeadlineExceeded(t *testing
 	assert.Error(t, err)
 	var retryErr *backoff.RetryAfterError
 	assert.ErrorAs(t, err, &retryErr, "error should be of type *backoff.RetryAfterError")
-	assert.Contains(t, err.Error(), "retry after 30s")
+	assert.Contains(t, err.Error(), "retry after")
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
 	mockApplier.AssertNumberOfCalls(t, "WaitForApply", 1)
 }

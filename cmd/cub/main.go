@@ -813,17 +813,13 @@ func parseEntityIdentifierSingleAsEntity[T EntityInSpace](
 	return &entities[0], nil
 }
 
-func parseTagSlug(tagValue string) (string, error) {
-	uuid, err := parseEntityIdentifierSingle[goclientnew.Tag](
+func parseTagSlug(tagValue string) (uuid.UUID, error) {
+	return parseEntityIdentifierSingle[goclientnew.Tag](
 		tagValue,
 		EntityTypeTag,
 		apiGetTagFromSlugInSpace,
 		func(t *goclientnew.Tag) string { return t.TagID.String() },
 	)
-	if err != nil {
-		return "", err
-	}
-	return uuid.String(), nil
 }
 
 func parseChangeSetSlug(changesetValue string) (uuid.UUID, error) {
@@ -1281,6 +1277,18 @@ func addSpaceIDToWhereClause(whereClause, spaceID string) string {
 	return spaceConstraint
 }
 
+// addChangeSetIDToWhereClause adds changeset constraint to where clause, for reuse across commands
+func addChangeSetIDToWhereClause(whereClause, changesetID string) string {
+	if changesetID == "" {
+		return whereClause
+	}
+	changesetConstraint := fmt.Sprintf("ChangeSetID = '%s'", changesetID)
+	if whereClause != "" {
+		return fmt.Sprintf("%s AND %s", whereClause, changesetConstraint)
+	}
+	return changesetConstraint
+}
+
 // displayBulkDeleteResults handles the display of bulk delete operation results
 func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, entityName, operationName, contextInfo string) error {
 	var responses *[]goclientnew.DeleteResponse
@@ -1502,7 +1510,7 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			queuedOps = append(queuedOps, result.Action)
 			if !quiet && !wait {
 				// Fetch unit details to get the slug
-				unitDetails, err := apiGetUnit(result.Action.UnitID.String(), "Slug")
+				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
 				unitSlug := result.Action.UnitID.String()
 				if err == nil && unitDetails != nil && unitDetails.Slug != "" {
 					unitSlug = unitDetails.Slug
@@ -1555,7 +1563,7 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			if failureCount > 0 {
 				tprint("Units that would fail: %d", failureCount)
 			}
-			tprint("Total units processed: %d", successCount + failureCount)
+			tprint("Total units processed: %d", successCount+failureCount)
 		} else {
 			if successCount > 0 && failureCount > 0 {
 				tprint("Bulk %s completed with partial success: %d succeeded, %d failed", action, successCount, failureCount)

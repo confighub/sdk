@@ -10,6 +10,7 @@ OUTPUT
     "Path": "database.host",
     "AttributeName": "attribute-value",
     "DataType": "string",
-    "Value": "localhost"
+    "Value": "localhost",
+    "Index": 0
   }
 ]

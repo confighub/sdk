@@ -420,7 +420,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	// Compute diff
 	// toData is the base content
 	// fromData is newer content
-	diffSegments := ComputeStructuredDiff(string(toData), string(fromData))
+	diffSegments := ComputeStructuredDiff(string(fromData), string(toData))
 
 	// Print diff in requested format
 	if unitDiffArgs.unifiedDiff {

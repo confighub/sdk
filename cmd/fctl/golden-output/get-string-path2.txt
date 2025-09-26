@@ -32,6 +32,7 @@ OUTPUT
         }
       ]
     },
-    "Value": "nginx"
+    "Value": "nginx",
+    "Index": 0
   }
 ]
