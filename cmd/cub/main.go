@@ -649,7 +649,8 @@ type EntityInSpace interface {
 	goclientnew.Filter | goclientnew.View | goclientnew.Invocation |
 		goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet |
 		goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit |
-		goclientnew.Link | goclientnew.Set
+		goclientnew.Link
+	// | goclientnew.Set // Not implemented yet
 }
 
 // apiGetEntityFromSlugInSpaceFunc is a function type for getting entities by slug in a space
@@ -1102,8 +1103,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedRevision |
 		goclientnew.Mutation |
 		goclientnew.ExtendedMutation |
-		goclientnew.Set |
-		goclientnew.ExtendedSet |
+		// goclientnew.Set |
+		// goclientnew.ExtendedSet |
 		goclientnew.Space |
 		goclientnew.ExtendedSpace |
 		goclientnew.Target |
@@ -1136,7 +1137,7 @@ type DeleteConstraint interface {
 		goclientnew.DeleteLinkResponse |
 		goclientnew.DeleteOrganizationResponse |
 		goclientnew.DeleteOrganizationMemberResponse |
-		goclientnew.DeleteSetResponse |
+		// goclientnew.DeleteSetResponse |
 		goclientnew.DeleteSpaceResponse |
 		goclientnew.DeleteTagResponse |
 		goclientnew.DeleteTargetResponse |

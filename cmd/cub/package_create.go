@@ -321,7 +321,7 @@ func pruneUnit(unit *goclientnew.Unit) {
 	unit.UnitID = uuid.Nil
 	unit.OrganizationID = uuid.Nil
 	unit.SpaceID = uuid.Nil
-	unit.SetID = nil
+	// unit.SetID = nil
 	unit.UpstreamOrganizationID = nil
 	unit.UpstreamSpaceID = nil
 	unit.UpstreamUnitID = nil

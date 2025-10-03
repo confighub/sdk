@@ -41,6 +41,11 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",
 }
 
+func IsSupportedToolchain(toolchain workerapi.ToolchainType) bool {
+	_, supported := SupportedToolchains[toolchain]
+	return supported
+}
+
 // TODO: Unify DataType and OutputType.
 
 // DataType represents the data type of a function parameter or configuration attribute.
@@ -119,6 +124,8 @@ const (
 	ResourceTypeAny = ResourceType("*")
 )
 
+const MaxResourceTypeLength = 128
+
 // ResourceCategoryType is a tuple containing the ResourceCategory and ResourceType.
 type ResourceCategoryType struct {
 	ResourceCategory ResourceCategory
@@ -155,6 +162,9 @@ const FunctionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
 
 // Valid attribute names. By convention we use kabob-case to match cub's convention.
 const AttributeNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
+
+const MaxFunctionNameLength = 128
+const MaxNumFunctionArguments = 32
 
 // AttributeName represents the category name of an attribute used for getter and setter functions, and for
 // matching Provided values to Needed values. There are some well known attribute names that are used across
@@ -336,6 +346,11 @@ type FunctionInvocationResponse struct {
 	Success       bool     `description:"True if all functions executed successfully"`
 	ErrorMessages []string `description:"Error messages from function execution; will be empty if Success is true"`
 }
+
+const MaxConfigDataLength = 64 * 1024 * 1024     // 64MB
+const MaxFunctionOutputLength = 64 * 1024 * 1024 // 64MB
+const MaxFunctionNumberOfErrors = 1024
+const MaxFunctionErrorMessageLength = 1024
 
 // ResourceInfo contains the ResourceName, ResourceNameWithoutScope, ResourceType, and ResourceCategory for a configuration Element within a configuration Unit.
 type ResourceInfo struct {

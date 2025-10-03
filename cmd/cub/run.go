@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -136,6 +137,7 @@ func RegisterFunctionsAsCobraCommands() {
 
 					// Parse changeset once if specified
 					var changesetID string
+					var changesetUUID uuid.UUID
 					if functionChangesetSlug != "" {
 						changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
 						if err != nil {
@@ -222,7 +224,7 @@ func RegisterFunctionsAsCobraCommands() {
 						Where:       effectiveWhere,
 						FilterID:    filterID,
 						DryRun:      dryRun,
-						ChangeSetID: changesetID,
+						ChangeSetID: changesetUUID,
 						Body:        newBody,
 					}
 					respMsgs, err := invokeFunctionsOnUnits(invokeArgs)

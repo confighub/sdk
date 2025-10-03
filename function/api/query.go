@@ -204,7 +204,13 @@ func GetLogicalOperator(decodedQueryString string) (string, string) {
 	return decodedQueryString, ""
 }
 
+const MaxFilterLength = 8192
+
 func ParseAndValidateWhereFilter(queryString string) ([]*VisitorRelationalExpression, error) {
+	if len(queryString) > MaxFilterLength {
+		return nil, fmt.Errorf("query string exceeds maximum length of %d", MaxFilterLength)
+	}
+
 	expressions := []*VisitorRelationalExpression{}
 
 	decodedQueryString := SkipWhitespace(queryString)

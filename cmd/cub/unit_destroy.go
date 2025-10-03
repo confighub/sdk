@@ -124,14 +124,20 @@ func runBulkUnitDestroy() error {
 	// Add space constraint to the where clause if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
+	// Parse filter parameter
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
 	// Build query parameters
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	params := &goclientnew.BulkDestroyUnitsParams{
 		Where:   effectiveWhere,
 		Include: &include,
 	}
-	if filter != "" {
-		params.Filter = &filter
+	if filterID != "" {
+		params.Filter = &filterID
 	}
 	if unitDestroyArgs.dryRun {
 		params.DryRun = &unitDestroyArgs.dryRun

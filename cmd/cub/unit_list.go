@@ -66,7 +66,7 @@ Available columns (prefixed with Unit.):
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
   - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, LiveState, ApprovedBy
-  - Relationships: SetID, TargetID, ToolchainType
+  - Relationships: TargetID, ToolchainType
   - Revisions: LastAppliedRevisionNum, PreviousLiveRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>
 
@@ -243,7 +243,7 @@ func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
@@ -285,7 +285,7 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string, s
 	if whereData != "" {
 		newParams.WhereData = &whereData
 	}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

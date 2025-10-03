@@ -15,3 +15,5 @@ const (
 	ToolchainAppConfigINI        ToolchainType = "AppConfig/INI"  // TODO
 	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env"  // TODO
 )
+
+const MaxToolchainTypeLength = 128

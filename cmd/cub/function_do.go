@@ -424,7 +424,7 @@ type invokeArgs struct {
 	Where       string
 	FilterID    string
 	DryRun      bool
-	ChangeSetID string
+	ChangeSetID uuid.UUID
 	Body        *goclientnew.FunctionInvocationsRequest
 }
 
@@ -442,7 +442,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.ChangeSetID != "" {
+		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *invokeArgs.Body)
@@ -467,7 +467,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.ChangeSetID != "" {
+		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *invokeArgs.Body)
@@ -525,8 +525,9 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 
 	// Parse changeset once if specified
 	var changesetID string
+	var changesetUUID uuid.UUID
 	if functionChangesetSlug != "" {
-		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+		changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
 		if err != nil {
 			return err
 		}
@@ -556,7 +557,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			Where:       effectiveWhere,
 			FilterID:    filterID,
 			DryRun:      dryRun,
-			ChangeSetID: changesetID,
+			ChangeSetID: changesetUUID,
 			Body:        newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
@@ -628,7 +629,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if wait {
-		if !quiet && !dataOnly && !outputOnly && !outputValuesOnly {
+		if !quiet && !dataOnly && !outputOnly && !outputValuesOnly && !outputRaw && !hasAlternativeOutput {
 			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time
@@ -648,7 +649,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 
 func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationsResponse) {
 	for _, respMsg := range *respMsgs {
-		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly {
+		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly && !outputRaw {
 			detail := detailView()
 			detail.Append([]string{strings.ToUpper("Success"), fmt.Sprintf("%v", respMsg.Success)})
 			if !respMsg.Success && respMsg.Error != nil {
@@ -660,7 +661,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			}
 			detail.Render()
 		}
-		if dataOnly || ((!quiet && !outputOnly && !outputValuesOnly) && len(respMsg.ConfigData) != 0 && len(respMsg.Mutators) > 0) {
+		if dataOnly || ((!quiet && !outputOnly && !outputValuesOnly && !outputRaw) && len(respMsg.ConfigData) != 0 && len(respMsg.Mutators) > 0) {
 			// Don't use detailView to print the data because it pads the entire width with spaces.
 			if !dataOnly {
 				tprintRaw("CONFIGDATA\n---------\n")
@@ -673,7 +674,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 		}
 		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Outputs) != 0 {
 			// Don't use detailView to print the output because it pads the entire width with spaces.
-			if !outputOnly && !outputValuesOnly {
+			if !outputOnly && !outputValuesOnly && !outputRaw {
 				tprintRaw("OUTPUT\n------\n")
 			}
 
@@ -710,8 +711,10 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					var payload api.AttributeValueList
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output
-					if err != nil || outputRaw {
+					if err != nil {
 						tprintRaw(string(outputBytes))
+					} else if outputRaw {
+						displayJSON(payload)
 					} else {
 						for i := range payload {
 							tprint("%v %s %s %s %s", payload[i].Value, payload[i].DataType, payload[i].Path, payload[i].ResourceName, payload[i].ResourceType)
@@ -720,13 +723,15 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 				case string(api.OutputTypeValidationResultList), string(api.OutputTypeValidationResult):
 					var payload api.ValidationResultList
 					err := json.Unmarshal(outputBytes, &payload)
-					if err != nil || outputRaw {
+					if err != nil {
 						// Try parsing as a single result. Shouldn't happen now.
 						var payload api.ValidationResult
 						err := json.Unmarshal(outputBytes, &payload)
 						// If there's an error print the raw output
-						if err != nil || outputRaw {
+						if err != nil {
 							tprintRaw(string(outputBytes))
+						} else if outputRaw {
+							displayJSON(payload)
 						} else {
 							// TODO: Factor this out
 							details := ""
@@ -743,6 +748,8 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 									payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
 							}
 						}
+					} else if outputRaw {
+						displayJSON(payload)
 					} else {
 						for i := range payload {
 							details := ""
@@ -764,8 +771,10 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					var payload api.ResourceInfoList
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output
-					if err != nil || outputRaw {
+					if err != nil {
 						tprintRaw(string(outputBytes))
+					} else if outputRaw {
+						displayJSON(payload)
 					} else {
 						for i := range payload {
 							tprint("%s %s", payload[i].ResourceName, payload[i].ResourceType)
@@ -775,8 +784,10 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					var payload api.ResourceList
 					err := json.Unmarshal(outputBytes, &payload)
 					// If there's an error print the raw output
-					if err != nil || outputRaw {
+					if err != nil {
 						tprintRaw(string(outputBytes))
+					} else if outputRaw {
+						displayJSON(payload)
 					} else {
 						for i := range payload {
 							tprint("%s %s:", payload[i].ResourceName, payload[i].ResourceType)

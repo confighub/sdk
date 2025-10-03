@@ -34,3 +34,21 @@ const (
 	ProviderConfigMap     ProviderType = "ConfigMap"
 	ProviderAWS           ProviderType = "AWS"
 )
+
+var SupportedProviders = map[ProviderType]bool{
+	ProviderConfigHub:     true,
+	ProviderKubernetes:    true,
+	ProviderFluxOCIWriter: true,
+	ProviderConfigMap:     true,
+	ProviderAWS:           true,
+}
+
+func IsSupportedProvider(provider ProviderType) bool {
+	return SupportedProviders[provider]
+}
+
+// Max length for 3P providers
+const MaxProviderTypeLength = 128
+
+// Max size of marshaled parameters
+const MaxParametersLength = 16384

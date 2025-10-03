@@ -122,10 +122,11 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Name", unitDetails.Unit.Slug})
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
 
+		// Not implemented yet
 		// Show Set name if available
-		if unitDetails.Set != nil {
-			view.Append([]string{"Set", unitDetails.Set.Slug})
-		}
+		// if unitDetails.Set != nil {
+		// 	view.Append([]string{"Set", unitDetails.Set.Slug})
+		// }
 
 		// Show Target name if available
 		if unitDetails.Target != nil {
@@ -228,7 +229,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			failOnError(err)
 		}
 		tprintRaw(fmt.Sprintf("Config data written to %s", flagFilename))
-	} else if dataOnly { // TODO: also when verbose?
+	} else if dataOnly || verbose || dryRun {
 		dataBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
 		if err != nil {
 			failOnError(err)
@@ -263,7 +264,7 @@ func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*gocl
 
 func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.GetUnitParams{}
-	include := "UnitEventID,SetID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

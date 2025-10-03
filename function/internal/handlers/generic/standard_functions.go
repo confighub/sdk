@@ -487,6 +487,35 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			return genericFnSetPathComment(resourceProvider, functionContext, parsedData, args, liveState)
 		},
 	})
+	fh.RegisterFunction("delete-path", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "delete-path",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "resource-type",
+					Required:      true,
+					Description:   "Resource type (" + resourceProvider.TypeDescription() + ") of the path to delete",
+					DataType:      api.DataTypeString,
+				},
+				{
+					ParameterName: "path",
+					Required:      true,
+					Description:   "Path to delete",
+					DataType:      api.DataTypeString,
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Deletes the specified attribute path",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return GenericFnDeletePath(resourceProvider, functionContext, parsedData, args, liveState)
+		},
+	})
 	fh.RegisterFunction("set-default-names", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-default-names",
@@ -2199,4 +2228,14 @@ func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionCo
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
 	values, err := yamlkit.GetPaths[bool](parsedData, resourceTypeToPaths, pathArgs, resourceProvider)
 	return parsedData, values, err
+}
+
+func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	// The argument value types should be verified before this function is called
+	resourceType := args[0].Value.(string)
+	unresolvedPath := args[1].Value.(string)
+
+	resourceTypeToPaths := GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
+	err := yamlkit.DeletePaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider)
+	return parsedData, nil, err
 }

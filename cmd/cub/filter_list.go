@@ -398,17 +398,18 @@ func parseEntityIdentifierForFilter(
 		}
 		return entityType, linkUUID.String(), nil
 
-	case "Set":
-		setUUID, err := parseEntityIdentifierSingle[goclientnew.Set](
-			identifier,
-			EntityTypeSet,
-			apiGetSetFromSlugInSpace,
-			func(s *goclientnew.Set) string { return s.SetID.String() },
-		)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to resolve Set %s: %w", identifier, err)
-		}
-		return entityType, setUUID.String(), nil
+	// Not implemented yet
+	// case "Set":
+	// 	setUUID, err := parseEntityIdentifierSingle[goclientnew.Set](
+	// 		identifier,
+	// 		EntityTypeSet,
+	// 		apiGetSetFromSlugInSpace,
+	// 		func(s *goclientnew.Set) string { return s.SetID.String() },
+	// 	)
+	// 	if err != nil {
+	// 		return "", "", fmt.Errorf("failed to resolve Set %s: %w", identifier, err)
+	// 	}
+	// 	return entityType, setUUID.String(), nil
 
 	default:
 		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)

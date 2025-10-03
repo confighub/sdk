@@ -106,9 +106,9 @@ func init() {
 		inCluster = true
 	}
 
-	enableMultiplexer := false
-	if os.Getenv("ENABLE_MULTIPLEXER") == "true" {
-		enableMultiplexer = true
+	enableMultiplexer := true
+	if os.Getenv("ENABLE_MULTIPLEXER") == "false" {
+		enableMultiplexer = false
 	}
 
 	gracePeriodDelay := 10 // default 10 seconds
@@ -129,7 +129,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootArgs.inCluster, "in-cluster", inCluster, "Enable in-cluster deployment for FluxOCIWorker (use Kubernetes secrets or cloud provider credentials) (IN_CLUSTER)")
 	rootCmd.PersistentFlags().StringVar(&rootArgs.authMethod, "auth-method", authMethod, "Authentication method for FluxOCIWorker (kubernetes, cloud, docker-config, keychain) (AUTH_METHOD)")
 	rootCmd.PersistentFlags().StringVar(&rootArgs.kubernetesSecretPath, "kubernetes-secret-path", kubernetesSecretPath, "Path to the Kubernetes secret mounted as a volume. For use with k8s auth-method and FluxOCIWorker (KUBERNETES_SECRET_PATH)")
-	rootCmd.PersistentFlags().BoolVar(&rootArgs.enableMultiplexer, "enable-multiplexer", enableMultiplexer, "Enable multiplexer mode with prefixes and multi-worker support (ENABLE_MULTIPLEXER)")
+	rootCmd.PersistentFlags().BoolVar(&rootArgs.enableMultiplexer, "enable-multiplexer", enableMultiplexer, "Enable multiplexer mode with prefixes and multi-worker support (default: true, ENABLE_MULTIPLEXER)")
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
 
@@ -203,11 +203,11 @@ func workerTypeToToolchainAndProvider(workerType string) (workerapi.ToolchainTyp
 func rootRunE(cmd *cobra.Command, args []string) error {
 	// Check if multiplexer mode is enabled
 	if !rootArgs.enableMultiplexer {
-		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer disabled by default)")
+		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer explicitly disabled)")
 
 		// In legacy mode, only support single worker type
 		if strings.Contains(args[0], ",") {
-			return fmt.Errorf("multiple worker types not supported in legacy mode. Enable multiplexer with --enable-multiplexer or ENABLE_MULTIPLEXER=true")
+			return fmt.Errorf("multiple worker types not supported in legacy mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true")
 		}
 
 		// Handle ConfigHub worker specially - it needs authentication
@@ -260,7 +260,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	bridgeDispatcher := impl.NewBridgeDispatcher()
 	functionDispatcher := impl.NewFunctionDispatcher()
 
-	// Only enable prefixes if multiplexer mode is explicitly enabled
+	// Disable prefixes if multiplexer mode is explicitly disabled (for legacy compatibility)
 	if !rootArgs.enableMultiplexer {
 		bridgeDispatcher.SetDisablePrefixes(true)
 	}

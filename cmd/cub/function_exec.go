@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -106,8 +107,9 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 
 	// Parse changeset once if specified (not for revision-based invocations)
 	var changesetID string
+	var changesetUUID uuid.UUID
 	if functionChangesetSlug != "" && revisionIdentifier == "" {
-		changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+		changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +167,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 			Where:       effectiveWhere,
 			FilterID:    filterID,
 			DryRun:      dryRun,
-			ChangeSetID: changesetID,
+			ChangeSetID: changesetUUID,
 			Body:        newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)

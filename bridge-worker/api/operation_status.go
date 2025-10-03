@@ -4,8 +4,10 @@
 package api
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +23,16 @@ const (
 	ActionStatusFailed      ActionStatusType = "Failed"
 	ActionStatusCanceled    ActionStatusType = "Canceled"
 )
+
+var ValidActionStatus = map[ActionStatusType]bool{
+	ActionStatusNone:        true,
+	ActionStatusPending:     true,
+	ActionStatusSubmitted:   true,
+	ActionStatusProgressing: true,
+	ActionStatusCompleted:   true,
+	ActionStatusFailed:      true,
+	ActionStatusCanceled:    true,
+}
 
 type ActionResultType string
 
@@ -43,6 +55,23 @@ const (
 	ActionResultFunctionInvocationFailed    ActionResultType = "FunctionInvocationFailed"
 )
 
+var ValidActionResult = map[ActionResultType]bool{
+	ActionResultNone:                        true,
+	ActionResultApplyCompleted:              true,
+	ActionResultApplyFailed:                 true,
+	ActionResultApplyWaitFailed:             true,
+	ActionResultDestroyCompleted:            true,
+	ActionResultDestroyFailed:               true,
+	ActionResultDestroyWaitFailed:           true,
+	ActionResultRefreshFailed:               true,
+	ActionResultRefreshAndDrifted:           true,
+	ActionResultRefreshAndNoDrift:           true,
+	ActionResultImportCompleted:             true,
+	ActionResultImportFailed:                true,
+	ActionResultFunctionInvocationCompleted: true,
+	ActionResultFunctionInvocationFailed:    true,
+}
+
 type ActionType string
 
 // Action values
@@ -59,6 +88,18 @@ const (
 	ActionListFunctions   ActionType = "ListFunctions"
 )
 
+var ValidAction = map[ActionType]bool{
+	ActionNA:              true,
+	ActionApply:           true,
+	ActionDestroy:         true,
+	ActionRefresh:         true,
+	ActionImport:          true,
+	ActionFinalize:        true,
+	ActionHeartbeat:       true,
+	ActionInvokeFunctions: true,
+	ActionListFunctions:   true,
+}
+
 type ActionResultBaseMeta struct {
 	RevisionNum  int64
 	Action       ActionType       `bun:",notnull" swaggertype:"string"`
@@ -67,6 +108,27 @@ type ActionResultBaseMeta struct {
 	Message      string           `bun:"type:text"`
 	StartedAt    time.Time        `json:",omitempty" bun:"type:timestamptz"`
 	TerminatedAt *time.Time       `json:",omitempty" bun:"type:timestamptz"`
+}
+
+const MaxActionResultMessageLength = 1024
+
+func ValidateActionResultBaseMeta(arbm *ActionResultBaseMeta) error {
+	if arbm.RevisionNum < 0 {
+		return fmt.Errorf("RevisionNum %d invalid; must be non-negative", arbm.RevisionNum)
+	}
+	if !ValidAction[arbm.Action] {
+		return fmt.Errorf("invalid Action %s", string(arbm.Action))
+	}
+	if !ValidActionResult[arbm.Result] {
+		return fmt.Errorf("invalid Result %s", string(arbm.Result))
+	}
+	if !ValidActionStatus[arbm.Status] {
+		return fmt.Errorf("invalid Status %s", string(arbm.Status))
+	}
+	if len(arbm.Message) > MaxActionResultMessageLength {
+		return fmt.Errorf("Message length %d exceeds max length %d", len(arbm.Message), MaxActionResultMessageLength)
+	}
+	return nil
 }
 
 // ActionResult is a result of action from the Bridgeworker
@@ -80,4 +142,36 @@ type ActionResult struct {
 	Data      []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Configuration data of the Unit"`
 	LiveState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live state corresponding to the Unit"`
 	Outputs   []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Outputs resulting from applying the configuration data of the Unit"`
+}
+
+const MaxConfigDataLength = 64 * 1024 * 1024 // 64MB
+
+func ValidateActionResultMeta(ar *ActionResult) error {
+	err := ValidateActionResultBaseMeta(&ar.ActionResultBaseMeta)
+	if err != nil {
+		return err
+	}
+	if ar.UnitID == uuid.Nil {
+		return errors.New("UnitID must be provided")
+	}
+	if ar.SpaceID == uuid.Nil {
+		return errors.New("SpaceID must be provided")
+	}
+	if ar.QueuedOperationID == uuid.Nil {
+		return errors.New("QueuedOperationID must be provided")
+	}
+	return nil
+}
+
+func ValidateActionResultData(ar *ActionResult) error {
+	if len(ar.Data) > MaxConfigDataLength {
+		return errors.Errorf("Data length %d exceeds max length %d", len(ar.Data), MaxConfigDataLength)
+	}
+	if len(ar.LiveState) > MaxConfigDataLength {
+		return errors.Errorf("LiveState length %d exceeds max length %d", len(ar.LiveState), MaxConfigDataLength)
+	}
+	if len(ar.Outputs) > MaxConfigDataLength {
+		return errors.Errorf("Outputs length %d exceeds max length %d", len(ar.Outputs), MaxConfigDataLength)
+	}
+	return nil
 }

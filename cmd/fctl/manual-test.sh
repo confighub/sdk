@@ -98,6 +98,7 @@ ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname prod.chat.cubby
 ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname-subdomain chat > ${DIR}/set-subdomain.txt
 ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname-domain cubby.bz > ${DIR}/set-domain.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-path-comment apps/v1/Deployment spec.replicas "TODO: autoscale" > ${DIR}/set-path-comment.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" delete-path apps/v1/Deployment "spec.template.spec.containers.?name=otel-sidecar" > ${DIR}/delete-path.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-properties.txt

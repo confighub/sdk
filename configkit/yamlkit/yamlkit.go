@@ -1458,6 +1458,20 @@ func GetRegisteredProvidedStringPaths(
 	return GetStringPaths(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider)
 }
 
+func DeletePaths(
+	parsedData gaby.Container,
+	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
+	keys []any,
+	resourceProvider ResourceProvider,
+) error {
+	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		err := doc.DeleteP(string(context.Path))
+		return nil, err
+	}
+	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, docVisitor, false)
+	return err
+}
+
 func attributeValueForPath(path api.ResolvedPath, resourceInfo *api.ResourceInfo, value any) api.AttributeValue {
 	// TODO: attributeName, dataType, Info.GetterInvocation, Info.SetterInvocations, Comment
 	var attributeValue api.AttributeValue

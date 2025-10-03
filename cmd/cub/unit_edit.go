@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +28,7 @@ var unitEditCmd = &cobra.Command{
 
 func init() {
 	enableWaitFlag(unitEditCmd)
+	unitEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
 	unitCmd.AddCommand(unitEditCmd)
 }
 
@@ -38,6 +40,25 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 
 	spaceID := currentUnit.SpaceID
 	currentUnit.LastChangeDescription = "CLI edit"
+
+	params := &goclientnew.UpdateUnitParams{}
+	if changesetSlug != "" {
+		if changesetSlug == "-" {
+			// Special value to remove the changeset (only valid in patch mode)
+			return errors.New("edit cannot remove a changeset")
+		}
+		changesetUUID, err := parseChangeSetSlug(changesetSlug)
+		if err != nil {
+			return err
+		}
+		if currentUnit.ChangeSetID != nil && *currentUnit.ChangeSetID != changesetUUID {
+			return fmt.Errorf("specified ChangeSet %s does not match unit's current ChangeSet %s", changesetSlug, currentUnit.ChangeSetID.String())
+		}
+		currentUnit.ChangeSetID = &changesetUUID
+		params.ChangeSetId = &changesetUUID
+	} else if currentUnit.ChangeSetID != nil {
+		return fmt.Errorf("unit is in ChangeSet %s; use --changeset", currentUnit.ChangeSetID.String())
+	}
 
 	tmpFile, err := os.CreateTemp("", "*.yaml")
 	if err != nil {
@@ -83,7 +104,7 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	updatedData := base64.StdEncoding.EncodeToString(updatedContent)
 	currentUnit.Data = updatedData
-	unitDetails, err := updateUnit(spaceID, currentUnit, &goclientnew.UpdateUnitParams{})
+	unitDetails, err := updateUnit(spaceID, currentUnit, params)
 	if err != nil {
 		return err
 	}

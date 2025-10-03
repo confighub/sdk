@@ -2942,6 +2942,7 @@ paths:
         name: change_set_id
         required: false
         schema:
+          format: uuid
           type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
@@ -2971,7 +2972,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -4567,7 +4568,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Where expression to select FromUnits for created links
 
@@ -4622,7 +4623,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Where expression to select ToUnits for created links
 
@@ -8443,6 +8444,7 @@ paths:
         name: change_set_id
         required: false
         schema:
+          format: uuid
           type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
@@ -8472,7 +8474,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -9797,479 +9799,6 @@ paths:
       summary: Update Link
       tags:
       - Link
-  /space/{space_id}/set:
-    get:
-      description: List Sets
-      operationId: ListSets
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: |-
-          The specified string is an expression for the purpose of filtering
-          the list of Sets returned. The expression syntax was inspired by SQL.
-          It supports conjunctions using `AND` of relational expressions of the form *attribute*
-          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-          as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
-          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-          UUIDs and boolean attributes support equality and inequality only.
-          UUID and time literals must be quoted as string literals.
-          String literals are quoted with single quotes, such as `'string'`.
-          Time literals use the same form as when serialized as JSON,
-          such as: `CreatedAt > '2025-02-18T23:16:34'`.
-          Integer and boolean literals are also supported for attributes of those types.
-          Arrays support the `?` operator to to match any element of the array,
-          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-          Conjunctions are supported using the `AND` operator.
-          An example conjunction is:
-          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-
-          Supported attributes for filtering on Set: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, SetID, Slug, SpaceID, UpdatedAt.
-
-          The whole string must be query-encoded.
-        in: query
-        name: where
-        required: false
-        schema:
-          type: string
-      - description: |-
-          UUID of a Filter entity to apply to the Set list.
-
-          The Filter must be in the same Organization as the user credentials.
-
-          The Filter's From field must match the entity type being filtered (Set).
-
-          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-
-          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-
-          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-        in: query
-        name: filter
-        required: false
-        schema:
-          type: string
-      - description: |-
-          Free text search that approximately matches the specified string against string fields and map keys/values.
-
-          The search is case-insensitive and uses pattern matching to find entities containing the text.
-
-          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-
-          For map fields (like Labels and Annotations), the search matches both map keys and values.
-
-          The search uses OR logic across all searchable fields, so matching any field will return the entity.
-
-          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-
-          Searchable fields for Set include string and map-type attributes from the queryable attributes list.
-
-          The whole string must be query-encoded.
-        in: query
-        name: contains
-        required: false
-        schema:
-          type: string
-      - description: |-
-          Include clause for expanding related entities in the response for Set.
-          The attribute names are case-sensitive, PascalCase, and
-          expected in a comma-separated list format as in the JSON encoding.
-
-          Supported attributes for Set are OrganizationID, SpaceID.
-
-          The whole string must be query-encoded.
-        in: query
-        name: include
-        required: false
-        schema:
-          type: string
-      - description: |-
-          Select clause for specifying which fields to include in the response for Set.
-          The attribute names are case-sensitive, PascalCase, and
-          expected in a comma-separated list format as in the JSON encoding.
-          If not specified, all fields are returned.
-          Entity and parent IDs (like OrganizationID, SpaceID, SetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
-          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-          The whole string must be query-encoded.
-        in: query
-        name: select
-        required: false
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedSet'
-                type: array
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Set.
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedSet'
-                type: array
-          description: ""
-      summary: List Sets
-      tags:
-      - Set
-    post:
-      description: Create Set
-      operationId: CreateSet
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Allowed values are true and false. Default is false. When true,
-          reports success when an entity already exists and returns the existing entity
-        in: query
-        name: allow_exists
-        required: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Set'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Set'
-          description: A group of related Units that can be cloned, upgraded, applied,
-            refreshed, or destroyed as a group.
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Set.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Set'
-          description: A group of related Units that can be cloned, upgraded, applied,
-            refreshed, or destroyed as a group.
-      summary: Create Set
-      tags:
-      - Set
-  /space/{space_id}/set/{set_id}:
-    delete:
-      description: Delete Set
-      operationId: DeleteSet
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a set_id
-        in: path
-        name: set_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set not found.
-        "422":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set could not be deleted.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Set.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
-      summary: Delete Set
-      tags:
-      - Set
-    get:
-      description: Get Set
-      operationId: GetSet
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: |-
-          Include clause for expanding related entities in the response for Set.
-          The attribute names are case-sensitive, PascalCase, and
-          expected in a comma-separated list format as in the JSON encoding.
-
-          Supported attributes for Set are OrganizationID, SpaceID.
-
-          The whole string must be query-encoded.
-        in: query
-        name: include
-        required: false
-        schema:
-          type: string
-      - description: |-
-          Select clause for specifying which fields to include in the response for Set.
-          The attribute names are case-sensitive, PascalCase, and
-          expected in a comma-separated list format as in the JSON encoding.
-          If not specified, all fields are returned.
-          Entity and parent IDs (like OrganizationID, SpaceID, SetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
-          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-          The whole string must be query-encoded.
-        in: query
-        name: select
-        required: false
-        schema:
-          type: string
-      - description: Unique identifier for a set_id
-        in: path
-        name: set_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtendedSet'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Set.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ExtendedSet'
-          description: ""
-      summary: Get Set
-      tags:
-      - Set
-    put:
-      description: Update Set
-      operationId: UpdateSet
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a set_id
-        in: path
-        name: set_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Set'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Set'
-          description: A group of related Units that can be cloned, upgraded, applied,
-            refreshed, or destroyed as a group.
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set not found.
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Set data conflict. Data has changed since last read.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Set.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Set'
-          description: A group of related Units that can be cloned, upgraded, applied,
-            refreshed, or destroyed as a group.
-      summary: Update Set
-      tags:
-      - Set
   /space/{space_id}/tag:
     get:
       description: List Tags
@@ -12185,7 +11714,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -12238,7 +11767,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -12510,7 +12039,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -12722,9 +12251,17 @@ paths:
         required: false
         schema:
           type: string
-      - description: Unique identifier for a tag
+      - description: Tag ID to add to the head revision
         in: query
         name: tag
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Must match ChangeSetID of affected Units if config Data is changed
+          unless in dry run mode
+        in: query
+        name: change_set_id
         required: false
         schema:
           format: uuid
@@ -12789,14 +12326,6 @@ paths:
                   description: LastChangeDescription is a human-readable description
                     of the last change. This description is copied to the new Revision
                     when the Data is changed.
-                  nullable: true
-                  type: string
-                SetID:
-                  description: Unique identifier for the Set the Unit belongs to.
-                    Sets are used to group related units together. Optional. Units
-                    are not required to belong to sets. Cleared automatically when
-                    the Set is deleted.
-                  format: uuid
                   nullable: true
                   type: string
                 Slug:
@@ -13036,9 +12565,17 @@ paths:
         required: false
         schema:
           type: string
-      - description: Unique identifier for a tag
+      - description: Tag ID to add to the head revision
         in: query
         name: tag
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Must match ChangeSetID of affected Units if config Data is changed
+          unless in dry run mode
+        in: query
+        name: change_set_id
         required: false
         schema:
           format: uuid
@@ -14783,7 +14320,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -14836,7 +14373,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -17681,7 +17218,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -17734,7 +17271,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -17838,7 +17375,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -17891,7 +17428,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18030,7 +17567,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18083,7 +17620,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18202,9 +17739,17 @@ paths:
         required: false
         schema:
           type: string
-      - description: Unique identifier for a tag
+      - description: Tag ID to add to the head revision
         in: query
         name: tag
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Must match ChangeSetID of affected Units if config Data is changed
+          unless in dry run mode
+        in: query
+        name: change_set_id
         required: false
         schema:
           format: uuid
@@ -18269,14 +17814,6 @@ paths:
                   description: LastChangeDescription is a human-readable description
                     of the last change. This description is copied to the new Revision
                     when the Data is changed.
-                  nullable: true
-                  type: string
-                SetID:
-                  description: Unique identifier for the Set the Unit belongs to.
-                    Sets are used to group related units together. Optional. Units
-                    are not required to belong to sets. Cleared automatically when
-                    the Set is deleted.
-                  format: uuid
                   nullable: true
                   type: string
                 Slug:
@@ -18400,7 +17937,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18453,7 +17990,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18591,14 +18128,6 @@ paths:
                     when the Data is changed.
                   nullable: true
                   type: string
-                SetID:
-                  description: Unique identifier for the Set the Unit belongs to.
-                    Sets are used to group related units together. Optional. Units
-                    are not required to belong to sets. Cleared automatically when
-                    the Set is deleted.
-                  format: uuid
-                  nullable: true
-                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -18721,7 +18250,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18774,7 +18303,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18895,7 +18424,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18948,7 +18477,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -19056,7 +18585,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19109,7 +18638,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -19222,7 +18751,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19275,7 +18804,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -19387,7 +18916,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19440,7 +18969,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SetID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -21182,17 +20711,6 @@ components:
         User:
           $ref: '#/components/schemas/User'
       type: object
-    ExtendedSet:
-      properties:
-        Error:
-          $ref: '#/components/schemas/ResponseError'
-        Organization:
-          $ref: '#/components/schemas/Organization'
-        Set:
-          $ref: '#/components/schemas/Set'
-        Space:
-          $ref: '#/components/schemas/Space'
-      type: object
     ExtendedSpace:
       properties:
         Error:
@@ -21350,8 +20868,6 @@ components:
           $ref: '#/components/schemas/Organization'
         PreviousLiveRevision:
           $ref: '#/components/schemas/Revision'
-        Set:
-          $ref: '#/components/schemas/Set'
         Space:
           $ref: '#/components/schemas/Space'
         Target:
@@ -22639,94 +22155,6 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
-    Set:
-      description: A group of related Units that can be cloned, upgraded, applied,
-        refreshed, or destroyed as a group.
-      properties:
-        Annotations:
-          additionalProperties:
-            type: string
-          description: An optional map of Annotation key/value pairs for tools to
-            attach information to entities.
-          type: object
-          x-go-type-skip-optional-pointer: true
-        CreatedAt:
-          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
-            format.
-          example: "2025-04-04T11:50:02.95102-07:00"
-          format: date-time
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
-        DeleteGates:
-          additionalProperties:
-            type: boolean
-          description: An optional set of gates that, if any is present, will block
-            deletion.
-          type: object
-          x-go-type-skip-optional-pointer: true
-        DisplayName:
-          description: Friendly name for the entity.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        EntityType:
-          description: The type of entity.
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Labels:
-          additionalProperties:
-            type: string
-          description: An optional map of Label key/value pairs to specify identifying
-            attributes of entities for the purpose of grouping and filtering them.
-          type: object
-          x-go-type-skip-optional-pointer: true
-        OrganizationID:
-          description: Unique identifier for an organization.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        SetID:
-          description: Unique identifier for a Set.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Slug:
-          description: Unique URL-safe identifier for the entity.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        SpaceID:
-          description: Unique identifier for a space.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        UpdatedAt:
-          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
-            format.
-          example: "2025-04-04T11:50:02.95102-07:00"
-          format: date-time
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Version:
-          description: An entity-specific sequence number used for optimistic concurrency
-            control. The value read must be sent in calls to Update.
-          format: int64
-          readOnly: false
-          type: integer
-          x-go-type-skip-optional-pointer: true
-      required:
-      - Slug
-      type: object
     Space:
       description: The logical container for most entities in ConfigHub. Namespaces
         triggers, units, targets, workers, and other entities.
@@ -23445,8 +22873,6 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
-        SetID:
-          $ref: '#/components/schemas/UUID'
         Slug:
           description: Unique URL-safe identifier for the entity.
           type: string

@@ -382,6 +382,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 						return
 					}
 					patchMap["ChangeSetID"] = changesetUUID
+					newParams.ChangeSetId = &changesetUUID
 				}
 			}
 		}
@@ -438,6 +439,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				return err
 			}
 			currentUnit.ChangeSetID = &changesetUUID
+			newParams.ChangeSetId = &changesetUUID
 		}
 	}
 
@@ -586,6 +588,14 @@ func runBulkUnitUpdate() error {
 		effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 	}
 
+	// Build bulk patch parameters
+	params := &goclientnew.BulkPatchUnitsParams{
+		Where: &effectiveWhere,
+	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
+
 	// Create enhancer for unit-specific fields
 	var enhancer PatchEnhancer = func(patchMap map[string]interface{}) {
 		// Handle destroy gates for units
@@ -607,6 +617,7 @@ func runBulkUnitUpdate() error {
 					return
 				}
 				patchMap["ChangeSetID"] = changesetUUID
+				params.ChangeSetId = &changesetUUID
 			}
 		}
 	}
@@ -615,14 +626,6 @@ func runBulkUnitUpdate() error {
 	patchData, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
-	}
-
-	// Build bulk patch parameters
-	params := &goclientnew.BulkPatchUnitsParams{
-		Where: &effectiveWhere,
-	}
-	if filterID != "" {
-		params.Filter = &filterID
 	}
 
 	// Set include parameter to expand UpstreamUnitID
@@ -775,6 +778,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag
+	patchParams.ChangeSetId = updateParams.ChangeSetId
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,

@@ -31,7 +31,7 @@ var workerRunArgs struct {
 func init() {
 	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerType, "worker-type", "t", "kubernetes", "worker type")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
-	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", false, "Enable multiplexer mode with prefixes and multi-worker support")
+	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", true, "Enable multiplexer mode with prefixes and multi-worker support (default: true)")
 
 	// [jj]: I commented this out and set "kubernetes" as default type.
 	// TODO: Type should not be required at all.
