@@ -22956,11 +22956,6 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
-          "RecentChangeUnitCount": {
-            "type": "integer",
-            "format": "int64",
-            "x-go-type-skip-optional-pointer": true
-          },
           "Space": {
             "$ref": "#/components/schemas/Space"
           },
@@ -24339,6 +24334,15 @@
             "example": "2006-01-02T15:04:05Z07:00",
             "x-go-type-skip-optional-pointer": true
           },
+          "Dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "ExtraParams": {
             "type": "string",
             "description": "ExtraParams contains additional parameters for the operation in string format.",
@@ -25483,6 +25487,14 @@
             "type": "string",
             "format": "date-time",
             "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
           "ExtraParams": {

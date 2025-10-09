@@ -4,6 +4,7 @@
 package lib
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -90,9 +91,22 @@ func (c *workerClient) handleApply(workerContext api.BridgeWorkerContext, payloa
 func (c *workerClient) handleWatchApply(workerContext api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	log.Printf("📥 Kick off watching for apply")
 	if watchable, ok := c.bridgeWorker.(api.WatchableWorker); ok {
-		c.watcherPool.Submit(func() {
+		c.watcherManager.SubmitWatcher(workerContext.Context(), payload.UnitID, api.ActionApply, func(watcherCtx context.Context) {
+			// Create a new context that uses the watcher context
+			watchContext := &defaultBridgeWorkerContext{
+				ctx:        watcherCtx,
+				sendResult: workerContext.SendStatus,
+			}
+
 			operation := func() (any, error) {
-				return nil, watchable.WatchForApply(workerContext, payload)
+				// Check if context was canceled before starting
+				select {
+				case <-watcherCtx.Done():
+					log.Printf("⚠️ Apply watcher for unit %s canceled", payload.UnitID)
+					return nil, watcherCtx.Err()
+				default:
+				}
+				return nil, watchable.WatchForApply(watchContext, payload)
 			}
 			eb := &backoff.ExponentialBackOff{
 				InitialInterval:     30 * time.Second,
@@ -101,12 +115,18 @@ func (c *workerClient) handleWatchApply(workerContext api.BridgeWorkerContext, p
 				MaxInterval:         5 * time.Minute,
 			}
 			_, err := backoff.Retry(
-				workerContext.Context(),
+				watcherCtx,
 				operation,
 				backoff.WithBackOff(eb),
 			)
 			if err != nil {
-				log.Printf("Error watching for apply: %v", err)
+				if errors.Is(err, context.Canceled) {
+					log.Printf("✅ Apply watcher for unit %s was successfully canceled", payload.UnitID)
+				} else {
+					log.Printf("❌ Error watching for apply unit %s: %v", payload.UnitID, err)
+				}
+			} else {
+				log.Printf("✅ Apply watcher for unit %s completed successfully", payload.UnitID)
 			}
 		})
 	}
@@ -132,9 +152,22 @@ func (c *workerClient) handleWatchDestroy(workerContext api.BridgeWorkerContext,
 	log.Printf("📥 Kick off watching for destroy")
 	// TODO rename api.WatchableWorker api.WatchableBridgeWorker
 	if watchable, ok := c.bridgeWorker.(api.WatchableWorker); ok {
-		c.watcherPool.Submit(func() {
+		c.watcherManager.SubmitWatcher(workerContext.Context(), payload.UnitID, api.ActionDestroy, func(watcherCtx context.Context) {
+			// Create a new context that uses the watcher context
+			watchContext := &defaultBridgeWorkerContext{
+				ctx:        watcherCtx,
+				sendResult: workerContext.SendStatus,
+			}
+
 			operation := func() (any, error) {
-				return nil, watchable.WatchForDestroy(workerContext, payload)
+				// Check if context was canceled before starting
+				select {
+				case <-watcherCtx.Done():
+					log.Printf("⚠️ Destroy watcher for unit %s canceled", payload.UnitID)
+					return nil, watcherCtx.Err()
+				default:
+				}
+				return nil, watchable.WatchForDestroy(watchContext, payload)
 			}
 			eb := &backoff.ExponentialBackOff{
 				InitialInterval:     30 * time.Second,
@@ -143,12 +176,18 @@ func (c *workerClient) handleWatchDestroy(workerContext api.BridgeWorkerContext,
 				MaxInterval:         5 * time.Minute,
 			}
 			_, err := backoff.Retry(
-				workerContext.Context(),
+				watcherCtx,
 				operation,
 				backoff.WithBackOff(eb),
 			)
 			if err != nil {
-				log.Printf("Error watching for destroy: %v", err)
+				if errors.Is(err, context.Canceled) {
+					log.Printf("✅ Destroy watcher for unit %s was successfully canceled", payload.UnitID)
+				} else {
+					log.Printf("❌ Error watching for destroy unit %s: %v", payload.UnitID, err)
+				}
+			} else {
+				log.Printf("✅ Destroy watcher for unit %s completed successfully", payload.UnitID)
 			}
 		})
 	}

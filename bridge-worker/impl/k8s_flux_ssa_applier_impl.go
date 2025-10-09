@@ -63,7 +63,16 @@ func (a *SSAApplier) WaitForApply(ctx context.Context, objects []*unstructured.U
 	log.Log.Info("✅ All resources are ready")
 
 	// Get live objects after successful wait
-	liveObjects, err := a.getLiveObjects(ctx, objects, true)
+	// Use a fresh context with timeout since the parent context may have expired during wait
+	// Use the WaitTimeout value if set, otherwise default to 30 seconds
+	getLiveTimeout := 30 * time.Second
+	if timeout > 0 {
+		getLiveTimeout = timeout
+	}
+	getLiveCtx, cancel := context.WithTimeout(context.Background(), getLiveTimeout)
+	defer cancel()
+
+	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, true)
 	if err != nil {
 		return WaitResult{Error: fmt.Errorf("failed to get live objects: %w", err)}
 	}

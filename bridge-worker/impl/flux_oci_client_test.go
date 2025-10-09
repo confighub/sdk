@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fluxcd/pkg/oci"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/stretchr/testify/assert"
@@ -30,11 +29,6 @@ type MockClient struct {
 
 func (m *MockClient) LoginWithCredentials(cred string) error {
 	args := m.Called(cred)
-	return args.Error(0)
-}
-
-func (m *MockClient) LoginWithProvider(ctx context.Context, url string, provider oci.Provider) error {
-	args := m.Called(ctx, url, provider)
 	return args.Error(0)
 }
 
@@ -141,14 +135,6 @@ func TestGetDefaultKeychainCredentials_Invalid(t *testing.T) {
 	assert.Equal(t, "", cred)
 }
 
-// Test GetCloudProvider
-func TestGetCloudProvider(t *testing.T) {
-	assert.Equal(t, oci.ProviderAWS, GetCloudProvider("AWS"))
-	assert.Equal(t, oci.ProviderAzure, GetCloudProvider("Azure"))
-	assert.Equal(t, oci.ProviderGCP, GetCloudProvider("GCP"))
-	assert.Equal(t, oci.ProviderGeneric, GetCloudProvider("Generic"))
-}
-
 // Test GetK8sSecretCredentials
 func TestGetK8sSecretCredentials(t *testing.T) {
 	// Mock Kubernetes client
@@ -182,27 +168,6 @@ func TestLoginToRegistry_K8sSecret(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, client)
 	mockClient.AssertCalled(t, "LoginWithCredentials", "user:pass")
-}
-
-func TestLoginToRegistry_CloudProvider(t *testing.T) {
-	workerConfig := &FluxOCIWorkerConfig{
-		AuthMethod: AuthMethodCloud,
-	}
-	params := &FluxOCIParams{
-		Repository: "my-registry.com/repo",
-		Tag:        "latest",
-		Provider:   ProviderAWS,
-	}
-
-	mockClient := new(MockClient)
-	mockClient.On("LoginWithProvider", mock.Anything, "my-registry.com/repo:latest", oci.ProviderAWS).Return(nil)
-	newFunc := func() OCIClient {
-		return mockClient
-	}
-	client, err := LoginToRegistry(context.Background(), workerConfig, params, newFunc)
-	assert.NoError(t, err)
-	assert.NotNil(t, client)
-	mockClient.AssertCalled(t, "LoginWithProvider", mock.Anything, "my-registry.com/repo:latest", oci.ProviderAWS)
 }
 
 func TestExtractCredentialsFromSecret_DockerConfigJSON(t *testing.T) {

@@ -86,7 +86,6 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Gated Units", fmt.Sprintf("%d", extendedSpace.GatedUnitCount)})
 	view.Append([]string{"# Upgradable Units", fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount)})
 	view.Append([]string{"# Unlinked Units", fmt.Sprintf("%d", extendedSpace.UnlinkedUnitCount)})
-	view.Append([]string{"# Recently Changed Units", fmt.Sprintf("%d", extendedSpace.RecentChangeUnitCount)})
 	view.Append([]string{"# Incomplete Applies", fmt.Sprintf("%d", extendedSpace.IncompleteApplyUnitCount)})
 	view.Append([]string{"# Workers", fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount)})
 	view.Append([]string{"# Filters", fmt.Sprintf("%d", extendedSpace.TotalFilterCount)})

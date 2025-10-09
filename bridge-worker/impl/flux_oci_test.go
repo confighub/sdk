@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/fluxcd/pkg/oci"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,11 +32,6 @@ func (m *MockOCIClient) GetOptions() []crane.Option {
 
 func (m *MockOCIClient) LoginWithCredentials(cred string) error {
 	args := m.Called(cred)
-	return args.Error(0)
-}
-
-func (m *MockOCIClient) LoginWithProvider(ctx context.Context, url string, provider oci.Provider) error {
-	args := m.Called(url, provider)
 	return args.Error(0)
 }
 

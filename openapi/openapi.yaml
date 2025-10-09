@@ -20725,10 +20725,6 @@ components:
           x-go-type-skip-optional-pointer: true
         Organization:
           $ref: '#/components/schemas/Organization'
-        RecentChangeUnitCount:
-          format: int64
-          type: integer
-          x-go-type-skip-optional-pointer: true
         Space:
           $ref: '#/components/schemas/Space'
         TargetCountByToolchainType:
@@ -21867,6 +21863,15 @@ components:
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
+        Dependencies:
+          description: Dependencies contains the list of operation IDs that this operation
+            depends on. Operations will not be delivered until all dependencies are
+            completed.
+          items:
+            $ref: '#/components/schemas/UUID'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         ExtraParams:
           description: ExtraParams contains additional parameters for the operation
             in string format.
@@ -22952,6 +22957,12 @@ components:
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
+          x-go-type-skip-optional-pointer: true
+        Dependencies:
+          items:
+            $ref: '#/components/schemas/UUID'
+          nullable: true
+          type: array
           x-go-type-skip-optional-pointer: true
         ExtraParams:
           type: string

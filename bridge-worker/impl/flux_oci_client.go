@@ -11,11 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 
 	"github.com/fluxcd/pkg/oci"
-	"github.com/fluxcd/pkg/oci/client"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -48,27 +46,22 @@ type DockerAuth struct {
 
 type OCIClient interface {
 	LoginWithCredentials(cred string) error
-	LoginWithProvider(ctx context.Context, url string, provider oci.Provider) error
 	Delete(ctx context.Context, url string) error
 	GetOptions() []crane.Option
 }
 
 type RealOCIClient struct {
-	client *client.Client
+	client *oci.Client
 }
 
 func NewRealOCIClient() OCIClient {
 	return &RealOCIClient{
-		client: client.NewClient(client.DefaultOptions()),
+		client: oci.NewClient(oci.DefaultOptions()),
 	}
 }
 
 func (r *RealOCIClient) LoginWithCredentials(cred string) error {
 	return r.client.LoginWithCredentials(cred)
-}
-
-func (r *RealOCIClient) LoginWithProvider(ctx context.Context, url string, provider oci.Provider) error {
-	return r.client.LoginWithProvider(ctx, url, provider)
 }
 
 func (r *RealOCIClient) Delete(ctx context.Context, url string) error {
@@ -261,27 +254,17 @@ func TryAuth(auths map[string]DockerAuth, key string) string {
 }
 
 // LoginToRegistry attempts registry authentication in multiple ways:
-// 0) Kubernetes secret (if specified)
-// 1) DefaultKeychain (system keychain & credential helpers)
-// 2) Docker config.json base64 auth
-// 3) Cloud-native provider if specified
+// 1) Kubernetes secret from params (if specified)
+// 2) Configured AuthMethod (kubernetes, docker-config, or keychain) - with fallback
+// 3) Always fallback to docker-config if not already tried
+// 4) Always fallback to keychain if not already tried
+// 5) Anonymous access for public registries
 func LoginToRegistry(ctx context.Context, workerConfig *FluxOCIWorkerConfig, params *FluxOCIParams, newClientFunc NewClientFunc) (OCIClient, error) {
 	var cred string
-	var provider oci.Provider
+	triedDocker := false
+	triedKeychain := false
 
-	// 1. Attempt cloud provider authentication if specified
-	// Currently supported providers: AWS, Azure, GCP
-	if !slices.Contains([]string{"", ProviderGeneric, ProviderNone}, params.Provider) {
-		provider = GetCloudProvider(params.Provider)
-		url := params.Repository + ":" + params.Tag
-		cli := newClientFunc()
-		if err := cli.LoginWithProvider(ctx, url, provider); err == nil {
-			return cli, nil
-		}
-		log.Log.Info("Cloud provider authentication failed, falling back", "provider", params.Provider)
-	}
-
-	// 2. Attempt Kubernetes secret credentials
+	// 1. Attempt Kubernetes secret credentials from params
 	if params.KubernetesSecretName != "" && params.KubernetesSecretNamespace != "" {
 		cred = GetK8sSecretCredentials(ctx, params)
 		if cred != "" {
@@ -297,7 +280,7 @@ func LoginToRegistry(ctx context.Context, workerConfig *FluxOCIWorkerConfig, par
 		}
 	}
 
-	// 3. Attempt workerConfig.AuthMethod
+	// 2. Try the configured AuthMethod first
 	switch workerConfig.AuthMethod {
 	case AuthMethodKubernetes:
 		if workerConfig.KubernetesSecretCredentials != "" {
@@ -306,48 +289,73 @@ func LoginToRegistry(ctx context.Context, workerConfig *FluxOCIWorkerConfig, par
 			cfg, err := rest.InClusterConfig()
 			if err != nil {
 				log.Log.Info("Failed to load in-cluster configuration", "error", err.Error())
-				break
+			} else {
+				k8sClient, err := ctrlclient.New(cfg, ctrlclient.Options{})
+				if err != nil {
+					log.Log.Info("Failed to create Kubernetes client", "error", err.Error())
+				} else {
+					cred = GetCredentialsFromImagePullSecrets(ctx, k8sClient)
+				}
 			}
-
-			k8sClient, err := ctrlclient.New(cfg, ctrlclient.Options{})
-			if err != nil {
-				log.Log.Info("Failed to create Kubernetes client", "error", err.Error())
-				break
-			}
-			cred = GetCredentialsFromImagePullSecrets(ctx, k8sClient)
 		}
 		if cred != "" {
 			cli := newClientFunc()
 			if err := cli.LoginWithCredentials(cred); err == nil {
 				return cli, nil
 			}
+			log.Log.Info("Kubernetes AuthMethod authentication failed, falling back")
 		}
-	case AuthMethodCloud:
-		provider = GetCloudProvider(params.Provider)
-		url := params.Repository + ":" + params.Tag
-		cli := newClientFunc()
-		if err := cli.LoginWithProvider(ctx, url, provider); err == nil {
-			return cli, nil
-		}
+
 	case AuthMethodDockerConfig:
+		triedDocker = true
 		cred = GetDockerConfigCredentials(params.Repository)
 		if cred != "" {
 			cli := newClientFunc()
 			if err := cli.LoginWithCredentials(cred); err == nil {
 				return cli, nil
 			}
+			log.Log.Info("Docker config AuthMethod authentication failed, falling back")
 		}
-	default:
+
+	default: // AuthMethodKeychain
+		triedKeychain = true
 		cred = GetDefaultKeychainCredentials(params, authn.DefaultKeychain)
 		if cred != "" {
 			cli := newClientFunc()
 			if err := cli.LoginWithCredentials(cred); err == nil {
 				return cli, nil
 			}
+			log.Log.Info("Keychain authentication failed, falling back")
 		}
 	}
 
-	return nil, fmt.Errorf("all authentication methods failed")
+	// 3. Fallback to Docker config if not already tried
+	if !triedDocker {
+		cred = GetDockerConfigCredentials(params.Repository)
+		if cred != "" {
+			cli := newClientFunc()
+			if err := cli.LoginWithCredentials(cred); err == nil {
+				return cli, nil
+			}
+			log.Log.Info("Docker config fallback authentication failed")
+		}
+	}
+
+	// 4. Fallback to Keychain if not already tried
+	if !triedKeychain {
+		cred = GetDefaultKeychainCredentials(params, authn.DefaultKeychain)
+		if cred != "" {
+			cli := newClientFunc()
+			if err := cli.LoginWithCredentials(cred); err == nil {
+				return cli, nil
+			}
+			log.Log.Info("Keychain fallback authentication failed")
+		}
+	}
+
+	// 5. Last resort: anonymous access for public registries
+	log.Log.Info("All authentication methods failed, using anonymous access")
+	return newClientFunc(), nil
 }
 
 func GetDefaultKeychainCredentials(params *FluxOCIParams, keychain authn.Keychain) string {
@@ -372,19 +380,6 @@ func GetDefaultKeychainCredentials(params *FluxOCIParams, keychain authn.Keychai
 	}
 
 	return ac.Username + ":" + ac.Password
-}
-
-func GetCloudProvider(provider string) oci.Provider {
-	switch provider {
-	case ProviderAWS:
-		return oci.ProviderAWS
-	case ProviderAzure:
-		return oci.ProviderAzure
-	case ProviderGCP:
-		return oci.ProviderGCP
-	default:
-		return oci.ProviderGeneric
-	}
 }
 
 func GetK8sSecretCredentials(ctx context.Context, params *FluxOCIParams) string {

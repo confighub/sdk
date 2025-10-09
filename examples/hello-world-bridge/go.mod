@@ -1,6 +1,6 @@
 module github.com/confighub/sdk/examples/hello-world-bridge
 
-go 1.24.3
+go 1.25
 
 require github.com/confighub/sdk v0.0.0
 

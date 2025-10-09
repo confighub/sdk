@@ -428,6 +428,14 @@ func (a *CLIUtilsApplier) waitForResourcesTerminated(ctx context.Context, object
 				return true, nil
 			}
 			if err != nil {
+				// If context is canceled/timed out, don't keep polling
+				// The outer loop will verify actual deletion state
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					log.Log.V(1).Info("⏳ Context done while checking resource",
+						"name", obj.GetName(),
+						"error", err)
+					return false, err
+				}
 				// Other error, keep polling
 				log.Log.V(1).Info("⏳ Error checking resource, will retry",
 					"name", obj.GetName(),
@@ -443,6 +451,35 @@ func (a *CLIUtilsApplier) waitForResourcesTerminated(ctx context.Context, object
 		})
 
 		if err != nil {
+			// Context canceled/timed out - verify actual deletion state with fresh context
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				log.Log.Info("🔍 Verifying resource deletion with fresh context",
+					"resource", fmt.Sprintf("%s/%s/%s", obj.GetKind(), obj.GetNamespace(), obj.GetName()))
+
+				verifyCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				key := client.ObjectKey{
+					Namespace: obj.GetNamespace(),
+					Name:      obj.GetName(),
+				}
+				u := obj.DeepCopy()
+				verifyErr := a.comps.KubernetesClient.Get(verifyCtx, key, u)
+				cancel()
+
+				if apierrors.IsNotFound(verifyErr) {
+					// Resource is actually deleted - success!
+					log.Log.Info("✅ Verified resource is deleted",
+						"resource", fmt.Sprintf("%s/%s/%s", obj.GetKind(), obj.GetNamespace(), obj.GetName()))
+					continue // Move to next object
+				}
+
+				// Resource still exists or we got an error
+				if verifyErr != nil {
+					log.Log.Error(verifyErr, "Failed to verify resource deletion",
+						"resource", fmt.Sprintf("%s/%s/%s", obj.GetKind(), obj.GetNamespace(), obj.GetName()))
+				}
+				// Fall through to return error
+			}
+
 			return fmt.Errorf("timeout waiting for %s/%s/%s termination (unit: %s): %w",
 				obj.GetKind(), obj.GetNamespace(), obj.GetName(), a.unitSlug, err)
 		}
@@ -514,13 +551,19 @@ func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, objects []*
 		return statusCollector.Error
 	}
 
-	// Collect any error messages
+	// Collect error messages - only for truly failed resources
 	var errs []string
+	var notReadyResources []string
+	var needsVerification []object.ObjMetadata
+
 	for id, rs := range statusCollector.ResourceStatuses {
 		switch {
 		case rs == nil || lastStatus[id] == nil:
-			errs = append(errs, fmt.Sprintf("can't determine status for %s", fmtObjMetadata(id)))
+			// Status not captured during polling - need to verify actual cluster state
+			// This commonly happens when resources come up very quickly (bulk apply)
+			needsVerification = append(needsVerification, id)
 		case lastStatus[id].Status == status.FailedStatus:
+			// Only FailedStatus is a true error - resources are broken
 			var builder strings.Builder
 			builder.WriteString(fmt.Sprintf("%s status: '%s'",
 				fmtObjMetadata(rs.Identifier), lastStatus[id].Status))
@@ -528,23 +571,97 @@ func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, objects []*
 				builder.WriteString(fmt.Sprintf(": %s", rs.Error))
 			}
 			errs = append(errs, builder.String())
-		case errors.Is(waitCtx.Err(), context.DeadlineExceeded) && lastStatus[id].Status != status.CurrentStatus:
-			var builder strings.Builder
-			builder.WriteString(fmt.Sprintf("%s status: '%s'",
+		case lastStatus[id].Status != status.CurrentStatus:
+			// Track resources that aren't ready yet (but not failed)
+			notReadyResources = append(notReadyResources, fmt.Sprintf("%s (status: %s)",
 				fmtObjMetadata(rs.Identifier), lastStatus[id].Status))
-			if rs.Error != nil {
-				builder.WriteString(fmt.Sprintf(": %s", rs.Error))
-			}
-			errs = append(errs, builder.String())
 		}
 	}
 
+	// Verify resources with missing poll status by checking actual cluster state
+	if len(needsVerification) > 0 {
+		log.Log.Info("🔍 Verifying cluster state for resources with missing poll status",
+			"count", len(needsVerification))
+
+		for _, id := range needsVerification {
+			// Use a fresh context with short timeout for verification
+			verifyCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+			// Resolve GVK using RESTMapper
+			mapping, err := a.comps.RestMapper.RESTMapping(id.GroupKind)
+			if err != nil {
+				log.Log.Error(err, "Failed to get REST mapping", "resource", fmtObjMetadata(id))
+				cancel()
+				errs = append(errs, fmt.Sprintf("%s error resolving GVK: %v", fmtObjMetadata(id), err))
+				continue
+			}
+
+			// Fetch the actual resource from cluster
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(mapping.GroupVersionKind)
+			u.SetNamespace(id.Namespace)
+			u.SetName(id.Name)
+
+			err = a.comps.KubernetesClient.Get(verifyCtx, client.ObjectKey{
+				Namespace: id.Namespace,
+				Name:      id.Name,
+			}, u)
+
+			cancel()
+
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					errs = append(errs, fmt.Sprintf("%s not found in cluster", fmtObjMetadata(id)))
+				} else {
+					errs = append(errs, fmt.Sprintf("%s error fetching: %v", fmtObjMetadata(id), err))
+				}
+				continue
+			}
+
+			// Resource exists - compute its actual status
+			result, err := status.Compute(u)
+			if err != nil {
+				log.Log.Info("⚠️ Could not compute status, assuming progressing",
+					"resource", fmtObjMetadata(id), "error", err)
+				// Can't compute status but resource exists - treat as progressing
+				notReadyResources = append(notReadyResources, fmt.Sprintf("%s (status: unknown, resource exists)",
+					fmtObjMetadata(id)))
+				continue
+			}
+
+			// Check actual status
+			switch result.Status {
+			case status.CurrentStatus:
+				log.Log.Info("✅ Verified resource is ready",
+					"resource", fmtObjMetadata(id))
+				// Resource is ready - no error
+			case status.FailedStatus:
+				errs = append(errs, fmt.Sprintf("%s verified status: '%s'", fmtObjMetadata(id), result.Status))
+			default:
+				// Resource exists but not yet ready - treat as progressing
+				notReadyResources = append(notReadyResources, fmt.Sprintf("%s (verified status: %s)",
+					fmtObjMetadata(id), result.Status))
+			}
+		}
+	}
+
+	// If there are truly failed resources, return an error
 	if len(errs) > 0 {
 		msg := fmt.Sprintf("failed early due to stalled resources (unit: %s)", a.unitSlug)
 		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) {
 			msg = fmt.Sprintf("timeout waiting for resources (unit: %s)", a.unitSlug)
 		}
 		return fmt.Errorf("%s: [%s]", msg, strings.Join(errs, ", "))
+	}
+
+	// If timeout occurred but resources are progressing (not failed), log but don't error
+	// This allows resources to continue reconciling in the background
+	if errors.Is(waitCtx.Err(), context.DeadlineExceeded) && len(notReadyResources) > 0 {
+		log.Log.Info("⏳ Timeout reached but resources are still progressing (not failed)",
+			"unit", a.unitSlug,
+			"notReady", len(notReadyResources))
+		// Don't return an error - resources are progressing normally, just taking longer
+		// The apply operation itself succeeded, reconciliation will continue
 	}
 
 	return nil
@@ -575,10 +692,19 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 	}
 
 	// Get live objects from cluster
-	liveObjects, err := a.getLiveObjects(ctx, objects, true)
+	// Use a fresh context with timeout since the parent context may have expired during wait
+	// Use the WaitTimeout value if set, otherwise default to 30 seconds
+	getLiveTimeout := 30 * time.Second
+	if timeout > 0 {
+		getLiveTimeout = timeout
+	}
+	getLiveCtx, cancel := context.WithTimeout(context.Background(), getLiveTimeout)
+	defer cancel()
+
+	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, true)
 	if err != nil {
 		log.Log.Error(err, "Failed to get live objects after successful wait")
-		// Try to get whatever we can
+		// Try to get whatever we can using the fresh context
 		liveObjects = make([]*unstructured.Unstructured, 0)
 		for _, obj := range objects {
 			key := client.ObjectKey{
@@ -586,7 +712,7 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 				Name:      obj.GetName(),
 			}
 			u := obj.DeepCopyObject().(*unstructured.Unstructured)
-			if getErr := a.comps.KubernetesClient.Get(ctx, key, u); getErr == nil {
+			if getErr := a.comps.KubernetesClient.Get(getLiveCtx, key, u); getErr == nil {
 				cleanup(u)
 				liveObjects = append(liveObjects, u)
 			}

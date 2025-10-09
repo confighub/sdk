@@ -612,8 +612,7 @@ type ExtendedSpace struct {
 	IncompleteApplyUnitCount int64          `json:"IncompleteApplyUnitCount,omitempty" yaml:"IncompleteApplyUnitCount,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization          *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
-	RecentChangeUnitCount int64         `json:"RecentChangeUnitCount,omitempty" yaml:"RecentChangeUnitCount,omitempty"`
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space                      *Space         `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -1357,6 +1356,9 @@ type QueuedOperation struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
+	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
+	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
 
@@ -1953,6 +1955,7 @@ type UnitAction struct {
 	Action            *ActionType        `json:"Action,omitempty" yaml:"Action,omitempty"`
 	BridgeWorkerID    openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 	CreatedAt         time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	Dependencies      []UUID             `json:"Dependencies" yaml:"Dependencies"`
 	ExtraParams       string             `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
 	OrganizationID    openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
