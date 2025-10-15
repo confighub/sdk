@@ -189,10 +189,13 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		},
 	}
 
+	activeContext := contextManager.ActiveContext()
+	serverURL := activeContext.Coordinate.ServerURL
+
 	// Create a hashmap of environment variables first to handle overrides
 	envMap := map[string]string{
 		"CONFIGHUB_WORKER_ID":   worker.BridgeWorkerID.String(),
-		"CONFIGHUB_URL":         os.Getenv("CONFIGHUB_URL"),
+		"CONFIGHUB_URL":         serverURL,
 		"CONFIGHUB_WORKER_PORT": os.Getenv("CONFIGHUB_WORKER_PORT"),
 	}
 

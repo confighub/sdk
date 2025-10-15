@@ -270,9 +270,9 @@ type ClientInterface interface {
 	ListBridgeWorkers(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateBridgeWorkerWithBody request with any body
-	CreateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteBridgeWorker request
 	DeleteBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1458,8 +1458,8 @@ func (c *Client) ListBridgeWorkers(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateBridgeWorkerRequestWithBody(c.Server, spaceId, contentType, body)
+func (c *Client) CreateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBridgeWorkerRequestWithBody(c.Server, spaceId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1470,8 +1470,8 @@ func (c *Client) CreateBridgeWorkerWithBody(ctx context.Context, spaceId openapi
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateBridgeWorkerRequest(c.Server, spaceId, body)
+func (c *Client) CreateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBridgeWorkerRequest(c.Server, spaceId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7481,18 +7481,18 @@ func NewListBridgeWorkersRequest(server string, spaceId openapi_types.UUID, para
 }
 
 // NewCreateBridgeWorkerRequest calls the generic CreateBridgeWorker builder with application/json body
-func NewCreateBridgeWorkerRequest(server string, spaceId openapi_types.UUID, body CreateBridgeWorkerJSONRequestBody) (*http.Request, error) {
+func NewCreateBridgeWorkerRequest(server string, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateBridgeWorkerRequestWithBody(server, spaceId, "application/json", bodyReader)
+	return NewCreateBridgeWorkerRequestWithBody(server, spaceId, params, "application/json", bodyReader)
 }
 
 // NewCreateBridgeWorkerRequestWithBody generates requests for CreateBridgeWorker with any type of body
-func NewCreateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7515,6 +7515,28 @@ func NewCreateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.U
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.AllowExists != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -16941,9 +16963,9 @@ type ClientWithResponsesInterface interface {
 	ListBridgeWorkersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*ListBridgeWorkersResponse, error)
 
 	// CreateBridgeWorkerWithBodyWithResponse request with any body
-	CreateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error)
+	CreateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error)
 
-	CreateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error)
+	CreateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error)
 
 	// DeleteBridgeWorkerWithResponse request
 	DeleteBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteBridgeWorkerResponse, error)
@@ -20333,6 +20355,7 @@ type ApplyUnitResponse struct {
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *QueuedOperation
 }
@@ -20415,6 +20438,7 @@ type DestroyUnitResponse struct {
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *QueuedOperation
 }
@@ -20471,6 +20495,7 @@ type ImportUnitResponse struct {
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *QueuedOperation
 }
@@ -20581,6 +20606,7 @@ type RefreshUnitResponse struct {
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *QueuedOperation
 }
@@ -22289,16 +22315,16 @@ func (c *ClientWithResponses) ListBridgeWorkersWithResponse(ctx context.Context,
 }
 
 // CreateBridgeWorkerWithBodyWithResponse request with arbitrary body returning *CreateBridgeWorkerResponse
-func (c *ClientWithResponses) CreateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error) {
-	rsp, err := c.CreateBridgeWorkerWithBody(ctx, spaceId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error) {
+	rsp, err := c.CreateBridgeWorkerWithBody(ctx, spaceId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateBridgeWorkerResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error) {
-	rsp, err := c.CreateBridgeWorker(ctx, spaceId, body, reqEditors...)
+func (c *ClientWithResponses) CreateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error) {
+	rsp, err := c.CreateBridgeWorker(ctx, spaceId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -31037,6 +31063,13 @@ func ParseApplyUnitResponse(rsp *http.Response) (*ApplyUnitResponse, error) {
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31227,6 +31260,13 @@ func ParseDestroyUnitResponse(rsp *http.Response) (*DestroyUnitResponse, error) 
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31362,6 +31402,13 @@ func ParseImportUnitResponse(rsp *http.Response) (*ImportUnitResponse, error) {
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -31620,6 +31667,13 @@ func ParseRefreshUnitResponse(rsp *http.Response) (*RefreshUnitResponse, error) 
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

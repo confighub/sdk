@@ -4980,6 +4980,12 @@ type ListBridgeWorkersParams struct {
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
+// CreateBridgeWorkerParams defines parameters for CreateBridgeWorker.
+type CreateBridgeWorkerParams struct {
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
 // GetBridgeWorkerParams defines parameters for GetBridgeWorker.
 type GetBridgeWorkerParams struct {
 	// Include Include clause for expanding related entities in the response for BridgeWorker.

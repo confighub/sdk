@@ -6698,6 +6698,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "allow_exists",
+            "in": "query",
+            "description": "Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -14727,6 +14736,16 @@
               }
             }
           },
+          "422": {
+            "description": "Bridge worker unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -15050,6 +15069,16 @@
               }
             }
           },
+          "422": {
+            "description": "Bridge worker unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -15259,6 +15288,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Bridge worker unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -15756,6 +15795,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Bridge worker unavailable",
             "content": {
               "application/json": {
                 "schema": {

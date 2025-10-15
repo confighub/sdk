@@ -79,11 +79,15 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		cmdArgs = append(cmdArgs, "--enable-multiplexer")
 	}
 
+	activeContext := contextManager.ActiveContext()
+	serverURL := activeContext.Coordinate.ServerURL
+
 	workerCommand := exec.Command(workerExecutable, cmdArgs...)
 	workerCommand.Stdin = os.Stdin
 	workerCommand.Stdout = os.Stdout
 	workerCommand.Stderr = os.Stderr
 	workerCommand.Env = append(os.Environ(),
+		"CONFIGHUB_URL="+serverURL,
 		"CONFIGHUB_WORKER_ID="+worker.BridgeWorkerID.String(),
 		"CONFIGHUB_WORKER_SECRET="+worker.Secret)
 	// Also append -e to envs

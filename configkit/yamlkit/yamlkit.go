@@ -1258,9 +1258,18 @@ func GetPathsAnyType(
 		case string:
 			currentDataType = api.DataTypeString
 			if context.EmbeddedPath != "" && context.Accessor != nil {
-				embeddedValue, _ := context.Accessor.Extract(v, context.EmbeddedPath).(string)
+				embeddedValue, err := context.Accessor.Extract(v, context.EmbeddedPath)
+				if err != nil {
+					// Skip this path if the embedded field isn't found
+					return output, nil
+				}
+				embeddedStringValue, ok := embeddedValue.(string)
+				if !ok {
+					// Skip this path if not a string
+					return output, nil
+				}
 				// If the data isn't a string or the pattern wasn't matched, embeddedValue should be empty
-				currentValue = embeddedValue
+				currentValue = embeddedStringValue
 				attr.Path = api.ResolvedPath(string(attr.Path) + "#" + context.EmbeddedPath)
 			}
 		case int:
@@ -1394,18 +1403,23 @@ func UpdateStringPathsFunction(
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue string) (any, error) {
 		originalValue := currentValue
 		if context.EmbeddedPath != "" && context.Accessor != nil {
-			embeddedValue, ok := context.Accessor.Extract(currentValue, context.EmbeddedPath).(string)
-			// If the data isn't a string or the pattern wasn't matched, embeddedValue should be empty
-			if !ok || embeddedValue == "" {
-				return output, fmt.Errorf("embedded field %s not found at path %s", context.EmbeddedPath, string(context.Path)) // TODO: create an error type
+			embeddedValue, err := context.Accessor.Extract(currentValue, context.EmbeddedPath)
+			if err != nil {
+				// Not found is not an error. For example, it could be an embedded YAML or JSON field. Skip this value.
+				return output, nil
 			}
-			currentValue = embeddedValue
+			embeddedStringValue, ok := embeddedValue.(string)
+			// If the data isn't a string, skip this value.
+			if !ok {
+				return output, nil
+			}
+			currentValue = embeddedStringValue
 		}
 		newValue := updater(currentValue)
 		if context.EmbeddedPath != "" && context.Accessor != nil {
 			replacedValue, err := context.Accessor.Replace(originalValue, newValue, context.EmbeddedPath)
 			if err != nil {
-				return output, fmt.Errorf("embedded field %s not replaced at path %s", context.EmbeddedPath, string(context.Path)) // TODO: create an error type
+				return output, errors.Wrap(err, fmt.Sprintf("embedded field %s not replaced at path %s", context.EmbeddedPath, string(context.Path)))
 			}
 			newValue = replacedValue
 		}

@@ -4,10 +4,11 @@
 package yamlkit
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
+	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 )
@@ -32,7 +33,7 @@ type EmbeddedAccessor interface {
 
 	// Data returns the value of the specified attribute or subpart embedded
 	// within the string at the specified YAML document node.
-	Data(scalarYamlDoc *gaby.YamlDoc, path string) any
+	Data(scalarYamlDoc *gaby.YamlDoc, path string) (any, error)
 
 	// Replace replaces the value of the specified attribute or subpart within
 	// the provided string.
@@ -40,7 +41,7 @@ type EmbeddedAccessor interface {
 
 	// Extract returns the value of the specified attribute or subpart within the
 	// provided string.
-	Extract(currentFieldValue, path string) any
+	Extract(currentFieldValue, path string) (any, error)
 }
 
 // RegexpAccessor is an EmbeddedAccessor that uses regular expressions to extract
@@ -52,6 +53,12 @@ type RegexpAccessor struct {
 }
 
 var embeddedAccessorMap = map[string]EmbeddedAccessor{}
+var embeddedAccessorMutex sync.Mutex
+
+var UnsupportedAccessorType = errors.New("accessor type not supported")
+var NoSubexpressions = errors.New("no capturing subexpressions")
+var UnsupportedValueType = errors.New("only string values supported currently")
+var EmbeddedPathNotFound = errors.New("embedded path not found")
 
 func newEmbeddedAccessor(embeddedAccessorType api.EmbeddedAccessorType, config string) (EmbeddedAccessor, error) {
 	switch embeddedAccessorType {
@@ -59,12 +66,14 @@ func newEmbeddedAccessor(embeddedAccessorType api.EmbeddedAccessorType, config s
 		a, err := newRegexpAccessor(config)
 		return a, err
 	default:
-		return nil, errors.New("accessor type not supported")
+		return nil, UnsupportedAccessorType
 	}
 }
 
 func GetEmbeddedAccessor(embeddedAccessorType api.EmbeddedAccessorType, config string) (EmbeddedAccessor, error) {
 	memokey := string(embeddedAccessorType) + "/" + config
+	embeddedAccessorMutex.Lock()
+	defer embeddedAccessorMutex.Unlock()
 	a, memoized := embeddedAccessorMap[memokey]
 	if !memoized {
 		var err error
@@ -86,7 +95,7 @@ func newRegexpAccessor(regexpString string) (*RegexpAccessor, error) {
 	}
 	ra.SubexpNames = ra.Regexp.SubexpNames()
 	if len(ra.SubexpNames) <= 1 {
-		return nil, fmt.Errorf("no capturing subexpressions found in %s", regexpString)
+		return nil, errors.Mark(fmt.Errorf("no capturing subexpressions found in %s", regexpString), NoSubexpressions)
 	}
 	return &ra, nil
 }
@@ -111,15 +120,15 @@ func (ra *RegexpAccessor) Replace(currentFieldValue string, value any, path stri
 	// TODO: does it make sense to support other data types?
 	stringValue, ok := value.(string)
 	if !ok {
-		return currentFieldValue, fmt.Errorf("only string values supported currently")
+		return currentFieldValue, UnsupportedValueType
 	}
 	i := ra.Regexp.SubexpIndex(path)
 	if i < 0 || i >= len(ra.SubexpNames) {
-		return currentFieldValue, fmt.Errorf("subexp %s not found", path) // TODO: create an error type
+		return currentFieldValue, errors.Mark(fmt.Errorf("subexp %s not found", path), EmbeddedPathNotFound)
 	}
 	submatchIndices := ra.Regexp.FindStringSubmatchIndex(currentFieldValue)
 	if submatchIndices == nil {
-		return currentFieldValue, fmt.Errorf("subexp %s not found", path)
+		return currentFieldValue, errors.Mark(fmt.Errorf("subexp %s not found", path), EmbeddedPathNotFound)
 	}
 	submatchStart := submatchIndices[2*i]
 	submatchEnd := submatchIndices[2*i+1]
@@ -133,7 +142,7 @@ func (ra *RegexpAccessor) Replace(currentFieldValue string, value any, path stri
 func (ra *RegexpAccessor) SetP(scalarYamlDoc *gaby.YamlDoc, value any, path string) error {
 	currentFieldValue, found, err := YamlSafePathGetValue[string](scalarYamlDoc, "", true)
 	if !found || err != nil {
-		return fmt.Errorf("subexp %s not found", path)
+		return errors.Mark(fmt.Errorf("subexp %s not found", path), EmbeddedPathNotFound)
 	}
 	newFieldValue, err := ra.Replace(currentFieldValue, value, path)
 	if err != nil {
@@ -146,23 +155,23 @@ func (ra *RegexpAccessor) SetP(scalarYamlDoc *gaby.YamlDoc, value any, path stri
 	return err
 }
 
-func (ra *RegexpAccessor) Extract(currentFieldValue, path string) any {
+func (ra *RegexpAccessor) Extract(currentFieldValue, path string) (any, error) {
 	i := ra.Regexp.SubexpIndex(path)
 	if i < 0 || i >= len(ra.SubexpNames) {
-		return ""
+		return "", EmbeddedPathNotFound
 	}
 	submatches := ra.Regexp.FindStringSubmatch(currentFieldValue)
 	if submatches == nil {
-		return ""
+		return "", EmbeddedPathNotFound
 	}
-	return submatches[i]
+	return submatches[i], nil
 }
 
-func (ra *RegexpAccessor) Data(scalarYamlDoc *gaby.YamlDoc, path string) any {
+func (ra *RegexpAccessor) Data(scalarYamlDoc *gaby.YamlDoc, path string) (any, error) {
 	// TODO: does it make sense to support other data types?
 	value, found, err := YamlSafePathGetValue[string](scalarYamlDoc, "", true)
 	if !found || err != nil {
-		return ""
+		return "", EmbeddedPathNotFound
 	}
 	return ra.Extract(value, path)
 }

@@ -6492,6 +6492,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -12726,6 +12733,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker unavailable
         "500":
           content:
             application/json:
@@ -12935,6 +12948,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker unavailable
         "500":
           content:
             application/json:
@@ -13073,6 +13092,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker unavailable
         "500":
           content:
             application/json:
@@ -13477,6 +13502,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker unavailable
         "500":
           content:
             application/json:

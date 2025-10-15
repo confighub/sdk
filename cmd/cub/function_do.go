@@ -650,8 +650,16 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationsResponse) {
 	for _, respMsg := range *respMsgs {
 		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly && !outputRaw {
+			statusVerb := "failed"
+			if respMsg.Success {
+				statusVerb = "succeeded"
+			}
+			if respMsg.RevisionID != uuid.Nil {
+				tprint("Function(s) %s on revision %s of unit %s", statusVerb, respMsg.RevisionID.String(), respMsg.UnitID.String())
+			} else {
+				tprint("Function(s) %s on unit %s", statusVerb, respMsg.UnitID.String())
+			}
 			detail := detailView()
-			detail.Append([]string{strings.ToUpper("Success"), fmt.Sprintf("%v", respMsg.Success)})
 			if !respMsg.Success && respMsg.Error != nil {
 				messages := respMsg.Error.Message
 				if len(respMsg.Error.Details) > 0 {
@@ -661,16 +669,28 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			}
 			detail.Render()
 		}
-		if dataOnly || ((!quiet && !outputOnly && !outputValuesOnly && !outputRaw) && len(respMsg.ConfigData) != 0 && len(respMsg.Mutators) > 0) {
-			// Don't use detailView to print the data because it pads the entire width with spaces.
-			if !dataOnly {
-				tprintRaw("CONFIGDATA\n---------\n")
+		if dataOnly || (!quiet && !outputOnly && !outputValuesOnly && !outputRaw) {
+			if dataOnly || len(respMsg.Mutators) > 0 {
+				// Don't use detailView to print the data because it pads the entire width with spaces.
+				if !dataOnly {
+					if verbose && len(respMsg.ConfigData) != 0 {
+						tprintRaw("CONFIGDATA\n---------\n")
+					} else {
+						tprintRaw("Config data changed")
+					}
+				}
+				if len(respMsg.ConfigData) != 0 {
+					data, err := base64.StdEncoding.DecodeString(respMsg.ConfigData)
+					if err != nil {
+						failOnError(fmt.Errorf("%s: Failed to decode config data", err.Error()))
+					}
+					if dataOnly || verbose {
+						tprintRaw(string(data))
+					}
+				}
+			} else if !dataOnly && len(respMsg.ConfigData) != 0 && len(respMsg.Outputs) == 0 {
+				tprintRaw("Config data not changed")
 			}
-			data, err := base64.StdEncoding.DecodeString(respMsg.ConfigData)
-			if err != nil {
-				failOnError(fmt.Errorf("%s: Failed to decode config data", err.Error()))
-			}
-			tprintRaw(string(data))
 		}
 		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Outputs) != 0 {
 			// Don't use detailView to print the output because it pads the entire width with spaces.

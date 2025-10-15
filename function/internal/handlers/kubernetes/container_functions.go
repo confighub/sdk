@@ -473,9 +473,10 @@ const (
 
 var (
 	imageURIRegexpString       = fmt.Sprintf("(?P<uri>(?:(?:%s)/)?(?:%s))", imageRegistryHostRegexpString, imageRepositoryRegexpString)
-	imageReferenceRegexpString = fmt.Sprintf("(?P<reference>\\:(?:%s)|@(?:%s))", imageTagReferenceRegexpString, imageDigestReferenceRegexpString)
-	// This expression partitions the image into two pieces, URI and reference
-	imageURIReferenceRegexpString = fmt.Sprintf("^%s%s?$", imageURIRegexpString, imageReferenceRegexpString)
+	imageReferenceRegexpString = fmt.Sprintf("(?P<reference>(?:\\:(?:%s)|@(?:%s))?)", imageTagReferenceRegexpString, imageDigestReferenceRegexpString)
+	// This expression partitions the image into two pieces, URI and reference.
+	// The reference may be empty.
+	imageURIReferenceRegexpString = fmt.Sprintf("^%s%s$", imageURIRegexpString, imageReferenceRegexpString)
 )
 
 var imageURIReferenceAccessor *yamlkit.RegexpAccessor

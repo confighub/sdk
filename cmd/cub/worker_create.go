@@ -70,7 +70,14 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func apiCreateWorker(details *goclientnew.BridgeWorker, spaceID uuid.UUID) (*goclientnew.BridgeWorker, error) {
-	workerRes, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, spaceID, *details)
+	// Create params with AllowExists if needed
+	params := &goclientnew.CreateBridgeWorkerParams{}
+	if allowExists {
+		allowExistsStr := "true"
+		params.AllowExists = &allowExistsStr
+	}
+
+	workerRes, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, spaceID, params, *details)
 	if cubapi.IsAPIError(err, workerRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, workerRes)
 	}

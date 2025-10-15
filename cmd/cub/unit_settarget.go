@@ -27,8 +27,9 @@ Bulk mode:
   cub unit set-target <target-slug> --unit unit1,unit2,unit3
   
 Use "-" as target-slug to unset/clear the target.`,
-	Args: cobra.RangeArgs(1, 2),
-	RunE: unitSetTargetCmdRun,
+	Args:        cobra.RangeArgs(1, 2),
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        unitSetTargetCmdRun,
 }
 
 func init() {

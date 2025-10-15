@@ -20,14 +20,14 @@ import (
 var packageLoadCmd = &cobra.Command{
 	Use:   "load <dir-or-url>",
 	Short: "load a package from a directory or URL",
-	Long:  `load a package by deserializing a directory structure or remote URL into ConfigHub spaces, units, links, etc.
+	Long: `load a package by deserializing a directory structure or remote URL into ConfigHub spaces, units, links, etc.
 
 Supports:
   - Local directories: ./my-package or /path/to/package
   - HTTP/HTTPS URLs: https://example.com/packages/my-package
   - GitHub repositories: https://github.com/user/repo/tree/main/packages/my-package`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  packageLoadCmdRun,
+	Args: cobra.ExactArgs(1),
+	RunE: packageLoadCmdRun,
 }
 
 func init() {
@@ -92,7 +92,8 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		workerDetails.SpaceID = createdSpaces[worker.SpaceSlug].SpaceID
-		resp, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, createdSpaces[worker.SpaceSlug].SpaceID, *workerDetails)
+		workerParams := &goclientnew.CreateBridgeWorkerParams{}
+		resp, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, createdSpaces[worker.SpaceSlug].SpaceID, workerParams, *workerDetails)
 		if err != nil {
 			return err
 		}
@@ -183,28 +184,28 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		linkDetails.SpaceID = createdSpaces[link.SpaceSlug].SpaceID
-		
+
 		// Find the from unit using the slash notation
 		fromUnit, ok := createdUnits[link.FromUnit]
 		if !ok {
 			return fmt.Errorf("from unit %s not found for link %s", link.FromUnit, link.Slug)
 		}
 		linkDetails.FromUnitID = fromUnit.UnitID
-		
+
 		// Find the to unit using the slash notation
 		toUnit, ok := createdUnits[link.ToUnit]
 		if !ok {
 			return fmt.Errorf("to unit %s not found for link %s", link.ToUnit, link.Slug)
 		}
 		linkDetails.ToUnitID = toUnit.UnitID
-		
+
 		// Extract ToSpaceSlug from ToUnit slash notation
 		toParts := strings.Split(link.ToUnit, "/")
 		if len(toParts) == 2 {
 			toSpaceSlug := toParts[0]
 			linkDetails.ToSpaceID = createdSpaces[toSpaceSlug].SpaceID
 		}
-		
+
 		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, nil, *linkDetails)
 		if err != nil {
 			return err
@@ -234,7 +235,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			fromSpaceID := createdSpaces[filter.FromSpaceSlug].SpaceID
 			filterDetails.FromSpaceID = &fromSpaceID
 		}
-		
+
 		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, nil, *filterDetails)
 		if err != nil {
 			return err
@@ -262,7 +263,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		viewDetails.SpaceID = createdSpaces[view.SpaceSlug].SpaceID
-		
+
 		// Set FilterID if FilterSlug is specified
 		if view.FilterSlug != "" {
 			// FilterSlug already contains the full path (e.g., "space28643/headlamp")
@@ -274,7 +275,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 				tprint("Warning: Filter %s not found for view %s", filterKey, view.Slug)
 			}
 		}
-		
+
 		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, nil, *viewDetails)
 		if err != nil {
 			return err
@@ -295,7 +296,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		tagDetails.SpaceID = createdSpaces[tag.SpaceSlug].SpaceID
-		
+
 		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, nil, *tagDetails)
 		if err != nil {
 			return err
@@ -323,7 +324,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		invocationDetails.SpaceID = createdSpaces[invocation.SpaceSlug].SpaceID
-		
+
 		// Restore BridgeWorker reference if present
 		if invocation.WorkerSlug != "" {
 			// WorkerSlug already contains the full path (e.g., "space28643/worker-name")
@@ -334,7 +335,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 				tprint("Warning: Worker %s not found for invocation %s", workerKey, invocation.Slug)
 			}
 		}
-		
+
 		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, nil, *invocationDetails)
 		if err != nil {
 			return err
@@ -489,7 +490,7 @@ func loadInvocationDetails(dir string, invocation InvocationEntry) (*goclientnew
 
 func loadRemotePackage(sourceURL string, prefix string) error {
 	tprint("Loading package from remote URL: %s", sourceURL)
-	
+
 	loader, err := NewRemotePackageLoader(sourceURL)
 	if err != nil {
 		return fmt.Errorf("failed to create remote loader: %w", err)
@@ -529,7 +530,8 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to load remote worker %s: %w", worker.Slug, err)
 		}
 		workerDetails.SpaceID = createdSpaces[worker.SpaceSlug].SpaceID
-		resp, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, createdSpaces[worker.SpaceSlug].SpaceID, *workerDetails)
+		workerParams := &goclientnew.CreateBridgeWorkerParams{}
+		resp, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, createdSpaces[worker.SpaceSlug].SpaceID, workerParams, *workerDetails)
 		if err != nil {
 			return err
 		}
@@ -626,28 +628,28 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to load remote link %s: %w", link.Slug, err)
 		}
 		linkDetails.SpaceID = createdSpaces[link.SpaceSlug].SpaceID
-		
+
 		// Find the from unit using the slash notation
 		fromUnit, ok := createdUnits[link.FromUnit]
 		if !ok {
 			return fmt.Errorf("from unit %s not found for link %s", link.FromUnit, link.Slug)
 		}
 		linkDetails.FromUnitID = fromUnit.UnitID
-		
+
 		// Find the to unit using the slash notation
 		toUnit, ok := createdUnits[link.ToUnit]
 		if !ok {
 			return fmt.Errorf("to unit %s not found for link %s", link.ToUnit, link.Slug)
 		}
 		linkDetails.ToUnitID = toUnit.UnitID
-		
+
 		// Extract ToSpaceSlug from ToUnit slash notation
 		toParts := strings.Split(link.ToUnit, "/")
 		if len(toParts) == 2 {
 			toSpaceSlug := toParts[0]
 			linkDetails.ToSpaceID = createdSpaces[toSpaceSlug].SpaceID
 		}
-		
+
 		resp, err := cubClientNew.CreateLinkWithResponse(ctx, createdSpaces[link.SpaceSlug].SpaceID, nil, *linkDetails)
 		if err != nil {
 			return err
@@ -678,7 +680,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			fromSpaceID := createdSpaces[filter.FromSpaceSlug].SpaceID
 			filterDetails.FromSpaceID = &fromSpaceID
 		}
-		
+
 		resp, err := cubClientNew.CreateFilterWithResponse(ctx, createdSpaces[filter.SpaceSlug].SpaceID, nil, *filterDetails)
 		if err != nil {
 			return err
@@ -700,7 +702,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to load remote view %s: %w", view.Slug, err)
 		}
 		viewDetails.SpaceID = createdSpaces[view.SpaceSlug].SpaceID
-		
+
 		// Set FilterID if FilterSlug is specified
 		if view.FilterSlug != "" {
 			// FilterSlug already contains the full path (e.g., "space28643/headlamp")
@@ -712,7 +714,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 				tprint("Warning: Filter %s not found for view %s", filterKey, view.Slug)
 			}
 		}
-		
+
 		resp, err := cubClientNew.CreateViewWithResponse(ctx, createdSpaces[view.SpaceSlug].SpaceID, nil, *viewDetails)
 		if err != nil {
 			return err
@@ -733,7 +735,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to load remote tag %s: %w", tag.Slug, err)
 		}
 		tagDetails.SpaceID = createdSpaces[tag.SpaceSlug].SpaceID
-		
+
 		resp, err := cubClientNew.CreateTagWithResponse(ctx, createdSpaces[tag.SpaceSlug].SpaceID, nil, *tagDetails)
 		if err != nil {
 			return err
@@ -761,7 +763,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to load remote invocation %s: %w", invocation.Slug, err)
 		}
 		invocationDetails.SpaceID = createdSpaces[invocation.SpaceSlug].SpaceID
-		
+
 		// Restore BridgeWorker reference if present
 		if invocation.WorkerSlug != "" {
 			// WorkerSlug already contains the full path (e.g., "space28643/worker-name")
@@ -772,7 +774,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 				tprint("Warning: Worker %s not found for invocation %s", workerKey, invocation.Slug)
 			}
 		}
-		
+
 		resp, err := cubClientNew.CreateInvocationWithResponse(ctx, createdSpaces[invocation.SpaceSlug].SpaceID, nil, *invocationDetails)
 		if err != nil {
 			return err

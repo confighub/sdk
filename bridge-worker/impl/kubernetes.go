@@ -189,7 +189,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 						{
 							Name: targetName,
 							Params: KubernetesWorkerParams{
-								WaitTimeout: "2m0s",
+								WaitTimeout: "10m0s",
 							}.ToMap(),
 						},
 					},
@@ -206,7 +206,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			Name: fmt.Sprintf("%s-%s", opts.Slug, slug.Make(contextName)),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
-				WaitTimeout: "2m0s",
+				WaitTimeout: "10m0s",
 			}.ToMap(),
 		})
 	}
