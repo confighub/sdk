@@ -28,13 +28,11 @@ spec:
         resources: {requests: {cpu: 128m, memory: 128Mi}}
         securityContext:
           readOnlyRootFilesystem: true
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           privileged: false
           capabilities:
             drop:
             - ALL
-        imagePullPolicy: Always
         startupProbe:
           httpGet:
             path: confighubplaceholder
@@ -68,13 +66,11 @@ spec:
         - containerPort: 4318
         securityContext:
           readOnlyRootFilesystem: true
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           privileged: false
           capabilities:
             drop:
             - ALL
-        imagePullPolicy: Always
         resources: {requests: {cpu: 128m, memory: 128Mi}}
         startupProbe:
           httpGet:
@@ -104,7 +100,10 @@ spec:
           failureThreshold: 3
           successThreshold: 1
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 60
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000

@@ -1408,19 +1408,43 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 				}
 			}
 
-			// Set terminationGracePeriodSeconds to 60 if not already present
-			if !podSpecDoc.Exists("terminationGracePeriodSeconds") {
-				_, err = podSpecDoc.Set(60, "terminationGracePeriodSeconds")
-				if err != nil {
-					multiErrs = append(multiErrs, err)
-				}
-			}
+			// terminationGracePeriodSeconds is 30 by default, which should be a good enough starting point.
+			// if !podSpecDoc.Exists("terminationGracePeriodSeconds") {
+			// 	_, err = podSpecDoc.Set(60, "terminationGracePeriodSeconds")
+			// 	if err != nil {
+			// 		multiErrs = append(multiErrs, err)
+			// 	}
+			// }
 
 			if securityContext {
 				// Pod-level security contexft
 				_, err = podSpecDoc.Set("RuntimeDefault", "securityContext", "seccompProfile", "type")
 				if err != nil {
 					multiErrs = append(multiErrs, err)
+				}
+				_, err = podSpecDoc.Set(true, "securityContext", "runAsNonRoot")
+				if err != nil {
+					multiErrs = append(multiErrs, err)
+				}
+				// These are arbitrary and can be changed, but I see these used fairly often, perhaps because it's
+				// the example in the docs: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+				if !podSpecDoc.Exists("securityContext", "runAsUser") {
+					_, err = podSpecDoc.Set(1000, "securityContext", "runAsUser")
+					if err != nil {
+						multiErrs = append(multiErrs, err)
+					}
+				}
+				if !podSpecDoc.Exists("securityContext", "runAsGroup") {
+					_, err = podSpecDoc.Set(3000, "securityContext", "runAsGroup")
+					if err != nil {
+						multiErrs = append(multiErrs, err)
+					}
+				}
+				if !podSpecDoc.Exists("securityContext", "fsGroup") {
+					_, err = podSpecDoc.Set(2000, "securityContext", "fsGroup")
+					if err != nil {
+						multiErrs = append(multiErrs, err)
+					}
 				}
 
 				for _, containerPath := range containersPaths {
@@ -1436,10 +1460,6 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 					for _, containerDoc := range containersDoc.Children() {
 						// Container-level security context
 						_, err = containerDoc.Set(true, "securityContext", "readOnlyRootFilesystem")
-						if err != nil {
-							multiErrs = append(multiErrs, err)
-						}
-						_, err = containerDoc.Set(true, "securityContext", "runAsNonRoot")
 						if err != nil {
 							multiErrs = append(multiErrs, err)
 						}
@@ -1460,13 +1480,14 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 							}
 						}
 
-						// Set imagePullPolicy to Always if not already present
-						if !containerDoc.Exists("imagePullPolicy") {
-							_, err = containerDoc.Set("Always", "imagePullPolicy")
-							if err != nil {
-								multiErrs = append(multiErrs, err)
-							}
-						}
+						// TODO: Set imagePullPolicy to Always if not already present.
+						// We may want to parameterize this with a larger group of options.
+						// if !containerDoc.Exists("imagePullPolicy") {
+						// 	_, err = containerDoc.Set("Always", "imagePullPolicy")
+						// 	if err != nil {
+						// 		multiErrs = append(multiErrs, err)
+						// 	}
+						// }
 					}
 				}
 			}

@@ -7,9 +7,36 @@ import (
 	"bytes"
 	"fmt"
 
+	"sigs.k8s.io/kustomize/kyaml/kio"
+	"sigs.k8s.io/kustomize/kyaml/kio/filters"
+
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 )
+
+// StripComments removes all comments from YAML data while preserving the structure and values.
+// This is useful when comparing YAML documents where comments should be ignored.
+func StripComments(yamlData []byte) ([]byte, error) {
+	if len(yamlData) == 0 {
+		return yamlData, nil
+	}
+
+	// Use kustomize's StripCommentsFilter to remove comments
+	reader := &kio.ByteReader{Reader: bytes.NewReader(yamlData)}
+	var buf bytes.Buffer
+	writer := &kio.ByteWriter{Writer: &buf}
+
+	err := kio.Pipeline{
+		Inputs:  []kio.Reader{reader},
+		Filters: []kio.Filter{filters.StripCommentsFilter{}},
+		Outputs: []kio.Writer{writer},
+	}.Execute()
+	if err != nil {
+		return nil, fmt.Errorf("failed to strip comments: %v", err)
+	}
+
+	return buf.Bytes(), nil
+}
 
 // DiffPatch compares original and modified YAML content, generates a patch, and applies it to target data
 func DiffPatch(original, modified, targetData []byte, resourceProvider ResourceProvider) ([]byte, bool, error) {

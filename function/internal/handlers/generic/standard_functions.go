@@ -1485,7 +1485,7 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 	for _, doc := range parsedData {
 		var dataMap map[string]any
 		if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
-			return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to unmarshal data for config %s: %v", functionContext.UnitDisplayName, err)
+			return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to unmarshal data for config %s: %v", functionContext.UnitSlug, err)
 		}
 
 		obj := map[string]any{

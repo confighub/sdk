@@ -478,7 +478,7 @@ var selectFields = ""
 var debug = false
 var noheader = false
 var wait = true
-var timeout = "2m"
+var timeout string
 var label []string
 var deleteGate []string
 var spaceIdentifiers []string
@@ -847,7 +847,7 @@ func enableContainsFlag(cmd *cobra.Command) {
 
 func enableWaitFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&wait, "wait", true, "wait for completion")
-	cmd.Flags().StringVar(&timeout, "timeout", "2m", "completion timeout as a duration with units, such as 10s or 2m")
+	cmd.Flags().StringVar(&timeout, "timeout", "10m", "completion timeout as a duration with units, such as 10s or 2m")
 }
 
 type Unmarshalable interface {

@@ -102,21 +102,20 @@ func InvokeFunction(
 	})
 }
 
-func fakeFunctionContext(displayName string) *api.FunctionContext {
+func fakeFunctionContext(slug string) *api.FunctionContext {
 	// Ensure these IDs are deterministic for testing.
 	unitID := uuid.MustParse("5837950a-619e-44da-9b75-f957c2aee14c")
 	spaceID := uuid.MustParse("c73bbc39-7ad1-4f32-aba0-1ef0789c9571")
 	spaceSlug := "DeepSpace"
 	orgID := uuid.MustParse("362c7a01-ba2d-40f6-9454-805c9a4fbbbe")
 	functionContext := api.FunctionContext{
-		UnitDisplayName: displayName,
-		UnitSlug:        strings.ToLower(displayName), // note this doesn't convert spaces, punctuation, etc.
-		UnitID:          unitID,
-		SpaceID:         spaceID,
-		SpaceSlug:       spaceSlug,
-		OrganizationID:  orgID,
-		RevisionNum:     1,
-		New:             true,
+		UnitSlug:       strings.ToLower(slug), // note this doesn't convert spaces, punctuation, etc.
+		UnitID:         unitID,
+		SpaceID:        spaceID,
+		SpaceSlug:      spaceSlug,
+		OrganizationID: orgID,
+		RevisionNum:    1,
+		New:            true,
 	}
 	return &functionContext
 }

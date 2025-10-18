@@ -67,14 +67,15 @@ const (
 
 // Defines values for QueuedOperationStatus.
 const (
-	Aborted     QueuedOperationStatus = "Aborted"
-	Completed   QueuedOperationStatus = "Completed"
-	Delivered   QueuedOperationStatus = "Delivered"
-	Delivered1  QueuedOperationStatus = "delivered"
-	Failed      QueuedOperationStatus = "Failed"
-	Pending     QueuedOperationStatus = "Pending"
-	Pending1    QueuedOperationStatus = "pending"
-	Progressing QueuedOperationStatus = "Progressing"
+	Aborted      QueuedOperationStatus = "Aborted"
+	Completed    QueuedOperationStatus = "Completed"
+	Delivered    QueuedOperationStatus = "Delivered"
+	Delivered1   QueuedOperationStatus = "delivered"
+	Failed       QueuedOperationStatus = "Failed"
+	Initializing QueuedOperationStatus = "Initializing"
+	Pending      QueuedOperationStatus = "Pending"
+	Pending1     QueuedOperationStatus = "pending"
+	Progressing  QueuedOperationStatus = "Progressing"
 )
 
 // ActionResult defines model for ActionResult.
@@ -1374,7 +1375,7 @@ type QueuedOperation struct {
 	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
-	// Status Status indicates the current status of the queued operation. v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+	// Status Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 	Status QueuedOperationStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
 
 	// TargetID TargetID is the unique identifier of the target this operation is directed to.
@@ -1388,7 +1389,7 @@ type QueuedOperation struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
-// QueuedOperationStatus Status indicates the current status of the queued operation. v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+// QueuedOperationStatus Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 type QueuedOperationStatus string
 
 // ResourceInfo defines model for ResourceInfo.

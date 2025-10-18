@@ -217,9 +217,6 @@ type FunctionContext struct {
 	// ToolchainType is the ToolchainType of the configuration data and function handlers.
 	ToolchainType workerapi.ToolchainType
 
-	// UnitDisplayName is the display name of the configuration Unit.
-	UnitDisplayName string
-
 	// UnitSlug is the Slug of the configuration Unit.
 	UnitSlug string
 

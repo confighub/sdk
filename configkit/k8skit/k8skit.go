@@ -52,6 +52,8 @@ const (
 	KubernetesConfigMirror = "kubernetes.io/config.mirror"
 	KubernetesConfigSource = "kubernetes.io/config.source"
 	KubernetesConfigSeen   = "kubernetes.io/config.seen"
+	// CLI Utils applier inventory
+	KubernetesCLIUtilsInventory = "config.k8s.io/owning-inventory"
 
 	// Kubernetes label prefixes that should be removed during cleanup
 	// Controller-generated labels
@@ -82,6 +84,7 @@ var K8sInternalAnnotationKeys = []string{
 	KubernetesConfigMirror,
 	KubernetesConfigSource,
 	KubernetesConfigSeen,
+	KubernetesCLIUtilsInventory,
 }
 
 var K8sInternalLabelPrefixes = []string{

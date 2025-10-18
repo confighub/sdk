@@ -12,6 +12,7 @@ import (
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml/merge2"
 )
 
 //------------------------------------------------------------------------------
@@ -88,6 +89,14 @@ func YAMLPointerToSlice(path string) ([]string, error) {
 		hierarchy[i] = r1.Replace(v)
 	}
 	return hierarchy, nil
+}
+
+// UnescapeDotsInPathSegment unescapes tilde-encoded characters in a path segment.
+// Reverses the encoding done by yamlkit.EscapeDotsInPathSegment:
+// - ~1 becomes . (dot)
+// - ~0 becomes ~ (tilde)
+func UnescapeDotsInPathSegment(segment string) string {
+	return r2.Replace(segment)
 }
 
 // DotPathToSlice returns a slice of path segments parsed out of a dot path.
@@ -843,6 +852,47 @@ func (c *YamlDoc) Merge(source *YamlDoc) error {
 		}
 		return []interface{}{dest, src}
 	})
+}
+
+// MergeDoc merges a source document into the destination document using kyaml's merge2 strategy.
+// This merge preserves comments and follows Kubernetes strategic merge patch semantics.
+// Unlike Merge, MergeDoc uses kustomize's merge2 implementation which better handles
+// YAML metadata like comments, anchors, and preserves field order where possible.
+func (c *YamlDoc) MergeDoc(source *YamlDoc) error {
+	if c == nil || c.node == nil {
+		return ErrInvalidInputObj
+	}
+	if source == nil || source.node == nil {
+		return nil // Nothing to merge
+	}
+
+	// Use kyaml's merge2 to merge the source into the destination
+	// merge2.Merge merges src into dest and returns the merged result
+	mergedNode, err := merge2.Merge(source.node, c.node, yaml.MergeOptions{
+		// ListIncreaseDirection can be "prepend" or "append"
+		// For Kubernetes resources, "append" is more common
+		ListIncreaseDirection: yaml.MergeOptionsListAppend,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to merge documents: %w", err)
+	}
+
+	// Update the destination node with the merged result
+	c.node = mergedNode
+
+	return nil
+}
+
+// MergeDocP merges a source document into the destination at a specific path using dot notation.
+// The path specifies where in the destination document the merge should occur.
+func (c *YamlDoc) MergeDocP(source *YamlDoc, path string) error {
+	target, err := c.searchStrict(DotPathToSlice(path)...)
+	if err != nil {
+		return fmt.Errorf("failed to find merge target at path %s: %w", path, err)
+	}
+
+	targetDoc := &YamlDoc{node: target.node}
+	return targetDoc.MergeDoc(source)
 }
 
 //------------------------------------------------------------------------------

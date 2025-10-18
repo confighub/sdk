@@ -20,6 +20,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
+	funcapi "github.com/confighub/sdk/function/api"
 )
 
 // parseTargetParams extracts and parses target parameters
@@ -93,12 +94,52 @@ func cleanup(u *unstructured.Unstructured) {
 	unstructured.RemoveNestedField(u.Object, "metadata", "selfLink")
 }
 
+func gvkToResourceType(gvk *schema.GroupVersionKind) funcapi.ResourceType {
+	var resourceTypeString string
+	if gvk.Group != "" {
+		resourceTypeString = gvk.Group + "/"
+	}
+	resourceTypeString += gvk.Version + "/" + gvk.Kind
+	return funcapi.ResourceType(resourceTypeString)
+}
+
+func isService(gvk *schema.GroupVersionKind) bool {
+	return gvk.Kind == "Service" && gvk.Group == "" && gvk.Version == "v1"
+}
+
+func isPersistentVolume(gvk *schema.GroupVersionKind) bool {
+	return gvk.Kind == "PersistentVolume" && gvk.Group == "" && gvk.Version == "v1"
+}
+
+func isStandardWorkload(gvk *schema.GroupVersionKind) bool {
+	resourceType := gvkToResourceType(gvk)
+	_, present := k8skit.K8sWorkloadResourceTypes[resourceType]
+	// TODO: Handle CronJob
+	return present && resourceType != funcapi.ResourceType("batch/v1/CronJob")
+}
+
 // extraCleanupObjects performs heuristic cleanup on imported objects to make them suitable for being unit.Data
 func extraCleanupObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
 	for _, obj := range objects {
 		cleanup(obj)
 		removeInternalAnnotations(obj)
 		removeInternalLabels(obj)
+
+		gvk := obj.GroupVersionKind()
+		if isService(&gvk) {
+			// These are allocated
+			unstructured.RemoveNestedField(obj.Object, "spec", "clusterIP")
+			unstructured.RemoveNestedField(obj.Object, "spec", "clusterIPs")
+			// TODO: spec.ports.*.nodePort? nodePort is more often set by the user than clusterIP.
+			// We only want to refresh it if it was in the original Data.
+			// https://github.com/kubernetes/kubernetes/issues/28551
+		} else if isStandardWorkload(&gvk) {
+			// This doesn't really hurt anything, but is ugly and in the most common resources
+			unstructured.RemoveNestedField(obj.Object, "spec", "template", "metadata", "creationTimestamp")
+		} else if isPersistentVolume(&gvk) {
+			unstructured.RemoveNestedField(obj.Object, "spec", "claimRef", "uid")
+			unstructured.RemoveNestedField(obj.Object, "spec", "claimRef", "resourceVersion")
+		}
 	}
 	return objects
 }

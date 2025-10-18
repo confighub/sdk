@@ -17,6 +17,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/mikefarah/yq/v4/pkg/yqlib"
 	yqlogger "gopkg.in/op/go-logging.v1"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
@@ -2226,7 +2227,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			}
 			// TODO: what should we do about errors?
 			switch patchMutation.MutationType {
-			case api.MutationTypeAdd, api.MutationTypeUpdate, api.MutationTypeReplace:
+			case api.MutationTypeAdd, api.MutationTypeReplace:
 				valueString := patchMutation.Value
 				valueDoc, err := gaby.ParseYAML([]byte(valueString))
 				if err != nil {
@@ -2236,6 +2237,46 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 				_, err = doc.SetDocP(valueDoc, string(patchPath))
 				if err != nil {
 					log.Infof("error setting value at path %s: %v", string(patchPath), err)
+				}
+			case api.MutationTypeUpdate:
+				// For updates, try to preserve comments when possible
+				valueString := patchMutation.Value
+				valueDoc, err := gaby.ParseYAML([]byte(valueString))
+				if err != nil {
+					log.Infof("error parsing value at path %s: %v", string(patchPath), err)
+					continue
+				}
+
+				// Check if the value is a complex object (map or list) vs a scalar
+				ynode := valueDoc.YNode()
+				isScalarValue := ynode.Kind == yaml.ScalarNode
+
+				if isScalarValue {
+					// For scalar values, we need to preserve the comment manually
+					// Get the current field to check if it has a comment
+					currentField := doc.Path(string(patchPath))
+					var existingComment string
+					if currentField != nil {
+						existingComment = currentField.GetComments()
+					}
+
+					// Set the new value
+					_, err = doc.SetDocP(valueDoc, string(patchPath))
+					if err != nil {
+						log.Infof("error setting value at path %s: %v", string(patchPath), err)
+					} else if existingComment != "" {
+						// Restore the comment after setting the value
+						updatedField := doc.Path(string(patchPath))
+						if updatedField != nil {
+							updatedField.SetComment(existingComment)
+						}
+					}
+				} else {
+					// For complex objects (maps/lists), use merge to preserve nested comments
+					err = doc.MergeDocP(valueDoc, string(patchPath))
+					if err != nil {
+						log.Infof("error merging value at path %s: %v", string(patchPath), err)
+					}
 				}
 			case api.MutationTypeDelete:
 				err := doc.DeleteP(string(patchPath))

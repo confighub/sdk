@@ -28,29 +28,28 @@ spec:
         resources: {requests: {cpu: 128m, memory: 128Mi}}
         securityContext:
           readOnlyRootFilesystem: true
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           privileged: false
           capabilities:
             drop:
             - ALL
-        imagePullPolicy: Always
       - image: otel/opentelemetry-collector:latest-amd64
         name: otel-sidecar
         ports:
         - containerPort: 4318
         securityContext:
           readOnlyRootFilesystem: true
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           privileged: false
           capabilities:
             drop:
             - ALL
-        imagePullPolicy: Always
         resources: {requests: {cpu: 128m, memory: 128Mi}}
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 60
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000

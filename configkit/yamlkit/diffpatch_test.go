@@ -711,3 +711,199 @@ data:
 		assert.Contains(t, resultStr2, "app: test")
 	})
 }
+
+func TestDiffPatch_PreservesLineComments(t *testing.T) {
+	t.Run("preserves line comments on scalar fields", func(t *testing.T) {
+		original := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+  namespace: example
+spec:
+  replicas: 3 # Line comment on replicas
+  template:
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        resources: {}
+`)
+
+		// Modified version changes replicas to 5
+		modified := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+  namespace: example
+spec:
+  replicas: 5
+  template:
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        resources: {}
+`)
+
+		target := original
+
+		result, changed, err := yamlkit.DiffPatch(original, modified, target, k8skit.K8sResourceProvider)
+
+		assert.NoError(t, err)
+		assert.True(t, changed, "Should indicate changes were made")
+
+		// Parse the result to verify it's valid YAML
+		parsedResult, err := gaby.ParseYAML(result)
+		assert.NoError(t, err)
+
+		// Check that the replicas value was updated
+		replicas := parsedResult.Path("spec.replicas")
+		assert.NotNil(t, replicas)
+		replicasValue, ok := replicas.Data().(int)
+		assert.True(t, ok, "replicas should be an integer")
+		assert.Equal(t, 5, replicasValue, "replicas should be updated to 5")
+
+		// Check that the line comment is preserved
+		assert.Contains(t, string(result), "# Line comment on replicas", "Line comment should be preserved")
+		assert.Contains(t, string(result), "replicas: 5 # Line comment on replicas", "Comment should be on the same line as the updated value")
+	})
+
+	t.Run("preserves comments when adding new fields", func(t *testing.T) {
+		original := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+data:
+  key1: value1 # Important key
+`)
+
+		modified := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+data:
+  key1: value1
+  key2: value2 # New key
+`)
+
+		target := original
+
+		result, changed, err := yamlkit.DiffPatch(original, modified, target, k8skit.K8sResourceProvider)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+
+		// Both comments should be present in the result
+		assert.Contains(t, string(result), "# Important key", "Original comment should be preserved")
+		assert.Contains(t, string(result), "# New key", "New comment should be added")
+	})
+
+	t.Run("preserves comments in complex nested structures", func(t *testing.T) {
+		original := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        resources: # Resource limits
+          limits:
+            cpu: 200m
+            memory: 128Mi
+`)
+
+		modified := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+`)
+
+		target := original
+
+		result, changed, err := yamlkit.DiffPatch(original, modified, target, k8skit.K8sResourceProvider)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+
+		// The comment on resources should be preserved
+		assert.Contains(t, string(result), "# Resource limits", "Nested comment should be preserved")
+
+		// Verify the structure is correct
+		parsedResult, err := gaby.ParseYAML(result)
+		assert.NoError(t, err)
+
+		// Verify the new requests field was added
+		requests := parsedResult.Path("spec.template.spec.containers.0.resources.requests")
+		assert.NotNil(t, requests, "requests field should be added")
+	})
+
+	t.Run("handles multiple line comments on different fields", func(t *testing.T) {
+		// This test demonstrates that DiffPatch works at the resource level
+		// When the entire resource changes significantly, comments from target are preserved
+		original := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  key1: value1
+  key2: value2
+`)
+
+		modified := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  key1: modified1
+  key2: modified2
+  key3: value3
+`)
+
+		// Target has the comments we want to preserve
+		target := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config # Config name
+  namespace: default # Default namespace
+data:
+  key1: value1 # First key
+  key2: value2 # Second key
+`)
+
+		result, changed, err := yamlkit.DiffPatch(original, modified, target, k8skit.K8sResourceProvider)
+
+		assert.NoError(t, err)
+		assert.True(t, changed)
+
+		// Comments in target should be preserved
+		assert.Contains(t, string(result), "# Config name", "Comment on name should be preserved")
+		assert.Contains(t, string(result), "# Default namespace", "Comment on namespace should be preserved")
+		assert.Contains(t, string(result), "# First key", "Comment on key1 should be preserved")
+		assert.Contains(t, string(result), "# Second key", "Comment on key2 should be preserved")
+
+		// Verify values were updated
+		assert.Contains(t, string(result), "modified1")
+		assert.Contains(t, string(result), "modified2")
+		assert.Contains(t, string(result), "key3: value3")
+	})
+}

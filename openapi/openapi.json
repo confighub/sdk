@@ -24426,6 +24426,7 @@
           },
           "Status": {
             "enum": [
+              "Initializing",
               "Pending",
               "Delivered",
               "Progressing",
@@ -24436,7 +24437,7 @@
               "delivered"
             ],
             "type": "string",
-            "description": "Status indicates the current status of the queued operation. v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).",
+            "description": "Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).",
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {

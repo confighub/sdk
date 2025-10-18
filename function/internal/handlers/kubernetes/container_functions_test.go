@@ -13,8 +13,8 @@ import (
 )
 
 var fakeContext api.FunctionContext = api.FunctionContext{
-	UnitDisplayName: "MyK8sUnit",
-	New:             true,
+	UnitSlug: "MyK8sUnit",
+	New:      true,
 }
 
 func stringArgsToFunctionArgs(stringArgs []string) []api.FunctionArgument {

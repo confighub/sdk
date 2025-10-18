@@ -21936,11 +21936,12 @@ components:
           x-go-type-skip-optional-pointer: true
         Status:
           description: 'Status indicates the current status of the queued operation.
-            v2 statuses: Pending (waiting), Delivered (sent to worker), Progressing
-            (being processed), Completed (success), Failed (error). v1 compatibility:
-            ''pending'' = Pending, ''delivered'' = Completed (legacy ''delivered''
-            meant work done).'
+            v2 statuses: Initializing (being set up), Pending (waiting), Delivered
+            (sent to worker), Progressing (being processed), Completed (success),
+            Failed (error). v1 compatibility: ''pending'' = Pending, ''delivered''
+            = Completed (legacy ''delivered'' meant work done).'
           enum:
+          - Initializing
           - Pending
           - Delivered
           - Progressing

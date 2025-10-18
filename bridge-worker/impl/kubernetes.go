@@ -105,11 +105,20 @@ func createRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackO
 
 // NewKubernetesBridgeWorker creates a new KubernetesBridgeWorker with CLI Utils SSA as default
 func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
-	defaultApplier := FluxSSA
-	if os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER") == "true" ||
-		os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER") == "1" {
-		defaultApplier = CLIUtilsSSA
+	defaultApplier := CLIUtilsSSA
+
+	// Check for deprecated environment variable
+	if oldEnv := os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER"); oldEnv != "" {
+		log.Log.Info("⚠️ CONFIGHUB_USE_CLIUTILS_APPLIER is deprecated and will be ignored. CLIUtils applier is now the default. Use USE_LEGACY_FLUX_APPLIER=true to opt-out if needed.")
 	}
+
+	// Check for legacy FluxSSA opt-in
+	if os.Getenv("USE_LEGACY_FLUX_APPLIER") == "true" ||
+		os.Getenv("USE_LEGACY_FLUX_APPLIER") == "1" {
+		defaultApplier = FluxSSA
+		log.Log.Info("⚠️ Using legacy FluxSSA applier via USE_LEGACY_FLUX_APPLIER environment variable")
+	}
+
 	return &KubernetesBridgeWorker{
 		applierType: defaultApplier, // Default to CLI Utils SSA for inventory support
 	}
@@ -315,7 +324,7 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayload) (K8sApplier, error) {
 	// Default to CLIUtilsSSA if applierType is not set (defensive programming)
 	if w.applierType == "" {
-		w.applierType = FluxSSA
+		w.applierType = CLIUtilsSSA
 		log.Log.Info("⚠️ Applier type was not set, defaulting to CLIUtilsSSA")
 	}
 
@@ -346,8 +355,8 @@ func (w *KubernetesBridgeWorker) getOrCreateApplier(payload api.BridgeWorkerPayl
 	// Ensure we have a valid applier type (defensive)
 	applierType := w.applierType
 	if applierType == "" {
-		applierType = FluxSSA
-		log.Log.Info("⚠️ Applier type was empty, using FluxSSA as fallback")
+		applierType = CLIUtilsSSA
+		log.Log.Info("⚠️ Applier type was empty, using CLIUtilsSSA as fallback")
 	}
 	applier, err := NewK8sApplier(applierType, applierConfig)
 	if err != nil {
@@ -543,6 +552,15 @@ func (w *KubernetesBridgeWorker) updateLiveStateWithInventory(ctx context.Contex
 }
 
 func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	var refreshParams *api.RefreshParams
+	if len(payload.ExtraParams) > 0 {
+		// Try to parse ExtraParams as RefreshParams structure
+		refreshParams = new(api.RefreshParams)
+		if err := json.Unmarshal(payload.ExtraParams, refreshParams); err != nil {
+			refreshParams = nil
+		}
+	}
+
 	applier, err := w.getOrCreateApplier(payload)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -608,13 +626,36 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	// for resources that don't explicitly specify a namespace in their YAML.
 	// This could lead to resources being applied to the wrong namespace.
 	// Future improvement: Ensure namespace is properly preserved during split.
-	//
+
 	// Perform diff patch on resources only (without inventory) to detect drift
 	//
-	// Note: We could try to copy comments from the Data to the LiveState resources:
-	// https://github.com/kubernetes-sigs/kustomize/blob/master/kyaml/comments/comments.go
-	// But we'd still want to detect drift.
-	patched, drifted, err := yamlkit.DiffPatchWithOptions(payload.Data, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider, false)
+	// We use the base Data provided by the server, if provided.
+	//
+	// Note that we don't follow the delegation principle used by kubectl apply here.
+	// If we did, we'd only report drift on previously applied fields. We also add fields
+	// from the live state, because a lot of configuration changes entail adding optional
+	// fields. We'll need to add an ignore mechanism at some point (e.g., if/when we make
+	// refresh continuous) to ignore dynamically changed fields, such as autoscaled replicas.
+	//
+	// Note: We strip comments from baseData before calling DiffPatchWithOptions because
+	// the yamlData retrieved from the Kubernetes cluster does not contain comments.
+	// This ensures we don't treat comment differences as drift, and allows comments to be
+	// preserved in the final patched result.
+	var baseData []byte
+	if refreshParams == nil {
+		baseData = payload.Data
+	} else {
+		baseData = refreshParams.BaseRevisionData
+	}
+
+	// Strip comments from baseData to avoid treating comment differences as drift
+	baseDataWithoutComments, err := yamlkit.StripComments(baseData)
+	if err != nil {
+		log.Log.Error(err, "Failed to strip comments from baseData, continuing without stripping")
+		baseDataWithoutComments = baseData
+	}
+
+	patched, drifted, err := yamlkit.DiffPatchWithOptions(baseDataWithoutComments, []byte(yamlData), payload.Data, k8skit.K8sResourceProvider, false)
 	if err != nil {
 		log.Log.Error(err, "Failed to diff patch")
 		return lib.SafeSendStatus(wctx, newActionResult(
