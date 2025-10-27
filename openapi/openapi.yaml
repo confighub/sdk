@@ -112,9 +112,18 @@ paths:
         schema:
           type: string
       - description: Valid values are true and false. False is the default if unspecified.
-          If true, recursively delete all entities within the deleted space(s).
+          If true, recursively delete all entities within the deleted space(s) so
+          long as none have delete gates.
         in: query
         name: recursive
+        required: false
+        schema:
+          type: string
+      - description: Valid values are true and false. False is the default if unspecified.
+          If true, recursively delete all entities within the deleted space(s) regardless
+          whether any have delete gates.
+        in: query
+        name: recursive_force
         required: false
         schema:
           type: string
@@ -5991,9 +6000,18 @@ paths:
           format: uuid
           type: string
       - description: Valid values are true and false. False is the default if unspecified.
-          If true, recursively delete all entities within the deleted space(s).
+          If true, recursively delete all entities within the deleted space(s) so
+          long as none have delete gates.
         in: query
         name: recursive
+        required: false
+        schema:
+          type: string
+      - description: Valid values are true and false. False is the default if unspecified.
+          If true, recursively delete all entities within the deleted space(s) regardless
+          whether any have delete gates.
+        in: query
+        name: recursive_force
         required: false
         schema:
           type: string
@@ -11891,7 +11909,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -11945,7 +11963,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -12367,7 +12385,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -12421,7 +12439,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -12600,7 +12618,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -12660,7 +12678,7 @@ paths:
                 $ref: '#/components/schemas/Unit'
           description: |-
             Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+            of a single supported Toolchain Type (configuration format). This blob is typically a text document
             that contains a collection of Kubernetes or infrastructure resources, or an application configuration
             file. Applying / deploying or destroying the configuration happens as a single *transaction*
             from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -22747,7 +22765,7 @@ components:
     Unit:
       description: |-
         Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-        of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+        of a single supported Toolchain Type (configuration format). This blob is typically a text document
         that contains a collection of Kubernetes or infrastructure resources, or an application configuration
         file. Applying / deploying or destroying the configuration happens as a single *transaction*
         from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by

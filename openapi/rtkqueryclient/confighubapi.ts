@@ -1,0 +1,54 @@
+// Copyright (C) ConfigHub, Inc.
+// SPDX-License-Identifier: MIT
+import type { BaseQueryFn } from '@reduxjs/toolkit/query';
+import type { FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+// fetchBaseQuery uses URLSearchParams, which already escapes query parameters.
+// https://redux-toolkit.js.org/rtk-query/api/fetchBaseQuery
+// https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
+// https://github.com/reduxjs/redux-toolkit/pull/4568
+const baseQuery = fetchBaseQuery({
+  baseUrl: '/api',
+  credentials: 'include', // This enables sending cookies with requests
+  prepareHeaders: (headers, { endpoint }) => {
+    // Set content type for operations that require merge-patch+json
+    if (
+      endpoint.startsWith('patch') ||
+      endpoint.startsWith('bulkPatch') ||
+      endpoint.startsWith('bulkCreate')
+    ) {
+      headers.set('Content-Type', 'application/merge-patch+json');
+    }
+    return headers;
+  },
+});
+
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  let result = await baseQuery(args, api, extraOptions);
+
+  if (result.error && result.error.status === 401) {
+    // Unauthorized - redirect to login
+    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+    window.location.href =
+      '/auth/login?state=' + window.location.pathname + (window.location.search ?? '') +
+      '&redirect_uri=' + redirectUri;
+  }
+
+  if (result.error && result.error.status === 403) {
+    // Access forbidden - redirect to access denied page
+    window.location.href = '/access-denied';
+  }
+
+  return result;
+};
+
+// initialize an empty api service that we'll inject endpoints into later as needed
+export const confighubApi = createApi({
+  baseQuery: baseQueryWithReauth,
+  endpoints: () => ({}),
+});

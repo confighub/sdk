@@ -1142,14 +1142,12 @@ func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *
 
 func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.DeprecatedPlaceHolderBlockApplyString)...)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	return parsedData, paths, nil
 }
 
 func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.DeprecatedPlaceHolderBlockApplyString)...)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	result := api.ValidationResult{
 		Passed:           len(paths) == 0,
@@ -1288,8 +1286,7 @@ func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functio
 
 	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentValue string) (any, error) {
 		// TODO: Support this condition in the string visitor.
-		if !strings.Contains(currentValue, yamlkit.PlaceHolderBlockApplyString) &&
-			!strings.Contains(currentValue, yamlkit.DeprecatedPlaceHolderBlockApplyString) {
+		if !strings.Contains(currentValue, yamlkit.PlaceHolderBlockApplyString) {
 			return nil, nil
 		}
 		// We can't replace the placeholder string because reset doesn't restore the original

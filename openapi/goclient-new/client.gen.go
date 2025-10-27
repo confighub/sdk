@@ -3360,6 +3360,22 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 
 		}
 
+		if params.RecursiveForce != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "recursive_force", runtime.ParamLocationQuery, *params.RecursiveForce); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -7154,6 +7170,22 @@ func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID, params *De
 		if params.Recursive != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "recursive", runtime.ParamLocationQuery, *params.Recursive); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.RecursiveForce != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "recursive_force", runtime.ParamLocationQuery, *params.RecursiveForce); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

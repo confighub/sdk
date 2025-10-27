@@ -79,7 +79,16 @@
           {
             "name": "recursive",
             "in": "query",
-            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).",
+            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursive_force",
+            "in": "query",
+            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6065,7 +6074,16 @@
           {
             "name": "recursive",
             "in": "query",
-            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).",
+            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursive_force",
+            "in": "query",
+            "description": "Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.",
             "required": false,
             "schema": {
               "type": "string"
@@ -13635,7 +13653,7 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13645,7 +13663,7 @@
             }
           },
           "200": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14320,7 +14338,7 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14330,7 +14348,7 @@
             }
           },
           "200": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14544,7 +14562,7 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14554,7 +14572,7 @@
             }
           },
           "200": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25519,7 +25537,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (congifuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration."
+        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration."
       },
       "UnitAction": {
         "type": "object",

@@ -39,6 +39,7 @@ Examples:
 var (
 	spaceDeleteIdentifiers []string
 	recursive              bool
+	recursiveForce         bool
 )
 
 func init() {
@@ -46,7 +47,8 @@ func init() {
 	enableWhereFlag(spaceDeleteCmd)
 	enableFilterFlag(spaceDeleteCmd)
 	spaceDeleteCmd.Flags().StringSliceVar(&spaceDeleteIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk delete (can be repeated or comma-separated)")
-	spaceDeleteCmd.Flags().BoolVar(&recursive, "recursive", false, "Recursively delete all entities within the deleted space(s).")
+	spaceDeleteCmd.Flags().BoolVar(&recursive, "recursive", false, "Recursively delete all entities within the deleted space(s) if none have delete gates.")
+	spaceDeleteCmd.Flags().BoolVar(&recursiveForce, "recursive-force", false, "Recursively delete all entities within the deleted space(s) regardless whether any have delete gates.")
 	spaceCmd.AddCommand(spaceDeleteCmd)
 }
 
@@ -107,6 +109,10 @@ func runBulkSpaceDelete() error {
 		recursiveParam := "true"
 		params.Recursive = &recursiveParam
 	}
+	if recursiveForce {
+		recursiveForceParam := "true"
+		params.RecursiveForce = &recursiveForceParam
+	}
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteSpacesWithResponse(ctx, params)
@@ -135,6 +141,10 @@ func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if recursive {
 		recursiveParam := "true"
 		params.Recursive = &recursiveParam
+	}
+	if recursiveForce {
+		recursiveForceParam := "true"
+		params.RecursiveForce = &recursiveForceParam
 	}
 	deleteRes, err := cubClientNew.DeleteSpaceWithResponse(ctx, spaceID, params)
 	if cubapi.IsAPIError(err, deleteRes) {

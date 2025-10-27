@@ -460,7 +460,7 @@ type ExtendedLink struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// FromUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -491,7 +491,7 @@ type ExtendedLink struct {
 	ToSpace *Space `json:"ToSpace,omitempty" yaml:"ToSpace,omitempty"`
 
 	// ToUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -521,7 +521,7 @@ type ExtendedMutation struct {
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -558,7 +558,7 @@ type ExtendedMutation struct {
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -589,7 +589,7 @@ type ExtendedRevision struct {
 	Tags  []Tag  `json:"Tags,omitempty" yaml:"Tags,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -760,7 +760,7 @@ type ExtendedUnit struct {
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -778,7 +778,7 @@ type ExtendedUnit struct {
 	UpstreamSpace *Space `json:"UpstreamSpace,omitempty" yaml:"UpstreamSpace,omitempty"`
 
 	// UpstreamUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -1841,7 +1841,7 @@ type TriggerCreateOrUpdateResponse struct {
 type UUID = openapi_types.UUID
 
 // Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 // that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 // file. Applying / deploying or destroying the configuration happens as a single *transaction*
 // from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -1981,7 +1981,7 @@ type UnitCreateOrUpdateResponse struct {
 	Links []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -2054,7 +2054,7 @@ type UnitExtended struct {
 	ToLinks            []Link            `json:"ToLinks" yaml:"ToLinks"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (congifuration format). This blob is typically a text document
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
 	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
 	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
 	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
@@ -2271,8 +2271,11 @@ type BulkDeleteSpacesParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.
 	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
+
+	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
+	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
 }
 
 // BulkPatchSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchSpaces.
@@ -4846,8 +4849,11 @@ type CreateSpaceParams struct {
 
 // DeleteSpaceParams defines parameters for DeleteSpace.
 type DeleteSpaceParams struct {
-	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s).
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.
 	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
+
+	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
+	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
 }
 
 // GetSpaceParams defines parameters for GetSpace.
