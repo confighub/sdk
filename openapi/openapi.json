@@ -14695,7 +14695,7 @@
         ],
         "responses": {
           "default": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14705,7 +14705,7 @@
             }
           },
           "200": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15028,7 +15028,7 @@
         ],
         "responses": {
           "default": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15038,7 +15038,7 @@
             }
           },
           "200": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15255,7 +15255,7 @@
         },
         "responses": {
           "default": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15265,7 +15265,7 @@
             }
           },
           "200": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15762,7 +15762,7 @@
         ],
         "responses": {
           "default": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15772,7 +15772,7 @@
             }
           },
           "200": {
-            "description": "QueuedOperation is a record of an operation to be done by a bridge worker.",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16424,7 +16424,7 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16434,7 +16434,7 @@
             }
           },
           "200": {
-            "description": "OK",
+            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24424,7 +24424,7 @@
           },
           "QueuedOperationID": {
             "type": "string",
-            "description": "QueuedOperationID is the unique identifier for the queued operation.",
+            "description": "QueuedOperationID is the unique identifier for the queued unit action.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
@@ -24455,7 +24455,7 @@
               "delivered"
             ],
             "type": "string",
-            "description": "Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).",
+            "description": "Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).",
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {
@@ -24472,6 +24472,18 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "UserAgent": {
+            "type": "string",
+            "description": "User-Agent string of the API call.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "UserID of the user the action was performed by.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Version": {
             "type": "integer",
             "description": "An entity-specific sequence number used for optimistic concurrency control.\nThe value read must be sent in calls to Update.",
@@ -24479,7 +24491,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "QueuedOperation is a record of an operation to be done by a bridge worker."
+        "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction."
       },
       "ResourceInfo": {
         "type": "object",
@@ -25547,12 +25559,14 @@
           },
           "BridgeWorkerID": {
             "type": "string",
+            "description": "BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "CreatedAt": {
             "type": "string",
+            "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
             "format": "date-time",
             "example": "2006-01-02T15:04:05Z07:00",
             "x-go-type-skip-optional-pointer": true
@@ -25562,58 +25576,92 @@
             "items": {
               "$ref": "#/components/schemas/UUID"
             },
+            "description": "Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.",
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
           "ExtraParams": {
             "type": "string",
+            "description": "ExtraParams contains additional parameters for the operation in string format.",
             "x-go-type-skip-optional-pointer": true
           },
           "OrganizationID": {
             "type": "string",
+            "description": "OrganizationID is the unique identifier of the organization this operation belongs to.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "QueuedOperationID": {
             "type": "string",
+            "description": "QueuedOperationID is the unique identifier for the queued unit action.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "RevisionNum": {
             "type": "integer",
+            "description": "RevisionNum is the revision number this operation was performed on.",
             "format": "int64",
             "x-go-type-skip-optional-pointer": true
           },
           "SpaceID": {
             "type": "string",
+            "description": "SpaceID is the unique identifier of the space of the unit this operation is performed on.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "Status": {
+            "enum": [
+              "Initializing",
+              "Pending",
+              "Delivered",
+              "Progressing",
+              "Completed",
+              "Failed",
+              "Aborted",
+              "pending",
+              "delivered"
+            ],
             "type": "string",
+            "description": "Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).",
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {
             "type": "string",
+            "description": "TargetID is the unique identifier of the target this operation is directed to.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "UnitID": {
             "type": "string",
+            "description": "UnitID is the unique identifier of the unit this operation is performed on.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserAgent": {
+            "type": "string",
+            "description": "User-Agent string of the API call.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "UserID of the user the action was performed by.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "Version": {
             "type": "integer",
+            "description": "An entity-specific sequence number used for optimistic concurrency control.\nThe value read must be sent in calls to Update.",
             "format": "int64",
             "x-go-type-skip-optional-pointer": true
           }
-        }
+        },
+        "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction."
       },
       "UnitActionResponse": {
         "type": "object",

@@ -21,7 +21,7 @@ var unitActionListCmd = &cobra.Command{
 }
 
 // Default columns to display when no custom columns are specified
-var defaultUnitActionColumns = []string{"Action", "Status", "CreatedAt"}
+var defaultUnitActionColumns = []string{"Action", "Status", "CreatedAt", "ID", "UserID"}
 
 // UnitAction-specific aliases
 var unitActionAliases = map[string]string{
@@ -64,7 +64,7 @@ func getUnitActionSlug(entity *goclientnew.UnitAction) string {
 func displayUnitActionList(actions []*goclientnew.UnitAction) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Action", "Status", "Created-At"})
+		table.SetHeader([]string{"Action", "Status", "Created-At", "ID", "UserID"})
 	}
 	for _, action := range actions {
 		act := ""
@@ -73,8 +73,10 @@ func displayUnitActionList(actions []*goclientnew.UnitAction) {
 		}
 		table.Append([]string{
 			act,
-			action.Status,
+			string(action.Status),
 			action.CreatedAt.String(),
+			action.QueuedOperationID.String(),
+			action.UserID.String(), // todo: get user
 		})
 	}
 	table.Render()

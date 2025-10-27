@@ -67,15 +67,28 @@ const (
 
 // Defines values for QueuedOperationStatus.
 const (
-	Aborted      QueuedOperationStatus = "Aborted"
-	Completed    QueuedOperationStatus = "Completed"
-	Delivered    QueuedOperationStatus = "Delivered"
-	Delivered1   QueuedOperationStatus = "delivered"
-	Failed       QueuedOperationStatus = "Failed"
-	Initializing QueuedOperationStatus = "Initializing"
-	Pending      QueuedOperationStatus = "Pending"
-	Pending1     QueuedOperationStatus = "pending"
-	Progressing  QueuedOperationStatus = "Progressing"
+	QueuedOperationStatusAborted      QueuedOperationStatus = "Aborted"
+	QueuedOperationStatusCompleted    QueuedOperationStatus = "Completed"
+	QueuedOperationStatusDelivered    QueuedOperationStatus = "Delivered"
+	QueuedOperationStatusDelivered1   QueuedOperationStatus = "delivered"
+	QueuedOperationStatusFailed       QueuedOperationStatus = "Failed"
+	QueuedOperationStatusInitializing QueuedOperationStatus = "Initializing"
+	QueuedOperationStatusPending      QueuedOperationStatus = "Pending"
+	QueuedOperationStatusPending1     QueuedOperationStatus = "pending"
+	QueuedOperationStatusProgressing  QueuedOperationStatus = "Progressing"
+)
+
+// Defines values for UnitActionStatus.
+const (
+	UnitActionStatusAborted      UnitActionStatus = "Aborted"
+	UnitActionStatusCompleted    UnitActionStatus = "Completed"
+	UnitActionStatusDelivered    UnitActionStatus = "Delivered"
+	UnitActionStatusDelivered1   UnitActionStatus = "delivered"
+	UnitActionStatusFailed       UnitActionStatus = "Failed"
+	UnitActionStatusInitializing UnitActionStatus = "Initializing"
+	UnitActionStatusPending      UnitActionStatus = "Pending"
+	UnitActionStatusPending1     UnitActionStatus = "pending"
+	UnitActionStatusProgressing  UnitActionStatus = "Progressing"
 )
 
 // ActionResult defines model for ActionResult.
@@ -1347,7 +1360,11 @@ type OrganizationMember struct {
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
 }
 
-// QueuedOperation QueuedOperation is a record of an operation to be done by a bridge worker.
+// QueuedOperation UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+// to each UnitAction.
 type QueuedOperation struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
@@ -1366,7 +1383,7 @@ type QueuedOperation struct {
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
-	// QueuedOperationID QueuedOperationID is the unique identifier for the queued operation.
+	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
 
 	// RevisionNum RevisionNum is the revision number this operation was performed on.
@@ -1375,7 +1392,7 @@ type QueuedOperation struct {
 	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
-	// Status Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 	Status QueuedOperationStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
 
 	// TargetID TargetID is the unique identifier of the target this operation is directed to.
@@ -1384,12 +1401,18 @@ type QueuedOperation struct {
 	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
+	// UserAgent User-Agent string of the API call.
+	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
+
+	// UserID UserID of the user the action was performed by.
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
-// QueuedOperationStatus Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+// QueuedOperationStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 type QueuedOperationStatus string
 
 // ResourceInfo defines model for ResourceInfo.
@@ -1951,26 +1974,68 @@ type Unit struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
-// UnitAction defines model for UnitAction.
+// UnitAction UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+// to each UnitAction.
 type UnitAction struct {
-	Action            *ActionType        `json:"Action,omitempty" yaml:"Action,omitempty"`
-	BridgeWorkerID    openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	CreatedAt         time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-	Dependencies      []UUID             `json:"Dependencies" yaml:"Dependencies"`
-	ExtraParams       string             `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
-	OrganizationID    openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
+	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
+	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
+	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+
+	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
-	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-	SpaceID           openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	Status            string             `json:"Status,omitempty" yaml:"Status,omitempty"`
-	TargetID          openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-	UnitID            openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
-	Version           int64              `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// RevisionNum RevisionNum is the revision number this operation was performed on.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+	Status UnitActionStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
+
+	// TargetID TargetID is the unique identifier of the target this operation is directed to.
+	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+
+	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UserAgent User-Agent string of the API call.
+	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
+
+	// UserID UserID of the user the action was performed by.
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control.
+	// The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
+
+// UnitActionStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
+type UnitActionStatus string
 
 // UnitActionResponse defines model for UnitActionResponse.
 type UnitActionResponse struct {
-	// Action QueuedOperation is a record of an operation to be done by a bridge worker.
+	// Action UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+	// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+	// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+	// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+	// to each UnitAction.
 	Action *QueuedOperation `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error  *ResponseError   `json:"Error,omitempty" yaml:"Error,omitempty"`
 }

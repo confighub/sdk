@@ -12725,8 +12725,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
         "400":
           content:
             application/json:
@@ -12768,8 +12773,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
       summary: Apply a unit configuration
       tags:
       - Unit
@@ -12940,8 +12950,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
         "400":
           content:
             application/json:
@@ -12983,8 +12998,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
       summary: Destroy a unit configuration
       tags:
       - Unit
@@ -13084,8 +13104,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
         "400":
           content:
             application/json:
@@ -13127,8 +13152,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
       summary: Import a configuration unit
       tags:
       - Unit
@@ -13494,8 +13524,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
         "400":
           content:
             application/json:
@@ -13537,8 +13572,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: QueuedOperation is a record of an operation to be done by a
-            bridge worker.
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
       summary: Refresh a unit configuration
       tags:
       - Unit
@@ -14060,7 +14100,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnitAction'
-          description: OK
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
         "400":
           content:
             application/json:
@@ -14096,7 +14142,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnitAction'
-          description: ""
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
       summary: Get UnitAction
       tags:
       - UnitAction
@@ -21893,8 +21945,13 @@ components:
           x-go-type-skip-optional-pointer: true
       type: object
     QueuedOperation:
-      description: QueuedOperation is a record of an operation to be done by a bridge
-        worker.
+      description: "UnitAction is a record of an action to be performed by a Bridge
+        Worker. They are queued and sent to the worker in creation order. \nIf the
+        worker is temporarily disconnected the queued actions will be sent when the
+        worker reconnects or responds.\nIf there are links between units applied or
+        destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+        in the appropriate order (reverse or forword topological order). One or more
+        UnitEvents will correspond\nto each UnitAction."
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
@@ -21934,7 +21991,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         QueuedOperationID:
-          description: QueuedOperationID is the unique identifier for the queued operation.
+          description: QueuedOperationID is the unique identifier for the queued unit
+            action.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -21953,11 +22011,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Status:
-          description: 'Status indicates the current status of the queued operation.
-            v2 statuses: Initializing (being set up), Pending (waiting), Delivered
-            (sent to worker), Progressing (being processed), Completed (success),
-            Failed (error). v1 compatibility: ''pending'' = Pending, ''delivered''
-            = Completed (legacy ''delivered'' meant work done).'
+          description: 'Status indicates the current status of the unit action. v2
+            statuses: Initializing (being set up), Pending (waiting), Delivered (sent
+            to worker), Progressing (being processed), Completed (success), Failed
+            (error). v1 compatibility: ''pending'' = Pending, ''delivered'' = Completed
+            (legacy ''delivered'' meant work done).'
           enum:
           - Initializing
           - Pending
@@ -21980,6 +22038,16 @@ components:
         UnitID:
           description: UnitID is the unique identifier of the unit this operation
             is performed on.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserAgent:
+          description: User-Agent string of the API call.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: UserID of the user the action was performed by.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -22995,61 +23063,117 @@ components:
       - ToolchainType
       type: object
     UnitAction:
+      description: "UnitAction is a record of an action to be performed by a Bridge
+        Worker. They are queued and sent to the worker in creation order. \nIf the
+        worker is temporarily disconnected the queued actions will be sent when the
+        worker reconnects or responds.\nIf there are links between units applied or
+        destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+        in the appropriate order (reverse or forword topological order). One or more
+        UnitEvents will correspond\nto each UnitAction."
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
         BridgeWorkerID:
+          description: BridgeWorkerID is the unique identifier of the bridge worker
+            that will process this operation.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
         Dependencies:
+          description: Dependencies contains the list of operation IDs that this operation
+            depends on. Operations will not be delivered until all dependencies are
+            completed.
           items:
             $ref: '#/components/schemas/UUID'
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
         ExtraParams:
+          description: ExtraParams contains additional parameters for the operation
+            in string format.
           type: string
           x-go-type-skip-optional-pointer: true
         OrganizationID:
+          description: OrganizationID is the unique identifier of the organization
+            this operation belongs to.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         QueuedOperationID:
+          description: QueuedOperationID is the unique identifier for the queued unit
+            action.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         RevisionNum:
+          description: RevisionNum is the revision number this operation was performed
+            on.
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
         SpaceID:
+          description: SpaceID is the unique identifier of the space of the unit this
+            operation is performed on.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         Status:
+          description: 'Status indicates the current status of the unit action. v2
+            statuses: Initializing (being set up), Pending (waiting), Delivered (sent
+            to worker), Progressing (being processed), Completed (success), Failed
+            (error). v1 compatibility: ''pending'' = Pending, ''delivered'' = Completed
+            (legacy ''delivered'' meant work done).'
+          enum:
+          - Initializing
+          - Pending
+          - Delivered
+          - Progressing
+          - Completed
+          - Failed
+          - Aborted
+          - pending
+          - delivered
           type: string
           x-go-type-skip-optional-pointer: true
         TargetID:
+          description: TargetID is the unique identifier of the target this operation
+            is directed to.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         UnitID:
+          description: UnitID is the unique identifier of the unit this operation
+            is performed on.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserAgent:
+          description: User-Agent string of the API call.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: UserID of the user the action was performed by.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         Version:
+          description: |-
+            An entity-specific sequence number used for optimistic concurrency control.
+            The value read must be sent in calls to Update.
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true

@@ -63,8 +63,9 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 		action = string(*unitAction.Action)
 	}
 	table.Append([]string{"Action", action})
-	table.Append([]string{"Status", unitAction.Status})
+	table.Append([]string{"Status", string(unitAction.Status)})
 	table.Append([]string{"Created At", unitAction.CreatedAt.String()})
+	table.Append([]string{"User ID", unitAction.UserID.String()})
 	table.Append([]string{"Bridge Worker ID", unitAction.BridgeWorkerID.String()})
 
 	table.Render()

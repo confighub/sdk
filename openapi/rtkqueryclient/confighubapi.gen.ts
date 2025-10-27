@@ -6407,7 +6407,11 @@ export type UpdateUnitApiArg = {
   unit: Unit;
 };
 export type ApplyUnitApiResponse =
-  /** status 200 QueuedOperation is a record of an operation to be done by a bridge worker. */ QueuedOperation;
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ QueuedOperation;
 export type ApplyUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6433,7 +6437,11 @@ export type DownloadUnitDataApiArg = {
   unitId: string;
 };
 export type DestroyUnitApiResponse =
-  /** status 200 QueuedOperation is a record of an operation to be done by a bridge worker. */ QueuedOperation;
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ QueuedOperation;
 export type DestroyUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6448,7 +6456,11 @@ export type GetUnitExtendedApiArg = {
   unitId: string;
 };
 export type ImportUnitApiResponse =
-  /** status 200 QueuedOperation is a record of an operation to be done by a bridge worker. */ QueuedOperation;
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ QueuedOperation;
 export type ImportUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6573,7 +6585,11 @@ export type GetExtendedMutationApiArg = {
   mutationId: string;
 };
 export type RefreshUnitApiResponse =
-  /** status 200 QueuedOperation is a record of an operation to be done by a bridge worker. */ QueuedOperation;
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ QueuedOperation;
 export type RefreshUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6766,7 +6782,12 @@ export type ListUnitActionsApiArg = {
     The whole string must be query-encoded. */
   contains?: string;
 };
-export type GetUnitActionApiResponse = /** status 200 OK */ UnitAction;
+export type GetUnitActionApiResponse =
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ UnitAction;
 export type GetUnitActionApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -11215,13 +11236,13 @@ export type QueuedOperation = {
   ExtraParams?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;
-  /** QueuedOperationID is the unique identifier for the queued operation. */
+  /** QueuedOperationID is the unique identifier for the queued unit action. */
   QueuedOperationID?: string;
   /** RevisionNum is the revision number this operation was performed on. */
   RevisionNum?: number;
   /** SpaceID is the unique identifier of the space of the unit this operation is performed on. */
   SpaceID?: string;
-  /** Status indicates the current status of the queued operation. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done). */
+  /** Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done). */
   Status?:
     | 'Initializing'
     | 'Pending'
@@ -11236,6 +11257,10 @@ export type QueuedOperation = {
   TargetID?: string;
   /** UnitID is the unique identifier of the unit this operation is performed on. */
   UnitID?: string;
+  /** User-Agent string of the API call. */
+  UserAgent?: string;
+  /** UserID of the user the action was performed by. */
+  UserID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control.
     The value read must be sent in calls to Update. */
   Version?: number;
@@ -11305,17 +11330,43 @@ export type ExtendedMutationRead = {
 };
 export type UnitAction = {
   Action?: ActionType;
+  /** BridgeWorkerID is the unique identifier of the bridge worker that will process this operation. */
   BridgeWorkerID?: string;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
+  /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
   Dependencies?: Uuid[] | null;
+  /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
+  /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;
+  /** QueuedOperationID is the unique identifier for the queued unit action. */
   QueuedOperationID?: string;
+  /** RevisionNum is the revision number this operation was performed on. */
   RevisionNum?: number;
+  /** SpaceID is the unique identifier of the space of the unit this operation is performed on. */
   SpaceID?: string;
-  Status?: string;
+  /** Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done). */
+  Status?:
+    | 'Initializing'
+    | 'Pending'
+    | 'Delivered'
+    | 'Progressing'
+    | 'Completed'
+    | 'Failed'
+    | 'Aborted'
+    | 'pending'
+    | 'delivered';
+  /** TargetID is the unique identifier of the target this operation is directed to. */
   TargetID?: string;
+  /** UnitID is the unique identifier of the unit this operation is performed on. */
   UnitID?: string;
+  /** User-Agent string of the API call. */
+  UserAgent?: string;
+  /** UserID of the user the action was performed by. */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control.
+    The value read must be sent in calls to Update. */
   Version?: number;
 };
 export type Column = {
