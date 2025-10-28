@@ -34,12 +34,14 @@ Like other ConfigHub entities, Units have metadata, which can be partly set on t
 and otherwise read from stdin using the flag --from-stdin or --replace-from-stdin.
 
 Unit configuration data can be provided in multiple ways:
+
   1. From a local or remote configuration file, or from stdin (by specifying "-")
   2. By restoring to a previous revision (using --restore)
   3. By upgrading from the upstream unit (using --upgrade)
   4. By performing a 3-way merge with another unit (using --merge-source, --merge-base, --merge-end)
 
 Examples:
+` + "```" + `
   # Update a unit from a local YAML file
   cub unit update --space my-space myunit config.yaml
 
@@ -110,7 +112,9 @@ Patch Mode Examples:
   cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LiveRevisionNum --change-desc "Restored to live revision"
 
   # Bulk patch with data from stdin plus metadata (just an example; use cub unit set-target for this case)
-  echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"`
+  echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"
+` + "```" + `
+`
 
 	agentContext := `Essential for maintaining and evolving configuration in ConfigHub.
 

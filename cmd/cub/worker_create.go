@@ -14,19 +14,23 @@ var workerCreateCmd = &cobra.Command{
 	Use:   "create <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Create a worker",
-	Long: `Create a bridge worker in your environment. Workers are responsible for executing tasks and managing resources in your infrastructure.
+	Long: getCommandHelp(`Create a bridge worker in your environment. Workers are responsible for executing tasks and managing resources in your infrastructure.
 
 The worker-slug must be unique within a space. Workers can be used to:
+
   1. Apply configurations to target environments
   2. Monitor and manage resource states
 
 Examples:
+`+"```"+`
   # Create a worker in a space
   cub worker create --space my-space k8s-worker-1
 
   # Create a worker and run it for the Kubernetes toolchain
   cub worker create --space my-space worker-1
-  cub worker run --space my-space worker-1 -t=kubernetes`,
+  cub worker run --space my-space worker-1 -t=kubernetes
+`+"```"+`
+`, ""),
 	RunE: workerCreateCmdRun,
 }
 

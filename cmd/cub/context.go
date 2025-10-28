@@ -88,7 +88,7 @@ type ContextManager struct {
 var contextCmd = &cobra.Command{
 	Use:   "context",
 	Short: "Context commands",
-	Long:  `Context commands`,
+	Long:  getCommandHelp(`Context commands`, ""),
 }
 
 func init() {

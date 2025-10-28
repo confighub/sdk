@@ -88,10 +88,37 @@ var IsAgent bool = os.Getenv("CONFIGHUB_AGENT") != ""
 
 // getCommandHelp returns help text for commands with optional agent context
 func getCommandHelp(baseHelp string, agentContext string) string {
-	if IsAgent && agentContext != "" {
-		return baseHelp + "\n\n" + agentContext
+	if IsAgent {
+		if agentContext != "" {
+			return baseHelp + "\n\n" + agentContext
+		}
+		return baseHelp
 	}
-	return baseHelp
+	// Docgen uses an env var rather than a global variable in order to pass info across
+	// process boundaries.
+	if os.Getenv("CONFIGHUB_DOCGEN") != "" {
+		return baseHelp
+	}
+	return getFormattedContent(baseHelp)
+}
+
+func getFormattedContent(content string) string {
+	renderer, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(80),
+	)
+	if err != nil {
+		// Fallback to raw markdown if glamour fails
+		return content
+	}
+
+	formatted, err := renderer.Render(content)
+	if err != nil {
+		// Fallback to raw markdown if rendering fails
+		return content
+	}
+
+	return formatted
 }
 
 func getFormattedOverview() string {
@@ -109,22 +136,11 @@ func getFormattedOverview() string {
 To change the default confighub host, set CONFIGHUB_URL environment variable.`
 	}
 
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(80),
-	)
-	if err != nil || IsAgent {
-		// Fallback to raw markdown if glamour fails
+	if IsAgent {
 		return string(content)
 	}
 
-	formatted, err := renderer.Render(string(content))
-	if err != nil {
-		// Fallback to raw markdown if rendering fails
-		return string(content)
-	}
-
-	return formatted
+	return getFormattedContent(string(content))
 }
 
 func getSimpleHelp() string {

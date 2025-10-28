@@ -21,19 +21,20 @@ var unitDestroyCmd = &cobra.Command{
 	Use:   "destroy [<unit-slug>]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Destroy configuration units from the target",
-	Long: `Destroy configuration units from the target.
+	Long: getCommandHelp(`Destroy configuration units from the target.
 
 Examples:
+`+"```"+`
   # Destroy a single unit by slug
   cub unit destroy my-unit
-  
+
   # Destroy multiple specific units
   cub unit destroy --space my-space --unit unit1,unit2,unit3
   cub unit destroy --space my-space --unit unit1 --unit unit2 --unit unit3
 
   # Bulk destroy units using a WHERE clause with labels
   cub unit destroy --space my-space --where "Labels.Tier = 'backend'"
-  
+
   # Destroy units with multiple label conditions
   cub unit destroy --space my-space --where "Labels.App = 'api' AND Labels.Tier = 'backend'"
 
@@ -44,7 +45,9 @@ Examples:
   cub unit destroy --space my-space --where "LiveRevisionNum > 0"
 
   # Destroy units across all spaces (requires --space "*")
-  cub unit destroy --space "*" --where "Space.Labels.Environment = 'test'"`,
+  cub unit destroy --space "*" --where "Space.Labels.Environment = 'test'"
+`+"```"+`
+`, ""),
 	RunE:        unitDestroyCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
 }

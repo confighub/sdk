@@ -13,9 +13,10 @@ import (
 var changesetListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List changesets",
-	Long: `List changesets you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List changesets you have access to in a space or across all spaces.
 
 Examples:
+`+"```"+`
   # List all changesets in a space with headers
   cub changeset list --space my-space
 
@@ -32,7 +33,9 @@ Examples:
   cub changeset list --space my-space --no-header --names
 
   # List changesets with matching Descriptions
-  cub changeset list --space my-space --where "Description LIKE 'Release%'"`,
+  cub changeset list --space my-space --where "Description LIKE 'Release%'"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        changesetListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

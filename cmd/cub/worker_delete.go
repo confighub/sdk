@@ -15,15 +15,19 @@ import (
 var bridgeworkerDeleteCmd = &cobra.Command{
 	Use:   "delete [<name>]",
 	Short: "Delete a bridgeworker or multiple bridgeworkers",
-	Long: `Delete a bridgeworker or multiple bridgeworkers using bulk operations.
+	Long: getCommandHelp(`Delete a bridgeworker or multiple bridgeworkers using bulk operations.
 
 Single bridgeworker delete:
+`+"```"+`
   cub worker delete my-worker
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple bridgeworkers at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all disabled bridgeworkers
   cub worker delete --where "Disabled = true"
 
@@ -34,7 +38,9 @@ Examples:
   cub worker delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific bridgeworkers by name
-  cub worker delete --worker my-worker,another-worker`,
+  cub worker delete --worker my-worker,another-worker
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        bridgeworkerDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

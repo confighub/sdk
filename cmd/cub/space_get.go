@@ -17,16 +17,17 @@ var spaceGetCmd = &cobra.Command{
 	Use:   "get <name or id>",
 	Short: "Get details about a space",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a space including its ID, name, and organization details.
+	Long: getCommandHelp(`Get detailed information about a space including its ID, name, and organization details.
 
 Examples:
+`+"```"+`
   # Get space details in table format
   cub space get my-space
 
   # Get space details in JSON format
   cub space get --json my-space
-
-`,
+`+"```"+`
+`, ""),
 	RunE: spaceGetCmdRun,
 }
 

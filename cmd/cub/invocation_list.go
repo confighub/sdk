@@ -15,9 +15,10 @@ import (
 var invocationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List invocations",
-	Long: `List invocations you have access to in a space or across all spaces. The output includes slugs, worker slugs, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List invocations you have access to in a space or across all spaces. The output includes slugs, worker slugs, toolchain types, function names, and the number of arguments.
 
 Examples:
+`+"```"+`
   # List all invocations in a space with headers
   cub invocation list --space my-space
 
@@ -37,7 +38,9 @@ Examples:
   cub invocation list --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
 
   # List invocations using a specific function
-  cub invocation list --space my-space --where "FunctionName = 'cel-validate'"`,
+  cub invocation list --space my-space --where "FunctionName = 'cel-validate'"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        invocationListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

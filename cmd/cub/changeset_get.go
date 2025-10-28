@@ -16,15 +16,17 @@ var changesetGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a changeset",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a changeset in a space including its ID, slug, display name, tags, and description.
+	Long: getCommandHelp(`Get detailed information about a changeset in a space including its ID, slug, display name, tags, and description.
 
 Examples:
+`+"```"+`
   # Get details about a release changeset
   cub changeset get --space my-space release-changeset
 
   # Get details about a changeset in JSON format
   cub changeset get --space my-space --json hotfix-changeset
-`,
+`+"```"+`
+`, ""),
 	RunE: changesetGetCmdRun,
 }
 

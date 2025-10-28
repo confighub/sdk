@@ -16,13 +16,14 @@ var userGetCmd = &cobra.Command{
 	Use:   "get <user>",
 	Short: "Get details about a user",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a user.
+	Long: getCommandHelp(`Get detailed information about a user.
 
 Examples:
+`+"```"+`
   # Get details about a user
   cub user get --json my-user
-
-`,
+`+"```"+`
+`, ""),
 	RunE: userGetCmdRun,
 }
 

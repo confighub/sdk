@@ -17,20 +17,26 @@ import (
 var targetUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>]",
 	Short: "Update a target or multiple targets",
-	Long: `Update a target or multiple targets using bulk operations.
+	Long: getCommandHelp(`Update a target or multiple targets using bulk operations.
 
 Single target update:
+`+"```"+`
   cub target update --space my-space my-target
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple targets at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update all targets with a specific toolchain type using JSON patch
   echo '{"Parameters": "{}"}' | cub target update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
 
   # Update specific targets by slug
-  cub target update --patch --target my-target,another-target --from-stdin < patch.json`,
+  cub target update --patch --target my-target,another-target --from-stdin < patch.json
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 args for bulk mode
 	RunE:        targetUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

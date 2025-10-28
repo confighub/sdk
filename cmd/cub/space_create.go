@@ -24,22 +24,27 @@ var spaceCreateCmd = &cobra.Command{
 	Use:   "create [space]",
 	Short: "Create a space",
 	Args:  cobra.RangeArgs(0, 1),
-	Long: `Create a new space as a collaborative context for a project or team.
+	Long: getCommandHelp(`Create a new space as a collaborative context for a project or team.
 
 Single space creation examples:
+`+"```"+`
   # Create a new space named "my-space" with verbose output, reading configuration from stdin
   # Verbose output prints the details of the created entity
   cub space create --verbose --json --from-stdin my-space
 
   # Create a new space with minimal output
   cub space create my-space
+`+"```"+`
 
 Bulk creation examples:
+`+"```"+`
   # Bulk create spaces by cloning existing spaces with name prefixes
   cub space create --where "Slug IN ('prod', 'staging')" --name-prefix "backup-,test-"
 
   # Clone specific spaces by identifier with prefixes
-  cub space create --space "space1,space2" --name-prefix "new-"`,
+  cub space create --space "space1,space2" --name-prefix "new-"
+`+"```"+`
+`, ""),
 	RunE: spaceCreateCmdRun,
 }
 

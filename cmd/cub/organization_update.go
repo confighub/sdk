@@ -12,7 +12,7 @@ import (
 var organizationUpdateCmd = &cobra.Command{
 	Use:   "update <slug or id>",
 	Short: "Update a organization",
-	Long:  `Update a organization.`,
+	Long:  getCommandHelp(`Update a organization.`, ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  organizationUpdateCmdRun,
 }

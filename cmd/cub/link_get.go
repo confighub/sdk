@@ -16,13 +16,14 @@ var linkGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a link",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a link in a space including its ID, slug, display name, and the connected units.
+	Long: getCommandHelp(`Get detailed information about a link in a space including its ID, slug, display name, and the connected units.
 
 Examples:
+`+"```"+`
   # Get details about a deployment-to-namespace link
   cub link get --space my-space deployment-to-namespace
-
-`,
+`+"```"+`
+`, ""),
 	RunE: linkGetCmdRun,
 }
 

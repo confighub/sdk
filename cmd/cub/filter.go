@@ -10,7 +10,7 @@ import (
 var filterCmd = &cobra.Command{
 	Use:               "filter",
 	Short:             "Filter commands",
-	Long:              `The filter subcommands are used to manage filters`,
+	Long:              getCommandHelp(`The filter subcommands are used to manage filters`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

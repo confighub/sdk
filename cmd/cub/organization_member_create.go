@@ -15,15 +15,18 @@ var organizationMemberCreateCmd = &cobra.Command{
 	Use:   "create <organization-member>",
 	Short: "Create a organization-member",
 	Args:  cobra.ExactArgs(1),
-	Long: `Create a new organization-member as a collaborative context for a project or team.
+	Long: getCommandHelp(`Create a new organization-member as a collaborative context for a project or team.
 
 Examples:
+`+"```"+`
   # Create a new organization-member named "my-organization-member" with verbose output, reading configuration from stdin
   # Verbose output prints the details of the created entity
   cub organization-member create --verbose --json --from-stdin my-organization-member
 
   # Create a new organization-member with minimal output
-  cub organization-member create my-organization-member`,
+  cub organization-member create my-organization-member
+`+"```"+`
+`, ""),
 	RunE: organizationMemberCreateCmdRun,
 }
 

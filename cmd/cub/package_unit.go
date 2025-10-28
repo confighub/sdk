@@ -12,7 +12,7 @@ import (
 var packageUnitCmd = &cobra.Command{
 	Use:   "unit <command>",
 	Short: "unit commands",
-	Long:  `unit commands for packages`,
+	Long:  getCommandHelp(`unit commands for packages`, ""),
 }
 
 func init() {

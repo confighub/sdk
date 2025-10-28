@@ -16,15 +16,17 @@ var filterGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a filter",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a filter in a space including its ID, slug, display name, from type, where expressions, and resource type.
+	Long: getCommandHelp(`Get detailed information about a filter in a space including its ID, slug, display name, from type, where expressions, and resource type.
 
 Examples:
+`+"```"+`
   # Get details about a unit filter
   cub filter get --space my-space --json unit-filter
 
   # Get details about a deployment filter
   cub filter get --space my-space --json deployment-filter
-`,
+`+"```"+`
+`, ""),
 	RunE: filterGetCmdRun,
 }
 

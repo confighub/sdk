@@ -15,15 +15,19 @@ import (
 var spaceDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a space or multiple spaces",
-	Long: `Delete a space or multiple spaces using bulk operations.
+	Long: getCommandHelp(`Delete a space or multiple spaces using bulk operations.
 
 Single space delete:
+`+"```"+`
   cub space delete my-space
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple spaces at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all spaces with specific label
   cub space delete --where "Labels.Environment = 'staging'"
 
@@ -31,7 +35,9 @@ Examples:
   cub space delete --where "CreatedAt < '2024-01-01'"
 
   # Delete specific spaces by slug
-  cub space delete --space my-space,another-space`,
+  cub space delete --space my-space,another-space
+`+"```"+`
+`, ""),
 	Args: cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE: spaceDeleteCmdRun,
 }

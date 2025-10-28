@@ -15,9 +15,10 @@ import (
 var filterListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List filters",
-	Long: `List filters you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List filters you have access to in a space or across all spaces.
 
 Examples:
+`+"```"+`
   # List all filters in a space with headers
   cub filter list --space my-space
 
@@ -43,7 +44,9 @@ Examples:
   cub filter list --space my-space --entity-type Unit --entity-id my-unit
 
   # List filters that match a space (works across all spaces)
-  cub filter list --space "*" --entity-type Space --entity-id my-space`,
+  cub filter list --space "*" --entity-type Space --entity-id my-space
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        filterListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

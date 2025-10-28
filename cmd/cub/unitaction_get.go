@@ -14,6 +14,7 @@ import (
 var unitActionGetCmd = &cobra.Command{
 	Use:   "get <unit-slug> <unit-action-id>",
 	Short: "Get a unit action",
+	Long:  getCommandHelp("Get a unit action", ""),
 	Args:  cobra.ExactArgs(2),
 	RunE:  unitActionGetRun,
 }

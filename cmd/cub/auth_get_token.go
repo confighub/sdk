@@ -12,7 +12,7 @@ import (
 var authGetTokenCmd = &cobra.Command{
 	Use:   "get-token",
 	Short: "Get the current JWT access token",
-	Long:  `Get the current JWT access token from the session. Useful for scripting and integration with other tools like Claude Code MCP.`,
+	Long:  getCommandHelp(`Get the current JWT access token from the session. Useful for scripting and integration with other tools like Claude Code MCP.`, ""),
 	Args:  cobra.ExactArgs(0),
 	RunE:  authGetTokenCmdRun,
 }

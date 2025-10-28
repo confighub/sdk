@@ -26,12 +26,13 @@ var unitApplyCmd = &cobra.Command{
 	Use:   "apply [<unit-slug>]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Apply configuration units to the target",
-	Long: `Apply configuration units to the target.
+	Long: getCommandHelp(`Apply configuration units to the target.
 
 Examples:
+`+"```"+`
   # Apply a single unit by slug
   cub unit apply my-unit
-  
+
   # Apply a specific revision
   cub unit apply my-unit --revision 5
   cub unit apply my-unit --revision LiveRevisionNum
@@ -43,7 +44,7 @@ Examples:
 
   # Bulk apply units using a WHERE clause with labels
   cub unit apply --space my-space --where "Labels.Tier = 'backend'"
-  
+
   # Apply specific revision for multiple units
   cub unit apply --space my-space --where "Labels.Tier = 'backend'" --revision LiveRevisionNum
 
@@ -57,7 +58,9 @@ Examples:
   cub unit apply --space my-space --where "HeadRevisionNum > LiveRevisionNum"
 
   # Apply units across all spaces (requires --space "*")
-  cub unit apply --space "*" --where "Space.Labels.Environment = 'staging'"`,
+  cub unit apply --space "*" --where "Space.Labels.Environment = 'staging'"
+`+"```"+`
+`, ""),
 	RunE:        unitApplyCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
 }

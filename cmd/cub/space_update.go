@@ -21,21 +21,26 @@ var spaceUpdateArgs struct {
 var spaceUpdateCmd = &cobra.Command{
 	Use:   "update [slug or id]",
 	Short: "Update a space",
-	Long: `Update a space.
+	Long: getCommandHelp(`Update a space.
 
 Single space update examples:
+`+"```"+`
   # Update a space by slug
   cub space update my-space --from-stdin
 
   # Update a space with patch mode
   cub space update --patch my-space --label "Environment=prod"
+`+"```"+`
 
 Bulk update examples:
+`+"```"+`
   # Bulk patch spaces by filter
   cub space update --patch --where "Labels.Environment = 'dev'" --label "updated=true"
 
   # Patch specific spaces by identifier
-  cub space update --patch --space "space1,space2" --from-stdin`,
+  cub space update --patch --space "space1,space2" --from-stdin
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(0, 1),
 	RunE: spaceUpdateCmdRun,
 }

@@ -17,24 +17,28 @@ import (
 var unitApproveCmd = &cobra.Command{
 	Use:   "approve [<unit-slug>]",
 	Short: "Approve a unit or multiple units",
-	Long: `Approve a unit or multiple units using bulk operations.
+	Long: getCommandHelp(`Approve a unit or multiple units using bulk operations.
 
 Single unit approve:
+`+"```"+`
   cub unit approve my-unit
-  
+
   # Approve a specific revision
   cub unit approve my-unit --revision 5
   cub unit approve my-unit --revision LiveRevisionNum
   cub unit approve my-unit --revision Tag:release-v1.0
   cub unit approve my-unit --revision ChangeSet:feature-rollout
+`+"```"+`
 
 Bulk approve with --where:
+
 Approve multiple units at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Approve all units with specific label
   cub unit approve --where "Labels.Tier = 'backend'"
-  
+
   # Approve a specific revision for all matching units
   cub unit approve --where "Labels.Tier = 'backend'" --revision LiveRevisionNum
 
@@ -42,7 +46,9 @@ Examples:
   cub unit approve --space "*" --where "Slug = 'backend'"
 
   # Approve specific units by slug
-  cub unit approve --unit my-unit,another-unit`,
+  cub unit approve --unit my-unit,another-unit
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        unitApproveCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

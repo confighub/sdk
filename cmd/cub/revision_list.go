@@ -18,9 +18,10 @@ import (
 var revisionListCmd = &cobra.Command{
 	Use:   "list [unit]",
 	Short: "List revisions",
-	Long: `List revisions for a unit in a space, or across all spaces when selectedSpaceID is "*". The output includes revision numbers, timestamps, usernames, sources, descriptions, apply gates, and tags. Revisions track the history of changes made to a unit's configuration.
+	Long: getCommandHelp(`List revisions for a unit in a space, or across all spaces when selectedSpaceID is "*". The output includes revision numbers, timestamps, usernames, sources, descriptions, apply gates, and tags. Revisions track the history of changes made to a unit's configuration.
 
 Examples:
+`+"```"+`
   # List all revisions for a unit
   cub revision list --space my-space my-ns
 
@@ -41,8 +42,8 @@ Examples:
 
   # List revisions across all spaces (organization-wide search, at most one revision per unit)
   cub revision list --space '*' --where 'Tags.my-tag-id = "some-value"'
-
-`,
+`+"```"+`
+`, ""),
 	Args:        cobra.RangeArgs(0, 1),
 	RunE:        revisionListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

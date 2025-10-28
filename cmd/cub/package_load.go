@@ -20,12 +20,12 @@ import (
 var packageLoadCmd = &cobra.Command{
 	Use:   "load <dir-or-url>",
 	Short: "load a package from a directory or URL",
-	Long: `load a package by deserializing a directory structure or remote URL into ConfigHub spaces, units, links, etc.
+	Long: getCommandHelp(`load a package by deserializing a directory structure or remote URL into ConfigHub spaces, units, links, etc.
 
 Supports:
   - Local directories: ./my-package or /path/to/package
   - HTTP/HTTPS URLs: https://example.com/packages/my-package
-  - GitHub repositories: https://github.com/user/repo/tree/main/packages/my-package`,
+  - GitHub repositories: https://github.com/user/repo/tree/main/packages/my-package`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: packageLoadCmdRun,
 }

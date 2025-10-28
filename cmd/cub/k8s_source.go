@@ -12,9 +12,9 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -25,7 +25,7 @@ import (
 var k8sSourceCmd = &cobra.Command{
 	Use:   "source <kind> <name>",
 	Short: "Find the ConfigHub source of a Kubernetes resource",
-	Long: `Retrieve a Kubernetes resource and trace it back to its ConfigHub unit.
+	Long: getCommandHelp(`Retrieve a Kubernetes resource and trace it back to its ConfigHub unit.
 
 This command gets a Kubernetes resource and uses ConfigHub annotations to determine
 which unit manages the resource. It then opens a browser window to view the unit
@@ -35,11 +35,13 @@ The resource must have ConfigHub annotations (confighub.com/UnitSlug and configh
 to be traced back to its source.
 
 The kubeconfig file is loaded with the following precedence:
+
   1. --kubeconfig flag (highest priority, no merging)
   2. KUBECONFIG environment variable (merges multiple files)
   3. $HOME/.kube/config (default)
 
 Examples:
+`+"```"+`
   # Find the source of a deployment
   cub k8s source deployment my-app
 
@@ -50,7 +52,9 @@ Examples:
   cub k8s source clusterrole my-role
 
   # Use a specific kubeconfig file
-  cub k8s source deployment my-app --kubeconfig /path/to/config`,
+  cub k8s source deployment my-app --kubeconfig /path/to/config
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(2),
 	RunE: k8sSourceCmdRun,
 }
@@ -247,27 +251,27 @@ func getCommonAPIVersions(kind string) []string {
 
 	// Map of kinds to their common API versions
 	apiVersionMap := map[string][]string{
-		"pod":                  {"v1"},
-		"service":              {"v1"},
-		"configmap":            {"v1"},
-		"secret":               {"v1"},
-		"serviceaccount":       {"v1"},
-		"namespace":            {"v1"},
-		"node":                 {"v1"},
-		"persistentvolume":     {"v1"},
+		"pod":                   {"v1"},
+		"service":               {"v1"},
+		"configmap":             {"v1"},
+		"secret":                {"v1"},
+		"serviceaccount":        {"v1"},
+		"namespace":             {"v1"},
+		"node":                  {"v1"},
+		"persistentvolume":      {"v1"},
 		"persistentvolumeclaim": {"v1"},
-		"deployment":           {"apps/v1", "apps/v1beta2", "apps/v1beta1"},
-		"statefulset":          {"apps/v1", "apps/v1beta2", "apps/v1beta1"},
-		"daemonset":            {"apps/v1", "apps/v1beta2"},
-		"replicaset":           {"apps/v1", "apps/v1beta2"},
-		"job":                  {"batch/v1"},
-		"cronjob":              {"batch/v1", "batch/v1beta1"},
-		"ingress":              {"networking.k8s.io/v1", "networking.k8s.io/v1beta1"},
-		"networkpolicy":        {"networking.k8s.io/v1"},
-		"role":                 {"rbac.authorization.k8s.io/v1"},
-		"rolebinding":          {"rbac.authorization.k8s.io/v1"},
-		"clusterrole":          {"rbac.authorization.k8s.io/v1"},
-		"clusterrolebinding":   {"rbac.authorization.k8s.io/v1"},
+		"deployment":            {"apps/v1", "apps/v1beta2", "apps/v1beta1"},
+		"statefulset":           {"apps/v1", "apps/v1beta2", "apps/v1beta1"},
+		"daemonset":             {"apps/v1", "apps/v1beta2"},
+		"replicaset":            {"apps/v1", "apps/v1beta2"},
+		"job":                   {"batch/v1"},
+		"cronjob":               {"batch/v1", "batch/v1beta1"},
+		"ingress":               {"networking.k8s.io/v1", "networking.k8s.io/v1beta1"},
+		"networkpolicy":         {"networking.k8s.io/v1"},
+		"role":                  {"rbac.authorization.k8s.io/v1"},
+		"rolebinding":           {"rbac.authorization.k8s.io/v1"},
+		"clusterrole":           {"rbac.authorization.k8s.io/v1"},
+		"clusterrolebinding":    {"rbac.authorization.k8s.io/v1"},
 	}
 
 	if versions, ok := apiVersionMap[kind]; ok {

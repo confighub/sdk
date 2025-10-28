@@ -13,7 +13,7 @@ import (
 var workerListCmd = &cobra.Command{
 	Use:         "list",
 	Short:       "List workers",
-	Long:        `List workers in a space or across all spaces. Use --space "*" to list workers across all spaces.`,
+	Long:        getCommandHelp(`List workers in a space or across all spaces. Use --space "*" to list workers across all spaces.`, ""),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        workerListCmdRun,
 }

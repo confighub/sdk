@@ -16,7 +16,7 @@ var workerListFunctionCmd = &cobra.Command{
 	Use:   "list-function <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "List functions supported by a worker",
-	Long:  `List functions supported by a worker.`,
+	Long:  getCommandHelp(`List functions supported by a worker.`, ""),
 	RunE:  workerListFunctionCmdRun,
 }
 

@@ -10,7 +10,7 @@ import (
 var tagCmd = &cobra.Command{
 	Use:               "tag",
 	Short:             "Tag commands",
-	Long:              `The tag subcommands are used to manage tags`,
+	Long:              getCommandHelp(`The tag subcommands are used to manage tags`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

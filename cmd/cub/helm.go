@@ -18,7 +18,7 @@ import (
 var helmCmd = &cobra.Command{
 	Use:               "helm",
 	Short:             "Helm commands",
-	Long:              "Interact with Helm charts from the ConfigHub CLI.",
+	Long:              getCommandHelp("Interact with Helm charts from the ConfigHub CLI.", ""),
 	PersistentPreRunE: spacePreRunE, // Re-use the space selection mechanism used elsewhere
 }
 

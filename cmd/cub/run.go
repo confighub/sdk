@@ -16,7 +16,7 @@ import (
 var runCmd = &cobra.Command{
 	Use:               "run",
 	Short:             "invoke a function",
-	Long:              `invoke a function`,
+	Long:              getCommandHelp(`invoke a function`, ""),
 	PersistentPreRunE: spacePreRunE,
 	RunE:              RunRunCmd,
 }

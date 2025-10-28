@@ -18,9 +18,10 @@ var applyCmd = &cobra.Command{
 	Use:   "apply <filename> <last-applied-file> <inventory-file>",
 	Short: "Apply configuration from a YAML file",
 	Args:  cobra.ExactArgs(3),
-	Long: `Apply creates or updates entities from a YAML configuration file.
+	Long: getCommandHelp(`Apply creates or updates entities from a YAML configuration file.
 
 The command will:
+
 - Create entities that don't exist
 - Update entities that already exist using JSON merge patch
 - Use SpaceSlug from the entity data or --space flag
@@ -28,12 +29,14 @@ The command will:
 - Process all entities in the file even if some fail
 
 Examples:
+`+"```"+`
   # Apply configuration from a file with last-applied and inventory
   cub apply config.yaml last-applied.yaml inventory.yaml
 
   # Apply with a specific space
   cub apply --space my-space config.yaml last-applied.yaml inventory.yaml
-`,
+`+"```"+`
+`, ""),
 	RunE:        applyCmdRun,
 	PreRunE:     spacePreRunE,
 	Annotations: map[string]string{"OrgLevel": ""},

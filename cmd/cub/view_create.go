@@ -27,9 +27,11 @@ func getViewCreateHelp() string {
 	baseHelp := `Create a new view or bulk create multiple views by cloning existing ones.
 
 SINGLE VIEW CREATION:
+
 Create a new view to define an entity view specification.
 
 Examples:
+` + "```" + `
   # Create a view with a filter and specific columns
   cub view create --space my-space unit-view unit-filter --column Unit.Slug --column Unit.DisplayName --column Space.Slug
 
@@ -41,12 +43,15 @@ Examples:
 
   # Create a view from JSON
   cub view create --space my-space --json my-view --from-stdin < view.json
+` + "```" + `
 
 BULK VIEW CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 views based on filters and creates multiple new views with optional modifications.
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all views matching a pattern with name prefixes
   cub view create --where "FilterID IS NOT NULL" --name-prefix backup- --dest-space backup-space
 
@@ -58,16 +63,19 @@ Bulk Create Examples:
 
   # Clone views with modifications via JSON patch
   echo '{"OrderByDirection": "DESC"}' | cub view create --where "OrderBy IS NOT NULL" --name-prefix sorted- --from-stdin
+` + "```" + `
 
 Column Names:
+
 Columns should be specified in the format used by list commands, such as:
+
   - Unit.Slug, Unit.DisplayName, Unit.Status
   - Space.Slug, Space.DisplayName
   - Labels.Environment, Labels.Version
   - UpstreamUnit.HeadRevisionNum, UpstreamUnit.Slug
   - Target.Slug, Target.ToolchainType`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var viewCreateArgs struct {

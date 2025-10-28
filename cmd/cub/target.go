@@ -10,7 +10,7 @@ import (
 var targetCmd = &cobra.Command{
 	Use:               "target",
 	Short:             "Target commands",
-	Long:              `The target subcommands are used to manage targets`,
+	Long:              getCommandHelp(`The target subcommands are used to manage targets`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

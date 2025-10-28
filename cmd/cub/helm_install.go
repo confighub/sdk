@@ -33,12 +33,13 @@ const (
 var helmInstallCmd = &cobra.Command{
 	Use:   "install <release-name> <repo>/<chartname>",
 	Short: "Render a Helm chart's templates and install to ConfigHub",
-	Long: `Render a Helm chart's templates and install them as ConfigHub units.
+	Long: getCommandHelp(`Render a Helm chart's templates and install them as ConfigHub units.
 This command loads a chart (e.g., <repo>/<chartname>) from configured Helm repositories.
 It processes values from files and --set flags.
 CRDs are always rendered and splitted if exist.
 
 Examples:
+`+"```"+`
   # Render nginx chart (ensure 'bitnami' repo is added via 'helm repo add')
   # This command would create:
   # 1. my-nginx containing nginx Namespace definition + nginx resources
@@ -49,7 +50,7 @@ Examples:
 
   # Render the cert-manager chart
   # This creates 2 units:
-  # 1. cert-manager-crds: Custom Resource Definitions  
+  # 1. cert-manager-crds: Custom Resource Definitions
   # 2. cert-manager: Namespace definition + Main resources (rendered directly from Helm)
   #
 
@@ -58,7 +59,8 @@ Examples:
 	  cert-manager \
 	  jetstack/cert-manager \
 	  --version v1.17.1
-`,
+`+"```"+`
+`, ""),
 	Args:          cobra.MinimumNArgs(2),
 	RunE:          helmInstallCmdRun,
 	SilenceUsage:  true,

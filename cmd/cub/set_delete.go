@@ -13,7 +13,7 @@ package main
 // var setDeleteCmd = &cobra.Command{
 // 	Use:   "delete <slug or id>",
 // 	Short: "Delete a set",
-// 	Long:  `Delete a set`,
+// 	Long:  getCommandHelp(`Delete a set`, ""),
 // 	Args:  cobra.ExactArgs(1),
 // 	RunE:  setDeleteCmdRun,
 // }

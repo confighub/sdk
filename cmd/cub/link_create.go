@@ -30,20 +30,24 @@ var linkCreateArgs struct {
 var linkCreateCmd = &cobra.Command{
 	Use:   "create [<link slug> <from unit slug> <to unit slug> [<to space slug>]]",
 	Short: "Create a new link or bulk create links",
-	Long: `Create a new link between two units or bulk create multiple links based on filters.
+	Long: getCommandHelp(`Create a new link between two units or bulk create multiple links based on filters.
 
 SINGLE LINK CREATION:
+
 Create a single link between two units. Links define relationships between units and can be used to establish dependencies or connections between resources.
 
 A link can be created:
+
   1. Between units in the same space
   2. Between units across different spaces (by specifying the target space)
 
 BULK LINK CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode creates
 links between units matching the filters specified.
 
 Single Link Examples:
+`+"```"+`
   # Create a link between a deployment and its namespace in the same space
   cub link create --space my-space --json to-ns my-deployment my-ns --wait
 
@@ -52,8 +56,10 @@ Single Link Examples:
 
   # Create a link between a cloned unit and a namespace
   cub link create --space my-space --json clone-to-ns my-clone my-ns --wait
+`+"```"+`
 
 Bulk Create Examples:
+`+"```"+`
   # Create links between all deployments and a namespace in a space
   cub link create --where-space "Slug = 'my-space'" --where-from "Labels.type = 'deployment'" --where-to "Slug = 'my-ns'"
 
@@ -67,7 +73,9 @@ Bulk Create Examples:
   cub link create --dest-space dev-space,staging-space --where-from "Labels.app = 'frontend'" --where-to "Labels.app = 'backend'" --where-to-space "Slug = 'services-space'"
 
   # Create links with custom labels via JSON patch
-  echo '{"Labels": {"relationship": "dependency"}}' | cub link create --where-space "Slug LIKE 'app-%'" --where-from "Labels.tier = 'web'" --where-to "Labels.tier = 'db'" --from-stdin`,
+  echo '{"Labels": {"relationship": "dependency"}}' | cub link create --where-space "Slug LIKE 'app-%'" --where-from "Labels.tier = 'web'" --where-to "Labels.tier = 'db'" --from-stdin
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(4),
 	RunE:        linkCreateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

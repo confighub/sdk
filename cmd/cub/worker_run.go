@@ -16,6 +16,8 @@ import (
 
 var workerRunCmd = &cobra.Command{
 	Use:           "run",
+	Short:         "Run a worker locally",
+	Long:          getCommandHelp(`Run a worker locally`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerRunCmdRun,
 	SilenceUsage:  true,

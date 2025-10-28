@@ -16,16 +16,17 @@ var organizationGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a organization",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a organization including its ID, slug, display name, and additional details.
+	Long: getCommandHelp(`Get detailed information about a organization including its ID, slug, display name, and additional details.
 
 Examples:
+`+"```"+`
   # Get organization details in table format
   cub organization get my-organization
 
   # Get organization details in JSON format
   cub organization get --json my-organization
-
-`,
+`+"```"+`
+`, ""),
 	RunE: organizationGetCmdRun,
 }
 

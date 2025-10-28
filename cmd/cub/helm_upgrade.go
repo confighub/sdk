@@ -23,17 +23,19 @@ import (
 var helmUpgradeCmd = &cobra.Command{
 	Use:   "upgrade <release-name> <repo>/<chartname>",
 	Short: "Render a Helm chart's templates and update ConfigHub units",
-	Long: `Render a Helm chart's templates and update existing ConfigHub units.
+	Long: getCommandHelp(`Render a Helm chart's templates and update existing ConfigHub units.
 This command loads a chart (e.g., <repo>/<chartname>) from configured Helm repositories.
 It processes values from files and --set flags.
 
 The upgrade process:
+
 1. Renders the new chart version
 2. Checks if <release-name> unit exists
 3. If it exists, updates the unit with the new resources
 4. Optionally updates CRDs unit if --update-crds flag is set
 
 Examples:
+`+"```"+`
   # Upgrade nginx chart
   cub helm upgrade --namespace nginx my-nginx bitnami/nginx --version 15.6.0 --set image.tag=latest
 
@@ -43,7 +45,8 @@ Examples:
       cert-manager \
       jetstack/cert-manager \
       --version v1.17.2
-`,
+`+"```"+`
+`, ""),
 	Args:          cobra.MinimumNArgs(2),
 	RunE:          helmUpgradeCmdRun,
 	SilenceUsage:  true,

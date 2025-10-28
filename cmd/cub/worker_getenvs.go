@@ -14,10 +14,14 @@ var workerEnvsCmd = &cobra.Command{
 	Use:   "get-envs <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Get Bridge Worker environment variables",
-	Long: `Get Bridge Worker environment variables.
+	Long: getCommandHelp(`Get Bridge Worker environment variables.
 
-# Get the environment variables for a Bridge Worker
-cub worker get-envs <worker-slug>`,
+Examples:
+`+"```"+`
+  # Get the environment variables for a Bridge Worker
+  cub worker get-envs <worker-slug>
+`+"```"+`
+`, ""),
 	RunE: workerEnvsCmdRun,
 }
 

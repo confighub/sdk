@@ -16,15 +16,20 @@ import (
 var functionExecCmd = &cobra.Command{
 	Use:   "exec file",
 	Short: "Invoke a list of functions",
-	Long: `Invoke functions on units. Functions can be used to modify, validate, or query unit configurations.
+	Long: getCommandHelp(`Invoke functions on units. Functions can be used to modify, validate, or query unit configurations.
 
 To display a list of supported functions, run:
+`+"```"+`
   cub function list
+`+"```"+`
 
 To display usage details of a specific function, run:
+`+"```"+`
   cub function explain --toolchain TOOLCHAIN_TYPE FUNCTION_NAME
+`+"```"+`
 
 Example Functions:
+
   - set-image: Update container image in a deployment
   - set-int-path: Set an integer value at a specific path in the configuration
   - get-replicas: Get the number of replicas for deployments
@@ -35,12 +40,17 @@ Example Functions:
 The syntax is the same as the cub function do command line, but without "cub function do" and without flags.
 
 Example:
+`+"```"+`
   cub function exec functions.txt --where "Slug = 'mydeployment'
+`+"```"+`
 
 Where functions.txt contains:
+`+"```"+`
 set-replicas 3
 set-image nginx nginx:v234
-set-namespace myns`,
+set-namespace myns
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        functionExecCommandRun,

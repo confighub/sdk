@@ -17,24 +17,32 @@ import (
 var linkUpdateCmd = &cobra.Command{
 	Use:   "update [<link slug or id> <from unit slug> <to unit slug> [<to space slug>]]",
 	Short: "Update a link or multiple links",
-	Long: `Update a link or multiple links using bulk operations.
+	Long: getCommandHelp(`Update a link or multiple links using bulk operations.
 
 Single link update:
+`+"```"+`
   cub link update my-link from-unit to-unit [to-space]
+`+"```"+`
 
 Individual patch with --patch:
+
 Update a single link using JSON merge patch. Requires --patch flag with link slug.
 
+Examples:
+`+"```"+`
   # Patch individual link with JSON
   echo '{"Labels": {"env": "prod"}}' | cub link update my-link --patch --from-stdin
-  
+
   # Patch individual link with labels
   cub link update my-link --patch --label env=prod,team=backend
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple links at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update labels for multiple links using JSON patch
   echo '{"Labels": {"env": "prod"}}' | cub link update --patch --where "DisplayName LIKE 'app-%'" --from-stdin
 
@@ -45,7 +53,9 @@ Examples:
   cub link update --patch --space "*" --where "ToSpaceID = 'old-space-id'" --from-stdin
 
   # Update specific links by slug
-  echo '{"Labels": {"updated": "true"}}' | cub link update --patch --link my-link,another-link --from-stdin`,
+  echo '{"Labels": {"updated": "true"}}' | cub link update --patch --link my-link,another-link --from-stdin
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        linkUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

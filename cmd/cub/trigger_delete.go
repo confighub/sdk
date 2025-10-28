@@ -15,15 +15,19 @@ import (
 var triggerDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a trigger or multiple triggers",
-	Long: `Delete a trigger or multiple triggers using bulk operations.
+	Long: getCommandHelp(`Delete a trigger or multiple triggers using bulk operations.
 
 Single trigger delete:
+`+"```"+`
   cub trigger delete my-trigger
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple triggers at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all disabled triggers
   cub trigger delete --where "Disabled = true"
 
@@ -34,7 +38,9 @@ Examples:
   cub trigger delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific triggers by slug
-  cub trigger delete --trigger my-trigger,another-trigger`,
+  cub trigger delete --trigger my-trigger,another-trigger
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        triggerDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

@@ -15,15 +15,19 @@ import (
 var targetDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a target or multiple targets",
-	Long: `Delete a target or multiple targets using bulk operations.
+	Long: getCommandHelp(`Delete a target or multiple targets using bulk operations.
 
 Single target delete:
+`+"```"+`
   cub target delete my-target
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple targets at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete targets for specific toolchain
   cub target delete --where "ToolchainType = 'Kubernetes/YAML'"
 
@@ -31,7 +35,9 @@ Examples:
   cub target delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific targets by slug
-  cub target delete --target my-target,another-target`,
+  cub target delete --target my-target,another-target
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        targetDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

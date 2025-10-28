@@ -16,9 +16,10 @@ import (
 var viewListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List views",
-	Long: `List views you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List views you have access to in a space or across all spaces.
 
 Examples:
+`+"```"+`
   # List all views in a space with headers
   cub view list --space my-space
 
@@ -38,7 +39,9 @@ Examples:
   cub view list --space my-space --where "GroupBy IS NOT NULL"
 
   # List views with ordering
-  cub view list --space my-space --where "OrderBy IS NOT NULL"`,
+  cub view list --space my-space --where "OrderBy IS NOT NULL"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        viewListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

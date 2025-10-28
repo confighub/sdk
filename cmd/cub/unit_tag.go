@@ -18,20 +18,23 @@ var (
 var unitTagCmd = &cobra.Command{
 	Use:   "tag <tag-slug-or-id>",
 	Short: "Add or remove tags to/from unit revisions (supports space/tag syntax)",
-	Long: `Add or remove tags to/from unit revisions using bulk operations.
+	Long: getCommandHelp(`Add or remove tags to/from unit revisions using bulk operations.
 
 This command allows you to tag specific revisions of units with a tag identifier.
 Use bulk selection options to tag multiple units at once.
 
 Tag a specific revision type:
+`+"```"+`
   --revision HeadRevisionNum     Tag the head revision (default)
   --revision LiveRevisionNum     Tag the live revision
   --revision LastAppliedRevisionNum  Tag the last applied revision
   --revision PreviousLiveRevisionNum Tag the previous live revision
   --revision Remove              Remove the tag from the revision
   --revision -                   Remove the tag (shorthand for Remove)
+`+"```"+`
 
 Examples:
+`+"```"+`
   # Tag head revision of a single unit (uses current space)
   cub unit tag my-tag --unit my-unit
 
@@ -48,7 +51,9 @@ Examples:
   cub unit tag production/prod-release --space "*" --where "Labels.env = 'production'"
 
   # Use space/tag syntax to target tag in specific space
-  cub unit tag dev-space/dev-tag --unit my-unit`,
+  cub unit tag dev-space/dev-tag --unit my-unit
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(1), // Require tag slug or ID
 	RunE:        unitTagCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

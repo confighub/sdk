@@ -15,15 +15,19 @@ import (
 var changesetDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a changeset or multiple changesets",
-	Long: `Delete a changeset or multiple changesets using bulk operations.
+	Long: getCommandHelp(`Delete a changeset or multiple changesets using bulk operations.
 
 Single changeset delete:
+`+"```"+`
   cub changeset delete my-changeset
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple changesets at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all changesets created before a specific date
   cub changeset delete --where "CreatedAt < '2024-01-01'"
 
@@ -34,7 +38,9 @@ Examples:
   cub changeset delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific changesets by slug
-  cub changeset delete --changeset old-changeset,deprecated-changeset`,
+  cub changeset delete --changeset old-changeset,deprecated-changeset
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        changesetDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

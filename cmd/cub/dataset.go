@@ -12,7 +12,7 @@ import (
 var datasetCmdGroup = &cobra.Command{
 	Use:   "dataset <command>",
 	Short: "dataset commands",
-	Long:  `dataset commands`,
+	Long:  getCommandHelp(`dataset commands`, ""),
 }
 
 func init() {

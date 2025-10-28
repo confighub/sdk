@@ -17,15 +17,19 @@ import (
 var viewUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>] [options...]",
 	Short: "Update a view or multiple views",
-	Long: `Update a view or multiple views using bulk operations.
+	Long: getCommandHelp(`Update a view or multiple views using bulk operations.
 
 Single view update:
+`+"```"+`
   cub view update my-view --column Unit.Slug --column Unit.Status --order-by Unit.CreatedAt --order-by-direction DESC
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple views at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update columns for all views matching a pattern
   cub view update --patch --where "FilterID IS NOT NULL" --column Unit.Slug --column Unit.DisplayName
 
@@ -36,7 +40,9 @@ Examples:
   echo '{"OrderByDirection": "DESC"}' | cub view update --patch --where "OrderBy IS NOT NULL" --from-stdin
 
   # Clear ordering from views
-  echo '{"OrderBy": "", "OrderByDirection": ""}' | cub view update --patch --where "OrderBy IS NOT NULL" --from-stdin`,
+  echo '{"OrderBy": "", "OrderByDirection": ""}' | cub view update --patch --where "OrderBy IS NOT NULL" --from-stdin
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        viewUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

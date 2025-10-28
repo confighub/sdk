@@ -10,7 +10,7 @@ import (
 var invocationCmd = &cobra.Command{
 	Use:               "invocation",
 	Short:             "Invocation commands",
-	Long:              `The invocation subcommands are used to manage invocations`,
+	Long:              getCommandHelp(`The invocation subcommands are used to manage invocations`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

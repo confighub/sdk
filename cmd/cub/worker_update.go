@@ -17,20 +17,26 @@ import (
 var bridgeworkerUpdateCmd = &cobra.Command{
 	Use:   "update [<name>]",
 	Short: "Update a bridge worker or multiple bridge workers",
-	Long: `Update a bridge worker or multiple bridge workers using bulk operations.
+	Long: getCommandHelp(`Update a bridge worker or multiple bridge workers using bulk operations.
 
 Single bridge worker update:
+`+"```"+`
   cub worker update --space my-space my-worker
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple bridge workers at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update all bridge workers with specific labels using JSON patch
   echo '{"Labels": {"env": "prod"}}' | cub worker update --patch --where "Labels.tier = 'backend'" --from-stdin
 
   # Update specific bridge workers by slug
-  cub worker update --patch --worker my-worker,another-worker --from-stdin < patch.json`,
+  cub worker update --patch --worker my-worker,another-worker --from-stdin < patch.json
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 args for bulk mode
 	RunE:        bridgeworkerUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

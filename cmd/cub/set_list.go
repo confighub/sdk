@@ -14,9 +14,10 @@ package main
 // var setListCmd = &cobra.Command{
 // 	Use:   "list",
 // 	Short: "List sets",
-// 	Long: `List sets you have access to in a space. The output includes slugs and space slugs.
+// 	Long: getCommandHelp(`List sets you have access to in a space. The output includes slugs and space slugs.
 
 // Examples:
+// `+"```"+`
 //   # List all sets in a space
 //   cub set list --space my-space
 
@@ -39,7 +40,9 @@ package main
 //   cub set list --space my-space --where "Slug = 'my-set'"
 
 //   # List sets with minimal output
-//   cub set list --space my-space --quiet`,
+//   cub set list --space my-space --quiet
+// `+"```"+`
+// `, ""),
 // 	Args: cobra.ExactArgs(0),
 // 	RunE: setListCmdRun,
 // }

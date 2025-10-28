@@ -12,9 +12,10 @@ var workerGetCmd = &cobra.Command{
 	Use:   "get <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Get details about a bridge worker",
-	Long: `Get detailed information about a bridge worker including its configuration, status, and metadata.
+	Long: getCommandHelp(`Get detailed information about a bridge worker including its configuration, status, and metadata.
 
 Examples:
+`+"```"+`
   # Get details about a bridge worker
   cub worker get --space my-space my-worker
 
@@ -22,7 +23,9 @@ Examples:
   cub worker get --space my-space --json my-worker
 
   # Include worker secret in output
-  cub worker get --space my-space --include-secret my-worker`,
+  cub worker get --space my-space --include-secret my-worker
+`+"```"+`
+`, ""),
 	RunE: workerGetCmdRun,
 }
 

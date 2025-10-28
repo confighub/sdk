@@ -12,14 +12,17 @@ import (
 var contextRenameCmd = &cobra.Command{
 	Use:   "rename [old-name] [new-name]",
 	Short: "Rename a context",
-	Long: `Rename an existing context to a new name.
+	Long: getCommandHelp(`Rename an existing context to a new name.
 
 Examples:
+`+"```"+`
   # Rename a context
   cub context rename old-name new-name
-  
+
   # Rename the current context
-  cub context rename staging production`,
+  cub context rename staging production
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(2),
 	RunE: contextRenameCmdRun,
 }

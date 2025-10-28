@@ -18,7 +18,7 @@ import (
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade cub to the latest version",
-	Long:  `Download and install the latest version of cub and cub-worker-run binaries`,
+	Long:  getCommandHelp(`Download and install the latest version of cub and cub-worker-run binaries`, ""),
 	RunE:  upgradeCmdRun,
 }
 

@@ -10,7 +10,7 @@ import (
 var linkCmd = &cobra.Command{
 	Use:               "link",
 	Short:             "Link commands",
-	Long:              `The link subcommands are used to manage links`,
+	Long:              getCommandHelp(`The link subcommands are used to manage links`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

@@ -38,12 +38,18 @@ Parameters may be specified out of order using the "--parameter-name=value" synt
 flags, so specify "--" before the function name if using that syntax for function arguments.
 
 To display a list of supported functions for each ToolchainType, run:
+` + "```" + `
   cub function list
+` + "```" + `
 
 To display usage details of a specific function, run:
+` + "```" + `
+
   cub function explain --toolchain TOOLCHAIN_TYPE FUNCTION_NAME
+` + "```" + `
 
 Example Functions:
+
   - set-image: Update container image in a deployment
   - set-int-path: Set an integer value at a specific path in the configuration
   - get-replicas: Get the number of replicas for deployments
@@ -52,6 +58,7 @@ Example Functions:
   - cel-validate: Validate resources using CEL expressions
 
 Examples:
+` + "```" + `
   # Use set-image to update container image in a deployment
   cub function do \
     --space my-space \
@@ -100,7 +107,9 @@ Examples:
     cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1' \
     --quiet \
     --output-jq '.[].Passed' \
-    --jq '.[].UnitID'`
+    --jq '.[].UnitID'
+` + "```" + `
+`
 
 	agentContext := `Agent-specific guidance:
 

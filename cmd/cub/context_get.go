@@ -10,14 +10,17 @@ import (
 var contextGetCmd = &cobra.Command{
 	Use:   "get [context-name]",
 	Short: "Get context information",
-	Long: `Get information about a specific context or the current context.
+	Long: getCommandHelp(`Get information about a specific context or the current context.
 
 Examples:
+`+"```"+`
   # Get current context information
   cub context get
-  
+
   # Get specific context information
-  cub context get prod-acme`,
+  cub context get prod-acme
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(0, 1),
 	RunE: contextGetCmdRun,
 }

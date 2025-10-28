@@ -18,13 +18,14 @@ var mutationGetCmd = &cobra.Command{
 	Use:   "get <unit-slug> <mutation-num>",
 	Short: "Get details about a mutation",
 	Args:  cobra.ExactArgs(2),
-	Long: `Get detailed information about a specific mutation of a unit.
+	Long: getCommandHelp(`Get detailed information about a specific mutation of a unit.
 
 Examples:
+`+"```"+`
   # Get details about a specific mutation in JSON format
   cub mutation get --space my-space --json my-deployment 3
-
-`,
+`+"```"+`
+`, ""),
 	RunE: mutationGetCmdRun,
 }
 

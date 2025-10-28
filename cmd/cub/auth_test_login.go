@@ -20,7 +20,7 @@ import (
 var authTestLoginCmd = &cobra.Command{
 	Use:   "test-login <username>",
 	Short: "Log into ConfigHub with a test user",
-	Long:  `Authenticate the CLI to ConfigHub for testing purposes`,
+	Long:  getCommandHelp(`Authenticate the CLI to ConfigHub for testing purposes`, ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  authTestLoginCmdRun,
 }

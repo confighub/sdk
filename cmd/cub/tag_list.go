@@ -13,9 +13,10 @@ import (
 var tagListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tags",
-	Long: `List tags you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List tags you have access to in a space or across all spaces.
 
 Examples:
+`+"```"+`
   # List all tags in a space with headers
   cub tag list --space my-space
 
@@ -35,7 +36,9 @@ Examples:
   cub tag list --space my-space --where "Labels.environment = 'production'"
 
   # List tags created after a specific date
-  cub tag list --space my-space --where "CreatedAt > '2024-01-01'"`,
+  cub tag list --space my-space --where "CreatedAt > '2024-01-01'"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        tagListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

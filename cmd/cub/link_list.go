@@ -13,9 +13,10 @@ import (
 var linkListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List links",
-	Long: `List links you have access to in a space or across all spaces. The output includes slugs, source unit slugs (From-Unit), target unit slugs (To-Unit), and target space slugs (To-Space).
+	Long: getCommandHelp(`List links you have access to in a space or across all spaces. The output includes slugs, source unit slugs (From-Unit), target unit slugs (To-Unit), and target space slugs (To-Space).
 
 Examples:
+`+"```"+`
   # List all links in a space
   cub link list --space my-space
 
@@ -40,8 +41,10 @@ Examples:
   # List links from a specific unit
   cub link list --space my-space --where "FromUnitID = 'c871ca3a-d9ca-4eeb-a576-79c3b5a2ca97'"
 
-  # List cross-space links across all spaces  
-  cub link list --space "*" --where "ToSpaceID != SpaceID"`,
+  # List cross-space links across all spaces
+  cub link list --space "*" --where "ToSpaceID != SpaceID"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        linkListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

@@ -12,7 +12,7 @@ import (
 var organizationMemberDeleteCmd = &cobra.Command{
 	Use:   "delete <username or user id>",
 	Short: "Delete a organization-member",
-	Long:  `Delete a organization-member`,
+	Long:  getCommandHelp(`Delete a organization-member`, ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  organizationMemberDeleteCmdRun,
 }

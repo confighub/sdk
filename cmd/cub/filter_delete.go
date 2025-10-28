@@ -15,15 +15,19 @@ import (
 var filterDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a filter or multiple filters",
-	Long: `Delete a filter or multiple filters using bulk operations.
+	Long: getCommandHelp(`Delete a filter or multiple filters using bulk operations.
 
 Single filter delete:
+`+"```"+`
   cub filter delete my-filter
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple filters at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all filters for Units
   cub filter delete --where "From = 'Unit'"
 
@@ -34,7 +38,9 @@ Examples:
   cub filter delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific filters by slug
-  cub filter delete --filter-entity my-filter,another-filter`,
+  cub filter delete --filter-entity my-filter,another-filter
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        filterDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

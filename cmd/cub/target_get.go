@@ -16,13 +16,14 @@ var targetGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a target",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a target in a space including its ID, slug, display name, and configuration.
+	Long: getCommandHelp(`Get detailed information about a target in a space including its ID, slug, display name, and configuration.
 
 Examples:
+`+"```"+`
   # Get details about a target
   cub target get --space my-space --json my-target
-
-`,
+`+"```"+`
+`, ""),
 	RunE: targetGetCmdRun,
 }
 

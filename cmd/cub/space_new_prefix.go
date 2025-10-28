@@ -14,13 +14,16 @@ import (
 var spaceNewPrefixCmd = &cobra.Command{
 	Use:   "new-prefix",
 	Short: "Generate a random space name that is not a prefix of existing spaces",
-	Long: `Generate a random space name using cubbyname.Random() until finding one that is not a prefix of any existing space.
+	Long: getCommandHelp(`Generate a random space name using cubbyname.Random() until finding one that is not a prefix of any existing space.
 
 This command is useful for creating unique space names that won't conflict with existing spaces.
 
 Examples:
+`+"```"+`
   # Generate a new unique space name
-  cub space new-prefix`,
+  cub space new-prefix
+`+"```"+`
+`, ""),
 	RunE: spaceNewPrefixCmdRun,
 }
 

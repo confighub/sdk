@@ -19,7 +19,7 @@ import (
 var packageUnitListCmd = &cobra.Command{
 	Use:   "list <dir>",
 	Short: "list units in a package directory",
-	Long:  `list units in a package directory with optional label columns`,
+	Long:  getCommandHelp(`list units in a package directory with optional label columns`, ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  packageUnitListCmdRun,
 }

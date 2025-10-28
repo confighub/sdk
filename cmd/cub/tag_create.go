@@ -27,9 +27,11 @@ func getTagCreateHelp() string {
 	baseHelp := `Create a new tag or bulk create multiple tags by cloning existing ones.
 
 SINGLE TAG CREATION:
+
 Create a new tag to identify a set of revisions across units.
 
 Examples:
+` + "```" + `
   # Create a tag for a release
   cub tag create --space my-space release-v1.0
 
@@ -38,12 +40,15 @@ Examples:
 
   # Create a tag with a display name
   cub tag create --space my-space --json my-tag --from-stdin < tag.json
+` + "```" + `
 
 BULK TAG CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 tags based on filters and creates multiple new tags with optional modifications.
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all tags matching a pattern with name prefixes
   cub tag create --where "Slug LIKE 'release-%'" --name-prefix archive- --dest-space archive-space
 
@@ -54,9 +59,11 @@ Bulk Create Examples:
   cub tag create --where "Labels.version = '1.0'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone tags with modifications via JSON patch
-  echo '{"Labels": {"archived": "true"}}' | cub tag create --where "CreatedAt < '2024-01-01'" --name-prefix old- --from-stdin`
+  echo '{"Labels": {"archived": "true"}}' | cub tag create --where "CreatedAt < '2024-01-01'" --name-prefix old- --from-stdin
+` + "```" + `
+`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var tagCreateArgs struct {

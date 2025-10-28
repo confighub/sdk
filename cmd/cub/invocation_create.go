@@ -27,12 +27,18 @@ func getInvocationCreateHelp() string {
 	baseHelp := `Create a new invocation or bulk create multiple invocations by cloning existing ones.
 
 SINGLE INVOCATION CREATION:
+
 Create a new invocation to define a function invocation.
 
 Toolchain Types:
-  - Kubernetes/YAML: For Kubernetes YAML configurations
+
+- Kubernetes/YAML: For Kubernetes YAML configurations
+- ConfigHub/YAML: For ConfigHub YAML configurations
+- AppConfig/Properties: For Java Properties configurations
+- OpenTofu/HCL: For OpenTofu HCL configurations
 
 Example Functions:
+
   - vet-celexpr: Validate resources using CEL expressions
   - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
@@ -44,10 +50,12 @@ Function arguments can be provided as positional arguments or as named arguments
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
 
 BULK INVOCATION CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 invocations based on filters and creates multiple new invocations with optional modifications.
 
 Single Invocation Examples:
+` + "```" + `
   # Create an invocation to validate replicas > 1 for Deployments
   cub invocation create --space my-space --json replicated Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 
@@ -65,8 +73,10 @@ Single Invocation Examples:
 
   # Using named arguments for clarity (note the "--" separator)
   cub invocation create --space my-space --json stamp Kubernetes/YAML -- set-annotation --key=cloned --value=true
+` + "```" + `
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all invocations matching a pattern with name prefixes
   cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix dev-,staging- --dest-space dev-space
 
@@ -77,9 +87,11 @@ Bulk Create Examples:
   cub invocation create --where "ToolchainType = 'Kubernetes/YAML'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone invocations with modifications via JSON patch
-  echo '{"FunctionName": "vet-placeholders"}' | cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix v2- --from-stdin`
+  echo '{"FunctionName": "vet-placeholders"}' | cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix v2- --from-stdin
+` + "```" + `
+`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var invocationCreateArgs struct {

@@ -16,13 +16,14 @@ var organizationMemberGetCmd = &cobra.Command{
 	Use:   "get <organization-member>",
 	Short: "Get details about a organization-member",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a organization-member in an organization including its ID, User ID, and Organization ID.
+	Long: getCommandHelp(`Get detailed information about a organization-member in an organization including its ID, User ID, and Organization ID.
 
 Examples:
+`+"```"+`
   # Get details about a organization-member
   cub organization-member get --json my-organization-member
-
-`,
+`+"```"+`
+`, ""),
 	RunE: organizationMemberGetCmdRun,
 }
 

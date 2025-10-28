@@ -12,16 +12,19 @@ import (
 var contextCreateCmd = &cobra.Command{
 	Use:   "create [name]",
 	Short: "Create a new context",
-	Long: `Create a new context. If no name is provided, the context will be given a random name.
+	Long: getCommandHelp(`Create a new context. If no name is provided, the context will be given a random name.
 
 Examples:
+`+"```"+`
   # Create with parameters
   cub context create my-context \
     --server=https://api.confighub.com \
     --space=default
-  
+
   # Create from current authentication
-  cub context create staging --from-current`,
+  cub context create staging --from-current
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(0, 1),
 	RunE: contextCreateCmdRun,
 }

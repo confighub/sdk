@@ -45,10 +45,12 @@ func getUnitTreeHelp() string {
 
 The tree view shows the hierarchical relationships between units based on the specified edge type.
 Supports two types of relationships:
+
 - 'clone': Units connected via UpstreamUnit (configuration inheritance)
 - 'link': Units connected via Link relationships (dependency/producer-consumer)
 
 The tree can display either unit names or space names as nodes:
+
 - 'unit' (default): Shows unit names as tree nodes, with space names in a second column
 - 'space': Shows space names as tree nodes, with unit names in a second column
 
@@ -59,6 +61,7 @@ and specified columns on the right.
 Default columns for hybrid view: Status, UpgradeNeeded, UnappliedChanges, ApplyGates
 
 Examples:
+` + "```" + `
   # Show simple clone tree for all units in current space (clone is default)
   cub unit tree
 
@@ -90,7 +93,9 @@ Examples:
   cub unit tree --node space --space "*" --columns UnitStatus.Status
 
   # Explicitly specify clone edge type
-  cub unit tree --edge clone`
+  cub unit tree --edge clone
+ ` + "```" + `
+ `
 
 	agentContext := `Tree view is essential for understanding unit relationships and dependencies in ConfigHub.
 

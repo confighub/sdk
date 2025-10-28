@@ -11,7 +11,7 @@ package main
 // var setCmd = &cobra.Command{
 // 	Use:               "set",
 // 	Short:             "Set commands",
-// 	Long:              `The set subcommands are used to manage sets`,
+// 	Long:              getCommandHelp(`The set subcommands are used to manage sets`, ""),
 // 	PersistentPreRunE: spacePreRunE,
 // }
 

@@ -14,9 +14,10 @@ import (
 var userListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List users",
-	Long: `List users you have access to in organizations to which you belong.
+	Long: getCommandHelp(`List users you have access to in organizations to which you belong.
 
 Examples:
+`+"```"+`
   # List all users with headers
   cub user list
 
@@ -28,8 +29,8 @@ Examples:
 
   # List user with custom JQ filter
   cub user list --jq '.[].UserID'
-
-`,
+`+"```"+`
+`, ""),
 	RunE: userListCmdRun,
 }
 

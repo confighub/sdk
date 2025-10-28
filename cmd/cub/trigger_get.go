@@ -17,16 +17,17 @@ var triggerGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a trigger",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a trigger in a space including its ID, slug, display name, event type, toolchain type, function name, and arguments.
+	Long: getCommandHelp(`Get detailed information about a trigger in a space including its ID, slug, display name, event type, toolchain type, function name, and arguments.
 
 Examples:
+`+"```"+`
   # Get details about a trigger that validates replicas
   cub trigger get --space my-space --json validate-replicas
 
   # Get details about a trigger that enforces low resource usage
   cub trigger get --space my-space --json enforce-low-cost
-
-`,
+`+"```"+`
+`, ""),
 	RunE: triggerGetCmdRun,
 }
 

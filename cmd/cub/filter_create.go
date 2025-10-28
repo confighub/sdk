@@ -27,9 +27,11 @@ func getFilterCreateHelp() string {
 	baseHelp := `Create a new filter or bulk create multiple filters by cloning existing ones.
 
 SINGLE FILTER CREATION:
+
 Create a new filter to define entity filter expressions.
 
 From Types:
+
   - Unit: Filter units
   - Space: Filter spaces
   - Trigger: Filter triggers
@@ -37,6 +39,7 @@ From Types:
   - Target: Filter targets
 
 Examples:
+` + "```" + `
   # Create a filter for Units with specific labels
   cub filter create --space my-space --json unit-filter Unit --where-field "Labels.Environment = 'production'"
 
@@ -51,12 +54,15 @@ Examples:
 
   # Create a filter with from-space for filtering within a specific space
   cub filter create --space my-space --json cross-space-filter Unit --from-space other-space --where-field "DisplayName LIKE 'app-%'"
+` + "```" + `
 
 BULK FILTER CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 filters based on filters and creates multiple new filters with optional modifications.
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all filters matching a pattern with name prefixes
   cub filter create --where "From = 'Unit'" --name-prefix dev-,staging- --dest-space dev-space
 
@@ -67,9 +73,11 @@ Bulk Create Examples:
   cub filter create --where "From = 'Space'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone filters with modifications via JSON patch
-  echo '{"From": "Unit"}' | cub filter create --where "From = 'Space'" --name-prefix unit- --from-stdin`
+  echo '{"From": "Unit"}' | cub filter create --where "From = 'Space'" --name-prefix unit- --from-stdin
+` + "```" + `
+`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var filterCreateArgs struct {

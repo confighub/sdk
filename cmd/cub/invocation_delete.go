@@ -15,15 +15,19 @@ import (
 var invocationDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete an invocation or multiple invocations",
-	Long: `Delete an invocation or multiple invocations using bulk operations.
+	Long: getCommandHelp(`Delete an invocation or multiple invocations using bulk operations.
 
 Single invocation delete:
+`+"```"+`
   cub invocation delete my-invocation
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple invocations at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all invocations for a specific function
   cub invocation delete --where "FunctionName = 'validate'"
 
@@ -34,7 +38,9 @@ Examples:
   cub invocation delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific invocations by slug
-  cub invocation delete --invocation my-invocation,another-invocation`,
+  cub invocation delete --invocation my-invocation,another-invocation
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        invocationDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

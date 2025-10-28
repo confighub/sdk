@@ -27,20 +27,25 @@ func getChangeSetCreateHelp() string {
 	baseHelp := `Create a new changeset or bulk create multiple changesets by cloning existing ones.
 
 SINGLE CHANGESET CREATION:
+
 Create a new changeset to record an entity changeset specification.
 
 Examples:
+` + "```" + `
   # Create a changeset
   cub changeset create --space my-space hotfix-changeset --description "Hotfix changes"
 
   # Create a changeset from JSON
   cub changeset create --space my-space --json my-changeset --from-stdin < changeset.json
+` + "```" + `
 
 BULK CHANGESET CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 changesets based on filters and creates multiple new changesets with optional modifications.
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all changesets matching a pattern with name prefixes
   cub changeset create --where "Description LIKE '%release%'" --name-prefix archive- --dest-space archive-space
 
@@ -51,9 +56,11 @@ Bulk Create Examples:
   cub changeset create --where "Description LIKE 'Release%'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone changesets with modifications via JSON patch
-  echo '{"Description": "Archived changeset"}' | cub changeset create --where "CreatedAt < '2024-01-01'" --name-prefix old- --from-stdin`
+  echo '{"Description": "Archived changeset"}' | cub changeset create --where "CreatedAt < '2024-01-01'" --name-prefix old- --from-stdin
+` + "```" + `
+`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var changesetCreateArgs struct {

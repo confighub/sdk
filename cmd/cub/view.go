@@ -10,7 +10,7 @@ import (
 var viewCmd = &cobra.Command{
 	Use:               "view",
 	Short:             "View commands",
-	Long:              `The view subcommands are used to manage views`,
+	Long:              getCommandHelp(`The view subcommands are used to manage views`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

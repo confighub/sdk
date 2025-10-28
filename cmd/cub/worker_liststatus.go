@@ -15,10 +15,14 @@ var workerListStatusCmd = &cobra.Command{
 	Use:   "list-status <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "List worker statuses",
-	Long: `List statuses for a worker.
+	Long: getCommandHelp(`List statuses for a worker.
 
-# List all statuses for a worker
-cub worker list-status <worker-id>`,
+Examples:
+`+"```"+`
+  # List all statuses for a worker
+  cub worker list-status <worker-id>
+`+"```"+`
+`, ""),
 	RunE: workerListStatusCmdRun,
 }
 

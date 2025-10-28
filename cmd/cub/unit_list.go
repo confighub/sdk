@@ -26,6 +26,7 @@ func getUnitListHelp() string {
 	baseHelp := `List units you have access to in a space. The output includes slugs, data size, head revision, apply gates, and last change timestamp.
 
 Examples:
+` + "```" + `
   # List all units in a space
   cub unit list --space my-space
 
@@ -61,8 +62,10 @@ Examples:
 
   # List units showing label and annotation values
   cub unit list --space my-space --columns Unit.Slug,Unit.Labels.Environment,Unit.Labels.Tier,Unit.Annotations.Owner
+` + "```" + `
 
 Available columns (prefixed with Unit.):
+
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
   - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, LiveState, ApprovedBy
@@ -71,6 +74,7 @@ Available columns (prefixed with Unit.):
   - Dynamic: Labels.<key>, Annotations.<key>
 
 Example extended available columns (not exhaustive):
+
   - Basic: Space.Slug, Target.Slug
   - Status: UnitStatus.Status`
 

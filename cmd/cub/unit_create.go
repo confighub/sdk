@@ -32,6 +32,7 @@ func getUnitCreateHelp() string {
 	baseHelp := `Create a new unit or bulk create multiple units by cloning existing ones.
 
 SINGLE UNIT CREATION:
+
 Like other ConfigHub entities, Units have metadata, which can be partly set on the command line
 and otherwise read from stdin using the flag --from-stdin. 
 
@@ -39,14 +40,17 @@ Unlike other ConfigHub entities, Units also contain configuration data, which is
 source.
 
 Unit configuration data can be provided in multiple ways:
+
   1. From a local or remote configuration file, or from stdin (by specifying "-")
   2. By cloning an existing upstream unit (using --upstream-unit)
 
 BULK UNIT CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 units based on filters and creates multiple new units with optional modifications.
 
 Single Unit Examples:
+` + "```" + `
   # Create a unit from a local YAML file
   cub unit create --space my-space myunit config.yaml
 
@@ -64,8 +68,10 @@ Single Unit Examples:
 
   # Clone an existing unit
   cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment
+` + "```" + `
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all units matching a pattern with name prefixes
   cub unit create --where "Slug LIKE 'app-%'" --name-prefix dev-,staging- --dest-space dev-space
 
@@ -79,7 +85,9 @@ Bulk Create Examples:
   cub unit create --where "Labels.Tier = 'backend'" --name-prefix canary- --target my-target --label "Rollout=canary"
 
   # Clone units with JSON patch modifications
-  echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin`
+  echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin
+` + "```" + `
+`
 
 	agentContext := `Essential for adding new configuration to ConfigHub.
 
@@ -90,7 +98,7 @@ Agent creation workflow:
 4. Check for any validation issues or apply gates
 
 Creation methods:
-
+` + "```" + `
 From local file:
   cub unit create --space SPACE my-unit config.yaml --wait
 
@@ -99,6 +107,8 @@ From stdin (useful for programmatic creation):
 
 Clone existing unit:
   cub unit create --space SPACE my-variant --upstream-unit SOURCE_UNIT --upstream-space SOURCE_SPACE --from-stdin < metadata.json
+` + "```" + `
+
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)

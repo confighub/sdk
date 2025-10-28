@@ -15,15 +15,19 @@ import (
 var unitDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a unit or multiple units",
-	Long: `Delete a unit or multiple units using bulk operations.
+	Long: getCommandHelp(`Delete a unit or multiple units using bulk operations.
 
 Single unit delete:
+`+"```"+`
   cub unit delete my-unit
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple units at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all units with specific label
   cub unit delete --where "Labels.Tier = 'backend'"
 
@@ -31,7 +35,9 @@ Examples:
   cub unit delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific units by slug
-  cub unit delete --unit my-unit,another-unit`,
+  cub unit delete --unit my-unit,another-unit
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        unitDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

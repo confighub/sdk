@@ -23,7 +23,7 @@ import (
 var packageCmdGroup = &cobra.Command{
 	Use:   "package <command>",
 	Short: "package commands",
-	Long:  `package commands`,
+	Long:  getCommandHelp(`package commands`, ""),
 }
 
 func init() {
@@ -73,23 +73,23 @@ type WorkerEntry struct {
 type LinkEntry struct {
 	Slug       string `json:"slug"`
 	SpaceSlug  string `json:"space_slug"`
-	FromUnit   string `json:"from_unit"`  // Format: "space-slug/unit-slug"
-	ToUnit     string `json:"to_unit"`    // Format: "space-slug/unit-slug"
+	FromUnit   string `json:"from_unit"` // Format: "space-slug/unit-slug"
+	ToUnit     string `json:"to_unit"`   // Format: "space-slug/unit-slug"
 	DetailsLoc string `json:"details_loc"`
 }
 
 type ViewEntry struct {
-	Slug        string `json:"slug"`
-	SpaceSlug   string `json:"space_slug"`
-	FilterSlug  string `json:"filter_slug,omitempty"`  // Reference to filter (optional)
-	DetailsLoc  string `json:"details_loc"`
+	Slug       string `json:"slug"`
+	SpaceSlug  string `json:"space_slug"`
+	FilterSlug string `json:"filter_slug,omitempty"` // Reference to filter (optional)
+	DetailsLoc string `json:"details_loc"`
 }
 
 type FilterEntry struct {
-	Slug            string `json:"slug"`
-	SpaceSlug       string `json:"space_slug"`
-	FromSpaceSlug   string `json:"from_space_slug,omitempty"`  // Reference to FromSpace (optional)
-	DetailsLoc      string `json:"details_loc"`
+	Slug          string `json:"slug"`
+	SpaceSlug     string `json:"space_slug"`
+	FromSpaceSlug string `json:"from_space_slug,omitempty"` // Reference to FromSpace (optional)
+	DetailsLoc    string `json:"details_loc"`
 }
 
 type TagEntry struct {
@@ -101,7 +101,7 @@ type TagEntry struct {
 type InvocationEntry struct {
 	Slug       string `json:"slug"`
 	SpaceSlug  string `json:"space_slug"`
-	WorkerSlug string `json:"worker_slug,omitempty"`  // Reference to BridgeWorker (optional)
+	WorkerSlug string `json:"worker_slug,omitempty"` // Reference to BridgeWorker (optional)
 	DetailsLoc string `json:"details_loc"`
 }
 
@@ -142,7 +142,7 @@ func convertToGitHubRawURL(githubURL string) string {
 	// Convert various GitHub URL formats to raw.githubusercontent.com format
 	// Example: https://github.com/user/repo/tree/main/path -> https://raw.githubusercontent.com/user/repo/main/path
 	// Example: https://github.com/user/repo/blob/main/path -> https://raw.githubusercontent.com/user/repo/main/path
-	
+
 	u, err := url.Parse(githubURL)
 	if err != nil {
 		return githubURL
@@ -155,7 +155,7 @@ func convertToGitHubRawURL(githubURL string) string {
 
 	user := parts[0]
 	repo := parts[1]
-	
+
 	// Default branch
 	branch := "main"
 	subPath := ""
@@ -182,7 +182,7 @@ func convertToGitHubRawURL(githubURL string) string {
 // LoadManifest loads the manifest from the remote source
 func (r *RemotePackageLoader) LoadManifest() (*PackageManifest, error) {
 	manifestURL := r.baseURL + "manifest.json"
-	
+
 	resp, err := r.httpClient.Get(manifestURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch manifest: %w", err)
@@ -210,9 +210,9 @@ func (r *RemotePackageLoader) LoadManifest() (*PackageManifest, error) {
 func (r *RemotePackageLoader) LoadFile(relativePath string) ([]byte, error) {
 	// Remove leading slash if present
 	relativePath = strings.TrimPrefix(relativePath, "/")
-	
+
 	fileURL := r.baseURL + relativePath
-	
+
 	resp, err := r.httpClient.Get(fileURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch file %s: %w", relativePath, err)
@@ -382,6 +382,6 @@ func (r *RemotePackageLoader) LoadInvocationDetails(invocation InvocationEntry) 
 
 // isRemoteURL determines if a path is a remote URL
 func isRemoteURL(path string) bool {
-	return strings.HasPrefix(path, "http://") || 
-		   strings.HasPrefix(path, "https://")
+	return strings.HasPrefix(path, "http://") ||
+		strings.HasPrefix(path, "https://")
 }

@@ -13,14 +13,17 @@ var contextUseCmd = &cobra.Command{
 	Use:     "use [name]",
 	Aliases: []string{"set-current"},
 	Short:   "Switch to a different context",
-	Long: `Switch to a different context making it the current active context.
+	Long: getCommandHelp(`Switch to a different context making it the current active context.
 
 Examples:
+`+"```"+`
   # Switch to a context
   cub context use prod-acme
-  
+
   # Switch using alias
-  cub context set-current staging`,
+  cub context set-current staging
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: contextUseCmdRun,
 }

@@ -13,14 +13,17 @@ var contextListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"get-contexts"},
 	Short:   "List all contexts",
-	Long: `List all available contexts showing current context, server, organization, user, and default space.
+	Long: getCommandHelp(`List all available contexts showing current context, server, organization, user, and default space.
 
 Examples:
+`+"```"+`
   # List all contexts
   cub context list
-  
+
   # List contexts (using alias)
-  cub context get-contexts`,
+  cub context get-contexts
+`+"```"+`
+`, ""),
 	Args: cobra.NoArgs,
 	RunE: contextListCmdRun,
 }

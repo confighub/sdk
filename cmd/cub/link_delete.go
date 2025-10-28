@@ -16,15 +16,19 @@ import (
 var linkDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a link or multiple links",
-	Long: `Delete a link or multiple links using bulk operations.
+	Long: getCommandHelp(`Delete a link or multiple links using bulk operations.
 
 Single link delete:
+`+"```"+`
   cub link delete my-link
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple links at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all links to a specific unit
   cub link delete --where "ToUnitID = 'unit-uuid'"
 
@@ -35,7 +39,9 @@ Examples:
   cub link delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific links by slug
-  cub link delete --link my-link,another-link`,
+  cub link delete --link my-link,another-link
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        linkDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

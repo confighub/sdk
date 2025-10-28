@@ -13,15 +13,18 @@ var organizationCreateCmd = &cobra.Command{
 	Use:   "create <organization name>",
 	Short: "Create a organization",
 	Args:  cobra.ExactArgs(1),
-	Long: `Create a new organization as a top-level division for your access management.
+	Long: getCommandHelp(`Create a new organization as a top-level division for your access management.
 
 Examples:
+`+"```"+`
   # Create a new organization named "my-organization" with verbose output, reading configuration from stdin
   # Verbose output prints the details of the created entity
   cub organization create --verbose --json --from-stdin my-organization
 
   # Create a new organization with minimal output
-  cub organization create my-organization`,
+  cub organization create my-organization
+`+"```"+`
+`, ""),
 	RunE: organizationCreateCmdRun,
 }
 

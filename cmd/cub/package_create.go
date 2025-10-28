@@ -23,7 +23,7 @@ import (
 var packageCreateCmd = &cobra.Command{
 	Use:   "create <dir>",
 	Short: "create a package in a directory",
-	Long:  `create a package by serializing a set of spaces, units, links, etc. from ConfigHub into a directory structure.`,
+	Long:  getCommandHelp(`create a package by serializing a set of spaces, units, links, etc. from ConfigHub into a directory structure.`, ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  packageCreateCmdRun,
 }

@@ -16,9 +16,10 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: `List triggers you have access to in a space or across all spaces. The output includes slugs, worker slugs, events, validation status, disabled status, enforcement status, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, worker slugs, events, validation status, disabled status, enforcement status, toolchain types, function names, and the number of arguments.
 
 Examples:
+`+"```"+`
   # List all triggers in a space with headers
   cub trigger list --space my-space
 
@@ -42,9 +43,11 @@ Examples:
 
   # List triggers using a specific function
   cub trigger list --space my-space --where "FunctionName = 'cel-validate'"
-  
+
   # List disabled triggers across all spaces
-  cub trigger list --space "*" --where "Disabled = true"`,
+  cub trigger list --space "*" --where "Disabled = true"
+`+"```"+`
+`, ""),
 	Args:        cobra.ExactArgs(0),
 	RunE:        triggerListCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

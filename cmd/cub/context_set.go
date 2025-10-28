@@ -12,20 +12,23 @@ import (
 var contextSetCmd = &cobra.Command{
 	Use:   "set [context-name] [options]",
 	Short: "Set the default space for a context",
-	Long: `Set the default space for the current context or a specific context.
+	Long: getCommandHelp(`Set the default space for the current context or a specific context.
 
 This command updates the default space that will be used for commands
 when no --space flag is provided.
 
 Examples:
+`+"```"+`
   # Set default space for current context
   cub context set --space=production
-  
+
   # Set default space for a specific context
   cub context set prod-context --space=production
-  
+
   # Set default space to development
-  cub context set --space=dev`,
+  cub context set --space=dev
+`+"```"+`
+`, ""),
 	Args: cobra.MaximumNArgs(1),
 	RunE: contextSetCmdRun,
 }

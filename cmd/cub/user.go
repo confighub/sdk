@@ -10,7 +10,7 @@ import (
 var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "User commands",
-	Long:  `The user subcommands are used to view users`,
+	Long:  getCommandHelp(`The user subcommands are used to view users`, ""),
 	// just globalPreRun,
 }
 

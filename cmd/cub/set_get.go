@@ -17,13 +17,14 @@ package main
 // 	Use:   "get <slug or id>",
 // 	Short: "Get details about a set",
 // 	Args:  cobra.ExactArgs(1),
-// 	Long: `Get detailed information about a set in a space including its ID, slug, display name, and organization details.
+// 	Long: getCommandHelp(`Get detailed information about a set in a space including its ID, slug, display name, and organization details.
 
 // Examples:
+// `+"```"+`
 //   # Get details about a set
 //   cub set get --space my-space --json my-set
-
-// `,
+// `+"```"+`
+// `, ""),
 // 	RunE: setGetCmdRun,
 // }
 

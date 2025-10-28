@@ -20,7 +20,7 @@ import (
 var functionLocalCmd = &cobra.Command{
 	Use:   "local <filename> <function> [<arg1> ...]",
 	Short: "Execute a function locally on input data for debugging",
-	Long: `Execute a ConfigHub function locally on input data for debugging purposes.
+	Long: getCommandHelp(`Execute a ConfigHub function locally on input data for debugging purposes.
 
 This command allows you to test functions without connecting to the ConfigHub server.
 It reads configuration data from a file and executes the specified function locally.
@@ -33,6 +33,7 @@ Parameters may be specified out of order using the "--parameter-name=value" synt
 flags, so specify "--" before the filename if using that syntax for function arguments.
 
 Examples:
+`+"```"+`
   # Execute set-image function on local file
   cub function local deployment.yaml set-image nginx nginx:1.25-alpine --toolchain Kubernetes/YAML
 
@@ -43,7 +44,9 @@ Examples:
   cub function local -- deployment.yaml set-int-path --apiVersion=apps/v1 --kind=Deployment --path=spec.replicas --value=3
 
   # Read from stdin
-  cat deployment.yaml | cub function local - set-replicas 3 --toolchain Kubernetes/YAML`,
+  cat deployment.yaml | cub function local - set-replicas 3 --toolchain Kubernetes/YAML
+`+"```"+`
+`, ""),
 	Args: cobra.MinimumNArgs(2),
 	RunE: functionLocalCommandRun,
 	// Skip the default pre-run which tries to connect to the server

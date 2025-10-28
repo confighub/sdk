@@ -17,15 +17,17 @@ var viewGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a view",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a view in a space including its ID, slug, display name, filter, columns, and ordering.
+	Long: getCommandHelp(`Get detailed information about a view in a space including its ID, slug, display name, filter, columns, and ordering.
 
 Examples:
+`+"```"+`
   # Get details about a unit view
   cub view get --space my-space unit-view
 
   # Get details about a view in JSON format
   cub view get --space my-space --json summary-view
-`,
+`+"```"+`
+`, ""),
 	RunE: viewGetCmdRun,
 }
 

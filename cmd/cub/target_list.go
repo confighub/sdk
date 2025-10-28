@@ -13,7 +13,7 @@ import (
 var targetListCmd = &cobra.Command{
 	Use:         "list",
 	Short:       "List targets",
-	Long:        `List targets you have access to in a space or across all spaces. Use --space "*" to list targets across all spaces.`,
+	Long:        getCommandHelp(`List targets you have access to in a space or across all spaces. Use --space "*" to list targets across all spaces.`, ""),
 	Args:        cobra.ExactArgs(0),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        targetListCmdRun,

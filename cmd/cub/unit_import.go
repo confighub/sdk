@@ -15,24 +15,30 @@ import (
 var unitImportCmd = &cobra.Command{
 	Use:   "import <slug> [config-file]",
 	Short: "Import a unit from various sources using unified import filters",
-	Long: `Import a unit from various sources using unified import filters.
+	Long: getCommandHelp(`Import a unit from various sources using unified import filters.
 
 Default mode (with config-file):
+`+"```"+`
   cub unit import myunit resources.json
+`+"```"+`
 
 Unified import filter mode currently supports Kubernetes resource filtering:
 
-Include custom resources:
+Examples:
+`+"```"+`
+  # Include custom resources
   cub unit import myunit --where "metadata.namespace = 'import-test-default' AND import.include_custom = true"
 
-Combined scenario:
+  # Combined scenario
   cub unit import myunit --where "metadata.namespace = 'import-test-default' AND import.include_system = true AND import.include_custom = true"
 
-Resource type filtering:
+  # Resource type filtering
   cub unit import myunit --where "kind = 'ConfigMap' AND metadata.namespace IN ('import-test-default', 'import-test-production')"
 
-Complex path filtering with wildcards:
-  cub unit import myunit --where "metadata.namespace IN ('import-test-default', 'import-test-production') AND spec.template.spec.containers.*.image = 'nginx:latest'"`,
+  # Complex path filtering with wildcards
+  cub unit import myunit --where "metadata.namespace IN ('import-test-default', 'import-test-production') AND spec.template.spec.containers.*.image = 'nginx:latest'"
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(1, 2),
 	RunE: unitImportCmdRun,
 }

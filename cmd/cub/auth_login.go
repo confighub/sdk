@@ -32,26 +32,29 @@ var (
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Log into ConfigHub",
-	Long: `Authenticate the CLI to ConfigHub via Browser Login
+	Long: getCommandHelp(`Authenticate the CLI to ConfigHub via Browser Login
 
 Examples:
+`+"```"+`
   # Login (creates or updates current context)
   cub auth login
-  
+
   # Login to a specific server
   cub auth login --server https://hub.confighub.com
-  
+
   # Login to a specific existing context
   cub --context prod2 auth login
-  
+
   # Create a new context and login with a specific server
   cub auth login --new-context --server https://hub.confighub.com
-  
+
   # Login as a worker using environment variables
   cub auth login --as-worker
-  
+
   # Login without automatically opening browser
-  cub auth login --no-browser`,
+  cub auth login --no-browser
+`+"```"+`
+`, ""),
 	Args: cobra.NoArgs,
 	RunE: authLoginCmdRun,
 }

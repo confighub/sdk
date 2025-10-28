@@ -41,24 +41,31 @@ const (
 var unitDiffCmd = &cobra.Command{
 	Use:   "diff <unit-slug> [fromRev] [toRev]",
 	Short: "Show differences between revisions",
-	Long: `Show differences between revisions of a unit.
+	Long: getCommandHelp(`Show differences between revisions of a unit.
 
 Usage Modes:
+
   1. Positional Arguments (cannot be mixed with flags):
+`+"```"+`
      cub unit diff <unit-slug>               # Compare live vs head
      cub unit diff <unit-slug> <rev1>        # Compare live vs rev1
      cub unit diff <unit-slug> <rev1> <rev2> # Compare rev1 vs rev2
+`+"```"+`
 
   2. Flag-based (cannot be mixed with positionals):
+`+"```"+`
      --from  Source revision (defaults to live)
      --to    Target revision (defaults to head)
+`+"```"+`
 
 Output Formats:
+
   - Default: Line-numbered format with color
   - Unified: Use -u for unified diff format (like git diff)
   - Color:   Use -c to enable color in unified diff
 
 Examples:
+`+"```"+`
   # Basic Comparisons
   cub unit diff my-unit                     # live    vs head
   cub unit diff my-unit --from=123          # rev 123 vs head
@@ -67,7 +74,9 @@ Examples:
 
   # With Unified Diff
   cub unit diff -u  my-unit                 # Unified format
-  cub unit diff -uc my-unit                 # Unified format with color`,
+  cub unit diff -uc my-unit                 # Unified format with color
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(1, 3),
 	RunE: runRevisionDiff,
 }

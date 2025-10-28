@@ -20,7 +20,7 @@ var confighubApi *ConfighubApi
 var datasetLoadCmd = &cobra.Command{
 	Use:   "load <dir>",
 	Short: "Load an entire dataset of spaces, units, etc into an org",
-	Long:  "Load an entire dataset of spaces, units, etc into an org",
+	Long:  getCommandHelp("Load an entire dataset of spaces, units, etc into an org", ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  datasetLoadCmdRun,
 }

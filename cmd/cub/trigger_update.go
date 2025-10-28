@@ -17,19 +17,24 @@ import (
 var triggerUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>] [<event> <config type> <function> [<arg1> ...]]",
 	Short: "Update a trigger or multiple triggers",
-	Long: `Update a trigger or multiple triggers using bulk operations.
+	Long: getCommandHelp(`Update a trigger or multiple triggers using bulk operations.
 
 Single trigger update:
+
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
 
 Example with named arguments:
+`+"```"+`
   cub trigger update --space my-space my-trigger Mutation Kubernetes/YAML -- set-annotation --key=cloned --value=true
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple triggers at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Disable all triggers for a specific function
   cub trigger update --patch --where "FunctionName = 'cel-validate'" --disable
 
@@ -43,7 +48,9 @@ Examples:
   cub trigger update --patch --where "Event = 'Mutation'" --enforce
 
   # Update specific triggers by slug
-  cub trigger update --patch --trigger my-trigger,another-trigger --disable`,
+  cub trigger update --patch --trigger my-trigger,another-trigger --disable
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        triggerUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

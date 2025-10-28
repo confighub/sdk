@@ -15,15 +15,19 @@ import (
 var tagDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a tag or multiple tags",
-	Long: `Delete a tag or multiple tags using bulk operations.
+	Long: getCommandHelp(`Delete a tag or multiple tags using bulk operations.
 
 Single tag delete:
+`+"```"+`
   cub tag delete my-tag
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple tags at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all tags created before a specific date
   cub tag delete --where "CreatedAt < '2024-01-01'"
 
@@ -34,7 +38,9 @@ Examples:
   cub tag delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific tags by slug
-  cub tag delete --tag old-tag,deprecated-tag`,
+  cub tag delete --tag old-tag,deprecated-tag
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        tagDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

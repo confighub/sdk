@@ -14,6 +14,7 @@ import (
 var unitEventGetCmd = &cobra.Command{
 	Use:   "get <unit-slug> <unit-event-id>",
 	Short: "Get a unit event",
+	Long:  getCommandHelp("Get a unit event", ""),
 	Args:  cobra.ExactArgs(2),
 	RunE:  unitEventGetRun,
 }

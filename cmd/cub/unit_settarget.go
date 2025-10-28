@@ -17,16 +17,20 @@ import (
 var unitSetTargetCmd = &cobra.Command{
 	Use:   "set-target <unit-slug> <target-slug> | set-target <target-slug>",
 	Short: "Set target for unit(s)",
-	Long: `Set target for unit(s). Supports two modes:
+	Long: getCommandHelp(`Set target for unit(s). Supports two modes:
 
 Single unit mode:
+`+"```"+`
   cub unit set-target <unit-slug> <target-slug>
+`+"```"+`
 
 Bulk mode:
+`+"```"+`
   cub unit set-target <target-slug> --where "Slug LIKE 'app-%'"
   cub unit set-target <target-slug> --unit unit1,unit2,unit3
-  
-Use "-" as target-slug to unset/clear the target.`,
+`+"```"+`
+
+Use "-" as target-slug to unset/clear the target.`, ""),
 	Args:        cobra.RangeArgs(1, 2),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        unitSetTargetCmdRun,

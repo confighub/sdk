@@ -10,7 +10,7 @@ import (
 var mutationCmd = &cobra.Command{
 	Use:               "mutation",
 	Short:             "Mutation commands",
-	Long:              `The mutation subcommands are used to manage mutations`,
+	Long:              getCommandHelp(`The mutation subcommands are used to manage mutations`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

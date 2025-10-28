@@ -21,15 +21,19 @@ var unitRefreshCmd = &cobra.Command{
 	Use:   "refresh [unit-slug]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Refresh a configuration unit from the target",
-	Long: `Refresh a configuration unit from the target. If no unit is specified, performs bulk refresh based on filter criteria.
+	Long: getCommandHelp(`Refresh a configuration unit from the target. If no unit is specified, performs bulk refresh based on filter criteria.
 
 Single unit refresh:
+`+"```"+`
   cub unit refresh my-unit
+`+"```"+`
 
 Bulk refresh with --where:
+
 Refresh multiple units at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Refresh all units with specific label
   cub unit refresh --where "Labels.Tier = 'backend'"
 
@@ -40,7 +44,9 @@ Examples:
   cub unit refresh --unit my-unit,another-unit
 
   # Dry run to preview which units would be refreshed
-  cub unit refresh --where "Labels.Environment = 'test'" --dry-run`,
+  cub unit refresh --where "Labels.Environment = 'test'" --dry-run
+`+"```"+`
+`, ""),
 	RunE:        unitRefreshCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
 }

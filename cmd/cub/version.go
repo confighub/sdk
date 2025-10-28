@@ -17,7 +17,7 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version, commit and build date",
-	Long:  `Show the build version, commit hash, and build date for cub`,
+	Long:  getCommandHelp(`Show the build version, commit hash, and build date for cub`, ""),
 	Run:   versionCmdRun,
 }
 

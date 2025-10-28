@@ -17,7 +17,7 @@ import (
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Authentication commands",
-	Long:  `The auth subcommands are used to manage authentication`,
+	Long:  getCommandHelp(`The auth subcommands are used to manage authentication`, ""),
 }
 
 func init() {

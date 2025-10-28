@@ -17,15 +17,19 @@ import (
 var filterUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>] [<from>] [options...]",
 	Short: "Update a filter or multiple filters",
-	Long: `Update a filter or multiple filters using bulk operations.
+	Long: getCommandHelp(`Update a filter or multiple filters using bulk operations.
 
 Single filter update:
+`+"```"+`
   cub filter update my-filter Unit --where-field "Labels.Environment = 'staging'"
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple filters at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update From type for all filters
   cub filter update --patch --where "From = 'Space'" --from-stdin < patch.json
 
@@ -33,7 +37,9 @@ Examples:
   echo '{"Where": "Labels.Environment = 'production'"}' | cub filter update --patch --filter-entity my-filter,another-filter --from-stdin
 
   # Update resource type for Unit filters
-  echo '{"ResourceType": "apps/v1/StatefulSet"}' | cub filter update --patch --where "From = 'Unit'" --from-stdin`,
+  echo '{"ResourceType": "apps/v1/StatefulSet"}' | cub filter update --patch --where "From = 'Unit'" --from-stdin
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        filterUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

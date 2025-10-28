@@ -19,16 +19,17 @@ var revisionGetCmd = &cobra.Command{
 	Use:   "get <unit-slug> <revision-num>",
 	Short: "Get details about a revision",
 	Args:  cobra.ExactArgs(2),
-	Long: `Get detailed information about a specific revision of a unit including its configuration data and metadata.
+	Long: getCommandHelp(`Get detailed information about a specific revision of a unit including its configuration data and metadata.
 
 Examples:
+`+"```"+`
   # Get details about a specific revision in JSON format
   cub revision get --space my-space --json my-deployment 3
 
   # Get only the configuration data of a revision
   cub revision get --space my-space --data-only my-ns 2
-
-`,
+`+"```"+`
+`, ""),
 	RunE: revisionGetCmdRun,
 }
 

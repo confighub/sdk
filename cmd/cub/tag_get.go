@@ -16,15 +16,17 @@ var tagGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a tag",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about a tag in a space including its ID, slug, display name, and metadata.
+	Long: getCommandHelp(`Get detailed information about a tag in a space including its ID, slug, display name, and metadata.
 
 Examples:
+`+"```"+`
   # Get details about a release tag
   cub tag get --space my-space release-v1.0
 
   # Get details about a tag in JSON format
   cub tag get --space my-space --json production-deploy
-`,
+`+"```"+`
+`, ""),
 	RunE: tagGetCmdRun,
 }
 

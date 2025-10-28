@@ -14,7 +14,7 @@ package main
 // var setUpdateCmd = &cobra.Command{
 // 	Use:   "update <slug or id>",
 // 	Short: "Update a set",
-// 	Long:  `Update a set.`,
+// 	Long:  getCommandHelp(`Update a set.`, ""),
 // 	Args:  cobra.ExactArgs(1),
 // 	RunE:  setUpdateCmdRun,
 // }

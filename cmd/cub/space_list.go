@@ -22,6 +22,7 @@ func getSpaceListHelp() string {
 	baseHelp := `List spaces you have access to in this organization. The output includes slugs, environment labels, and summary counts for units, workers, targets, and triggers.
 
 Examples:
+` + "```" + `
   # List all spaces with headers
   cub space list
 
@@ -35,7 +36,9 @@ Examples:
   cub space list --jq '.[].Slug'
 
   # List spaces matching a specific criteria
-  cub space list --where "Labels.Environment = 'prod'"`
+  cub space list --where "Labels.Environment = 'prod'"
+ ` + "```" + `
+`
 
 	agentContext := `Essential first step for discovering available spaces and setting up context.
 

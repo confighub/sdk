@@ -21,7 +21,7 @@ var (
 var docgenCmd = &cobra.Command{
 	Use:    "docgen",
 	Short:  "Generate CLI documentation",
-	Long:   `Generate markdown documentation for all cub commands`,
+	Long:   getCommandHelp(`Generate markdown documentation for all cub commands`, ""),
 	Hidden: true,
 	Run:    docgenCmdRun,
 }

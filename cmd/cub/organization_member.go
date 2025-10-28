@@ -10,7 +10,7 @@ import (
 var organizationMemberCmd = &cobra.Command{
 	Use:               "organization-member",
 	Short:             "Organization Member commands",
-	Long:              `The organization-member subcommands are used to manage organization members`,
+	Long:              getCommandHelp(`The organization-member subcommands are used to manage organization members`, ""),
 	PersistentPreRunE: organizationPreRunE,
 }
 

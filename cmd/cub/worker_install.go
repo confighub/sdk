@@ -20,7 +20,7 @@ import (
 var workerInstallCmd = &cobra.Command{
 	Use:           "install [worker-name]",
 	Short:         "Install a worker to a Kubernetes cluster",
-	Long:          `Install a worker to a Kubernetes cluster.`,
+	Long:          getCommandHelp(`Install a worker to a Kubernetes cluster.`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerInstallCmdRun,
 	SilenceUsage:  true,

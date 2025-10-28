@@ -16,7 +16,7 @@ import (
 var workerCmd = &cobra.Command{
 	Use:               "worker",
 	Short:             "Manage workers",
-	Long:              `Manage workers`,
+	Long:              getCommandHelp(`Manage workers`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

@@ -13,7 +13,7 @@ import (
 var organizationCmd = &cobra.Command{
 	Use:               "organization",
 	Short:             "Organization commands",
-	Long:              `The organization subcommands are used to manage organizations`,
+	Long:              getCommandHelp(`The organization subcommands are used to manage organizations`, ""),
 	PersistentPreRunE: organizationPreRunE,
 }
 

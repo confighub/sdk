@@ -24,12 +24,14 @@ func getUnitPushUpgradeHelp() string {
 	baseHelp := `Upgrade all downstream units that depend on the specified upstream unit. This command finds all units that have the specified unit as their upstream source and upgrades them to match the latest version if they are behind.
 
 The push-upgrade operation only affects downstream units where:
+
 - Unit.UpstreamUnitID matches the specified unit
 - Unit.UpstreamRevisionNum is less than the upstream unit's HeadRevisionNum
 
 This is useful for propagating changes from a template or base configuration to all dependent units across your infrastructure.
 
 Examples:
+` + "```" + `
   # Upgrade all downstream units from a template unit
   cub unit push-upgrade --space my-space base-template
 
@@ -40,7 +42,9 @@ Examples:
   cub unit push-upgrade --space my-space base-template --json
 
   # Upgrade with specific field selection using jq
-  cub unit push-upgrade --space my-space base-template --jq '.[] | select(.Unit) | .Unit | {Slug, UnitID, HeadRevisionNum}'`
+  cub unit push-upgrade --space my-space base-template --jq '.[] | select(.Unit) | .Unit | {Slug, UnitID, HeadRevisionNum}'
+` + "```" + `
+`
 
 	agentContext := `Essential for maintaining consistency across dependent configurations.
 

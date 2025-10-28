@@ -14,16 +14,20 @@ package main
 // var setCreateCmd = &cobra.Command{
 // 	Use:   "create <name>",
 // 	Short: "Create a new set",
-// 	Long: `Create a new set to group and organize related units within a space.
+// 	Long: getCommandHelp(`Create a new set to group and organize related units within a space.
 
 // Sets provide a way to:
+//
 //   1. Organize units logically
 //   2. Apply common configurations across grouped units
 //   3. Manage permissions and access controls for groups of units
 
 // Examples:
+// `+"```"+`
 //   # Create a new set with JSON output, reading configuration from stdin
-//   cub set create --space my-space --json --from-stdin my-set`,
+//   cub set create --space my-space --json --from-stdin my-set
+// `+"```"+`
+// `, ""),
 // 	Args: cobra.ExactArgs(1),
 // 	RunE: setCreateCmdRun,
 // }

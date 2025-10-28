@@ -19,9 +19,9 @@ import (
 var unitEditCmd = &cobra.Command{
 	Use:   "edit <name>",
 	Short: "Edit the config data of a unit in your system's editor",
-	Long: `This command will pull down the latest revision of this unit and open it the editor specified in the
+	Long: getCommandHelp(`This command will pull down the latest revision of this unit and open it the editor specified in the
 	        EDITOR environment variable or vi if the variable is not set. When the editor process exits,
-					the changes will be saved as a new revision. If the contents were not changed, then no update will be made`,
+					the changes will be saved as a new revision. If the contents were not changed, then no update will be made`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: unitEditCmdRun,
 }

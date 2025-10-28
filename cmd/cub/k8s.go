@@ -10,7 +10,7 @@ import (
 var k8sCmd = &cobra.Command{
 	Use:   "k8s",
 	Short: "Kubernetes commands",
-	Long:  `The k8s subcommands are used to interact with Kubernetes resources and trace them back to ConfigHub`,
+	Long:  getCommandHelp(`The k8s subcommands are used to interact with Kubernetes resources and trace them back to ConfigHub`, ""),
 }
 
 func init() {

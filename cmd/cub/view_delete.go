@@ -15,15 +15,19 @@ import (
 var viewDeleteCmd = &cobra.Command{
 	Use:   "delete [<slug or id>]",
 	Short: "Delete a view or multiple views",
-	Long: `Delete a view or multiple views using bulk operations.
+	Long: getCommandHelp(`Delete a view or multiple views using bulk operations.
 
 Single view delete:
+`+"```"+`
   cub view delete my-view
+`+"```"+`
 
 Bulk delete with --where:
+
 Delete multiple views at once based on search criteria.
 
 Examples:
+`+"```"+`
   # Delete all views created before a specific date
   cub view delete --where "CreatedAt < '2024-01-01'"
 
@@ -37,7 +41,9 @@ Examples:
   cub view delete --space "*" --where "Labels.cleanup = 'true'"
 
   # Delete specific views by slug
-  cub view delete --view old-view,deprecated-view`,
+  cub view delete --view old-view,deprecated-view
+`+"```"+`
+`, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        viewDeleteCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

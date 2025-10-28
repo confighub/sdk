@@ -17,15 +17,19 @@ import (
 var tagUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>]",
 	Short: "Update a tag or multiple tags",
-	Long: `Update a tag or multiple tags using bulk operations.
+	Long: getCommandHelp(`Update a tag or multiple tags using bulk operations.
 
 Single tag update:
+`+"```"+`
   cub tag update my-tag --label environment=production
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple tags at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update labels for all tags matching a pattern
   echo '{"Labels": {"archived": "true"}}' | cub tag update --patch --where "CreatedAt < '2024-01-01'" --from-stdin
 
@@ -33,7 +37,9 @@ Examples:
   echo '{"DisplayName": "archived-v1.0"}' | cub tag update --patch --tag release-v1.0,release-v1.1 --from-stdin
 
   # Update labels for tags in multiple spaces
-  cub tag update --patch --where "Labels.version = '1.0'" --label status=deprecated`,
+  cub tag update --patch --where "Labels.version = '1.0'" --label status=deprecated
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        tagUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

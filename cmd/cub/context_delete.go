@@ -12,14 +12,17 @@ import (
 var contextDeleteCmd = &cobra.Command{
 	Use:   "delete [name]",
 	Short: "Delete a context",
-	Long: `Delete a context and its associated token file.
+	Long: getCommandHelp(`Delete a context and its associated token file.
 
 Examples:
+`+"```"+`
   # Delete a context
   cub context delete staging
-  
+
   # Delete a context (will fail if it's the current context)
-  cub context delete prod-acme`,
+  cub context delete prod-acme
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: contextDeleteCmdRun,
 }
@@ -41,7 +44,7 @@ func contextDeleteCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	tprint("Successfully deleted context %q", name)
-	
+
 	// If there are no more contexts, inform the user
 	if len(contextManager.ListContexts()) == 0 {
 		fmt.Println("No contexts remaining. Use 'cub context create' to create a new context.")

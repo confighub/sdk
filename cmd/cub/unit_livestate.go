@@ -15,13 +15,14 @@ import (
 var unitLiveStateCmd = &cobra.Command{
 	Use:   "livestate [unit-slug-or-id]",
 	Short: "Show the LiveState of a unit",
-	Long: `Display the LiveState YAML of a unit, which includes the inventory ConfigMap
+	Long: getCommandHelp(`Display the LiveState YAML of a unit, which includes the inventory ConfigMap
 used for tracking applied resources and the actual Kubernetes resources.
 
 The inventory ConfigMap appears at the beginning of the LiveState and contains:
+
 - Labels: cli-utils.sigs.k8s.io/inventory-id
 - Annotations: config.k8s.io/function: inventory
-- Data: Object references for pruning and lifecycle management`,
+- Data: Object references for pruning and lifecycle management`, ""),
 	Args: cobra.ExactArgs(1),
 	Run:  runUnitLiveState,
 }

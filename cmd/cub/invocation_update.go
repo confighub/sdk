@@ -17,19 +17,24 @@ import (
 var invocationUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>] [<toolchain type> <function> [<arg1> ...]]",
 	Short: "Update an invocation or multiple invocations",
-	Long: `Update an invocation or multiple invocations using bulk operations.
+	Long: getCommandHelp(`Update an invocation or multiple invocations using bulk operations.
 
 Single invocation update:
+
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
 
 Example with named arguments:
+`+"```"+`
   cub invocation update --space my-space my-invocation Kubernetes/YAML -- set-annotation --key=cloned --value=true
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple invocations at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update worker for all invocations of a certain type using JSON patch
   echo '{"BridgeWorkerID": "worker-uuid"}' | cub invocation update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
 
@@ -37,7 +42,9 @@ Examples:
   echo '{"FunctionName": "no-placeholders"}' | cub invocation update --patch --where "FunctionName = 'cel-validate'" --from-stdin
 
   # Update specific invocations by slug
-  cub invocation update --patch --invocation my-invocation,another-invocation --worker new-worker`,
+  cub invocation update --patch --invocation my-invocation,another-invocation --worker new-worker
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        invocationUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

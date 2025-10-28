@@ -12,9 +12,10 @@ import (
 var organizationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List organizations",
-	Long: `List organizations you have access to in this organization. The output includes display names, slugs, and organization IDs.
+	Long: getCommandHelp(`List organizations you have access to in this organization. The output includes display names, slugs, and organization IDs.
 
 Examples:
+`+"```"+`
   # List all organizations with headers
   cub organization list
 
@@ -25,7 +26,9 @@ Examples:
   cub organization list --json
 
   # List organizations with custom JQ filter
-  cub organization list --jq '.[].Slug'`,
+  cub organization list --jq '.[].Slug'
+`+"```"+`
+`, ""),
 	RunE: organizationListCmdRun,
 }
 

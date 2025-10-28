@@ -10,7 +10,7 @@ import (
 var changesetCmd = &cobra.Command{
 	Use:               "changeset",
 	Short:             "ChangeSet commands",
-	Long:              `The changeset subcommands are used to manage changesets`,
+	Long:              getCommandHelp(`The changeset subcommands are used to manage changesets`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

@@ -12,8 +12,8 @@ import (
 
 var infoCmd = &cobra.Command{
 	Use:   "info",
-	Short: "Show some information",
-	Long:  `Show some information`,
+	Short: "Show CLI and server details",
+	Long:  getCommandHelp(`Show CLI and server details`, ""),
 	RunE:  infoCmdRun,
 }
 

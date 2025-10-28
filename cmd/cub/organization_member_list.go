@@ -15,9 +15,10 @@ import (
 var organizationMemberListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List organization members",
-	Long: `List organization members you have access to in this organization. The output includes Created At, User IDs, and organization IDs.
+	Long: getCommandHelp(`List organization members you have access to in this organization. The output includes Created At, User IDs, and organization IDs.
 
 Examples:
+`+"```"+`
   # List all organization-member with headers
   cub organization-member list
 
@@ -28,7 +29,9 @@ Examples:
   cub organization-member list --json
 
   # List organization-member with custom JQ filter
-  cub organization-member list --jq '.[].UserID'`,
+  cub organization-member list --jq '.[].UserID'
+`+"```"+`
+`, ""),
 	RunE: organizationMemberListCmdRun,
 }
 

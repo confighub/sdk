@@ -28,6 +28,7 @@ func getUnitGetHelp() string {
 	baseHelp := `Get detailed information about a unit in a space including its configuration, status, and metadata.
 
 Examples:
+` + "```" + `
   # Get details about a namespace unit
   cub unit get --space my-space --json my-ns
 
@@ -40,7 +41,9 @@ Examples:
   # Get only the configuration data of a unit
   cub unit get --space my-space --data-only my-deployment
 
-  cub unit get --space my-space --json my-ns`
+  cub unit get --space my-space --json my-ns
+` + "```" + `
+`
 
 	agentContext := `Critical for inspecting unit configuration and state before making changes.
 

@@ -17,20 +17,24 @@ import (
 var authSwitchCmd = &cobra.Command{
 	Use:   "switch [organization]",
 	Short: "Switch to a different organization",
-	Long: `Switch to a different organization without going through the browser UI.
-	
+	Long: getCommandHelp(`Switch to a different organization without going through the browser UI.
+
 The organization argument can be a partial match of:
+
 - Organization Display Name (e.g., "ConfigHub")
 - Organization Slug (e.g., "org_01jsqq70m483a3b1fk3zfs9z1a")
 - Organization ID (ConfigHub UUID, e.g., "2af2356f-8587-4816-8619-77dfa85fb524")
 - External ID (WorkOS ID, e.g., "org_01JSQQ70M483A3B1FK3ZFS9Z1A")
 
 Examples:
+`+"```"+`
   # Switch to organization by display name
   cub auth switch "ConfigHub"
-  
+
   # Switch to organization by slug
-  cub auth switch "org_01jsqq70m483a3b1fk3zfs9z1a"`,
+  cub auth switch "org_01jsqq70m483a3b1fk3zfs9z1a"
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: authSwitchCmdRun,
 }

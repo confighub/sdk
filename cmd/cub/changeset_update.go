@@ -17,15 +17,19 @@ import (
 var changesetUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>] [options...]",
 	Short: "Update a changeset or multiple changesets",
-	Long: `Update a changeset or multiple changesets using bulk operations.
+	Long: getCommandHelp(`Update a changeset or multiple changesets using bulk operations.
 
 Single changeset update:
+`+"```"+`
   cub changeset update my-changeset --description "Updated description"
+`+"```"+`
 
 Bulk update with --patch:
+
 Update multiple changesets at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
+`+"```"+`
   # Update description for all changesets matching a pattern
   echo '{"Description": "Archived changeset"}' | cub changeset update --patch --where "CreatedAt < '2024-01-01'" --from-stdin
 
@@ -33,7 +37,9 @@ Examples:
   cub changeset update --patch --changeset cs1,cs2 --description "Updated description"
 
   # Update tags for changesets using JSON patch
-  echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeset update --patch --where "Description LIKE 'Release%'" --from-stdin`,
+  echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeset update --patch --where "Description LIKE 'Release%'" --from-stdin
+`+"```"+`
+`, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        changesetUpdateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},

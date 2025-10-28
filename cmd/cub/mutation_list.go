@@ -19,9 +19,10 @@ var byUnitID bool
 var mutationListCmd = &cobra.Command{
 	Use:   "list <unit>",
 	Short: "List mutations",
-	Long: `List mutations for a unit in a space. Mutations track the history of detailed mutations made to a unit's configuration.
+	Long: getCommandHelp(`List mutations for a unit in a space. Mutations track the history of detailed mutations made to a unit's configuration.
 
 Examples:
+`+"```"+`
   # List all mutations for a unit
   cub mutation list --space my-space my-ns
 
@@ -39,8 +40,8 @@ Examples:
 
   # List mutations with specific criteria
   cub mutation list --space my-space --where 'MutationNum > 1' my-ns
-
-`,
+`+"```"+`
+`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: mutationListCmdRun,
 }

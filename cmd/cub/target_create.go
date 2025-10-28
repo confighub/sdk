@@ -18,10 +18,15 @@ import (
 var targetCreateCmd = &cobra.Command{
 	Use:   "create <slug> <parameters> [worker-slug]",
 	Short: "Create a new target",
-	Long: `Create a new target with the specified slug and optional parameters and worker slug.
+	Long: getCommandHelp(`Create a new target with the specified slug and optional parameters and worker slug.
 Parameters are optional and can be used to pass additional configuration data to the target.
 Parameters are passed as a JSON string.
-Example: "{\"KubeContext\":\"kind-space17005\",\"KubeNamespace\":\"default\",\"WaitTimeout\":\"2m0s\"}"`,
+
+Example:
+`+"```"+`
+  "{\"KubeContext\":\"kind-space17005\",\"KubeNamespace\":\"default\",\"WaitTimeout\":\"2m0s\"}"
+`+"```"+`
+`, ""),
 	Args: cobra.RangeArgs(1, 3),
 	RunE: targetCreateCmdRun,
 }

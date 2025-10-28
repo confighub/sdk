@@ -16,15 +16,17 @@ var invocationGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about an invocation",
 	Args:  cobra.ExactArgs(1),
-	Long: `Get detailed information about an invocation in a space including its ID, slug, display name, toolchain type, function name, and arguments.
+	Long: getCommandHelp(`Get detailed information about an invocation in a space including its ID, slug, display name, toolchain type, function name, and arguments.
 
 Examples:
+`+"```"+`
   # Get details about an invocation that validates replicas
   cub invocation get --space my-space --json validate-replicas
 
   # Get details about an invocation that enforces low resource usage
   cub invocation get --space my-space --json enforce-low-cost
-`,
+`+"```"+`
+`, ""),
 	RunE: invocationGetCmdRun,
 }
 

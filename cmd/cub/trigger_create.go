@@ -27,16 +27,23 @@ func getTriggerCreateHelp() string {
 	baseHelp := `Create a new trigger or bulk create multiple triggers by cloning existing ones.
 
 SINGLE TRIGGER CREATION:
+
 Create a new trigger to automate actions on resources.
 
 Events:
+
   - Mutation: Triggered when a resource is being modified
   - PostClone: Triggered after a resource is cloned
 
 Config Types:
+
   - Kubernetes/YAML: For Kubernetes YAML configurations
+  - ConfigHub/YAML: For ConfigHub YAML configurations
+  - AppConfig/Properties: For Java Properties configurations
+  - OpenTofu/HCL: For OpenTofu HCL configurations
 
 Example Functions:
+
   - vet-celexpr: Validate resources using CEL expressions
   - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
@@ -48,10 +55,12 @@ Function arguments can be provided as positional arguments or as named arguments
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
 
 BULK TRIGGER CREATION:
+
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
 triggers based on filters and creates multiple new triggers with optional modifications.
 
 Single Trigger Examples:
+` + "```" + `
   # Create a trigger to validate replicas > 1 for Deployments
   cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 
@@ -75,8 +84,10 @@ Single Trigger Examples:
 
   # Using named arguments for clarity (note the "--" separator)
   cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML -- set-annotation --key=cloned --value=true
+` + "```" + `
 
 Bulk Create Examples:
+` + "```" + `
   # Clone all triggers matching a pattern with name prefixes
   cub trigger create --where "Slug LIKE 'app-%'" --name-prefix dev-,staging- --dest-space dev-space
 
@@ -90,9 +101,11 @@ Bulk Create Examples:
   echo '{"Disabled": false}' | cub trigger create --where "Event = 'Mutation'" --name-prefix active- --from-stdin
 
   # Clone triggers matching specific criteria
-  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'vet-celexpr'" --name-prefix v2-`
+  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'vet-celexpr'" --name-prefix v2-
+` + "```" + `
+`
 
-	return baseHelp
+	return getCommandHelp(baseHelp, "")
 }
 
 var triggerCreateArgs struct {

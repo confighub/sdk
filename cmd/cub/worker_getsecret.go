@@ -15,10 +15,14 @@ var workerSecretCmd = &cobra.Command{
 	Use:   "get-secret <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Get worker secrets",
-	Long: `Get worker secrets.
+	Long: getCommandHelp(`Get worker secrets.
 
-# Get the secret of a worker
-cub worker get-secret <worker-slug>`,
+Examples:
+`+"```"+`
+  # Get the secret of a worker
+  cub worker get-secret <worker-slug>
+`+"```"+`
+`, ""),
 	RunE: workerSecretCmdRun,
 }
 

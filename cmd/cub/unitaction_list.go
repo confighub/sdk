@@ -16,6 +16,7 @@ import (
 var unitActionListCmd = &cobra.Command{
 	Use:   "list <unit-slug>",
 	Short: "List unit actions",
+	Long:  getCommandHelp("List unit actions", ""),
 	Args:  cobra.ExactArgs(1),
 	RunE:  unitActionListRun,
 }
