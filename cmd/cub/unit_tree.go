@@ -193,7 +193,7 @@ func unitTreeCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
-		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, selectFields, filterID)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, resourceType, whereData, selectFields, filterID)
 		if err != nil {
 			return err
 		}

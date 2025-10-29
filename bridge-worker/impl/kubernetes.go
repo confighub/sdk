@@ -185,10 +185,15 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	if cfg, err := rest.InClusterConfig(); err == nil {
 		w.cfg = cfg
 		log.Log.Info("Running inside Kubernetes cluster, using in-cluster configuration")
-		targetName := os.Getenv("IN_CLUSTER_TARGET_NAME")
+		targetName := os.Getenv("CONFIGHUB_IN_CLUSTER_TARGET_NAME")
 		if targetName == "" {
-			targetName = opts.Slug
+			// TODO: Deprecated. Remove this eventually.
+			targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
+			if targetName == "" {
+				targetName = opts.Slug
+			}
 		}
+
 		return api.BridgeWorkerInfo{
 			SupportedConfigTypes: []*api.ConfigType{
 				{

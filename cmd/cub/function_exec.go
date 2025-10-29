@@ -72,6 +72,8 @@ func init() {
 	enableFilterFlag(functionExecCmd)
 	addStandardDisplayFlags(functionExecCmd)
 	enableWaitFlag(functionExecCmd)
+	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionExecCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionCmd.AddCommand(functionExecCmd)
@@ -174,11 +176,13 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		}
 	} else {
 		invokeArgs := &invokeArgs{
-			Where:       effectiveWhere,
-			FilterID:    filterID,
-			DryRun:      dryRun,
-			ChangeSetID: changesetUUID,
-			Body:        newBody,
+			Where:        effectiveWhere,
+			FilterID:     filterID,
+			ResourceType: resourceType,
+			WhereData:    whereData,
+			DryRun:       dryRun,
+			ChangeSetID:  changesetUUID,
+			Body:         newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {

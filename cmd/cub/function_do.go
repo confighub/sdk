@@ -176,6 +176,8 @@ func init() {
 	enableFilterFlag(functionDoCmd)
 	addStandardDisplayFlags(functionDoCmd)
 	enableWaitFlag(functionDoCmd)
+	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionCmd.AddCommand(functionDoCmd)
@@ -430,11 +432,13 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 }
 
 type invokeArgs struct {
-	Where       string
-	FilterID    string
-	DryRun      bool
-	ChangeSetID uuid.UUID
-	Body        *goclientnew.FunctionInvocationsRequest
+	Where        string
+	FilterID     string
+	ResourceType string
+	WhereData    string
+	DryRun       bool
+	ChangeSetID  uuid.UUID
+	Body         *goclientnew.FunctionInvocationsRequest
 }
 
 func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvocationsResponse, error) {
@@ -446,6 +450,12 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.FilterID != "" {
 			newParams.Filter = &invokeArgs.FilterID
+		}
+		if invokeArgs.ResourceType != "" {
+			newParams.ResourceType = &invokeArgs.ResourceType
+		}
+		if invokeArgs.WhereData != "" {
+			newParams.WhereData = &invokeArgs.WhereData
 		}
 		if invokeArgs.DryRun {
 			dryRunStr := "true"
@@ -471,6 +481,12 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.FilterID != "" {
 			newParams.Filter = &invokeArgs.FilterID
+		}
+		if invokeArgs.ResourceType != "" {
+			newParams.ResourceType = &invokeArgs.ResourceType
+		}
+		if invokeArgs.WhereData != "" {
+			newParams.WhereData = &invokeArgs.WhereData
 		}
 		if invokeArgs.DryRun {
 			dryRunStr := "true"
@@ -563,11 +579,13 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		invokeArgs := &invokeArgs{
-			Where:       effectiveWhere,
-			FilterID:    filterID,
-			DryRun:      dryRun,
-			ChangeSetID: changesetUUID,
-			Body:        newBody,
+			Where:        effectiveWhere,
+			FilterID:     filterID,
+			ResourceType: resourceType,
+			WhereData:    whereData,
+			DryRun:       dryRun,
+			ChangeSetID:  changesetUUID,
+			Body:         newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {

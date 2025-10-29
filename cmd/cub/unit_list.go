@@ -202,7 +202,7 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
-		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, selectFields, filterID)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, resourceType, whereData, selectFields, filterID)
 		if err != nil {
 			return err
 		}
@@ -224,7 +224,7 @@ func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
 }
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
-	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, selectParam, "")
+	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, "", "", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*go
 	return units, nil
 }
 
-func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedUnit, error) {
+func apiListExtendedUnits(spaceID string, whereFilter string, resourceType string, whereData string, selectParam string, filterParam string) ([]*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.ListUnitsParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -246,6 +246,12 @@ func apiListExtendedUnits(spaceID string, whereFilter string, selectParam string
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if resourceType != "" {
+		newParams.ResourceType = &resourceType
+	}
+	if whereData != "" {
+		newParams.WhereData = &whereData
 	}
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
 	newParams.Include = &include

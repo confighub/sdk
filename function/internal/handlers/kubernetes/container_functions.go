@@ -393,6 +393,54 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 	}
 	generic.RegisterPathSetterAndGetter(fh, "hostname-domain", domainParameters,
 		" the domain name", api.AttributeNameDomain, k8skit.K8sResourceProvider, true, false)
+	volumeMountParameters := []api.FunctionParameter{
+		{
+			ParameterName:    "container-name",
+			Required:         true,
+			Description:      "Name of the container to add volume mount to",
+			DataType:         api.DataTypeString,
+			Example:          "main",
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
+		},
+		{
+			ParameterName:    "volume-name",
+			Required:         true,
+			Description:      "Name of the volume to mount",
+			DataType:         api.DataTypeString,
+			Example:          "config-volume",
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+		},
+		{
+			ParameterName: "volume-path",
+			Required:      true,
+			Description:   "Path where the volume should be mounted in the container",
+			DataType:      api.DataTypeString,
+			Example:       "/etc/config",
+			// TODO: Add validation for filesystem path?
+		},
+		{
+			ParameterName:    "volume-source",
+			Required:         false,
+			Description:      "Type of volume source (emptyDir, configMap, secret, persistentVolumeClaim)",
+			DataType:         api.DataTypeEnum,
+			Example:          "configMap",
+			ValueConstraints: api.ValueConstraints{EnumValues: []string{"emptyDir", "configMap", "secret", "persistentVolumeClaim"}},
+		},
+	}
+	fh.RegisterFunction("set-container-volume-mount-path", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "set-container-volume-mount-path",
+			Parameters:   volumeMountParameters,
+			Mutating:     true,
+			Validating:   false,
+			Hermetic:     true,
+			Idempotent:   true,
+			Description:  "Set a volume mount for a container and ensure the volume exists in the pod spec",
+			FunctionType: api.FunctionTypeCustom,
+			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(resourceTypeToPodSpecPaths),
+		},
+		Function: k8sFnSetContainerVolumeMountPath,
+	})
 }
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -1662,6 +1710,204 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	if len(multiErrs) != 0 {
+		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+	}
+	return parsedData, nil, nil
+}
+
+func k8sFnSetContainerVolumeMountPath(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	multiErrs := []error{}
+	// Parse arguments
+	containerName := args[0].Value.(string)
+	volumeName := args[1].Value.(string)
+	volumePath := args[2].Value.(string)
+	var volumeSource string
+	if len(args) > 3 && args[3].Value != nil {
+		volumeSource = args[3].Value.(string)
+	}
+
+	var err error
+	for _, doc := range parsedData {
+		var resourceType api.ResourceType
+		resourceType, err = k8skit.K8sResourceProvider.ResourceTypeGetter(doc)
+		if err != nil {
+			continue // Skip malformed resources
+		}
+		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceType]
+		if !ok {
+			continue // Skip resource kinds we don't handle
+		}
+
+		for _, podSpecPath := range podSpecPaths {
+			podSpecDoc, hasPodSpec, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(podSpecPath), true)
+			if err != nil {
+				multiErrs = append(multiErrs, err)
+				continue
+			}
+			if !hasPodSpec {
+				continue
+			}
+
+			// Find the container
+			containersPaths, ok := resourceTypeToContainersPaths[resourceType]
+			if !ok {
+				continue
+			}
+
+			containerFound := false
+			for _, containersPath := range containersPaths {
+				var resolvedContainersPaths []yamlkit.ResolvedPathInfo
+				unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
+				resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
+				if err != nil {
+					continue // skip problematic path
+				}
+				for _, containerPath := range resolvedContainersPaths {
+					containerFound = true
+					var container *gaby.YamlDoc
+					var found bool
+					container, found, err = yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
+					if !found || err != nil {
+						continue
+					}
+
+					// Check if volumeMount already exists using ResolveAssociativePaths
+					var volumeMountPaths []yamlkit.ResolvedPathInfo
+					volumeMountPaths, err = yamlkit.ResolveAssociativePaths(container, api.UnresolvedPath("volumeMounts.?name="+volumeName), "", false)
+
+					if err == nil && len(volumeMountPaths) > 0 {
+						// Volume mount exists, update the mountPath
+						volumeMount, found, err := yamlkit.YamlSafePathGetDoc(container, volumeMountPaths[0].Path, true)
+						if found && err == nil {
+							_, err = volumeMount.Set(volumePath, "mountPath")
+							if err != nil {
+								multiErrs = append(multiErrs, errors.Wrapf(err, "error setting mountPath for volume %s", volumeName))
+							}
+						}
+					} else {
+						// Volume mount doesn't exist, create it
+						// Ensure volumeMounts array exists
+						volumeMounts := container.Path("volumeMounts")
+						if volumeMounts == nil {
+							var ary *gaby.YamlDoc
+							ary, err = container.Array("volumeMounts")
+							if err != nil {
+								multiErrs = append(multiErrs, errors.Wrap(err, "error creating volumeMounts array"))
+								continue
+							}
+							volumeMounts = ary
+						}
+
+						// Append new volumeMount with ordered fields
+						volumeMount := orderedmap.New[string, interface{}]()
+						volumeMount.Set("name", volumeName)
+						volumeMount.Set("mountPath", volumePath)
+						if err = volumeMounts.ArrayAppend(volumeMount); err != nil {
+							multiErrs = append(multiErrs, errors.Wrapf(err, "error appending volumeMount %s", volumeName))
+							continue
+						}
+					}
+				}
+			}
+
+			if !containerFound {
+				multiErrs = append(multiErrs, errors.Newf("container %s not found", containerName))
+				continue
+			}
+
+			// Now handle the volume in the pod spec
+			// Check if volume already exists using ResolveAssociativePaths
+			var volumePaths []yamlkit.ResolvedPathInfo
+			volumePaths, err = yamlkit.ResolveAssociativePaths(podSpecDoc, api.UnresolvedPath("volumes.?name="+volumeName), "", false)
+
+			if err == nil && len(volumePaths) > 0 {
+				// Volume exists
+				if volumeSource != "" {
+					// Check if the volume source needs to be updated
+					volume, found, err := yamlkit.YamlSafePathGetDoc(podSpecDoc, volumePaths[0].Path, true)
+					if found && err == nil {
+						// Check if the volume already has the correct source type
+						hasCorrectType := volume.Exists(volumeSource)
+
+						if !hasCorrectType {
+							// Volume exists but has wrong type - delete all fields except "name"
+							volumeName, _ := volume.Path("name").Data().(string)
+
+							// Get all field names in the volume
+							childrenMap := volume.ChildrenMap()
+							for fieldName := range childrenMap {
+								if fieldName != "name" {
+									_ = volume.DeleteP(fieldName)
+								}
+							}
+
+							// Add the specified source type
+							switch volumeSource {
+							case "emptyDir":
+								_, err = volume.Set(map[string]interface{}{}, "emptyDir")
+							case "configMap":
+								_, err = volume.Set("confighubplaceholder", "configMap", "name")
+							case "secret":
+								_, err = volume.Set("confighubplaceholder", "secret", "secretName")
+							case "persistentVolumeClaim":
+								_, err = volume.Set("confighubplaceholder", "persistentVolumeClaim", "claimName")
+							}
+							if err != nil {
+								multiErrs = append(multiErrs, errors.Wrapf(err, "error setting volume source for volume %s", volumeName))
+							}
+						}
+						// If hasCorrectType is true, we don't modify the volume at all to preserve existing attributes
+					}
+				}
+			} else {
+				// Volume doesn't exist
+				if volumeSource == "" {
+					multiErrs = append(multiErrs, errors.Newf("volume %s does not exist and volume-source was not specified", volumeName))
+					continue
+				}
+
+				// Ensure volumes array exists
+				volumes := podSpecDoc.Path("volumes")
+				if volumes == nil {
+					var ary *gaby.YamlDoc
+					ary, err = podSpecDoc.Array("volumes")
+					if err != nil {
+						multiErrs = append(multiErrs, errors.Wrap(err, "error creating volumes array"))
+						continue
+					}
+					volumes = ary
+				}
+
+				// Create the volume with ordered fields
+				volume := orderedmap.New[string, interface{}]()
+				volume.Set("name", volumeName)
+
+				switch volumeSource {
+				case "emptyDir":
+					volume.Set("emptyDir", map[string]interface{}{})
+				case "configMap":
+					configMapVolume := orderedmap.New[string, interface{}]()
+					configMapVolume.Set("name", "confighubplaceholder")
+					volume.Set("configMap", configMapVolume)
+				case "secret":
+					secretVolume := orderedmap.New[string, interface{}]()
+					secretVolume.Set("secretName", "confighubplaceholder")
+					volume.Set("secret", secretVolume)
+				case "persistentVolumeClaim":
+					pvcVolume := orderedmap.New[string, interface{}]()
+					pvcVolume.Set("claimName", "confighubplaceholder")
+					volume.Set("persistentVolumeClaim", pvcVolume)
+				}
+
+				if err = volumes.ArrayAppend(volume); err != nil {
+					multiErrs = append(multiErrs, errors.Wrapf(err, "error appending volume %s", volumeName))
+					continue
 				}
 			}
 		}

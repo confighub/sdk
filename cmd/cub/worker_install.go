@@ -18,9 +18,31 @@ import (
 )
 
 var workerInstallCmd = &cobra.Command{
-	Use:           "install [worker-name]",
-	Short:         "Install a worker to a Kubernetes cluster",
-	Long:          getCommandHelp(`Install a worker to a Kubernetes cluster.`, ""),
+	Use:   "install [worker-name]",
+	Short: "Generate a worker configuration for a Kubernetes cluster",
+	Long: getCommandHelp(`Generate a worker configuration to serve one or more "worker types" for a Kubernetes cluster.
+
+A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
+For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
+and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
+possible for a single ProviderType to correspond to multiple ToolchainTypes.
+
+The available worker types are:
+
+- confighub
+- kubernetes
+- opentofu-aws
+- properties-configmap
+
+They can be comma separated like "kubernetes,properties-configmap".
+
+Use --export to display the configuration. Use --unit to create a unit in ConfigHub for the configuration.
+
+The Secret resource is redacted by default. Use --include-secret to include it with the rest
+of the configuration or --export-secret-only to display only the Secret resource.
+
+See the worker guide (https://docs.confighub.com/guide/workers/) for more details.
+	`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerInstallCmdRun,
 	SilenceUsage:  true,
@@ -28,7 +50,7 @@ var workerInstallCmd = &cobra.Command{
 }
 
 var workerInstallArgs struct {
-	workerType       string
+	workerTypes      string
 	envs             []string
 	export           bool
 	includeSecret    bool
@@ -45,7 +67,7 @@ var workerInstallArgs struct {
 }
 
 func init() {
-	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerType, "worker-type", "t", "kubernetes", "worker type")
+	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
 	workerInstallCmd.Flags().StringSliceVarP(&workerInstallArgs.envs, "env", "e", []string{}, "environment variables")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.export, "export", false, "export manifest to stdout instead of applying it")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.includeSecret, "include-secret", false, "include Secret resource in manifest")
@@ -141,11 +163,9 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// TODO: Apply manifest to Kubernetes cluster
-	// This would use the kubernetes client-go to apply the manifest
+	// TODO: Bootstrap the worker in the Kubernetes cluster using the Kubernetes bridge implementation
 	// For now, we'll just print a message
-	fmt.Printf("Installing worker %s to Kubernetes cluster...\n", workerSlug)
-	fmt.Println("This functionality is not yet implemented. Use --export to get the manifest.")
+	fmt.Println("Use --export to display the configuration or --unit to create a unit.")
 
 	return nil
 }
@@ -194,7 +214,6 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	// Create a hashmap of environment variables first to handle overrides
 	envMap := map[string]string{
-		"CONFIGHUB_WORKER_ID":   worker.BridgeWorkerID.String(),
 		"CONFIGHUB_URL":         serverURL,
 		"CONFIGHUB_WORKER_PORT": os.Getenv("CONFIGHUB_WORKER_PORT"),
 	}
@@ -217,6 +236,16 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		})
 	}
 
+	// Pass the Kubernetes Namespace for workers that need it
+	containerEnvs = append(containerEnvs, map[string]interface{}{
+		"name": "NAMESPACE",
+		"valueFrom": map[string]interface{}{
+			"fieldRef": map[string]interface{}{
+				"fieldPath": "metadata.namespace",
+			},
+		},
+	})
+
 	// Create Secret resource if includeSecret is true
 	var secret map[string]interface{}
 	if includeSecret {
@@ -232,12 +261,11 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 				"name":            "worker",
 				"image":           image,
 				"imagePullPolicy": imagePullPolicy,
-				"args":            []string{workerInstallArgs.workerType},
 				"env":             containerEnvs,
 				"envFrom": []map[string]interface{}{
 					{
 						"secretRef": map[string]interface{}{
-							"name": "confighub-worker-env",
+							"name": "confighub-worker-secret",
 						},
 					},
 				},
@@ -351,11 +379,12 @@ func createWorkerSecret(worker *goclientnew.BridgeWorker, namespace string) map[
 		"apiVersion": "v1",
 		"kind":       "Secret",
 		"metadata": map[string]interface{}{
-			"name":      "confighub-worker-env",
+			"name":      "confighub-worker-secret",
 			"namespace": namespace,
 		},
 		"type": "Opaque",
 		"stringData": map[string]interface{}{
+			"CONFIGHUB_WORKER_ID":     worker.BridgeWorkerID.String(),
 			"CONFIGHUB_WORKER_SECRET": worker.Secret,
 		},
 	}

@@ -27,17 +27,37 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "cub-worker-run <worker-types>",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Short: "Start a worker process",
-	Long: `Start a worker process
+	Long: `Start a worker process to serve one or more "worker types".
+
+A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
+For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
+and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
+possible for a single ProviderType to correspond to multiple ToolchainTypes.
+
 The available worker types are:
+
 - confighub
 - kubernetes
-- flux-oci-writer
 - opentofu-aws
 - properties-configmap
 
-They can be comma separated like "kubernetes,properties-configmap"
+They can be comma separated like "kubernetes,properties-configmap".
+
+They can be passed in the one optional command-line argument (deprecated), or
+via the CONFIGHUB_WORKER_TYPES environment variable.
+
+By default, all worker types are started.
+
+The worker takes its configuration primarily from environment variables.
+
+The other environment variables it expects are:
+
+- CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
+- CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
+- CONFIGHUB_WORKER_ID: The worker ID
+- CONFIGHUB_WORKER_SECRET: The worker secret
 `,
 	SilenceErrors:     true,
 	SilenceUsage:      true,
@@ -49,6 +69,7 @@ const (
 	defaultConfighubScheme = "https"
 	defaultConfighubHost   = "hub.confighub.com"
 	defaultConfighubURL    = defaultConfighubScheme + "://" + defaultConfighubHost
+	defaultWorkerPort      = "443"
 )
 
 var rootArgs struct {
@@ -57,12 +78,14 @@ var rootArgs struct {
 	workerPort           string
 	workerID             string
 	workerSecret         string
+	workerTypesStr       string
 	inCluster            bool
 	authMethod           string // "kubernetes", "cloud", "docker-config", "keychain"
 	kubernetesSecretPath string
 	enableMultiplexer    bool // Enable new multiplexer mode with prefixes
 	gracePeriodDelay     int  // Delay in seconds after SIGTERM before starting shutdown
 	// autoRefresh  bool
+	enableFluxOCI bool
 }
 
 func init() {
@@ -89,10 +112,12 @@ func init() {
 		}
 	}
 
-	workerPort := "443"
+	workerPort := defaultWorkerPort
 	if p := os.Getenv("CONFIGHUB_WORKER_PORT"); p != "" {
 		workerPort = p
 	}
+
+	// FIXME: We should not be using any env vars that are not prefixed with CONFIGHUB_
 
 	authMethod := "keychain"
 	if am := os.Getenv("AUTH_METHOD"); am != "" {
@@ -118,17 +143,42 @@ func init() {
 		}
 	}
 
+	// FluxOCI is currently disabled by default
+	if os.Getenv("CONFIGHUB_ENABLE_FLUXOCI") != "" {
+		rootArgs.enableFluxOCI = true
+	}
+	if rootArgs.enableFluxOCI {
+		availableBridgeWorkers[WorkerTypeFluxOCIWriter] = fluxOCIWorker
+		availableFunctionWorkers[WorkerTypeFluxOCIWriter] = k8sFunctionWorker
+	}
+
+	workerTypesStr := ""
+	for wt := range availableFunctionWorkers {
+		workerTypesStr += "," + wt
+	}
+	workerTypesStr = strings.TrimPrefix(workerTypesStr, ",")
+	if wt := os.Getenv("CONFIGHUB_WORKER_TYPES"); wt != "" {
+		workerTypesStr = wt
+	}
+
+	// Flags should only be used for testing. They are not part of the worker invocation contract.
+
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.configHubURL, "url", "u", url, "ConfigHub Server URL (CONFIGHUB_URL)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.mainPort, "main-port", "", mainPort, "ConfigHub Main Port (extracted from CONFIGHUB_URL by default)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerPort, "worker-port", "p", workerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerID, "worker-id", "w", os.Getenv("CONFIGHUB_WORKER_ID"), "Worker ID (CONFIGHUB_WORKER_ID)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerSecret, "worker-secret", "s", os.Getenv("CONFIGHUB_WORKER_SECRET"), "Worker Secret (CONFIGHUB_WORKER_SECRET)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerTypesStr, "worker-types", "t", workerTypesStr, "Comma-separated list of worker types (CONFIGHUB_WORKER_TYPES)")
 
 	// TODO not implemented yet
 	// rootCmd.Flags().BoolVarP(&rootArgs.autoRefresh, "auto-refresh", "r", false, "Enable auto-refresh")
-	rootCmd.PersistentFlags().BoolVar(&rootArgs.inCluster, "in-cluster", inCluster, "Enable in-cluster deployment for FluxOCIWorker (use Kubernetes secrets or cloud provider credentials) (IN_CLUSTER)")
-	rootCmd.PersistentFlags().StringVar(&rootArgs.authMethod, "auth-method", authMethod, "Authentication method for FluxOCIWorker (kubernetes, cloud, docker-config, keychain) (AUTH_METHOD)")
-	rootCmd.PersistentFlags().StringVar(&rootArgs.kubernetesSecretPath, "kubernetes-secret-path", kubernetesSecretPath, "Path to the Kubernetes secret mounted as a volume. For use with k8s auth-method and FluxOCIWorker (KUBERNETES_SECRET_PATH)")
+
+	if rootArgs.enableFluxOCI {
+		rootCmd.PersistentFlags().BoolVar(&rootArgs.inCluster, "in-cluster", inCluster, "Enable in-cluster deployment for FluxOCIWorker (use Kubernetes secrets or cloud provider credentials) (IN_CLUSTER)")
+		rootCmd.PersistentFlags().StringVar(&rootArgs.authMethod, "auth-method", authMethod, "Authentication method for FluxOCIWorker (kubernetes, cloud, docker-config, keychain) (AUTH_METHOD)")
+		rootCmd.PersistentFlags().StringVar(&rootArgs.kubernetesSecretPath, "kubernetes-secret-path", kubernetesSecretPath, "Path to the Kubernetes secret mounted as a volume. For use with k8s auth-method and FluxOCIWorker (KUBERNETES_SECRET_PATH)")
+	}
+
 	rootCmd.PersistentFlags().BoolVar(&rootArgs.enableMultiplexer, "enable-multiplexer", enableMultiplexer, "Enable multiplexer mode with prefixes and multi-worker support (default: true, ENABLE_MULTIPLEXER)")
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
@@ -143,15 +193,18 @@ const (
 	// TODO: add configmap-flux type.
 )
 
+// NOTE: The FluxOCIWriter worker type is disabled by default for now and may be deprecated in the future.
+
 // TODO: worker types should map to combinations of ToolchainType and ProviderType
 // Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
 var availableBridgeWorkers = map[string]api.BridgeWorker{
 	// ConfigHub worker is special - it will be initialized in rootRunE with a client
-	WorkerTypeKubernetes:          impl.NewKubernetesBridgeWorker(),
-	WorkerTypeFluxOCIWriter:       impl.NewFluxOCIWorker(),
+	WorkerTypeKubernetes: impl.NewKubernetesBridgeWorker(),
+	// WorkerTypeFluxOCIWriter:       fluxOCIWorker,
 	WorkerTypeOpenTofuAWS:         &impl.OpenTofuAWSWorker{},
 	WorkerTypePropertiesConfigMap: &impl.ConfigMapBridgeWorker{},
 }
+var fluxOCIWorker = impl.NewFluxOCIWorker()
 
 // Initialize individual function workers first
 var confighubFunctionWorker = impl.NewConfigHubFunctionWorker()
@@ -161,9 +214,9 @@ var opentofuFunctionWorker = impl.NewOpentofuFunctionWorker()
 
 // Map of available function workers by worker type
 var availableFunctionWorkers = map[string]api.FunctionWorker{
-	WorkerTypeConfigHub:           confighubFunctionWorker,
-	WorkerTypeKubernetes:          k8sFunctionWorker,
-	WorkerTypeFluxOCIWriter:       k8sFunctionWorker,
+	WorkerTypeConfigHub:  confighubFunctionWorker,
+	WorkerTypeKubernetes: k8sFunctionWorker,
+	// WorkerTypeFluxOCIWriter:       k8sFunctionWorker,
 	WorkerTypeOpenTofuAWS:         opentofuFunctionWorker,
 	WorkerTypePropertiesConfigMap: propertiesFunctionWorker,
 }
@@ -201,31 +254,38 @@ func workerTypeToToolchainAndProvider(workerType string) (workerapi.ToolchainTyp
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
+	if len(args) > 0 {
+		// Override worker types
+		rootArgs.workerTypesStr = args[0]
+	}
+
 	// Check if multiplexer mode is enabled
 	if !rootArgs.enableMultiplexer {
+
 		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer explicitly disabled)")
 
 		// In legacy mode, only support single worker type
-		if strings.Contains(args[0], ",") {
+		if strings.Contains(rootArgs.workerTypesStr, ",") {
 			return fmt.Errorf("multiple worker types not supported in legacy mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true")
 		}
 
 		// Handle ConfigHub worker specially - it needs authentication
 		var bridgeWorker api.BridgeWorker
 		var ok bool
-		if args[0] == WorkerTypeConfigHub {
+		if rootArgs.workerTypesStr == WorkerTypeConfigHub {
 			// Create ConfigHub bridge worker with authentication
 			bridgeWorker = impl.NewConfigHubBridgeWorker(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
 			ok = true
 		} else {
 			// Use the old behavior - direct worker without dispatcher
-			bridgeWorker, ok = availableBridgeWorkers[args[0]]
+			bridgeWorker, ok = availableBridgeWorkers[rootArgs.workerTypesStr]
 			if !ok {
-				return fmt.Errorf("unknown bridge worker %s", args[0])
+				return fmt.Errorf("unknown bridge worker %s", rootArgs.workerTypesStr)
 			}
 		}
 
-		if args[0] == WorkerTypeFluxOCIWriter {
+		// Currently disabled by default
+		if rootArgs.enableFluxOCI && rootArgs.workerTypesStr == WorkerTypeFluxOCIWriter {
 			// Additional initialization for FluxOCIWorker
 			if fluxWorker, ok := bridgeWorker.(*impl.FluxOCIWorker); ok {
 				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
@@ -239,9 +299,9 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		functionWorker, ok := availableFunctionWorkers[args[0]]
+		functionWorker, ok := availableFunctionWorkers[rootArgs.workerTypesStr]
 		if !ok {
-			return fmt.Errorf("unknown function worker %s", args[0])
+			return fmt.Errorf("unknown function worker %s", rootArgs.workerTypesStr)
 		}
 
 		// Use legacy mode without dispatcher
@@ -251,7 +311,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	// New multiplexer mode
 	// workerType is a comma separated string like "kubernetes,flux-oci-writer"
 	// Get the input worker types string from command-line arguments
-	workerTypesStr := args[0]
+	workerTypesStr := rootArgs.workerTypesStr
 
 	// Split the worker types string by comma
 	workerTypes := strings.Split(workerTypesStr, ",")
@@ -290,8 +350,9 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		}
 
 		if ok {
+			// Currently disabled by default
 			// Special case for FluxOCIWriter - initialize it
-			if workerType == WorkerTypeFluxOCIWriter {
+			if rootArgs.enableFluxOCI && workerType == WorkerTypeFluxOCIWriter {
 				fluxWorker := impl.NewFluxOCIWorker()
 				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
 					rootArgs.inCluster,

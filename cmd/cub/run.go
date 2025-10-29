@@ -34,6 +34,8 @@ func init() {
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	runCmd.PersistentFlags().StringVar(&where, "where", "", "where filter")
 	runCmd.PersistentFlags().StringVar(&filter, "filter", "", "filter to apply (slug, space/filter, or UUID)")
+	runCmd.PersistentFlags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	runCmd.PersistentFlags().StringVar(&whereData, "where-data", "", "where data filter")
 	runCmd.PersistentFlags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	//These flags don't make sense in the context of cub run because it assumes one function will be explicitly specified on the command line
 	//runCmd.PersistentFlags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
@@ -221,11 +223,13 @@ func RegisterFunctionsAsCobraCommands() {
 					}
 
 					invokeArgs := &invokeArgs{
-						Where:       effectiveWhere,
-						FilterID:    filterID,
-						DryRun:      dryRun,
-						ChangeSetID: changesetUUID,
-						Body:        newBody,
+						Where:        effectiveWhere,
+						FilterID:     filterID,
+						ResourceType: resourceType,
+						WhereData:    whereData,
+						DryRun:       dryRun,
+						ChangeSetID:  changesetUUID,
+						Body:         newBody,
 					}
 					respMsgs, err := invokeFunctionsOnUnits(invokeArgs)
 					if err != nil {

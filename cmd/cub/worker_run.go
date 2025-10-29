@@ -15,9 +15,24 @@ import (
 )
 
 var workerRunCmd = &cobra.Command{
-	Use:           "run",
-	Short:         "Run a worker locally",
-	Long:          getCommandHelp(`Run a worker locally`, ""),
+	Use:   "run",
+	Short: "Run a worker locally",
+	Long: getCommandHelp(`Run a worker locally to serve one or more "worker types".
+
+A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
+For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
+and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
+possible for a single ProviderType to correspond to multiple ToolchainTypes.
+
+The available worker types are:
+
+- confighub
+- kubernetes
+- opentofu-aws
+- properties-configmap
+
+They can be comma separated like "kubernetes,properties-configmap".
+	`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerRunCmdRun,
 	SilenceUsage:  true,
@@ -25,13 +40,13 @@ var workerRunCmd = &cobra.Command{
 }
 
 var workerRunArgs struct {
-	workerType        string
+	workerTypes       string
 	envs              []string
 	enableMultiplexer bool
 }
 
 func init() {
-	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerType, "worker-type", "t", "kubernetes", "worker type")
+	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
 	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", true, "Enable multiplexer mode with prefixes and multi-worker support (default: true)")
 
@@ -45,7 +60,7 @@ func init() {
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	// Auto-enable multiplexer if worker type contains comma
-	if strings.Contains(workerRunArgs.workerType, ",") && !cmd.Flags().Changed("enable-multiplexer") {
+	if strings.Contains(workerRunArgs.workerTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
 		workerRunArgs.enableMultiplexer = true
 	}
 
@@ -75,11 +90,8 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Build command args
-	cmdArgs := []string{workerRunArgs.workerType}
-	if workerRunArgs.enableMultiplexer {
-		cmdArgs = append(cmdArgs, "--enable-multiplexer")
-	}
+	// Do not use command-line arguments
+	cmdArgs := []string{}
 
 	activeContext := contextManager.ActiveContext()
 	serverURL := activeContext.Coordinate.ServerURL
@@ -91,7 +103,9 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	workerCommand.Env = append(os.Environ(),
 		"CONFIGHUB_URL="+serverURL,
 		"CONFIGHUB_WORKER_ID="+worker.BridgeWorkerID.String(),
-		"CONFIGHUB_WORKER_SECRET="+worker.Secret)
+		"CONFIGHUB_WORKER_SECRET="+worker.Secret,
+		"CONFIGHUB_WORKER_TYPES="+workerRunArgs.workerTypes, // may be ""
+	)
 	// Also append -e to envs
 	// TODO redesign this by adding a prefix for example REPO would become WORKER_TARGET_REPO
 	workerCommand.Env = append(workerCommand.Env, workerRunArgs.envs...)

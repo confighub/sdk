@@ -1,19 +1,19 @@
 # Kubernetes Worker Additional Configuration
 
 Among regular configuration in the Kubernetes worker,
-the `IN_CLUSTER_TARGET_NAME` Environment Variable is available.
+the `CONFIGHUB_IN_CLUSTER_TARGET_NAME` Environment Variable is available.
 
 ## Purpose
 
-The `IN_CLUSTER_TARGET_NAME` environment variable is used by the ConfigHub Kubernetes bridge worker to determine the name of the default target when the worker is running inside a Kubernetes cluster (i.e., when using Kubernetes' in-cluster configuration).
+The `CONFIGHUB_IN_CLUSTER_TARGET_NAME` environment variable is used by the ConfigHub Kubernetes bridge worker to determine the name of the default target when the worker is running inside a Kubernetes cluster (i.e., when using Kubernetes' in-cluster configuration).
 
 ## How It Works
 
 When the bridge worker detects that it is running inside a Kubernetes cluster (using `rest.InClusterConfig()`), it attempts to set the name of the available target as follows:
 
-1. **If `IN_CLUSTER_TARGET_NAME` is set:**
+1. **If `CONFIGHUB_IN_CLUSTER_TARGET_NAME` is set:**
    - The value of this environment variable is used as the name for the default target.
-2. **If `IN_CLUSTER_TARGET_NAME` is not set:**
+2. **If `CONFIGHUB_IN_CLUSTER_TARGET_NAME` is not set:**
    - The worker falls back to using the slug provided via the Go Options pattern (i.e., the `Slug` field in the options passed to `Info`).
    - If neither is set, a generic name such as `in-cluster` may be used (see implementation for details).
 
@@ -22,7 +22,7 @@ When the bridge worker detects that it is running inside a Kubernetes cluster (u
 Suppose you want the default target to appear as `my-cluster` in the ConfigHub UI or API. You would start the worker with:
 
 ```sh
-export IN_CLUSTER_TARGET_NAME=my-cluster
+export CONFIGHUB_IN_CLUSTER_TARGET_NAME=my-cluster
 ./cub-worker-run ...
 ```
 
