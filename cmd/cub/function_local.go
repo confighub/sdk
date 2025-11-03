@@ -63,6 +63,8 @@ func init() {
 	functionLocalCmd.Flags().StringVar(&localToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function execution")
 	functionLocalCmd.Flags().BoolVar(&localDataOnly, "data-only", false, "show config data without other response details")
 	functionLocalCmd.Flags().BoolVar(&localOutputOnly, "output-only", false, "show output without other response details")
+	functionLocalCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
+	functionLocalCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	addStandardDisplayFlags(functionLocalCmd)
 	functionCmd.AddCommand(functionLocalCmd)
 }
@@ -177,6 +179,9 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 	}
 
 	// Handle output-only flag
+	if outputRaw || outputJQ != "" {
+		localOutputOnly = true
+	}
 	if localOutputOnly {
 		for outputType, outputData := range response.Outputs {
 			if len(outputData) > 0 {
@@ -241,7 +246,7 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 }
 
 func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOnly bool, multipleTypes bool) {
-	if multipleTypes {
+	if multipleTypes && !outputRaw && outputJQ == "" {
 		fmt.Printf("%s:\n", outputType)
 	}
 
@@ -257,8 +262,14 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 	case api.OutputTypeAttributeValueList:
 		var payload api.AttributeValueList
 		if err := json.Unmarshal(outputBytes, &payload); err == nil {
-			for _, attr := range payload {
-				fmt.Printf("%v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+			if outputRaw {
+				displayJSON(payload)
+			} else if outputJQ != "" {
+				displayJQ(payload)
+			} else {
+				for _, attr := range payload {
+					fmt.Printf("%v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+				}
 			}
 		} else {
 			fmt.Print(string(outputBytes))
@@ -266,16 +277,22 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 	case api.OutputTypeValidationResult, api.OutputTypeValidationResultList:
 		var payload api.ValidationResultList
 		if err := json.Unmarshal(outputBytes, &payload); err == nil {
-			for _, result := range payload {
-				details := ""
-				if len(result.Details) > 0 {
-					details = ": " + strings.Join(result.Details, ", ")
-				}
-				fmt.Printf("Passed: %v%s\n", result.Passed, details)
-				if len(result.FailedAttributes) > 0 {
-					fmt.Println("Failed Attributes:")
-					for _, attr := range result.FailedAttributes {
-						fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+			if outputRaw {
+				displayJSON(payload)
+			} else if outputJQ != "" {
+				displayJQ(payload)
+			} else {
+				for _, result := range payload {
+					details := ""
+					if len(result.Details) > 0 {
+						details = ": " + strings.Join(result.Details, ", ")
+					}
+					fmt.Printf("Passed: %v%s\n", result.Passed, details)
+					if len(result.FailedAttributes) > 0 {
+						fmt.Println("Failed Attributes:")
+						for _, attr := range result.FailedAttributes {
+							fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+						}
 					}
 				}
 			}
@@ -283,15 +300,21 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 			// Try single result
 			var singleResult api.ValidationResult
 			if err := json.Unmarshal(outputBytes, &singleResult); err == nil {
-				details := ""
-				if len(singleResult.Details) > 0 {
-					details = ": " + strings.Join(singleResult.Details, ", ")
-				}
-				fmt.Printf("Passed: %v%s\n", singleResult.Passed, details)
-				if len(singleResult.FailedAttributes) > 0 {
-					fmt.Println("Failed Attributes:")
-					for _, attr := range singleResult.FailedAttributes {
-						fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+				if outputRaw {
+					displayJSON(payload)
+				} else if outputJQ != "" {
+					displayJQ(payload)
+				} else {
+					details := ""
+					if len(singleResult.Details) > 0 {
+						details = ": " + strings.Join(singleResult.Details, ", ")
+					}
+					fmt.Printf("Passed: %v%s\n", singleResult.Passed, details)
+					if len(singleResult.FailedAttributes) > 0 {
+						fmt.Println("Failed Attributes:")
+						for _, attr := range singleResult.FailedAttributes {
+							fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
+						}
 					}
 				}
 			} else {
@@ -301,8 +324,14 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 	case api.OutputTypeResourceInfoList:
 		var payload api.ResourceInfoList
 		if err := json.Unmarshal(outputBytes, &payload); err == nil {
-			for _, resource := range payload {
-				fmt.Printf("%s %s\n", resource.ResourceName, resource.ResourceType)
+			if outputRaw {
+				displayJSON(payload)
+			} else if outputJQ != "" {
+				displayJQ(payload)
+			} else {
+				for _, resource := range payload {
+					fmt.Printf("%s %s\n", resource.ResourceName, resource.ResourceType)
+				}
 			}
 		} else {
 			fmt.Print(string(outputBytes))
@@ -310,9 +339,15 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 	case api.OutputTypeResourceList:
 		var payload api.ResourceList
 		if err := json.Unmarshal(outputBytes, &payload); err == nil {
-			for _, resource := range payload {
-				fmt.Printf("%s %s:\n", resource.ResourceName, resource.ResourceType)
-				fmt.Println(resource.ResourceBody)
+			if outputRaw {
+				displayJSON(payload)
+			} else if outputJQ != "" {
+				displayJQ(payload)
+			} else {
+				for _, resource := range payload {
+					fmt.Printf("%s %s:\n", resource.ResourceName, resource.ResourceType)
+					fmt.Println(resource.ResourceBody)
+				}
 			}
 		} else {
 			fmt.Print(string(outputBytes))
@@ -321,8 +356,7 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 		// Try to format as JSON
 		var jsonData interface{}
 		if err := json.Unmarshal(outputBytes, &jsonData); err == nil {
-			indented, _ := json.MarshalIndent(jsonData, "", "  ")
-			fmt.Print(string(indented))
+			displayJSON(jsonData)
 		} else {
 			fmt.Print(string(outputBytes))
 		}

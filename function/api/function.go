@@ -14,6 +14,8 @@ import (
 	"github.com/confighub/sdk/third_party/yamlpatch"
 	"github.com/confighub/sdk/workerapi"
 
+	jsonschema "github.com/swaggest/jsonschema-go"
+
 	"github.com/google/uuid"
 )
 
@@ -371,23 +373,23 @@ type ResourceTypeAndName string
 type PatchMap map[ResourceTypeAndName]ResourcePatch
 
 type ResourcePatch struct {
-	Patches yamlpatch.Patch
+	Patches yamlpatch.Patch `description:"Isomorphic to a JSON patch, but to be applied to YAML"`
 }
 
 // An AttributeIdentifier identifies the resource type and name and resolved path of the
 // resource attribute.
 type AttributeIdentifier struct {
 	ResourceInfo
-	Path        ResolvedPath `swaggertype:"string"`
-	InLiveState bool         `json:",omitempty"`
+	Path        ResolvedPath `swaggertype:"string" description:"Path of the attribute"`
+	InLiveState bool         `json:",omitempty" description:"True if a path in the live state, false if a path in the configuration data"`
 }
 
 // AttributeMetadata specifies the AttributeName, DataType, and other details, such as corresponding
 // getter and setter functions for the attribute.
 type AttributeMetadata struct {
-	AttributeName AttributeName     `json:",omitempty" swaggertype:"string"`
-	DataType      DataType          `swaggertype:"string"`
-	Info          *AttributeDetails `json:",omitempty"`
+	AttributeName AttributeName     `json:",omitempty" swaggertype:"string" description:"Name of the registered attribute"`
+	DataType      DataType          `swaggertype:"string" description:"Data type if the attribute value."`
+	Info          *AttributeDetails `json:",omitempty" description:"Additional attribute details"`
 }
 
 // AttributeInfo conveys both the identifying information about a resource attribute and its
@@ -400,30 +402,27 @@ type AttributeInfo struct {
 // AttributeDetails provides the getter and (potentially multiple) setter functions for the
 // resource attribute, and other information.
 type AttributeDetails struct {
-	GetterInvocation  *FunctionInvocation  `json:",omitempty"` // used for matching
-	SetterInvocations []FunctionInvocation `json:",omitempty"` // used for matching
-	Description       string               `json:",omitempty"` // documentation
-	// ValidationRegexp   string              `json:",omitempty"`   // not used yet
-	// ExtractionRegexp   string              `json:",omitempty"`   // not used yet
-	// PartitionRegexp    string              `json:",omitempty"`    // not used yet
+	GetterInvocation  *FunctionInvocation  `json:",omitempty" description:"Function invocation used to get the attribute, if any"`                        // used for matching
+	SetterInvocations []FunctionInvocation `json:",omitempty" description:"Function invocation used to set the attribute (except for the value), if any"` // used for matching
+	Description       string               `json:",omitempty" description:"Description of the attribute"`
 }
 
 // AttributeValue provides the value of an attribute in addition to information about the attribute.
 type AttributeValue struct {
 	AttributeInfo
-	Value   any
-	Comment string `json:",omitempty"`
-	Index   int    // index of the function invocation corresponding to the result
+	Value   any    `description:"Value of the attribute at the specified Path"`
+	Comment string `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
+	Index   int    `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
 }
 type AttributeValueList []AttributeValue
 
 // ValidationResult specifies whether a single validation function or sequence of validation
 // functions passed for the given configuration Unit.
 type ValidationResult struct {
-	Passed           bool               // true if valid, false otherwise
-	Index            int                // index of the function invocation corresponding to the result
-	Details          []string           `json:",omitempty"` // optional list of failure details
-	FailedAttributes AttributeValueList `json:",omitempty"` // optional list of failed attributes; preferred over Details
+	Passed           bool               `description:"True if valid, false otherwise"`
+	Index            int                `description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
+	Details          []string           `json:",omitempty" description:"Optional list of failure details"`
+	FailedAttributes AttributeValueList `json:",omitempty" description:"optional list of failed attributes; preferred over Details"`
 }
 
 type ValidationResultList []ValidationResult
@@ -470,31 +469,33 @@ type FunctionParameter struct {
 
 // ValueConstraints specifies constraints on a parameter's value.
 type ValueConstraints struct {
-	Regexp     string   `json:",omitempty" description:"Regular expression matching valid values; applies to string parameters"`
-	Min        *int     `json:",omitempty" description:"Minimum allowed value; applies to int parameters"`
-	Max        *int     `json:",omitempty" description:"Maximum allowed value; applies to int parameters"`
-	EnumValues []string `json:",omitempty" description:"List of valid enum values; applies to enum parameters"`
+	Regexp     string             `json:",omitempty" description:"Regular expression matching valid values; applies to string parameters"`
+	Min        *int               `json:",omitempty" description:"Minimum allowed value; applies to int parameters"`
+	Max        *int               `json:",omitempty" description:"Maximum allowed value; applies to int parameters"`
+	EnumValues []string           `json:",omitempty" description:"List of valid enum values; applies to enum parameters"`
+	Schema     *jsonschema.Schema `json:",omitempty" description:"JSON schema (for embedded JSON values)"`
 }
 
 // FunctionOutput specifies the name and description of the result and its OutputType.
 type FunctionOutput struct {
-	ResultName  string     `description:"Name of the result in kabob-case"`
-	Description string     `description:"Description of the result"`
-	OutputType  OutputType `swaggertype:"string" description:"Data type of the JSON embedded in the output"`
+	ResultName  string             `description:"Name of the result in kabob-case"`
+	Description string             `description:"Description of the result"`
+	OutputType  OutputType         `swaggertype:"string" description:"Data type of the JSON embedded in the output"`
+	Schema      *jsonschema.Schema `json:",omitempty" description:"JSON schema of the output type"`
 }
 
 // PathVisitorInfo specifies the information needed by a visitor function to traverse the
 // specified attributes within the registered resource types. The type is serializable as JSON
 // for dynamic configuration and discovery.
 type PathVisitorInfo struct {
-	Path                   UnresolvedPath            `swaggertype:"string"`                   // unresolved path pattern
-	ResolvedPath           ResolvedPath              `json:",omitempty" swaggertype:"string"` // specific resolved path
-	AttributeName          AttributeName             `swaggertype:"string"`                   // AttributeName for the path
-	DataType               DataType                  `swaggertype:"string"`                   // DataType of the attribute at the path
-	Info                   *AttributeDetails         `json:",omitempty"`                      // additional attribute details
-	TypeExceptions         map[ResourceType]struct{} `json:",omitempty"`                      // resource types to skip
-	EmbeddedAccessorType   EmbeddedAccessorType      `json:",omitempty" swaggertype:"string"` // embedded accessor to use, if any
-	EmbeddedAccessorConfig string                    `json:",omitempty"`                      // configuration of the embedded accessor, if any
+	Path                   UnresolvedPath            `swaggertype:"string" description:"Unresolved path pattern"`
+	ResolvedPath           ResolvedPath              `json:",omitempty" swaggertype:"string" description:"Specific resolved path"`
+	AttributeName          AttributeName             `swaggertype:"string" description:"AttributeName for the path"`
+	DataType               DataType                  `swaggertype:"string" description:"DataType of the attribute at the path"`
+	Info                   *AttributeDetails         `json:",omitempty" description:"Additional attribute details"`
+	TypeExceptions         map[ResourceType]struct{} `json:",omitempty" description:"Resource types to skip"`
+	EmbeddedAccessorType   EmbeddedAccessorType      `json:",omitempty" swaggertype:"string" description:"Embedded accessor to use, if any"`
+	EmbeddedAccessorConfig string                    `json:",omitempty" description:"Configuration of the embedded accessor, if any"`
 }
 
 // PathToVisitorInfoType associates attribute metadata with a resource path.
@@ -509,6 +510,7 @@ type ResourceTypeToPathToVisitorInfoType map[ResourceType]PathToVisitorInfoType
 type AttributeNameToResourceTypeToPathToVisitorInfoType map[AttributeName]ResourceTypeToPathToVisitorInfoType
 
 // TODO: Add ResourceCategory
+
 func ResourceTypeAndNameFromResourceInfo(resourceInfo ResourceInfo) ResourceTypeAndName {
 	return ResourceTypeAndName(string(resourceInfo.ResourceType) + "#" + string(resourceInfo.ResourceNameWithoutScope))
 }
@@ -517,7 +519,7 @@ func AttributeNameForResourceType(resourceType ResourceType) AttributeName {
 	return AttributeName(string(AttributeNameResourceName) + "/" + string(resourceType))
 }
 
-// All types except int and bool are always serialized as strings
+// All types except int and bool are always serialized as strings.
 func DataTypeIsSerializedAsString(dataType DataType) bool {
 	switch dataType {
 	case DataTypeInt, DataTypeBool:
@@ -526,6 +528,7 @@ func DataTypeIsSerializedAsString(dataType DataType) bool {
 	return true
 }
 
+// Unmarshal well known output types.
 func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 	switch outputType {
 	case OutputTypeValidationResult, OutputTypeValidationResultList:
@@ -561,6 +564,7 @@ func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 	}
 }
 
+// Merge outputs from multiple function calls as a map by output type, combining lists of the same well known type.
 func CombineOutputs(
 	functionName string,
 	instance string,

@@ -32,6 +32,7 @@ require (
 	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
+	github.com/swaggest/jsonschema-go v0.3.78
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	github.com/yannh/kubeconform v0.6.7
 	github.com/zclconf/go-cty v1.16.1
@@ -220,6 +221,7 @@ require (
 	github.com/spyzhov/ajson v0.9.6 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

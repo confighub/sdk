@@ -14,6 +14,7 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"github.com/labstack/gommon/log"
+	"github.com/swaggest/jsonschema-go"
 	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit"
@@ -25,6 +26,11 @@ import (
 )
 
 func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	reflector := jsonschema.Reflector{}
+	resourceMutationListSchema, err := reflector.Reflect(api.ResourceMutationList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ResourceMutationList")
+	}
 	fh.RegisterFunction("compute-mutations", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "compute-mutations",
@@ -36,28 +42,30 @@ func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.C
 					DataType:      converter.DataType(),
 				},
 				{
-					ParameterName: "functionIndex",
+					ParameterName: "function-index",
 					Required:      true,
-					Description:   "index of the function from the invocation list that mutated the config data",
+					Description:   "Index of the function from the invocation list that mutated the config data",
 					DataType:      api.DataTypeInt,
+					Example:       "0",
 				},
 				{
-					ParameterName: "alreadyConverted",
+					ParameterName: "already-converted",
 					Required:      false,
-					Description:   "if true, the config-doc-list is already converted to YAML",
+					Description:   "If true, the config-doc-list is already converted to YAML",
 					DataType:      api.DataTypeBool,
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "mutations",
-				Description: "List of mutations in the same order as the resources in the config data",
+				Description: "List of resource mutations in the same order as the resources in the config data",
 				OutputType:  api.OutputTypeResourceMutationList,
+				Schema:      &resourceMutationListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           `Diffs the input with the config data and returns a list of mutations made to the config data`,
+			Description:           `Diffs the previous config data from the parameter with the current config data from the unit and returns a list of resource mutations made to the config data. The output can be used with patch-mutations.`,
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -68,6 +76,31 @@ func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.C
 }
 
 func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	reflector := jsonschema.Reflector{}
+	resourceListSchema, err := reflector.Reflect(api.ResourceList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ResourceList")
+	}
+	resourceInfoListSchema, err := reflector.Reflect(api.ResourceInfoList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ResourceInfoList")
+	}
+	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.AttributeValueList")
+	}
+	validationResultListSchema, err := reflector.Reflect(api.ValidationResultList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ValidationResultList")
+	}
+	yamlPayloadSchema, err := reflector.Reflect(api.YAMLPayload{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.YAMLPayload")
+	}
+	resourceMutationListSchema, err := reflector.Reflect(api.ResourceMutationList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ResourceMutationList")
+	}
 	fh.RegisterFunction("get-resources", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-resources",
@@ -85,6 +118,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "resource",
 				Description: "Return the names, types, and bodies of the resources",
 				OutputType:  api.OutputTypeResourceList,
+				Schema:      &resourceListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -113,6 +147,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "resource-name",
 				Description: "Return the names of resources of the specified type",
 				OutputType:  api.OutputTypeResourceInfoList,
+				Schema:      &resourceInfoListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -162,12 +197,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "path",
 				Description: "Resource paths containing placeholder values",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of attributes containing the placeholder string 'confighubplaceholder' or number 999999999",
+			Description:           "Returns a list of attributes containing the placeholder string 'confighubplaceholder' or number 999999999. See https://docs.confighub.com/background/concepts/placeholders/ for more information about placeholders.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -182,12 +218,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "passed",
 				Description: "True if no placeholders remain, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
+			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999. See https://docs.confighub.com/background/concepts/placeholders/ for more information about placeholders.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -203,12 +240,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "passed",
 				Description: "True if no placeholders remain, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
+			Description:           "[Deprecated; use vet-placeholders instead] Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999. See https://docs.confighub.com/background/concepts/placeholders/ for more information about placeholders.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -223,13 +261,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "search-value",
 					Required:      true,
-					Description:   "Value to search for",
+					Description:   "String value to search for",
 					DataType:      api.DataTypeString,
 				},
 				{
 					ParameterName: "replace-value",
 					Required:      true,
-					Description:   "Value to use as the replacement for search-value",
+					Description:   "String value to use as the replacement for search-value",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -256,16 +294,18 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path whose value to get",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated configuration path of the attribute whose value to get. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "path",
-				Description: "Value of the specified resource path",
+				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -290,10 +330,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path of the attribute to set",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute to set. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 				{
 					ParameterName: "attribute-value",
@@ -306,7 +347,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set the value(s) of the specified attribute path",
+			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -325,16 +366,18 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path whose value to get",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute whose value to get. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "path",
-				Description: "Value of the specified resource path",
+				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -359,10 +402,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path of the attribute to set",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute to set. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 				{
 					ParameterName: "attribute-value",
@@ -375,7 +419,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set the value(s) of the specified attribute path",
+			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -394,16 +438,18 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path whose value to get",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute whose value to get. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "path",
-				Description: "Value of the specified resource path",
+				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -428,10 +474,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path of the attribute to set",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute to set. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 				{
 					ParameterName: "attribute-value",
@@ -444,7 +491,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set the value(s) of the specified attribute path",
+			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -463,10 +510,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path of the attribute to comment",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path of the attribute to comment. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 				{
 					ParameterName: "comment",
@@ -498,10 +546,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					DataType:      api.DataTypeString,
 				},
 				{
-					ParameterName: "path",
-					Required:      true,
-					Description:   "Path to delete",
-					DataType:      api.DataTypeString,
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated path to delete. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
 			Mutating:              true,
@@ -523,7 +572,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "name",
 					Required:      true,
-					Description:   "Name value to set in identified name fields containing placeholder values",
+					Description:   "Name value to set in identified name fields containing the placeholder string 'confighubplaceholder' or number 999999999",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -531,7 +580,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set the values of identified name fields containing placeholder values",
+			Description:           "Set the values of identified name fields containing the placeholder string 'confighubplaceholder' or number 999999999. See https://docs.confighub.com/background/concepts/placeholders/ for more details regarding placeholder values.",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameDefaultName,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -545,22 +594,24 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "get-attribute",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "attribute-name",
-					Required:      true,
-					Description:   "Name of the attribute get",
-					DataType:      api.DataTypeString,
+					ParameterName:    "attribute-name",
+					Required:         true,
+					Description:      "Name of the attribute get",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.AttributeNamePrefixRegexpString + "$"},
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute",
+				ResultName:  "attribute-list",
 				Description: "Specified attribute values",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:     false,
 			Validating:   false,
 			Hermetic:     true,
 			Idempotent:   true,
-			Description:  "Returns values of a specified registered attribute",
+			Description:  "Returns values of a specified registered attribute. See https://docs.confighub.com/guide/functions/#getters-and-setters-attributes-and-the-path-registry for more information about registered attributes.",
 			FunctionType: api.FunctionTypePathVisitor,
 			// No AttributeName, since that's provided as a parameter
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -573,15 +624,16 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-attributes",
 			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute",
-				Description: "Significant attributes of common resource types",
+				ResultName:  "attribute-list",
+				Description: "Selected attribute values of common resource types",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of significant attributes",
+			Description:           "Returns a list of selected attribute values. Currently it returns a curated set of attributes registered under " + string(api.AttributeNameGeneral) + ", many of which are also registered under more specific attribute names.",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameGeneral,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -595,17 +647,18 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "set-attributes",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "attribute-list",
-					Required:      true,
-					Description:   "List of attributes to set",
-					DataType:      api.DataTypeAttributeValueList,
+					ParameterName:    "attribute-list",
+					Required:         true,
+					Description:      "List of attributes to set",
+					DataType:         api.DataTypeAttributeValueList,
+					ValueConstraints: api.ValueConstraints{Schema: &attributeValueListSchema},
 				},
 			},
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set specified attributes",
+			Description:           "Set specified attributes to the specified values. This function is intended to be used for read-modify-write operations in combination with any (typically `get-`) functions returning output of the type " + string(api.DataTypeAttributeValueList) + ".",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -617,15 +670,16 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-needed",
 			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute",
+				ResultName:  "attribute-list",
 				Description: "Needed attributes",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of needed attributes with setter functions",
+			Description:           "Returns a list of needed attributes with setter functions. See https://docs.confighub.com/background/concepts/needsprovides/ for more information.",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameNeededValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -638,15 +692,16 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-provided",
 			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute",
+				ResultName:  "attribute-list",
 				Description: "Provided attributes",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of Provided attributes",
+			Description:           "Returns a list of Provided attributes. See https://docs.confighub.com/background/concepts/needsprovides/ for more information.",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameProvidedValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -662,16 +717,17 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "validation-expr",
 					Required:      true,
-					Description:   "CEL (Common Expression Language) expression to validate each resource. The current resource is refenced with the prefix 'r.' See https://cel.dev/ for language details.",
+					Description:   "CEL (Common Expression Language) expression to validate each resource. The current resource is referenced with the prefix 'r.' See https://cel.dev/ for language details.",
 					DataType:      api.DataTypeCEL,
 					// TODO: Override this with ToolchainType-specific examples.
-					Example: "r.kind != 'Deployment' || r.spec.template.spec.containers.all(container, container.securityContext.runAsNonRoot == true)",
+					Example: "r.kind != 'Deployment' || (r.spec.template.spec.securityContext.runAsNonRoot == true && r.spec.template.spec.containers.all(container, !has(container.securityContext.runAsNonRoot) || container.securityContext.runAsNonRoot == true)) || r.spec.template.spec.containers.all(container, has(container.securityContext.runAsNonRoot) && container.securityContext.runAsNonRoot == true)",
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if validation passed, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -703,12 +759,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "passed",
 				Description: "True if validation passed, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           `Returns true if validation expression evaluates to true for all resources`,
+			Description:           `[Deprecated; use vet-celexpr instead] Returns true if validation expression evaluates to true for all resources`,
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -729,7 +786,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				{
 					ParameterName: "where-expression",
 					Required:      true,
-					Description:   "Where filter: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
+					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -737,12 +794,13 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "matched",
 				Description: "True if filter passed for at least one resource, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           `Returns true if all terms of the conjunction of relational expressions evaluate to true for at least one matching path of a resource of the specified type`,
+			Description:           `Returns true if all terms of the conjunction of relational expressions evaluate to true for at least one matching path of a resource of the specified type. Intended to be used for filtering rather than validating, though it returns the same output type.`,
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -759,26 +817,52 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					Required:      true,
 					Description:   "yq expression",
 					DataType:      api.DataTypeString,
+					Example:       ".spec.replicas",
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "yq output",
 				Description: "Output from yq",
 				OutputType:  api.OutputTypeYAML,
+				Schema:      &yamlPayloadSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns the result of running yq with the specified expression on the YAML configuration data",
+			Description:           "Returns the result of running yq with the specified expression on the configuration data",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState)
+			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState, false)
 		},
 	})
-	// TODO: Depreciated in favor of vet-approvedby. Remove this.
+	fh.RegisterFunction("yq-i", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "yq-i",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "yq-expression",
+					Required:      true,
+					Description:   "yq expression",
+					DataType:      api.DataTypeString,
+					Example:       ".spec.replicas = 7",
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "The configuration data is updated with the result of running yq -i with the specified expression on the configuration data",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState, true)
+		},
+	})
+	// TODO: Deprecated in favor of vet-approvedby. Remove this.
 	fh.RegisterFunction("is-approved", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "is-approved",
@@ -788,18 +872,20 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 					Required:      true,
 					Description:   "Number of approvers",
 					DataType:      api.DataTypeInt,
+					Example:       "2",
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if approvers are present, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if sufficient approvers are present",
+			Description:           "[Deprecated; use vet-approvedby instead] Returns true if sufficient approvers are present",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -822,6 +908,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 				ResultName:  "passed",
 				Description: "True if approvers are present, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -850,7 +937,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set function context values in configuration resource/element attributes (if possible) if addContext is true and remove the context if false",
+			Description:           "Set function context values (e.g., unit slug, space ID) in configuration resource/element attributes (if possible) if add-context is true and remove the context if false. These values can be used to find the corresponding unit in ConfigHub, such as with `cub k8s source`.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -863,15 +950,16 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-details",
 			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute",
-				Description: "Selected significant resource attributes",
+				ResultName:  "attribute-list",
+				Description: "Selected resource attributes",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns a list of selected significant resource attributes",
+			Description:           "Returns a list of curated resource attributes",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         api.AttributeNameDetail,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -886,10 +974,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "upsert-resource",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "resource-list",
-					Required:      true,
-					Description:   "ResourceList containing the resource to upsert",
-					DataType:      api.DataTypeResourceList,
+					ParameterName:    "resource-list",
+					Required:         true,
+					Description:      "ResourceList containing the resource to upsert",
+					DataType:         api.DataTypeResourceList,
+					ValueConstraints: api.ValueConstraints{Schema: &resourceListSchema},
 				},
 				{
 					ParameterName: "resource-type",
@@ -908,7 +997,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Append the resource if it is not present or replace the existing resource if it is already present in the configuration data",
+			Description:           "Append the resource if it is not present or replace the existing resource if it is already present in the configuration data. Intended to be used with get-resources.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -954,23 +1043,25 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "patch-mutations",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "mutation-predicates",
-					Required:      true,
-					Description:   "Mutations with predicates set to true if they are patchable",
-					DataType:      api.DataTypeResourceMutationList,
+					ParameterName:    "mutation-predicates",
+					Required:         true,
+					Description:      "Mutations with predicates set to true if they are patchable",
+					DataType:         api.DataTypeResourceMutationList,
+					ValueConstraints: api.ValueConstraints{Schema: &resourceMutationListSchema},
 				},
 				{
-					ParameterName: "mutation-patch",
-					Required:      true,
-					Description:   "Mutations to filter and patch",
-					DataType:      api.DataTypeResourceMutationList,
+					ParameterName:    "mutation-patch",
+					Required:         true,
+					Description:      "Mutations to filter and patch",
+					DataType:         api.DataTypeResourceMutationList,
+					ValueConstraints: api.ValueConstraints{Schema: &resourceMutationListSchema},
 				},
 			},
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Selectively patch attributes if their mutations indicate they are patchable",
+			Description:           "Selectively patch attributes if their mutations indicate they are patchable. Intended to be used with compute-mutations.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -983,10 +1074,11 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionName: "reset",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName: "mutation-predicates",
-					Required:      true,
-					Description:   "Mutations with predicates set to true if they should be reset",
-					DataType:      api.DataTypeResourceMutationList,
+					ParameterName:    "mutation-predicates",
+					Required:         true,
+					Description:      "Mutations with predicates set to true if they should be reset",
+					DataType:         api.DataTypeResourceMutationList,
+					ValueConstraints: api.ValueConstraints{Schema: &resourceMutationListSchema},
 				},
 			},
 			Mutating:              true,
@@ -1034,7 +1126,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Replicate the specified configuration resource/element replicas-1 times",
+			Description:           "Replicate the specified configuration resource/element replicas minus one times",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -1748,13 +1840,23 @@ func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionCo
 	return parsedData, nil, err
 }
 
-func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, mutating bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	expression := args[0].Value.(string)
 
 	output, err := yamlkit.EvalYQExpression(expression, parsedData.String())
+	if err != nil {
+		return parsedData, nil, errors.Wrap(err, "yq expression evaluation failed")
+	}
+	if mutating {
+		parsedOutput, err := gaby.ParseAll([]byte(output))
+		if err != nil {
+			return parsedData, nil, errors.Wrap(err, "failed to parse output from yq")
+		}
+		return parsedOutput, nil, nil
+	}
 	wrappedOutput := api.YAMLPayload{Payload: output}
-	return parsedData, wrappedOutput, err
+	return parsedData, wrappedOutput, nil
 }
 
 func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
@@ -2050,11 +2152,17 @@ func RegisterPathSetterAndGetter(
 		// All parameters are path parameters
 		getterParameters[i].Description += "get"
 	}
+	reflector := jsonschema.Reflector{}
+	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.AttributeValueList")
+	}
 	// The getter output should match the last setter parameter
 	outputInfo := &api.FunctionOutput{
 		ResultName:  setterParameters[valueParameter].ParameterName,
 		Description: setterParameters[valueParameter].Description,
 		OutputType:  api.OutputTypeAttributeValueList,
+		Schema:      &attributeValueListSchema,
 	}
 	getterSignature := &api.FunctionSignature{
 		FunctionName:          "get-" + name,

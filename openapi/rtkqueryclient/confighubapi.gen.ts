@@ -9511,6 +9511,7 @@ export type BridgeWorkerInfo = {
   /** Configuration types supported by the BridgeWorker */
   SupportedConfigTypes?: ConfigType[];
 };
+export type Schema = any;
 export type FunctionOutput = {
   /** Description of the result */
   Description?: string;
@@ -9518,6 +9519,7 @@ export type FunctionOutput = {
   OutputType?: string;
   /** Name of the result in kabob-case */
   ResultName?: string;
+  Schema?: Schema;
 };
 export type FunctionParameter = {
   /** Data type of the parameter */
@@ -9538,6 +9540,7 @@ export type FunctionParameter = {
   Regexp?: string;
   /** Whether the parameter is required */
   Required?: boolean;
+  Schema?: Schema;
 };
 export type FunctionSignature = {
   /** Resource types the function applies to; * if all */

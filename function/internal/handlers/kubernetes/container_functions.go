@@ -172,7 +172,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Replace the specified image registry with a new registry",
+			Description:           "Replace the specified image registry prefix with a new registry prefix",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         api.AttributeNameContainerImages,
 			AffectedResourceTypes: resourceTypes,
@@ -254,6 +254,11 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 	resourceTypes = yamlkit.ResourceTypesForAttribute(attributeNameContainerResources, k8skit.K8sResourceProvider)
 	minFactor := 0
 	maxFactor := 10
+	// See https://github.com/kubernetes/apimachinery/blob/master/pkg/api/resource/quantity.go
+	// Optional sign
+	// Integer or decimal
+	// Binary SI (base 1024) or Decimal SI (base 1000) or Exponent or no suffix
+	resourceQuantityRegexpString := "^[+-]?([0-9]*(\\.[0-9]+)?)(([KMGTPE]i?)|[mk]|([eE][-+]?[0-9]+))?$"
 	fh.RegisterFunction("set-container-resources", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-container-resources",
@@ -273,19 +278,19 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 					Example:          "all",
 					ValueConstraints: api.ValueConstraints{EnumValues: []string{containerResourceOperationAll, containerResourceOperationCap, containerResourceOperationFloor}},
 				}, {
-					ParameterName: "cpu",
-					Required:      true,
-					Description:   "Request cpu represented as a Kubernetes resource quantity, such as 500m; ignored if empty",
-					DataType:      api.DataTypeString,
-					Example:       "500m",
-					// TODO: regexp?
+					ParameterName:    "cpu",
+					Required:         true,
+					Description:      "Request cpu represented as a Kubernetes resource quantity, such as 500m; ignored if empty",
+					DataType:         api.DataTypeString,
+					Example:          "500m",
+					ValueConstraints: api.ValueConstraints{Regexp: resourceQuantityRegexpString},
 				}, {
-					ParameterName: "memory",
-					Required:      true,
-					Description:   "Request memory represented as a Kubernetes resource quantity, such as 256Mi; ignored if empty",
-					DataType:      api.DataTypeString,
-					Example:       "256Mi",
-					// TODO: regexp?
+					ParameterName:    "memory",
+					Required:         true,
+					Description:      "Request memory represented as a Kubernetes resource quantity, such as 256Mi; ignored if empty",
+					DataType:         api.DataTypeString,
+					Example:          "256Mi",
+					ValueConstraints: api.ValueConstraints{Regexp: resourceQuantityRegexpString},
 				}, {
 					ParameterName:    "limit-factor",
 					Required:         true,
@@ -429,17 +434,67 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 	}
 	fh.RegisterFunction("set-container-volume-mount-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName: "set-container-volume-mount-path",
-			Parameters:   volumeMountParameters,
-			Mutating:     true,
-			Validating:   false,
-			Hermetic:     true,
-			Idempotent:   true,
-			Description:  "Set a volume mount for a container and ensure the volume exists in the pod spec",
-			FunctionType: api.FunctionTypeCustom,
+			FunctionName:          "set-container-volume-mount-path",
+			Parameters:            volumeMountParameters,
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Set a volume mount for a container and ensure the volume exists in the pod spec",
+			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(resourceTypeToPodSpecPaths),
 		},
 		Function: k8sFnSetContainerVolumeMountPath,
+	})
+	minPortNumber := 1
+	maxPortNumber := 65535
+	containerPortParameters := []api.FunctionParameter{
+		{
+			ParameterName:    "container-name",
+			Required:         true,
+			Description:      "Name of the container to set port for",
+			DataType:         api.DataTypeString,
+			Example:          "main",
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
+		},
+		{
+			ParameterName:    "port-name",
+			Required:         true,
+			Description:      "Name for the port",
+			DataType:         api.DataTypeString,
+			Example:          "http",
+			ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(dns1123LabelRegexpString)},
+		},
+		{
+			ParameterName:    "port-number",
+			Required:         true,
+			Description:      "Port number to expose",
+			DataType:         api.DataTypeInt,
+			Example:          "8080",
+			ValueConstraints: api.ValueConstraints{Min: &minPortNumber, Max: &maxPortNumber},
+		},
+		{
+			ParameterName:    "protocol",
+			Required:         false,
+			Description:      "Protocol for the port (TCP, UDP, or SCTP)",
+			DataType:         api.DataTypeEnum,
+			Example:          "TCP",
+			ValueConstraints: api.ValueConstraints{EnumValues: []string{"TCP", "UDP", "SCTP"}},
+		},
+	}
+	fh.RegisterFunction("set-container-port", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName:          "set-container-port",
+			Parameters:            containerPortParameters,
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Set a port for a container, adding it if not present",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(resourceTypeToContainersPaths),
+		},
+		Function: k8sFnSetContainerPort,
 	})
 }
 
@@ -1908,6 +1963,119 @@ func k8sFnSetContainerVolumeMountPath(_ *api.FunctionContext, parsedData gaby.Co
 				if err = volumes.ArrayAppend(volume); err != nil {
 					multiErrs = append(multiErrs, errors.Wrapf(err, "error appending volume %s", volumeName))
 					continue
+				}
+			}
+		}
+	}
+
+	if len(multiErrs) != 0 {
+		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+	}
+	return parsedData, nil, nil
+}
+
+func k8sFnSetContainerPort(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+	multiErrs := []error{}
+	// Parse arguments
+	containerName := args[0].Value.(string)
+	portName := args[1].Value.(string)
+	portNumber := args[2].Value.(int)
+	var protocol string
+	if len(args) > 3 && args[3].Value != nil {
+		protocol = args[3].Value.(string)
+	} else {
+		protocol = "TCP" // Default protocol
+	}
+
+	var err error
+
+	for _, doc := range parsedData {
+		var resourceType api.ResourceType
+		resourceType, err = k8skit.K8sResourceProvider.ResourceTypeGetter(doc)
+		if err != nil {
+			continue // Skip malformed resources
+		}
+		containersPaths, ok := resourceTypeToContainersPaths[resourceType]
+		if !ok {
+			continue // Skip resource kinds we don't handle
+		}
+
+		for _, containersPath := range containersPaths {
+			var resolvedContainersPaths []yamlkit.ResolvedPathInfo
+			unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
+			resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
+			if err != nil {
+				continue // skip problematic path
+			}
+			for _, containerPath := range resolvedContainersPaths {
+				var container *gaby.YamlDoc
+				var found bool
+				container, found, err = yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
+				if !found || err != nil {
+					continue
+				}
+
+				// Check if ports array exists
+				ports := container.Path("ports")
+				if ports == nil {
+					var ary *gaby.YamlDoc
+					// Create the ports array if it doesn't exist
+					ary, err = container.Array("ports")
+					if err != nil {
+						multiErrs = append(multiErrs, errors.Wrap(err, "error creating ports array"))
+						continue
+					}
+					ports = ary
+				}
+
+				// Check if a port with the same containerPort and protocol already exists
+				// Priority: first check by port number/protocol, then by name
+				portFound := false
+				for _, portEntry := range ports.Children() {
+					if !portEntry.Exists("containerPort") {
+						continue // skip malformed element
+					}
+					existingPort, ok := portEntry.Path("containerPort").Data().(int)
+					if !ok {
+						continue // skip malformed element
+					}
+
+					// Check if this port has the same number
+					if existingPort == portNumber {
+						// Check protocol - if the existing port has a protocol, it must match
+						existingProtocol := "TCP" // Default protocol
+						if portEntry.Exists("protocol") {
+							if proto, ok := portEntry.Path("protocol").Data().(string); ok {
+								existingProtocol = proto
+							}
+						}
+
+						if existingProtocol == protocol {
+							portFound = true
+							// Update the name and protocol for this port
+							_, err = portEntry.Set(portName, "name")
+							if err != nil {
+								multiErrs = append(multiErrs, errors.Newf("error setting name for port %d: %v", portNumber, err))
+							}
+							_, err = portEntry.Set(protocol, "protocol")
+							if err != nil {
+								multiErrs = append(multiErrs, errors.Newf("error setting protocol for port %d: %v", portNumber, err))
+							}
+							break
+						}
+					}
+				}
+
+				// If port not found, add it
+				if !portFound {
+					port := orderedmap.New[string, interface{}]()
+					port.Set("name", portName)
+					port.Set("containerPort", portNumber)
+					port.Set("protocol", protocol)
+					if err = ports.ArrayAppend(port); err != nil {
+						multiErrs = append(multiErrs, errors.Wrapf(err, "error appending port %s", portName))
+						continue
+					}
 				}
 			}
 		}

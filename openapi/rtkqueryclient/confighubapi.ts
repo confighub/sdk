@@ -40,8 +40,28 @@ const baseQueryWithReauth: BaseQueryFn<
   }
 
   if (result.error && result.error.status === 403) {
-    // Access forbidden - redirect to access denied page
-    window.location.href = '/access-denied';
+    // Don't redirect if we're already on an error page (prevents infinite loop)
+    if (window.location.pathname === '/access-denied' || window.location.pathname === '/pending-approval') {
+      return result;
+    }
+
+    // Check if this is a "pending approval" error
+    const errorData = result.error.data as { message?: string } | undefined;
+    const errorMessage = errorData?.message || '';
+    const isPendingApproval = errorMessage.includes('pending approval');
+
+    if (isPendingApproval) {
+      // For pending approval, log out the user first so they get a fresh JWT when approved
+      // The return_to parameter will bring them back to the pending approval page
+      const returnTo = encodeURIComponent(`${window.location.origin}/pending-approval`);
+      window.location.href = `/auth/logout?return_to=${returnTo}`;
+    } else {
+      // Regular access denied - just show the access denied page
+      window.location.replace('/access-denied');
+    }
+
+    // Return a promise that never resolves to prevent further query processing
+    return new Promise(() => {});
   }
 
   return result;

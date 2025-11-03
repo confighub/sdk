@@ -13,6 +13,8 @@ import (
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/labstack/gommon/log"
+	"github.com/swaggest/jsonschema-go"
 )
 
 func registerMetadataFunctions(fh handler.FunctionRegistry) {
@@ -51,6 +53,11 @@ func registerMetadataFunctions(fh handler.FunctionRegistry) {
 	}
 	generic.RegisterPathSetterAndGetter(fh, "namespace", namespaceParameters,
 		" the namespace attributes in resource", AttributeNameNamespaceNameReference, k8skit.K8sResourceProvider, true, false)
+	reflector := jsonschema.Reflector{}
+	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.AttributeValueList")
+	}
 	fh.RegisterFunction("get-needed-namespaces", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-needed-namespaces",
@@ -58,6 +65,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "namespace-name",
 				Description: "Namespace attributes in the resources that need to be set",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,

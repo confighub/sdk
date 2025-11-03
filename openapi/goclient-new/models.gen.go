@@ -983,7 +983,8 @@ type FunctionOutput struct {
 	OutputType string `json:"OutputType,omitempty" yaml:"OutputType,omitempty"`
 
 	// ResultName Name of the result in kabob-case
-	ResultName string `json:"ResultName,omitempty" yaml:"ResultName,omitempty"`
+	ResultName string  `json:"ResultName,omitempty" yaml:"ResultName,omitempty"`
+	Schema     *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
 }
 
 // FunctionParameter defines model for FunctionParameter.
@@ -1013,7 +1014,8 @@ type FunctionParameter struct {
 	Regexp string `json:"Regexp,omitempty" yaml:"Regexp,omitempty"`
 
 	// Required Whether the parameter is required
-	Required bool `json:"Required,omitempty" yaml:"Required,omitempty"`
+	Required bool    `json:"Required,omitempty" yaml:"Required,omitempty"`
+	Schema   *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
 }
 
 // FunctionSignature defines model for FunctionSignature.
@@ -1531,6 +1533,9 @@ type Revision struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
+
+// Schema defines model for Schema.
+type Schema = interface{}
 
 // Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 type Space struct {

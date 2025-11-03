@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
 	"github.com/labstack/gommon/log"
+	"github.com/swaggest/jsonschema-go"
 	"github.com/yannh/kubeconform/pkg/resource"
 	"github.com/yannh/kubeconform/pkg/validator"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
@@ -29,6 +30,15 @@ import (
 func registerStandardFunctions(fh handler.FunctionRegistry) {
 	generic.RegisterStandardFunctions(fh, k8skit.K8sResourceProvider, k8skit.K8sResourceProvider)
 
+	reflector := jsonschema.Reflector{}
+	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.AttributeValueList")
+	}
+	validationResultListSchema, err := reflector.Reflect(api.ValidationResultList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ValidationResultList")
+	}
 	// Override some functions with extended implementations
 	fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -37,6 +47,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "path",
 				Description: "Resource paths containing placeholder values",
 				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -55,6 +66,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "passed",
 				Description: "True if no placeholders remain, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -73,20 +85,23 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				{
 					ParameterName: "resource-type",
 					Required:      true,
-					Description:   "Resource type (g/v/k) to match, for example apps/v1/Deployment",
+					Description:   "Resource type (API group/version/kind) to match, for example apps/v1/Deployment",
 					DataType:      api.DataTypeString,
+					Example:       "apps/v1/Deployment",
 				},
 				{
 					ParameterName: "where-expression",
 					Required:      true,
-					Description:   "Where filter: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. The expression syntax was inspired by SQL. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Strings and integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. Boolean values support equality and inequality only. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
+					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. Kubernetes resource quantities, such as '500m' and '128Mi', may be compared.",
 					DataType:      api.DataTypeString,
+					Example:       "spec.template.spec.|securityContext.runAsNonRoot != true AND spec.template.spec.containers.*.|securityContext.runAsNonRoot != true",
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "matched",
 				Description: "True if filter passed for at least one resource, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -106,6 +121,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -125,6 +141,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,

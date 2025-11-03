@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/confighub/sdk/helmutils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
@@ -142,7 +143,7 @@ metadata:
 }
 
 // createCRDsUnit creates a new unit representing the CRDs from a Helm chart.
-func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, crdYAMLContent string, releaseName string, chartName string, unitLabels map[string]string) (*goclientnew.Unit, error) {
+func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, crdYAMLContent string, releaseName string, unitLabels map[string]string) (*goclientnew.Unit, error) {
 	unitSlug := releaseName + "-crds"
 	toolchainType := "Kubernetes/YAML"
 
@@ -174,7 +175,7 @@ func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 }
 
 // createResourceUnit creates a new unit representing the regular resources from a Helm chart.
-func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, chartName string, unitLabels map[string]string, namespace string) (*goclientnew.Unit, error) {
+func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, unitLabels map[string]string, namespace string) (*goclientnew.Unit, error) {
 	unitSlug := releaseName
 	toolchainType := "Kubernetes/YAML"
 
@@ -276,17 +277,6 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 		replaceMeNamespace = helmInstallArgs.namespace
 	}
 
-	chartName := helmInstallArgs.chartName
-	if strings.Contains(chartName, "/") {
-		parts := strings.Split(chartName, "/")
-		chartName = parts[len(parts)-1]
-	}
-	unitLabels := map[string]string{
-		HelmChartLabel:   chartName,
-		HelmReleaseLabel: helmInstallArgs.releaseName,
-		// TODO "helmChartVersion": helmInstallArgs.version,
-	}
-
 	// TODO: helmInstallArgs.namespace will be used for creating <release>-ns object
 
 	// Initialize Helm SDK objects
@@ -329,6 +319,26 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 	// This must be called BEFORE ToRenderValues to properly handle subchart conditions
 	if err := chartutil.ProcessDependencies(chrt, userSuppliedValues); err != nil {
 		return fmt.Errorf("failed to process chart dependencies: %w", err)
+	}
+
+	// 2.6. Create unit labels with chart metadata
+	// All Helm labels are sourced from Chart.yaml metadata (required for Helm upgrade/rollback operations)
+	unitLabels := map[string]string{
+		helmutils.HelmReleaseLabel: helmInstallArgs.releaseName,
+	}
+	if chrt.Metadata != nil {
+		if chrt.Metadata.Name != "" {
+			unitLabels[helmutils.HelmChartLabel] = chrt.Metadata.Name
+		}
+		if chrt.Metadata.APIVersion != "" {
+			unitLabels[helmutils.HelmChartAPIVersionLabel] = chrt.Metadata.APIVersion
+		}
+		if chrt.Metadata.Version != "" {
+			unitLabels[helmutils.HelmChartVersionLabel] = chrt.Metadata.Version
+		}
+		if chrt.Metadata.AppVersion != "" {
+			unitLabels[helmutils.HelmAppVersionLabel] = chrt.Metadata.AppVersion
+		}
 	}
 
 	// 3. Build render-time values.
@@ -390,7 +400,7 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 	// Create a unit for CRDs if any were found
 	var crdUnit *goclientnew.Unit
 	if len(splitResult.CRDs) > 0 {
-		createdCRDsUnit, err := createCRDsUnit(ctx, cubClientNew, selectedSpaceID, splitResult.CRDs, helmInstallArgs.releaseName, helmInstallArgs.chartName, unitLabels)
+		createdCRDsUnit, err := createCRDsUnit(ctx, cubClientNew, selectedSpaceID, splitResult.CRDs, helmInstallArgs.releaseName, unitLabels)
 		if err != nil {
 			return fmt.Errorf("failed to create CRDs unit: %w", err)
 		}
@@ -409,7 +419,7 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Create a unit for regular resources if any were found
 	if len(splitResult.Resources) > 0 {
-		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, splitResult.Resources, helmInstallArgs.releaseName, helmInstallArgs.chartName, unitLabels, helmInstallArgs.namespace)
+		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, splitResult.Resources, helmInstallArgs.releaseName, unitLabels, helmInstallArgs.namespace)
 		if err != nil {
 			return fmt.Errorf("failed to create resources unit: %w", err)
 		}

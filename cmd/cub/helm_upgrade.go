@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/confighub/sdk/helmutils"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -98,18 +99,6 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		replaceMeNamespace = helmUpgradeArgs.namespace
 	}
 
-	chartName := helmUpgradeArgs.chartName
-	if strings.Contains(chartName, "/") {
-		parts := strings.Split(chartName, "/")
-		chartName = parts[len(parts)-1]
-	}
-	unitLabels := map[string]string{
-		HelmChartLabel:   chartName,
-		HelmReleaseLabel: helmUpgradeArgs.releaseName,
-		// TODO due to character restrictions in label values.
-		// helmChartVersion": helmInstallArgs.version,
-	}
-
 	// Initialize Helm SDK objects
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
@@ -147,6 +136,26 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 	// This must be called BEFORE ToRenderValues to properly handle subchart conditions
 	if err := chartutil.ProcessDependencies(chrt, userSuppliedValues); err != nil {
 		return fmt.Errorf("failed to process chart dependencies: %w", err)
+	}
+
+	// 2.6. Create unit labels with chart metadata
+	// All Helm labels are sourced from Chart.yaml metadata (required for Helm upgrade/rollback operations)
+	unitLabels := map[string]string{
+		helmutils.HelmReleaseLabel: helmUpgradeArgs.releaseName,
+	}
+	if chrt.Metadata != nil {
+		if chrt.Metadata.Name != "" {
+			unitLabels[helmutils.HelmChartLabel] = chrt.Metadata.Name
+		}
+		if chrt.Metadata.APIVersion != "" {
+			unitLabels[helmutils.HelmChartAPIVersionLabel] = chrt.Metadata.APIVersion
+		}
+		if chrt.Metadata.Version != "" {
+			unitLabels[helmutils.HelmChartVersionLabel] = chrt.Metadata.Version
+		}
+		if chrt.Metadata.AppVersion != "" {
+			unitLabels[helmutils.HelmAppVersionLabel] = chrt.Metadata.AppVersion
+		}
 	}
 
 	// 3. Build render-time values.

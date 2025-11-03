@@ -21213,6 +21213,8 @@ components:
           description: Name of the result in kabob-case
           type: string
           x-go-type-skip-optional-pointer: true
+        Schema:
+          $ref: '#/components/schemas/Schema'
       type: object
     FunctionParameter:
       properties:
@@ -21257,6 +21259,8 @@ components:
           description: Whether the parameter is required
           type: boolean
           x-go-type-skip-optional-pointer: true
+        Schema:
+          $ref: '#/components/schemas/Schema'
       type: object
     FunctionSignature:
       properties:
@@ -22218,6 +22222,7 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
+    Schema: {}
     Space:
       description: The logical container for most entities in ConfigHub. Namespaces
         triggers, units, targets, workers, and other entities.

@@ -162,6 +162,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	functionDoCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
+	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionDoCmd.Flags().BoolVar(&outputValuesOnly, "output-values-only", false, "show output values (from functions returning AttributeValueList) without other response details")
 	functionDoCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	// Same flag as unit update
@@ -178,7 +179,6 @@ func init() {
 	enableWaitFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
-	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionCmd.AddCommand(functionDoCmd)
 }

@@ -23491,6 +23491,9 @@
             "type": "string",
             "description": "Name of the result in kabob-case",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Schema": {
+            "$ref": "#/components/schemas/Schema"
           }
         }
       },
@@ -23546,6 +23549,9 @@
             "type": "boolean",
             "description": "Whether the parameter is required",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Schema": {
+            "$ref": "#/components/schemas/Schema"
           }
         }
       },
@@ -24652,6 +24658,7 @@
         },
         "description": "Revision is a historial view of a Config Unit."
       },
+      "Schema": {},
       "Space": {
         "required": [
           "Slug"

@@ -31,7 +31,7 @@ const (
 
 	// Path segment without patterns (for right side of split)
 	pathSegmentWithoutPatternsRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + ")"
-	pathRegexpString                       = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
+	PathRegexpString                       = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
 	whitespaceRegexpString                 = "^[ \t][ \t]*"
 	relationalOperatorRegexpString         = "^(<=|>=|<|>|=|\\!=|LIKE|ILIKE|~~|!~~|~\\*|!~\\*|~|!~|IN|NOT IN)"
 	logicalOperatorRegexpString            = "^AND"
@@ -43,7 +43,7 @@ const (
 )
 
 var (
-	pathNameRegexp           = regexp.MustCompile(pathRegexpString)
+	pathNameRegexp           = regexp.MustCompile(PathRegexpString)
 	whitespaceRegexp         = regexp.MustCompile(whitespaceRegexpString)
 	relationalOperatorRegexp = regexp.MustCompile(relationalOperatorRegexpString)
 	LogicalOperatorRegexp    = regexp.MustCompile(logicalOperatorRegexpString)

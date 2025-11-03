@@ -10,12 +10,19 @@ import (
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/function/internal/handlers/generic"
 	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/labstack/gommon/log"
+	"github.com/swaggest/jsonschema-go"
 )
 
 // TODO: refactor to share code that's common across ToolchainTypes
 
 func registerStandardFunctions(fh handler.FunctionRegistry) {
 	generic.RegisterStandardFunctions(fh, cubkit.ConfigHubResourceProvider, cubkit.ConfigHubResourceProvider)
+	reflector := jsonschema.Reflector{}
+	validationResultListSchema, err := reflector.Reflect(api.ValidationResultList{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ValidationResultList")
+	}
 	fh.RegisterFunction("validate", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "validate",
@@ -23,12 +30,13 @@ func registerStandardFunctions(fh handler.FunctionRegistry) {
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if schema passes validation",
+			Description:           "Returns true if schema passes validation. [Not implemented yet.]",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

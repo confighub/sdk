@@ -28,14 +28,14 @@ const (
 	colorGreen     = "\033[32m"
 	colorLightBlue = "\033[94m" // Light blue for line numbers
 
-	// Revision references
-	revLIVE = "live"
-	revHEAD = "head"
-
 	// Diff segment types
 	segEqual  = "equal"
 	segDelete = "delete"
 	segAdd    = "add"
+
+	// Default revision references
+	defaultFrom = "LiveRevisionNum"
+	defaultTo   = "HeadRevisionNum"
 )
 
 var unitDiffCmd = &cobra.Command{
@@ -43,38 +43,36 @@ var unitDiffCmd = &cobra.Command{
 	Short: "Show differences between revisions",
 	Long: getCommandHelp(`Show differences between revisions of a unit.
 
-Usage Modes:
-
-  1. Positional Arguments (cannot be mixed with flags):
-`+"```"+`
-     cub unit diff <unit-slug>               # Compare live vs head
-     cub unit diff <unit-slug> <rev1>        # Compare live vs rev1
-     cub unit diff <unit-slug> <rev1> <rev2> # Compare rev1 vs rev2
-`+"```"+`
-
-  2. Flag-based (cannot be mixed with positionals):
-`+"```"+`
-     --from  Source revision (defaults to live)
-     --to    Target revision (defaults to head)
-`+"```"+`
+Revision References:
+  - Absolute: 123, 456
+  - Named: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum
+  - Relative: -1, -2, -3 (N revisions back from HeadRevisionNum)
 
 Output Formats:
-
   - Default: Line-numbered format with color
   - Unified: Use -u for unified diff format (like git diff)
-  - Color:   Use -c to enable color in unified diff
+  - Color: Use -c to enable color in unified diff
 
 Examples:
 `+"```"+`
-  # Basic Comparisons
-  cub unit diff my-unit                     # live    vs head
-  cub unit diff my-unit --from=123          # rev 123 vs head
-  cub unit diff my-unit --to=456            # live    vs rev 456
-  cub unit diff my-unit --from=123 --to=456 # rev 123 vs rev 456
+  # Basic (defaults: LiveRevisionNum vs HeadRevisionNum)
+  cub unit diff my-unit
 
-  # With Unified Diff
-  cub unit diff -u  my-unit                 # Unified format
-  cub unit diff -uc my-unit                 # Unified format with color
+  # Specific revisions
+  cub unit diff my-unit --from=123 --to=456
+  cub unit diff my-unit 123 456
+
+  # Named revisions
+  cub unit diff my-unit --from=LastAppliedRevisionNum
+  cub unit diff my-unit --from=PreviousLiveRevisionNum
+
+  # Relative to head
+  cub unit diff my-unit --from=-1
+  cub unit diff my-unit --from=-2 --to=-1
+
+  # Unified diff format
+  cub unit diff -u my-unit
+  cub unit diff -uc my-unit --from=-1
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 3),
@@ -91,30 +89,51 @@ var unitDiffArgs struct {
 func init() {
 	unitDiffCmd.Flags().BoolVarP(&unitDiffArgs.unifiedDiff, "unified", "u", false, "output unified diff format")
 	unitDiffCmd.Flags().BoolVarP(&unitDiffArgs.colorOutput, "color", "c", false, "colorize the unified diff output (default: true for numbered diff)")
-	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", revLIVE, "source revision (defaults to live)")
-	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", revHEAD, "target revision (defaults to head)")
+	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LiveRevisionNum)")
+	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", defaultTo, "target revision (defaults to HeadRevisionNum)")
 	unitCmd.AddCommand(unitDiffCmd)
 }
 
-// resolveRevisionNumber gets the actual revision number for HEAD or numeric reference
-func resolveRevisionNumber(unitSlug string, base string) (int64, error) {
-	if base == revHEAD || base == revLIVE {
-		unit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for now
-		if err != nil {
-			return 0, fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
-		}
-		if base == revHEAD {
-			return unit.HeadRevisionNum, nil
-		} else if base == revLIVE {
-			return unit.LiveRevisionNum, nil
-		}
+// resolveRevisionNumber resolves a revision reference to an actual revision number
+// Supports:
+// - Absolute revision numbers: 123, 456
+// - API field names: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum
+// - Negative numbers (relative to HeadRevisionNum): -1, -2, -3
+func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
+	// Get unit data (we'll need it for most cases)
+	unit, err := apiGetUnitFromSlug(unitSlug, "*")
+	if err != nil {
+		return 0, fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 	}
 
-	// Try parsing as number
-	num, err := strconv.ParseInt(base, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid revision reference: %s", base)
+	// Check for API field names
+	switch revSpec {
+	case "HeadRevisionNum":
+		return unit.HeadRevisionNum, nil
+	case "LiveRevisionNum":
+		return unit.LiveRevisionNum, nil
+	case "LastAppliedRevisionNum":
+		return unit.LastAppliedRevisionNum, nil
+	case "PreviousLiveRevisionNum":
+		return unit.PreviousLiveRevisionNum, nil
 	}
+
+	// Try parsing as a number (could be positive absolute or negative relative)
+	num, err := strconv.ParseInt(revSpec, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid revision reference '%s': must be a revision number, -N (relative to head), or one of HeadRevisionNum/LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", revSpec)
+	}
+
+	// Handle negative numbers (relative to HeadRevisionNum)
+	if num < 0 {
+		resolved := unit.HeadRevisionNum + num
+		if resolved < 1 {
+			return 0, fmt.Errorf("revision delta %d results in revision %d which is out of range (must be >= 1)", num, resolved)
+		}
+		return resolved, nil
+	}
+
+	// Positive number - treat as absolute revision number
 	return num, nil
 }
 
@@ -356,23 +375,23 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	revTo := unitDiffArgs.toRev
 
 	// Prevent mixing positional arguments with --from/--to flags
-	if len(args) > 1 && (unitDiffArgs.fromRev != revLIVE || unitDiffArgs.toRev != revHEAD) {
+	if len(args) > 1 && (unitDiffArgs.fromRev != defaultFrom || unitDiffArgs.toRev != defaultTo) {
 		return fmt.Errorf("cannot mix positional arguments with --from/--to flags")
 	}
 
 	// Handle flag-based revision specification
-	if unitDiffArgs.fromRev != revLIVE || unitDiffArgs.toRev != revHEAD {
+	if unitDiffArgs.fromRev != defaultFrom || unitDiffArgs.toRev != defaultTo {
 		// If either flag is set, use flag values with defaults
 		if unitDiffArgs.fromRev == "" {
-			unitDiffArgs.fromRev = revLIVE
+			unitDiffArgs.fromRev = defaultFrom
 		}
 		if unitDiffArgs.toRev == "" {
-			unitDiffArgs.toRev = revHEAD
+			unitDiffArgs.toRev = defaultTo
 		}
 	} else {
 		// Handle positional arguments
-		revFrom = revLIVE
-		revTo = revHEAD
+		revFrom = defaultFrom
+		revTo = defaultTo
 		if len(args) == 2 {
 			revTo = args[1]
 		} else if len(args) == 3 {

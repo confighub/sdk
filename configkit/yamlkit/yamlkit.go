@@ -449,7 +449,6 @@ func ResolveAssociativePaths(
 			}
 			var parameterKey, parameterName string
 			keyName := kvParts[0]
-			value := kvParts[1]
 			keyNameParts := strings.Split(keyName, ":")
 			parameterKey = keyNameParts[0]
 			switch len(keyNameParts) {
@@ -459,6 +458,12 @@ func ResolveAssociativePaths(
 				parameterName = keyNameParts[1]
 			default:
 				return []ResolvedPathInfo{}, fmt.Errorf("invalid associative parameter expression '%s'", segment)
+			}
+			value := kvParts[1]
+			directIndexString := ""
+			if strings.HasPrefix(value, "@") {
+				// Support the syntax @<index> to specify an index even though the path was registered as associative
+				directIndexString = strings.TrimPrefix(value, "@")
 			}
 
 			// Search the sequence for an element where key == value
@@ -470,7 +475,8 @@ func ResolveAssociativePaths(
 					continue
 				}
 				fieldValueNode := child.S(parameterKey)
-				if fieldValueNode != nil && (fieldValueNode.Data() == value || constraintSegment != "") {
+				if (indexString == directIndexString) ||
+					(fieldValueNode != nil && (fieldValueNode.Data() == value || constraintSegment != "")) {
 					// Found the matching element. Just update the head of the queue.
 					workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, indexString)
 					workList[0].ParentNode = child

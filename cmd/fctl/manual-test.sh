@@ -50,6 +50,7 @@ ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env-var nginx S
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" get-env-var nginx HOPE > ${DIR}/get-env-var.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-resources nginx all 500m 256Mi 2 > ${DIR}/set-container-resources.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-volume-mount-path nginx config-volume /etc/config configMap > ${DIR}/set-container-volume-mount-path.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-port nginx http 8080 TCP > ${DIR}/set-container-port.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults true true true true true > ${DIR}/set-pod-defaults.yaml
 ${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-schemas > ${DIR}/vet-schemas-set-pod-defaults.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
@@ -88,6 +89,7 @@ ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/mutatefuncs
 ${FCTL} doseq --num-filters 1 --stop test-data/deployment.yaml "MyDeployment" "$(<test-data/filter.json)" > ${DIR}/doseqfilter3.txt
 ${FCTL} doseq --num-filters 1 --stop test-data/deployment10.yaml "MyDeployment" "$(<test-data/filter.json)" > ${DIR}/doseqfilter10.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" yq '.spec.replicas' > ${DIR}/yq-relicas.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" yq-i '.spec.replicas = 7' > ${DIR}/yq-i-relicas.txt
 ${FCTL} do test-data/service.yaml "MyService" ensure-namespaces > ${DIR}/ensure-namespaces-insert.txt
 ${FCTL} do test-data/all-in-one.yaml "MyUnit" ensure-namespaces > ${DIR}/ensure-namespaces-skipclusterscoped.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" ensure-context true > ${DIR}/ensure-context-true.txt
