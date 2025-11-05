@@ -97,14 +97,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -167,6 +164,16 @@
           },
           "404": {
             "description": "Space not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -303,14 +310,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SpaceCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -373,6 +377,16 @@
           },
           "404": {
             "description": "Space not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -517,14 +531,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SpaceCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -595,6 +606,16 @@
               }
             }
           },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Space.",
             "content": {
@@ -656,14 +677,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -726,6 +744,16 @@
           },
           "404": {
             "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -811,19 +839,6 @@
           }
         ],
         "responses": {
-          "default": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedBridgeWorker"
-                  }
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -945,14 +960,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BridgeWorkerCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1023,6 +1035,16 @@
               }
             }
           },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing BridgeWorker.",
             "content": {
@@ -1067,11 +1089,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1126,6 +1148,16 @@
               }
             }
           },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing BridgeWorker.",
             "content": {
@@ -1161,11 +1193,11 @@
         ],
         "responses": {
           "default": {
-            "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BridgeWorker"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1255,11 +1287,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
-              "text/event-stream": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventMessage"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1306,6 +1338,16 @@
           },
           "404": {
             "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1375,14 +1417,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1445,6 +1484,16 @@
           },
           "404": {
             "description": "ChangeSet not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1531,14 +1580,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedChangeSet"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1714,14 +1760,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChangeSetCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -1784,6 +1827,16 @@
           },
           "404": {
             "description": "ChangeSet not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1946,14 +1999,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChangeSetCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2024,6 +2074,16 @@
               }
             }
           },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing ChangeSet.",
             "content": {
@@ -2085,14 +2145,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2155,6 +2212,16 @@
           },
           "404": {
             "description": "Filter not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2259,14 +2326,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedFilter"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2463,14 +2527,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FilterCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2533,6 +2594,16 @@
           },
           "404": {
             "description": "Filter not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2716,14 +2787,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FilterCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2794,6 +2862,16 @@
               }
             }
           },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Filter.",
             "content": {
@@ -2817,17 +2895,11 @@
         "operationId": "ListOrgFunctions",
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/FunctionSignature"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -2977,14 +3049,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FunctionInvocationsResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3055,6 +3124,16 @@
               }
             }
           },
+          "409": {
+            "description": "Function data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Unable to process configuration data",
             "content": {
@@ -3087,16 +3166,6 @@
         "description": "Get info about this api server",
         "operationId": "apiInfo",
         "responses": {
-          "default": {
-            "description": "Information provided to clients by the server.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiInfo"
-                }
-              }
-            }
-          },
           "200": {
             "description": "Information provided to clients by the server.",
             "content": {
@@ -3158,14 +3227,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3228,6 +3294,16 @@
           },
           "404": {
             "description": "Invocation not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3314,14 +3390,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedInvocation"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3517,14 +3590,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/InvocationCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3587,6 +3657,16 @@
           },
           "404": {
             "description": "Invocation not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3769,14 +3849,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/InvocationCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3847,6 +3924,16 @@
               }
             }
           },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Invocation.",
             "content": {
@@ -3908,14 +3995,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -3978,6 +4062,16 @@
           },
           "404": {
             "description": "Link not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4064,14 +4158,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedLink"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4260,14 +4351,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LinkCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4330,6 +4418,16 @@
           },
           "404": {
             "description": "Link not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4514,14 +4612,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LinkCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4592,6 +4687,16 @@
               }
             }
           },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Link.",
             "content": {
@@ -4615,11 +4720,11 @@
         "operationId": "GetMe",
         "responses": {
           "default": {
-            "description": "a User given membership on the Organization",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationMember"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4744,14 +4849,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Organization"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4850,11 +4952,11 @@
         },
         "responses": {
           "default": {
-            "description": "The top-level container for an organization using ConfigHub.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Organization"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4901,6 +5003,16 @@
           },
           "404": {
             "description": "Organization not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Organization data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4944,11 +5056,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4995,6 +5107,16 @@
           },
           "404": {
             "description": "Organization not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Organization data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5064,11 +5186,11 @@
         ],
         "responses": {
           "default": {
-            "description": "The top-level container for an organization using ConfigHub.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Organization"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5165,11 +5287,11 @@
         },
         "responses": {
           "default": {
-            "description": "The top-level container for an organization using ConfigHub.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Organization"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5296,14 +5418,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OrganizationMember"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5403,11 +5522,11 @@
         },
         "responses": {
           "default": {
-            "description": "a User given membership on the Organization",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationMember"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5454,6 +5573,16 @@
           },
           "404": {
             "description": "OrganizationMember not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OrganizationMember data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5507,11 +5636,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5558,6 +5687,16 @@
           },
           "404": {
             "description": "OrganizationMember not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OrganizationMember data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5619,11 +5758,11 @@
         ],
         "responses": {
           "default": {
-            "description": "a User given membership on the Organization",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationMember"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5748,14 +5887,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedRevision"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5892,14 +6028,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedSpace"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -5998,11 +6131,11 @@
         },
         "responses": {
           "default": {
-            "description": "The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Space"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6049,6 +6182,16 @@
           },
           "404": {
             "description": "Space not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6110,11 +6253,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6161,6 +6304,16 @@
           },
           "404": {
             "description": "Space not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6239,11 +6392,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedSpace"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6390,11 +6543,11 @@
         },
         "responses": {
           "default": {
-            "description": "The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Space"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6449,6 +6602,16 @@
               }
             }
           },
+          "409": {
+            "description": "Space data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Space.",
             "content": {
@@ -6491,11 +6654,11 @@
         },
         "responses": {
           "default": {
-            "description": "The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Space"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6640,14 +6803,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedBridgeWorker"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6756,11 +6916,11 @@
         },
         "responses": {
           "default": {
-            "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BridgeWorker"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6807,6 +6967,16 @@
           },
           "404": {
             "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6860,11 +7030,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -6911,6 +7081,16 @@
           },
           "404": {
             "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6990,11 +7170,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedBridgeWorker"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7151,11 +7331,11 @@
         },
         "responses": {
           "default": {
-            "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BridgeWorker"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7202,6 +7382,16 @@
           },
           "404": {
             "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BridgeWorker data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7262,11 +7452,11 @@
         },
         "responses": {
           "default": {
-            "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BridgeWorker"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7375,22 +7565,6 @@
           }
         ],
         "responses": {
-          "default": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/FunctionSignature"
-                    }
-                  }
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -7442,14 +7616,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BridgeWorkerStatus"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7562,11 +7733,11 @@
         ],
         "responses": {
           "default": {
-            "description": "BridgeWorkerStatus represents the status information of a bridge worker within the system.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BridgeWorkerStatus"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7701,14 +7872,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedChangeSet"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7817,11 +7985,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity changeset.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChangeSet"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7868,6 +8036,16 @@
           },
           "404": {
             "description": "ChangeSet not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7921,11 +8099,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -7972,6 +8150,16 @@
           },
           "404": {
             "description": "ChangeSet not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8051,11 +8239,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedChangeSet"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8212,11 +8400,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity changeset.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChangeSet"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8263,6 +8451,16 @@
           },
           "404": {
             "description": "ChangeSet not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ChangeSet data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8323,11 +8521,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity changeset.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChangeSet"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8490,14 +8688,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedFilter"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8606,11 +8801,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity filter.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Filter"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8657,6 +8852,16 @@
           },
           "404": {
             "description": "Filter not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8710,11 +8915,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -8761,6 +8966,16 @@
           },
           "404": {
             "description": "Filter not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8840,11 +9055,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedFilter"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9022,11 +9237,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity filter.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Filter"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9073,6 +9288,16 @@
           },
           "404": {
             "description": "Filter not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Filter data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9133,11 +9358,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity filter.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Filter"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9255,17 +9480,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "$ref": "#/components/schemas/FunctionSignature"
-                    }
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9445,14 +9664,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FunctionInvocationsResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9515,6 +9731,16 @@
           },
           "404": {
             "description": "Function not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Function data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9613,14 +9839,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedInvocation"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9729,11 +9952,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a function invocation.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Invocation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9780,6 +10003,16 @@
           },
           "404": {
             "description": "Invocation not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9833,11 +10066,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -9884,6 +10117,16 @@
           },
           "404": {
             "description": "Invocation not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9963,11 +10206,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedInvocation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10144,11 +10387,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a function invocation.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Invocation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10195,6 +10438,16 @@
           },
           "404": {
             "description": "Invocation not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invocation data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10255,11 +10508,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a function invocation.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Invocation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10404,14 +10657,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedLink"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10520,11 +10770,11 @@
         },
         "responses": {
           "default": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Link"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10571,6 +10821,16 @@
           },
           "404": {
             "description": "Link not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10624,11 +10884,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10675,6 +10935,16 @@
           },
           "404": {
             "description": "Link not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10754,11 +11024,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedLink"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10928,11 +11198,11 @@
         },
         "responses": {
           "default": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Link"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -10979,6 +11249,16 @@
           },
           "404": {
             "description": "Link not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Link data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11039,11 +11319,11 @@
         },
         "responses": {
           "default": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Link"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11188,14 +11468,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTag"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11304,11 +11581,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a Tag that can be used to identify a set of Revisions across Units.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Tag"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11355,6 +11632,16 @@
           },
           "404": {
             "description": "Tag not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11408,11 +11695,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11459,6 +11746,16 @@
           },
           "404": {
             "description": "Tag not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11538,11 +11835,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedTag"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11694,11 +11991,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a Tag that can be used to identify a set of Revisions across Units.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Tag"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11745,6 +12042,16 @@
           },
           "404": {
             "description": "Tag not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11805,11 +12112,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines a Tag that can be used to identify a set of Revisions across Units.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Tag"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -11954,14 +12261,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTarget"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -12070,17 +12374,17 @@
         },
         "responses": {
           "default": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Target"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12121,6 +12425,16 @@
           },
           "404": {
             "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12174,11 +12488,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -12225,6 +12539,16 @@
           },
           "404": {
             "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12304,11 +12628,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedTarget"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -12481,17 +12805,17 @@
         },
         "responses": {
           "default": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Target"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12532,6 +12856,16 @@
           },
           "404": {
             "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12592,17 +12926,17 @@
         },
         "responses": {
           "default": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Target"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12741,14 +13075,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTrigger"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -12857,11 +13188,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an automated function invocation that executes in response to specific\nUnit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,\nautomated transformations, or other custom logic that should run when configuration\nchanges occur. Each Trigger is associated with a specific Space and can be configured\nto execute on events.\n\nTriggers can be either validating (checking configuration validity without modifying it)\nor mutating (making changes to the configuration). They can also be enforced (cannot be\noverridden) or disabled.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Trigger"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -12908,6 +13239,16 @@
           },
           "404": {
             "description": "Trigger not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12961,11 +13302,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13012,6 +13353,16 @@
           },
           "404": {
             "description": "Trigger not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13091,11 +13442,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedTrigger"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13293,11 +13644,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an automated function invocation that executes in response to specific\nUnit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,\nautomated transformations, or other custom logic that should run when configuration\nchanges occur. Each Trigger is associated with a specific Space and can be configured\nto execute on events.\n\nTriggers can be either validating (checking configuration validity without modifying it)\nor mutating (making changes to the configuration). They can also be enforced (cannot be\noverridden) or disabled.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Trigger"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13344,6 +13695,16 @@
           },
           "404": {
             "description": "Trigger not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13404,11 +13765,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an automated function invocation that executes in response to specific\nUnit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,\nautomated transformations, or other custom logic that should run when configuration\nchanges occur. Each Trigger is associated with a specific Space and can be configured\nto execute on events.\n\nTriggers can be either validating (checking configuration validity without modifying it)\nor mutating (making changes to the configuration). They can also be enforced (cannot be\noverridden) or disabled.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Trigger"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13571,14 +13932,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedUnit"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13707,11 +14065,11 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unit"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13758,6 +14116,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13821,11 +14189,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -13872,6 +14240,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13951,11 +14329,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Unit with capability to extend additional related entities.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedUnit"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14231,7 +14609,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -14247,11 +14625,11 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unit"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14298,6 +14676,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14471,11 +14859,11 @@
         },
         "responses": {
           "default": {
-            "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unit"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14604,11 +14992,11 @@
         ],
         "responses": {
           "default": {
-            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueuedOperation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14655,6 +15043,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14727,11 +15125,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14786,6 +15184,16 @@
               }
             }
           },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -14831,12 +15239,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
-              "application/octet-stream": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "format": "base64"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14937,11 +15344,11 @@
         ],
         "responses": {
           "default": {
-            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueuedOperation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -14988,6 +15395,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15051,11 +15468,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnitExtended"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15164,11 +15581,11 @@
         },
         "responses": {
           "default": {
-            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueuedOperation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15215,6 +15632,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15278,12 +15705,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
-              "application/octet-stream": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "format": "base64"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15429,14 +15855,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedMutation"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15567,11 +15990,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedMutation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15671,11 +16094,11 @@
         ],
         "responses": {
           "default": {
-            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueuedOperation"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15722,6 +16145,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15830,14 +16263,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedRevision"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -15968,11 +16398,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedRevision"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16082,11 +16512,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
-              "application/octet-stream": {
+              "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16213,14 +16643,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitAction"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16333,11 +16760,11 @@
         ],
         "responses": {
           "default": {
-            "description": "UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order. \nIf the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.\nIf there are links between units applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond\nto each UnitAction.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnitAction"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16464,14 +16891,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitEvent"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16584,11 +17008,11 @@
         ],
         "responses": {
           "default": {
-            "description": "UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks\nthe lifecycle of applying, destroying, or refreshing a Unit's configuration in the target\nlive system. The event captures the current status of the operation, any configuration\ndrift detected, and timing information about when the action started and completed.\nActions are atomic from ConfigHub's perspective but may involve multiple steps\nin the connected Bridge. The status and drift detection help track the health\nand consistency of the provisioned configuration compared to what is defined in the Unit.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnitEvent"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16723,14 +17147,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedView"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16839,11 +17260,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity view.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16890,6 +17311,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16943,11 +17374,11 @@
         ],
         "responses": {
           "default": {
-            "description": "Response for successful delete operation",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -16994,6 +17425,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17073,11 +17514,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ExtendedView"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17259,11 +17700,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity view.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17310,6 +17751,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17370,11 +17821,11 @@
         },
         "responses": {
           "default": {
-            "description": "Defines an entity view.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17500,14 +17951,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17570,6 +18018,16 @@
           },
           "404": {
             "description": "Tag not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17656,14 +18114,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTag"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17834,14 +18289,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TagCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -17904,6 +18356,16 @@
           },
           "404": {
             "description": "Tag not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18061,14 +18523,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TagCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -18139,6 +18598,16 @@
               }
             }
           },
+          "409": {
+            "description": "Tag data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Tag.",
             "content": {
@@ -18200,14 +18669,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -18270,6 +18736,16 @@
           },
           "404": {
             "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Target data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18356,14 +18832,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTarget"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -18555,14 +19028,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TargetCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -18633,6 +19103,16 @@
               }
             }
           },
+          "409": {
+            "description": "Target data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Target.",
             "content": {
@@ -18694,14 +19174,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -18764,6 +19241,16 @@
           },
           "404": {
             "description": "Trigger not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18850,14 +19337,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedTrigger"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -19074,14 +19558,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TriggerCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -19144,6 +19625,16 @@
           },
           "404": {
             "description": "Trigger not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19347,14 +19838,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TriggerCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -19425,6 +19913,16 @@
               }
             }
           },
+          "409": {
+            "description": "Trigger data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Trigger.",
             "content": {
@@ -19486,14 +19984,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -19556,6 +20051,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19660,14 +20165,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedUnit"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -19951,7 +20453,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -19967,14 +20469,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20037,6 +20536,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20225,7 +20734,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -20241,14 +20750,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20311,6 +20817,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20408,14 +20924,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitActionResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20478,6 +20991,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20566,14 +21089,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ApproveResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20636,6 +21156,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20714,14 +21244,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitActionResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20784,6 +21311,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20872,14 +21409,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitActionResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -20942,6 +21476,16 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21030,14 +21574,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/UnitTagResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21108,6 +21649,16 @@
               }
             }
           },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -21160,14 +21711,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21260,11 +21808,11 @@
         ],
         "responses": {
           "default": {
-            "description": "a User in Confighub.",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21380,14 +21928,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DeleteResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21450,6 +21995,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21536,14 +22091,11 @@
         ],
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ExtendedView"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21744,14 +22296,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ViewCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -21814,6 +22363,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22001,14 +22560,11 @@
         },
         "responses": {
           "default": {
-            "description": "",
+            "description": "Unexpected error.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ViewCreateOrUpdateResponse"
-                  }
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -22071,6 +22627,16 @@
           },
           "404": {
             "description": "View not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "View data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23641,6 +24207,16 @@
                 "$ref": "#/components/schemas/FunctionSignature"
               }
             },
+            "description": "Signatures of supported functions by ToolchainType",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToolchainTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported ToolchainTypes",
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           }
@@ -24978,7 +25554,7 @@
           },
           "ProviderType": {
             "type": "string",
-            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\" or \"AWS\".",
+            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\" or \"OpenTofu/AWS\".",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -25002,7 +25578,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\".",
+            "description": "ToolchainType specifies the type of toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\".",
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {
@@ -25021,7 +25597,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
+        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
       },
       "TargetCreateOrUpdateResponse": {
         "type": "object",
@@ -25414,7 +25990,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"ConfigHub/YAML\".",
+            "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"ConfigHub/YAML\".",
             "x-go-type-skip-optional-pointer": true
           },
           "UnitID": {

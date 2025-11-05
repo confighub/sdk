@@ -6,7 +6,7 @@ package api
 import "context"
 
 type InfoOptions struct {
-	Slug string
+	WorkerSlug string
 }
 
 type BridgeWorker interface {

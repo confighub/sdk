@@ -11,9 +11,10 @@ const (
 	ToolchainKubernetesYAML      ToolchainType = "Kubernetes/YAML"
 	ToolchainOpenTofuHCL         ToolchainType = "OpenTofu/HCL"
 	ToolchainAppConfigProperties ToolchainType = "AppConfig/Properties"
-	ToolchainAppConfigTOML       ToolchainType = "AppConfig/TOML" // TODO
-	ToolchainAppConfigINI        ToolchainType = "AppConfig/INI"  // TODO
-	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env"  // TODO
+	ToolchainAppConfigYAML       ToolchainType = "AppConfig/YAML"
+	ToolchainAppConfigTOML       ToolchainType = "AppConfig/TOML"
+	ToolchainAppConfigINI        ToolchainType = "AppConfig/INI"
+	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env" // TODO
 )
 
 const MaxToolchainTypeLength = 128

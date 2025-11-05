@@ -20,21 +20,22 @@ import (
 var workerInstallCmd = &cobra.Command{
 	Use:   "install [worker-name]",
 	Short: "Generate a worker configuration for a Kubernetes cluster",
-	Long: getCommandHelp(`Generate a worker configuration to serve one or more "worker types" for a Kubernetes cluster.
+	Long: getCommandHelp(`Generate a worker configuration to serve one or more provider types for a Kubernetes cluster.
 
-A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
-For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
-and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
-possible for a single ProviderType to correspond to multiple ToolchainTypes.
+Each ProviderType corresponds to one or more ToolchainTypes.
+For example, the "Kubernetes" provider type corresponds to the Kubernetes/YAML ToolchainType
 
-The available worker types are:
+Some ToolchainTypes are supported by multiple ProviderTypes, and some ProviderTypes support
+multiple ToolchainTypes.
 
-- confighub
-- kubernetes
-- opentofu-aws
-- properties-configmap
+The available ProviderTypes are:
 
-They can be comma separated like "kubernetes,properties-configmap".
+- ConfigHub
+- Kubernetes
+- OpenTofu/AWS
+- ConfigMap
+
+Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 
 Use --export to display the configuration. Use --unit to create a unit in ConfigHub for the configuration.
 
@@ -50,24 +51,24 @@ See the worker guide (https://docs.confighub.com/guide/workers/) for more detail
 }
 
 var workerInstallArgs struct {
-	workerTypes      string
-	envs             []string
-	export           bool
-	includeSecret    bool
-	namespace        string
-	unitSlug         string
-	targetSlug       string
-	hostNetwork      bool
-	deploymentName   string
-	functionsFile    string
-	exportSecretOnly bool
-	image            string
-	imagePullPolicy  string
-	updateStrategy   string
+	workerProviderTypes string
+	envs                []string
+	export              bool
+	includeSecret       bool
+	namespace           string
+	unitSlug            string
+	targetSlug          string
+	hostNetwork         bool
+	deploymentName      string
+	functionsFile       string
+	exportSecretOnly    bool
+	image               string
+	imagePullPolicy     string
+	updateStrategy      string
 }
 
 func init() {
-	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
+	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
 	workerInstallCmd.Flags().StringSliceVarP(&workerInstallArgs.envs, "env", "e", []string{}, "environment variables")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.export, "export", false, "export manifest to stdout instead of applying it")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.includeSecret, "include-secret", false, "include Secret resource in manifest")
@@ -216,6 +217,10 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 	envMap := map[string]string{
 		"CONFIGHUB_URL":         serverURL,
 		"CONFIGHUB_WORKER_PORT": os.Getenv("CONFIGHUB_WORKER_PORT"),
+	}
+
+	if workerInstallArgs.workerProviderTypes != "" {
+		envMap["CONFIGHUB_WORKER_PROVIDER_TYPES"] = workerInstallArgs.workerProviderTypes
 	}
 
 	// Add additional environment variables from command line arguments

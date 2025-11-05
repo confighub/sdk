@@ -5,9 +5,13 @@
 // It is responsible for registering functions and invoking them.
 
 // The executor currently supports the following toolchains:
+// - ConfigHub YAML
 // - Kubernetes YAML
 // - OpenTofu HCL
 // - AppConfig Properties
+// - AppConfig YAML
+// - AppConfig TOML
+// - AppConfig INI
 
 // Example:
 //
@@ -30,10 +34,13 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/configkit"
+	"github.com/confighub/sdk/configkit/appyamlkit"
 	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/hclkit"
+	"github.com/confighub/sdk/configkit/inikit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/propkit"
+	"github.com/confighub/sdk/configkit/tomlkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
@@ -51,6 +58,9 @@ var converters = map[workerapi.ToolchainType]configkit.ConfigConverter{
 	workerapi.ToolchainKubernetesYAML:      k8skit.K8sResourceProvider,
 	workerapi.ToolchainOpenTofuHCL:         hclkit.HclResourceProvider,
 	workerapi.ToolchainAppConfigProperties: propkit.PropertiesResourceProvider,
+	workerapi.ToolchainAppConfigYAML:       appyamlkit.AppConfigYAMLResourceProvider,
+	workerapi.ToolchainAppConfigTOML:       tomlkit.TOMLResourceProvider,
+	workerapi.ToolchainAppConfigINI:        inikit.INIResourceProvider,
 }
 
 var resourceProviders = map[workerapi.ToolchainType]yamlkit.ResourceProvider{
@@ -58,6 +68,9 @@ var resourceProviders = map[workerapi.ToolchainType]yamlkit.ResourceProvider{
 	workerapi.ToolchainKubernetesYAML:      k8skit.K8sResourceProvider,
 	workerapi.ToolchainOpenTofuHCL:         hclkit.HclResourceProvider,
 	workerapi.ToolchainAppConfigProperties: propkit.PropertiesResourceProvider,
+	workerapi.ToolchainAppConfigYAML:       appyamlkit.AppConfigYAMLResourceProvider,
+	workerapi.ToolchainAppConfigTOML:       tomlkit.TOMLResourceProvider,
+	workerapi.ToolchainAppConfigINI:        inikit.INIResourceProvider,
 }
 
 var registrators = map[workerapi.ToolchainType]func(*handler.FunctionHandler){
@@ -65,6 +78,9 @@ var registrators = map[workerapi.ToolchainType]func(*handler.FunctionHandler){
 	workerapi.ToolchainKubernetesYAML:      RegisterKubernetes,
 	workerapi.ToolchainOpenTofuHCL:         RegisterOpenTofu,
 	workerapi.ToolchainAppConfigProperties: RegisterProperties,
+	workerapi.ToolchainAppConfigYAML:       RegisterAppConfigYAML,
+	workerapi.ToolchainAppConfigTOML:       RegisterTOML,
+	workerapi.ToolchainAppConfigINI:        RegisterINI,
 }
 
 type FunctionExecutor struct {

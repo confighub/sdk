@@ -4,6 +4,9 @@
 package api
 
 import (
+	"strings"
+
+	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/workerapi"
 )
 
@@ -32,7 +35,7 @@ const (
 	ProviderKubernetes    ProviderType = "Kubernetes"
 	ProviderFluxOCIWriter ProviderType = "FluxOCIWriter"
 	ProviderConfigMap     ProviderType = "ConfigMap"
-	ProviderAWS           ProviderType = "AWS"
+	ProviderOpenTofuAWS   ProviderType = "OpenTofu/AWS"
 )
 
 var SupportedProviders = map[ProviderType]bool{
@@ -40,7 +43,7 @@ var SupportedProviders = map[ProviderType]bool{
 	ProviderKubernetes:    true,
 	ProviderFluxOCIWriter: true,
 	ProviderConfigMap:     true,
-	ProviderAWS:           true,
+	ProviderOpenTofuAWS:   true,
 }
 
 func IsSupportedProvider(provider ProviderType) bool {
@@ -52,3 +55,24 @@ const MaxProviderTypeLength = 128
 
 // Max size of marshaled parameters
 const MaxParametersLength = 16384
+
+func GenerateTargetName(workerSlug string, provider ProviderType, toolchain workerapi.ToolchainType, suffix string) string {
+	name := workerSlug
+
+	name += "-" + string(provider)
+
+	// Reduce overlap in the case that the provider and toolchain share common prefixes.
+	toolchainPrefix, toolchainSuffix, _ := strings.Cut(string(toolchain), "/")
+	if strings.HasPrefix(string(provider), toolchainPrefix) {
+		if toolchainSuffix != "" {
+			name += "-" + toolchainSuffix
+		}
+	} else {
+		name += "-" + string(toolchain)
+	}
+
+	if suffix != "" {
+		name += "-" + suffix
+	}
+	return strings.ToLower(cubkit.ConfigHubResourceProvider.NormalizeName(name))
+}

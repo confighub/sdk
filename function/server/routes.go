@@ -9,10 +9,13 @@ import (
 	"syscall"
 
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/appyaml"
 	"github.com/confighub/sdk/function/internal/handlers/confighub"
+	"github.com/confighub/sdk/function/internal/handlers/ini"
 	"github.com/confighub/sdk/function/internal/handlers/kubernetes"
 	"github.com/confighub/sdk/function/internal/handlers/opentofu"
 	"github.com/confighub/sdk/function/internal/handlers/properties"
+	"github.com/confighub/sdk/function/internal/handlers/toml"
 
 	"github.com/labstack/echo/v4"
 )
@@ -21,6 +24,9 @@ var confighubHandler *handler.FunctionHandler
 var kubernetesHandler *handler.FunctionHandler
 var propertiesHandler *handler.FunctionHandler
 var opentofuHandler *handler.FunctionHandler
+var appyamlHandler *handler.FunctionHandler
+var tomlHandler *handler.FunctionHandler
+var iniHandler *handler.FunctionHandler
 
 func registerFunctionHandler(parent *echo.Group, h **handler.FunctionHandler, p handler.FunctionProvider) {
 	*h = handler.NewFunctionHandler()
@@ -38,6 +44,9 @@ func echoSetup(rootRouter *echo.Echo) {
 	registerFunctionHandler(apiRouter, &confighubHandler, confighub.ConfigHubRegistrar)
 	registerFunctionHandler(apiRouter, &kubernetesHandler, kubernetes.KubernetesRegistrar)
 	registerFunctionHandler(apiRouter, &propertiesHandler, properties.PropertiesRegistrar)
+	registerFunctionHandler(apiRouter, &appyamlHandler, appyaml.AppConfigYAMLRegistrar)
+	registerFunctionHandler(apiRouter, &tomlHandler, toml.TOMLRegistrar)
+	registerFunctionHandler(apiRouter, &iniHandler, ini.INIRegistrar)
 	registerFunctionHandler(apiRouter, &opentofuHandler, opentofu.OpenTofuRegistrar)
 }
 

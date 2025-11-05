@@ -5711,7 +5711,7 @@ export type ListTargetsApiArg = {
   select?: string;
 };
 export type CreateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type CreateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5752,7 +5752,7 @@ export type GetTargetApiArg = {
   targetId: string;
 };
 export type PatchTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type PatchTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5784,7 +5784,7 @@ export type PatchTargetApiArg = {
   };
 };
 export type UpdateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type UpdateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6239,7 +6239,7 @@ export type PatchUnitApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -8318,7 +8318,7 @@ export type BulkPatchUnitsApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -8475,7 +8475,7 @@ export type BulkCreateUnitsApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -9570,11 +9570,14 @@ export type FunctionSignature = {
   VarArgs?: boolean;
 };
 export type FunctionWorkerInfo = {
+  /** Signatures of supported functions by ToolchainType */
   SupportedFunctions?: {
     [key: string]: {
       [key: string]: FunctionSignature;
     };
   } | null;
+  /** Supported ToolchainTypes */
+  ToolchainTypes?: string[] | null;
 };
 export type WorkerInfo = {
   BridgeWorkerInfo?: BridgeWorkerInfo;
@@ -10287,7 +10290,7 @@ export type Unit = {
   /** Unique identifier for a space. */
   SpaceID?: string;
   TargetID?: Uuid;
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -10360,7 +10363,7 @@ export type UnitRead = {
   /** Unique identifier for a space. */
   SpaceID?: string;
   TargetID?: Uuid;
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -10751,7 +10754,7 @@ export type Target = {
     - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
      */
   Parameters?: string;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS". */
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -10759,7 +10762,7 @@ export type Target = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties". */
+  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
@@ -10797,7 +10800,7 @@ export type TargetRead = {
     - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
      */
   Parameters?: string;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS". */
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -10805,7 +10808,7 @@ export type TargetRead = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties". */
+  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;

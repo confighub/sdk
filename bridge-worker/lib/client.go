@@ -234,7 +234,7 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	log.Printf("[DEBUG] Opening event stream to URL: %s", eventUrl)
 
 	// TODO accumulate from all supported workers
-	bridgeWorkerInfo := c.bridgeWorker.Info(api.InfoOptions{Slug: c.workerSlug})
+	bridgeWorkerInfo := c.bridgeWorker.Info(api.InfoOptions{WorkerSlug: c.workerSlug})
 	functionWorkerInfo := c.functionWorker.Info()
 
 	workerInfo := api.WorkerInfo{

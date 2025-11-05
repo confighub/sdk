@@ -40,12 +40,23 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 	workerapi.ToolchainConfigHubYAML:       "/confighub",
 	workerapi.ToolchainKubernetesYAML:      "/kubernetes",
 	workerapi.ToolchainAppConfigProperties: "/properties",
+	workerapi.ToolchainAppConfigYAML:       "/yaml",
+	workerapi.ToolchainAppConfigTOML:       "/toml",
+	workerapi.ToolchainAppConfigINI:        "/ini",
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",
 }
 
 func IsSupportedToolchain(toolchain workerapi.ToolchainType) bool {
 	_, supported := SupportedToolchains[toolchain]
 	return supported
+}
+
+func SupportedToolchainsToString() string {
+	s := ""
+	for toolchain := range SupportedToolchains {
+		s += ", " + string(toolchain)
+	}
+	return strings.TrimPrefix(s, ", ")
 }
 
 // TODO: Unify DataType and OutputType.

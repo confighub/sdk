@@ -34,6 +34,7 @@ func (fw OpentofuFunctionWorker) Info() api.FunctionWorkerInfo {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainOpenTofuHCL},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
 			workerapi.ToolchainOpenTofuHCL: registeredFunctionsMap,
 		},

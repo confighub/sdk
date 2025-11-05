@@ -14,7 +14,6 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/cockroachdb/errors"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
-	"github.com/gosimple/slug"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -189,9 +188,11 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		if targetName == "" {
 			// TODO: Deprecated. Remove this eventually.
 			targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
-			if targetName == "" {
-				targetName = opts.Slug
-			}
+		}
+
+		// Ensure target is unique
+		if targetName == "" || toolchain != workerapi.ToolchainKubernetesYAML {
+			targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, "cluster")
 		}
 
 		return api.BridgeWorkerInfo{
@@ -213,11 +214,11 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	}
 
 	// Create targets for each context
-	// TODO: will workerSlug + contextName be unique enough?
+	// Ensure targets are unique
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
 		targets = append(targets, api.Target{
-			Name: fmt.Sprintf("%s-%s", opts.Slug, slug.Make(contextName)),
+			Name: api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: "10m0s",

@@ -9,10 +9,13 @@ import (
 	// we centralize the registration calls here.
 
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function/internal/handlers/appyaml"
 	"github.com/confighub/sdk/function/internal/handlers/confighub"
+	"github.com/confighub/sdk/function/internal/handlers/ini"
 	"github.com/confighub/sdk/function/internal/handlers/kubernetes"
 	"github.com/confighub/sdk/function/internal/handlers/opentofu"
 	"github.com/confighub/sdk/function/internal/handlers/properties"
+	"github.com/confighub/sdk/function/internal/handlers/toml"
 )
 
 // These are intended for use by components outside the main functions server, like workers,
@@ -36,4 +39,19 @@ func RegisterProperties(fh *handler.FunctionHandler) {
 // RegisterOpenTofu registers OpenTofu functions onto the provided FunctionHandler.
 func RegisterOpenTofu(fh *handler.FunctionHandler) {
 	opentofu.OpenTofuRegistrar.RegisterFunctions(fh)
+}
+
+// RegisterAppConfigYAML registers AppConfigYAML functions onto the provided FunctionHandler.
+func RegisterAppConfigYAML(fh *handler.FunctionHandler) {
+	appyaml.AppConfigYAMLRegistrar.RegisterFunctions(fh)
+}
+
+// RegisterTOML registers TOML functions onto the provided FunctionHandler.
+func RegisterTOML(fh *handler.FunctionHandler) {
+	toml.TOMLRegistrar.RegisterFunctions(fh)
+}
+
+// RegisterINI registers INI functions onto the provided FunctionHandler.
+func RegisterINI(fh *handler.FunctionHandler) {
+	ini.INIRegistrar.RegisterFunctions(fh)
 }

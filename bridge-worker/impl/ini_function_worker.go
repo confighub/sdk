@@ -13,35 +13,35 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
-type KubernetesFunctionWorker struct {
+type INIFunctionWorker struct {
 	fh *handler.FunctionHandler
 }
 
-func NewKubernetesFunctionWorker() *KubernetesFunctionWorker {
+func NewINIFunctionWorker() *INIFunctionWorker {
 	fh := handler.NewFunctionHandler()
-	function.RegisterKubernetes(fh)
+	function.RegisterINI(fh)
 	// Register custom functions
 	registerCustomFunctions(fh)
-	return &KubernetesFunctionWorker{
+	return &INIFunctionWorker{
 		fh: fh,
 	}
 }
 
-func (fw KubernetesFunctionWorker) Info() api.FunctionWorkerInfo {
+func (fw INIFunctionWorker) Info() api.FunctionWorkerInfo {
 	// convert function registration to function signature before sending back
 	registeredFunctionsMap := make(map[string]funcApi.FunctionSignature)
 	for name, registration := range fw.fh.ListCore() {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
-		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainAppConfigINI},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
-			workerapi.ToolchainKubernetesYAML: registeredFunctionsMap,
+			workerapi.ToolchainAppConfigINI: registeredFunctionsMap,
 		},
 	}
 }
 
-func (fw KubernetesFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, request funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
+func (fw INIFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, request funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
 	resp, err := fw.fh.InvokeCore(workerCtx.Context(), &request)
 	if err != nil {
 		return funcApi.FunctionInvocationResponse{}, err
@@ -52,4 +52,4 @@ func (fw KubernetesFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, r
 	return *resp, nil
 }
 
-var _ api.FunctionWorker = (*KubernetesFunctionWorker)(nil)
+var _ api.FunctionWorker = (*INIFunctionWorker)(nil)

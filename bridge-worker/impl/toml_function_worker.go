@@ -13,35 +13,35 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
-type KubernetesFunctionWorker struct {
+type TOMLFunctionWorker struct {
 	fh *handler.FunctionHandler
 }
 
-func NewKubernetesFunctionWorker() *KubernetesFunctionWorker {
+func NewTOMLFunctionWorker() *TOMLFunctionWorker {
 	fh := handler.NewFunctionHandler()
-	function.RegisterKubernetes(fh)
+	function.RegisterTOML(fh)
 	// Register custom functions
 	registerCustomFunctions(fh)
-	return &KubernetesFunctionWorker{
+	return &TOMLFunctionWorker{
 		fh: fh,
 	}
 }
 
-func (fw KubernetesFunctionWorker) Info() api.FunctionWorkerInfo {
+func (fw TOMLFunctionWorker) Info() api.FunctionWorkerInfo {
 	// convert function registration to function signature before sending back
 	registeredFunctionsMap := make(map[string]funcApi.FunctionSignature)
 	for name, registration := range fw.fh.ListCore() {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
-		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainAppConfigTOML},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
-			workerapi.ToolchainKubernetesYAML: registeredFunctionsMap,
+			workerapi.ToolchainAppConfigTOML: registeredFunctionsMap,
 		},
 	}
 }
 
-func (fw KubernetesFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, request funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
+func (fw TOMLFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, request funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
 	resp, err := fw.fh.InvokeCore(workerCtx.Context(), &request)
 	if err != nil {
 		return funcApi.FunctionInvocationResponse{}, err
@@ -52,4 +52,4 @@ func (fw KubernetesFunctionWorker) Invoke(workerCtx api.FunctionWorkerContext, r
 	return *resp, nil
 }
 
-var _ api.FunctionWorker = (*KubernetesFunctionWorker)(nil)
+var _ api.FunctionWorker = (*TOMLFunctionWorker)(nil)

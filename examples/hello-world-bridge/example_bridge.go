@@ -12,7 +12,6 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/workerapi"
-	"github.com/gosimple/slug"
 )
 
 // ExampleBridge implements the Bridge interface
@@ -39,6 +38,9 @@ func NewExampleBridge(name, baseDir string) (*ExampleBridge, error) {
 	}, nil
 }
 
+// Define a unique ProviderType for this bridge
+const ProviderFilesystem = api.ProviderType("Filesystem")
+
 // Info returns information about the bridge's capabilities
 // For this particular bridge, it will offer a target for each subdirectory in the base directory.
 func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
@@ -53,7 +55,7 @@ func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
 		for _, entry := range entries {
 			if entry.IsDir() {
 				targets = append(targets, api.Target{
-					Name: slug.Make(entry.Name()),
+					Name: api.GenerateTargetName(opts.WorkerSlug, ProviderFilesystem, workerapi.ToolchainKubernetesYAML, entry.Name()),
 					Params: map[string]interface{}{
 						"description": fmt.Sprintf("Filesystem target for directory: %s", entry.Name()),
 						"dir_name":    entry.Name(),
@@ -71,7 +73,7 @@ func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
 		SupportedConfigTypes: []*api.ConfigType{
 			{
 				ToolchainType:    workerapi.ToolchainKubernetesYAML,
-				ProviderType:     api.ProviderType("Filesystem"),
+				ProviderType:     ProviderFilesystem,
 				AvailableTargets: targets,
 			},
 		},

@@ -135,6 +135,7 @@ var unitCreateArgs struct {
 	toolchainType     string
 	targetSlug        string
 	changesetSlug     string
+	changeDescription string
 	// Bulk create specific flags
 	destSpaces   []string
 	whereSpace   string
@@ -157,6 +158,7 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
 
 	// Bulk create specific flags
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -274,7 +276,8 @@ func runSingleUnitCreate(args []string) error {
 		}
 		upstreamUnitID = upstreamUnit.UnitID
 		newUnit = upstreamUnit
-		newUnit.UnitID = uuid.Nil // the server will do this also
+		newUnit.UnitID = uuid.Nil          // the server will set this
+		newUnit.LastChangeDescription = "" // set from the flag or stdin
 	}
 
 	// Set allow_exists parameter if flag is set
@@ -344,6 +347,9 @@ func runSingleUnitCreate(args []string) error {
 			newUnit.ChangeSetID = &changesetUUID
 		}
 	}
+	if unitCreateArgs.changeDescription != "" {
+		newUnit.LastChangeDescription = unitCreateArgs.changeDescription
+	}
 
 	// If these were set from stdin, they will be overridden
 	newUnit.SpaceID = spaceID
@@ -404,8 +410,8 @@ func createBulkCreatePatch() ([]byte, error) {
 		}
 
 		// Add change description if specified
-		if changeDescription != "" {
-			patchMap["LastChangeDescription"] = changeDescription
+		if unitCreateArgs.changeDescription != "" {
+			patchMap["LastChangeDescription"] = unitCreateArgs.changeDescription
 		}
 
 		// Add changeset if specified

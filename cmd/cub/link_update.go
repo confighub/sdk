@@ -227,7 +227,7 @@ func runBulkLinkUpdate() error {
 	}
 
 	// Handle the response
-	return handleBulkLinkUpdateResponse(res.JSON200, res.JSONDefault, res.StatusCode(), "update", effectiveWhere)
+	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", effectiveWhere)
 }
 
 func runIndividualLinkPatch(linkSlug string) error {

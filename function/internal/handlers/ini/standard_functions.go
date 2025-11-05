@@ -1,10 +1,10 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package properties
+package ini
 
 import (
-	"github.com/confighub/sdk/configkit/propkit"
+	"github.com/confighub/sdk/configkit/inikit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
@@ -14,7 +14,7 @@ import (
 // TODO: refactor to share code that's common across ToolchainTypes
 
 func registerStandardFunctions(fh handler.FunctionRegistry) {
-	generic.RegisterStandardFunctions(fh, propkit.PropertiesResourceProvider, propkit.PropertiesResourceProvider)
+	generic.RegisterStandardFunctions(fh, inikit.INIResourceProvider, inikit.INIResourceProvider)
 }
 
 // This is also defined in the bridge.
@@ -25,8 +25,8 @@ func initStandardFunctions() {
 	// configs across mutations, but it is necessary for "container" resources.
 	var defaultNames = api.ResourceTypeToPathToVisitorInfoType{
 		api.ResourceTypeAny: {
-			api.UnresolvedPath(propkit.PropertiesResourceProvider.ScopelessResourceNamePath()): {
-				Path:          api.UnresolvedPath(propkit.PropertiesResourceProvider.ScopelessResourceNamePath()),
+			api.UnresolvedPath(inikit.INIResourceProvider.ScopelessResourceNamePath()): {
+				Path:          api.UnresolvedPath(inikit.INIResourceProvider.ScopelessResourceNamePath()),
 				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
 			},
@@ -37,7 +37,7 @@ func initStandardFunctions() {
 	}
 	for resourceType, pathInfos := range defaultNames {
 		yamlkit.RegisterPathsByAttributeName(
-			propkit.PropertiesResourceProvider,
+			inikit.INIResourceProvider,
 			api.AttributeNameDefaultName,
 			resourceType,
 			pathInfos,
@@ -46,7 +46,7 @@ func initStandardFunctions() {
 			false,
 		)
 		yamlkit.RegisterPathsByAttributeName(
-			propkit.PropertiesResourceProvider,
+			inikit.INIResourceProvider,
 			api.AttributeNameGeneral,
 			resourceType,
 			pathInfos,
@@ -60,7 +60,7 @@ func initStandardFunctions() {
 	var attributePaths = api.ResourceTypeToPathToVisitorInfoType{}
 	for resourceType, pathInfos := range attributePaths {
 		yamlkit.RegisterPathsByAttributeName(
-			propkit.PropertiesResourceProvider,
+			inikit.INIResourceProvider,
 			api.AttributeNameGeneral,
 			resourceType,
 			pathInfos,
@@ -74,7 +74,7 @@ func initStandardFunctions() {
 	var detailPaths = api.ResourceTypeToPathToVisitorInfoType{}
 	for resourceType, pathInfos := range detailPaths {
 		yamlkit.RegisterPathsByAttributeName(
-			propkit.PropertiesResourceProvider,
+			inikit.INIResourceProvider,
 			api.AttributeNameDetail,
 			resourceType,
 			pathInfos,
@@ -98,6 +98,6 @@ func initStandardFunctions() {
 		FunctionName: "set-references-of-type",
 		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: "v1/Namespace"}},
 	}
-	yamlkit.RegisterNeededPaths(propkit.PropertiesResourceProvider, api.ResourceTypeAny, pathInfos, setterFunctionInvocation)
+	yamlkit.RegisterNeededPaths(inikit.INIResourceProvider, api.ResourceTypeAny, pathInfos, setterFunctionInvocation)
 
 }

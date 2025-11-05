@@ -16,7 +16,8 @@ type FunctionWorker interface {
 }
 
 type FunctionWorkerInfo struct {
-	SupportedFunctions map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature `desccription:"Signatures of supported functions by ToolchainType"`
+	ToolchainTypes     []workerapi.ToolchainType                                        `description:"Supported ToolchainTypes"`
+	SupportedFunctions map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature `description:"Signatures of supported functions by ToolchainType"`
 }
 
 type FunctionWorkerContext interface {

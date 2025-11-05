@@ -39,7 +39,10 @@ Config Types:
 
   - Kubernetes/YAML: For Kubernetes YAML configurations
   - ConfigHub/YAML: For ConfigHub YAML configurations
-  - AppConfig/Properties: For Java Properties configurations
+  - AppConfig/Properties: For application Java Properties configurations
+  - AppConfig/YAML: For application YAML configurations
+  - AppConfig/TOML: For application TOML configurations
+  - AppConfig/INI: For application INI configurations
   - OpenTofu/HCL: For OpenTofu HCL configurations
 
 Example Functions:

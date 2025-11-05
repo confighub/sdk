@@ -437,7 +437,10 @@ cub trigger create --space SPACE_SLUG replicated Mutation \
 ## Supported Configuration Formats
 
 - **Kubernetes/YAML**: Kubernetes resources in YAML format
-- **AppConfig/Properties**: Java-style properties files
+- **AppConfig/Properties**: Application Java Properties configurations
+- **AppConfig/YAML**: Application YAML configurations
+- **AppConfig/TOML**: Application TOML configurations
+- **AppConfig/INI**: Application INI configurations
 - **OpenTofu/HCL**: OpenTofu/Terraform HCL configurations
 
 Functions are toolchain-specific, so ensure you're using the right function for your configuration type.

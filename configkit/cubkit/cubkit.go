@@ -27,7 +27,7 @@ func (*ConfigHubResourceProviderType) GetPathRegistry() api.AttributeNameToResou
 	return pathRegistry
 }
 
-// ConfigHubResourceProvider implements the ResourceProvider interface for AppConfig/ConfigHub.
+// ConfigHubResourceProvider implements the ResourceProvider interface for ConfigHub/YAML.
 var ConfigHubResourceProvider = &ConfigHubResourceProviderType{}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
@@ -35,7 +35,7 @@ func (*ConfigHubResourceProviderType) DefaultResourceCategory() api.ResourceCate
 	return api.ResourceCategoryResource
 }
 
-// ResourceCategoryGetter just returns ResourceCategoryAppConfig for ConfigHub documents.
+// ResourceCategoryGetter just returns ResourceCategoryResource for ConfigHub/YAML documents.
 func (*ConfigHubResourceProviderType) ResourceCategoryGetter(doc *gaby.YamlDoc) (api.ResourceCategory, error) {
 	// TODO: check that the document is non-empty?
 	return api.ResourceCategoryResource, nil
@@ -126,7 +126,6 @@ func makeSlug(providedText string) string {
 }
 
 func (*ConfigHubResourceProviderType) NormalizeName(name string) string {
-	// TODO: use
 	return makeSlug(name)
 }
 

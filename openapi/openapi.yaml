@@ -168,6 +168,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -184,10 +190,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple spaces
       tags:
       - Space
@@ -373,6 +377,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -383,10 +393,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/SpaceCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple spaces
       tags:
       - Space
@@ -586,6 +594,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -596,10 +610,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/SpaceCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple spaces
       tags:
       - Space
@@ -736,6 +748,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -752,10 +770,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple bridge workers
       tags:
       - BridgeWorker
@@ -862,14 +878,6 @@ paths:
                   $ref: '#/components/schemas/ExtendedBridgeWorker'
                 type: array
           description: OK
-        default:
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedBridgeWorker'
-                type: array
-          description: ""
       summary: List all BridgeWorker across spaces
       tags:
       - BridgeWorker
@@ -1056,6 +1064,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -1066,10 +1080,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/BridgeWorkerCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple bridge workers
       tags:
       - BridgeWorker
@@ -1121,6 +1133,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -1131,8 +1149,8 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create action result
       tags:
       - BridgeWorker
@@ -1197,16 +1215,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BridgeWorker'
-          description: |-
-            BridgeWorker represents a bridge worker in ConfigHub.
-            A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-            It acts as a bridge between ConfigHub and the infrastructure where configurations need
-            to be applied. Bridge workers are responsible for executing configuration changes on
-            remote targets and reporting status back to ConfigHub.
-            When starting a bridge worker program, both the BridgeWorkerID and Secret are
-            required for authentication with the ConfigHub server. These credentials allow the
-            bridge worker to establish a secure connection and receive configuration actions.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Gets the current BridgeWorker from context
       tags:
       - BridgeWorker
@@ -1254,6 +1264,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -1262,10 +1278,10 @@ paths:
           description: Something went wrong while processing BridgeWorker.
         default:
           content:
-            text/event-stream:
+            application/json:
               schema:
-                $ref: '#/components/schemas/EventMessage'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Stream events to bridge worker
       tags:
       - BridgeWorker
@@ -1402,6 +1418,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -1418,10 +1440,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple changesets
       tags:
       - ChangeSet
@@ -1573,10 +1593,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedChangeSet'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of ChangeSets across spaces
       tags:
       - ChangeSet
@@ -1763,6 +1781,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -1773,10 +1797,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ChangeSetCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple changesets
       tags:
       - ChangeSet
@@ -2032,6 +2054,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -2042,10 +2070,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ChangeSetCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple changesets
       tags:
       - ChangeSet
@@ -2182,6 +2208,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -2198,10 +2230,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple filters
       tags:
       - Filter
@@ -2367,10 +2397,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedFilter'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Filters across spaces
       tags:
       - Filter
@@ -2573,6 +2601,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -2583,10 +2617,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/FilterCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple filters
       tags:
       - Filter
@@ -2858,6 +2890,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -2868,10 +2906,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/FilterCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple filters
       tags:
       - Filter
@@ -2924,12 +2960,8 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  additionalProperties:
-                    $ref: '#/components/schemas/FunctionSignature'
-                  type: object
-                type: object
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List retrieves a map of Functions across the Organization
       tags:
       - Function
@@ -3089,6 +3121,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Function not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Function data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -3105,10 +3143,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/FunctionInvocationsResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Invoke Functions across Org
       tags:
       - Function
@@ -3118,12 +3154,6 @@ paths:
       operationId: apiInfo
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiInfo'
-          description: Information provided to clients by the server.
-        default:
           content:
             application/json:
               schema:
@@ -3265,6 +3295,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -3281,10 +3317,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple invocations
       tags:
       - Invocation
@@ -3436,10 +3470,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedInvocation'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Invocations across spaces
       tags:
       - Invocation
@@ -3642,6 +3674,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -3652,10 +3690,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/InvocationCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple invocations
       tags:
       - Invocation
@@ -3927,6 +3963,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -3937,10 +3979,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/InvocationCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple invocations
       tags:
       - Invocation
@@ -4079,6 +4119,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -4095,10 +4141,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete multiple Links
       tags:
       - Link
@@ -4250,10 +4294,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedLink'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Links across spaces
       tags:
       - Link
@@ -4452,6 +4494,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -4462,10 +4510,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/LinkCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update multiple Links
       tags:
       - Link
@@ -4803,6 +4849,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -4813,10 +4865,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/LinkCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple links
       tags:
       - Link
@@ -4865,8 +4915,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationMember'
-          description: a User given membership on the Organization
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get the current user's information
       tags:
       - UserInfo
@@ -5019,10 +5069,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/Organization'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Organizations
       tags:
       - Organization
@@ -5073,6 +5121,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Organization not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Organization data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -5083,8 +5137,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-          description: The top-level container for an organization using ConfigHub.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Organization
       tags:
       - Organization
@@ -5131,6 +5185,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Organization not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Organization data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -5147,8 +5207,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Organization
       tags:
       - Organization
@@ -5231,8 +5291,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-          description: The top-level container for an organization using ConfigHub.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Organization
       tags:
       - Organization
@@ -5299,8 +5359,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-          description: The top-level container for an organization using ConfigHub.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Organization
       tags:
       - Organization
@@ -5433,10 +5493,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/OrganizationMember'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List OrganizationMembers
       tags:
       - OrganizationMember
@@ -5487,6 +5545,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: OrganizationMember not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OrganizationMember data conflict. Data has changed since last
+            read.
         "500":
           content:
             application/json:
@@ -5497,8 +5562,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationMember'
-          description: a User given membership on the Organization
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create OrganizationMember
       tags:
       - OrganizationMember
@@ -5552,6 +5617,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: OrganizationMember not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OrganizationMember data conflict. Data has changed since last
+            read.
         "422":
           content:
             application/json:
@@ -5568,8 +5640,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete OrganizationMember
       tags:
       - OrganizationMember
@@ -5632,8 +5704,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationMember'
-          description: a User given membership on the Organization
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get OrganizationMember
       tags:
       - OrganizationMember
@@ -5789,10 +5861,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedRevision'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Revisions across spaces
       tags:
       - Revision
@@ -5951,10 +6021,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedSpace'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Spaces
       tags:
       - Space
@@ -6006,6 +6074,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -6016,9 +6090,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Space'
-          description: The logical container for most entities in ConfigHub. Namespaces
-            triggers, units, targets, workers, and other entities.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Space
       tags:
       - Space
@@ -6081,6 +6154,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -6097,8 +6176,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Space
       tags:
       - Space
@@ -6187,8 +6266,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedSpace'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Space
       tags:
       - Space
@@ -6285,6 +6364,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Space not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Space data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -6295,9 +6380,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Space'
-          description: The logical container for most entities in ConfigHub. Namespaces
-            triggers, units, targets, workers, and other entities.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Space
       tags:
       - Space
@@ -6365,9 +6449,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Space'
-          description: The logical container for most entities in ConfigHub. Namespaces
-            triggers, units, targets, workers, and other entities.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Space
       tags:
       - Space
@@ -6527,10 +6610,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedBridgeWorker'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List BridgeWorkers
       tags:
       - BridgeWorker
@@ -6596,6 +6677,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -6606,16 +6693,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BridgeWorker'
-          description: |-
-            BridgeWorker represents a bridge worker in ConfigHub.
-            A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-            It acts as a bridge between ConfigHub and the infrastructure where configurations need
-            to be applied. Bridge workers are responsible for executing configuration changes on
-            remote targets and reporting status back to ConfigHub.
-            When starting a bridge worker program, both the BridgeWorkerID and Secret are
-            required for authentication with the ConfigHub server. These credentials allow the
-            bridge worker to establish a secure connection and receive configuration actions.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create BridgeWorker
       tags:
       - BridgeWorker
@@ -6669,6 +6748,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -6685,8 +6770,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete BridgeWorker
       tags:
       - BridgeWorker
@@ -6776,8 +6861,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedBridgeWorker'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get BridgeWorker
       tags:
       - BridgeWorker
@@ -6888,6 +6973,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -6898,16 +6989,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BridgeWorker'
-          description: |-
-            BridgeWorker represents a bridge worker in ConfigHub.
-            A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-            It acts as a bridge between ConfigHub and the infrastructure where configurations need
-            to be applied. Bridge workers are responsible for executing configuration changes on
-            remote targets and reporting status back to ConfigHub.
-            When starting a bridge worker program, both the BridgeWorkerID and Secret are
-            required for authentication with the ConfigHub server. These credentials allow the
-            bridge worker to establish a secure connection and receive configuration actions.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch BridgeWorker
       tags:
       - BridgeWorker
@@ -6989,16 +7072,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BridgeWorker'
-          description: |-
-            BridgeWorker represents a bridge worker in ConfigHub.
-            A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-            It acts as a bridge between ConfigHub and the infrastructure where configurations need
-            to be applied. Bridge workers are responsible for executing configuration changes on
-            remote targets and reporting status back to ConfigHub.
-            When starting a bridge worker program, both the BridgeWorkerID and Secret are
-            required for authentication with the ConfigHub server. These credentials allow the
-            bridge worker to establish a secure connection and receive configuration actions.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update BridgeWorker
       tags:
       - BridgeWorker
@@ -7032,16 +7107,6 @@ paths:
                   type: object
                 type: object
           description: OK
-        default:
-          content:
-            application/json:
-              schema:
-                additionalProperties:
-                  additionalProperties:
-                    $ref: '#/components/schemas/FunctionSignature'
-                  type: object
-                type: object
-          description: ""
       summary: List available functions supported by a specific bridge worker
       tags:
       - BridgeWorker
@@ -7107,10 +7172,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/BridgeWorkerStatus'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List BridgeWorkerStatuses
       tags:
       - BridgeWorkerStatus
@@ -7182,9 +7245,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BridgeWorkerStatus'
-          description: BridgeWorkerStatus represents the status information of a bridge
-            worker within the system.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get BridgeWorkerStatus
       tags:
       - BridgeWorkerStatus
@@ -7344,10 +7406,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedChangeSet'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List ChangeSets
       tags:
       - ChangeSet
@@ -7405,6 +7465,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -7415,8 +7481,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChangeSet'
-          description: Defines an entity changeset.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create ChangeSet
       tags:
       - ChangeSet
@@ -7470,6 +7536,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -7486,8 +7558,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete ChangeSet
       tags:
       - ChangeSet
@@ -7577,8 +7649,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedChangeSet'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get ChangeSet
       tags:
       - ChangeSet
@@ -7681,6 +7753,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -7691,8 +7769,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChangeSet'
-          description: Defines an entity changeset.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch ChangeSet
       tags:
       - ChangeSet
@@ -7766,8 +7844,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChangeSet'
-          description: Defines an entity changeset.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update ChangeSet
       tags:
       - ChangeSet
@@ -7941,10 +8019,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedFilter'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Filters
       tags:
       - Filter
@@ -8002,6 +8078,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -8012,8 +8094,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Filter'
-          description: Defines an entity filter.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Filter
       tags:
       - Filter
@@ -8067,6 +8149,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -8083,8 +8171,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Filter
       tags:
       - Filter
@@ -8174,8 +8262,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedFilter'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Filter
       tags:
       - Filter
@@ -8295,6 +8383,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -8305,8 +8399,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Filter'
-          description: Defines an entity filter.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Filter
       tags:
       - Filter
@@ -8380,8 +8474,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Filter'
-          description: Defines an entity filter.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Filter
       tags:
       - Filter
@@ -8456,12 +8550,8 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties:
-                  additionalProperties:
-                    $ref: '#/components/schemas/FunctionSignature'
-                  type: object
-                type: object
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List retrieves a map of Functions
       tags:
       - Function
@@ -8642,6 +8732,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Function not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Function data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -8658,10 +8754,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/FunctionInvocationsResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Invoke Functions
       tags:
       - Function
@@ -8821,10 +8915,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedInvocation'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Invocations
       tags:
       - Invocation
@@ -8882,6 +8974,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -8892,8 +8990,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Invocation
       tags:
       - Invocation
@@ -8947,6 +9045,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -8963,8 +9067,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Invocation
       tags:
       - Invocation
@@ -9054,8 +9158,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedInvocation'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Invocation
       tags:
       - Invocation
@@ -9174,6 +9278,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -9184,8 +9294,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Invocation
       tags:
       - Invocation
@@ -9259,8 +9369,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Invocation
       tags:
       - Invocation
@@ -9420,10 +9530,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedLink'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Links
       tags:
       - Link
@@ -9487,6 +9595,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -9497,14 +9611,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Link'
-          description: |-
-            Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Link
       tags:
       - Link
@@ -9558,6 +9666,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -9574,8 +9688,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Link
       tags:
       - Link
@@ -9665,8 +9779,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedLink'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Link
       tags:
       - Link
@@ -9786,6 +9900,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Link not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Link data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -9796,14 +9916,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Link'
-          description: |-
-            Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Link
       tags:
       - Link
@@ -9883,14 +9997,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Link'
-          description: |-
-            Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Link
       tags:
       - Link
@@ -10050,10 +10158,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTag'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Tags
       tags:
       - Tag
@@ -10112,6 +10218,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -10122,9 +10234,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tag'
-          description: Defines a Tag that can be used to identify a set of Revisions
-            across Units.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Tag
       tags:
       - Tag
@@ -10178,6 +10289,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -10194,8 +10311,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Tag
       tags:
       - Tag
@@ -10285,8 +10402,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedTag'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Tag
       tags:
       - Tag
@@ -10386,6 +10503,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -10396,9 +10519,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tag'
-          description: Defines a Tag that can be used to identify a set of Revisions
-            across Units.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Tag
       tags:
       - Tag
@@ -10473,9 +10595,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tag'
-          description: Defines a Tag that can be used to identify a set of Revisions
-            across Units.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Tag
       tags:
       - Tag
@@ -10635,10 +10756,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTarget'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Targets
       tags:
       - Target
@@ -10673,9 +10792,10 @@ paths:
                 $ref: '#/components/schemas/Target'
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -10700,6 +10820,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -10710,12 +10836,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Target
       tags:
       - Target
@@ -10769,6 +10891,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -10785,8 +10913,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Target
       tags:
       - Target
@@ -10876,8 +11004,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedTarget'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Target
       tags:
       - Target
@@ -10970,86 +11098,10 @@ paths:
                 $ref: '#/components/schemas/Target'
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Target request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Target not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Target.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
-      summary: Patch Target
-      tags:
-      - Target
-    put:
-      description: Update Target
-      operationId: UpdateTarget
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a target_id
-        in: path
-        name: target_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Target'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -11090,12 +11142,88 @@ paths:
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch Target
+      tags:
+      - Target
+    put:
+      description: Update Target
+      operationId: UpdateTarget
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a target_id
+        in: path
+        name: target_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Target'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
                 $ref: '#/components/schemas/Target'
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g.,
-            Kubernetes, AWS, ConfigMap). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+            Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Target.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Target
       tags:
       - Target
@@ -11255,10 +11383,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTrigger'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Triggers
       tags:
       - Trigger
@@ -11325,6 +11451,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -11335,17 +11467,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trigger'
-          description: |-
-            Defines an automated function invocation that executes in response to specific
-            Unit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,
-            automated transformations, or other custom logic that should run when configuration
-            changes occur. Each Trigger is associated with a specific Space and can be configured
-            to execute on events.
-
-            Triggers can be either validating (checking configuration validity without modifying it)
-            or mutating (making changes to the configuration). They can also be enforced (cannot be
-            overridden) or disabled.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Trigger
       tags:
       - Trigger
@@ -11399,6 +11522,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -11415,8 +11544,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Trigger
       tags:
       - Trigger
@@ -11506,8 +11635,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedTrigger'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Trigger
       tags:
       - Trigger
@@ -11652,6 +11781,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -11662,17 +11797,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trigger'
-          description: |-
-            Defines an automated function invocation that executes in response to specific
-            Unit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,
-            automated transformations, or other custom logic that should run when configuration
-            changes occur. Each Trigger is associated with a specific Space and can be configured
-            to execute on events.
-
-            Triggers can be either validating (checking configuration validity without modifying it)
-            or mutating (making changes to the configuration). They can also be enforced (cannot be
-            overridden) or disabled.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Trigger
       tags:
       - Trigger
@@ -11755,17 +11881,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trigger'
-          description: |-
-            Defines an automated function invocation that executes in response to specific
-            Unit lifecycle events in ConfigHub. Triggers can be used to implement validation rules,
-            automated transformations, or other custom logic that should run when configuration
-            changes occur. Each Trigger is associated with a specific Space and can be configured
-            to execute on events.
-
-            Triggers can be either validating (checking configuration validity without modifying it)
-            or mutating (making changes to the configuration). They can also be enforced (cannot be
-            overridden) or disabled.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Trigger
       tags:
       - Trigger
@@ -11962,10 +12079,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedUnit'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Units
       tags:
       - Unit
@@ -12049,6 +12164,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -12065,20 +12186,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create Unit
       tags:
       - Unit
@@ -12132,6 +12241,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -12148,8 +12263,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete Unit
       tags:
       - Unit
@@ -12239,8 +12354,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedUnit'
-          description: Unit with capability to extend additional related entities.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Unit
       tags:
       - Unit
@@ -12473,7 +12588,8 @@ paths:
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
-                    "AppConfig/Properties", "ConfigHub/YAML".
+                    "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
+                    "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -12525,6 +12641,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -12541,20 +12663,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch Unit
       tags:
       - Unit
@@ -12780,20 +12890,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update Unit
       tags:
       - Unit
@@ -12861,6 +12959,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -12877,14 +12981,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueuedOperation'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Apply a unit configuration
       tags:
       - Unit
@@ -12947,6 +13045,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -12957,8 +13061,8 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Approve a unit configuration
       tags:
       - Unit
@@ -13021,11 +13125,10 @@ paths:
           description: Something went wrong while processing Unit.
         default:
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                format: base64
-                type: string
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Download config data
       tags:
       - Unit
@@ -13086,6 +13189,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -13102,14 +13211,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueuedOperation'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Destroy a unit configuration
       tags:
       - Unit
@@ -13173,8 +13276,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UnitExtended'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get Unit details with expanded relationships
       tags:
       - Unit
@@ -13240,6 +13343,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -13256,14 +13365,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueuedOperation'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Import a configuration unit
       tags:
       - Unit
@@ -13326,11 +13429,10 @@ paths:
           description: Something went wrong while processing Unit.
         default:
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                format: base64
-                type: string
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Download live state
       tags:
       - Unit
@@ -13497,10 +13599,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedMutation'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List ExtendedMutations
       tags:
       - Mutation
@@ -13598,8 +13698,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedMutation'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get ExtendedMutation
       tags:
       - Mutation
@@ -13660,6 +13760,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -13676,14 +13782,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueuedOperation'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Refresh a unit configuration
       tags:
       - Unit
@@ -13852,10 +13952,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedRevision'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List ExtendedRevisions
       tags:
       - Revision
@@ -13953,8 +14051,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedRevision'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get ExtendedRevision
       tags:
       - Revision
@@ -14023,10 +14121,10 @@ paths:
           description: Something went wrong while processing Revision.
         default:
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Download the selected Revision's data
       tags:
       - Revision
@@ -14166,10 +14264,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitAction'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List UnitActions
       tags:
       - UnitAction
@@ -14246,14 +14342,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UnitAction'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get UnitAction
       tags:
       - UnitAction
@@ -14393,10 +14483,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitEvent'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List UnitEvents
       tags:
       - UnitEvent
@@ -14474,15 +14562,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UnitEvent'
-          description: |-
-            UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
-            the lifecycle of applying, destroying, or refreshing a Unit's configuration in the target
-            live system. The event captures the current status of the operation, any configuration
-            drift detected, and timing information about when the action started and completed.
-            Actions are atomic from ConfigHub's perspective but may involve multiple steps
-            in the connected Bridge. The status and drift detection help track the health
-            and consistency of the provisioned configuration compared to what is defined in the Unit.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get UnitEvent
       tags:
       - UnitEvent
@@ -14642,10 +14723,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedView'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Views
       tags:
       - View
@@ -14703,6 +14782,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -14713,8 +14798,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/View'
-          description: Defines an entity view.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Create View
       tags:
       - View
@@ -14768,6 +14853,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -14784,8 +14875,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Delete View
       tags:
       - View
@@ -14875,8 +14966,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExtendedView'
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get View
       tags:
       - View
@@ -14999,6 +15090,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -15009,8 +15106,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/View'
-          description: Defines an entity view.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Patch View
       tags:
       - View
@@ -15084,8 +15181,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/View'
-          description: Defines an entity view.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Update View
       tags:
       - View
@@ -15222,6 +15319,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -15238,10 +15341,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple tags
       tags:
       - Tag
@@ -15393,10 +15494,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTag'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Tags across spaces
       tags:
       - Tag
@@ -15578,6 +15677,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -15588,10 +15693,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TagCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple tags
       tags:
       - Tag
@@ -15842,6 +15945,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -15852,10 +15961,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TagCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple tags
       tags:
       - Tag
@@ -15992,6 +16099,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -16008,10 +16121,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple targets
       tags:
       - Target
@@ -16163,10 +16274,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTarget'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Targets across spaces
       tags:
       - Target
@@ -16365,6 +16474,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -16375,10 +16490,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TargetCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple targets
       tags:
       - Target
@@ -16515,6 +16628,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -16531,10 +16650,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple triggers
       tags:
       - Trigger
@@ -16686,10 +16803,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedTrigger'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Triggers across spaces
       tags:
       - Trigger
@@ -16908,6 +17023,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -16918,10 +17039,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TriggerCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple triggers
       tags:
       - Trigger
@@ -17209,6 +17328,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Trigger not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Trigger data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -17219,10 +17344,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/TriggerCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple triggers
       tags:
       - Trigger
@@ -17361,6 +17484,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -17377,10 +17506,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple units
       tags:
       - Unit
@@ -17569,10 +17696,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedUnit'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Units across spaces
       tags:
       - Unit
@@ -17872,7 +17997,8 @@ paths:
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
-                    "AppConfig/Properties", "ConfigHub/YAML".
+                    "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
+                    "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -17922,6 +18048,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -17938,10 +18070,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple units
       tags:
       - Unit
@@ -18184,7 +18314,8 @@ paths:
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
-                    "AppConfig/Properties", "ConfigHub/YAML".
+                    "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
+                    "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -18234,6 +18365,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -18250,10 +18387,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple units
       tags:
       - Unit
@@ -18408,6 +18543,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -18424,10 +18565,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitActionResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk apply units
       tags:
       - Unit
@@ -18575,6 +18714,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -18585,10 +18730,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ApproveResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk approve multiple units
       tags:
       - Unit
@@ -18735,6 +18878,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -18751,10 +18900,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitActionResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk destroy units
       tags:
       - Unit
@@ -18901,6 +19048,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -18917,10 +19070,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitActionResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk refresh units
       tags:
       - Unit
@@ -19064,6 +19215,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -19074,10 +19231,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/UnitTagResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk tag multiple units
       tags:
       - Unit
@@ -19203,10 +19358,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/User'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List Users
       tags:
       - User
@@ -19263,8 +19416,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-          description: a User in Confighub.
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Get User
       tags:
       - User
@@ -19401,6 +19554,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "422":
           content:
             application/json:
@@ -19417,10 +19576,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/DeleteResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk delete multiple views
       tags:
       - View
@@ -19572,10 +19729,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ExtendedView'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: List of Views across spaces
       tags:
       - View
@@ -19781,6 +19936,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -19791,10 +19952,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ViewCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk patch multiple views
       tags:
       - View
@@ -20069,6 +20228,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
         "500":
           content:
             application/json:
@@ -20079,10 +20244,8 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/ViewCreateOrUpdateResponse'
-                type: array
-          description: ""
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Bulk create (clone) multiple views
       tags:
       - View
@@ -21328,8 +21491,16 @@ components:
             additionalProperties:
               $ref: '#/components/schemas/FunctionSignature'
             type: object
+          description: Signatures of supported functions by ToolchainType
           nullable: true
           type: object
+          x-go-type-skip-optional-pointer: true
+        ToolchainTypes:
+          description: Supported ToolchainTypes
+          items:
+            type: string
+          nullable: true
+          type: array
           x-go-type-skip-optional-pointer: true
       type: object
     ImportFilter:
@@ -22460,9 +22631,10 @@ components:
     Target:
       description: Target represents a deployment target in ConfigHub. It defines
         where configuration should be applied, including the toolchain type (e.g.,
-        Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties) and provider (e.g., Kubernetes,
-        AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that
-        handles the actual deployment actions (e.g. Apply, Destroy).
+        Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
+        AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each
+        Target is associated with a specific BridgeWorker that handles the actual
+        deployment actions (e.g. Apply, Destroy).
       properties:
         Annotations:
           additionalProperties:
@@ -22532,7 +22704,7 @@ components:
           x-go-type-skip-optional-pointer: true
         ProviderType:
           description: ProviderType specifies the cloud or infrastructure provider
-            for this target, such as "Kubernetes" or "AWS".
+            for this target, such as "Kubernetes" or "OpenTofu/AWS".
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -22554,7 +22726,7 @@ components:
         ToolchainType:
           description: ToolchainType specifies the type of toolchain supported by
             this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
-            "AppConfig/Properties".
+            "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -22940,7 +23112,7 @@ components:
         ToolchainType:
           description: ToolchainType specifies the type of toolchain for this unit.
             Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties",
-            "ConfigHub/YAML".
+            "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
           type: string
           x-go-type-skip-optional-pointer: true
         UnitID:

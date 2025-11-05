@@ -180,7 +180,7 @@ func runBulkLinkDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkLinkDeleteResponse(res.JSON200, res.JSONDefault, res.StatusCode(), "delete", effectiveWhere)
+	return handleBulkLinkDeleteResponse(res.JSON200, res.JSON207, res.StatusCode(), "delete", effectiveWhere)
 }
 
 func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {

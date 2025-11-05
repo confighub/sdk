@@ -17,21 +17,22 @@ import (
 var workerRunCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a worker locally",
-	Long: getCommandHelp(`Run a worker locally to serve one or more "worker types".
+	Long: getCommandHelp(`Run a worker locally to serve one or more provider types.
 
-A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
-For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
-and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
-possible for a single ProviderType to correspond to multiple ToolchainTypes.
+Each ProviderType corresponds to one or more ToolchainTypes.
+For example, the "Kubernetes" provider type corresponds to the Kubernetes/YAML ToolchainType
 
-The available worker types are:
+Some ToolchainTypes are supported by multiple ProviderTypes, and some ProviderTypes support
+multiple ToolchainTypes.
 
-- confighub
-- kubernetes
-- opentofu-aws
-- properties-configmap
+The available ProviderTypes are:
 
-They can be comma separated like "kubernetes,properties-configmap".
+- ConfigHub
+- Kubernetes
+- OpenTofu/AWS
+- ConfigMap
+
+Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 	`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerRunCmdRun,
@@ -40,27 +41,22 @@ They can be comma separated like "kubernetes,properties-configmap".
 }
 
 var workerRunArgs struct {
-	workerTypes       string
-	envs              []string
-	enableMultiplexer bool
+	workerProviderTypes string
+	envs                []string
+	enableMultiplexer   bool
 }
 
 func init() {
-	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
+	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
 	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", true, "Enable multiplexer mode with prefixes and multi-worker support (default: true)")
 
-	// [jj]: I commented this out and set "kubernetes" as default type.
-	// TODO: Type should not be required at all.
-	// if err := workerRunCmd.MarkFlagRequired("worker-type"); err != nil {
-	// 	panic(err)
-	// }
 	workerCmd.AddCommand(workerRunCmd)
 }
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	// Auto-enable multiplexer if worker type contains comma
-	if strings.Contains(workerRunArgs.workerTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
+	if strings.Contains(workerRunArgs.workerProviderTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
 		workerRunArgs.enableMultiplexer = true
 	}
 
@@ -104,7 +100,7 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		"CONFIGHUB_URL="+serverURL,
 		"CONFIGHUB_WORKER_ID="+worker.BridgeWorkerID.String(),
 		"CONFIGHUB_WORKER_SECRET="+worker.Secret,
-		"CONFIGHUB_WORKER_TYPES="+workerRunArgs.workerTypes, // may be ""
+		"CONFIGHUB_WORKER_PROVIDER_TYPES="+workerRunArgs.workerProviderTypes, // may be ""
 	)
 	// Also append -e to envs
 	// TODO redesign this by adding a prefix for example REPO would become WORKER_TARGET_REPO

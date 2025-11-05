@@ -9,6 +9,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/cubapi"
+	funcapi "github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/workerapi"
 	"github.com/google/uuid"
@@ -145,20 +146,19 @@ func validateToolchainAndProvider(toolchainType string, providerType string) err
 	if toolchainType == "" || providerType == "" {
 		return errors.New("toolchain and provider must be specified")
 	}
-	// TODO: Use SupportedToolchains
-	if toolchainType != string(workerapi.ToolchainKubernetesYAML) &&
-		toolchainType != string(workerapi.ToolchainOpenTofuHCL) &&
-		toolchainType != string(workerapi.ToolchainAppConfigProperties) {
-		return errors.New("toolchain must be one of: Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties")
+	if !funcapi.IsSupportedToolchain(workerapi.ToolchainType(toolchainType)) {
+		return errors.New("toolchain must be one of: " + funcapi.SupportedToolchainsToString())
 	}
-	if providerType != string(api.ProviderKubernetes) &&
-		providerType != string(api.ProviderAWS) &&
-		providerType != string(api.ProviderFluxOCIWriter) &&
-		providerType != string(api.ProviderConfigMap) {
-		return errors.New("provider must be one of: Kubernetes, AWS, FluxOCIWriter, ConfigMap")
-	}
-	if providerType == string(api.ProviderAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
-		return errors.New("provider AWS requires toolchain OpenTofu/HCL")
+	// Technically we need to allow any provider type that a bridge implements
+	// if providerType != string(api.ProviderKubernetes) &&
+	// 	providerType != string(api.ProviderOpenTofuAWS) &&
+	// 	providerType != string(api.ProviderFluxOCIWriter) &&
+	// 	providerType != string(api.ProviderConfigMap) {
+	// 	// NOTE: FluxOCI deliberately not mentioned
+	// 	return errors.New("provider must be one of: Kubernetes, OpenTofu/AWS, ConfigMap")
+	// }
+	if providerType == string(api.ProviderOpenTofuAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
+		return errors.New("provider OpenTofu/AWS requires toolchain OpenTofu/HCL")
 	}
 	if (providerType == string(api.ProviderKubernetes) || providerType == string(api.ProviderFluxOCIWriter)) &&
 		toolchainType != string(workerapi.ToolchainKubernetesYAML) {
@@ -166,10 +166,12 @@ func validateToolchainAndProvider(toolchainType string, providerType string) err
 	}
 	if providerType == string(api.ProviderConfigMap) &&
 		toolchainType != string(workerapi.ToolchainAppConfigProperties) &&
+		toolchainType != string(workerapi.ToolchainAppConfigYAML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigTOML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigINI) &&
 		toolchainType != string(workerapi.ToolchainAppConfigEnv) {
-		return errors.New("provider ConfigMap requires toolchain AppConfig/Properties, AppConfig/TOML, AppConfig/INI, or AppConfig/Env")
+		// NOTE: Env deliberately not mentioned
+		return errors.New("provider ConfigMap requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, or AppConfig/INI")
 	}
 	return nil
 }

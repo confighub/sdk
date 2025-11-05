@@ -14,6 +14,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/bridge-worker/lib"
+	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/workerapi"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -31,7 +32,8 @@ metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   labels:
-    confighub.com/UnitSlug: {{.Label}}
+    confighub.com/UnitSlug: {{.UnitSlug}}
+    confighub.com/SpaceID: {{.SpaceID}}
   annotations:
     confighub.com/RevisionNum: "{{.RevisionNum}}"
 data:
@@ -40,12 +42,15 @@ data:
 `
 
 // This is a label rather than an annotation so that we can select all the generated ConfigMaps.
-const configMapLabelKey = "confighub.com/UnitSlug"
+const configMapUnitSlugLabelKey = "confighub.com/UnitSlug"
+
+// TODO: Add SpaceID
 
 type configMapTemplateArgs struct {
 	Name        string
 	Namespace   string
-	Label       string
+	UnitSlug    string
+	SpaceID     string
 	RevisionNum string
 	DataName    string
 	ConfigData  string
@@ -73,8 +78,23 @@ func generateConfigMapFromData(args *configMapTemplateArgs) []byte {
 }
 
 func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	// TODO: Support other AppConfig types
-	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainAppConfigProperties, api.ProviderConfigMap)
+	// Support multiple AppConfig types
+	supportedToolchains := []workerapi.ToolchainType{
+		workerapi.ToolchainAppConfigProperties,
+		workerapi.ToolchainAppConfigTOML,
+		workerapi.ToolchainAppConfigINI,
+		workerapi.ToolchainAppConfigYAML,
+	}
+
+	var configTypes []*api.ConfigType
+	for _, toolchain := range supportedToolchains {
+		info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, toolchain, api.ProviderConfigMap)
+		configTypes = append(configTypes, info.SupportedConfigTypes...)
+	}
+
+	return api.BridgeWorkerInfo{
+		SupportedConfigTypes: configTypes,
+	}
 }
 
 // This is also defined in the function executor.
@@ -96,6 +116,21 @@ func truncateString(s string, n int) string {
 	return string([]rune(s)[:n])
 }
 
+func getFileExtensionForToolchain(toolchain workerapi.ToolchainType) string {
+	switch toolchain {
+	case workerapi.ToolchainAppConfigProperties:
+		return ".properties"
+	case workerapi.ToolchainAppConfigTOML:
+		return ".toml"
+	case workerapi.ToolchainAppConfigINI:
+		return ".ini"
+	case workerapi.ToolchainAppConfigYAML:
+		return ".yaml"
+	default:
+		return ".config"
+	}
+}
+
 func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	configData := string(payload.Data)
 	// Extract the namespace. We could use get-string-path, but that would require conversion to YAML, etc.
@@ -109,13 +144,14 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	// Comment out configHub fields. We may want to uncomment these in functions instead.
 	configData = strings.ReplaceAll(configData, configHubPrefix, "#"+configHubPrefix)
 	nameSuffix := truncateString(fmt.Sprintf("%x", sha256.Sum256(payload.Data)), 10)
+	fileExtension := getFileExtensionForToolchain(payload.ToolchainType)
 	args := &configMapTemplateArgs{
-		// TODO: ensure slug character set is valid
-		Name:        payload.UnitSlug + "-" + nameSuffix,
+		Name:        k8skit.K8sResourceProvider.NormalizeName(payload.UnitSlug + "-" + nameSuffix),
 		Namespace:   namespace,
-		Label:       payload.UnitSlug,
+		UnitSlug:    payload.UnitSlug,
+		SpaceID:     payload.SpaceID.String(),
 		RevisionNum: fmt.Sprintf("%d", payload.RevisionNum),
-		DataName:    payload.UnitSlug + ".properties", // TODO: support other AppConfig types
+		DataName:    payload.UnitSlug + fileExtension,
 		ConfigData:  configData,
 	}
 	configMap := generateConfigMapFromData(args)
