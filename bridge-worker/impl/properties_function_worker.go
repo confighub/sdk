@@ -34,7 +34,6 @@ func (fw PropertiesFunctionWorker) Info() api.FunctionWorkerInfo {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
-		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainAppConfigProperties},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
 			workerapi.ToolchainAppConfigProperties: registeredFunctionsMap,
 		},

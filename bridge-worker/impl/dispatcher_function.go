@@ -6,7 +6,6 @@ package impl
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sync"
 
 	"github.com/google/uuid"
@@ -70,14 +69,10 @@ func (d *FunctionDispatcher) Info() api.FunctionWorkerInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	toolchains := []workerapi.ToolchainType{}
 	supportedFunctions := make(map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature)
 
 	// Collect info from all registered workers
 	for toolchainType, worker := range d.workers {
-		if !slices.Contains(toolchains, toolchainType) {
-			toolchains = append(toolchains, toolchainType)
-		}
 		info := worker.Info()
 		if info.SupportedFunctions != nil {
 			if _, exists := info.SupportedFunctions[toolchainType]; exists {
@@ -94,7 +89,6 @@ func (d *FunctionDispatcher) Info() api.FunctionWorkerInfo {
 	}
 
 	return api.FunctionWorkerInfo{
-		ToolchainTypes:     toolchains,
 		SupportedFunctions: supportedFunctions,
 	}
 }

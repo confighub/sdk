@@ -44,7 +44,7 @@ Note: You may see warnings about uninitialized loggers - these can be safely ign
 
 Create a unit with some Kubernetes compliant YAML content:
 
-    cub unit create myapp test_input.yaml --target example-bridge-filesystem-kubernetes-yaml-dev
+    cub unit create myapp test_input.yaml --target dev
 
 Apply the unit to your bridge target:
 
@@ -56,8 +56,8 @@ The bridge will write the configuration to `/tmp/confighub-example-bridge/dev/my
 
 Bridges implement five core operation. An operation is always performed on a config unit. The following properties apply:
 
-- The unit in question must first be associated with a target made available by the bridge
-- The unit and the target must have the same toolchain. E.g. you cannot create a properties file as a unit and associate it with a kubernetes/yaml target.
+* The unit in question must first be associated with a target made available by the bridge
+* The unit and the target must have the same toolchain. E.g. you cannot create a properties file as a unit and associate it with a kubernetes/yaml target.
 
 ### 1. Apply
 
@@ -65,7 +65,7 @@ Applies configuration to the target system. In this example, it creates/updates 
 
     cub unit apply myapp
 
-### 2. Refresh
+### 2. Refresh  
 
 Reads the current state from the target and detects drift. Returns whether the live state matches the desired state.
 
@@ -252,7 +252,7 @@ if err != nil {
 For long-running operations, send periodic status updates:
 
 1. Initial "progressing" status when starting
-2. Intermediate updates for multi-step operations
+2. Intermediate updates for multi-step operations  
 3. Final "completed" or "failed" status
 
 ### Target Management
@@ -268,3 +268,4 @@ This filesystem bridge demonstrates basic concepts. Examples of real-world bridg
 - **Kubernetes Bridge**: Apply YAML manifests to clusters
 - **AWS Bridge**: Manage cloud resources via APIs
 - **Database Bridge**: Execute schema migrations
+

@@ -34,7 +34,6 @@ func (fw AppConfigYAMLFunctionWorker) Info() api.FunctionWorkerInfo {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
-		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainAppConfigYAML},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
 			workerapi.ToolchainAppConfigYAML: registeredFunctionsMap,
 		},

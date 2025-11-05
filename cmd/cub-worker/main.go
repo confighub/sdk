@@ -26,30 +26,32 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "cub-worker-run <provider-types>",
+	Use:   "cub-worker-run <worker-types>",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Start a worker process",
-	Long: `Start a worker process to serve one or more supported provider types.
+	Long: `Start a worker process to serve one or more "worker types".
 
-Each ProviderType corresponds to one or more ToolchainTypes.
-For example, the "Kubernetes" provider type corresponds to the Kubernetes/YAML ToolchainType
+A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
+For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
+and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
+possible for a single ProviderType to correspond to multiple ToolchainTypes.
 
-Some ToolchainTypes are supported by multiple ProviderTypes, and some ProviderTypes support
-multiple ToolchainTypes.
+The available worker types are:
 
-The available ProviderTypes are:
+- confighub
+- kubernetes
+- opentofu-aws
+- properties-configmap
+- yaml-configmap
+- toml-configmap
+- ini-configmap
 
-- ConfigHub
-- Kubernetes
-- OpenTofu/AWS
-- ConfigMap
-
-Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
+They can be comma separated like "kubernetes,properties-configmap,toml-configmap".
 
 They can be passed in the one optional command-line argument (deprecated), or
-via the CONFIGHUB_WORKER_PROVIDER_TYPES environment variable.
+via the CONFIGHUB_WORKER_TYPES environment variable.
 
-By default, all provider types are started.
+By default, all worker types are started.
 
 The worker takes its configuration primarily from environment variables.
 
@@ -74,17 +76,17 @@ const (
 )
 
 var rootArgs struct {
-	configHubURL           string
-	mainPort               string
-	workerPort             string
-	workerID               string
-	workerSecret           string
-	workerProviderTypesStr string
-	inCluster              bool
-	authMethod             string // "kubernetes", "cloud", "docker-config", "keychain"
-	kubernetesSecretPath   string
-	enableMultiplexer      bool // Enable new multiplexer mode with prefixes
-	gracePeriodDelay       int  // Delay in seconds after SIGTERM before starting shutdown
+	configHubURL         string
+	mainPort             string
+	workerPort           string
+	workerID             string
+	workerSecret         string
+	workerTypesStr       string
+	inCluster            bool
+	authMethod           string // "kubernetes", "cloud", "docker-config", "keychain"
+	kubernetesSecretPath string
+	enableMultiplexer    bool // Enable new multiplexer mode with prefixes
+	gracePeriodDelay     int  // Delay in seconds after SIGTERM before starting shutdown
 	// autoRefresh  bool
 	enableFluxOCI bool
 }
@@ -149,17 +151,17 @@ func init() {
 		rootArgs.enableFluxOCI = true
 	}
 	if rootArgs.enableFluxOCI {
-		availableBridgeWorkers[LowerProviderTypeFluxOCIWriter] = fluxOCIWorker
-		availableFunctionWorkers[LowerProviderTypeFluxOCIWriter] = []api.FunctionWorker{k8sFunctionWorker}
+		availableBridgeWorkers[WorkerTypeFluxOCIWriter] = fluxOCIWorker
+		availableFunctionWorkers[WorkerTypeFluxOCIWriter] = k8sFunctionWorker
 	}
 
-	workerProviderTypesStr := ""
+	workerTypesStr := ""
 	for wt := range availableFunctionWorkers {
-		workerProviderTypesStr += "," + wt
+		workerTypesStr += "," + wt
 	}
-	workerProviderTypesStr = strings.TrimPrefix(workerProviderTypesStr, ",")
-	if wt := os.Getenv("CONFIGHUB_WORKER_PROVIDER_TYPES"); wt != "" {
-		workerProviderTypesStr = wt
+	workerTypesStr = strings.TrimPrefix(workerTypesStr, ",")
+	if wt := os.Getenv("CONFIGHUB_WORKER_TYPES"); wt != "" {
+		workerTypesStr = wt
 	}
 
 	// Flags should only be used for testing. They are not part of the worker invocation contract.
@@ -169,7 +171,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerPort, "worker-port", "p", workerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerID, "worker-id", "w", os.Getenv("CONFIGHUB_WORKER_ID"), "Worker ID (CONFIGHUB_WORKER_ID)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerSecret, "worker-secret", "s", os.Getenv("CONFIGHUB_WORKER_SECRET"), "Worker Secret (CONFIGHUB_WORKER_SECRET)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerProviderTypesStr, "provider-types", "t", workerProviderTypesStr, "Comma-separated list of provider types (CONFIGHUB_WORKER_PROVIDER_TYPES)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerTypesStr, "worker-types", "t", workerTypesStr, "Comma-separated list of worker types (CONFIGHUB_WORKER_TYPES)")
 
 	// TODO not implemented yet
 	// rootCmd.Flags().BoolVarP(&rootArgs.autoRefresh, "auto-refresh", "r", false, "Enable auto-refresh")
@@ -184,25 +186,31 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
 
-// These are lowercase to make the provider type matching case insensitive
 const (
-	LowerProviderTypeConfigHub     = "confighub"
-	LowerProviderTypeKubernetes    = "kubernetes"
-	LowerProviderTypeFluxOCIWriter = "fluxociwriter"
-	LowerProviderTypeOpenTofuAWS   = "opentofu/aws"
-	LowerProviderTypeConfigMap     = "configmap"
+	WorkerTypeConfigHub           = "confighub"
+	WorkerTypeKubernetes          = "kubernetes"
+	WorkerTypeFluxOCIWriter       = "flux-oci-writer"
+	WorkerTypeOpenTofuAWS         = "opentofu-aws"
+	WorkerTypePropertiesConfigMap = "properties-configmap"
+	WorkerTypeYAMLConfigMap       = "yaml-configmap"
+	WorkerTypeTOMLConfigMap       = "toml-configmap"
+	WorkerTypeINIConfigMap        = "ini-configmap"
+	// TODO: add configmap-flux type.
 )
 
-// NOTE: The FluxOCIWriter provider type is disabled by default for now and may be deprecated in the future.
+// NOTE: The FluxOCIWriter worker type is disabled by default for now and may be deprecated in the future.
 
+// TODO: worker types should map to combinations of ToolchainType and ProviderType
 // Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
-
 var availableBridgeWorkers = map[string]api.BridgeWorker{
 	// ConfigHub worker is special - it will be initialized in rootRunE with a client
-	LowerProviderTypeKubernetes: impl.NewKubernetesBridgeWorker(),
-	// LowerProviderTypeFluxOCIWriter:       fluxOCIWorker,
-	LowerProviderTypeOpenTofuAWS: &impl.OpenTofuAWSWorker{},
-	LowerProviderTypeConfigMap:   &impl.ConfigMapBridgeWorker{},
+	WorkerTypeKubernetes: impl.NewKubernetesBridgeWorker(),
+	// WorkerTypeFluxOCIWriter:       fluxOCIWorker,
+	WorkerTypeOpenTofuAWS:         &impl.OpenTofuAWSWorker{},
+	WorkerTypePropertiesConfigMap: &impl.ConfigMapBridgeWorker{},
+	WorkerTypeYAMLConfigMap:       &impl.ConfigMapBridgeWorker{},
+	WorkerTypeTOMLConfigMap:       &impl.ConfigMapBridgeWorker{},
+	WorkerTypeINIConfigMap:        &impl.ConfigMapBridgeWorker{},
 }
 var fluxOCIWorker = impl.NewFluxOCIWorker()
 
@@ -215,13 +223,16 @@ var tomlFunctionWorker = impl.NewTOMLFunctionWorker()
 var iniFunctionWorker = impl.NewINIFunctionWorker()
 var opentofuFunctionWorker = impl.NewOpentofuFunctionWorker()
 
-// Map of available function workers by provider type
-var availableFunctionWorkers = map[string][]api.FunctionWorker{
-	LowerProviderTypeConfigHub:  []api.FunctionWorker{confighubFunctionWorker},
-	LowerProviderTypeKubernetes: []api.FunctionWorker{k8sFunctionWorker},
-	// LowerProviderTypeFluxOCIWriter: []api.FunctionWorker{k8sFunctionWorker},
-	LowerProviderTypeOpenTofuAWS: []api.FunctionWorker{opentofuFunctionWorker},
-	LowerProviderTypeConfigMap:   []api.FunctionWorker{propertiesFunctionWorker, appyamlFunctionWorker, tomlFunctionWorker, iniFunctionWorker},
+// Map of available function workers by worker type
+var availableFunctionWorkers = map[string]api.FunctionWorker{
+	WorkerTypeConfigHub:  confighubFunctionWorker,
+	WorkerTypeKubernetes: k8sFunctionWorker,
+	// WorkerTypeFluxOCIWriter:       k8sFunctionWorker,
+	WorkerTypeOpenTofuAWS:         opentofuFunctionWorker,
+	WorkerTypePropertiesConfigMap: propertiesFunctionWorker,
+	WorkerTypeYAMLConfigMap:       appyamlFunctionWorker,
+	WorkerTypeTOMLConfigMap:       tomlFunctionWorker,
+	WorkerTypeINIConfigMap:        iniFunctionWorker,
 }
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
@@ -238,29 +249,34 @@ func rootPreRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// Convert lowercase provider type to toolchain type and provider type
-func providerTypeToToolchainsAndProvider(lowerProviderType string) ([]workerapi.ToolchainType, api.ProviderType) {
-	switch lowerProviderType {
-	case LowerProviderTypeConfigHub:
-		return []workerapi.ToolchainType{workerapi.ToolchainConfigHubYAML}, api.ProviderConfigHub
-	case LowerProviderTypeKubernetes:
-		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderKubernetes
-	case LowerProviderTypeFluxOCIWriter:
-		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderFluxOCIWriter
-	case LowerProviderTypeOpenTofuAWS:
-		return []workerapi.ToolchainType{workerapi.ToolchainOpenTofuHCL}, api.ProviderOpenTofuAWS
-	case LowerProviderTypeConfigMap:
-		return []workerapi.ToolchainType{workerapi.ToolchainAppConfigProperties, workerapi.ToolchainAppConfigYAML, workerapi.ToolchainAppConfigTOML, workerapi.ToolchainAppConfigINI}, api.ProviderConfigMap
+// Convert worker type to toolchain type and provider type
+func workerTypeToToolchainAndProvider(workerType string) (workerapi.ToolchainType, api.ProviderType) {
+	switch workerType {
+	case WorkerTypeConfigHub:
+		return workerapi.ToolchainConfigHubYAML, api.ProviderConfigHub
+	case WorkerTypeKubernetes:
+		return workerapi.ToolchainKubernetesYAML, api.ProviderKubernetes
+	case WorkerTypeFluxOCIWriter:
+		return workerapi.ToolchainKubernetesYAML, api.ProviderFluxOCIWriter
+	case WorkerTypeOpenTofuAWS:
+		return workerapi.ToolchainOpenTofuHCL, api.ProviderAWS
+	case WorkerTypePropertiesConfigMap:
+		return workerapi.ToolchainAppConfigProperties, api.ProviderConfigMap
+	case WorkerTypeYAMLConfigMap:
+		return workerapi.ToolchainAppConfigYAML, api.ProviderConfigMap
+	case WorkerTypeTOMLConfigMap:
+		return workerapi.ToolchainAppConfigTOML, api.ProviderConfigMap
+	case WorkerTypeINIConfigMap:
+		return workerapi.ToolchainAppConfigINI, api.ProviderConfigMap
 	default:
-		return []workerapi.ToolchainType{}, ""
+		return "", ""
 	}
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	workerProviderTypesStr := strings.ToLower(rootArgs.workerProviderTypesStr)
 	if len(args) > 0 {
-		// Override provider types
-		workerProviderTypesStr = strings.ToLower(args[0])
+		// Override worker types
+		rootArgs.workerTypesStr = args[0]
 	}
 
 	// Check if multiplexer mode is enabled
@@ -268,28 +284,28 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer explicitly disabled)")
 
-		// In legacy mode, only support single provider type
-		if strings.Contains(workerProviderTypesStr, ",") {
-			return fmt.Errorf("multiple provider types not supported in legacy mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true")
+		// In legacy mode, only support single worker type
+		if strings.Contains(rootArgs.workerTypesStr, ",") {
+			return fmt.Errorf("multiple worker types not supported in legacy mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true")
 		}
 
 		// Handle ConfigHub worker specially - it needs authentication
 		var bridgeWorker api.BridgeWorker
 		var ok bool
-		if workerProviderTypesStr == LowerProviderTypeConfigHub {
+		if rootArgs.workerTypesStr == WorkerTypeConfigHub {
 			// Create ConfigHub bridge worker with authentication
 			bridgeWorker = impl.NewConfigHubBridgeWorker(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
 			ok = true
 		} else {
 			// Use the old behavior - direct worker without dispatcher
-			bridgeWorker, ok = availableBridgeWorkers[workerProviderTypesStr]
+			bridgeWorker, ok = availableBridgeWorkers[rootArgs.workerTypesStr]
 			if !ok {
-				return fmt.Errorf("unknown bridge worker %s", workerProviderTypesStr)
+				return fmt.Errorf("unknown bridge worker %s", rootArgs.workerTypesStr)
 			}
 		}
 
 		// Currently disabled by default
-		if rootArgs.enableFluxOCI && workerProviderTypesStr == LowerProviderTypeFluxOCIWriter {
+		if rootArgs.enableFluxOCI && rootArgs.workerTypesStr == WorkerTypeFluxOCIWriter {
 			// Additional initialization for FluxOCIWorker
 			if fluxWorker, ok := bridgeWorker.(*impl.FluxOCIWorker); ok {
 				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
@@ -303,57 +319,60 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		functionWorkers, ok := availableFunctionWorkers[workerProviderTypesStr]
+		functionWorker, ok := availableFunctionWorkers[rootArgs.workerTypesStr]
 		if !ok {
-			return fmt.Errorf("provider type %s has no function executors", workerProviderTypesStr)
-		}
-
-		if len(functionWorkers) != 1 {
-			fmt.Errorf("provider type %s requires multiplexer mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true.", workerProviderTypesStr)
+			return fmt.Errorf("unknown function worker %s", rootArgs.workerTypesStr)
 		}
 
 		// Use legacy mode without dispatcher
-		return runWorkerLegacy(bridgeWorker, functionWorkers[0])
+		return runWorkerLegacy(bridgeWorker, functionWorker)
 	}
 
 	// New multiplexer mode
-	// workerProviderTypesStr is a comma separated string like "kubernetes,configmap"
+	// workerType is a comma separated string like "kubernetes,flux-oci-writer"
+	// Get the input worker types string from command-line arguments
+	workerTypesStr := rootArgs.workerTypesStr
 
-	// Split the provider types string by comma
-	providerTypes := strings.Split(workerProviderTypesStr, ",")
+	// Split the worker types string by comma
+	workerTypes := strings.Split(workerTypesStr, ",")
 
 	// Initialize appropriate workers based on the input
 	bridgeDispatcher := impl.NewBridgeDispatcher()
 	functionDispatcher := impl.NewFunctionDispatcher()
 
-	// For multiple provider types or explicitly using generic worker, use dispatchers
-	log.FromContext(context.Background()).Info("Using dispatcher pattern for multi-provider/multi-toolchain support with unit-level serialization")
+	// Disable prefixes if multiplexer mode is explicitly disabled (for legacy compatibility)
+	if !rootArgs.enableMultiplexer {
+		bridgeDispatcher.SetDisablePrefixes(true)
+	}
 
-	// Process each provider type and register with dispatchers
-	for _, lowerProviderType := range providerTypes {
-		// Convert lowercase provider type to toolchain type and provider type
-		toolchainTypes, providerType := providerTypeToToolchainsAndProvider(lowerProviderType)
-		if len(toolchainTypes) == 0 || providerType == "" {
-			return fmt.Errorf("could not determine toolchain/provider for provider type %s", providerType)
+	// For multiple worker types or explicitly using generic worker, use dispatchers
+	log.FromContext(context.Background()).Info("Using dispatcher pattern for multi-worker support with unit-level serialization")
+
+	// Process each worker type and register with dispatchers
+	for _, workerType := range workerTypes {
+		// Convert worker type to toolchain type and provider type
+		toolchainType, providerType := workerTypeToToolchainAndProvider(workerType)
+		if toolchainType == "" || providerType == "" {
+			return fmt.Errorf("could not determine toolchain/provider for worker type %s", workerType)
 		}
 
-		// Register bridge worker based on provider type
+		// Register bridge worker based on worker type
 		var directBridgeWorker api.BridgeWorker
 		var ok bool
 
 		// Handle ConfigHub worker specially - it needs authentication
-		if lowerProviderType == LowerProviderTypeConfigHub {
+		if workerType == WorkerTypeConfigHub {
 			// Create ConfigHub bridge worker with authentication
 			directBridgeWorker = impl.NewConfigHubBridgeWorker(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
 			ok = true
 		} else {
-			directBridgeWorker, ok = availableBridgeWorkers[lowerProviderType]
+			directBridgeWorker, ok = availableBridgeWorkers[workerType]
 		}
 
 		if ok {
 			// Currently disabled by default
 			// Special case for FluxOCIWriter - initialize it
-			if rootArgs.enableFluxOCI && lowerProviderType == LowerProviderTypeFluxOCIWriter {
+			if rootArgs.enableFluxOCI && workerType == WorkerTypeFluxOCIWriter {
 				fluxWorker := impl.NewFluxOCIWorker()
 				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
 					rootArgs.inCluster,
@@ -364,38 +383,30 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 					return fmt.Errorf("failed to initialize FluxOCIWorker: %w", err)
 				}
 				// Use fresh instance for dispatcher registration
-				bridgeDispatcher.RegisterWorker(workerapi.ToolchainKubernetesYAML, providerType, fluxWorker)
-				log.FromContext(context.Background()).Info("Registered bridge worker",
-					"toolchainType", workerapi.ToolchainKubernetesYAML,
-					"providerType", providerType)
-
+				bridgeDispatcher.RegisterWorker(toolchainType, providerType, fluxWorker)
 			} else {
-				// Register other bridges directly
-				for _, toolchainType := range toolchainTypes {
-					bridgeDispatcher.RegisterWorker(toolchainType, providerType, directBridgeWorker)
-					log.FromContext(context.Background()).Info("Registered bridge worker",
-						"toolchainType", toolchainType,
-						"providerType", providerType)
-				}
+				// Register other workers directly
+				bridgeDispatcher.RegisterWorker(toolchainType, providerType, directBridgeWorker)
 			}
 
+			log.FromContext(context.Background()).Info("Registered bridge worker",
+				"workerType", workerType,
+				"toolchainType", toolchainType,
+				"providerType", providerType)
 		} else {
-			return fmt.Errorf("unknown bridge provider type %s", providerType)
+			return fmt.Errorf("unknown bridge worker type %s", workerType)
 		}
 
-		// Register function executor based on provider type
-		if directFunctionWorkers, ok := availableFunctionWorkers[lowerProviderType]; ok {
+		// Register function worker based on worker type
+		if directFunctionWorker, ok := availableFunctionWorkers[workerType]; ok {
 			// Register with function dispatcher if not already registered
-			for _, directFunctionWorker := range directFunctionWorkers {
-				toolchainTypes := directFunctionWorker.Info().ToolchainTypes
-				for _, toolchainType := range toolchainTypes {
-					functionDispatcher.RegisterWorker(toolchainType, directFunctionWorker)
-					log.FromContext(context.Background()).Info("Registered function executor",
-						"toolchainType", toolchainType)
-				}
-			}
+			functionDispatcher.RegisterWorker(toolchainType, directFunctionWorker)
+
+			log.FromContext(context.Background()).Info("Registered function worker",
+				"workerType", workerType,
+				"toolchainType", toolchainType)
 		} else {
-			return fmt.Errorf("no function executors for provider type %s", lowerProviderType)
+			return fmt.Errorf("unknown function worker type %s", workerType)
 		}
 	}
 

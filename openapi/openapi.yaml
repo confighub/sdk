@@ -10793,9 +10793,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
+            is associated with a specific BridgeWorker that handles the actual deployment
+            actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -11099,9 +11099,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
+            is associated with a specific BridgeWorker that handles the actual deployment
+            actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -11179,9 +11179,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
+            is associated with a specific BridgeWorker that handles the actual deployment
+            actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -21491,16 +21491,8 @@ components:
             additionalProperties:
               $ref: '#/components/schemas/FunctionSignature'
             type: object
-          description: Signatures of supported functions by ToolchainType
           nullable: true
           type: object
-          x-go-type-skip-optional-pointer: true
-        ToolchainTypes:
-          description: Supported ToolchainTypes
-          items:
-            type: string
-          nullable: true
-          type: array
           x-go-type-skip-optional-pointer: true
       type: object
     ImportFilter:
@@ -22632,9 +22624,9 @@ components:
       description: Target represents a deployment target in ConfigHub. It defines
         where configuration should be applied, including the toolchain type (e.g.,
         Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-        AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each
-        Target is associated with a specific BridgeWorker that handles the actual
-        deployment actions (e.g. Apply, Destroy).
+        AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
+        is associated with a specific BridgeWorker that handles the actual deployment
+        actions (e.g. Apply, Destroy).
       properties:
         Annotations:
           additionalProperties:
@@ -22704,7 +22696,7 @@ components:
           x-go-type-skip-optional-pointer: true
         ProviderType:
           description: ProviderType specifies the cloud or infrastructure provider
-            for this target, such as "Kubernetes" or "OpenTofu/AWS".
+            for this target, such as "Kubernetes" or "AWS".
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:

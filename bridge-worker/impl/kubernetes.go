@@ -24,6 +24,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/bridge-worker/lib"
+	"github.com/confighub/sdk/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -188,11 +189,14 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		if targetName == "" {
 			// TODO: Deprecated. Remove this eventually.
 			targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
+			if targetName == "" {
+				targetName = opts.Slug
+			}
 		}
 
-		// Ensure target is unique
-		if targetName == "" || toolchain != workerapi.ToolchainKubernetesYAML {
-			targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, "cluster")
+		// Append toolchain suffix if not Kubernetes/YAML to make target unique
+		if toolchain != workerapi.ToolchainKubernetesYAML {
+			targetName = targetName + "-" + cubkit.ConfigHubResourceProvider.NormalizeName(string(toolchain))
 		}
 
 		return api.BridgeWorkerInfo{
@@ -214,11 +218,17 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	}
 
 	// Create targets for each context
-	// Ensure targets are unique
+	// Append toolchain suffix if not Kubernetes/YAML to make targets unique
+	var targetNameSuffix string
+	if toolchain != workerapi.ToolchainKubernetesYAML {
+		targetNameSuffix = "-" + cubkit.ConfigHubResourceProvider.NormalizeName(string(toolchain))
+	}
+
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
+		normalizedContext := cubkit.ConfigHubResourceProvider.NormalizeName(contextName)
 		targets = append(targets, api.Target{
-			Name: api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
+			Name: fmt.Sprintf("%s-%s%s", opts.Slug, normalizedContext, targetNameSuffix),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: "10m0s",

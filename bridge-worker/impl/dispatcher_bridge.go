@@ -24,10 +24,11 @@ type WorkerKey struct {
 // based on the toolchain and provider information in the request payload
 // It ensures operations on the same unit are processed sequentially
 type BridgeDispatcher struct {
-	mu      sync.RWMutex
-	workers map[WorkerKey]api.BridgeWorker
-	ctx     context.Context
-	cancel  context.CancelFunc
+	mu              sync.RWMutex
+	workers         map[WorkerKey]api.BridgeWorker
+	ctx             context.Context
+	cancel          context.CancelFunc
+	disablePrefixes bool // Compatibility mode - disable target prefixes
 }
 
 // Ensure Dispatcher implements the BridgeWorker interface
@@ -44,6 +45,13 @@ func NewBridgeDispatcher() *BridgeDispatcher {
 	}
 
 	return d
+}
+
+// SetDisablePrefixes configures the dispatcher to disable target prefixes (compatibility mode)
+func (d *BridgeDispatcher) SetDisablePrefixes(disable bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.disablePrefixes = disable
 }
 
 // RegisterWorker registers a bridge worker for a specific toolchain and provider combination
@@ -70,6 +78,22 @@ func (d *BridgeDispatcher) getWorker(toolchainType workerapi.ToolchainType, prov
 	return worker, nil
 }
 
+// getProviderPrefix returns the appropriate prefix for a given provider type
+func (d *BridgeDispatcher) getProviderPrefix(providerType api.ProviderType) string {
+	switch providerType {
+	case api.ProviderKubernetes:
+		return "k8s-"
+	case api.ProviderFluxOCIWriter:
+		return "flux-"
+	case api.ProviderConfigMap:
+		return "cm-"
+	case api.ProviderAWS:
+		return "aws-"
+	default:
+		return ""
+	}
+}
+
 // Info returns aggregated information about all registered workers
 func (d *BridgeDispatcher) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	d.mu.RLock()
@@ -78,9 +102,14 @@ func (d *BridgeDispatcher) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	var supportedConfigTypes []*api.ConfigType
 
 	// Collect info from all registered workers
-	for _, worker := range d.workers {
+	for key, worker := range d.workers {
+		// TODO [ck]: Bridge should support TargetPrefix option for exposing unique targets
+		prefix := ""
+		if !d.disablePrefixes {
+			prefix = d.getProviderPrefix(key.ProviderType)
+		}
 		opt := api.InfoOptions{
-			WorkerSlug: opts.WorkerSlug,
+			Slug: prefix + opts.Slug,
 		}
 		info := worker.Info(opt)
 		for _, configType := range info.SupportedConfigTypes {
@@ -173,8 +202,7 @@ func (d *BridgeDispatcher) Finalize(ctx api.BridgeWorkerContext, payload api.Bri
 		"toolchainType", payload.ToolchainType,
 		"providerType", payload.ProviderType,
 		"unitSlug", payload.UnitSlug,
-		"unitID", payload.UnitID,
-		"spaceID", payload.SpaceID)
+		"unitID", payload.UnitID)
 
 	return worker.Finalize(ctx, payload)
 }

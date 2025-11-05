@@ -58,11 +58,11 @@ var (
 )
 
 const (
-	AuthProviderNone    = "None"
-	AuthProviderGeneric = "Generic"
-	AuthProviderAWS     = "AWS"
-	AuthProviderAzure   = "Azure"
-	AuthProviderGCP     = "GCP"
+	ProviderNone    = "None"
+	ProviderGeneric = "Generic"
+	ProviderAWS     = "AWS"
+	ProviderAzure   = "Azure"
+	ProviderGCP     = "GCP"
 )
 
 // FluxOCIParams represents the target parameters for OCI operations
@@ -89,7 +89,7 @@ func (p *FluxOCIParams) ToMap() map[string]interface{} {
 // we will not provide any default targets
 // Repository and Tag are generally passed via FluxOCIParams
 // and read from the BridgeWorkerPayload
-func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
+func (f FluxOCIWorker) Info(_ api.InfoOptions) api.BridgeWorkerInfo {
 	repository := os.Getenv("REPO")
 	if repository == "" {
 		repository = "// rerun with -e REPO=<your registry>"
@@ -101,7 +101,7 @@ func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 
 	availableTargets := make([]api.Target, 0)
 	if os.Getenv("REPO") != "" && os.Getenv("TAG") != "" {
-		availableTargets = defaultTargets(opts.WorkerSlug, repository, tag)
+		availableTargets = defaultTargets(repository, tag)
 	}
 
 	return api.BridgeWorkerInfo{
@@ -115,43 +115,41 @@ func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	}
 }
 
-func defaultTargets(workerSlug, repository, tag string) []api.Target {
-	provider := api.ProviderFluxOCIWriter
-	toolchain := workerapi.ToolchainKubernetesYAML
+func defaultTargets(repository string, tag string) []api.Target {
 	return []api.Target{
 		{
-			Name: api.GenerateTargetName(workerSlug, provider, toolchain, "docker"),
+			Name: "flux-oci-writer",
 			Params: (&FluxOCIParams{
 				Repository:    repository,
 				Tag:           tag,
-				Provider:      AuthProviderNone, // provider None means reading credentials from .docker/config.json
+				Provider:      ProviderNone, // provider None means reading credentials from .docker/config.json
 				AllowDeletion: "false",
 			}).ToMap(),
 		},
 		{
-			Name: api.GenerateTargetName(workerSlug, provider, toolchain, "aws"),
+			Name: "flux-oci-writer-with-aws-provider",
 			Params: (&FluxOCIParams{
 				Repository:    repository,
 				Tag:           tag,
-				Provider:      AuthProviderAWS,
+				Provider:      ProviderAWS,
 				AllowDeletion: "false",
 			}).ToMap(),
 		},
 		{
-			Name: api.GenerateTargetName(workerSlug, provider, toolchain, "gcp"),
+			Name: "flux-oci-writer-with-gcp-provider",
 			Params: (&FluxOCIParams{
 				Repository:    repository,
 				Tag:           tag,
-				Provider:      AuthProviderGCP,
+				Provider:      ProviderGCP,
 				AllowDeletion: "false",
 			}).ToMap(),
 		},
 		{
-			Name: api.GenerateTargetName(workerSlug, provider, toolchain, "azure"),
+			Name: "flux-oci-writer-with-azure-provider",
 			Params: (&FluxOCIParams{
 				Repository:    repository,
 				Tag:           tag,
-				Provider:      AuthProviderAzure,
+				Provider:      ProviderAzure,
 				AllowDeletion: "false",
 			}).ToMap(),
 		},

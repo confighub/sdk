@@ -14,7 +14,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/bridge-worker/lib"
-	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/workerapi"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -32,8 +31,7 @@ metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   labels:
-    confighub.com/UnitSlug: {{.UnitSlug}}
-    confighub.com/SpaceID: {{.SpaceID}}
+    confighub.com/UnitSlug: {{.Label}}
   annotations:
     confighub.com/RevisionNum: "{{.RevisionNum}}"
 data:
@@ -42,15 +40,12 @@ data:
 `
 
 // This is a label rather than an annotation so that we can select all the generated ConfigMaps.
-const configMapUnitSlugLabelKey = "confighub.com/UnitSlug"
-
-// TODO: Add SpaceID
+const configMapLabelKey = "confighub.com/UnitSlug"
 
 type configMapTemplateArgs struct {
 	Name        string
 	Namespace   string
-	UnitSlug    string
-	SpaceID     string
+	Label       string
 	RevisionNum string
 	DataName    string
 	ConfigData  string
@@ -146,10 +141,10 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	nameSuffix := truncateString(fmt.Sprintf("%x", sha256.Sum256(payload.Data)), 10)
 	fileExtension := getFileExtensionForToolchain(payload.ToolchainType)
 	args := &configMapTemplateArgs{
-		Name:        k8skit.K8sResourceProvider.NormalizeName(payload.UnitSlug + "-" + nameSuffix),
+		// TODO: ensure slug character set is valid
+		Name:        payload.UnitSlug + "-" + nameSuffix,
 		Namespace:   namespace,
-		UnitSlug:    payload.UnitSlug,
-		SpaceID:     payload.SpaceID.String(),
+		Label:       payload.UnitSlug,
 		RevisionNum: fmt.Sprintf("%d", payload.RevisionNum),
 		DataName:    payload.UnitSlug + fileExtension,
 		ConfigData:  configData,

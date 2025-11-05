@@ -136,7 +136,7 @@ func (w *ConfigHubBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 				ProviderType:  api.ProviderConfigHub,
 				AvailableTargets: []api.Target{
 					{
-						Name:   api.GenerateTargetName(opts.WorkerSlug, api.ProviderConfigHub, workerapi.ToolchainConfigHubYAML, ""),
+						Name:   "confighub-" + opts.Slug,
 						Params: map[string]interface{}{},
 					},
 				},
