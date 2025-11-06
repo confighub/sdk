@@ -1,0 +1,256 @@
+{
+  "GrafanaLDAP": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["configHub", "servers"],
+    "properties": {
+      "configHub": {
+        "type": "object",
+        "required": ["configSchema"],
+        "properties": {
+          "configName": {
+            "type": "string",
+            "description": "Name of the configuration"
+          },
+          "configSchema": {
+            "type": "string",
+            "const": "GrafanaLDAP",
+            "description": "Must be 'GrafanaLDAP' for Grafana LDAP configurations"
+          },
+          "kubernetes": {
+            "type": "object",
+            "properties": {
+              "namespace": {
+                "type": "string",
+                "description": "Kubernetes namespace for deployment"
+              }
+            }
+          }
+        }
+      },
+      "servers": {
+        "type": "array",
+        "minItems": 1,
+        "description": "List of LDAP servers to authenticate against",
+        "items": {
+          "type": "object",
+          "required": ["host", "bind_dn", "search_filter", "search_base_dns", "attributes"],
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "LDAP server hostname or IP address. Can specify multiple hosts separated by space",
+              "minLength": 1,
+              "examples": ["ldap.example.com", "ldap1.example.com ldap2.example.com"]
+            },
+            "port": {
+              "type": "integer",
+              "description": "LDAP server port. Default 389 for non-SSL, 636 for SSL",
+              "minimum": 1,
+              "maximum": 65535,
+              "default": 389
+            },
+            "use_ssl": {
+              "type": "boolean",
+              "description": "Use LDAPS (LDAP over SSL/TLS) for connections",
+              "default": false
+            },
+            "start_tls": {
+              "type": "boolean",
+              "description": "Use STARTTLS to upgrade connection to TLS",
+              "default": false
+            },
+            "ssl_skip_verify": {
+              "type": "boolean",
+              "description": "Skip SSL certificate verification (insecure, use only for testing)",
+              "default": false
+            },
+            "root_ca_cert": {
+              "type": "string",
+              "description": "Path to root CA certificate file for SSL verification",
+              "examples": ["/etc/ssl/certs/root-ca.pem"]
+            },
+            "client_cert": {
+              "type": "string",
+              "description": "Path to client certificate file for mutual TLS authentication"
+            },
+            "client_key": {
+              "type": "string",
+              "description": "Path to client private key file for mutual TLS authentication"
+            },
+            "tls_ciphers": {
+              "type": "array",
+              "description": "List of accepted TLS cipher suites",
+              "items": {
+                "type": "string"
+              }
+            },
+            "min_tls_version": {
+              "type": "string",
+              "description": "Minimum TLS version to accept",
+              "enum": ["TLS1.2", "TLS1.3"]
+            },
+            "timeout": {
+              "type": "integer",
+              "description": "Connection timeout in seconds",
+              "minimum": 1,
+              "default": 10
+            },
+            "bind_dn": {
+              "type": "string",
+              "description": "Distinguished name of the user to bind as for searching. Supports variable expansion like $__env{VAR}",
+              "minLength": 1,
+              "examples": ["CN=admin,DC=example,DC=com", "$__env{LDAP_BINDID_USER}"]
+            },
+            "bind_password": {
+              "type": "string",
+              "description": "Password for the bind DN user. Supports variable expansion like $__env{VAR}. Omit for single-bind mode",
+              "examples": ["$__env{LDAP_BINDID_PASS}"]
+            },
+            "search_filter": {
+              "type": "string",
+              "description": "LDAP search filter for finding users. %s is replaced with the username",
+              "minLength": 1,
+              "examples": [
+                "(cn=%s)",
+                "(sAMAccountName=%s)",
+                "(&(objectClass=user)(sAMAccountName=%s))",
+                "(&(objectClass=posixAccount)(uid=%s))"
+              ]
+            },
+            "search_base_dns": {
+              "type": "array",
+              "description": "Base distinguished names to start user searches from",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "examples": ["DC=example,DC=com", "OU=Users,DC=example,DC=com"]
+              }
+            },
+            "group_search_filter": {
+              "type": "string",
+              "description": "LDAP search filter for finding groups. Used when member_of attribute is not available",
+              "examples": ["(&(objectClass=posixGroup)(memberUid=%s))"]
+            },
+            "group_search_base_dns": {
+              "type": "array",
+              "description": "Base distinguished names to start group searches from",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "group_search_filter_user_attribute": {
+              "type": "string",
+              "description": "User attribute to use in group search filter replacement",
+              "examples": ["dn", "uid"]
+            },
+            "attributes": {
+              "type": "object",
+              "description": "Mapping of Grafana user attributes to LDAP attributes",
+              "required": ["username", "email", "member_of"],
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "description": "LDAP attribute containing the username",
+                  "minLength": 1,
+                  "examples": ["sAMAccountName", "uid", "cn"]
+                },
+                "name": {
+                  "type": "string",
+                  "description": "LDAP attribute containing the user's display name",
+                  "examples": ["givenName", "displayName", "cn"]
+                },
+                "surname": {
+                  "type": "string",
+                  "description": "LDAP attribute containing the user's surname/last name",
+                  "examples": ["sn", "surname"]
+                },
+                "email": {
+                  "type": "string",
+                  "description": "LDAP attribute containing the user's email address",
+                  "minLength": 1,
+                  "examples": ["mail", "email", "userPrincipalName"]
+                },
+                "member_of": {
+                  "type": "string",
+                  "description": "LDAP attribute containing group memberships",
+                  "minLength": 1,
+                  "examples": ["memberOf", "dn"]
+                }
+              },
+              "additionalProperties": {
+                "type": "string",
+                "description": "Additional custom attribute mappings"
+              }
+            },
+            "group_mappings": {
+              "type": "array",
+              "description": "Mappings of LDAP groups to Grafana organization roles",
+              "items": {
+                "type": "object",
+                "required": ["group_dn", "org_role"],
+                "properties": {
+                  "group_dn": {
+                    "type": "string",
+                    "description": "LDAP group distinguished name. Use '*' as wildcard to match all users",
+                    "minLength": 1,
+                    "examples": [
+                      "CN=admins,OU=groups,DC=example,DC=com",
+                      "*"
+                    ]
+                  },
+                  "org_role": {
+                    "type": "string",
+                    "description": "Grafana organization role to assign",
+                    "enum": ["Admin", "Editor", "Viewer"]
+                  },
+                  "org_id": {
+                    "type": "integer",
+                    "description": "Organization ID to assign the role in",
+                    "minimum": 1,
+                    "default": 1
+                  },
+                  "grafana_admin": {
+                    "type": "boolean",
+                    "description": "Grant Grafana server admin privileges (super admin)",
+                    "default": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "auth.ldap": {
+        "type": "object",
+        "description": "Main LDAP authentication configuration section",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable LDAP authentication",
+            "default": false
+          },
+          "config_file": {
+            "type": "string",
+            "description": "Path to LDAP configuration file",
+            "default": "/etc/grafana/ldap.toml"
+          },
+          "allow_sign_up": {
+            "type": "boolean",
+            "description": "Allow automatic user creation on successful LDAP authentication",
+            "default": true
+          },
+          "skip_org_role_sync": {
+            "type": "boolean",
+            "description": "Skip synchronizing organization roles from LDAP groups",
+            "default": false
+          }
+        }
+      }
+    },
+    "additionalProperties": true
+  }
+}

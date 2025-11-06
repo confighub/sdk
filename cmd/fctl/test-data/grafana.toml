@@ -1,0 +1,30 @@
+[configHub]
+configName = "LDAPConfig"
+configSchema = "GrafanaLDAP"
+
+[configHub.kubernetes]
+namespace = "confighubplaceholder"
+
+[[servers]]
+bind_dn = "$__env{LDAP_BINDID_USER}"
+bind_password = "$__env{LDAP_BINDID_PASS}"
+host = "server.example.com"
+port = 636
+root_ca_cert = "/etc/ssl/certs/root-ca.pem"
+search_base_dns = ["DC=server,DC=example,DC=com"]
+search_filter = "(&(objectClass=user)(sAMAccountName=%s))"
+ssl_skip_verify = false
+start_tls = false
+use_ssl = true
+
+[servers.attributes]
+email = "mail"
+member_of = "memberOf"
+name = "givenName"
+surname = "sn"
+username = "sAMAccountName"
+
+[[servers.group_mappings]]
+grafana_admin = true
+group_dn = "*"
+org_role = "Viewer"

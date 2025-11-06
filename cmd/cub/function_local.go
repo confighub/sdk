@@ -69,29 +69,14 @@ func init() {
 	functionCmd.AddCommand(functionLocalCmd)
 }
 
-func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
+func invokeLocalFunction(inputData []byte, functionName string, functionArgs []string, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
 	functionlogger.SetLevel(functionlogger.ERROR)
-
-	// First argument is the filename
-	filename := args[0]
-
-	// Read the input data
-	inputData, err := fetchContent(filename)
-	if err != nil {
-		return fmt.Errorf("failed to read input file: %w", err)
-	}
-
-	// Second argument is the function name
-	functionName := args[1]
-
-	// Remaining arguments are function parameters
-	functionArgs := args[2:]
 
 	// Parse the function arguments using the existing helper
 	invocation := initializeFunctionInvocation(functionName, functionArgs)
 
 	// Convert toolchain type string to workerapi.ToolchainType
-	toolchainTypeEnum := workerapi.ToolchainType(localToolchainType)
+	toolchainTypeEnum := workerapi.ToolchainType(toolchainTypeString)
 
 	// Create function executor
 	functionExecutor := function.NewStandardExecutor()
@@ -100,10 +85,10 @@ func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
 	registeredFunctions := functionExecutor.RegisteredFunctions()
 	if toolchainFunctions, ok := registeredFunctions[toolchainTypeEnum]; ok {
 		if _, functionExists := toolchainFunctions[functionName]; !functionExists {
-			return fmt.Errorf("function '%s' not found for toolchain '%s'", functionName, localToolchainType)
+			return nil, fmt.Errorf("function '%s' not found for toolchain '%s'", functionName, toolchainTypeString)
 		}
 	} else {
-		return fmt.Errorf("no functions registered for toolchain '%s'", localToolchainType)
+		return nil, fmt.Errorf("no functions registered for toolchain '%s'", toolchainTypeString)
 	}
 
 	// Convert function arguments from goclientnew.FunctionArgument to api.FunctionArgument
@@ -157,7 +142,30 @@ func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	response, err := functionExecutor.Invoke(ctx, invocationRequest)
 	if err != nil {
-		return fmt.Errorf("function execution failed: %w", err)
+		return nil, fmt.Errorf("function execution failed: %w", err)
+	}
+	return response, nil
+}
+
+func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
+	// First argument is the filename
+	filename := args[0]
+
+	// Read the input data
+	inputData, err := fetchContent(filename)
+	if err != nil {
+		return fmt.Errorf("failed to read input file: %w", err)
+	}
+
+	// Second argument is the function name
+	functionName := args[1]
+
+	// Remaining arguments are function parameters
+	functionArgs := args[2:]
+
+	response, err := invokeLocalFunction(inputData, functionName, functionArgs, localToolchainType)
+	if err != nil {
+		return err
 	}
 
 	// Display the results

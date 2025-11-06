@@ -110,6 +110,10 @@ ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app2.properties "MyConfig" compute-mutations "$(<test-data/app.properties)" 0 > ${DIR}/compute-mutations-properties.txt
 
+# Test vet-jsonschema with Grafana LDAP configuration
+${FCTL} do --toolchain "AppConfig/TOML" test-data/grafana.toml "GrafanaLDAP" vet-jsonschema "$(<test-data/grafana-ldap-schema.json)" > ${DIR}/vet-jsonschema-grafana.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/grafana-invalid.toml "GrafanaLDAPInvalid" vet-jsonschema "$(<test-data/grafana-ldap-schema.json)" > ${DIR}/vet-jsonschema-grafana-invalid.txt
+
 # Test upsert-resource function
 # First get the resources from service.yaml to get the ResourceList
 SERVICE_RESOURCES=$(${FCTL} do --output-only test-data/service.yaml "MyService" get-resources)

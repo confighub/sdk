@@ -64,7 +64,10 @@ var workerInstallArgs struct {
 	image            string
 	imagePullPolicy  string
 	updateStrategy   string
+	serviceAccount   string
 }
+
+const defaultServiceAcccount = "confighub-worker"
 
 func init() {
 	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
@@ -78,9 +81,10 @@ func init() {
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.deploymentName, "deployment-name", "", "custom name for the Deployment and labels (defaults to worker slug)")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.functionsFile, "functions", "", "file containing functions to execute on the created unit")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.exportSecretOnly, "export-secret-only", false, "export only the Secret resource to stdout")
-	workerInstallCmd.Flags().StringVar(&workerInstallArgs.image, "image", "ghcr.io/confighubai/confighub-worker:latest", "Docker image for the worker")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.image, "image", "", "Container image for the worker. Defaults to ghcr.io/confighubai/confighub-worker at the most recent tagged release.")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.imagePullPolicy, "image-pull-policy", "Always", "Image pull policy (Always, IfNotPresent, Never)")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.updateStrategy, "update-strategy", "Recreate", "Deployment update strategy (RollingUpdate, Recreate)")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.serviceAccount, "service-account", defaultServiceAcccount, "Service account name")
 	enableWaitFlag(workerInstallCmd)
 
 	workerCmd.AddCommand(workerInstallCmd)
@@ -170,6 +174,19 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func getWorkerImage(image string) string {
+	if image == "" {
+		// Pin to the same build as the server
+		apiInfo := GetApiInfo()
+		tag := apiInfo.Build
+		if strings.HasPrefix(tag, "local") || strings.HasPrefix(tag, "test") {
+			tag = "latest"
+		}
+		image = "ghcr.io/confighubai/confighub-worker:" + tag
+	}
+	return image
+}
+
 func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret bool, namespace string, hostNetwork bool, deploymentName string, image string, imagePullPolicy string, updateStrategy string) (string, error) {
 	// Define the Kubernetes resources
 	namespaceResource := map[string]interface{}{
@@ -184,7 +201,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		"apiVersion": "v1",
 		"kind":       "ServiceAccount",
 		"metadata": map[string]interface{}{
-			"name":      "confighub-worker",
+			"name":      workerInstallArgs.serviceAccount,
 			"namespace": namespace,
 		},
 	}
@@ -203,7 +220,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		"subjects": []map[string]interface{}{
 			{
 				"kind":      "ServiceAccount",
-				"name":      "confighub-worker",
+				"name":      workerInstallArgs.serviceAccount,
 				"namespace": namespace,
 			},
 		},
@@ -254,12 +271,12 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	// Create pod spec
 	podSpec := map[string]interface{}{
-		"serviceAccountName":            "confighub-worker",
+		"serviceAccountName":            workerInstallArgs.serviceAccount,
 		"terminationGracePeriodSeconds": 60,
 		"containers": []map[string]interface{}{
 			{
 				"name":            "worker",
-				"image":           image,
+				"image":           getWorkerImage(image),
 				"imagePullPolicy": imagePullPolicy,
 				"env":             containerEnvs,
 				"envFrom": []map[string]interface{}{
@@ -340,7 +357,15 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		manifests = append(manifests, string(yamlBytes))
 	}
 
-	return strings.Join(manifests, "---\n"), nil
+	docList := strings.Join(manifests, "---\n")
+
+	// Set security context
+	response, err := invokeLocalFunction([]byte(docList), "set-pod-defaults", []string{"--security-context=true"}, string(workerapi.ToolchainKubernetesYAML))
+	if err != nil {
+		return docList, err
+	}
+
+	return string(response.ConfigData), nil
 }
 
 func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew.Unit, error) {
