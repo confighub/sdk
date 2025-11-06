@@ -5,15 +5,18 @@ package impl
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/bridge-worker/lib"
+	"github.com/confighub/sdk/function"
+	functionapi "github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/workerapi"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -25,27 +28,33 @@ type ConfigMapBridgeWorker struct {
 var _ api.BridgeWorker = (*ConfigMapBridgeWorker)(nil)
 var _ api.WatchableWorker = (*ConfigMapBridgeWorker)(nil)
 
+// The standard annotations are:
+// confighub.com/UnitSlug
+// confighub.com/SpaceID
+
+// We also add a label so we can select all ConfigMaps for this Unit
+
 const configMapTemplateString = `apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   labels:
-    confighub.com/UnitSlug: {{.Label}}
+    confighub.com/UnitSlug: {{.UnitSlug}}
   annotations:
+    confighub.com/UnitSlug: {{.UnitSlug}}
+    confighub.com/SpaceID: {{.SpaceID}}
     confighub.com/RevisionNum: "{{.RevisionNum}}"
 data:
   {{.DataName}}: |
 {{.ConfigData}}
 `
 
-// This is a label rather than an annotation so that we can select all the generated ConfigMaps.
-const configMapLabelKey = "confighub.com/UnitSlug"
-
 type configMapTemplateArgs struct {
 	Name        string
 	Namespace   string
-	Label       string
+	UnitSlug    string
+	SpaceID     string
 	RevisionNum string
 	DataName    string
 	ConfigData  string
@@ -93,16 +102,9 @@ func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 }
 
 // This is also defined in the function executor.
-const configHubPrefix = "configHub."
+const configHubPrefix = "configHub"
 
-const NamespaceProperty = configHubPrefix + "kubernetes.namespace"
-
-// '.' doesn't match newlines, so we need to permit them explicitly. The underlying syntax
-// package supports matching newlines and also supports matching beginning and end of lines,
-// but these capabilities don't appear to be accessible through the standard regexp functions.
-var namespaceRegexpString = "^(?:(?:.|\n)*\n)?[ \t]*" + strings.ReplaceAll(NamespaceProperty, ".", "\\.") + "[ \t]*[:=][ \t]*([a-z0-9\\-]+)"
-
-var namespaceRegexp = regexp.MustCompile(namespaceRegexpString)
+const NamespaceProperty = configHubPrefix + ".kubernetes.namespace"
 
 func truncateString(s string, n int) string {
 	if len(s) <= n {
@@ -128,23 +130,78 @@ func getFileExtensionForToolchain(toolchain workerapi.ToolchainType) string {
 
 func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	configData := string(payload.Data)
-	// Extract the namespace. We could use get-string-path, but that would require conversion to YAML, etc.
-	namespaceMatch := namespaceRegexp.FindStringSubmatch(configData)
-	var namespace string
-	if namespaceMatch == nil || len(namespaceMatch) < 2 {
-		namespace = "default"
-	} else {
-		namespace = namespaceMatch[1]
+
+	// Extract the namespace using get-string-path function
+	namespace := "default" // Default value
+
+	// FIXME: This re-initializes the path registry currently, which is not a good
+	// thing, but it only happens when this is invoked. We should pass the executor
+	// down from the worker instead.
+	// Create function executor
+	functionExecutor := function.NewStandardExecutor()
+
+	// Invoke get-string-path to extract namespace
+	getStringPathInvocation := functionapi.FunctionInvocation{
+		FunctionName: "get-string-path",
+		Arguments: []functionapi.FunctionArgument{
+			{Value: "*"},
+			{Value: NamespaceProperty},
+		},
 	}
-	// Comment out configHub fields. We may want to uncomment these in functions instead.
-	configData = strings.ReplaceAll(configData, configHubPrefix, "#"+configHubPrefix)
+
+	getStringPathRequest := &functionapi.FunctionInvocationRequest{
+		FunctionContext: functionapi.FunctionContext{
+			ToolchainType: payload.ToolchainType,
+		},
+		ConfigData:          payload.Data,
+		FunctionInvocations: []functionapi.FunctionInvocation{getStringPathInvocation},
+	}
+
+	ctx := context.Background()
+	getStringPathResp, err := functionExecutor.Invoke(ctx, getStringPathRequest)
+	if err == nil && getStringPathResp.Success {
+		// Extract namespace from AttributeValueList output
+		if outputData, exists := getStringPathResp.Outputs[functionapi.OutputTypeAttributeValueList]; exists {
+			var attrList functionapi.AttributeValueList
+			if err := json.Unmarshal(outputData, &attrList); err == nil && len(attrList) > 0 {
+				if strValue, ok := attrList[0].Value.(string); ok {
+					namespace = strValue
+				}
+			}
+		}
+	}
+
+	// Delete configHub properties using delete-path function
+	deletePathInvocation := functionapi.FunctionInvocation{
+		FunctionName: "delete-path",
+		Arguments: []functionapi.FunctionArgument{
+			{Value: "*"},
+			{Value: configHubPrefix},
+		},
+	}
+
+	deletePathRequest := &functionapi.FunctionInvocationRequest{
+		FunctionContext: functionapi.FunctionContext{
+			ToolchainType: payload.ToolchainType,
+		},
+		ConfigData:          payload.Data,
+		FunctionInvocations: []functionapi.FunctionInvocation{deletePathInvocation},
+	}
+
+	deletePathResp, err := functionExecutor.Invoke(ctx, deletePathRequest)
+	if err == nil && deletePathResp.Success {
+		configData = string(deletePathResp.ConfigData)
+	}
+	// If delete-path fails, configData remains as the original string(payload.Data)
+
 	nameSuffix := truncateString(fmt.Sprintf("%x", sha256.Sum256(payload.Data)), 10)
 	fileExtension := getFileExtensionForToolchain(payload.ToolchainType)
 	args := &configMapTemplateArgs{
 		// TODO: ensure slug character set is valid
 		Name:        payload.UnitSlug + "-" + nameSuffix,
 		Namespace:   namespace,
-		Label:       payload.UnitSlug,
+		UnitSlug:    payload.UnitSlug,
+		SpaceID:     payload.SpaceID.String(),
 		RevisionNum: fmt.Sprintf("%d", payload.RevisionNum),
 		DataName:    payload.UnitSlug + fileExtension,
 		ConfigData:  configData,

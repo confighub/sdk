@@ -523,7 +523,7 @@ func (c *workerClient) getBridgeWorkerSlug() error {
 
 	if resp.StatusCode != http.StatusOK {
 		_, _ = io.ReadAll(resp.Body)
-		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
+		return fmt.Errorf("server returned status %d for request to %s: %s", resp.StatusCode, getUrl, resp.Status)
 	}
 
 	var info goclientnew.BridgeWorker
