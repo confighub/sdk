@@ -295,6 +295,7 @@ func (chc *CubHttpClient) Do(req *http.Request) (*http.Response, error) {
 
 		// Before we retry, we must read (and discard in this case) the body and close it so that the transport
 		// is allowed to reuse the persistent TCP connection to the server.
+		// https://pkg.go.dev/net/http#Client.Do
 		io.ReadAll(res.Body)
 		res.Body.Close()
 
