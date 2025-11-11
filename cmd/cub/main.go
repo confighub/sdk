@@ -11,13 +11,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/charmbracelet/glamour"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
@@ -267,6 +270,54 @@ func setAuthHeaderToken(authSession *cubapi.AuthSession) string {
 	return authHeaderToken
 }
 
+type CubHttpClient struct {
+	client         *http.Client
+	retryCfg       backoff.BackOff
+	retriableCodes []int
+	maxRetries     uint
+}
+
+func (chc *CubHttpClient) Do(req *http.Request) (*http.Response, error) {
+	attempt := 0
+	operation := func() (*http.Response, error) {
+		attempt++
+		res, err := chc.client.Do(req)
+		if err != nil {
+			log.Printf("[WARN] Failed to perform request (attempt %d): %v - will retry", attempt, err)
+			return nil, err // this will be retried.
+		}
+
+		// If the status code is not retriable then we need to return the response without errors, as that
+		// is what we would expect from the http client.
+		if !slices.Contains(chc.retriableCodes, res.StatusCode) {
+			return res, nil
+		}
+
+		// Before we retry, we must read (and discard in this case) the body and close it so that the transport
+		// is allowed to reuse the persistent TCP connection to the server.
+		io.ReadAll(res.Body)
+		res.Body.Close()
+
+		err = fmt.Errorf("server returned status %d: %s", res.StatusCode, res.Status)
+		log.Printf("[WARN] %v (attempt #%d) - will retry", err, attempt)
+
+		return nil, err // this will be retried.
+	}
+
+	res, err := backoff.Retry(
+		req.Context(),
+		operation,
+		backoff.WithBackOff(chc.retryCfg),
+		backoff.WithMaxTries(chc.maxRetries),
+	)
+	if err != nil {
+		log.Printf("[WARN] Failed to perform operation after %d retries: %v", chc.maxRetries, err)
+		return nil, err
+	}
+
+	return res, nil
+}
+
 // InitializeClient initializes the API client for the given context.
 // It sets the base URL and the authentication header if a token is present.
 // If the context is updated during the course of execution and further API calls are made,
@@ -288,7 +339,18 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 	}
 
 	return goclientnew.NewClientWithResponses(baseURL, func(c *goclientnew.Client) error {
-		c.Client = &http.Client{Transport: ct}
+		eb := backoff.NewExponentialBackOff()
+		eb.InitialInterval = 1 * time.Second // Start with 1 second delay
+		eb.RandomizationFactor = 0.5         // Add ±50% randomization to prevent thundering herd
+		eb.Multiplier = 2.0                  // Double the delay on each retry
+		eb.MaxInterval = 60 * time.Second    // Cap maximum delay at 60 seconds
+
+		c.Client = &CubHttpClient{
+			client:         &http.Client{Transport: ct},
+			retryCfg:       eb,
+			retriableCodes: []int{http.StatusConflict},
+			maxRetries:     15,
+		}
 		if hasToken {
 			c.RequestEditors = append(c.RequestEditors, func(ctx context.Context, req *http.Request) error {
 				req.Header.Set("Authorization", authHeader)
