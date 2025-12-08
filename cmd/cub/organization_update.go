@@ -64,6 +64,7 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
 	orgRes, err := cubClientNew.UpdateOrganizationWithResponse(ctx, currentOrganization.OrganizationID, *currentOrganization)
 	if cubapi.IsAPIError(err, orgRes) {
 		return cubapi.InterpretErrorGeneric(err, orgRes)

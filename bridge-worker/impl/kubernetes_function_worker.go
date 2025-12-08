@@ -34,6 +34,7 @@ func (fw KubernetesFunctionWorker) Info() api.FunctionWorkerInfo {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
 			workerapi.ToolchainKubernetesYAML: registeredFunctionsMap,
 		},

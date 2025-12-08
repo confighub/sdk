@@ -33,10 +33,17 @@ var targetCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(targetListCmd)
+	enableWebFlag(targetListCmd)
 	targetCmd.AddCommand(targetListCmd)
 }
 
 func targetListCmdRun(cmd *cobra.Command, args []string) error {
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetTargetListURL(ctx.Coordinate.ServerURL)
+		return openWebUI(url)
+	}
+
 	var targets []*goclientnew.ExtendedTarget
 	var err error
 

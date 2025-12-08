@@ -16,6 +16,39 @@ import (
 func (c *workerClient) processFunctionCommand(ctx *defaultFunctionWorkerContext, reqEvent api.FunctionWorkerEventRequest) error {
 	log.Printf("Received function worker command: Action=%s, QueuedOperationID=%s", reqEvent.Action, reqEvent.Payload.QueuedOperationID)
 
+	// Handle cancel action
+	if reqEvent.Action == api.ActionCancel {
+		log.Printf("📥 Received CANCEL command for operation %s", reqEvent.Payload.QueuedOperationID)
+
+		// Cancel the operation
+		success := c.unitQueues.CancelOperation(reqEvent.Payload.QueuedOperationID)
+
+		// Send acknowledgment
+		startedAt := time.Now()
+		terminatedAt := startedAt
+		status := api.ActionStatusCompleted
+		message := "Operation cancelled"
+		if !success {
+			status = api.ActionStatusFailed
+			message = "Operation not found or already completed"
+		}
+
+		result := &api.ActionResult{
+			UnitID:            reqEvent.Payload.InvocationRequest.UnitID,
+			SpaceID:           reqEvent.Payload.InvocationRequest.SpaceID,
+			QueuedOperationID: reqEvent.Payload.QueuedOperationID,
+			ActionResultBaseMeta: api.ActionResultBaseMeta{
+				Action:       api.ActionCancel,
+				Result:       api.ActionResultNone,
+				Status:       status,
+				Message:      message,
+				StartedAt:    startedAt,
+				TerminatedAt: &terminatedAt,
+			},
+		}
+		return c.sendResult(result)
+	}
+
 	startTime := time.Now()
 
 	res, err := c.functionWorker.Invoke(ctx, reqEvent.Payload.InvocationRequest)

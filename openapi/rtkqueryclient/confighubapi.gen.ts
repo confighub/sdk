@@ -1716,6 +1716,19 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
+      bulkCancelUnits: build.mutation<BulkCancelUnitsApiResponse, BulkCancelUnitsApiArg>({
+        query: (queryArg) => ({
+          url: `/unit/cancel`,
+          method: 'POST',
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+          },
+        }),
+        invalidatesTags: ['Unit'],
+      }),
       bulkDestroyUnits: build.mutation<BulkDestroyUnitsApiResponse, BulkDestroyUnitsApiArg>({
         query: (queryArg) => ({
           url: `/unit/destroy`,
@@ -1997,6 +2010,9 @@ export type BulkPatchSpacesApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    Permissions?: {
+      [key: string]: object | null;
+    } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -2093,6 +2109,9 @@ export type BulkCreateSpacesApiArg = {
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
+    } | null;
+    Permissions?: {
+      [key: string]: object | null;
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
@@ -2328,6 +2347,9 @@ export type BulkPatchBridgeWorkersApiArg = {
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
+    } | null;
+    Permissions?: {
+      [key: string]: object | null;
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
@@ -4502,6 +4524,9 @@ export type PatchSpaceApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    Permissions?: {
+      [key: string]: object | null;
+    } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -4674,6 +4699,9 @@ export type PatchBridgeWorkerApiArg = {
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
+    } | null;
+    Permissions?: {
+      [key: string]: object | null;
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
@@ -5711,7 +5739,7 @@ export type ListTargetsApiArg = {
   select?: string;
 };
 export type CreateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type CreateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5752,7 +5780,7 @@ export type GetTargetApiArg = {
   targetId: string;
 };
 export type PatchTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type PatchTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5775,6 +5803,9 @@ export type PatchTargetApiArg = {
       [key: string]: string | null;
     } | null;
     Parameters?: string | null;
+    Permissions?: {
+      [key: string]: object | null;
+    } | null;
     ProviderType?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
@@ -5784,7 +5815,7 @@ export type PatchTargetApiArg = {
   };
 };
 export type UpdateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type UpdateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7584,6 +7615,9 @@ export type BulkPatchTargetsApiArg = {
       [key: string]: string | null;
     } | null;
     Parameters?: string | null;
+    Permissions?: {
+      [key: string]: object | null;
+    } | null;
     ProviderType?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
@@ -8635,6 +8669,80 @@ export type BulkApproveUnitsApiArg = {
   /** Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
   revision?: string;
 };
+export type BulkCancelUnitsApiResponse = /** status 200 OK */
+  | UnitActionResponse[]
+  | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
+export type BulkCancelUnitsApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Units returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    
+    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Unit list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Unit).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Unit.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+};
 export type BulkDestroyUnitsApiResponse = /** status 200 OK */
   | UnitActionResponse[]
   | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
@@ -9361,6 +9469,14 @@ export type StandardErrorResponse = {
   /** Message returned with the response. */
   Message?: string;
 };
+export type Subjects = {
+  UserIDs?: {
+    [key: string]: boolean;
+  };
+};
+export type Permissions = {
+  [key: string]: Subjects;
+};
 export type Space = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -9378,6 +9494,7 @@ export type Space = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Permissions?: Permissions;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -9441,6 +9558,7 @@ export type SpaceRead = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Permissions?: Permissions;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -9570,11 +9688,14 @@ export type FunctionSignature = {
   VarArgs?: boolean;
 };
 export type FunctionWorkerInfo = {
+  /** Signatures of supported functions by ToolchainType */
   SupportedFunctions?: {
     [key: string]: {
       [key: string]: FunctionSignature;
     };
   } | null;
+  /** Supported ToolchainTypes */
+  ToolchainTypes?: string[] | null;
 };
 export type WorkerInfo = {
   BridgeWorkerInfo?: BridgeWorkerInfo;
@@ -9602,6 +9723,7 @@ export type BridgeWorker = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Permissions?: Permissions;
   ProvidedInfo?: WorkerInfo;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -9644,6 +9766,7 @@ export type BridgeWorkerRead = {
   LastSeenAt?: string;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Permissions?: Permissions;
   ProvidedInfo?: WorkerInfo;
   /** Secret is a unique secret token for the bridge worker.
     It's auto-generated when the BridgeWorker entity is created and cannot be modified.
@@ -9766,7 +9889,8 @@ export type ActionStatusType =
   | 'Progressing'
   | 'Completed'
   | 'Failed'
-  | 'Canceled';
+  | 'Canceled'
+  | 'Aborted';
 export type ActionResult = {
   Action?: ActionType;
   /** Configuration data of the Unit */
@@ -10751,7 +10875,8 @@ export type Target = {
     - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
      */
   Parameters?: string;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS". */
+  Permissions?: Permissions;
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -10797,7 +10922,8 @@ export type TargetRead = {
     - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
      */
   Parameters?: string;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS". */
+  Permissions?: Permissions;
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -11144,6 +11270,7 @@ export type QueuedOperation = {
     | 'Completed'
     | 'Failed'
     | 'Aborted'
+    | 'Canceled'
     | 'pending'
     | 'delivered';
   /** TargetID is the unique identifier of the target this operation is directed to. */
@@ -11248,6 +11375,7 @@ export type UnitAction = {
     | 'Completed'
     | 'Failed'
     | 'Aborted'
+    | 'Canceled'
     | 'pending'
     | 'delivered';
   /** TargetID is the unique identifier of the target this operation is directed to. */
@@ -11620,6 +11748,7 @@ export const {
   useBulkCreateUnitsMutation,
   useBulkApplyUnitsMutation,
   useBulkApproveUnitsMutation,
+  useBulkCancelUnitsMutation,
   useBulkDestroyUnitsMutation,
   useBulkRefreshUnitsMutation,
   useBulkTagUnitsMutation,

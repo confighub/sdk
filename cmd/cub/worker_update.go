@@ -45,6 +45,7 @@ Examples:
 var (
 	workerPatch       bool
 	workerIdentifiers []string
+	workerUpdatePermissions []string
 )
 
 func init() {
@@ -53,6 +54,7 @@ func init() {
 	enableWhereFlag(bridgeworkerUpdateCmd)
 	enableFilterFlag(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
 }
 
@@ -128,6 +130,13 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Parse and set permissions
+	err = parsePermissions(workerUpdatePermissions, currentBridgeworker.Permissions)
+	if err != nil {
+		return err
+	}
+
 	// If this was set from stdin, it will be overridden
 	currentBridgeworker.SpaceID = spaceID
 
@@ -150,7 +159,7 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for worker)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, workerUpdatePermissions)
 	if err != nil {
 		return err
 	}
@@ -192,7 +201,7 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for worker)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, workerUpdatePermissions)
 	if err != nil {
 		return err
 	}

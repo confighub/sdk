@@ -34,6 +34,7 @@ func (fw INIFunctionWorker) Info() api.FunctionWorkerInfo {
 		registeredFunctionsMap[name] = registration.FunctionSignature
 	}
 	return api.FunctionWorkerInfo{
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainAppConfigINI},
 		SupportedFunctions: map[workerapi.ToolchainType]map[string]funcApi.FunctionSignature{
 			workerapi.ToolchainAppConfigINI: registeredFunctionsMap,
 		},

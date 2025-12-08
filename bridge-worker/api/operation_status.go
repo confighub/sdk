@@ -22,6 +22,7 @@ const (
 	ActionStatusCompleted   ActionStatusType = "Completed"
 	ActionStatusFailed      ActionStatusType = "Failed"
 	ActionStatusCanceled    ActionStatusType = "Canceled"
+	ActionStatusAborted     ActionStatusType = "Aborted" // Operation superseded by a newer one
 )
 
 var ValidActionStatus = map[ActionStatusType]bool{
@@ -32,6 +33,7 @@ var ValidActionStatus = map[ActionStatusType]bool{
 	ActionStatusCompleted:   true,
 	ActionStatusFailed:      true,
 	ActionStatusCanceled:    true,
+	ActionStatusAborted:     true,
 }
 
 type ActionResultType string
@@ -83,6 +85,7 @@ const (
 	ActionImport    ActionType = "Import"
 	ActionFinalize  ActionType = "Finalize"
 	ActionHeartbeat ActionType = "Heartbeat"
+	ActionCancel    ActionType = "Cancel"
 
 	ActionInvokeFunctions ActionType = "InvokeFunctions"
 	ActionListFunctions   ActionType = "ListFunctions"
@@ -96,6 +99,7 @@ var ValidAction = map[ActionType]bool{
 	ActionImport:          true,
 	ActionFinalize:        true,
 	ActionHeartbeat:       true,
+	ActionCancel:          true,
 	ActionInvokeFunctions: true,
 	ActionListFunctions:   true,
 }

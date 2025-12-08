@@ -38,8 +38,11 @@ var workerCreateArgs struct {
 	slug string
 }
 
+var workerCreatePermissions []string
+
 func init() {
 	addStandardCreateFlags(workerCreateCmd)
+	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	workerCmd.AddCommand(workerCreateCmd)
 }
 
@@ -62,6 +65,13 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Parse and set permissions
+	err = parsePermissions(workerCreatePermissions, workerDetails.Permissions)
+	if err != nil {
+		return err
+	}
+
 	workerDetails.Slug = makeSlug(args[0])
 	workerDetails.SpaceID = uuid.MustParse(selectedSpaceID)
 

@@ -33,6 +33,7 @@ Examples:
 
 func init() {
 	addStandardGetFlags(spaceGetCmd)
+	enableWebFlag(spaceGetCmd)
 	spaceCmd.AddCommand(spaceGetCmd)
 }
 
@@ -41,6 +42,13 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetSpaceDetailURL(ctx.Coordinate.ServerURL, extendedSpace.Space.SpaceID.String())
+		return openWebUI(url)
+	}
+
 	displayGetResults(extendedSpace, displayExtendedSpaceDetails)
 	return nil
 }
@@ -53,6 +61,7 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	view.Append([]string{"Labels", labelsToString(spaceDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(spaceDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
+	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions)})
 	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
 }

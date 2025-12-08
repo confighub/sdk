@@ -16,6 +16,7 @@ import (
 
 var spaceUpdateArgs struct {
 	whereTrigger string
+	permissions  []string
 }
 
 var spaceUpdateCmd = &cobra.Command{
@@ -50,6 +51,7 @@ func init() {
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)
 	spaceCmd.AddCommand(spaceUpdateCmd)
@@ -141,7 +143,7 @@ func runSingleSpaceUpdate(args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(spaceEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(spaceEnhancer, spaceUpdateArgs.permissions)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -179,6 +181,12 @@ func runSingleSpaceUpdate(args []string) error {
 		return err
 	}
 	err = setDeleteGates(&newBody.DeleteGates)
+	if err != nil {
+		return err
+	}
+
+	// Parse and set permissions
+	err = parsePermissions(spaceUpdateArgs.permissions, newBody.Permissions)
 	if err != nil {
 		return err
 	}
@@ -249,7 +257,7 @@ func runBulkSpaceUpdate() error {
 		}
 	}
 
-	patchData, err := BuildPatchData(spaceEnhancer)
+	patchData, err := BuildPatchDataWithPermissions(spaceEnhancer, spaceUpdateArgs.permissions)
 	if err != nil {
 		return err
 	}

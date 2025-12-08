@@ -16,7 +16,8 @@ const baseQuery = fetchBaseQuery({
     if (
       endpoint.startsWith('patch') ||
       endpoint.startsWith('bulkPatch') ||
-      endpoint.startsWith('bulkCreate')
+      endpoint.startsWith('bulkCreate') ||
+      endpoint.startsWith('patchView')
     ) {
       headers.set('Content-Type', 'application/merge-patch+json');
     }
@@ -35,13 +36,19 @@ const baseQueryWithReauth: BaseQueryFn<
     // Unauthorized - redirect to login
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     window.location.href =
-      '/auth/login?state=' + window.location.pathname + (window.location.search ?? '') +
-      '&redirect_uri=' + redirectUri;
+      '/auth/login?state=' +
+      window.location.pathname +
+      (window.location.search ?? '') +
+      '&redirect_uri=' +
+      redirectUri;
   }
 
   if (result.error && result.error.status === 403) {
     // Don't redirect if we're already on an error page (prevents infinite loop)
-    if (window.location.pathname === '/access-denied' || window.location.pathname === '/pending-approval') {
+    if (
+      window.location.pathname === '/access-denied' ||
+      window.location.pathname === '/pending-approval'
+    ) {
       return result;
     }
 

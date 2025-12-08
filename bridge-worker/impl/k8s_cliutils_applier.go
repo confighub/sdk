@@ -295,13 +295,39 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 	log.Log.Info("📋 Starting applier with inventory", "namespace", invInfo.GetNamespace(), "id", invInfo.GetID())
 	eventChannel := a.comps.Applier.Run(ctx, invInfo, resourceObjects, applyOptions)
 
-	// Drain the event channel synchronously to wait for apply to complete
-	// This blocks until all apply operations are finished
+	// Drain the event channel with context awareness to handle cancellation
+	// This ensures we exit quickly when the operation is overridden/cancelled
 	log.Log.Info("📋 Waiting for apply to complete by draining event channel")
-	for range eventChannel {
-		// Discard events - we use kstatus polling for status tracking
+	contextCancelled := false
+applyDrainLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			log.Log.Info("⚠️ Context cancelled while draining apply events, stopping drain",
+				"error", ctx.Err(),
+				"unitSlug", a.unitSlug)
+			contextCancelled = true
+			// Drain remaining events in background to avoid goroutine leak
+			go func() {
+				for range eventChannel {
+				}
+			}()
+			break applyDrainLoop
+		case _, ok := <-eventChannel:
+			if !ok {
+				break applyDrainLoop
+			}
+			// Event discarded - we use kstatus polling for status tracking
+		}
 	}
-	log.Log.Info("📋 Apply operation completed, event channel closed")
+	log.Log.Info("📋 Apply event channel drain completed", "contextCancelled", contextCancelled)
+
+	// Return early if context was cancelled (e.g., operation was overridden)
+	if contextCancelled {
+		return ApplyResult{
+			Error: ErrOperationInterrupted,
+		}
+	}
 
 	// Now poll for resources to be ready using kstatus
 	// Use context deadline if available, otherwise use default timeout
@@ -442,6 +468,17 @@ func (a *CLIUtilsApplier) waitForResourcesTerminated(ctx context.Context, object
 					"error", err)
 				return false, nil
 			}
+			// Check if context is cancelled before continuing to poll
+			// This ensures faster exit when operation is cancelled/overridden
+			select {
+			case <-ctx.Done():
+				log.Log.V(1).Info("⏳ Context cancelled while waiting for resource termination",
+					"name", obj.GetName(),
+					"error", ctx.Err())
+				return false, ctx.Err()
+			default:
+			}
+
 			// Object still exists
 			log.Log.V(1).Info("⏳ Resource still terminating",
 				"name", obj.GetName(),
@@ -820,13 +857,39 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 
 	eventChannel := a.comps.Destroyer.Run(ctx, invInfo, destroyOptions)
 
-	// Drain the event channel synchronously to wait for destroy to complete
-	// This blocks until all destroy operations are finished
+	// Drain the event channel with context awareness to handle cancellation
+	// This ensures we exit quickly when the operation is overridden/cancelled
 	log.Log.Info("📋 Waiting for destroy to complete by draining event channel")
-	for range eventChannel {
-		// Discard events - we use polling for status tracking
+	contextCancelled := false
+drainLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			log.Log.Info("⚠️ Context cancelled while draining destroy events, stopping drain",
+				"error", ctx.Err(),
+				"unitSlug", a.unitSlug)
+			contextCancelled = true
+			// Drain remaining events in background to avoid goroutine leak
+			go func() {
+				for range eventChannel {
+				}
+			}()
+			break drainLoop
+		case _, ok := <-eventChannel:
+			if !ok {
+				break drainLoop
+			}
+			// Event discarded - we use polling for status tracking
+		}
 	}
-	log.Log.Info("📋 Destroy operation completed, event channel closed")
+	log.Log.Info("📋 Destroy event channel drain completed", "contextCancelled", contextCancelled)
+
+	// Return early if context was cancelled (e.g., operation was overridden)
+	if contextCancelled {
+		return DestroyResult{
+			Error: ErrOperationInterrupted,
+		}
+	}
 
 	// Now poll for resources to be terminated using polling
 	// Get list of objects to wait for termination

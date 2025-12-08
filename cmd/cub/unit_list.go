@@ -171,6 +171,7 @@ var unitCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(unitListCmd)
+	enableWebFlag(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	unitListCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,TargetID,Labels.Environment,Annotations.Owner)")
@@ -178,6 +179,12 @@ func init() {
 }
 
 func unitListCmdRun(cmd *cobra.Command, args []string) error {
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetUnitListURL(ctx.Coordinate.ServerURL)
+		return openWebUI(url)
+	}
+
 	var err error
 	if whereData != "" {
 		if selectedSpaceID != "*" {
@@ -213,10 +220,6 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 
 func getExtendedUnitSlug(extendedUnit *goclientnew.ExtendedUnit) string {
 	return extendedUnit.Unit.Slug
-}
-
-func getUnitExtendedSlug(unitExtended *goclientnew.UnitExtended) string {
-	return unitExtended.Unit.Slug
 }
 
 func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {

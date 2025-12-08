@@ -67,6 +67,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Append([]string{"Labels", labelsToString(targetDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(targetDetails.Annotations)})
+	view.Append([]string{"Permissions", permissionsToString(targetDetails.Permissions)})
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()
 }

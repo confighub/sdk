@@ -15,6 +15,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/bridge-worker/lib"
+	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/function"
 	functionapi "github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/workerapi"
@@ -197,8 +198,7 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	nameSuffix := truncateString(fmt.Sprintf("%x", sha256.Sum256(payload.Data)), 10)
 	fileExtension := getFileExtensionForToolchain(payload.ToolchainType)
 	args := &configMapTemplateArgs{
-		// TODO: ensure slug character set is valid
-		Name:        payload.UnitSlug + "-" + nameSuffix,
+		Name:        k8skit.K8sResourceProvider.NormalizeName(payload.UnitSlug + "-" + nameSuffix),
 		Namespace:   namespace,
 		UnitSlug:    payload.UnitSlug,
 		SpaceID:     payload.SpaceID.String(),

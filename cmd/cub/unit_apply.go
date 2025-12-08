@@ -302,6 +302,15 @@ func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatus
 	return *status
 }
 
+// isTerminalStatus returns true if the status represents a terminal state
+// (Completed, Canceled, Failed, or Aborted)
+func isTerminalStatus(status goclientnew.ActionStatusType) bool {
+	return status == goclientnew.ActionStatusTypeCompleted ||
+		status == goclientnew.ActionStatusTypeCanceled ||
+		status == goclientnew.ActionStatusTypeFailed ||
+		status == goclientnew.ActionStatusTypeAborted
+}
+
 func displayOperationResults(id string, event *goclientnew.UnitEvent) {
 	if quiet {
 		return
@@ -357,13 +366,12 @@ func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error
 			// 	displayUnitEventList([]*goclientnew.UnitEvent{extendedUnit.LatestUnitEvent})
 			// }
 			if err == nil && extendedUnit.LatestUnitEvent != nil {
+				eventStatus := actionStatus(extendedUnit.LatestUnitEvent.Status)
 				if extendedUnit.LatestUnitEvent.QueuedOperationID != queuedOp.QueuedOperationID ||
 					actionType(extendedUnit.LatestUnitEvent.Action) != actionType(queuedOp.Action) ||
-					actionStatus(extendedUnit.LatestUnitEvent.Status) == goclientnew.ActionStatusTypeCompleted ||
-					actionStatus(extendedUnit.LatestUnitEvent.Status) == goclientnew.ActionStatusTypeCanceled ||
-					actionStatus(extendedUnit.LatestUnitEvent.Status) == goclientnew.ActionStatusTypeFailed {
+					isTerminalStatus(eventStatus) {
 					done = true
-					if actionStatus(extendedUnit.LatestUnitEvent.Status) == goclientnew.ActionStatusTypeFailed {
+					if eventStatus == goclientnew.ActionStatusTypeFailed {
 						failed = true
 					}
 					break
@@ -397,11 +405,10 @@ func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error
 	if len(events) == 0 {
 		return errors.New("no matching events found for completed operation")
 	}
-	// Look for a completion event
+	// Look for a completion event (terminal states: Completed, Canceled, Failed, Aborted)
 	for _, event := range events {
-		if actionStatus(event.Status) == goclientnew.ActionStatusTypeCompleted ||
-			actionStatus(event.Status) == goclientnew.ActionStatusTypeCanceled ||
-			actionStatus(event.Status) == goclientnew.ActionStatusTypeFailed {
+		status := actionStatus(event.Status)
+		if isTerminalStatus(status) {
 			displayOperationResults(unitIDString, event)
 			return nil
 		}

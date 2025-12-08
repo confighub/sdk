@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -22,12 +23,20 @@ Examples:
 `+"```"+`
   # Generate a new unique space name
   cub space new-prefix
+
+  # Generate a new unique space name in JSON format
+  cub space new-prefix --json
 `+"```"+`
 `, ""),
 	RunE: spaceNewPrefixCmdRun,
 }
 
+var spaceNewPrefixArgs struct {
+	json bool
+}
+
 func init() {
+	spaceNewPrefixCmd.Flags().BoolVar(&spaceNewPrefixArgs.json, "json", false, "Output in JSON format")
 	spaceCmd.AddCommand(spaceNewPrefixCmd)
 }
 
@@ -58,7 +67,16 @@ func spaceNewPrefixCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		if !isPrefix {
-			fmt.Println(candidateName)
+			if spaceNewPrefixArgs.json {
+				output := map[string]string{"prefix": candidateName}
+				jsonBytes, err := json.MarshalIndent(output, "", "  ")
+				if err != nil {
+					return fmt.Errorf("failed to marshal JSON output: %w", err)
+				}
+				fmt.Println(string(jsonBytes))
+			} else {
+				fmt.Println(candidateName)
+			}
 			return nil
 		}
 	}

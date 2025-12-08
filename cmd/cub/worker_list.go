@@ -32,10 +32,17 @@ var workerCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(workerListCmd)
+	enableWebFlag(workerListCmd)
 	workerCmd.AddCommand(workerListCmd)
 }
 
 func workerListCmdRun(_ *cobra.Command, _ []string) error {
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetWorkerListURL(ctx.Coordinate.ServerURL)
+		return openWebUI(url)
+	}
+
 	var workers []*goclientnew.ExtendedBridgeWorker
 	var err error
 

@@ -23,6 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"
 	"github.com/olekukonko/tablewriter"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
@@ -367,6 +368,163 @@ func annotationsToString(annotations map[string]string) string {
 	return mapToString(annotations)
 }
 
+func permissionsToString(permissions *goclientnew.Permissions) string {
+	if permissions == nil || len(*permissions) == 0 {
+		return ""
+	}
+	var parts []string
+	for actionCategory, subjects := range *permissions {
+		if len(subjects.UserIDs) > 0 {
+			userIDs := make([]string, 0, len(subjects.UserIDs))
+			for userID := range subjects.UserIDs {
+				userIDs = append(userIDs, userID)
+			}
+			parts = append(parts, fmt.Sprintf("%s: [%s]", actionCategory, strings.Join(userIDs, ", ")))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, "; ")
+}
+
+// parsePermissions parses permission strings in the format "Action:UserIDOrUsername" and populates a Permissions object.
+// Use "-Action:UserIDOrUsername" to remove a user from a permission (the user is removed from the UserIDs map).
+func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissions) error {
+	if len(permissionStrs) == 0 {
+		return nil
+	}
+
+	if *permissions == nil {
+		*permissions = make(goclientnew.Permissions)
+	}
+
+	for _, permStr := range permissionStrs {
+		// Check for removal prefix
+		isRemoval := strings.HasPrefix(permStr, "-")
+		if isRemoval {
+			permStr = permStr[1:] // Strip the "-" prefix
+		}
+
+		parts := strings.SplitN(permStr, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid permission format %q, expected Action:UserIDOrUsername or -Action:UserIDOrUsername", permStr)
+		}
+
+		action := parts[0]
+		userIdentifier := parts[1]
+
+		// Try to parse as UUID first
+		userID, err := uuid.Parse(userIdentifier)
+		if err != nil {
+			// Not a UUID, try to look up by username
+			user, err := apiGetUserFromUsername(userIdentifier)
+			if err != nil {
+				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
+			}
+			userID = user.UserID
+		}
+
+		// Get or create the subjects for this action
+		subjects, ok := (*permissions)[action]
+		if !ok {
+			subjects = goclientnew.Subjects{}
+		}
+
+		// Initialize the UserIDs map if needed
+		if subjects.UserIDs == nil {
+			subjects.UserIDs = make(map[string]bool)
+		}
+
+		if isRemoval {
+			// Remove the user ID from the map
+			delete(subjects.UserIDs, userID.String())
+		} else {
+			// Add the user ID to the map
+			subjects.UserIDs[userID.String()] = true
+		}
+
+		(*permissions)[action] = subjects
+	}
+
+	return nil
+}
+
+// parsePermissionsIntoPatchMap parses permission strings in the format "Action:UserIDOrUsername"
+// and adds them to a generic map structure for use in JSON patches.
+// Use "-Action:UserIDOrUsername" to remove a user from a permission (sets null in the patch for JSON Merge Patch).
+// This is used by the patch operations where we're building a generic map[string]interface{}.
+func parsePermissionsIntoPatchMap(permissionStrs []string, permissionsMap map[string]interface{}) error {
+	if len(permissionStrs) == 0 {
+		return nil
+	}
+
+	for _, permStr := range permissionStrs {
+		// Check for removal prefix
+		isRemoval := strings.HasPrefix(permStr, "-")
+		if isRemoval {
+			permStr = permStr[1:] // Strip the "-" prefix
+		}
+
+		parts := strings.SplitN(permStr, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid permission format %q, expected Action:UserIDOrUsername or -Action:UserIDOrUsername", permStr)
+		}
+
+		action := parts[0]
+		userIdentifier := parts[1]
+
+		// Try to parse as UUID first
+		userID, err := uuid.Parse(userIdentifier)
+		if err != nil {
+			// Not a UUID, try to look up by username
+			user, err := apiGetUserFromUsername(userIdentifier)
+			if err != nil {
+				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
+			}
+			userID = user.UserID
+		}
+
+		// Get or create the subjects for this action
+		var subjects map[string]interface{}
+		if existingSubjects, ok := permissionsMap[action]; ok {
+			if subjectsMap, ok := existingSubjects.(map[string]interface{}); ok {
+				subjects = subjectsMap
+			} else {
+				subjects = make(map[string]interface{})
+			}
+		} else {
+			subjects = make(map[string]interface{})
+		}
+
+		// Get or create the UserIDs map
+		var userIDs map[string]interface{}
+		if existingUserIDs, ok := subjects["UserIDs"]; ok {
+			if userIDsMap, ok := existingUserIDs.(map[string]interface{}); ok {
+				userIDs = userIDsMap
+			} else {
+				userIDs = make(map[string]interface{})
+			}
+		} else {
+			userIDs = make(map[string]interface{})
+		}
+
+		userIDStr := userID.String()
+		if isRemoval {
+			// Mark for removal by setting to null in JSON Merge Patch
+			userIDs[userIDStr] = nil
+		} else {
+			// Add the user ID to the map
+			userIDs[userIDStr] = true
+		}
+
+		subjects["UserIDs"] = userIDs
+		permissionsMap[action] = subjects
+	}
+
+	return nil
+}
+
 func uuidPtrToString(uuidPtr *goclientnew.UUID) string {
 	if uuidPtr != nil && *uuidPtr != uuid.Nil {
 		return uuidPtr.String()
@@ -493,6 +651,7 @@ var names = false
 var selectFields = ""
 var debug = false
 var noheader = false
+var webFlag = false
 var wait = true
 var timeout string
 var label []string
@@ -607,6 +766,18 @@ func enableYqFlag(cmd *cobra.Command) {
 
 func enableSelectFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&selectFields, "select", "", "Comma-separated list of fields to retrieve and display. Entity IDs and Slug are always included. Example: \"DisplayName,CreatedAt,Labels\"")
+}
+
+func enableWebFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&webFlag, "web", false, "Open in web UI instead of executing")
+}
+
+func openWebUI(url string) error {
+	if err := open.Start(url); err != nil {
+		return fmt.Errorf("failed to open browser: %w", err)
+	}
+	tprint("Opened in web UI: %s", url)
+	return nil
 }
 
 func enableWhereFlag(cmd *cobra.Command) {

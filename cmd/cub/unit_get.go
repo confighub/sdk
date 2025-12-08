@@ -85,6 +85,7 @@ var liveStateOnly bool
 
 func init() {
 	addStandardGetFlags(unitGetCmd)
+	enableWebFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	unitGetCmd.Flags().BoolVar(&liveStateOnly, "live-state-only", false, "show live state without other response details")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
@@ -95,6 +96,12 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 	unitDetails, err := apiGetExtendedUnitFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
+	}
+
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetUnitDetailURL(ctx.Coordinate.ServerURL, selectedSpaceID, unitDetails.Unit.UnitID.String())
+		return openWebUI(url)
 	}
 
 	displayGetResults(unitDetails, displayExtendedUnitDetails)

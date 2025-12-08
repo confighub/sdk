@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/bridge-worker/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/v3/mem"
 	"golang.org/x/net/http2"
 )
@@ -86,7 +88,7 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 		panic("unsupported URL scheme: " + parsedURL.Scheme)
 	}
 
-	return &workerClient{
+	client := &workerClient{
 		serverURL:      serverURL,
 		workerID:       workerID,
 		workerSecret:   workerSecret,
@@ -97,6 +99,68 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 		watcherManager: NewWatcherManager(10, 50), // 10 workers, queue size 50
 		unitQueues:     NewUnitQueueManager(),
 	}
+
+	// Fetch /api/info to get the WorkerPort and update serverURL
+	if err := client.fetchAndApplyWorkerPort(); err != nil {
+		log.Printf("[WARN] Failed to fetch worker port from /api/info: %v. Using provided URL as-is: %s", err, serverURL)
+	}
+
+	return client
+}
+
+// fetchAndApplyWorkerPort fetches /api/info from the server and updates serverURL with the WorkerPort
+func (c *workerClient) fetchAndApplyWorkerPort() error {
+	parsedURL, err := url.Parse(c.serverURL)
+	if err != nil {
+		return fmt.Errorf("invalid server URL: %w", err)
+	}
+
+	// Fetch /api/info from the CONFIGHUB_URL to get the correct WorkerPort
+	// CONFIGHUB_URL should be the main server URL (e.g., http://localhost:9090)
+	confighubURL := os.Getenv("CONFIGHUB_URL")
+	if confighubURL == "" {
+		// Fallback to using serverURL if CONFIGHUB_URL not set
+		confighubURL = c.serverURL
+	}
+
+	log.Printf("[DEBUG] Fetching /api/info from: %s/api/info", confighubURL)
+
+	// Create an unauthenticated API client to fetch /api/info (public endpoint)
+	// Use the generated goclient-new instead of manual HTTP requests
+	apiClient, err := goclientnew.NewClientWithResponses(confighubURL + "/api")
+	if err != nil {
+		return fmt.Errorf("failed to create API client: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Use the generated client to fetch /api/info
+	resp, err := apiClient.ApiInfoWithResponse(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch /api/info: %w", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("server returned status %d", resp.StatusCode())
+	}
+
+	if resp.JSON200 == nil {
+		return fmt.Errorf("unexpected response format from /api/info")
+	}
+
+	if resp.JSON200.WorkerPort == "" {
+		return fmt.Errorf("WorkerPort not specified in /api/info response")
+	}
+
+	// Update serverURL to use the WorkerPort
+	parsedURL.Host = parsedURL.Hostname() + ":" + resp.JSON200.WorkerPort
+	newServerURL := parsedURL.String()
+
+	log.Printf("[INFO] Fetched worker port from /api/info: %s. Updated connection URL from %s to %s", resp.JSON200.WorkerPort, c.serverURL, newServerURL)
+	c.serverURL = newServerURL
+
+	return nil
 }
 
 // Start initializes the worker client and establishes a persistent connection to the ConfigHub server.
@@ -234,7 +298,7 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	log.Printf("[DEBUG] Opening event stream to URL: %s", eventUrl)
 
 	// TODO accumulate from all supported workers
-	bridgeWorkerInfo := c.bridgeWorker.Info(api.InfoOptions{Slug: c.workerSlug})
+	bridgeWorkerInfo := c.bridgeWorker.Info(api.InfoOptions{WorkerSlug: c.workerSlug})
 	functionWorkerInfo := c.functionWorker.Info()
 
 	workerInfo := api.WorkerInfo{
@@ -450,16 +514,78 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			return
 		}
 
+		// Intercept Cancel action to process immediately, bypassing the queue
+		// Cancel is special - we don't send a result for the Cancel action itself,
+		// only update the status of the cancelled operation
+		if op.Action == api.ActionCancel {
+			log.Printf("📥 Received CANCEL command for operation %s (Bypassing queue)", op.Payload.QueuedOperationID)
+
+			// Look up the running operation BEFORE cancelling to get its info (action type, startedAt, etc.)
+			runningOp := c.unitQueues.GetRunningOperationByID(op.Payload.QueuedOperationID)
+
+			success := c.unitQueues.CancelOperation(op.Payload.QueuedOperationID)
+
+			if !success {
+				log.Printf("[WARN] Cancel failed: operation %s not found or already completed", op.Payload.QueuedOperationID)
+			}
+
+			// Send cancelled status for the ORIGINAL operation only
+			// This marks the Apply/Destroy operation as Canceled so the CLI knows it's done
+			if runningOp != nil && success {
+				// Try atomic transition to Canceled status
+				if runningOp.TryTransitionToTerminal(api.ActionStatusCanceled) {
+					c.sendCancelledStatus(runningOp)
+				} else {
+					log.Printf("⚠️ Operation %s already terminal, skipping cancel status",
+						runningOp.operationID)
+				}
+			}
+			return
+		}
+
 		log.Printf("[INFO] Queueing bridge worker event: Unit=%s, Action=%s", op.Payload.UnitID.String(), op.Action)
+
+		// Override check BEFORE queueing (for Apply/Destroy only)
+		// This cancels any running same-type operation immediately, before the new operation enters the queue.
+		// Critical: This must happen before QueueBridgeEvent because the queue is serial per unit,
+		// so the new operation would be blocked waiting for the old one to complete otherwise.
+		if op.Action == api.ActionApply || op.Action == api.ActionDestroy {
+			if overridden, ok := c.unitQueues.GetAndCancelRunningOperation(op.Payload.UnitID, op.Action); ok {
+				// Try atomic transition to Aborted status
+				if overridden.TryTransitionToTerminal(api.ActionStatusAborted) {
+					log.Printf("🔄 OVERRIDE: Successfully marked operation %s as Aborted",
+						overridden.operationID)
+					c.sendOverriddenStatus(overridden, op.Payload.QueuedOperationID)
+				} else {
+					log.Printf("⚠️ OVERRIDE: Operation %s already terminal, skipping status",
+						overridden.operationID)
+				}
+			}
+		}
+
 		// Queue the bridge worker event for async processing
 		c.unitQueues.QueueBridgeEvent(ctx, op, func(event api.BridgeWorkerEventRequest) {
 			// Track this operation
 			c.operationsWg.Add(1)
 			defer c.operationsWg.Done()
 
-			// Use WithoutCancel to create an operation context that won't be cancelled when connection closes
-			// This allows ongoing operations to complete gracefully during shutdown
-			operationCtx := context.WithoutCancel(ctx)
+			// Create cancellable context for this operation
+			// WithoutCancel first to survive connection drops, then WithCancel for explicit cancellation
+			operationCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+
+			// Register the cancel function so operation can be canceled later
+			operationID := event.Payload.QueuedOperationID
+			c.unitQueues.RegisterCancelFunc(operationID, cancel)
+			defer c.unitQueues.UnregisterCancelFunc(operationID)
+
+			// Register this operation as running (for Apply/Destroy only)
+			// Note: The override check is done BEFORE queueing to ensure immediate cancellation
+			if event.Action == api.ActionApply || event.Action == api.ActionDestroy {
+				c.unitQueues.SetRunningOperation(event.Payload.UnitID, event.Payload.SpaceID,
+					operationID, event.Action, event.Payload.RevisionNum)
+				defer c.unitQueues.ClearRunningOperation(event.Payload.UnitID, event.Action, operationID)
+			}
+
 			var workerContext = &defaultBridgeWorkerContext{
 				ctx:       operationCtx,
 				serverURL: c.serverURL,
@@ -467,7 +593,11 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			}
 			err := c.processBridgeCommand(workerContext, event)
 			if err != nil {
-				log.Printf("[ERROR] Bridge command processing failed for Unit=%s, Action=%s: %v", event.Payload.UnitID.String(), event.Action, err)
+				if errors.Is(err, context.Canceled) {
+					log.Printf("[INFO] Operation %s was canceled for Unit=%s, Action=%s", operationID, event.Payload.UnitID.String(), event.Action)
+				} else {
+					log.Printf("[ERROR] Bridge command processing failed for Unit=%s, Action=%s: %v", event.Payload.UnitID.String(), event.Action, err)
+				}
 			} else {
 				log.Printf("[INFO] Bridge command completed successfully for Unit=%s, Action=%s", event.Payload.UnitID.String(), event.Action)
 			}
@@ -481,6 +611,39 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			return
 		}
 
+		// Intercept Cancel action to process immediately, bypassing the queue
+		if op.Action == api.ActionCancel {
+			log.Printf("📥 Received CANCEL command for function operation %s (Bypassing queue)", op.Payload.QueuedOperationID)
+			
+			success := c.unitQueues.CancelOperation(op.Payload.QueuedOperationID)
+			
+			// Send acknowledgment
+			startedAt := time.Now()
+			terminatedAt := startedAt
+			status := api.ActionStatusCompleted
+			message := "Operation cancelled"
+			if !success {
+				status = api.ActionStatusFailed
+				message = "Operation not found or already completed"
+			}
+	
+			result := &api.ActionResult{
+				UnitID:            op.Payload.InvocationRequest.UnitID,
+				SpaceID:           op.Payload.InvocationRequest.SpaceID,
+				QueuedOperationID: op.Payload.QueuedOperationID,
+				ActionResultBaseMeta: api.ActionResultBaseMeta{
+					Action:       api.ActionCancel,
+					Result:       api.ActionResultNone,
+					Status:       status,
+					Message:      message,
+					StartedAt:    startedAt,
+					TerminatedAt: &terminatedAt,
+				},
+			}
+			c.sendResult(result)
+			return
+		}
+
 		log.Printf("[INFO] Queueing function worker event: Unit=%s, Action=%s", op.Payload.InvocationRequest.UnitID.String(), op.Action)
 		// Queue the function worker event for async processing
 		c.unitQueues.QueueFunctionEvent(ctx, op, func(event api.FunctionWorkerEventRequest) {
@@ -488,9 +651,15 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			c.operationsWg.Add(1)
 			defer c.operationsWg.Done()
 
-			// Use WithoutCancel to create an operation context that won't be cancelled when connection closes
-			// This allows ongoing operations to complete gracefully during shutdown
-			operationCtx := context.WithoutCancel(ctx)
+			// Create cancellable context for this operation
+			// WithoutCancel first to survive connection drops, then WithCancel for explicit cancellation
+			operationCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+
+			// Register the cancel function so operation can be canceled later
+			operationID := event.Payload.QueuedOperationID
+			c.unitQueues.RegisterCancelFunc(operationID, cancel)
+			defer c.unitQueues.UnregisterCancelFunc(operationID)
+
 			var workerContext = &defaultFunctionWorkerContext{
 				ctx:       operationCtx,
 				serverURL: c.serverURL,
@@ -498,7 +667,11 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			}
 			err := c.processFunctionCommand(workerContext, event)
 			if err != nil {
-				log.Printf("[ERROR] Function command processing failed for Unit=%s, Action=%s: %v", event.Payload.InvocationRequest.UnitID.String(), event.Action, err)
+				if errors.Is(err, context.Canceled) {
+					log.Printf("[INFO] Operation %s was canceled for Unit=%s, Action=%s", operationID, event.Payload.InvocationRequest.UnitID.String(), event.Action)
+				} else {
+					log.Printf("[ERROR] Function command processing failed for Unit=%s, Action=%s: %v", event.Payload.InvocationRequest.UnitID.String(), event.Action, err)
+				}
 			} else {
 				log.Printf("[INFO] Function command completed successfully for Unit=%s, Action=%s", event.Payload.InvocationRequest.UnitID.String(), event.Action)
 			}
@@ -533,6 +706,52 @@ func (c *workerClient) getBridgeWorkerSlug() error {
 
 	c.workerSlug = info.Slug
 	return nil
+}
+
+// sendOverriddenStatus sends an aborted status for an operation that was overridden by a newer one.
+// This is called when a new Apply/Destroy operation arrives and supersedes an existing same-type operation.
+func (c *workerClient) sendOverriddenStatus(overridden *runningOperation, newOperationID uuid.UUID) {
+	terminatedAt := time.Now()
+	result := &api.ActionResult{
+		UnitID:            overridden.unitID,
+		SpaceID:           overridden.spaceID,
+		QueuedOperationID: overridden.operationID,
+		ActionResultBaseMeta: api.ActionResultBaseMeta{
+			RevisionNum:  overridden.revisionNum,
+			Action:       overridden.action,
+			Result:       api.ActionResultNone,
+			Status:       api.ActionStatusAborted,
+			Message:      fmt.Sprintf("Operation overridden by newer operation %s", newOperationID),
+			StartedAt:    overridden.startedAt,
+			TerminatedAt: &terminatedAt,
+		},
+	}
+	if err := c.sendResult(result); err != nil {
+		log.Printf("[ERROR] Failed to send overridden status for operation %s: %v", overridden.operationID, err)
+	}
+}
+
+// sendCancelledStatus sends a cancelled status for an operation that was explicitly cancelled.
+// This marks the original Apply/Destroy operation as Canceled so the CLI knows it's done.
+func (c *workerClient) sendCancelledStatus(cancelled *runningOperation) {
+	terminatedAt := time.Now()
+	result := &api.ActionResult{
+		UnitID:            cancelled.unitID,
+		SpaceID:           cancelled.spaceID,
+		QueuedOperationID: cancelled.operationID,
+		ActionResultBaseMeta: api.ActionResultBaseMeta{
+			RevisionNum:  cancelled.revisionNum,
+			Action:       cancelled.action,
+			Result:       api.ActionResultNone,
+			Status:       api.ActionStatusCanceled,
+			Message:      "Operation cancelled by user request",
+			StartedAt:    cancelled.startedAt,
+			TerminatedAt: &terminatedAt,
+		},
+	}
+	if err := c.sendResult(result); err != nil {
+		log.Printf("[ERROR] Failed to send cancelled status for operation %s: %v", cancelled.operationID, err)
+	}
 }
 
 // sendResult sends an action result to the ConfigHub server with automatic retry on failure.

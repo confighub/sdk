@@ -45,6 +45,7 @@ Examples:
 var (
 	targetPatch       bool
 	targetIdentifiers []string
+	targetUpdatePermissions []string
 )
 
 func init() {
@@ -53,6 +54,7 @@ func init() {
 	enableWhereFlag(targetUpdateCmd)
 	enableFilterFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringSliceVar(&targetIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	targetUpdateCmd.Flags().StringSliceVar(&targetUpdatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
 
@@ -143,6 +145,13 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Parse and set permissions
+	err = parsePermissions(targetUpdatePermissions, currentTarget.Target.Permissions)
+	if err != nil {
+		return err
+	}
+
 	// If this was set from stdin, it will be overridden
 	currentTarget.Target.SpaceID = spaceID
 
@@ -166,7 +175,7 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for target)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, targetUpdatePermissions)
 	if err != nil {
 		return err
 	}
@@ -209,7 +218,7 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for target)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, targetUpdatePermissions)
 	if err != nil {
 		return err
 	}

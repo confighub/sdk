@@ -287,6 +287,15 @@
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
                     "nullable": true
                   },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -506,6 +515,15 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
                     "nullable": true
                   },
                   "Slug": {
@@ -940,6 +958,15 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
                     "nullable": true
                   },
                   "Slug": {
@@ -6520,6 +6547,15 @@
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
                     "nullable": true
                   },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -7311,6 +7347,15 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
                     "nullable": true
                   },
                   "Slug": {
@@ -12384,7 +12429,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12777,6 +12822,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "ProviderType": {
                     "type": "string",
                     "description": "",
@@ -12815,7 +12869,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -12936,7 +12990,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -19000,6 +19054,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "Permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "ProviderType": {
                     "type": "string",
                     "description": "",
@@ -21187,6 +21250,162 @@
         }
       }
     },
+    "/unit/cancel": {
+      "post": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Bulk cancel unit operations",
+        "description": "Cancels pending or in-progress operations for multiple units based on filter criteria",
+        "operationId": "BulkCancelUnits",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.\n\nFinding all units created by cloning can be done using the expression `UpstreamRevisionNum \u003e 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum \u003e LiveRevisionNum`.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the Unit list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (Unit).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for Unit include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitActionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Multi-Status: Mixed success and failure results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitActionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unable to cancel unit operation(s)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/unit/destroy": {
       "post": {
         "tags": [
@@ -22760,7 +22979,8 @@
           "Progressing",
           "Completed",
           "Failed",
-          "Canceled"
+          "Canceled",
+          "Aborted"
         ],
         "type": "string"
       },
@@ -22939,6 +23159,9 @@
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/Permissions"
           },
           "ProvidedInfo": {
             "$ref": "#/components/schemas/WorkerInfo"
@@ -24207,6 +24430,16 @@
                 "$ref": "#/components/schemas/FunctionSignature"
               }
             },
+            "description": "Signatures of supported functions by ToolchainType",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToolchainTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Supported ToolchainTypes",
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           }
@@ -24862,6 +25095,12 @@
         },
         "description": "a User given membership on the Organization"
       },
+      "Permissions": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/Subjects"
+        }
+      },
       "QueuedOperation": {
         "type": "object",
         "properties": {
@@ -24932,6 +25171,7 @@
               "Completed",
               "Failed",
               "Aborted",
+              "Canceled",
               "pending",
               "delivered"
             ],
@@ -25288,6 +25528,9 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/Permissions"
+          },
           "Slug": {
             "type": "string",
             "description": "Unique URL-safe identifier for the entity.",
@@ -25349,6 +25592,18 @@
           }
         },
         "description": "Error response details."
+      },
+      "Subjects": {
+        "type": "object",
+        "properties": {
+          "UserIDs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "Tag": {
         "required": [
@@ -25467,9 +25722,9 @@
       "Target": {
         "required": [
           "Slug",
+          "BridgeWorkerID",
           "ToolchainType",
-          "ProviderType",
-          "BridgeWorkerID"
+          "ProviderType"
         ],
         "type": "object",
         "properties": {
@@ -25542,9 +25797,12 @@
             "description": "Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.\n\nFor ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)\nThe Parameters object may contain the following fields:\n- \"KubeContext\" (string): The name of the Kubernetes context (from \"~/.kube/config\") to use. (Not typically needed if running in-cluster).\n- \"WaitTimeout\" (string): A duration string (e.g., \"5m\", \"2m30s\") specifying how long to wait for resources to reach a ready state. Defaults to \"2m0s\".\n",
             "x-go-type-skip-optional-pointer": true
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/Permissions"
+          },
           "ProviderType": {
             "type": "string",
-            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\" or \"AWS\".",
+            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\" or \"OpenTofu/AWS\".",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -25587,7 +25845,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
+        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
       },
       "TargetCreateOrUpdateResponse": {
         "type": "object",
@@ -26103,6 +26361,7 @@
               "Completed",
               "Failed",
               "Aborted",
+              "Canceled",
               "pending",
               "delivered"
             ],

@@ -36,6 +36,7 @@ var fromTarget string
 var fromTargetSpace string
 var providerType string
 var toolchainType string
+var targetCreatePermissions []string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
@@ -44,6 +45,7 @@ func init() {
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
+	targetCreateCmd.Flags().StringSliceVar(&targetCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	targetCmd.AddCommand(targetCreateCmd)
 }
 
@@ -106,6 +108,13 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Parse and set permissions
+	err = parsePermissions(targetCreatePermissions, newTarget.Permissions)
+	if err != nil {
+		return err
+	}
+
 	newTarget.SpaceID = spaceID
 	newTarget.Slug = makeSlug(args[0])
 	if newTarget.DisplayName == "" {
@@ -151,14 +160,14 @@ func validateToolchainAndProvider(toolchainType string, providerType string) err
 	}
 	// Technically we need to allow any provider type that a bridge implements
 	// if providerType != string(api.ProviderKubernetes) &&
-	// 	providerType != string(api.ProviderAWS) &&
+	// 	providerType != string(api.ProviderOpenTofuAWS) &&
 	// 	providerType != string(api.ProviderFluxOCIWriter) &&
 	// 	providerType != string(api.ProviderConfigMap) {
 	// 	// NOTE: FluxOCI deliberately not mentioned
-	// 	return errors.New("provider must be one of: Kubernetes, AWS, ConfigMap")
+	// 	return errors.New("provider must be one of: Kubernetes, OpenTofu/AWS, ConfigMap")
 	// }
-	if providerType == string(api.ProviderAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
-		return errors.New("provider AWS requires toolchain OpenTofu/HCL")
+	if providerType == string(api.ProviderOpenTofuAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
+		return errors.New("provider OpenTofu/AWS requires toolchain OpenTofu/HCL")
 	}
 	if (providerType == string(api.ProviderKubernetes) || providerType == string(api.ProviderFluxOCIWriter)) &&
 		toolchainType != string(workerapi.ToolchainKubernetesYAML) {

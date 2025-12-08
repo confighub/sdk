@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,7 @@ var unitEditCmd = &cobra.Command{
 
 func init() {
 	enableWaitFlag(unitEditCmd)
+	enableWebFlag(unitEditCmd)
 	unitEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
 	unitCmd.AddCommand(unitEditCmd)
 }
@@ -36,6 +38,12 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 	currentUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
+	}
+
+	if webFlag {
+		ctx := contextManager.ActiveContext()
+		url := cubapi.GetUnitEditURL(ctx.Coordinate.ServerURL, currentUnit.SpaceID.String(), currentUnit.UnitID.String())
+		return openWebUI(url)
 	}
 
 	spaceID := currentUnit.SpaceID

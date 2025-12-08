@@ -135,6 +135,19 @@ type KubernetesWorkerParams struct {
 	RetryMaxElapsedTime  string  `json:",omitempty"` // Max total time for retries (e.g., "30m")
 }
 
+func generateLegacyKubernetesTargetName(workerSlug string, suffix string) string {
+	// provider is Kubernetes
+	// toolchain is Kubernetes/YAML
+
+	// Legacy names use a short prefix
+
+	name := "k8s-" + workerSlug
+	if suffix != "" {
+		name += "-" + cubkit.ConfigHubResourceProvider.NormalizeName(suffix)
+	}
+	return name
+}
+
 // getResourcesFromImportSource determines the appropriate resource fetching method
 // based on the provided ExtraParams and returns the resources
 func (w *KubernetesBridgeWorker) getResourcesFromImportSource(k8sclient KubernetesClient, importRequest *goclientnew.ImportRequest) ([]*unstructured.Unstructured, error) {
@@ -185,55 +198,71 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	if cfg, err := rest.InClusterConfig(); err == nil {
 		w.cfg = cfg
 		log.Log.Info("Running inside Kubernetes cluster, using in-cluster configuration")
+
+		defaultName := false
 		targetName := os.Getenv("CONFIGHUB_IN_CLUSTER_TARGET_NAME")
 		if targetName == "" {
 			// TODO: Deprecated. Remove this eventually.
 			targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
-			if targetName == "" {
-				targetName = opts.Slug
-			}
 		}
 
-		// Append toolchain suffix if not Kubernetes/YAML to make target unique
-		if toolchain != workerapi.ToolchainKubernetesYAML {
-			targetName = targetName + "-" + cubkit.ConfigHubResourceProvider.NormalizeName(string(toolchain))
+		// Ensure target is unique
+		if targetName == "" || toolchain != workerapi.ToolchainKubernetesYAML {
+			defaultName = true
+			targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, "cluster")
+		}
+
+		targets := []api.Target{
+			{
+				Name: targetName,
+				Params: KubernetesWorkerParams{
+					WaitTimeout: "10m0s",
+				}.ToMap(),
+			},
+		}
+		// Add legacy target for backward compatibility
+		if defaultName && toolchain == workerapi.ToolchainKubernetesYAML {
+			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, "")
+			targets = append(targets, api.Target{
+				Name: legacyTargetName,
+				Params: KubernetesWorkerParams{
+					WaitTimeout: "10m0s",
+				}.ToMap(),
+			})
 		}
 
 		return api.BridgeWorkerInfo{
 			SupportedConfigTypes: []*api.ConfigType{
 				{
-					ToolchainType: toolchain,
-					ProviderType:  provider,
-					AvailableTargets: []api.Target{
-						{
-							Name: targetName,
-							Params: KubernetesWorkerParams{
-								WaitTimeout: "10m0s",
-							}.ToMap(),
-						},
-					},
+					ToolchainType:    toolchain,
+					ProviderType:     provider,
+					AvailableTargets: targets,
 				},
 			},
 		}
 	}
 
 	// Create targets for each context
-	// Append toolchain suffix if not Kubernetes/YAML to make targets unique
-	var targetNameSuffix string
-	if toolchain != workerapi.ToolchainKubernetesYAML {
-		targetNameSuffix = "-" + cubkit.ConfigHubResourceProvider.NormalizeName(string(toolchain))
-	}
-
+	// Ensure targets are unique
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
-		normalizedContext := cubkit.ConfigHubResourceProvider.NormalizeName(contextName)
 		targets = append(targets, api.Target{
-			Name: fmt.Sprintf("%s-%s%s", opts.Slug, normalizedContext, targetNameSuffix),
+			Name: api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: "10m0s",
 			}.ToMap(),
 		})
+		// Add legacy target for backward compatibility
+		if toolchain == workerapi.ToolchainKubernetesYAML {
+			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, contextName)
+			targets = append(targets, api.Target{
+				Name: legacyTargetName,
+				Params: KubernetesWorkerParams{
+					WaitTimeout: "10m0s",
+				}.ToMap(),
+			})
+		}
 	}
 
 	return api.BridgeWorkerInfo{
@@ -285,6 +314,10 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 
 	result := applier.Apply(wctx.Context(), objects)
 	if result.Error != nil {
+		// Skip sending Failed status for interrupted operations - status already sent
+		if errors.Is(result.Error, ErrOperationInterrupted) {
+			return nil
+		}
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultApplyFailed,
@@ -436,6 +469,26 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 	// Default behavior is to wait 2m0s
 	waitResult := applier.WaitForApply(wctx.Context(), objects, timeout)
 	if waitResult.Error != nil {
+		// Check if cancelled first
+		if errors.Is(waitResult.Error, context.Canceled) {
+			log.Log.Info("⚠️ Apply wait cancelled, not sending failure status")
+			return nil
+		}
+
+		// Skip sending Failed status for interrupted operations - status already sent
+		if errors.Is(waitResult.Error, ErrOperationInterrupted) {
+			return nil
+		}
+
+		// Check context before sending failure
+		select {
+		case <-wctx.Context().Done():
+			log.Log.Info("⚠️ Apply operation was cancelled/overridden, not sending failure status")
+			return nil // Operation terminated, don't send failure
+		default:
+			// Continue to failure handling
+		}
+
 		log.Log.Error(waitResult.Error, "Failed to wait for resources")
 		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
 			// Use exponential backoff library for retry logic
@@ -493,6 +546,15 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 			log.Log.Error(err, "⚠️ Failed to update LiveState with inventory, using raw YAML")
 			liveStateData = []byte(yamlData)
 		}
+	}
+
+	// Check if operation was cancelled/overridden while waiting
+	select {
+	case <-wctx.Context().Done():
+		log.Log.Info("⚠️ Apply operation was cancelled/overridden, skipping completion status")
+		return nil
+	default:
+		// Continue to send completed status
 	}
 
 	status := newActionResult(
@@ -987,6 +1049,10 @@ func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload a
 
 	result := applier.Destroy(wctx.Context(), objects)
 	if result.Error != nil {
+		// Skip sending Failed status for interrupted operations - status already sent
+		if errors.Is(result.Error, ErrOperationInterrupted) {
+			return nil
+		}
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyFailed,
@@ -1052,6 +1118,26 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 
 	waitResult := applier.WaitForDestroy(wctx.Context(), objects, timeout)
 	if waitResult.Error != nil {
+		// Check if cancelled first
+		if errors.Is(waitResult.Error, context.Canceled) {
+			log.Log.Info("⚠️ Destroy wait cancelled, not sending failure status")
+			return nil
+		}
+
+		// Skip sending Failed status for interrupted operations - status already sent
+		if errors.Is(waitResult.Error, ErrOperationInterrupted) {
+			return nil
+		}
+
+		// Check context before sending failure
+		select {
+		case <-wctx.Context().Done():
+			log.Log.Info("⚠️ Destroy operation was cancelled/overridden, not sending failure status")
+			return nil // Operation terminated, don't send failure
+		default:
+			// Continue to failure handling
+		}
+
 		log.Log.Error(waitResult.Error, "Failed to wait for resource termination")
 		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
 			// Use exponential backoff library for retry logic
@@ -1136,6 +1222,15 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 	log.Log.Info("📦 Destroy completed",
 		"deletedResources", changesetCount,
 		"remainingResources", len(waitResult.LiveObjects))
+
+	// Check if operation was cancelled/overridden while waiting
+	select {
+	case <-wctx.Context().Done():
+		log.Log.Info("⚠️ Destroy operation was cancelled/overridden, skipping completion status")
+		return nil
+	default:
+		// Continue to send completed status
+	}
 
 	result := newActionResult(
 		api.ActionStatusCompleted,

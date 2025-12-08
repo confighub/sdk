@@ -36,6 +36,7 @@ const (
 
 // Defines values for ActionStatusType.
 const (
+	ActionStatusTypeAborted     ActionStatusType = "Aborted"
 	ActionStatusTypeCanceled    ActionStatusType = "Canceled"
 	ActionStatusTypeCompleted   ActionStatusType = "Completed"
 	ActionStatusTypeFailed      ActionStatusType = "Failed"
@@ -68,6 +69,7 @@ const (
 // Defines values for QueuedOperationStatus.
 const (
 	QueuedOperationStatusAborted      QueuedOperationStatus = "Aborted"
+	QueuedOperationStatusCanceled     QueuedOperationStatus = "Canceled"
 	QueuedOperationStatusCompleted    QueuedOperationStatus = "Completed"
 	QueuedOperationStatusDelivered    QueuedOperationStatus = "Delivered"
 	QueuedOperationStatusDelivered1   QueuedOperationStatus = "delivered"
@@ -81,6 +83,7 @@ const (
 // Defines values for UnitActionStatus.
 const (
 	UnitActionStatusAborted      UnitActionStatus = "Aborted"
+	UnitActionStatusCanceled     UnitActionStatus = "Canceled"
 	UnitActionStatusCompleted    UnitActionStatus = "Completed"
 	UnitActionStatusDelivered    UnitActionStatus = "Delivered"
 	UnitActionStatusDelivered1   UnitActionStatus = "delivered"
@@ -205,6 +208,7 @@ type BridgeWorker struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	ProvidedInfo   *WorkerInfo        `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
 
 	// Secret Secret is a unique secret token for the bridge worker.
@@ -681,7 +685,7 @@ type ExtendedTarget struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 }
 
@@ -769,7 +773,7 @@ type ExtendedUnit struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -1060,7 +1064,11 @@ type FunctionSignature struct {
 
 // FunctionWorkerInfo defines model for FunctionWorkerInfo.
 type FunctionWorkerInfo struct {
+	// SupportedFunctions Signatures of supported functions by ToolchainType
 	SupportedFunctions map[string]map[string]FunctionSignature `json:"SupportedFunctions" yaml:"SupportedFunctions"`
+
+	// ToolchainTypes Supported ToolchainTypes
+	ToolchainTypes []string `json:"ToolchainTypes" yaml:"ToolchainTypes"`
 }
 
 // ImportFilter defines model for ImportFilter.
@@ -1362,6 +1370,9 @@ type OrganizationMember struct {
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
 }
 
+// Permissions defines model for Permissions.
+type Permissions map[string]Subjects
+
 // QueuedOperation UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
 // If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
 // If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
@@ -1562,6 +1573,7 @@ type Space struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1627,6 +1639,11 @@ type StandardErrorResponse struct {
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 }
 
+// Subjects defines model for Subjects.
+type Subjects struct {
+	UserIDs map[string]bool `json:"UserIDs,omitempty" yaml:"UserIDs,omitempty"`
+}
+
 // Tag Defines a Tag that can be used to identify a set of Revisions across Units.
 type Tag struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1678,7 +1695,7 @@ type TagCreateOrUpdateResponse struct {
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
 }
 
-// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 type Target struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -1713,9 +1730,10 @@ type Target struct {
 	// The Parameters object may contain the following fields:
 	// - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
 	// - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
-	Parameters string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Parameters  string       `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "AWS".
+	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS".
 	ProviderType string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
@@ -1741,7 +1759,7 @@ type Target struct {
 type TargetCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 }
 
@@ -2344,7 +2362,8 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -2440,7 +2459,8 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -2691,7 +2711,8 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -4953,7 +4974,8 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -5088,7 +5110,8 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -5987,9 +6010,10 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
-	Parameters   *string             `json:"Parameters" yaml:"Parameters"`
-	ProviderType *string             `json:"ProviderType" yaml:"ProviderType"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters   *string                             `json:"Parameters" yaml:"Parameters"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -7529,9 +7553,10 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
-	Parameters   *string             `json:"Parameters" yaml:"Parameters"`
-	ProviderType *string             `json:"ProviderType" yaml:"ProviderType"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters   *string                             `json:"Parameters" yaml:"Parameters"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -8721,6 +8746,82 @@ type BulkApproveUnitsParams struct {
 
 	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+}
+
+// BulkCancelUnitsParams defines parameters for BulkCancelUnits.
+type BulkCancelUnitsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // BulkDestroyUnitsParams defines parameters for BulkDestroyUnits.

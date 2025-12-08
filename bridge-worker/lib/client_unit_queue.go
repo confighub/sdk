@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/google/uuid"
 )
 
 // QueueType represents the type of event queue
@@ -30,13 +32,87 @@ const (
 
 // UnitQueueManager manages queues for different units to ensure serialized operations
 type UnitQueueManager struct {
-	bridgeQueues   map[string]*unitQueue
-	functionQueues map[string]*unitQueue
-	mu             sync.RWMutex
-	wg             sync.WaitGroup
-	cleanupCtx     context.Context
-	cleanupCancel  context.CancelFunc
-	errorChannel   chan error
+	bridgeQueues      map[string]*unitQueue
+	functionQueues    map[string]*unitQueue
+	operationCancels  sync.Map // Key: uuid.UUID (QueuedOperationID), Value: context.CancelFunc
+	runningOperations sync.Map // Key: string (unitID:category), Value: *runningOperation
+	mu                sync.RWMutex
+	wg                sync.WaitGroup
+	cleanupCtx        context.Context
+	cleanupCancel     context.CancelFunc
+	errorChannel      chan error
+}
+
+// runningOperation tracks the currently running operation for a unit/category
+// Used for automatic override detection (Apply overrides Apply, Destroy overrides Destroy)
+type runningOperation struct {
+	operationID uuid.UUID
+	unitID      uuid.UUID
+	spaceID     uuid.UUID
+	action      api.ActionType
+	startedAt   time.Time
+	revisionNum int64
+
+	// Lifecycle state tracking using existing API status types.
+	// This prevents duplicate terminal status messages by ensuring only one
+	// final status can be sent per operation.
+	//
+	// Status mapping for state machine:
+	//   - api.ActionStatusNone      → Running (not yet terminal)
+	//   - api.ActionStatusAborted   → Overridden by newer operation
+	//   - api.ActionStatusCanceled  → Explicitly cancelled by user
+	//   - api.ActionStatusCompleted → Successfully completed
+	//   - api.ActionStatusFailed    → Failed with error
+	//
+	// Once transitioned to a terminal status (Aborted/Canceled/Completed/Failed),
+	// no further status transitions are allowed.
+	status   api.ActionStatusType
+	statusMu sync.RWMutex // Protects status transitions
+}
+
+// TryTransitionToTerminal attempts atomic transition from None (running) to a terminal status.
+//
+// Valid transitions:
+//   - ActionStatusNone → ActionStatusAborted   (operation overridden by newer one)
+//   - ActionStatusNone → ActionStatusCanceled  (operation cancelled by user)
+//   - ActionStatusNone → ActionStatusCompleted (operation completed successfully)
+//   - ActionStatusNone → ActionStatusFailed    (operation failed with error)
+//
+// Returns true if the transition succeeded, false if the operation is already in a terminal state.
+// This ensures only one terminal status can be sent per operation, preventing duplicates.
+func (op *runningOperation) TryTransitionToTerminal(newStatus api.ActionStatusType) bool {
+	op.statusMu.Lock()
+	defer op.statusMu.Unlock()
+
+	// Can only transition from None (running) to terminal statuses
+	if op.status != api.ActionStatusNone {
+		return false // Already terminal
+	}
+
+	// Validate terminal status
+	if newStatus != api.ActionStatusAborted &&
+		newStatus != api.ActionStatusCanceled &&
+		newStatus != api.ActionStatusCompleted &&
+		newStatus != api.ActionStatusFailed {
+		return false // Invalid status
+	}
+
+	op.status = newStatus
+	return true
+}
+
+// GetStatus returns current status (thread-safe)
+func (op *runningOperation) GetStatus() api.ActionStatusType {
+	op.statusMu.RLock()
+	defer op.statusMu.RUnlock()
+	return op.status
+}
+
+// IsTerminal returns whether operation is in terminal status
+func (op *runningOperation) IsTerminal() bool {
+	op.statusMu.RLock()
+	defer op.statusMu.RUnlock()
+	return op.status != api.ActionStatusNone
 }
 
 type unitQueue struct {
@@ -75,6 +151,15 @@ func (u *UnitQueueManager) Stop() {
 	if u.cleanupCancel != nil {
 		u.cleanupCancel()
 	}
+
+	// Cancel all tracked operations before shutdown
+	u.operationCancels.Range(func(key, value interface{}) bool {
+		operationID := key.(uuid.UUID)
+		cancel := value.(context.CancelFunc)
+		log.Printf("Cancelling operation %s during shutdown", operationID)
+		cancel()
+		return true
+	})
 
 	// First, cancel all queue contexts while holding the lock
 	u.mu.Lock()
@@ -353,4 +438,135 @@ func (u *UnitQueueManager) reportError(err error) {
 		// Error channel is full, log the error instead
 		log.Printf("[WARNING] Error channel full, dropping error report: %v", err)
 	}
+}
+
+// =============================================================================
+// Cancel Operations
+// =============================================================================
+// These methods support explicit cancellation via ActionCancel commands.
+// The cancel function is registered when an operation starts and called when
+// a Cancel command is received (bypassing the queue for immediate effect).
+
+// RegisterCancelFunc stores a cancel function for an operation
+// This allows the operation to be canceled later via CancelOperation
+func (u *UnitQueueManager) RegisterCancelFunc(operationID uuid.UUID, cancel context.CancelFunc) {
+	u.operationCancels.Store(operationID, cancel)
+	log.Printf("Registered cancel function for operation %s", operationID)
+}
+
+// UnregisterCancelFunc removes a cancel function when operation completes
+// This should be called via defer to ensure cleanup even if operation fails
+func (u *UnitQueueManager) UnregisterCancelFunc(operationID uuid.UUID) {
+	u.operationCancels.Delete(operationID)
+	log.Printf("Unregistered cancel function for operation %s", operationID)
+}
+
+// CancelOperation cancels a running operation by its ID
+// Returns true if operation was found and cancelled, false otherwise
+func (u *UnitQueueManager) CancelOperation(operationID uuid.UUID) bool {
+	if cancel, ok := u.operationCancels.Load(operationID); ok {
+		cancelFunc := cancel.(context.CancelFunc)
+		cancelFunc()
+		log.Printf("Cancelled operation %s", operationID)
+		return true
+	}
+	log.Printf("No active operation found for ID %s", operationID)
+	return false
+}
+
+// GetRunningOperationByID looks up a running operation by its operation ID
+// Returns the running operation info if found, nil otherwise
+// This iterates over all running operations since they are keyed by unitID:category
+func (u *UnitQueueManager) GetRunningOperationByID(operationID uuid.UUID) *runningOperation {
+	var found *runningOperation
+	u.runningOperations.Range(func(key, value interface{}) bool {
+		op := value.(*runningOperation)
+		if op.operationID == operationID {
+			found = op
+			return false // stop iteration
+		}
+		return true // continue iteration
+	})
+	return found
+}
+
+// =============================================================================
+// Override Operations
+// =============================================================================
+// These methods support automatic override for same-type operations.
+// When a new Apply/Destroy operation starts, it checks for and cancels any
+// running same-type operation (Apply overrides Apply, Destroy overrides Destroy).
+// Uses CancelOperation internally to trigger the actual cancellation.
+
+// makeRunningOperationKey creates a key for tracking running operations per unit per category
+// Returns empty string for non-overrideable actions
+// Note: Apply and WatchForApply share "apply" category (same operation flow)
+//
+//	Destroy and WatchForDestroy share "destroy" category (same operation flow)
+func makeRunningOperationKey(unitID uuid.UUID, action api.ActionType) string {
+	switch action {
+	case api.ActionApply, api.ActionDestroy:
+		return unitID.String() + ":" + strings.ToLower(string(action))
+	default:
+		return ""
+	}
+}
+
+// SetRunningOperation registers an operation as currently running for a unit/category
+// This enables automatic override detection for same-type operations
+func (u *UnitQueueManager) SetRunningOperation(unitID, spaceID, operationID uuid.UUID, action api.ActionType, revisionNum int64) {
+	key := makeRunningOperationKey(unitID, action)
+	if key == "" {
+		return // Not an overrideable action
+	}
+
+	op := &runningOperation{
+		operationID: operationID,
+		unitID:      unitID,
+		spaceID:     spaceID,
+		action:      action,
+		startedAt:   time.Now(),
+		revisionNum: revisionNum,
+		status:      api.ActionStatusNone, // Initialize to None (running/not terminal)
+	}
+	u.runningOperations.Store(key, op)
+	log.Printf("Registered running %s operation %s for unit %s (revision %d)", action, operationID, unitID, revisionNum)
+}
+
+// ClearRunningOperation removes the running operation tracking for a unit/category
+// Only removes if the operationID matches (prevents removing a replacement operation)
+func (u *UnitQueueManager) ClearRunningOperation(unitID uuid.UUID, action api.ActionType, operationID uuid.UUID) {
+	key := makeRunningOperationKey(unitID, action)
+	if key == "" {
+		return
+	}
+
+	// Only clear if this operation is still the current one
+	if val, ok := u.runningOperations.Load(key); ok {
+		running := val.(*runningOperation)
+		if running.operationID == operationID {
+			u.runningOperations.Delete(key)
+			log.Printf("Cleared running %s operation %s for unit %s", action, operationID, unitID)
+		}
+	}
+}
+
+// GetAndCancelRunningOperation checks for and cancels a running same-type operation
+// Returns the cancelled operation info and true if one was found and cancelled
+// Returns nil and false if no conflicting operation was running
+func (u *UnitQueueManager) GetAndCancelRunningOperation(unitID uuid.UUID, action api.ActionType) (*runningOperation, bool) {
+	key := makeRunningOperationKey(unitID, action)
+	if key == "" {
+		return nil, false // Not an overrideable action
+	}
+
+	if val, ok := u.runningOperations.Load(key); ok {
+		running := val.(*runningOperation)
+		// Cancel the running operation
+		if u.CancelOperation(running.operationID) {
+			log.Printf("🔄 Overriding running %s operation %s for unit %s", running.action, running.operationID, unitID)
+			return running, true
+		}
+	}
+	return nil, false
 }

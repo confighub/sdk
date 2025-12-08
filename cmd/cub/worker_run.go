@@ -4,9 +4,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -17,21 +19,22 @@ import (
 var workerRunCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a worker locally",
-	Long: getCommandHelp(`Run a worker locally to serve one or more "worker types".
+	Long: getCommandHelp(`Run a worker locally to serve one or more provider types.
 
-A "worker type" is an informal name for a pair of ToolchainType and ProviderType.
-For example, the "kubernetes" worker type corresponds to the Kubernetes/YAML ToolchainType
-and Kubernetes ProviderType. Some ToolchainTypes have multiple ProviderTypes, and it's
-possible for a single ProviderType to correspond to multiple ToolchainTypes.
+Each ProviderType corresponds to one or more ToolchainTypes.
+For example, the "Kubernetes" provider type corresponds to the Kubernetes/YAML ToolchainType
 
-The available worker types are:
+Some ToolchainTypes are supported by multiple ProviderTypes, and some ProviderTypes support
+multiple ToolchainTypes.
 
-- confighub
-- kubernetes
-- opentofu-aws
-- properties-configmap
+The available ProviderTypes are:
 
-They can be comma separated like "kubernetes,properties-configmap".
+- ConfigHub
+- Kubernetes
+- OpenTofu/AWS
+- ConfigMap
+
+Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 	`, ""),
 	Args:          cobra.ExactArgs(1),
 	RunE:          workerRunCmdRun,
@@ -40,27 +43,24 @@ They can be comma separated like "kubernetes,properties-configmap".
 }
 
 var workerRunArgs struct {
-	workerTypes       string
-	envs              []string
-	enableMultiplexer bool
+	workerProviderTypes string
+	envs                []string
+	enableMultiplexer   bool
+	daemon              bool
 }
 
 func init() {
-	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerTypes, "worker-types", "t", "", "Comma-separated list of worker types")
+	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
 	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", true, "Enable multiplexer mode with prefixes and multi-worker support (default: true)")
+	workerRunCmd.Flags().BoolVarP(&workerRunArgs.daemon, "daemon", "d", false, "Run worker in background (daemon mode)")
 
-	// [jj]: I commented this out and set "kubernetes" as default type.
-	// TODO: Type should not be required at all.
-	// if err := workerRunCmd.MarkFlagRequired("worker-type"); err != nil {
-	// 	panic(err)
-	// }
 	workerCmd.AddCommand(workerRunCmd)
 }
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	// Auto-enable multiplexer if worker type contains comma
-	if strings.Contains(workerRunArgs.workerTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
+	if strings.Contains(workerRunArgs.workerProviderTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
 		workerRunArgs.enableMultiplexer = true
 	}
 
@@ -104,11 +104,62 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		"CONFIGHUB_URL="+serverURL,
 		"CONFIGHUB_WORKER_ID="+worker.BridgeWorkerID.String(),
 		"CONFIGHUB_WORKER_SECRET="+worker.Secret,
-		"CONFIGHUB_WORKER_TYPES="+workerRunArgs.workerTypes, // may be ""
+		"CONFIGHUB_WORKER_PROVIDER_TYPES="+workerRunArgs.workerProviderTypes, // may be ""
 	)
 	// Also append -e to envs
 	// TODO redesign this by adding a prefix for example REPO would become WORKER_TARGET_REPO
 	workerCommand.Env = append(workerCommand.Env, workerRunArgs.envs...)
 
+	if workerRunArgs.daemon {
+		return runWorkerInDaemonMode(workerCommand, worker.Slug)
+	}
+
 	return workerCommand.Run()
+}
+
+// runWorkerInDaemonMode starts the worker in daemon mode, redirects logs to file, and saves PID
+func runWorkerInDaemonMode(cmd *exec.Cmd, workerSlug string) error {
+	confighubDir := filepath.Join(os.Getenv("HOME"), CONFIGHUB_DIR)
+	logsDir := filepath.Join(confighubDir, "worker", "log")
+	pidsDir := filepath.Join(confighubDir, "worker", "pid")
+
+	// Create logs and pids directories if they don't exist
+	if err := os.MkdirAll(logsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create logs directory: %w", err)
+	}
+	if err := os.MkdirAll(pidsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create pids directory: %w", err)
+	}
+
+	// Create log file
+	logFile := filepath.Join(logsDir, fmt.Sprintf("%s.log", workerSlug))
+	logWriter, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create log file: %w", err)
+	}
+	defer logWriter.Close()
+
+	// Redirect stdout and stderr to log file
+	cmd.Stdout = logWriter
+	cmd.Stderr = logWriter
+	cmd.Stdin = nil // No stdin for background process
+
+	// Start the process
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start worker: %w", err)
+	}
+
+	// Save PID to file
+	pidFile := filepath.Join(pidsDir, fmt.Sprintf("%s.pid", workerSlug))
+	if err := os.WriteFile(pidFile, []byte(strconv.Itoa(cmd.Process.Pid)), 0644); err != nil {
+		// Process is already running, but we couldn't save PID - warn but don't fail
+		fmt.Printf("Warning: worker started (PID %d) but failed to save PID file: %v\n", cmd.Process.Pid, err)
+	}
+
+	fmt.Printf("Worker '%s' started in daemon mode (PID: %d)\n", workerSlug, cmd.Process.Pid)
+	fmt.Printf("Logs: %s\n", logFile)
+	fmt.Printf("PID file: %s\n", pidFile)
+	fmt.Printf("\nTo stop the worker, run: cub worker stop %s\n", workerSlug)
+
+	return nil
 }

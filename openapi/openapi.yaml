@@ -322,6 +322,13 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -537,6 +544,13 @@ paths:
                   description: An optional map of Label key/value pairs to specify
                     identifying attributes of entities for the purpose of grouping
                     and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
                   nullable: true
                   type: object
                 Slug:
@@ -1011,6 +1025,13 @@ paths:
                   description: An optional map of Label key/value pairs to specify
                     identifying attributes of entities for the purpose of grouping
                     and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
                   nullable: true
                   type: object
                 Slug:
@@ -6318,6 +6339,13 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -6922,6 +6950,13 @@ paths:
                   description: An optional map of Label key/value pairs to specify
                     identifying attributes of entities for the purpose of grouping
                     and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
                   nullable: true
                   type: object
                 Slug:
@@ -10793,9 +10828,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
-            is associated with a specific BridgeWorker that handles the actual deployment
-            actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -11072,6 +11107,13 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
                 ProviderType:
                   description: ""
                   nullable: true
@@ -11099,9 +11141,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
-            is associated with a specific BridgeWorker that handles the actual deployment
-            actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -11179,9 +11221,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
-            is associated with a specific BridgeWorker that handles the actual deployment
-            actions (e.g. Apply, Destroy).
+            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
+            Each Target is associated with a specific BridgeWorker that handles the
+            actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -16415,6 +16457,13 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
                 ProviderType:
                   description: ""
                   nullable: true
@@ -18735,6 +18784,169 @@ paths:
       summary: Bulk approve multiple units
       tags:
       - Unit
+  /unit/cancel:
+    post:
+      description: Cancels pending or in-progress operations for multiple units based
+        on filter criteria
+      operationId: BulkCancelUnits
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitActionResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitActionResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to cancel unit operation(s)
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk cancel unit operations
+      tags:
+      - Unit
   /unit/destroy:
     post:
       description: Executes destroy operations for multiple units based on filter
@@ -20335,6 +20547,7 @@ components:
       - Completed
       - Failed
       - Canceled
+      - Aborted
       type: string
     ActionType:
       enum:
@@ -20492,6 +20705,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        Permissions:
+          $ref: '#/components/schemas/Permissions'
         ProvidedInfo:
           $ref: '#/components/schemas/WorkerInfo'
         Secret:
@@ -21491,8 +21706,16 @@ components:
             additionalProperties:
               $ref: '#/components/schemas/FunctionSignature'
             type: object
+          description: Signatures of supported functions by ToolchainType
           nullable: true
           type: object
+          x-go-type-skip-optional-pointer: true
+        ToolchainTypes:
+          description: Supported ToolchainTypes
+          items:
+            type: string
+          nullable: true
+          type: array
           x-go-type-skip-optional-pointer: true
       type: object
     ImportFilter:
@@ -22051,6 +22274,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    Permissions:
+      additionalProperties:
+        $ref: '#/components/schemas/Subjects'
+      type: object
     QueuedOperation:
       description: "UnitAction is a record of an action to be performed by a Bridge
         Worker. They are queued and sent to the worker in creation order. \nIf the
@@ -22131,6 +22358,7 @@ components:
           - Completed
           - Failed
           - Aborted
+          - Canceled
           - pending
           - delivered
           type: string
@@ -22440,6 +22668,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        Permissions:
+          $ref: '#/components/schemas/Permissions'
         Slug:
           description: Unique URL-safe identifier for the entity.
           type: string
@@ -22521,6 +22751,14 @@ components:
         Message:
           description: Message returned with the response.
           type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    Subjects:
+      properties:
+        UserIDs:
+          additionalProperties:
+            type: boolean
+          type: object
           x-go-type-skip-optional-pointer: true
       type: object
     Tag:
@@ -22624,9 +22862,9 @@ components:
       description: Target represents a deployment target in ConfigHub. It defines
         where configuration should be applied, including the toolchain type (e.g.,
         Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-        AppConfig/INI) and provider (e.g., Kubernetes, AWS, ConfigMap). Each Target
-        is associated with a specific BridgeWorker that handles the actual deployment
-        actions (e.g. Apply, Destroy).
+        AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each
+        Target is associated with a specific BridgeWorker that handles the actual
+        deployment actions (e.g. Apply, Destroy).
       properties:
         Annotations:
           additionalProperties:
@@ -22694,9 +22932,11 @@ components:
             - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
           type: string
           x-go-type-skip-optional-pointer: true
+        Permissions:
+          $ref: '#/components/schemas/Permissions'
         ProviderType:
           description: ProviderType specifies the cloud or infrastructure provider
-            for this target, such as "Kubernetes" or "AWS".
+            for this target, such as "Kubernetes" or "OpenTofu/AWS".
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -22738,9 +22978,9 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
+      - BridgeWorkerID
       - ToolchainType
       - ProviderType
-      - BridgeWorkerID
       type: object
     TargetCreateOrUpdateResponse:
       properties:
@@ -23235,6 +23475,7 @@ components:
           - Completed
           - Failed
           - Aborted
+          - Canceled
           - pending
           - delivered
           type: string

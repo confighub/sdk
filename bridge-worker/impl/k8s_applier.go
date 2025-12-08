@@ -5,11 +5,16 @@ package impl
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
+
+// ErrOperationInterrupted is returned when an operation is cancelled or overridden.
+// Status is already sent via sendOverriddenStatus/sendCancelledStatus, so no "Failed" status needed.
+var ErrOperationInterrupted = errors.New("operation interrupted")
 
 // ResourceSet represents a generic resource set interface
 // This allows different applier implementations to provide their own ResourceSet types

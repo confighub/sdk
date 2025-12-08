@@ -62,6 +62,37 @@ func (c *workerClient) processBridgeCommand(workerContext *defaultBridgeWorkerCo
 	case api.ActionFinalize:
 		setupSendResult(api.ActionFinalize)
 		return c.handleFinalize(workerContext, op.Payload)
+	case api.ActionCancel:
+		// Cancel operations don't perform work, they signal to cancel in-flight operations
+		log.Printf("📥 Received CANCEL command for operation %s", op.Payload.QueuedOperationID)
+
+		// Cancel the operation
+		success := c.unitQueues.CancelOperation(op.Payload.QueuedOperationID)
+
+		// Send acknowledgment
+		startedAt := time.Now()
+		terminatedAt := startedAt
+		status := api.ActionStatusCompleted
+		message := "Operation cancelled"
+		if !success {
+			status = api.ActionStatusFailed
+			message = "Operation not found or already completed"
+		}
+
+		result := &api.ActionResult{
+			UnitID:            op.Payload.UnitID,
+			SpaceID:           op.Payload.SpaceID,
+			QueuedOperationID: op.Payload.QueuedOperationID,
+			ActionResultBaseMeta: api.ActionResultBaseMeta{
+				Action:       api.ActionCancel,
+				Result:       api.ActionResultNone,
+				Status:       status,
+				Message:      message,
+				StartedAt:    startedAt,
+				TerminatedAt: &terminatedAt,
+			},
+		}
+		return c.sendResult(result)
 	default:
 		// For unknown actions, construct an error result and send it.
 		startedAt := time.Now()
@@ -91,7 +122,9 @@ func (c *workerClient) handleApply(workerContext api.BridgeWorkerContext, payloa
 func (c *workerClient) handleWatchApply(workerContext api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	log.Printf("📥 Kick off watching for apply")
 	if watchable, ok := c.bridgeWorker.(api.WatchableWorker); ok {
-		c.watcherManager.SubmitWatcher(workerContext.Context(), payload.UnitID, api.ActionApply, func(watcherCtx context.Context) {
+		// Use SubmitWatcherAndWait to keep the running operation registered until watcher completes.
+		// This enables Apply override detection during the watch phase.
+		c.watcherManager.SubmitWatcherAndWait(workerContext.Context(), payload.UnitID, api.ActionApply, func(watcherCtx context.Context) {
 			// Create a new context that uses the watcher context
 			watchContext := &defaultBridgeWorkerContext{
 				ctx:        watcherCtx,
@@ -152,7 +185,9 @@ func (c *workerClient) handleWatchDestroy(workerContext api.BridgeWorkerContext,
 	log.Printf("📥 Kick off watching for destroy")
 	// TODO rename api.WatchableWorker api.WatchableBridgeWorker
 	if watchable, ok := c.bridgeWorker.(api.WatchableWorker); ok {
-		c.watcherManager.SubmitWatcher(workerContext.Context(), payload.UnitID, api.ActionDestroy, func(watcherCtx context.Context) {
+		// Use SubmitWatcherAndWait to keep the running operation registered until watcher completes.
+		// This enables Destroy override detection during the watch phase.
+		c.watcherManager.SubmitWatcherAndWait(workerContext.Context(), payload.UnitID, api.ActionDestroy, func(watcherCtx context.Context) {
 			// Create a new context that uses the watcher context
 			watchContext := &defaultBridgeWorkerContext{
 				ctx:        watcherCtx,

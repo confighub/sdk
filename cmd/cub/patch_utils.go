@@ -13,6 +13,13 @@ import (
 // It handles reading from stdin or file, merging with existing data, processing labels, and applying
 // entity-specific enhancements through the enhancer function.
 func BuildPatchData(enhancer PatchEnhancer) ([]byte, error) {
+	return BuildPatchDataWithPermissions(enhancer, nil)
+}
+
+// BuildPatchDataWithPermissions builds patch JSON bytes from stdin/file input, labels, permissions, and entity-specific fields.
+// It handles reading from stdin or file, merging with existing data, processing labels, permissions, and applying
+// entity-specific enhancements through the enhancer function.
+func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string) ([]byte, error) {
 	// Get base patch data from stdin/file if provided
 	var patchData []byte
 	if flagPopulateModelFromStdin || flagFilename != "" {
@@ -26,21 +33,21 @@ func BuildPatchData(enhancer PatchEnhancer) ([]byte, error) {
 		patchData = []byte("null")
 	}
 
-	// Enhance with labels, delete gates, and entity-specific fields
-	return EnhancePatchData(patchData, label, deleteGate, enhancer)
+	// Enhance with labels, delete gates, permissions, and entity-specific fields
+	return EnhancePatchData(patchData, label, deleteGate, permissions, enhancer)
 }
 
 // PatchEnhancer is a function that adds entity-specific fields to patch data.
 // It receives the patch map and should modify it in place.
 type PatchEnhancer func(patchMap map[string]interface{})
 
-// EnhancePatchData adds labels, delete gates, and entity-specific fields to existing patch data.
+// EnhancePatchData adds labels, delete gates, permissions, and entity-specific fields to existing patch data.
 // This is used when patch data is already constructed and needs to be enhanced.
 // It handles the special case of "-" value for label/delete gate removal in patch operations.
 // The enhancer parameter is optional and can be used to add entity-specific fields.
-func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, enhancer PatchEnhancer) ([]byte, error) {
+func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, permissions []string, enhancer PatchEnhancer) ([]byte, error) {
 	// Check if we need to enhance the patch
-	needsEnhancement := len(labels) > 0 || len(deleteGates) > 0 || enhancer != nil
+	needsEnhancement := len(labels) > 0 || len(deleteGates) > 0 || len(permissions) > 0 || enhancer != nil
 	if !needsEnhancement {
 		return patchData, nil
 	}
@@ -131,6 +138,34 @@ func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, e
 		}
 
 		patchMap["DeleteGates"] = deleteGateMap
+	}
+
+	// Add permissions if specified
+	if len(permissions) > 0 {
+		// Parse permissions into the expected structure
+		// We need to convert the Permissions from parsePermissions format to the patch map format
+		// The permissions will be merged into the existing permissions
+		var permissionsMap map[string]interface{}
+
+		// Preserve existing permissions from the patch if any
+		if existingPermissions, ok := patchMap["Permissions"]; ok {
+			if existingPermMap, ok := existingPermissions.(map[string]interface{}); ok {
+				permissionsMap = existingPermMap
+			} else {
+				permissionsMap = make(map[string]interface{})
+			}
+		} else {
+			permissionsMap = make(map[string]interface{})
+		}
+
+		// Parse the permissions from command line into the map
+		// We need to call parsePermissionsIntoPatchMap to convert the string slice into the proper structure
+		err := parsePermissionsIntoPatchMap(permissions, permissionsMap)
+		if err != nil {
+			return nil, err
+		}
+
+		patchMap["Permissions"] = permissionsMap
 	}
 
 	// Re-marshal the enhanced patch
