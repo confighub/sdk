@@ -140,8 +140,8 @@ func (eb *ExampleBridge) Apply(ctx api.BridgeContext, payload api.BridgePayload)
 			StartedAt:    startTime,
 			TerminatedAt: &terminatedAt,
 		},
-		Data:      payload.Data,
-		LiveState: payload.Data,
+		Data:     payload.Data,
+		LiveData: payload.Data,
 	})
 }
 
@@ -286,8 +286,8 @@ func (eb *ExampleBridge) Import(ctx api.BridgeContext, payload api.BridgePayload
 			StartedAt:    startedAt,
 			TerminatedAt: &terminatedAt,
 		},
-		Data:      importedData,
-		LiveState: importedData,
+		Data:     importedData,
+		LiveData: importedData,
 	})
 }
 
@@ -344,7 +344,7 @@ func (eb *ExampleBridge) Destroy(ctx api.BridgeContext, payload api.BridgePayloa
 			StartedAt:    startedAt,
 			TerminatedAt: &terminatedAt,
 		},
-		LiveState: []byte{}, // Empty live state after destruction
+		LiveData: []byte{}, // Empty live data after destruction
 	})
 }
 

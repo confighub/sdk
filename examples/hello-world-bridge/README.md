@@ -145,7 +145,7 @@ return ctx.SendStatus(&api.ActionResult{
         TerminatedAt: &terminatedAt,
     },
     Data:      payload.Data,
-    LiveState: payload.Data,
+    LiveData:  payload.Data,
 })
 ```
 
@@ -201,7 +201,7 @@ Contains all information about the operation:
 - `UnitID`, `SpaceID`, `QueuedOperationID` - Identifiers
 - `UnitSlug` - Human-readable unit name
 - `Data` - Desired configuration (YAML/JSON)
-- `LiveState` - Current state from previous operations
+- `LiveData` - Last live configuration from previous operations
 - `TargetParams` - Target-specific parameters
 - `ToolchainType`, `ProviderType` - Configuration type info
 
@@ -211,7 +211,7 @@ Reports operation status and results:
 
 - `ActionResultBaseMeta` - Action type, status, messages, timing
 - `Data` - Updated configuration (for Import)
-- `LiveState` - Current state after operation
+- `LiveData` - Current state after operation
 
 ## Best Practices
 
