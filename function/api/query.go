@@ -466,6 +466,13 @@ func convertNumberToInt(value any) (int, error) {
 	} else if floatValue, ok := value.(float64); ok {
 		// Handle JSON numbers that parse as float64
 		return int(floatValue), nil
+	} else if strValue, ok := value.(string); ok {
+		// Handle string literals from parsed queries
+		parsed, err := strconv.Atoi(strValue)
+		if err != nil {
+			return 0, fmt.Errorf("internal error: failed to parse string as int: %w", err)
+		}
+		return parsed, nil
 	} else {
 		return 0, fmt.Errorf("internal error: expected int but got %T", value)
 	}
@@ -743,6 +750,18 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			}
 		}
 		return evaluateUUIDStringMapExpression(expr.Operator, uuidStringMapValue, rightUUIDValue)
+	case DataTypeStringStringUUIDBoolMap:
+		// Permissions type: map[string]map[string]map[uuid.UUID]bool
+		// This case is primarily handled by the in-memory filter evaluator in filter_impl.go
+		// which passes the MapKey and NestedMapKey directly to EvaluatePermissionsExpression.
+		// This code path is for direct evaluation where the leftValue is already PermissionsData.
+		permissionsValue, ok := leftValue.(PermissionsData)
+		if !ok {
+			return false, fmt.Errorf("internal error: expected PermissionsData but got %T", leftValue)
+		}
+		// For direct evaluation without filter context, we can only evaluate LEN(Permissions)
+		// Other operations require the action key and field key from the filter expression
+		return EvaluatePermissionsExpression(expr.Operator, permissionsValue, rightValue, expr.IsLengthExpression, "", "")
 	default:
 		return false, fmt.Errorf("unsupported data type %s", expr.DataType)
 	}
@@ -1065,4 +1084,87 @@ func evaluateUUIDStringMapExpression(operator string, leftValue map[uuid.UUID]st
 	default:
 		return false, fmt.Errorf("unsupported operator for UUID-string map: %s", operator)
 	}
+}
+
+// PermissionsData represents the Permissions type for query evaluation.
+// This is map[string]map[string]map[uuid.UUID]bool which corresponds to
+// map[ActionCategory]Subjects where Subjects contains UserIDs map[uuid.UUID]bool.
+// The structure is: Permissions[action]["UserIDs"][userUUID] = true
+type PermissionsData map[string]map[string]map[uuid.UUID]bool
+
+// EvaluatePermissionsExpression evaluates Permissions expressions
+// Supports:
+//   - LEN(Permissions) - returns total number of action categories with subjects
+//   - LEN(Permissions.<action>.UserIDs) - returns number of users for a specific action
+//   - Permissions.<action>.UserIDs ? <uuid> - checks if a user has a specific permission
+func EvaluatePermissionsExpression(operator string, leftValue PermissionsData, rightValue interface{}, isLengthExpression bool, actionKey string, fieldKey string) (bool, error) {
+	if isLengthExpression {
+		// Handle LEN(Permissions) - total number of action categories
+		if actionKey == "" {
+			length := len(leftValue)
+			rightInt, err := convertNumberToInt(rightValue)
+			if err != nil {
+				return false, err
+			}
+			return evaluateIntExpression(operator, length, rightInt), nil
+		}
+
+		// Handle LEN(Permissions.<action>.UserIDs)
+		subjects, exists := leftValue[actionKey]
+		if !exists {
+			// If action doesn't exist, length is 0
+			rightInt, err := convertNumberToInt(rightValue)
+			if err != nil {
+				return false, err
+			}
+			return evaluateIntExpression(operator, 0, rightInt), nil
+		}
+
+		userIDs, exists := subjects[fieldKey]
+		if !exists || userIDs == nil {
+			rightInt, err := convertNumberToInt(rightValue)
+			if err != nil {
+				return false, err
+			}
+			return evaluateIntExpression(operator, 0, rightInt), nil
+		}
+
+		rightInt, err := convertNumberToInt(rightValue)
+		if err != nil {
+			return false, err
+		}
+		return evaluateIntExpression(operator, len(userIDs), rightInt), nil
+	}
+
+	// Handle Permissions.<action>.UserIDs ? <uuid>
+	if operator != "?" {
+		return false, fmt.Errorf("unsupported operator for Permissions: %s (only ? is supported for containment)", operator)
+	}
+
+	// Right value should be a UUID
+	var rightUUID uuid.UUID
+	switch v := rightValue.(type) {
+	case uuid.UUID:
+		rightUUID = v
+	case string:
+		var err error
+		rightUUID, err = uuid.Parse(v)
+		if err != nil {
+			return false, fmt.Errorf("invalid UUID: %w", err)
+		}
+	default:
+		return false, fmt.Errorf("expected UUID for Permissions containment check, got %T", rightValue)
+	}
+
+	subjects, exists := leftValue[actionKey]
+	if !exists {
+		return false, nil
+	}
+
+	userIDs, exists := subjects[fieldKey]
+	if !exists || userIDs == nil {
+		return false, nil
+	}
+
+	return userIDs[rightUUID], nil
 }

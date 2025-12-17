@@ -349,40 +349,43 @@ func (f FluxOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWor
 		return err
 	}
 
-	applyOutputs := make([]applyOutput, 0)
-	applyOutputs = append(applyOutputs, applyOutput{
-		Digest: digest,
-		URL:    url,
-	})
-	if len(tags) > 0 {
-		for _, tag := range tags {
-			applyOutputs = append(applyOutputs, applyOutput{
-				Digest: digest,
-				URL:    params.Repository + ":" + tag,
-			})
-		}
-	}
+	// TODO: Remove if this information is not needed
+	// applyOutputs := make([]applyOutput, 0)
+	// applyOutputs = append(applyOutputs, applyOutput{
+	// 	Digest: digest,
+	// 	URL:    url,
+	// })
+	// if len(tags) > 0 {
+	// 	for _, tag := range tags {
+	// 		applyOutputs = append(applyOutputs, applyOutput{
+	// 			Digest: digest,
+	// 			URL:    params.Repository + ":" + tag,
+	// 		})
+	// 	}
+	// }
 
-	jsonOutputs, err := json.Marshal(applyOutputs)
-	if err != nil {
-		log.Log.Error(err, "Failed to marshal outputs")
-		status := newActionResult(
-			api.ActionStatusCompleted,
-			api.ActionResultApplyCompleted,
-			fmt.Sprintf("Failed to marshal outputs after successful push: %v", err),
-		)
-		status.LiveState = payload.Data
-		wctx.SendStatus(status)
-		return err
-	}
+	// jsonOutputs, err := json.Marshal(applyOutputs)
+	// if err != nil {
+	// 	log.Log.Error(err, "Failed to marshal outputs")
+	// 	status := newActionResult(
+	// 		api.ActionStatusCompleted,
+	// 		api.ActionResultApplyCompleted,
+	// 		fmt.Sprintf("Failed to marshal outputs after successful push: %v", err),
+	// 	)
+	// 	status.LiveState = payload.Data
+	// 	wctx.SendStatus(status)
+	// 	return err
+	// }
 
 	status := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultApplyCompleted,
-		fmt.Sprintf("Successfully pushed to OCI repository at %s", time.Now().Format(time.RFC3339)),
+		fmt.Sprintf("Successfully pushed digest %s to OCI repository %s at %s", digest, url, time.Now().Format(time.RFC3339)),
 	)
-	status.LiveState = payload.Data
-	status.Outputs = jsonOutputs
+	// TODO: Actually get the live data?
+	// TODO: Store Flux resources in LiveState?
+	status.LiveData = payload.Data
+	status.LiveState = []byte{}
 	return wctx.SendStatus(status)
 }
 
@@ -495,7 +498,11 @@ func (f FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeW
 				api.ActionResultRefreshAndNoDrift,
 				fmt.Sprintf("Retrieved manifest successfully at %s", time.Now().Format(time.RFC3339)),
 			)
-			result.LiveState = content
+			// TODO: Actually get the live data?
+			// TODO: Store Flux resources in LiveState?
+			result.Data = content
+			result.LiveData = content
+			result.LiveState = []byte{}
 			return wctx.SendStatus(result)
 		}
 	}
@@ -619,9 +626,11 @@ func (f FluxOCIWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWo
 				fmt.Sprintf("Imported manifest successfully at %s", time.Now().Format(time.RFC3339)),
 			)
 
-			// this is Import, so set both Data and LiveState
+			// TODO: Actually get the live data?
+			// TODO: Store Flux resources in LiveState?
 			result.Data = content
-			result.LiveState = content
+			result.LiveData = content
+			result.LiveState = []byte{}
 			return wctx.SendStatus(result)
 		}
 	}
@@ -695,6 +704,7 @@ func (f FluxOCIWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeW
 		api.ActionResultDestroyCompleted,
 		fmt.Sprintf("Successfully deleted from OCI repository at %s", time.Now().Format(time.RFC3339)),
 	)
+	result.LiveData = []byte{}
 	result.LiveState = []byte{}
 	return wctx.SendStatus(result)
 }

@@ -120,6 +120,7 @@ func isStandardWorkload(gvk *schema.GroupVersionKind) bool {
 
 // extraCleanupObjects performs heuristic cleanup on imported objects to make them suitable for being unit.Data
 func extraCleanupObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
+	// TODO: Use managed fields. See clearManagedFieldsForObjects and shouldTakeOverManager.
 	for _, obj := range objects {
 		cleanup(obj)
 		removeInternalAnnotations(obj)
@@ -215,6 +216,7 @@ type KubernetesClient interface {
 	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error
+	Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error
 	IsObjectNamespaced(obj runtime.Object) (bool, error)

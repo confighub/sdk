@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -86,9 +87,39 @@ func totalCountMap(counts map[string]int) int {
 	return total
 }
 
+func triggerSliceSlugsToString(triggers []goclientnew.Trigger) string {
+	if len(triggers) == 0 {
+		return ""
+	}
+	slugs := make([]string, len(triggers))
+	for i, trigger := range triggers {
+		slugs[i] = trigger.Slug
+	}
+	return strings.Join(slugs, ", ")
+}
+
 func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view := tableView()
 	displaySpaceDetailsInView(extendedSpace.Space, view)
+
+	// Display TriggerFilter - use Slug if expanded, otherwise UUID
+	if extendedSpace.TriggerFilter != nil {
+		view.Append([]string{"Trigger Filter", extendedSpace.TriggerFilter.Slug})
+	} else if extendedSpace.Space.TriggerFilterID != nil {
+		view.Append([]string{"Trigger Filter", extendedSpace.Space.TriggerFilterID.String()})
+	} else {
+		view.Append([]string{"Trigger Filter", ""})
+	}
+
+	// Display Triggers - use Slugs if expanded, otherwise UUIDs
+	if len(extendedSpace.Triggers) > 0 {
+		view.Append([]string{"Triggers", triggerSliceSlugsToString(extendedSpace.Triggers)})
+	} else if len(extendedSpace.Space.TriggerIDs) > 0 {
+		view.Append([]string{"Triggers", uuidSliceToString(extendedSpace.Space.TriggerIDs)})
+	} else {
+		view.Append([]string{"Triggers", ""})
+	}
+
 	// TODO: TriggerCountByEventType, TargetCountByToolchainType
 	view.Append([]string{"# Units", fmt.Sprintf("%d", extendedSpace.TotalUnitCount)})
 	view.Append([]string{"# Unapplied Units", fmt.Sprintf("%d", extendedSpace.UnappliedUnitCount)})
@@ -112,6 +143,9 @@ func apiGetExtendedSpace(spaceID string, selectParam string) (*goclientnew.Exten
 	newParams := &goclientnew.GetSpaceParams{}
 	summary := true
 	newParams.Summary = &summary
+	// Include expanded TriggerFilter and Triggers for display
+	include := "TriggerFilterID,TriggerIDs"
+	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

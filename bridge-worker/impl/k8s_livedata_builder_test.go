@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/cli-utils/pkg/object"
 )
 
-func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
+func TestLiveDataBuilder_BuildLiveData(t *testing.T) {
 	ctx := context.Background()
 
 	// Create fake dynamic client
@@ -66,8 +66,8 @@ func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
 		},
 	})
 
-	// Create LiveStateBuilder
-	builder := NewLiveStateBuilder(
+	// Create LiveDataBuilder
+	builder := NewLiveDataBuilder(
 		invClient,
 		dynamicClient,
 		restMapper,
@@ -75,7 +75,7 @@ func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
 		"test-unit",
 	)
 
-	t.Run("empty inventory returns empty LiveState", func(t *testing.T) {
+	t.Run("empty inventory returns empty LiveData", func(t *testing.T) {
 		// Create empty inventory first
 		inv, err := invClient.NewInventory(invInfo)
 		require.NoError(t, err)
@@ -88,14 +88,14 @@ func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
 			deletedObjects: []object.ObjMetadata{},
 		}
 
-		liveState, changeSet, err := builder.BuildLiveState(ctx, invInfo, processor, nil)
+		liveData, changeSet, err := builder.BuildLiveData(ctx, invInfo, processor, nil)
 		require.NoError(t, err)
-		assert.NotEmpty(t, liveState) // Should contain the inventory ConfigMap
+		assert.NotEmpty(t, liveData) // Should contain the inventory ConfigMap
 		assert.NotNil(t, changeSet)
 		assert.Empty(t, changeSet.GetEntries())
 	})
 
-	t.Run("builds LiveState with applied objects", func(t *testing.T) {
+	t.Run("builds LiveData with applied objects", func(t *testing.T) {
 		// Setup inventory with some objects
 		inv, err := invClient.NewInventory(invInfo)
 		require.NoError(t, err)
@@ -130,9 +130,9 @@ func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
 			deletedObjects: []object.ObjMetadata{},
 		}
 
-		liveState, changeSet, err := builder.BuildLiveState(ctx, invInfo, processor, nil)
+		liveData, changeSet, err := builder.BuildLiveData(ctx, invInfo, processor, nil)
 		require.NoError(t, err)
-		assert.NotEmpty(t, liveState)
+		assert.NotEmpty(t, liveData)
 		assert.NotNil(t, changeSet)
 		assert.Len(t, changeSet.GetEntries(), 1)
 	})
@@ -167,9 +167,9 @@ func TestLiveStateBuilder_BuildLiveState(t *testing.T) {
 			deletedObjects: []object.ObjMetadata{},
 		}
 
-		liveState, changeSet, err := builder.BuildLiveState(ctx, invInfo, processor, nil)
+		liveData, changeSet, err := builder.BuildLiveData(ctx, invInfo, processor, nil)
 		require.NoError(t, err)
-		assert.NotEmpty(t, liveState)
+		assert.NotEmpty(t, liveData)
 		assert.NotNil(t, changeSet)
 		assert.Len(t, changeSet.GetEntries(), 1)
 	})
@@ -250,7 +250,7 @@ func TestResourceCache(t *testing.T) {
 }
 
 func TestFetchStrategy(t *testing.T) {
-	builder := &LiveStateBuilder{
+	builder := &LiveDataBuilder{
 		cache: NewResourceCache(10, 5*time.Minute),
 	}
 

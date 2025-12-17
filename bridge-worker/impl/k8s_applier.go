@@ -70,7 +70,8 @@ func (s *SimpleResourceSet) Add(entry SimpleResourceSetEntry) {
 type ApplyResult struct {
 	ResourceSet ResourceSet
 	LiveObjects []*unstructured.Unstructured
-	LiveState   []byte // Updated LiveState including inventory
+	LiveData    []byte // Updated LiveData including inventory
+	LiveState   []byte
 	Error       error
 }
 
@@ -84,7 +85,7 @@ type WaitResult struct {
 // DestroyResult contains the result of a destroy operation
 type DestroyResult struct {
 	ResourceSet ResourceSet
-	LiveState   []byte // Updated LiveState including inventory after destroy
+	LiveData    []byte // Updated LiveData including inventory after destroy
 	Error       error
 }
 
@@ -113,7 +114,7 @@ type K8sApplier interface {
 // ApplierConfig contains configuration for creating an applier
 type ApplierConfig struct {
 	KubeContext string
-	LiveState   []byte // LiveState containing inventory and resources
+	LiveData    []byte // LiveData containing inventory and resources
 	SpaceID     string // SpaceID for inventory identification
 	UnitSlug    string // UnitSlug for inventory identification
 	WaitTimeout string // WaitTimeout duration string for resource readiness

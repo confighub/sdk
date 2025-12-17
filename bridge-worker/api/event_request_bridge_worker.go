@@ -20,17 +20,20 @@ type BridgeWorkerPayload struct {
 	ProviderType      ProviderType            `description:"ProviderType of the Target attached to the Unit on which the action was performed"`
 
 	// Keep relatively consistent with FunctionContext
-	UnitSlug        string            `description:"Slug of the Unit on which the action was performed"`
-	UnitID          uuid.UUID         `description:"UUID of the Unit on which the action was performed"`
-	UnitLabels      map[string]string `description:"Labels of the Unit on which the action was performed"`
-	UnitAnnotations map[string]string `description:"Annotations of the Unit on which the action was performed"`
-	SpaceSlug       string            `description:"Slug of the Space of the Unit on which the action was performed"`
-	SpaceID         uuid.UUID         `description:"UUID of the Space of the Unit on which the action was performed"`
-	OrganizationID  uuid.UUID         `description:"UUID of the Organization of the Unit on which the action was performed"`
-	TargetID        uuid.UUID         `description:"UUID of the Target attached to the Unit on which the action was performed"`
+	UnitSlug         string            `description:"Slug of the Unit on which the action was performed"`
+	UnitID           uuid.UUID         `description:"UUID of the Unit on which the action was performed"`
+	UnitLabels       map[string]string `description:"Labels of the Unit on which the action was performed"`
+	UnitAnnotations  map[string]string `description:"Annotations of the Unit on which the action was performed"`
+	SpaceSlug        string            `description:"Slug of the Space of the Unit on which the action was performed"`
+	SpaceID          uuid.UUID         `description:"UUID of the Space of the Unit on which the action was performed"`
+	SpaceLabels      map[string]string `description:"Labels of the Space of the Unit on which the action was performed"`
+	SpaceAnnotations map[string]string `description:"Annotations of the Space of the Unit on which the action was performed"`
+	OrganizationID   uuid.UUID         `description:"UUID of the Organization of the Unit on which the action was performed"`
+	TargetID         uuid.UUID         `description:"UUID of the Target attached to the Unit on which the action was performed"`
 
 	Data            []byte `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
-	LiveState       []byte `swaggertype:"string" format:"byte" description:"Live state corresponding to the Unit"`
+	LiveData        []byte `swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit"`
+	LiveState       []byte `swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit"`
 	TargetParams    []byte `swaggertype:"string" format:"byte" description:"Parameters of the Target attached to the Unit on which the action was performed"`
 	ExtraParams     []byte `swaggertype:"string" format:"byte" description:"Additional parameters associated with the action sent to the worker"`
 	RevisionNum     int64  `description:"Sequence number of the revision of the Unit on which the action was performed"`

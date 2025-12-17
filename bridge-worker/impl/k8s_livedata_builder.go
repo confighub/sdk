@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// LiveStateBuilder optimally builds LiveState from tracked events
-type LiveStateBuilder struct {
+// LiveDataBuilder optimally builds LiveData from tracked events
+type LiveDataBuilder struct {
 	inventory     inventory.Client
 	dynamicClient dynamic.Interface
 	restMapper    meta.RESTMapper
@@ -54,15 +54,15 @@ type FetchStrategy struct {
 	skipFetch    []object.ObjMetadata // Deleted/pruned, should not exist
 }
 
-// NewLiveStateBuilder creates a new LiveStateBuilder
-func NewLiveStateBuilder(
+// NewLiveDataBuilder creates a new LiveDataBuilder
+func NewLiveDataBuilder(
 	inventory inventory.Client,
 	dynamicClient dynamic.Interface,
 	restMapper meta.RESTMapper,
 	spaceID string,
 	unitSlug string,
-) *LiveStateBuilder {
-	return &LiveStateBuilder{
+) *LiveDataBuilder {
+	return &LiveDataBuilder{
 		inventory:     inventory,
 		dynamicClient: dynamicClient,
 		restMapper:    restMapper,
@@ -81,14 +81,14 @@ func NewResourceCache(maxSize int, maxAge time.Duration) *ResourceCache {
 	}
 }
 
-// BuildLiveState builds optimal LiveState from tracked events
-func (b *LiveStateBuilder) BuildLiveState(
+// BuildLiveData builds optimal LiveData from tracked events
+func (b *LiveDataBuilder) BuildLiveData(
 	ctx context.Context,
 	invInfo inventory.Info,
 	processor *EventProcessor,
-	previousLiveState []byte,
-) (liveState []byte, resourceSet ResourceSet, err error) {
-	log.Log.Info("🏗️ Building LiveState from events",
+	previousLiveData []byte,
+) (liveData []byte, resourceSet ResourceSet, err error) {
+	log.Log.Info("🏗️ Building LiveData from events",
 		"spaceID", b.spaceID,
 		"unitSlug", b.unitSlug,
 		"applied", len(processor.appliedObjects),
@@ -100,7 +100,7 @@ func (b *LiveStateBuilder) BuildLiveState(
 	if err != nil {
 		// If inventory doesn't exist (after destroy), return empty
 		if errors.IsNotFound(err) {
-			log.Log.Info("📦 Inventory not found (likely after destroy), returning empty LiveState")
+			log.Log.Info("📦 Inventory not found (likely after destroy), returning empty LiveData")
 			return []byte{}, processor.buildResourceSet(), nil
 		}
 		return nil, nil, fmt.Errorf("failed to get inventory: %w", err)
@@ -139,8 +139,8 @@ func (b *LiveStateBuilder) BuildLiveState(
 		return nil, nil, fmt.Errorf("failed to convert objects to YAML: %w", err)
 	}
 
-	// Step 7: Combine into LiveState
-	liveState, err = CombineInventoryWithResources(inventoryCM, []byte(yamlResources))
+	// Step 7: Combine into LiveData
+	liveData, err = CombineInventoryWithResources(inventoryCM, []byte(yamlResources))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to combine inventory with resources: %w", err)
 	}
@@ -153,16 +153,16 @@ func (b *LiveStateBuilder) BuildLiveState(
 	// Step 9: Update cache for next operation
 	b.updateCache(liveObjects, processor)
 
-	log.Log.Info("✅ LiveState built successfully",
-		"size", len(liveState),
+	log.Log.Info("✅ LiveData built successfully",
+		"size", len(liveData),
 		"objects", len(liveObjects),
 		"changes", len(resourceSet.GetEntries()))
 
-	return liveState, resourceSet, nil
+	return liveData, resourceSet, nil
 }
 
 // buildFetchStrategy determines what needs fetching and how
-func (b *LiveStateBuilder) buildFetchStrategy(
+func (b *LiveDataBuilder) buildFetchStrategy(
 	managedRefs object.ObjMetadataSet,
 	processor *EventProcessor,
 ) FetchStrategy {
@@ -217,7 +217,7 @@ func (b *LiveStateBuilder) buildFetchStrategy(
 }
 
 // fetchResourcesIntelligently performs parallel fetching with error handling
-func (b *LiveStateBuilder) fetchResourcesIntelligently(
+func (b *LiveDataBuilder) fetchResourcesIntelligently(
 	ctx context.Context,
 	strategy FetchStrategy,
 ) []*unstructured.Unstructured {
@@ -286,7 +286,7 @@ func (b *LiveStateBuilder) fetchResourcesIntelligently(
 }
 
 // fetchSingleResource fetches one resource with error handling
-func (b *LiveStateBuilder) fetchSingleResource(
+func (b *LiveDataBuilder) fetchSingleResource(
 	ctx context.Context,
 	ref object.ObjMetadata,
 ) *unstructured.Unstructured {
@@ -331,7 +331,7 @@ func (b *LiveStateBuilder) fetchSingleResource(
 }
 
 // updateCache updates cache with fetched resources
-func (b *LiveStateBuilder) updateCache(
+func (b *LiveDataBuilder) updateCache(
 	liveObjects []*unstructured.Unstructured,
 	processor *EventProcessor,
 ) {

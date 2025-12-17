@@ -140,6 +140,11 @@ func (m *MockK8sClient) Delete(ctx context.Context, obj client.Object, opts ...c
 	return args.Error(0)
 }
 
+func (m *MockK8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	args := m.Called(ctx, obj, patch, opts)
+	return args.Error(0)
+}
+
 // MockK8sApplier is a mock implementation of the K8sApplier interface
 type MockK8sApplier struct {
 	mock.Mock

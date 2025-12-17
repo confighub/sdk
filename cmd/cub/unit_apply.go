@@ -66,7 +66,7 @@ Examples:
 }
 
 func init() {
-	enableWaitFlag(unitApplyCmd)
+	enableActionWaitFlag(unitApplyCmd)
 	addStandardDisplayFlags(unitApplyCmd)
 	enableWhereFlag(unitApplyCmd)
 	enableFilterFlag(unitApplyCmd)
@@ -197,7 +197,7 @@ func runSingleUnitApply(unitSlug string) error {
 	}
 
 	// Handle wait flag
-	if wait {
+	if actionWait {
 		err = awaitCompletion("apply", applyRes.JSON200)
 		if err != nil {
 			return err
@@ -334,84 +334,104 @@ func displayOperationResults(id string, event *goclientnew.UnitEvent) {
 }
 
 func awaitCompletion(action string, queuedOp *goclientnew.QueuedOperation) error {
-	timeoutDuration, err := time.ParseDuration(timeout)
-	if err != nil {
-		return errors.New("invalid timeout duration " + timeout)
-	}
 	if queuedOp == nil {
 		return errors.New(action + " returned no operation")
 	}
-	unitID := queuedOp.UnitID
-	unitIDString := unitID.String()
-	spaceID := queuedOp.SpaceID
-	spaceIDString := spaceID.String()
-	started := false
-	whereQueuedOp := "QueuedOperationID='" + queuedOp.QueuedOperationID.String() + "'"
-	done := false
-	failed := false
-	sleepDuration := 200 * time.Millisecond
+
+	// Use bulk completion for the actual polling
+	results := awaitBulkCompletion(action, []*goclientnew.QueuedOperation{queuedOp})
+
+	// Extract result for this single operation
+	opID := queuedOp.QueuedOperationID.String()
+	if err := results[opID]; err != nil {
+		return err
+	}
+
+	// Wait for triggers (separate from action wait)
+	unitDetails, err := apiGetUnitInSpace(queuedOp.UnitID.String(), queuedOp.SpaceID.String(), "*")
+	if err != nil {
+		return err
+	}
+	return awaitTriggersRemoval(unitDetails)
+}
+
+// awaitBulkCompletion polls all operations in a single loop until all reach terminal state.
+// This checks all pending operations in each polling cycle, which prevents false timeouts
+// that occur when waiting for operations sequentially.
+func awaitBulkCompletion(action string, queuedOps []*goclientnew.QueuedOperation) map[string]error {
+	results := make(map[string]error) // opID -> error (nil = success)
+	pending := make(map[string]*goclientnew.QueuedOperation)
+	unitSlugs := make(map[string]string) // opID -> unit slug for display
+
+	// Initialize pending set and pre-fetch unit slugs
+	for _, op := range queuedOps {
+		opID := op.QueuedOperationID.String()
+		pending[opID] = op
+		// Pre-fetch unit slug for better error messages
+		unitDetails, err := apiGetUnitInSpace(op.UnitID.String(), op.SpaceID.String(), "Slug")
+		if err == nil && unitDetails != nil && unitDetails.Slug != "" {
+			unitSlugs[opID] = unitDetails.Slug
+		} else {
+			unitSlugs[opID] = op.UnitID.String()
+		}
+	}
+
+	timeoutDuration, err := time.ParseDuration(timeout)
+	if err != nil {
+		timeoutDuration = DefaultTimeoutDuration // default
+	}
+	// Backend polls at 100ms intervals, so we use slightly larger to ensure updates are available
+	sleepDuration := 111 * time.Millisecond
 	maxSleepDuration := sleepDuration * 32
 	startTime := time.Now()
-	for time.Since(startTime) < timeoutDuration {
-		if !started {
-			// Check that the queued operation has posted events
-			events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp, "")
-			if err == nil && len(events) > 0 {
-				// tprint(string(*queuedOp.Action) + " started")
-				started = true
+
+	for time.Since(startTime) < timeoutDuration && len(pending) > 0 {
+		pendingBefore := len(pending)
+
+		// Check all pending operations in this cycle
+		for opID, op := range pending {
+			whereQueuedOp := "QueuedOperationID='" + opID + "'"
+
+			// Query events for this specific operation
+			events, err := apiListUnitEvents(op.SpaceID, op.UnitID, whereQueuedOp, "")
+			if err != nil || len(events) == 0 {
+				// Operation hasn't started yet
+				continue
 			}
-		} else {
-			extendedUnit, err := apiGetExtendedUnitFromSlugInSpace(unitIDString, spaceIDString, "*")
-			// if err == nil {
-			// 	displayUnitEventList([]*goclientnew.UnitEvent{extendedUnit.LatestUnitEvent})
-			// }
-			if err == nil && extendedUnit.LatestUnitEvent != nil {
-				eventStatus := actionStatus(extendedUnit.LatestUnitEvent.Status)
-				if extendedUnit.LatestUnitEvent.QueuedOperationID != queuedOp.QueuedOperationID ||
-					actionType(extendedUnit.LatestUnitEvent.Action) != actionType(queuedOp.Action) ||
-					isTerminalStatus(eventStatus) {
-					done = true
-					if eventStatus == goclientnew.ActionStatusTypeFailed {
-						failed = true
-					}
-					break
+
+			// Get the most recent event for this operation (first in list)
+			event := events[0]
+
+			status := actionStatus(event.Status)
+			if isTerminalStatus(status) {
+				delete(pending, opID)
+				if !quiet {
+					displayOperationResults(op.UnitID.String(), event)
+				}
+				if status == goclientnew.ActionStatusTypeFailed {
+					results[opID] = fmt.Errorf("%s failed on unit %s", action, unitSlugs[opID])
+				} else {
+					results[opID] = nil // success
 				}
 			}
 		}
-		time.Sleep(sleepDuration)
-		sleepDuration *= 2
-		if sleepDuration > maxSleepDuration {
-			sleepDuration = maxSleepDuration
+
+		if len(pending) > 0 {
+			time.Sleep(sleepDuration)
+			// Only increase backoff if no progress was made
+			if len(pending) == pendingBefore {
+				sleepDuration *= 2
+				if sleepDuration > maxSleepDuration {
+					sleepDuration = maxSleepDuration
+				}
+			}
 		}
 	}
-	if !done {
-		return errors.New(string(*queuedOp.Action) + " didn't complete on unit " + unitIDString)
+
+	// Mark remaining pending operations as timed out
+	for opID := range pending {
+		results[opID] = fmt.Errorf("%s didn't complete on unit %s", action, unitSlugs[opID])
 	}
-	if failed {
-		return errors.New(string(*queuedOp.Action) + " failed on unit " + unitIDString)
-	}
-	unitDetails, err := apiGetUnitInSpace(unitIDString, spaceIDString, "*") // get all fields for now
-	if err != nil {
-		return err
-	}
-	err = awaitTriggersRemoval(unitDetails)
-	if err != nil {
-		return err
-	}
-	events, err := apiListUnitEvents(spaceID, unitID, whereQueuedOp, "")
-	if err != nil {
-		return err
-	}
-	if len(events) == 0 {
-		return errors.New("no matching events found for completed operation")
-	}
-	// Look for a completion event (terminal states: Completed, Canceled, Failed, Aborted)
-	for _, event := range events {
-		status := actionStatus(event.Status)
-		if isTerminalStatus(status) {
-			displayOperationResults(unitIDString, event)
-			return nil
-		}
-	}
-	return errors.New("no matching events found for completed operation")
+
+	return results
 }

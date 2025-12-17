@@ -52,7 +52,7 @@ Examples:
 }
 
 func init() {
-	enableWaitFlag(unitRefreshCmd)
+	enableActionWaitFlag(unitRefreshCmd)
 	addStandardDisplayFlags(unitRefreshCmd)
 	enableWhereFlag(unitRefreshCmd)
 	enableFilterFlag(unitRefreshCmd)
@@ -114,7 +114,7 @@ func runSingleUnitRefresh(unitSlug string) error {
 	}
 
 	// Handle wait flag
-	if wait {
+	if actionWait {
 		err = awaitCompletion("refresh", refreshRes.JSON200)
 		if err != nil {
 			return err

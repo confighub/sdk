@@ -483,7 +483,7 @@ func processSpace(ctx context.Context, client *goclientnew.ClientWithResponses, 
 			return "unchanged", existingSpace, existingSpace.SpaceID.String(), nil
 		}
 
-		resp, err := client.PatchSpaceWithBodyWithResponse(ctx, existingSpace.SpaceID, "application/merge-patch+json", bytes.NewReader(patchData))
+		resp, err := client.PatchSpaceWithBodyWithResponse(ctx, existingSpace.SpaceID, nil, "application/merge-patch+json", bytes.NewReader(patchData))
 		if IsAPIError(err, resp) {
 			return "", nil, "", InterpretErrorGeneric(err, resp)
 		}

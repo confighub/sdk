@@ -22,6 +22,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/olekukonko/tablewriter"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
@@ -388,6 +389,17 @@ func permissionsToString(permissions *goclientnew.Permissions) string {
 	return strings.Join(parts, "; ")
 }
 
+func uuidSliceToString(uuids []openapi_types.UUID) string {
+	if len(uuids) == 0 {
+		return ""
+	}
+	strs := make([]string, len(uuids))
+	for i, u := range uuids {
+		strs[i] = u.String()
+	}
+	return strings.Join(strs, ", ")
+}
+
 // parsePermissions parses permission strings in the format "Action:UserIDOrUsername" and populates a Permissions object.
 // Use "-Action:UserIDOrUsername" to remove a user from a permission (the user is removed from the UserIDs map).
 func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissions) error {
@@ -653,7 +665,10 @@ var debug = false
 var noheader = false
 var webFlag = false
 var wait = true
+var actionWait = false
 var timeout string
+
+const DefaultTimeoutDuration = 10 * time.Minute
 var label []string
 var deleteGate []string
 var spaceIdentifiers []string
@@ -1032,9 +1047,22 @@ func enableContainsFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&contains, "contains", "", "Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with --where using AND logic. Example: \"backend\" to find entities with backend in any searchable field")
 }
 
+// enableWaitFlagWithDefault allows setting a custom default for the wait flag
+func enableWaitFlagWithDefault(cmd *cobra.Command, defaultValue bool) {
+	cmd.Flags().BoolVar(&wait, "wait", defaultValue, "wait for completion")
+	cmd.Flags().StringVar(&timeout, "timeout", DefaultTimeoutDuration.String(), "completion timeout as a duration with units, such as 10s or 2m")
+}
+
+// enableWaitFlag is for trigger commands (default=true)
 func enableWaitFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&wait, "wait", true, "wait for completion")
-	cmd.Flags().StringVar(&timeout, "timeout", "10m", "completion timeout as a duration with units, such as 10s or 2m")
+	enableWaitFlagWithDefault(cmd, true)
+}
+
+// enableActionWaitFlag is for worker action commands (default=false)
+// Uses separate actionWait variable to avoid conflicts with trigger commands
+func enableActionWaitFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&actionWait, "wait", false, "wait for completion")
+	cmd.Flags().StringVar(&timeout, "timeout", DefaultTimeoutDuration.String(), "completion timeout as a duration with units, such as 10s or 2m")
 }
 
 type Unmarshalable interface {
@@ -1696,7 +1724,7 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 		} else if result.Action != nil {
 			successCount++
 			queuedOps = append(queuedOps, result.Action)
-			if !quiet && !wait {
+			if !quiet && !actionWait {
 				// Fetch unit details to get the slug
 				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
 				unitSlug := result.Action.UnitID.String()
@@ -1710,17 +1738,15 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 	}
 
 	// Handle wait flag by awaiting operations (skip if dry run)
-	if wait && len(queuedOps) > 0 && !isDryRun {
+	if actionWait && len(queuedOps) > 0 && !isDryRun {
 		if !quiet {
 			tprint("Awaiting %d %s operations...", len(queuedOps), action)
 		}
-		// Wait for all operations to complete
-		for _, op := range queuedOps {
-			err := awaitCompletion(action, op)
+		// Poll all operations in a single loop instead of sequentially
+		// This prevents false failures when later operations complete before earlier ones
+		results := awaitBulkCompletion(action, queuedOps)
+		for _, err := range results {
 			if err != nil {
-				if !quiet {
-					tprint("Operation %s failed: %v", op.QueuedOperationID, err)
-				}
 				hasErrors = true
 			}
 		}
@@ -1753,12 +1779,24 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			}
 			tprint("Total units processed: %d", successCount+failureCount)
 		} else {
-			if successCount > 0 && failureCount > 0 {
-				tprint("Bulk %s completed with partial success: %d succeeded, %d failed", action, successCount, failureCount)
-			} else if successCount > 0 {
-				tprint("Bulk %s completed successfully: %d units", action, successCount)
-			} else if failureCount > 0 {
-				tprint("Bulk %s failed: %d units", action, failureCount)
+			if actionWait {
+				// Operations were waited for, report completion status
+				if successCount > 0 && failureCount > 0 {
+					tprint("Bulk %s completed with partial success: %d succeeded, %d failed", action, successCount, failureCount)
+				} else if successCount > 0 {
+					tprint("Bulk %s completed successfully: %d units", action, successCount)
+				} else if failureCount > 0 {
+					tprint("Bulk %s failed: %d units", action, failureCount)
+				}
+			} else {
+				// Operations were queued but not waited for
+				if successCount > 0 && failureCount > 0 {
+					tprint("Bulk %s queued with partial success: %d queued, %d failed to queue", action, successCount, failureCount)
+				} else if successCount > 0 {
+					tprint("Bulk %s queued successfully: %d units", action, successCount)
+				} else if failureCount > 0 {
+					tprint("Bulk %s failed to queue: %d units", action, failureCount)
+				}
 			}
 		}
 	}

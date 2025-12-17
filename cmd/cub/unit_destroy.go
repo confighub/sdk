@@ -53,7 +53,7 @@ Examples:
 }
 
 func init() {
-	enableWaitFlag(unitDestroyCmd)
+	enableActionWaitFlag(unitDestroyCmd)
 	addStandardDisplayFlags(unitDestroyCmd)
 	enableWhereFlag(unitDestroyCmd)
 	enableFilterFlag(unitDestroyCmd)
@@ -82,7 +82,7 @@ func runSingleUnitDestroy(unitSlug string) error {
 	}
 
 	// Handle wait flag
-	if wait {
+	if actionWait {
 		err = awaitCompletion("destroy", destroyRes.JSON200)
 		if err != nil {
 			return err

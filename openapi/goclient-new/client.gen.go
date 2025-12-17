@@ -125,8 +125,19 @@ type ClientInterface interface {
 	// GetSelf request
 	GetSelf(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListQueuedOperations request
+	ListQueuedOperations(ctx context.Context, bridgeWorkerId openapi_types.UUID, params *ListQueuedOperationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetQueuedOperation request
+	GetQueuedOperation(ctx context.Context, bridgeWorkerId openapi_types.UUID, queuedOperationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// StreamBridgeWorker request
 	StreamBridgeWorker(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UserCreateActionResultWithBody request with any body
+	UserCreateActionResultWithBody(ctx context.Context, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UserCreateActionResult(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteChangeSets request
 	BulkDeleteChangeSets(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -257,14 +268,14 @@ type ClientInterface interface {
 	GetSpace(ctx context.Context, spaceId openapi_types.UUID, params *GetSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchSpaceWithBody request with any body
-	PatchSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateSpaceWithBody request with any body
-	UpdateSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateSpace(ctx context.Context, spaceId openapi_types.UUID, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateSpace(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListBridgeWorkers request
 	ListBridgeWorkers(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -518,6 +529,9 @@ type ClientInterface interface {
 	ImportUnitWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadUnitLiveData request
+	DownloadUnitLiveData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadUnitLiveState request
 	DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -822,8 +836,56 @@ func (c *Client) GetSelf(ctx context.Context, bridgeWorkerId openapi_types.UUID,
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListQueuedOperations(ctx context.Context, bridgeWorkerId openapi_types.UUID, params *ListQueuedOperationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListQueuedOperationsRequest(c.Server, bridgeWorkerId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetQueuedOperation(ctx context.Context, bridgeWorkerId openapi_types.UUID, queuedOperationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetQueuedOperationRequest(c.Server, bridgeWorkerId, queuedOperationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) StreamBridgeWorker(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewStreamBridgeWorkerRequest(c.Server, bridgeWorkerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserCreateActionResultWithBody(ctx context.Context, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserCreateActionResultRequestWithBody(c.Server, bridgeWorkerId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UserCreateActionResult(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUserCreateActionResultRequest(c.Server, bridgeWorkerId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1398,8 +1460,8 @@ func (c *Client) GetSpace(ctx context.Context, spaceId openapi_types.UUID, param
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchSpaceRequestWithBody(c.Server, spaceId, contentType, body)
+func (c *Client) PatchSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchSpaceRequestWithBody(c.Server, spaceId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1410,8 +1472,8 @@ func (c *Client) PatchSpaceWithBody(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchSpaceRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, body)
+func (c *Client) PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchSpaceRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1422,8 +1484,8 @@ func (c *Client) PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx context.Con
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateSpaceRequestWithBody(c.Server, spaceId, contentType, body)
+func (c *Client) UpdateSpaceWithBody(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSpaceRequestWithBody(c.Server, spaceId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1434,8 +1496,8 @@ func (c *Client) UpdateSpaceWithBody(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateSpace(ctx context.Context, spaceId openapi_types.UUID, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateSpaceRequest(c.Server, spaceId, body)
+func (c *Client) UpdateSpace(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSpaceRequest(c.Server, spaceId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2574,6 +2636,18 @@ func (c *Client) ImportUnit(ctx context.Context, spaceId openapi_types.UUID, uni
 	return c.Client.Do(req)
 }
 
+func (c *Client) DownloadUnitLiveData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadUnitLiveDataRequest(c.Server, spaceId, unitId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDownloadUnitLiveStateRequest(c.Server, spaceId, unitId)
 	if err != nil {
@@ -3484,6 +3558,22 @@ func NewBulkPatchSpacesRequestWithBody(server string, params *BulkPatchSpacesPar
 
 		}
 
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -4040,6 +4130,135 @@ func NewGetSelfRequest(server string, bridgeWorkerId openapi_types.UUID) (*http.
 	return req, nil
 }
 
+// NewListQueuedOperationsRequest generates requests for ListQueuedOperations
+func NewListQueuedOperationsRequest(server string, bridgeWorkerId openapi_types.UUID, params *ListQueuedOperationsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "bridge_worker_id", runtime.ParamLocationPath, bridgeWorkerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/bridge_worker/%s/queued_operation", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetQueuedOperationRequest generates requests for GetQueuedOperation
+func NewGetQueuedOperationRequest(server string, bridgeWorkerId openapi_types.UUID, queuedOperationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "bridge_worker_id", runtime.ParamLocationPath, bridgeWorkerId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "queued_operation_id", runtime.ParamLocationPath, queuedOperationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/bridge_worker/%s/queued_operation/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewStreamBridgeWorkerRequest generates requests for StreamBridgeWorker
 func NewStreamBridgeWorkerRequest(server string, bridgeWorkerId openapi_types.UUID) (*http.Request, error) {
 	var err error
@@ -4070,6 +4289,53 @@ func NewStreamBridgeWorkerRequest(server string, bridgeWorkerId openapi_types.UU
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUserCreateActionResultRequest calls the generic UserCreateActionResult builder with application/json body
+func NewUserCreateActionResultRequest(server string, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUserCreateActionResultRequestWithBody(server, bridgeWorkerId, "application/json", bodyReader)
+}
+
+// NewUserCreateActionResultRequestWithBody generates requests for UserCreateActionResult with any type of body
+func NewUserCreateActionResultRequestWithBody(server string, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "bridge_worker_id", runtime.ParamLocationPath, bridgeWorkerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/bridge_worker/%s/user_action_result", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -7331,18 +7597,18 @@ func NewGetSpaceRequest(server string, spaceId openapi_types.UUID, params *GetSp
 }
 
 // NewPatchSpaceRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchSpace builder with application/merge-patch+json body
-func NewPatchSpaceRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, body PatchSpaceApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchSpaceRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, params *PatchSpaceParams, body PatchSpaceApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchSpaceRequestWithBody(server, spaceId, "application/merge-patch+json", bodyReader)
+	return NewPatchSpaceRequestWithBody(server, spaceId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchSpaceRequestWithBody generates requests for PatchSpace with any type of body
-func NewPatchSpaceRequestWithBody(server string, spaceId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchSpaceRequestWithBody(server string, spaceId openapi_types.UUID, params *PatchSpaceParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7365,6 +7631,28 @@ func NewPatchSpaceRequestWithBody(server string, spaceId openapi_types.UUID, con
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -7378,18 +7666,18 @@ func NewPatchSpaceRequestWithBody(server string, spaceId openapi_types.UUID, con
 }
 
 // NewUpdateSpaceRequest calls the generic UpdateSpace builder with application/json body
-func NewUpdateSpaceRequest(server string, spaceId openapi_types.UUID, body UpdateSpaceJSONRequestBody) (*http.Request, error) {
+func NewUpdateSpaceRequest(server string, spaceId openapi_types.UUID, params *UpdateSpaceParams, body UpdateSpaceJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateSpaceRequestWithBody(server, spaceId, "application/json", bodyReader)
+	return NewUpdateSpaceRequestWithBody(server, spaceId, params, "application/json", bodyReader)
 }
 
 // NewUpdateSpaceRequestWithBody generates requests for UpdateSpace with any type of body
-func NewUpdateSpaceRequestWithBody(server string, spaceId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateSpaceRequestWithBody(server string, spaceId openapi_types.UUID, params *UpdateSpaceParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -7412,6 +7700,28 @@ func NewUpdateSpaceRequestWithBody(server string, spaceId openapi_types.UUID, co
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -12323,6 +12633,47 @@ func NewImportUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 	return req, nil
 }
 
+// NewDownloadUnitLiveDataRequest generates requests for DownloadUnitLiveData
+func NewDownloadUnitLiveDataRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/live_data", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDownloadUnitLiveStateRequest generates requests for DownloadUnitLiveState
 func NewDownloadUnitLiveStateRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
 	var err error
@@ -12346,7 +12697,7 @@ func NewDownloadUnitLiveStateRequest(server string, spaceId openapi_types.UUID, 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/live-state", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/live_state", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -16923,8 +17274,19 @@ type ClientWithResponsesInterface interface {
 	// GetSelfWithResponse request
 	GetSelfWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSelfResponse, error)
 
+	// ListQueuedOperationsWithResponse request
+	ListQueuedOperationsWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, params *ListQueuedOperationsParams, reqEditors ...RequestEditorFn) (*ListQueuedOperationsResponse, error)
+
+	// GetQueuedOperationWithResponse request
+	GetQueuedOperationWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, queuedOperationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetQueuedOperationResponse, error)
+
 	// StreamBridgeWorkerWithResponse request
 	StreamBridgeWorkerWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*StreamBridgeWorkerResponse, error)
+
+	// UserCreateActionResultWithBodyWithResponse request with any body
+	UserCreateActionResultWithBodyWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserCreateActionResultResponse, error)
+
+	UserCreateActionResultWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*UserCreateActionResultResponse, error)
 
 	// BulkDeleteChangeSetsWithResponse request
 	BulkDeleteChangeSetsWithResponse(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeSetsResponse, error)
@@ -17055,14 +17417,14 @@ type ClientWithResponsesInterface interface {
 	GetSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *GetSpaceParams, reqEditors ...RequestEditorFn) (*GetSpaceResponse, error)
 
 	// PatchSpaceWithBodyWithResponse request with any body
-	PatchSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error)
+	PatchSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error)
 
-	PatchSpaceWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error)
+	PatchSpaceWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error)
 
 	// UpdateSpaceWithBodyWithResponse request with any body
-	UpdateSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error)
+	UpdateSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error)
 
-	UpdateSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error)
+	UpdateSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error)
 
 	// ListBridgeWorkersWithResponse request
 	ListBridgeWorkersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*ListBridgeWorkersResponse, error)
@@ -17316,6 +17678,9 @@ type ClientWithResponsesInterface interface {
 	ImportUnitWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
 
 	ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
+
+	// DownloadUnitLiveDataWithResponse request
+	DownloadUnitLiveDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveDataResponse, error)
 
 	// DownloadUnitLiveStateWithResponse request
 	DownloadUnitLiveStateWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveStateResponse, error)
@@ -17707,6 +18072,62 @@ func (r GetSelfResponse) StatusCode() int {
 	return 0
 }
 
+type ListQueuedOperationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]QueuedOperation
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListQueuedOperationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListQueuedOperationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetQueuedOperationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *QueuedOperation
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetQueuedOperationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetQueuedOperationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type StreamBridgeWorkerResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -17729,6 +18150,35 @@ func (r StreamBridgeWorkerResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r StreamBridgeWorkerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UserCreateActionResultResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UserCreateActionResultResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UserCreateActionResultResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -20651,6 +21101,33 @@ func (r ImportUnitResponse) StatusCode() int {
 	return 0
 }
 
+type DownloadUnitLiveDataResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadUnitLiveDataResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadUnitLiveDataResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DownloadUnitLiveStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -22043,6 +22520,24 @@ func (c *ClientWithResponses) GetSelfWithResponse(ctx context.Context, bridgeWor
 	return ParseGetSelfResponse(rsp)
 }
 
+// ListQueuedOperationsWithResponse request returning *ListQueuedOperationsResponse
+func (c *ClientWithResponses) ListQueuedOperationsWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, params *ListQueuedOperationsParams, reqEditors ...RequestEditorFn) (*ListQueuedOperationsResponse, error) {
+	rsp, err := c.ListQueuedOperations(ctx, bridgeWorkerId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListQueuedOperationsResponse(rsp)
+}
+
+// GetQueuedOperationWithResponse request returning *GetQueuedOperationResponse
+func (c *ClientWithResponses) GetQueuedOperationWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, queuedOperationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetQueuedOperationResponse, error) {
+	rsp, err := c.GetQueuedOperation(ctx, bridgeWorkerId, queuedOperationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetQueuedOperationResponse(rsp)
+}
+
 // StreamBridgeWorkerWithResponse request returning *StreamBridgeWorkerResponse
 func (c *ClientWithResponses) StreamBridgeWorkerWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*StreamBridgeWorkerResponse, error) {
 	rsp, err := c.StreamBridgeWorker(ctx, bridgeWorkerId, reqEditors...)
@@ -22050,6 +22545,23 @@ func (c *ClientWithResponses) StreamBridgeWorkerWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseStreamBridgeWorkerResponse(rsp)
+}
+
+// UserCreateActionResultWithBodyWithResponse request with arbitrary body returning *UserCreateActionResultResponse
+func (c *ClientWithResponses) UserCreateActionResultWithBodyWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UserCreateActionResultResponse, error) {
+	rsp, err := c.UserCreateActionResultWithBody(ctx, bridgeWorkerId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserCreateActionResultResponse(rsp)
+}
+
+func (c *ClientWithResponses) UserCreateActionResultWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*UserCreateActionResultResponse, error) {
+	rsp, err := c.UserCreateActionResult(ctx, bridgeWorkerId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUserCreateActionResultResponse(rsp)
 }
 
 // BulkDeleteChangeSetsWithResponse request returning *BulkDeleteChangeSetsResponse
@@ -22463,16 +22975,16 @@ func (c *ClientWithResponses) GetSpaceWithResponse(ctx context.Context, spaceId 
 }
 
 // PatchSpaceWithBodyWithResponse request with arbitrary body returning *PatchSpaceResponse
-func (c *ClientWithResponses) PatchSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error) {
-	rsp, err := c.PatchSpaceWithBody(ctx, spaceId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error) {
+	rsp, err := c.PatchSpaceWithBody(ctx, spaceId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchSpaceResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchSpaceWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error) {
-	rsp, err := c.PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx, spaceId, body, reqEditors...)
+func (c *ClientWithResponses) PatchSpaceWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *PatchSpaceParams, body PatchSpaceApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchSpaceResponse, error) {
+	rsp, err := c.PatchSpaceWithApplicationMergePatchPlusJSONBody(ctx, spaceId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -22480,16 +22992,16 @@ func (c *ClientWithResponses) PatchSpaceWithApplicationMergePatchPlusJSONBodyWit
 }
 
 // UpdateSpaceWithBodyWithResponse request with arbitrary body returning *UpdateSpaceResponse
-func (c *ClientWithResponses) UpdateSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error) {
-	rsp, err := c.UpdateSpaceWithBody(ctx, spaceId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateSpaceWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error) {
+	rsp, err := c.UpdateSpaceWithBody(ctx, spaceId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateSpaceResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error) {
-	rsp, err := c.UpdateSpace(ctx, spaceId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceParams, body UpdateSpaceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceResponse, error) {
+	rsp, err := c.UpdateSpace(ctx, spaceId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -23311,6 +23823,15 @@ func (c *ClientWithResponses) ImportUnitWithResponse(ctx context.Context, spaceI
 		return nil, err
 	}
 	return ParseImportUnitResponse(rsp)
+}
+
+// DownloadUnitLiveDataWithResponse request returning *DownloadUnitLiveDataResponse
+func (c *ClientWithResponses) DownloadUnitLiveDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveDataResponse, error) {
+	rsp, err := c.DownloadUnitLiveData(ctx, spaceId, unitId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadUnitLiveDataResponse(rsp)
 }
 
 // DownloadUnitLiveStateWithResponse request returning *DownloadUnitLiveStateResponse
@@ -24406,6 +24927,142 @@ func ParseGetSelfResponse(rsp *http.Response) (*GetSelfResponse, error) {
 	return response, nil
 }
 
+// ParseListQueuedOperationsResponse parses an HTTP response from a ListQueuedOperationsWithResponse call
+func ParseListQueuedOperationsResponse(rsp *http.Response) (*ListQueuedOperationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListQueuedOperationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []QueuedOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetQueuedOperationResponse parses an HTTP response from a GetQueuedOperationWithResponse call
+func ParseGetQueuedOperationResponse(rsp *http.Response) (*GetQueuedOperationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetQueuedOperationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest QueuedOperation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseStreamBridgeWorkerResponse parses an HTTP response from a StreamBridgeWorkerWithResponse call
 func ParseStreamBridgeWorkerResponse(rsp *http.Response) (*StreamBridgeWorkerResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -24420,6 +25077,81 @@ func ParseStreamBridgeWorkerResponse(rsp *http.Response) (*StreamBridgeWorkerRes
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUserCreateActionResultResponse parses an HTTP response from a UserCreateActionResultWithResponse call
+func ParseUserCreateActionResultResponse(rsp *http.Response) (*UserCreateActionResultResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UserCreateActionResultResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31938,6 +32670,67 @@ func ParseImportUnitResponse(rsp *http.Response) (*ImportUnitResponse, error) {
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadUnitLiveDataResponse parses an HTTP response from a DownloadUnitLiveDataWithResponse call
+func ParseDownloadUnitLiveDataResponse(rsp *http.Response) (*DownloadUnitLiveDataResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadUnitLiveDataResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

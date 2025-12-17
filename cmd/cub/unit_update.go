@@ -832,6 +832,9 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	if !done {
 		return errors.New("triggers didn't execute on unit " + unitDetails.Slug)
 	}
+	if len(unitDetails.ApplyGates) > 0 && !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
+		tprint("Unit %s (%s) has apply gates: %s", unitDetails.Slug, unitDetails.UnitID.String(), applyGatesToString(unitDetails.ApplyGates))
+	}
 	return nil
 }
 

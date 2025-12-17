@@ -42,6 +42,7 @@ type ActionResultType string
 const (
 	ActionResultNone              ActionResultType = "None"
 	ActionResultApplyCompleted    ActionResultType = "ApplyCompleted"
+	ActionResultApplySynced       ActionResultType = "ApplySynced" // Config pushed to target, waiting for resources to be ready
 	ActionResultApplyFailed       ActionResultType = "ApplyFailed"
 	ActionResultApplyWaitFailed   ActionResultType = "ApplyWaitFailed"
 	ActionResultDestroyCompleted  ActionResultType = "DestroyCompleted"
@@ -60,6 +61,7 @@ const (
 var ValidActionResult = map[ActionResultType]bool{
 	ActionResultNone:                        true,
 	ActionResultApplyCompleted:              true,
+	ActionResultApplySynced:                 true,
 	ActionResultApplyFailed:                 true,
 	ActionResultApplyWaitFailed:             true,
 	ActionResultDestroyCompleted:            true,
@@ -143,9 +145,10 @@ type ActionResult struct {
 	// QueuedOperationID links this result back to the original operation request.
 	QueuedOperationID uuid.UUID `description:"UUID of the operation corresponding to the action request"`
 	ActionResultBaseMeta
-	Data      []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Configuration data of the Unit"`
-	LiveState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live state corresponding to the Unit"`
-	Outputs   []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Outputs resulting from applying the configuration data of the Unit"`
+	Data      []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
+	LiveData  []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit (for inventory and drift detection)"`
+	LiveState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit (for status determination)"`
+	// TODO: other worker outputs and error details
 }
 
 const MaxConfigDataLength = 64 * 1024 * 1024 // 64MB
@@ -171,11 +174,11 @@ func ValidateActionResultData(ar *ActionResult) error {
 	if len(ar.Data) > MaxConfigDataLength {
 		return errors.Errorf("Data length %d exceeds max length %d", len(ar.Data), MaxConfigDataLength)
 	}
+	if len(ar.LiveData) > MaxConfigDataLength {
+		return errors.Errorf("LiveData length %d exceeds max length %d", len(ar.LiveData), MaxConfigDataLength)
+	}
 	if len(ar.LiveState) > MaxConfigDataLength {
 		return errors.Errorf("LiveState length %d exceeds max length %d", len(ar.LiveState), MaxConfigDataLength)
-	}
-	if len(ar.Outputs) > MaxConfigDataLength {
-		return errors.Errorf("Outputs length %d exceeds max length %d", len(ar.Outputs), MaxConfigDataLength)
 	}
 	return nil
 }

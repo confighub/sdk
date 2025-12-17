@@ -98,26 +98,26 @@ func (i *InventoryConfigMap) GetInventoryID() string {
 	return labels[InventoryIDLabel]
 }
 
-// SplitInventoryFromLiveState splits the LiveState YAML into inventory ConfigMap and remaining resources
+// SplitInventoryFromLiveData splits the LiveData YAML into inventory ConfigMap and remaining resources
 // The inventory ConfigMap is expected to be the first document in the YAML
-func SplitInventoryFromLiveState(liveState []byte) (*InventoryConfigMap, []byte, error) {
-	if len(liveState) == 0 {
+func SplitInventoryFromLiveData(liveData []byte) (*InventoryConfigMap, []byte, error) {
+	if len(liveData) == 0 {
 		return nil, nil, nil
 	}
 
 	// Parse all YAML documents using gaby
-	documents, err := gaby.ParseAll(liveState)
+	documents, err := gaby.ParseAll(liveData)
 	if err != nil {
-		return nil, liveState, fmt.Errorf("failed to parse YAML documents: %w", err)
+		return nil, liveData, fmt.Errorf("failed to parse YAML documents: %w", err)
 	}
 	if len(documents) == 0 {
-		return nil, liveState, nil
+		return nil, liveData, nil
 	}
 
 	// Extract first document as potential inventory
 	inventoryCM, isInventory := extractInventoryFromDocument(documents[0])
 	if !isInventory {
-		return nil, liveState, nil
+		return nil, liveData, nil
 	}
 
 	// Reconstruct remaining documents
@@ -278,19 +278,19 @@ func isInventoryConfigMap(obj *unstructured.Unstructured) bool {
 	return false
 }
 
-// CreateInventoryFromLiveState creates an InMemInventoryClient initialized with LiveState data
+// CreateInventoryFromLiveData creates an InMemInventoryClient initialized with LiveData data
 // This is a convenience wrapper for backward compatibility
-func CreateInventoryFromLiveState(ctx context.Context, liveState []byte, inv inventory.Info) (*InMemInventoryClient, *InventoryConfigMap, []byte, error) {
+func CreateInventoryFromLiveData(ctx context.Context, liveData []byte, inv inventory.Info) (*InMemInventoryClient, *InventoryConfigMap, []byte, error) {
 	invClient := NewInMemInventoryClient()
-	inventoryCM, liveStateWithoutInventoryCM, err := invClient.CreateFromLiveState(ctx, liveState, inv)
-	return invClient, inventoryCM, liveStateWithoutInventoryCM, err
+	inventoryCM, liveDataWithoutInventoryCM, err := invClient.CreateFromLiveData(ctx, liveData, inv)
+	return invClient, inventoryCM, liveDataWithoutInventoryCM, err
 }
 
-// SaveInventoryToLiveState updates the LiveState with the current inventory state
+// SaveInventoryToLiveData updates the LiveData with the current inventory state
 // This is a convenience wrapper for backward compatibility
-func SaveInventoryToLiveState(invClient *InMemInventoryClient, inventoryCM *InventoryConfigMap, inventoryInfo inventory.Info, resources []byte) ([]byte, error) {
+func SaveInventoryToLiveData(invClient *InMemInventoryClient, inventoryCM *InventoryConfigMap, inventoryInfo inventory.Info, resources []byte) ([]byte, error) {
 	if invClient == nil {
 		return resources, nil
 	}
-	return invClient.SaveToLiveState(inventoryCM, inventoryInfo, resources)
+	return invClient.SaveToLiveData(inventoryCM, inventoryInfo, resources)
 }

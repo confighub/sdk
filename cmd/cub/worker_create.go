@@ -39,10 +39,12 @@ var workerCreateArgs struct {
 }
 
 var workerCreatePermissions []string
+var workerCreateOrgRole string
 
 func init() {
 	addStandardCreateFlags(workerCreateCmd)
 	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	workerCreateCmd.Flags().StringVar(&workerCreateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
 	workerCmd.AddCommand(workerCreateCmd)
 }
 
@@ -74,6 +76,10 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	workerDetails.Slug = makeSlug(args[0])
 	workerDetails.SpaceID = uuid.MustParse(selectedSpaceID)
+
+	if workerCreateOrgRole != "" {
+		workerDetails.OrgRole = workerCreateOrgRole
+	}
 
 	workerDetails, err = apiCreateWorker(workerDetails, workerDetails.SpaceID)
 	if err != nil {

@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -276,78 +275,79 @@ func TestOpenTofuAWSWorker_Destroy(t *testing.T) {
 	}
 }
 
-func TestConvertTofuOutputs(t *testing.T) {
-	tests := []struct {
-		name     string
-		outputs  map[string]*tfexec.OutputMeta
-		expected map[string]interface{}
-		wantErr  bool
-	}{
-		{
-			name: "simple string output",
-			outputs: map[string]*tfexec.OutputMeta{
-				"string_output": {
-					Value: json.RawMessage(`"test value"`),
-				},
-			},
-			expected: map[string]interface{}{
-				"string_output": "test value",
-			},
-			wantErr: false,
-		},
-		{
-			name: "number output",
-			outputs: map[string]*tfexec.OutputMeta{
-				"number_output": {
-					Value: json.RawMessage(`42`),
-				},
-			},
-			expected: map[string]interface{}{
-				"number_output": float64(42),
-			},
-			wantErr: false,
-		},
-		{
-			name: "complex output",
-			outputs: map[string]*tfexec.OutputMeta{
-				"complex_output": {
-					Value: json.RawMessage(`{"key1": "value1", "key2": 42, "key3": [1, 2, 3]}`),
-				},
-			},
-			expected: map[string]interface{}{
-				"complex_output": map[string]interface{}{
-					"key1": "value1",
-					"key2": float64(42),
-					"key3": []interface{}{float64(1), float64(2), float64(3)},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "invalid json",
-			outputs: map[string]*tfexec.OutputMeta{
-				"invalid_output": {
-					Value: json.RawMessage(`invalid json`),
-				},
-			},
-			wantErr: true,
-		},
-	}
+// Outputs are not supported
+// func TestConvertTofuOutputs(t *testing.T) {
+// 	tests := []struct {
+// 		name     string
+// 		outputs  map[string]*tfexec.OutputMeta
+// 		expected map[string]interface{}
+// 		wantErr  bool
+// 	}{
+// 		{
+// 			name: "simple string output",
+// 			outputs: map[string]*tfexec.OutputMeta{
+// 				"string_output": {
+// 					Value: json.RawMessage(`"test value"`),
+// 				},
+// 			},
+// 			expected: map[string]interface{}{
+// 				"string_output": "test value",
+// 			},
+// 			wantErr: false,
+// 		},
+// 		{
+// 			name: "number output",
+// 			outputs: map[string]*tfexec.OutputMeta{
+// 				"number_output": {
+// 					Value: json.RawMessage(`42`),
+// 				},
+// 			},
+// 			expected: map[string]interface{}{
+// 				"number_output": float64(42),
+// 			},
+// 			wantErr: false,
+// 		},
+// 		{
+// 			name: "complex output",
+// 			outputs: map[string]*tfexec.OutputMeta{
+// 				"complex_output": {
+// 					Value: json.RawMessage(`{"key1": "value1", "key2": 42, "key3": [1, 2, 3]}`),
+// 				},
+// 			},
+// 			expected: map[string]interface{}{
+// 				"complex_output": map[string]interface{}{
+// 					"key1": "value1",
+// 					"key2": float64(42),
+// 					"key3": []interface{}{float64(1), float64(2), float64(3)},
+// 				},
+// 			},
+// 			wantErr: false,
+// 		},
+// 		{
+// 			name: "invalid json",
+// 			outputs: map[string]*tfexec.OutputMeta{
+// 				"invalid_output": {
+// 					Value: json.RawMessage(`invalid json`),
+// 				},
+// 			},
+// 			wantErr: true,
+// 		},
+// 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := convertTofuOutputs(tt.outputs)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			result, err := convertTofuOutputs(tt.outputs)
+// 			if tt.wantErr {
+// 				assert.Error(t, err)
+// 				return
+// 			}
 
-			assert.NoError(t, err)
+// 			assert.NoError(t, err)
 
-			var decoded map[string]interface{}
-			err = json.Unmarshal(result, &decoded)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, decoded)
-		})
-	}
-}
+// 			var decoded map[string]interface{}
+// 			err = json.Unmarshal(result, &decoded)
+// 			assert.NoError(t, err)
+// 			assert.Equal(t, tt.expected, decoded)
+// 		})
+// 	}
+// }

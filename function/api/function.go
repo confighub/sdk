@@ -75,12 +75,13 @@ const (
 	DataTypeEnum   = DataType("enum")
 
 	// Additional Storage types
-	DataTypeUUID          = DataType("uuid")
-	DataTypeTime          = DataType("time")
-	DataTypeStringMap     = DataType("map[string]string")
-	DataTypeStringBoolMap = DataType("map[string]bool")
-	DataTypeUUIDArray     = DataType("[]uuid")
-	DataTypeUUIDStringMap = DataType("map[uuid]string")
+	DataTypeUUID                    = DataType("uuid")
+	DataTypeTime                    = DataType("time")
+	DataTypeStringMap               = DataType("map[string]string")
+	DataTypeStringBoolMap           = DataType("map[string]bool")
+	DataTypeUUIDArray               = DataType("[]uuid")
+	DataTypeUUIDStringMap           = DataType("map[uuid]string")
+	DataTypeStringStringUUIDBoolMap = DataType("map[string]map[string]map[uuid]bool")
 
 	// Structured data types
 	DataTypeAttributeValueList   = DataType("AttributeValueList")
@@ -247,6 +248,12 @@ type FunctionContext struct {
 
 	// SpaceSlug is the Slug of the Space of the configuration Unit.
 	SpaceSlug string
+
+	// SpaceLabels contains the labels of the Space of the configuration Unit.
+	SpaceLabels map[string]string
+
+	// SpaceAnnotations contains the annotations of the Space of the configuration Unit.
+	SpaceAnnotations map[string]string
 
 	// OrganizationID is the id of the Organization of the configuration Unit.
 	OrganizationID uuid.UUID

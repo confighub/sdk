@@ -52,7 +52,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -103,7 +103,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are OrganizationID.
+          Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -227,7 +227,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -278,7 +278,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are OrganizationID.
+          Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -286,6 +286,13 @@ paths:
         required: false
         schema:
           type: string
+      - description: If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID
+          even if these fields have not changed
+        in: query
+        name: refresh_triggers
+        required: false
+        schema:
+          type: boolean
       requestBody:
         content:
           application/merge-patch+json:
@@ -331,6 +338,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                TriggerFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -438,7 +450,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -489,7 +501,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are OrganizationID.
+          Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -555,6 +567,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                TriggerFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -662,7 +679,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -821,7 +838,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -928,7 +945,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -1027,10 +1044,18 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OrgRole:
+                  description: ""
+                  nullable: true
+                  type: string
                 Permissions:
                   additionalProperties:
                     nullable: true
                     type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                ProvidedInfo:
                   description: ""
                   nullable: true
                   type: object
@@ -1241,6 +1266,211 @@ paths:
       summary: Gets the current BridgeWorker from context
       tags:
       - BridgeWorker
+  /bridge_worker/{bridge_worker_id}/queued_operation:
+    get:
+      description: List QueuedOperations
+      operationId: ListQueuedOperations
+      parameters:
+      - description: Unique identifier for a bridge_worker_id
+        in: path
+        name: bridge_worker_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of QueuedOperations returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the QueuedOperation list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (QueuedOperation).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/QueuedOperation'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: QueuedOperation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: QueuedOperation not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing QueuedOperation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List QueuedOperations
+      tags:
+      - QueuedOperation
+  /bridge_worker/{bridge_worker_id}/queued_operation/{queued_operation_id}:
+    get:
+      description: Get QueuedOperation
+      operationId: GetQueuedOperation
+      parameters:
+      - description: Unique identifier for a bridge_worker_id
+        in: path
+        name: bridge_worker_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a queued_operation_id
+        in: path
+        name: queued_operation_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedOperation'
+          description: "UnitAction is a record of an action to be performed by a Bridge
+            Worker. They are queued and sent to the worker in creation order. \nIf
+            the worker is temporarily disconnected the queued actions will be sent
+            when the worker reconnects or responds.\nIf there are links between units
+            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
+            in the appropriate order (reverse or forword topological order). One or
+            more UnitEvents will correspond\nto each UnitAction."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: QueuedOperation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: QueuedOperation not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing QueuedOperation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get QueuedOperation
+      tags:
+      - QueuedOperation
   /bridge_worker/{bridge_worker_id}/stream:
     post:
       description: Establishes an SSE connection with a bridge worker for real-time
@@ -1304,6 +1534,76 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Stream events to bridge worker
+      tags:
+      - BridgeWorker
+  /bridge_worker/{bridge_worker_id}/user_action_result:
+    post:
+      description: Records the status/result of an action executed by a bridge worker
+        using a worker user identity
+      operationId: UserCreateActionResult
+      parameters:
+      - description: Unique identifier for a bridge_worker_id
+        in: path
+        name: bridge_worker_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionResult'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing BridgeWorker.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create action result
       tags:
       - BridgeWorker
   /change_set:
@@ -1950,7 +2250,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning changesets
 
@@ -2769,7 +3069,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning filters
 
@@ -3843,7 +4143,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning invocations
 
@@ -4569,7 +4869,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for created links
 
@@ -4624,7 +4924,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select ToSpaces for created links
 
@@ -5920,7 +6220,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5971,7 +6271,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are OrganizationID.
+          Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -6211,7 +6511,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are OrganizationID.
+          Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -6303,6 +6603,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID
+          even if these fields have not changed
+        in: query
+        name: refresh_triggers
+        required: false
+        schema:
+          type: boolean
       requestBody:
         content:
           application/merge-patch+json:
@@ -6348,6 +6655,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                TriggerFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -6424,6 +6736,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID
+          even if these fields have not changed
+        in: query
+        name: refresh_triggers
+        required: false
+        schema:
+          type: boolean
       requestBody:
         content:
           application/json:
@@ -6522,7 +6841,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+          Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -6952,10 +7271,18 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OrgRole:
+                  description: ""
+                  nullable: true
+                  type: string
                 Permissions:
                   additionalProperties:
                     nullable: true
                     type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                ProvidedInfo:
                   description: ""
                   nullable: true
                   type: object
@@ -10675,7 +11002,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13412,7 +13739,73 @@ paths:
       summary: Import a configuration unit
       tags:
       - Unit
-  /space/{space_id}/unit/{unit_id}/live-state:
+  /space/{space_id}/unit/{unit_id}/live_data:
+    get:
+      description: Download the live data of a unit
+      operationId: DownloadUnitLiveData
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/octet-stream:
+              schema:
+                format: base64
+                type: string
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Download live data
+      tags:
+      - Unit
+  /space/{space_id}/unit/{unit_id}/live_state:
     get:
       description: Download the live state of a unit
       operationId: DownloadUnitLiveState
@@ -15866,7 +16259,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning tags
 
@@ -16041,7 +16434,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -16200,7 +16593,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -16353,7 +16746,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -17219,7 +17612,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning triggers
 
@@ -18252,7 +18645,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning units
 
@@ -20295,7 +20688,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+          Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning views
 
@@ -20468,22 +20861,22 @@ components:
         Action:
           $ref: '#/components/schemas/ActionType'
         Data:
-          description: Configuration data of the Unit
+          description: Updated configuration Data of the Unit (for refresh and import)
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LiveData:
+          description: Live Data corresponding to the Unit (for inventory and drift
+            detection)
           format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         LiveState:
-          description: Live state corresponding to the Unit
+          description: Live State corresponding to the Unit (for status determination)
           format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         Message:
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Outputs:
-          description: Outputs resulting from applying the configuration data of the
-            Unit
-          format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         QueuedOperationID:
@@ -20697,6 +21090,10 @@ components:
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrgRole:
+          description: Organization-level permission for the BridgeWorker User.
           type: string
           x-go-type-skip-optional-pointer: true
         OrganizationID:
@@ -21189,6 +21586,13 @@ components:
             type: integer
           nullable: true
           type: object
+          x-go-type-skip-optional-pointer: true
+        TriggerFilter:
+          $ref: '#/components/schemas/Filter'
+        Triggers:
+          items:
+            $ref: '#/components/schemas/Trigger'
+          type: array
           x-go-type-skip-optional-pointer: true
         UnappliedUnitCount:
           format: int64
@@ -22680,6 +23084,16 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        TriggerFilterID:
+          $ref: '#/components/schemas/UUID'
+        TriggerIDs:
+          description: List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID
+            criteria. (readonly)
+          items:
+            $ref: '#/components/schemas/UUID'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -23294,6 +23708,13 @@ components:
             is changed.
           type: string
           x-go-type-skip-optional-pointer: true
+        LiveData:
+          description: The live resources as of the most recent action in the same
+            representation as Data.
+          format: base64
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         LiveRevisionNum:
           description: Sequence number the last Revision applied once apply has completed.
             0 if no live revision.
@@ -23302,8 +23723,7 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         LiveState:
-          description: The current live state of the Unit as reported by the bridge
-            worker associated with the Target attached to the Unit.
+          description: The live state as of the most recent action; content is ProviderType-specific.
           format: base64
           readOnly: true
           type: string
@@ -23314,12 +23734,6 @@ components:
           description: Unique identifier for an organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Outputs:
-          description: The outputs of the last successful apply of the Unit.
-          format: base64
-          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         PreviousLiveRevisionNum:
@@ -23665,6 +24079,9 @@ components:
         Status:
           type: string
           x-go-type-skip-optional-pointer: true
+        SyncStatus:
+          type: string
+          x-go-type-skip-optional-pointer: true
         ToLinks:
           items:
             $ref: '#/components/schemas/Link'
@@ -23694,6 +24111,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Status:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SyncStatus:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object

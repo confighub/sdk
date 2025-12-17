@@ -207,15 +207,15 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 		return err
 	}
 
-	// Parse the existing inventory and lastAppliedData from LiveState if available
+	// Parse the existing inventory and lastAppliedData from LiveData if available
 	var oldInventory *cubapi.Inventory
-	var lastAppliedDataFromLiveState []byte
+	var lastAppliedDataFromLiveData []byte
 
-	if len(payload.LiveState) > 0 {
-		// Parse the LiveState as multi-document YAML
-		container, err := gaby.ParseAll(payload.LiveState)
+	if len(payload.LiveData) > 0 {
+		// Parse the LiveData as multi-document YAML
+		container, err := gaby.ParseAll(payload.LiveData)
 		if err != nil {
-			log.Log.Error(err, "Failed to parse LiveState as multi-document YAML")
+			log.Log.Error(err, "Failed to parse LiveData as multi-document YAML")
 		} else if len(container) > 0 {
 			// First document should be the Inventory
 			firstDoc := container[0]
@@ -237,37 +237,37 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 					lastAppliedDocs = append(lastAppliedDocs, container[i].String())
 				}
 				if len(lastAppliedDocs) > 0 {
-					lastAppliedDataFromLiveState = []byte(strings.Join(lastAppliedDocs, "\n---\n"))
+					lastAppliedDataFromLiveData = []byte(strings.Join(lastAppliedDocs, "\n---\n"))
 				}
 			}
 		}
 	}
 
-	// Get last-applied data from LiveRevisionNum if available, fallback to LiveState
+	// Get last-applied data from LiveRevisionNum if available, fallback to LiveData
 	var lastAppliedData []byte
 	if payload.LiveRevisionNum > 0 {
 		revision, err := cubapi.GetRevisionByNum(wctx.Context(), client, payload.SpaceID.String(), payload.UnitID.String(), payload.LiveRevisionNum)
 		if err != nil {
-			log.Log.Info("Could not fetch live revision for lastAppliedData, falling back to LiveState",
+			log.Log.Info("Could not fetch live revision for lastAppliedData, falling back to LiveData",
 				"liveRevisionNum", payload.LiveRevisionNum,
 				"error", err)
-			lastAppliedData = lastAppliedDataFromLiveState
+			lastAppliedData = lastAppliedDataFromLiveData
 		} else if revision != nil && revision.Revision != nil && revision.Revision.Data != "" {
 			// Data is base64 encoded, need to decode it
 			decodedData, err := base64.StdEncoding.DecodeString(revision.Revision.Data)
 			if err != nil {
-				log.Log.Error(err, "Failed to decode base64 data from revision, falling back to LiveState",
+				log.Log.Error(err, "Failed to decode base64 data from revision, falling back to LiveData",
 					"liveRevisionNum", payload.LiveRevisionNum)
-				lastAppliedData = lastAppliedDataFromLiveState
+				lastAppliedData = lastAppliedDataFromLiveData
 			} else {
 				lastAppliedData = decodedData
 			}
 		} else {
-			lastAppliedData = lastAppliedDataFromLiveState
+			lastAppliedData = lastAppliedDataFromLiveData
 		}
 	} else {
-		// No LiveRevisionNum, use data from LiveState
-		lastAppliedData = lastAppliedDataFromLiveState
+		// No LiveRevisionNum, use data from LiveData
+		lastAppliedData = lastAppliedDataFromLiveData
 	}
 
 	// Call cubapi.Apply with the current unit's space slug as the default
@@ -310,8 +310,8 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 			failedCount++
 		} else if result.Action == "created" || result.Action == "updated" || result.Action == "unchanged" || result.Action == "deleted" {
 			successCount++
-			// Include the entity in LiveState if it currently exists (created, updated, or unchanged)
-			// Deleted entities should not be included in LiveState since they no longer exist
+			// Include the entity in LiveData if it currently exists (created, updated, or unchanged)
+			// Deleted entities should not be included in LiveData since they no longer exist
 			if result.Entity != nil && (result.Action == "created" || result.Action == "updated" || result.Action == "unchanged") {
 				successfulEntities = append(successfulEntities, entityWithType{
 					Entity:     result.Entity,
@@ -322,17 +322,17 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 		}
 	}
 
-	// Build the new LiveState with Inventory first, followed by applied entities
-	var liveStateData []byte
+	// Build the new LiveData with Inventory first, followed by applied entities
+	var liveDataData []byte
 	if newInventory != nil {
-		var liveStateDocs []string
+		var liveDataDocs []string
 
 		// First document: Inventory
 		inventoryYAML, err := yaml.Marshal(newInventory)
 		if err != nil {
 			log.Log.Error(err, "Failed to marshal inventory to YAML")
 		} else {
-			liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(inventoryYAML)))
+			liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(inventoryYAML)))
 		}
 
 		// Subsequent documents: Successfully applied entities
@@ -343,12 +343,12 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 				log.Log.Error(err, "Failed to marshal entity to YAML", "entity", item.Entity, "entityType", item.EntityType, "spaceSlug", item.SpaceSlug)
 				continue
 			}
-			liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(entityYAML)))
+			liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(entityYAML)))
 		}
 
 		// Join all documents with YAML document separator (matching gaby format)
-		if len(liveStateDocs) > 0 {
-			liveStateData = []byte(strings.Join(liveStateDocs, "\n---\n"))
+		if len(liveDataDocs) > 0 {
+			liveDataData = []byte(strings.Join(liveDataDocs, "\n---\n"))
 		}
 	}
 
@@ -362,13 +362,13 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 		), fmt.Errorf("%s", message))
 	}
 
-	// Success - send completed status with updated LiveState
+	// Success - send completed status with updated LiveData
 	finalResult := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultApplyCompleted,
 		fmt.Sprintf("Successfully applied %d resources", successCount),
 	)
-	finalResult.LiveState = liveStateData
+	finalResult.LiveData = liveDataData
 
 	return wctx.SendStatus(finalResult)
 }
@@ -425,15 +425,15 @@ func (w *ConfigHubBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload ap
 		return err
 	}
 
-	// Parse the inventory from LiveState
+	// Parse the inventory from LiveData
 	var inventory *cubapi.Inventory
-	if len(payload.LiveState) > 0 {
+	if len(payload.LiveData) > 0 {
 		inventory = &cubapi.Inventory{}
-		if err := yaml.Unmarshal(payload.LiveState, inventory); err != nil {
+		if err := yaml.Unmarshal(payload.LiveData, inventory); err != nil {
 			return lib.SafeSendStatus(wctx, newActionResult(
 				api.ActionStatusFailed,
 				api.ActionResultDestroyFailed,
-				fmt.Sprintf("Failed to parse inventory from LiveState: %v", err),
+				fmt.Sprintf("Failed to parse inventory from LiveData: %v", err),
 			), err)
 		}
 	}
@@ -480,13 +480,13 @@ func (w *ConfigHubBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload ap
 		), fmt.Errorf("%s", message))
 	}
 
-	// Success - send completed status with empty LiveState
+	// Success - send completed status with empty LiveData
 	finalResult := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultDestroyCompleted,
 		fmt.Sprintf("Successfully destroyed %d resources", successCount),
 	)
-	finalResult.LiveState = []byte{} // Clear the LiveState since everything is destroyed
+	finalResult.LiveData = []byte{} // Clear the LiveData since everything is destroyed
 
 	return wctx.SendStatus(finalResult)
 }
@@ -553,13 +553,13 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 		return err
 	}
 
-	// Parse the existing inventory from LiveState if available
+	// Parse the existing inventory from LiveData if available
 	var oldInventory *cubapi.Inventory
-	if len(payload.LiveState) > 0 {
-		// Parse the LiveState as multi-document YAML
-		container, err := gaby.ParseAll(payload.LiveState)
+	if len(payload.LiveData) > 0 {
+		// Parse the LiveData as multi-document YAML
+		container, err := gaby.ParseAll(payload.LiveData)
 		if err != nil {
-			log.Log.Error(err, "Failed to parse LiveState as multi-document YAML")
+			log.Log.Error(err, "Failed to parse LiveData as multi-document YAML")
 		} else if len(container) > 0 {
 			// First document should be the Inventory
 			firstDoc := container[0]
@@ -619,7 +619,7 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 			failedCount++
 		} else if result.Action == "refreshed" {
 			successCount++
-			// Include the entity in LiveState
+			// Include the entity in LiveData
 			if result.Entity != nil {
 				successfulEntities = append(successfulEntities, entityWithType{
 					Entity:     result.Entity,
@@ -629,21 +629,21 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 			}
 		} else if result.Action == "deleted" {
 			deletedCount++
-			// Deleted entities are not included in LiveState since they no longer exist
+			// Deleted entities are not included in LiveData since they no longer exist
 		}
 	}
 
-	// Build the new LiveState with Inventory first, followed by refreshed entities
-	var liveStateData []byte
+	// Build the new LiveData with Inventory first, followed by refreshed entities
+	var liveDataData []byte
 	if newInventory != nil {
-		var liveStateDocs []string
+		var liveDataDocs []string
 
 		// First document: Inventory
 		inventoryYAML, err := yaml.Marshal(newInventory)
 		if err != nil {
 			log.Log.Error(err, "Failed to marshal inventory to YAML")
 		} else {
-			liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(inventoryYAML)))
+			liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(inventoryYAML)))
 		}
 
 		// Subsequent documents: Successfully refreshed entities
@@ -654,12 +654,12 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 				log.Log.Error(err, "Failed to marshal entity to YAML", "entity", item.Entity, "entityType", item.EntityType, "spaceSlug", item.SpaceSlug)
 				continue
 			}
-			liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(entityYAML)))
+			liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(entityYAML)))
 		}
 
 		// Join all documents with YAML document separator (matching gaby format)
-		if len(liveStateDocs) > 0 {
-			liveStateData = []byte(strings.Join(liveStateDocs, "\n---\n"))
+		if len(liveDataDocs) > 0 {
+			liveDataData = []byte(strings.Join(liveDataDocs, "\n---\n"))
 		}
 	}
 
@@ -686,13 +686,13 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 		message = fmt.Sprintf("No drift detected: %d resources refreshed (%d deleted)", successCount, deletedCount)
 	}
 
-	// Success - send completed status with updated LiveState and config data
+	// Success - send completed status with updated LiveData and config data
 	finalResult := newActionResult(
 		api.ActionStatusCompleted,
 		resultType,
 		message,
 	)
-	finalResult.LiveState = liveStateData
+	finalResult.LiveData = liveDataData
 	// TODO: Properly merge the config data instead of blowing away the current data.
 	finalResult.Data = updatedConfigData
 
@@ -965,7 +965,7 @@ func (w *ConfigHubBridgeWorker) completeImportMixed(wctx api.BridgeWorkerContext
 
 	// Create inventory with all imported entities
 	var inventoryResources []cubapi.InventoryResource
-	var liveStateDocs []string
+	var liveDataDocs []string
 	var dataDocs []string
 
 	// Process each entity type group
@@ -986,7 +986,7 @@ func (w *ConfigHubBridgeWorker) completeImportMixed(wctx api.BridgeWorkerContext
 				log.Log.Error(err, "Failed to marshal entity to YAML", "entity", entity, "entityType", entityType, "spaceSlug", defaultSpaceSlug)
 				continue
 			}
-			liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(entityYAML)))
+			liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(entityYAML)))
 			dataDocs = append(dataDocs, strings.TrimSpace(string(entityYAML)))
 		}
 	}
@@ -997,23 +997,23 @@ func (w *ConfigHubBridgeWorker) completeImportMixed(wctx api.BridgeWorkerContext
 	}
 
 	// Build final YAML documents
-	var finalLiveStateDocs []string
+	var finalLiveDataDocs []string
 
 	// First document: Inventory
 	inventoryYAML, err := yaml.Marshal(inventory)
 	if err != nil {
 		log.Log.Error(err, "Failed to marshal inventory to YAML")
 	} else {
-		finalLiveStateDocs = append(finalLiveStateDocs, strings.TrimSpace(string(inventoryYAML)))
+		finalLiveDataDocs = append(finalLiveDataDocs, strings.TrimSpace(string(inventoryYAML)))
 	}
 
 	// Add entity documents
-	finalLiveStateDocs = append(finalLiveStateDocs, liveStateDocs...)
+	finalLiveDataDocs = append(finalLiveDataDocs, liveDataDocs...)
 
 	// Join all documents
-	var liveStateData []byte
-	if len(finalLiveStateDocs) > 0 {
-		liveStateData = []byte(strings.Join(finalLiveStateDocs, "\n---\n"))
+	var liveDataData []byte
+	if len(finalLiveDataDocs) > 0 {
+		liveDataData = []byte(strings.Join(finalLiveDataDocs, "\n---\n"))
 	}
 
 	var dataYAML []byte
@@ -1034,8 +1034,8 @@ func (w *ConfigHubBridgeWorker) completeImportMixed(wctx api.BridgeWorkerContext
 			Message:     fmt.Sprintf("Imported %d entities successfully at %s", len(entities), time.Now().Format(time.RFC3339)),
 			StartedAt:   startTime,
 		},
-		Data:      dataYAML,
-		LiveState: liveStateData,
+		Data:     dataYAML,
+		LiveData: liveDataData,
 	}
 
 	return wctx.SendStatus(finalResult)
@@ -1093,15 +1093,15 @@ func (w *ConfigHubBridgeWorker) completeImport(wctx api.BridgeWorkerContext, pay
 		Resources:  inventoryResources,
 	}
 
-	// Build LiveState with Inventory first, followed by entities (similar to Refresh)
-	var liveStateDocs []string
+	// Build LiveData with Inventory first, followed by entities (similar to Refresh)
+	var liveDataDocs []string
 
 	// First document: Inventory
 	inventoryYAML, err := yaml.Marshal(inventory)
 	if err != nil {
 		log.Log.Error(err, "Failed to marshal inventory to YAML")
 	} else {
-		liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(inventoryYAML)))
+		liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(inventoryYAML)))
 	}
 
 	// Subsequent documents: Imported entities with cleaned fields
@@ -1112,13 +1112,13 @@ func (w *ConfigHubBridgeWorker) completeImport(wctx api.BridgeWorkerContext, pay
 			log.Log.Error(err, "Failed to marshal entity to YAML", "entity", entity, "entityType", entityType, "spaceSlug", defaultSpaceSlug)
 			continue
 		}
-		liveStateDocs = append(liveStateDocs, strings.TrimSpace(string(entityYAML)))
+		liveDataDocs = append(liveDataDocs, strings.TrimSpace(string(entityYAML)))
 	}
 
 	// Join all documents with YAML document separator (matching gaby format)
-	var liveStateData []byte
-	if len(liveStateDocs) > 0 {
-		liveStateData = []byte(strings.Join(liveStateDocs, "\n---\n"))
+	var liveDataData []byte
+	if len(liveDataDocs) > 0 {
+		liveDataData = []byte(strings.Join(liveDataDocs, "\n---\n"))
 	}
 
 	// Create separate documents for Data field as well
@@ -1150,8 +1150,8 @@ func (w *ConfigHubBridgeWorker) completeImport(wctx api.BridgeWorkerContext, pay
 			Message:     fmt.Sprintf("Imported %d entities successfully at %s", len(entities), time.Now().Format(time.RFC3339)),
 			StartedAt:   startTime,
 		},
-		Data:      dataYAML,
-		LiveState: liveStateData,
+		Data:     dataYAML,
+		LiveData: liveDataData,
 	}
 
 	return wctx.SendStatus(finalResult)

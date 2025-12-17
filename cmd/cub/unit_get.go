@@ -81,13 +81,10 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 	return getCommandHelp(baseHelp, agentContext)
 }
 
-var liveStateOnly bool
-
 func init() {
 	addStandardGetFlags(unitGetCmd)
 	enableWebFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
-	unitGetCmd.Flags().BoolVar(&liveStateOnly, "live-state-only", false, "show live state without other response details")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
 	unitCmd.AddCommand(unitGetCmd)
 }
@@ -126,8 +123,18 @@ func countResources(unitDetails *goclientnew.Unit) int {
 	return count
 }
 
+func applyGatesToString(applyGates map[string]bool) string {
+	gates := make([]string, 0, len(applyGates))
+	for gate, failed := range applyGates {
+		if failed {
+			gates = append(gates, gate)
+		}
+	}
+	return strings.Join(gates, ", ")
+}
+
 func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
-	if !dataOnly && !liveStateOnly {
+	if !dataOnly {
 		view := tableView()
 		view.Append([]string{"Name", unitDetails.Unit.Slug})
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
@@ -171,13 +178,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		}
 
 		if len(unitDetails.Unit.ApplyGates) != 0 {
-			gates := ""
-			for gate, failed := range unitDetails.Unit.ApplyGates {
-				if failed {
-					gates += gate + " "
-				}
-			}
-			view.Append([]string{"Apply Gates", strings.TrimSpace(gates)})
+			view.Append([]string{"Apply Gates", applyGatesToString(unitDetails.Unit.ApplyGates)})
 		}
 
 		if len(unitDetails.Unit.ApprovedBy) != 0 {
@@ -245,13 +246,6 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			failOnError(err)
 		}
 		tprintRaw(string(dataBytes))
-	}
-	if liveStateOnly { // TODO: also when verbose?
-		liveStateBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.LiveState)
-		if err != nil {
-			failOnError(err)
-		}
-		tprintRaw(string(liveStateBytes))
 	}
 }
 

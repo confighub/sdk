@@ -98,15 +98,15 @@ const (
 type ActionResult struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
-	// Data Configuration data of the Unit
+	// Data Updated configuration Data of the Unit (for refresh and import)
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
-	// LiveState Live state corresponding to the Unit
+	// LiveData Live Data corresponding to the Unit (for inventory and drift detection)
+	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
+
+	// LiveState Live State corresponding to the Unit (for status determination)
 	LiveState string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 	Message   string `json:"Message,omitempty" yaml:"Message,omitempty"`
-
-	// Outputs Outputs resulting from applying the configuration data of the Unit
-	Outputs string `json:"Outputs,omitempty" yaml:"Outputs,omitempty"`
 
 	// QueuedOperationID UUID of the operation corresponding to the action request
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
@@ -205,6 +205,9 @@ type BridgeWorker struct {
 
 	// LastSeenAt LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event).
 	LastSeenAt time.Time `json:"LastSeenAt,omitempty" yaml:"LastSeenAt,omitempty"`
+
+	// OrgRole Organization-level permission for the BridgeWorker User.
+	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -644,10 +647,14 @@ type ExtendedSpace struct {
 	TotalUnitCount             int64          `json:"TotalUnitCount,omitempty" yaml:"TotalUnitCount,omitempty"`
 	TotalViewCount             int64          `json:"TotalViewCount,omitempty" yaml:"TotalViewCount,omitempty"`
 	TriggerCountByEventType    map[string]int `json:"TriggerCountByEventType" yaml:"TriggerCountByEventType"`
-	UnappliedUnitCount         int64          `json:"UnappliedUnitCount,omitempty" yaml:"UnappliedUnitCount,omitempty"`
-	UnapprovedUnitCount        int64          `json:"UnapprovedUnitCount,omitempty" yaml:"UnapprovedUnitCount,omitempty"`
-	UnlinkedUnitCount          int64          `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
-	UpgradableUnitCount        int64          `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
+
+	// TriggerFilter Defines an entity filter.
+	TriggerFilter       *Filter   `json:"TriggerFilter,omitempty" yaml:"TriggerFilter,omitempty"`
+	Triggers            []Trigger `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
+	UnappliedUnitCount  int64     `json:"UnappliedUnitCount,omitempty" yaml:"UnappliedUnitCount,omitempty"`
+	UnapprovedUnitCount int64     `json:"UnapprovedUnitCount,omitempty" yaml:"UnapprovedUnitCount,omitempty"`
+	UnlinkedUnitCount   int64     `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
+	UpgradableUnitCount int64     `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
 }
 
 // ExtendedTag defines model for ExtendedTag.
@@ -1579,7 +1586,11 @@ type Space struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID         openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	TriggerFilterID *UUID              `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+
+	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
+	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
@@ -1936,18 +1947,18 @@ type Unit struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
+	// LiveData The live resources as of the most recent action in the same representation as Data.
+	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
+
 	// LiveRevisionNum Sequence number the last Revision applied once apply has completed. 0 if no live revision.
 	LiveRevisionNum int64 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
 
-	// LiveState The current live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit.
+	// LiveState The live state as of the most recent action; content is ProviderType-specific.
 	LiveState       string                `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-
-	// Outputs The outputs of the last successful apply of the Unit.
-	Outputs string `json:"Outputs,omitempty" yaml:"Outputs,omitempty"`
 
 	// PreviousLiveRevisionNum Sequence number the previous Revision applied. 0 if no live revision.
 	PreviousLiveRevisionNum int64 `json:"PreviousLiveRevisionNum,omitempty" yaml:"PreviousLiveRevisionNum,omitempty"`
@@ -2123,6 +2134,7 @@ type UnitExtended struct {
 	Drift              string            `json:"Drift,omitempty" yaml:"Drift,omitempty"`
 	FromLinks          []Link            `json:"FromLinks" yaml:"FromLinks"`
 	Status             string            `json:"Status,omitempty" yaml:"Status,omitempty"`
+	SyncStatus         string            `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
 	ToLinks            []Link            `json:"ToLinks" yaml:"ToLinks"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -2148,6 +2160,7 @@ type UnitStatus struct {
 	ActionTerminatedAt time.Time         `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
 	Drift              string            `json:"Drift,omitempty" yaml:"Drift,omitempty"`
 	Status             string            `json:"Status,omitempty" yaml:"Status,omitempty"`
+	SyncStatus         string            `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
 }
 
 // UnitTagRequest defines model for UnitTagRequest.
@@ -2299,7 +2312,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2338,7 +2351,7 @@ type BulkDeleteSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are OrganizationID.
+	// Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -2366,7 +2379,8 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version      *int    `json:"Version" yaml:"Version"`
@@ -2402,7 +2416,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2441,10 +2455,13 @@ type BulkPatchSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are OrganizationID.
+	// Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
 // BulkCreateSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkCreateSpaces.
@@ -2463,7 +2480,8 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version      *int    `json:"Version" yaml:"Version"`
@@ -2499,7 +2517,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2538,7 +2556,7 @@ type BulkCreateSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are OrganizationID.
+	// Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -2579,7 +2597,7 @@ type BulkDeleteBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2653,7 +2671,7 @@ type ListAllBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2711,8 +2729,10 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OrgRole      *string                             `json:"OrgRole" yaml:"OrgRole"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProvidedInfo *map[string]interface{}             `json:"ProvidedInfo" yaml:"ProvidedInfo"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -2750,7 +2770,7 @@ type BulkPatchBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2793,6 +2813,71 @@ type BulkPatchBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
+// ListQueuedOperationsParams defines parameters for ListQueuedOperations.
+type ListQueuedOperationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of QueuedOperations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the QueuedOperation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (QueuedOperation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 }
 
 // BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
@@ -3174,7 +3259,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -3591,7 +3676,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -4070,7 +4155,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -4407,7 +4492,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for created links
 	//
@@ -4454,7 +4539,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select ToSpaces for created links
 	//
@@ -4864,7 +4949,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4903,7 +4988,7 @@ type ListSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are OrganizationID.
+	// Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4943,7 +5028,7 @@ type GetSpaceParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are OrganizationID.
+	// Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4978,11 +5063,24 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version      *int    `json:"Version" yaml:"Version"`
 	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
+}
+
+// PatchSpaceParams defines parameters for PatchSpace.
+type PatchSpaceParams struct {
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+}
+
+// UpdateSpaceParams defines parameters for UpdateSpace.
+type UpdateSpaceParams struct {
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
 // ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
@@ -5014,7 +5112,7 @@ type ListBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5110,8 +5208,10 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OrgRole      *string                             `json:"OrgRole" yaml:"OrgRole"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProvidedInfo *map[string]interface{}             `json:"ProvidedInfo" yaml:"ProvidedInfo"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -5914,7 +6014,7 @@ type ListTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7358,7 +7458,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -7411,7 +7511,7 @@ type BulkDeleteTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7485,7 +7585,7 @@ type ListAllTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7595,7 +7695,7 @@ type BulkPatchTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8041,7 +8141,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -8563,7 +8663,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -9510,7 +9610,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning views
 	//
@@ -9545,6 +9645,9 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody BulkPatchBri
 
 // CreateActionResultJSONRequestBody defines body for CreateActionResult for application/json ContentType.
 type CreateActionResultJSONRequestBody = ActionResult
+
+// UserCreateActionResultJSONRequestBody defines body for UserCreateActionResult for application/json ContentType.
+type UserCreateActionResultJSONRequestBody = ActionResult
 
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChangeSets for application/merge-patch+json ContentType.
 type BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody BulkPatchChangeSetsApplicationMergePatchPlusJSONBody

@@ -332,14 +332,15 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 	}
 	log.Log.Info("✅ Successfully initiated applying resources", "changeset_entries", changesetCount)
 
-	// Don't send LiveState here - it's just the input LiveState, not the actual state
-	// The real LiveState will be sent after WaitForApply when we have live resources
+	// Send ApplySynced to indicate config is pushed to target, but resources may not be ready yet
+	// This enables the "Synced but not Ready" state distinction
+	// The real LiveData will be sent after WaitForApply when we have live resources
 	actionResult := newActionResult(
-		api.ActionStatusProgressing,
-		api.ActionResultNone,
-		"Resources applied successfully",
+		api.ActionStatusCompleted,
+		api.ActionResultApplySynced,
+		"Resources applied successfully, waiting for ready state",
 	)
-	// Don't set LiveState - let backend keep using its current state
+	// Don't set LiveData - let backend keep using its current state
 
 	return wctx.SendStatus(actionResult)
 }
@@ -362,7 +363,7 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 
 	return ApplierConfig{
 		KubeContext: kubeContext,
-		LiveState:   payload.LiveState,
+		LiveData:    payload.LiveData,
 		SpaceID:     payload.SpaceID.String(),
 		UnitSlug:    payload.UnitSlug,
 		WaitTimeout: workerParams.WaitTimeout,
@@ -537,14 +538,14 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		), err)
 	}
 
-	// Handle inventory in LiveState for CLI Utils applier
-	liveStateData := []byte(yamlData)
+	// Handle inventory in LiveData for CLI Utils applier
+	liveDataData := []byte(yamlData)
 	if w.applierType == CLIUtilsSSA {
-		// Update LiveState with inventory for CLI Utils SSA applier
-		liveStateData, err = w.updateLiveStateWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+		// Update LiveData with inventory for CLI Utils SSA applier. This should not destroy yamlData.
+		liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
 		if err != nil {
-			log.Log.Error(err, "⚠️ Failed to update LiveState with inventory, using raw YAML")
-			liveStateData = []byte(yamlData)
+			log.Log.Error(err, "⚠️ Failed to update LiveData with inventory, using raw YAML")
+			liveDataData = []byte(yamlData)
 		}
 	}
 
@@ -562,14 +563,16 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		api.ActionResultApplyCompleted,
 		fmt.Sprintf("Applied %d resources successfully at %s", len(waitResult.LiveObjects), time.Now().Format(time.RFC3339)),
 	)
-	status.LiveState = liveStateData
+	// FIXME: LiveObjects and LiveData are already cleaned
+	status.LiveData = liveDataData
+	status.LiveState = []byte(yamlData)
 
 	wctx.SendStatus(status)
 	return nil
 }
 
-// updateLiveStateWithInventory updates the LiveState to include inventory ConfigMap as the first document
-func (w *KubernetesBridgeWorker) updateLiveStateWithInventory(ctx context.Context, payload api.BridgeWorkerPayload, liveObjects []*unstructured.Unstructured, yamlResources []byte) ([]byte, error) {
+// updateLiveDataWithInventory updates the LiveData to include inventory ConfigMap as the first document
+func (w *KubernetesBridgeWorker) updateLiveDataWithInventory(ctx context.Context, payload api.BridgeWorkerPayload, liveObjects []*unstructured.Unstructured, yamlResources []byte) ([]byte, error) {
 	// Create inventory info
 	invInfo := &SimpleInventoryInfo{
 		namespace: "default",
@@ -580,12 +583,12 @@ func (w *KubernetesBridgeWorker) updateLiveStateWithInventory(ctx context.Contex
 	// Create a new inventory client for this operation
 	invClient := NewInMemInventoryClient()
 
-	// Extract existing inventory ConfigMap from LiveState if present
+	// Extract existing inventory ConfigMap from LiveData if present
 	var inventoryCM *InventoryConfigMap
-	if len(payload.LiveState) > 0 {
-		_, existingCM, _, err := CreateInventoryFromLiveState(ctx, payload.LiveState, invInfo)
+	if len(payload.LiveData) > 0 {
+		_, existingCM, _, err := CreateInventoryFromLiveData(ctx, payload.LiveData, invInfo)
 		if err != nil {
-			log.Log.Error(err, "Failed to extract inventory from LiveState")
+			log.Log.Error(err, "Failed to extract inventory from LiveData")
 			// Create new inventory ConfigMap
 			inventoryCM = NewInventoryConfigMap(invInfo)
 		} else {
@@ -619,14 +622,14 @@ func (w *KubernetesBridgeWorker) updateLiveStateWithInventory(ctx context.Contex
 		return nil, fmt.Errorf("failed to update inventory: %w", err)
 	}
 
-	// Save inventory to LiveState
-	liveState, err := SaveInventoryToLiveState(invClient, inventoryCM, invInfo, yamlResources)
+	// Save inventory to LiveData
+	liveData, err := SaveInventoryToLiveData(invClient, inventoryCM, invInfo, yamlResources)
 	if err != nil {
-		return nil, fmt.Errorf("failed to save inventory to LiveState: %w", err)
+		return nil, fmt.Errorf("failed to save inventory to LiveData: %w", err)
 	}
 
-	log.Log.Info("📦 Updated LiveState with inventory", "inventoryID", invInfo.GetID(), "objects", len(objRefs))
-	return liveState, nil
+	log.Log.Info("📦 Updated LiveData with inventory", "inventoryID", invInfo.GetID(), "objects", len(objRefs))
+	return liveData, nil
 }
 
 func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
@@ -693,14 +696,14 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
-	// Extract inventory from LiveState if present and preserve it
-	inventoryCM, _, err := SplitInventoryFromLiveState(payload.LiveState)
+	// Extract inventory from LiveData if present and preserve it
+	inventoryCM, _, err := SplitInventoryFromLiveData(payload.LiveData)
 	if err != nil {
-		log.Log.Error(err, "Failed to split inventory from LiveState, continuing without inventory")
+		log.Log.Error(err, "Failed to split inventory from LiveData, continuing without inventory")
 	}
 
 	// TODO: Known issue - namespace handling is not optimal here.
-	// When we split inventory from LiveState, we may lose namespace context
+	// When we split inventory from LiveData, we may lose namespace context
 	// for resources that don't explicitly specify a namespace in their YAML.
 	// This could lead to resources being applied to the wrong namespace.
 	// Future improvement: Ensure namespace is properly preserved during split.
@@ -750,33 +753,35 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 			api.ActionResultRefreshAndNoDrift,
 			"Live state matches - no drift detected",
 		)
-		// Even when there's no drift, update LiveState with refreshed resources but preserve inventory
+		// Even when there's no drift, update LiveData with refreshed resources but preserve inventory
 		if inventoryCM != nil {
-			updatedLiveState, err := CombineInventoryWithResources(inventoryCM, []byte(yamlData))
+			updatedLiveData, err := CombineInventoryWithResources(inventoryCM, []byte(yamlData))
 			if err != nil {
 				log.Log.Error(err, "Failed to combine inventory with refreshed resources")
-				result.LiveState = []byte(yamlData)
+				result.LiveData = []byte(yamlData)
 			} else {
-				result.LiveState = updatedLiveState
+				result.LiveData = updatedLiveData
 			}
 		} else {
-			result.LiveState = []byte(yamlData)
+			result.LiveData = []byte(yamlData)
 		}
+		// FIXME: Use an uncleaned copy of the resources
+		result.LiveState = []byte(yamlData)
 		return wctx.SendStatus(result)
 	}
 
 	log.Log.Info("✅ Successfully retrieved resources", "count", len(retrievedObjects))
 
-	// Combine inventory with refreshed resources for the final LiveState
-	var updatedLiveState []byte
+	// Combine inventory with refreshed resources for the final LiveData
+	var updatedLiveData []byte
 	if inventoryCM != nil {
-		updatedLiveState, err = CombineInventoryWithResources(inventoryCM, []byte(yamlData))
+		updatedLiveData, err = CombineInventoryWithResources(inventoryCM, []byte(yamlData))
 		if err != nil {
 			log.Log.Error(err, "Failed to combine inventory with refreshed resources")
-			updatedLiveState = []byte(yamlData)
+			updatedLiveData = []byte(yamlData)
 		}
 	} else {
-		updatedLiveState = []byte(yamlData)
+		updatedLiveData = []byte(yamlData)
 	}
 
 	result := newActionResult(
@@ -785,7 +790,9 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		fmt.Sprintf("Retrieved %d resources successfully at %s", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 	)
 	result.Data = patched
-	result.LiveState = updatedLiveState // Use LiveState with preserved inventory
+	result.LiveData = updatedLiveData // Use LiveData with preserved inventory
+	// FIXME: Use an uncleaned copy of the resources
+	result.LiveState = []byte(yamlData)
 	return wctx.SendStatus(result)
 }
 
@@ -911,7 +918,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		return err
 	}
 
-	yamlForLiveState, err := objectsToYAML(retrievedObjects)
+	yamlForLiveData, err := objectsToYAML(retrievedObjects)
 	if err != nil {
 		log.Log.Error(err, "Failed to convert objects to YAML for live state")
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -974,7 +981,9 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			fmt.Sprintf("Imported %d resources successfully at %s (inventory tracking failed but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 		)
 		result.Data = []byte(yamlForData)
-		result.LiveState = []byte(yamlForLiveState)
+		result.LiveData = []byte(yamlForLiveData)
+		// FIXME: Use an uncleaned copy of the resources
+		result.LiveState = []byte(yamlForLiveData)
 		return wctx.SendStatus(result)
 	}
 
@@ -989,22 +998,26 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			fmt.Sprintf("Imported %d resources successfully at %s (inventory update failed but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 		)
 		result.Data = []byte(yamlForData)
-		result.LiveState = []byte(yamlForLiveState)
+		result.LiveData = []byte(yamlForLiveData)
+		// FIXME: Use an uncleaned copy of the resources
+		result.LiveState = []byte(yamlForLiveData)
 		return wctx.SendStatus(result)
 	}
 
-	// Save inventory to LiveState
-	liveStateWithInventory, err := SaveInventoryToLiveState(invClient, inventoryCM, &invInfo, []byte(yamlForLiveState))
+	// Save inventory to LiveData
+	liveDataWithInventory, err := SaveInventoryToLiveData(invClient, inventoryCM, &invInfo, []byte(yamlForLiveData))
 	if err != nil {
-		log.Log.Error(err, "Failed to save inventory to LiveState")
-		// Continue without inventory in LiveState
+		log.Log.Error(err, "Failed to save inventory to LiveData")
+		// Continue without inventory in LiveData
 		result := newActionResult(
 			api.ActionStatusCompleted,
 			api.ActionResultImportCompleted,
-			fmt.Sprintf("Imported %d resources successfully at %s (inventory not saved to LiveState but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
+			fmt.Sprintf("Imported %d resources successfully at %s (inventory not saved to LiveData but resources imported)", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 		)
 		result.Data = []byte(yamlForData)
-		result.LiveState = []byte(yamlForLiveState)
+		result.LiveData = []byte(yamlForLiveData)
+		// FIXME: Use an uncleaned copy of the resources
+		result.LiveState = []byte(yamlForLiveData)
 		return wctx.SendStatus(result)
 	}
 
@@ -1016,7 +1029,9 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		fmt.Sprintf("Imported %d resources successfully at %s", len(retrievedObjects), time.Now().Format(time.RFC3339)),
 	)
 	result.Data = []byte(yamlForData)
-	result.LiveState = liveStateWithInventory
+	result.LiveData = liveDataWithInventory
+	// FIXME: Use an uncleaned copy of the resources
+	result.LiveState = []byte(yamlForLiveData)
 	return wctx.SendStatus(result)
 }
 
@@ -1176,28 +1191,28 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 
 	// Success - no retry state to clear since we're stateless now
 
-	// For CLIUtils applier, use the LiveState from LiveStateBuilder
-	// For other appliers, build LiveState from the returned LiveObjects
-	var liveStateData []byte
+	// For CLIUtils applier, use the LiveData from LiveDataBuilder
+	// For other appliers, build LiveData from the returned LiveObjects
+	var liveDataData []byte
 	if w.applierType == CLIUtilsSSA {
-		// CLIUtils already built the LiveState with LiveStateBuilder
+		// CLIUtils already built the LiveData with LiveDataBuilder
 		// Convert LiveObjects to YAML and add inventory
 		if len(waitResult.LiveObjects) > 0 {
 			yamlData, err := objectsToYAML(waitResult.LiveObjects)
 			if err != nil {
 				log.Log.Error(err, "Failed to convert remaining objects to YAML")
-				liveStateData = []byte{}
+				liveDataData = []byte{}
 			} else {
 				// Add inventory for remaining resources
-				liveStateData, err = w.updateLiveStateWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+				liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
 				if err != nil {
-					log.Log.Error(err, "Failed to update LiveState with inventory")
-					liveStateData = []byte(yamlData)
+					log.Log.Error(err, "Failed to update LiveData with inventory")
+					liveDataData = []byte(yamlData)
 				}
 			}
 		} else {
-			// All resources destroyed - return empty LiveState
-			liveStateData = []byte{}
+			// All resources destroyed - return empty LiveData
+			liveDataData = []byte{}
 		}
 	} else {
 		// For other appliers, check if anything remains
@@ -1205,12 +1220,12 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 			yamlData, err := objectsToYAML(waitResult.LiveObjects)
 			if err != nil {
 				log.Log.Error(err, "Failed to convert remaining objects to YAML")
-				liveStateData = []byte{}
+				liveDataData = []byte{}
 			} else {
-				liveStateData = []byte(yamlData)
+				liveDataData = []byte(yamlData)
 			}
 		} else {
-			liveStateData = []byte{}
+			liveDataData = []byte{}
 		}
 	}
 
@@ -1237,7 +1252,9 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 		api.ActionResultDestroyCompleted,
 		fmt.Sprintf("Destroyed resources successfully at %s", time.Now().Format(time.RFC3339)),
 	)
-	result.LiveState = liveStateData
+	result.LiveData = liveDataData
+	// FIXME: Use an uncleaned copy of the resources without the inventory
+	result.LiveState = liveDataData
 
 	return wctx.SendStatus(result)
 }

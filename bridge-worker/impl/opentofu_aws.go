@@ -150,26 +150,27 @@ func prepareWorkspace(fs afero.Fs, payload api.BridgeWorkerPayload) (string, err
 	return workspaceDir, nil
 }
 
+// Outputs are not supported
 // convertTofuOutputs converts tfexec.OutputMeta values to their corresponding Go types
-func convertTofuOutputs(outputs map[string]*tfexec.OutputMeta) ([]byte, error) {
-	simpleOutputs := make(map[string]interface{})
-	for k, v := range outputs {
-		// The Value field is json.RawMessage, so we need to unmarshal it
-		var value interface{}
-		if err := json.Unmarshal(v.Value, &value); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal output value: %w", err)
-		}
-		simpleOutputs[k] = value
-	}
+// func convertTofuOutputs(outputs map[string]*tfexec.OutputMeta) ([]byte, error) {
+// 	simpleOutputs := make(map[string]interface{})
+// 	for k, v := range outputs {
+// 		// The Value field is json.RawMessage, so we need to unmarshal it
+// 		var value interface{}
+// 		if err := json.Unmarshal(v.Value, &value); err != nil {
+// 			return nil, fmt.Errorf("failed to unmarshal output value: %w", err)
+// 		}
+// 		simpleOutputs[k] = value
+// 	}
 
-	// Convert outputs to JSON
-	outputsJSON, err := json.Marshal(simpleOutputs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal outputs: %w", err)
-	}
+// 	// Convert outputs to JSON
+// 	outputsJSON, err := json.Marshal(simpleOutputs)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to marshal outputs: %w", err)
+// 	}
 
-	return outputsJSON, nil
-}
+// 	return outputsJSON, nil
+// }
 
 func (w *OpenTofuAWSWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	fs := afero.NewOsFs()
@@ -275,15 +276,16 @@ func (w *OpenTofuAWSWorker) Apply(wctx api.BridgeWorkerContext, payload api.Brid
 		ptrOutputs[k] = &v
 	}
 
-	outputsJSON, err := convertTofuOutputs(ptrOutputs)
-	if err != nil {
-		wctx.SendStatus(newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultApplyFailed,
-			fmt.Sprintf("failed to convert outputs: %v", err),
-		))
-		return fmt.Errorf("failed to convert outputs: %w", err)
-	}
+	// Outputs are not supported
+	// outputsJSON, err := convertTofuOutputs(ptrOutputs)
+	// if err != nil {
+	// 	wctx.SendStatus(newActionResult(
+	// 		api.ActionStatusFailed,
+	// 		api.ActionResultApplyFailed,
+	// 		fmt.Sprintf("failed to convert outputs: %v", err),
+	// 	))
+	// 	return fmt.Errorf("failed to convert outputs: %w", err)
+	// }
 
 	tfstate, err := afero.ReadFile(fs, tfstateFilepath)
 	if err != nil {
@@ -305,8 +307,8 @@ func (w *OpenTofuAWSWorker) Apply(wctx api.BridgeWorkerContext, payload api.Brid
 		api.ActionResultApplyCompleted,
 		fmt.Sprintf("Applied successfully at %s", time.Now().Format(time.RFC3339)),
 	)
+	// TODO: Set LiveData
 	status.LiveState = tfstate
-	status.Outputs = outputsJSON
 	return wctx.SendStatus(status)
 }
 

@@ -509,6 +509,10 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	return resp, nil
 }
 
+func hasAlternativeFunctionOutput() bool {
+	return outputRaw || outputOnly || outputValuesOnly || dataOnly || outputJQ != ""
+}
+
 func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	var resp *[]goclientnew.FunctionInvocationsResponse
 
@@ -656,7 +660,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if wait {
-		if !quiet && !dataOnly && !outputOnly && !outputValuesOnly && !outputRaw && !hasAlternativeOutput {
+		if !quiet && !hasAlternativeOutput && !hasAlternativeFunctionOutput() {
 			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time

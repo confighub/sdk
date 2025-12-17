@@ -73,6 +73,7 @@ func displayExtendedBridgeWorkerDetails(extendedWorker *goclientnew.ExtendedBrid
 	view.Append([]string{"Delete Gates", deleteGatesToString(displayWorker.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(displayWorker.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(displayWorker.Permissions)})
+	view.Append([]string{"OrgRole", displayWorker.OrgRole})
 	view.Append([]string{"UserID", displayWorker.UserID.String()})
 	view.Append([]string{"Secret", displayWorker.Secret})
 	view.Append([]string{"Condition", displayWorker.Condition})

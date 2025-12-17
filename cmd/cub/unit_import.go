@@ -49,7 +49,7 @@ var unitImportArgs struct {
 
 func init() {
 	addStandardCreateFlags(unitImportCmd)
-	enableWaitFlag(unitImportCmd)
+	enableActionWaitFlag(unitImportCmd)
 	enableWhereFlag(unitImportCmd)
 	enableFilterFlag(unitImportCmd)
 	// enableQuietFlagForOperation(unitImportCmd)
@@ -93,7 +93,7 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 	if cubapi.IsAPIError(err, importRes) {
 		return cubapi.InterpretErrorGeneric(err, importRes)
 	}
-	if wait {
+	if actionWait {
 		return awaitCompletion("import", importRes.JSON200)
 	}
 

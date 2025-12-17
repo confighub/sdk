@@ -5,6 +5,7 @@ import { confighubApi as api } from './confighubapi';
 export const addTagTypes = [
   'Space',
   'BridgeWorker',
+  'QueuedOperation',
   'ChangeSet',
   'Filter',
   'Function',
@@ -57,6 +58,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            refresh_triggers: queryArg.refreshTriggers,
           },
         }),
         invalidatesTags: ['Space'],
@@ -141,6 +143,28 @@ const injectedRtkApi = api
         query: (queryArg) => ({ url: `/bridge_worker/${queryArg.bridgeWorkerId}/me` }),
         providesTags: ['BridgeWorker'],
       }),
+      listQueuedOperations: build.query<
+        ListQueuedOperationsApiResponse,
+        ListQueuedOperationsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/bridge_worker/${queryArg.bridgeWorkerId}/queued_operation`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+          },
+        }),
+        providesTags: ['QueuedOperation'],
+      }),
+      getQueuedOperation: build.query<GetQueuedOperationApiResponse, GetQueuedOperationApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/bridge_worker/${queryArg.bridgeWorkerId}/queued_operation/${queryArg.queuedOperationId}`,
+          }),
+          providesTags: ['QueuedOperation'],
+        },
+      ),
       streamBridgeWorker: build.mutation<
         StreamBridgeWorkerApiResponse,
         StreamBridgeWorkerApiArg
@@ -148,6 +172,17 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/bridge_worker/${queryArg.bridgeWorkerId}/stream`,
           method: 'POST',
+        }),
+        invalidatesTags: ['BridgeWorker'],
+      }),
+      userCreateActionResult: build.mutation<
+        UserCreateActionResultApiResponse,
+        UserCreateActionResultApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/bridge_worker/${queryArg.bridgeWorkerId}/user_action_result`,
+          method: 'POST',
+          body: queryArg.actionResult,
         }),
         invalidatesTags: ['BridgeWorker'],
       }),
@@ -608,6 +643,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}`,
           method: 'PATCH',
           body: queryArg.body,
+          params: {
+            refresh_triggers: queryArg.refreshTriggers,
+          },
         }),
         invalidatesTags: ['Space'],
       }),
@@ -616,6 +654,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}`,
           method: 'PUT',
           body: queryArg.space,
+          params: {
+            refresh_triggers: queryArg.refreshTriggers,
+          },
         }),
         invalidatesTags: ['Space'],
       }),
@@ -1277,12 +1318,21 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
+      downloadUnitLiveData: build.query<
+        DownloadUnitLiveDataApiResponse,
+        DownloadUnitLiveDataApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/live_data`,
+        }),
+        providesTags: ['Unit'],
+      }),
       downloadUnitLiveState: build.query<
         DownloadUnitLiveStateApiResponse,
         DownloadUnitLiveStateApiArg
       >({
         query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/live-state`,
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/live_state`,
         }),
         providesTags: ['Unit'],
       }),
@@ -1879,7 +1929,7 @@ export type BulkDeleteSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -1915,7 +1965,7 @@ export type BulkDeleteSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are OrganizationID.
+    Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -1955,7 +2005,7 @@ export type BulkPatchSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -1991,10 +2041,12 @@ export type BulkPatchSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are OrganizationID.
+    Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -2015,6 +2067,7 @@ export type BulkPatchSpacesApiArg = {
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
+    TriggerFilterID?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     WhereTrigger?: string | null;
@@ -2051,7 +2104,7 @@ export type BulkCreateSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2087,7 +2140,7 @@ export type BulkCreateSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are OrganizationID.
+    Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -2115,6 +2168,7 @@ export type BulkCreateSpacesApiArg = {
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
+    TriggerFilterID?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     WhereTrigger?: string | null;
@@ -2151,7 +2205,7 @@ export type BulkDeleteBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2221,7 +2275,7 @@ export type ListAllBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2292,7 +2346,7 @@ export type BulkPatchBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2348,9 +2402,11 @@ export type BulkPatchBridgeWorkersApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    OrgRole?: string | null;
     Permissions?: {
       [key: string]: object | null;
     } | null;
+    ProvidedInfo?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -2376,10 +2432,92 @@ export type GetSelfApiArg = {
   /** Unique identifier for a bridge_worker_id */
   bridgeWorkerId: string;
 };
+export type ListQueuedOperationsApiResponse = /** status 200 OK */ QueuedOperation[];
+export type ListQueuedOperationsApiArg = {
+  /** Unique identifier for a bridge_worker_id */
+  bridgeWorkerId: string;
+  /** The specified string is an expression for the purpose of filtering
+    the list of QueuedOperations returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the QueuedOperation list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (QueuedOperation).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+};
+export type GetQueuedOperationApiResponse =
+  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
+If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
+If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
+worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
+to each UnitAction. */ QueuedOperation;
+export type GetQueuedOperationApiArg = {
+  /** Unique identifier for a bridge_worker_id */
+  bridgeWorkerId: string;
+  /** Unique identifier for a queued_operation_id */
+  queuedOperationId: string;
+};
 export type StreamBridgeWorkerApiResponse = /** status 200 OK */ EventMessage;
 export type StreamBridgeWorkerApiArg = {
   /** Unique identifier for a bridge_worker_id */
   bridgeWorkerId: string;
+};
+export type UserCreateActionResultApiResponse = /** status 200 OK */ string;
+export type UserCreateActionResultApiArg = {
+  /** Unique identifier for a bridge_worker_id */
+  bridgeWorkerId: string;
+  actionResult: ActionResult;
 };
 export type BulkDeleteChangeSetsApiResponse = /** status 200 OK */
   | DeleteResponse[]
@@ -2725,7 +2863,7 @@ export type BulkCreateChangeSetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning changesets
     
@@ -3119,7 +3257,7 @@ export type BulkCreateFiltersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning filters
     
@@ -3582,7 +3720,7 @@ export type BulkCreateInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning invocations
     
@@ -3910,7 +4048,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for created links
     
@@ -3955,7 +4093,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select ToSpaces for created links
     
@@ -4411,7 +4549,7 @@ export type ListSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4447,7 +4585,7 @@ export type ListSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are OrganizationID.
+    Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -4486,7 +4624,7 @@ export type GetSpaceApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are OrganizationID.
+    Supported attributes for Space are OrganizationID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -4509,6 +4647,8 @@ export type PatchSpaceApiResponse =
 export type PatchSpaceApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -4529,6 +4669,7 @@ export type PatchSpaceApiArg = {
     } | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
+    TriggerFilterID?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     WhereTrigger?: string | null;
@@ -4539,6 +4680,8 @@ export type UpdateSpaceApiResponse =
 export type UpdateSpaceApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   space: Space;
 };
 export type ListBridgeWorkersApiResponse = /** status 200 OK */ ExtendedBridgeWorkerRead[];
@@ -4572,7 +4715,7 @@ export type ListBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4700,9 +4843,11 @@ export type PatchBridgeWorkerApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    OrgRole?: string | null;
     Permissions?: {
       [key: string]: object | null;
     } | null;
+    ProvidedInfo?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -5688,7 +5833,7 @@ export type ListTargetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6420,6 +6565,13 @@ export type ImportUnitApiArg = {
   /** Unique identifier for a unit_id */
   unitId: string;
   importRequest: ImportRequest;
+};
+export type DownloadUnitLiveDataApiResponse = /** status 200 OK */ string;
+export type DownloadUnitLiveDataApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
 };
 export type DownloadUnitLiveStateApiResponse = /** status 200 OK */ string;
 export type DownloadUnitLiveStateApiArg = {
@@ -7335,7 +7487,7 @@ export type BulkCreateTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning tags
     
@@ -7407,7 +7559,7 @@ export type BulkDeleteTargetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7477,7 +7629,7 @@ export type ListAllTargetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7558,7 +7710,7 @@ export type BulkPatchTargetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7979,7 +8131,7 @@ export type BulkCreateTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning triggers
     
@@ -8460,7 +8612,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning units
     
@@ -9385,7 +9537,7 @@ export type BulkCreateViewsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, UpdatedAt.
+    Supported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning views
     
@@ -9477,6 +9629,7 @@ export type Subjects = {
 export type Permissions = {
   [key: string]: Subjects;
 };
+export type Uuid = string;
 export type Space = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -9499,6 +9652,7 @@ export type Space = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  TriggerFilterID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
   /** Filter expression to identify Triggers that should be invoked on Units within this Space. The specified string is an expression for the purpose of filtering
@@ -9563,6 +9717,9 @@ export type SpaceRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  TriggerFilterID?: Uuid;
+  /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
+  TriggerIDs?: Uuid[];
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -9701,7 +9858,6 @@ export type WorkerInfo = {
   BridgeWorkerInfo?: BridgeWorkerInfo;
   FunctionWorkerInfo?: FunctionWorkerInfo;
 };
-export type Uuid = string;
 export type BridgeWorker = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -9721,6 +9877,8 @@ export type BridgeWorker = {
   Labels?: {
     [key: string]: string;
   };
+  /** Organization-level permission for the BridgeWorker User. */
+  OrgRole?: string;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Permissions?: Permissions;
@@ -9764,6 +9922,8 @@ export type BridgeWorkerRead = {
   LastMessage?: string;
   /** LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event). */
   LastSeenAt?: string;
+  /** Organization-level permission for the BridgeWorker User. */
+  OrgRole?: string;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Permissions?: Permissions;
@@ -9893,13 +10053,13 @@ export type ActionStatusType =
   | 'Aborted';
 export type ActionResult = {
   Action?: ActionType;
-  /** Configuration data of the Unit */
+  /** Updated configuration Data of the Unit (for refresh and import) */
   Data?: string;
-  /** Live state corresponding to the Unit */
+  /** Live Data corresponding to the Unit (for inventory and drift detection) */
+  LiveData?: string;
+  /** Live State corresponding to the Unit (for status determination) */
   LiveState?: string;
   Message?: string;
-  /** Outputs resulting from applying the configuration data of the Unit */
-  Outputs?: string;
   /** UUID of the operation corresponding to the action request */
   QueuedOperationID?: string;
   Result?: ActionResultType;
@@ -9911,6 +10071,48 @@ export type ActionResult = {
   TerminatedAt?: string | null;
   /** UUID of the Unit on which the action is performed */
   UnitID?: string;
+};
+export type QueuedOperation = {
+  Action?: ActionType;
+  /** BridgeWorkerID is the unique identifier of the bridge worker that will process this operation. */
+  BridgeWorkerID?: string;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
+  Dependencies?: Uuid[] | null;
+  /** ExtraParams contains additional parameters for the operation in string format. */
+  ExtraParams?: string;
+  /** OrganizationID is the unique identifier of the organization this operation belongs to. */
+  OrganizationID?: string;
+  /** QueuedOperationID is the unique identifier for the queued unit action. */
+  QueuedOperationID?: string;
+  /** RevisionNum is the revision number this operation was performed on. */
+  RevisionNum?: number;
+  /** SpaceID is the unique identifier of the space of the unit this operation is performed on. */
+  SpaceID?: string;
+  /** Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done). */
+  Status?:
+    | 'Initializing'
+    | 'Pending'
+    | 'Delivered'
+    | 'Progressing'
+    | 'Completed'
+    | 'Failed'
+    | 'Aborted'
+    | 'Canceled'
+    | 'pending'
+    | 'delivered';
+  /** TargetID is the unique identifier of the target this operation is directed to. */
+  TargetID?: string;
+  /** UnitID is the unique identifier of the unit this operation is performed on. */
+  UnitID?: string;
+  /** User-Agent string of the API call. */
+  UserAgent?: string;
+  /** UserID of the user the action was performed by. */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control.
+    The value read must be sent in calls to Update. */
+  Version?: number;
 };
 export type EventMessage = {
   Data?: string;
@@ -10468,15 +10670,15 @@ export type UnitRead = {
   LastAppliedRevisionNum?: number;
   /** LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed. */
   LastChangeDescription?: string;
+  /** The live resources as of the most recent action in the same representation as Data. */
+  LiveData?: string;
   /** Sequence number the last Revision applied once apply has completed. 0 if no live revision. */
   LiveRevisionNum?: number;
-  /** The current live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit. */
+  /** The live state as of the most recent action; content is ProviderType-specific. */
   LiveState?: string;
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
-  /** The outputs of the last successful apply of the Unit. */
-  Outputs?: string;
   /** Sequence number the previous Revision applied. 0 if no live revision. */
   PreviousLiveRevisionNum?: number;
   /** Unique URL-safe identifier for the entity. */
@@ -10766,6 +10968,105 @@ export type ExtendedRevisionRead = {
   Unit?: UnitRead;
   User?: UserRead;
 };
+export type Trigger = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Function arguments */
+  Arguments?: FunctionArgument[] | null;
+  BridgeWorkerID?: Uuid;
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Disabled indicates whether this trigger is currently disabled.
+            When disabled, the trigger will not be executed even when matching events occur. */
+  Disabled?: boolean;
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Enforced indicates whether this trigger cannot be overridden.
+            Enforced triggers implement mandatory policies that cannot be bypassed. */
+  Enforced?: boolean;
+  /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
+  Event: string;
+  /** Function name */
+  FunctionName?: string;
+  InvocationID?: Uuid;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** ToolchainType specifies the type of toolchain this trigger works with.
+            This determines which configuration formats the trigger can process. */
+  ToolchainType: string;
+  /** TriggerID uniquely identifies a trigger within the system. */
+  TriggerID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type TriggerRead = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Function arguments */
+  Arguments?: FunctionArgument[] | null;
+  BridgeWorkerID?: Uuid;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Disabled indicates whether this trigger is currently disabled.
+            When disabled, the trigger will not be executed even when matching events occur. */
+  Disabled?: boolean;
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Enforced indicates whether this trigger cannot be overridden.
+            Enforced triggers implement mandatory policies that cannot be bypassed. */
+  Enforced?: boolean;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
+  Event: string;
+  /** Function name */
+  FunctionName?: string;
+  InvocationID?: Uuid;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** ToolchainType specifies the type of toolchain this trigger works with.
+            This determines which configuration formats the trigger can process. */
+  ToolchainType: string;
+  /** TriggerID uniquely identifies a trigger within the system. */
+  TriggerID?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** Validating indicates whether this is a validating function (true) or not (false).
+            When false, the function can be either mutating (modifying configuration) or readonly returning an AttributeValueList (extracting values without modification).
+            Validating functions check configuration validity without modifying it.
+            This value is returned by ConfigHub based on the corresponding property of the specified function. */
+  Validating?: boolean;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
 export type ExtendedSpace = {
   Error?: ResponseError;
   GatedUnitCount?: number;
@@ -10786,6 +11087,8 @@ export type ExtendedSpace = {
   TriggerCountByEventType?: {
     [key: string]: number;
   } | null;
+  TriggerFilter?: Filter;
+  Triggers?: Trigger[];
   UnappliedUnitCount?: number;
   UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
@@ -10811,6 +11114,8 @@ export type ExtendedSpaceRead = {
   TriggerCountByEventType?: {
     [key: string]: number;
   } | null;
+  TriggerFilter?: FilterRead;
+  Triggers?: TriggerRead[];
   UnappliedUnitCount?: number;
   UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
@@ -10951,105 +11256,6 @@ export type ExtendedTargetRead = {
   Organization?: OrganizationRead;
   Space?: SpaceRead;
   Target?: TargetRead;
-};
-export type Trigger = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Function arguments */
-  Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Disabled indicates whether this trigger is currently disabled.
-            When disabled, the trigger will not be executed even when matching events occur. */
-  Disabled?: boolean;
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Enforced indicates whether this trigger cannot be overridden.
-            Enforced triggers implement mandatory policies that cannot be bypassed. */
-  Enforced?: boolean;
-  /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
-  Event: string;
-  /** Function name */
-  FunctionName?: string;
-  InvocationID?: Uuid;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** ToolchainType specifies the type of toolchain this trigger works with.
-            This determines which configuration formats the trigger can process. */
-  ToolchainType: string;
-  /** TriggerID uniquely identifies a trigger within the system. */
-  TriggerID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type TriggerRead = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Function arguments */
-  Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Disabled indicates whether this trigger is currently disabled.
-            When disabled, the trigger will not be executed even when matching events occur. */
-  Disabled?: boolean;
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Enforced indicates whether this trigger cannot be overridden.
-            Enforced triggers implement mandatory policies that cannot be bypassed. */
-  Enforced?: boolean;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
-  Event: string;
-  /** Function name */
-  FunctionName?: string;
-  InvocationID?: Uuid;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** ToolchainType specifies the type of toolchain this trigger works with.
-            This determines which configuration formats the trigger can process. */
-  ToolchainType: string;
-  /** TriggerID uniquely identifies a trigger within the system. */
-  TriggerID?: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** Validating indicates whether this is a validating function (true) or not (false).
-            When false, the function can be either mutating (modifying configuration) or readonly returning an AttributeValueList (extracting values without modification).
-            Validating functions check configuration validity without modifying it.
-            This value is returned by ConfigHub based on the corresponding property of the specified function. */
-  Validating?: boolean;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
 };
 export type ExtendedTrigger = {
   BridgeWorker?: BridgeWorker;
@@ -11200,6 +11406,7 @@ export type UnitStatus = {
   ActionTerminatedAt?: string | null;
   Drift?: string;
   Status?: string;
+  SyncStatus?: string;
 };
 export type ExtendedUnit = {
   /** the users that have approved the latest revision of the config data. */
@@ -11243,48 +11450,6 @@ export type ExtendedUnitRead = {
   UpstreamSpace?: SpaceRead;
   UpstreamUnit?: UnitRead;
 };
-export type QueuedOperation = {
-  Action?: ActionType;
-  /** BridgeWorkerID is the unique identifier of the bridge worker that will process this operation. */
-  BridgeWorkerID?: string;
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
-  Dependencies?: Uuid[] | null;
-  /** ExtraParams contains additional parameters for the operation in string format. */
-  ExtraParams?: string;
-  /** OrganizationID is the unique identifier of the organization this operation belongs to. */
-  OrganizationID?: string;
-  /** QueuedOperationID is the unique identifier for the queued unit action. */
-  QueuedOperationID?: string;
-  /** RevisionNum is the revision number this operation was performed on. */
-  RevisionNum?: number;
-  /** SpaceID is the unique identifier of the space of the unit this operation is performed on. */
-  SpaceID?: string;
-  /** Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done). */
-  Status?:
-    | 'Initializing'
-    | 'Pending'
-    | 'Delivered'
-    | 'Progressing'
-    | 'Completed'
-    | 'Failed'
-    | 'Aborted'
-    | 'Canceled'
-    | 'pending'
-    | 'delivered';
-  /** TargetID is the unique identifier of the target this operation is directed to. */
-  TargetID?: string;
-  /** UnitID is the unique identifier of the unit this operation is performed on. */
-  UnitID?: string;
-  /** User-Agent string of the API call. */
-  UserAgent?: string;
-  /** UserID of the user the action was performed by. */
-  UserID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control.
-    The value read must be sent in calls to Update. */
-  Version?: number;
-};
 export type UnitExtended = {
   Action?: ActionType;
   ActionResult?: ActionResultType;
@@ -11294,6 +11459,7 @@ export type UnitExtended = {
   Drift?: string;
   FromLinks?: Link[] | null;
   Status?: string;
+  SyncStatus?: string;
   ToLinks?: Link[] | null;
   Unit?: Unit;
 };
@@ -11306,6 +11472,7 @@ export type UnitExtendedRead = {
   Drift?: string;
   FromLinks?: LinkRead[] | null;
   Status?: string;
+  SyncStatus?: string;
   ToLinks?: LinkRead[] | null;
   Unit?: UnitRead;
 };
@@ -11558,7 +11725,12 @@ export const {
   useCreateActionResultMutation,
   useGetSelfQuery,
   useLazyGetSelfQuery,
+  useListQueuedOperationsQuery,
+  useLazyListQueuedOperationsQuery,
+  useGetQueuedOperationQuery,
+  useLazyGetQueuedOperationQuery,
   useStreamBridgeWorkerMutation,
+  useUserCreateActionResultMutation,
   useBulkDeleteChangeSetsMutation,
   useListAllChangeSetsQuery,
   useLazyListAllChangeSetsQuery,
@@ -11698,6 +11870,8 @@ export const {
   useGetUnitExtendedQuery,
   useLazyGetUnitExtendedQuery,
   useImportUnitMutation,
+  useDownloadUnitLiveDataQuery,
+  useLazyDownloadUnitLiveDataQuery,
   useDownloadUnitLiveStateQuery,
   useLazyDownloadUnitLiveStateQuery,
   useListExtendedMutationsQuery,

@@ -5,9 +5,13 @@ package impl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -16,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -23,6 +28,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/cmd/util"
 	"sigs.k8s.io/cli-utils/pkg/apply"
 	"sigs.k8s.io/cli-utils/pkg/apply/event"
@@ -54,6 +60,30 @@ const (
 	PollInterval         = 2 * time.Second
 	InventoryPrefix      = "inventory"
 )
+
+var (
+	klogInitOnce sync.Once
+)
+
+// initKlog initializes klog with verbose logging for CLI-Utils debugging
+func initKlog() {
+	klogInitOnce.Do(func() {
+		// Initialize klog flags
+		fs := flag.NewFlagSet("klog", flag.ContinueOnError)
+		klog.InitFlags(fs)
+
+		// Set verbosity level based on CONFIGHUB_DEBUG environment variable
+		// Levels: 0=critical, 1=errors, 2=warnings, 3=info, 4=debug, 5=trace
+		logLevel := "2" // Default to warnings
+		if os.Getenv("CONFIGHUB_DEBUG") == "1" {
+			logLevel = "5" // Enable detailed CLI-Utils trace logs in debug mode
+			log.Log.Info("🔍 Initialized klog with verbosity level 5 for CLI-Utils debugging (CONFIGHUB_DEBUG=1)")
+		} else {
+			log.Log.Info("🔍 Initialized klog with verbosity level 2 (set CONFIGHUB_DEBUG=1 for detailed logs)")
+		}
+		_ = fs.Set("v", logLevel)
+	})
+}
 
 // SimpleInventoryInfo implements the inventory.Info interface
 type SimpleInventoryInfo struct {
@@ -145,7 +175,7 @@ type ApplierComponents struct {
 // CLIUtilsApplier implements K8sApplier using kubernetes-sigs/cli-utils
 type CLIUtilsApplier struct {
 	comps            *ApplierComponents
-	liveState        []byte
+	liveData         []byte
 	spaceID          string
 	unitSlug         string
 	waitTimeout      string // WaitTimeout duration string for resource readiness
@@ -155,7 +185,7 @@ type CLIUtilsApplier struct {
 	applyCompleted   bool                         // Flag to track if apply has been completed
 	destroyObjects   []*unstructured.Unstructured // Store objects for WaitForDestroy
 	destroyCompleted bool                         // Flag to track if destroy has been completed
-	liveStateBuilder *LiveStateBuilder            // Optimized LiveState builder
+	liveDataBuilder  *LiveDataBuilder             // Optimized LiveData builder
 	lastResourceSet  ResourceSet                  // Store the last ResourceSet for retrieval
 	poller           *polling.StatusPoller        // Status poller for kstatus-based waiting
 }
@@ -203,10 +233,10 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 	var invInfo inventory.Info
 
 	if a.inventoryCM != nil && a.inventoryCM.IsValid() {
-		// Use existing inventory from LiveState
+		// Use existing inventory from LiveData
 		inventoryObj = a.inventoryCM.Unstructured
 		invInfo = a.invInfo
-		log.Log.Info("📦 Using existing inventory from LiveState", "id", a.inventoryCM.GetInventoryID())
+		log.Log.Info("📦 Using existing inventory from LiveData", "id", a.inventoryCM.GetInventoryID())
 	} else {
 		// Create new inventory if none exists
 		invMetadata := InventoryMetadata{
@@ -291,6 +321,14 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		DryRunStrategy:         common.DryRunNone,
 	}
 
+	// Step 4.5: Clear managedFields for SSA compatibility
+	// This removes field ownership from other managers (like kubectl), allowing SSA to
+	// properly handle array item removal (e.g., removing old initContainers)
+	if err := a.clearManagedFieldsForObjects(ctx, resourceObjects); err != nil {
+		log.Log.Error(err, "⚠️ Failed to clear managedFields, continuing with apply")
+		// Continue anyway - this is best-effort cleanup
+	}
+
 	// Run the applier - it returns an event channel
 	log.Log.Info("📋 Starting applier with inventory", "namespace", invInfo.GetNamespace(), "id", invInfo.GetID())
 	eventChannel := a.comps.Applier.Run(ctx, invInfo, resourceObjects, applyOptions)
@@ -372,7 +410,7 @@ applyDrainLoop:
 		log.Log.Error(err, "Failed to get live objects")
 		// Return with what we have
 		return ApplyResult{
-			LiveState:   a.liveState,
+			LiveData:    a.liveData,
 			ResourceSet: NewSimpleResourceSet(),
 			Error:       nil, // Don't fail Apply, let WaitForApply handle it
 		}
@@ -390,18 +428,19 @@ applyDrainLoop:
 	}
 	a.lastResourceSet = simpleResourceSet
 
-	// Build LiveState if builder is available
-	if a.liveStateBuilder != nil {
+	// Build LiveData if builder is available
+	if a.liveDataBuilder != nil {
 		processor := &EventProcessor{} // Empty processor since we discarded events
-		updatedLiveState, resourceSet, err := a.liveStateBuilder.BuildLiveState(
+		updatedLiveData, _, err := a.liveDataBuilder.BuildLiveData(
 			ctx,
 			invInfo,
 			processor,
-			a.liveState,
+			a.liveData,
 		)
 		if err == nil {
-			a.liveState = updatedLiveState
-			a.lastResourceSet = resourceSet
+			a.liveData = updatedLiveData
+			// Note: We keep simpleResourceSet instead of the empty one from BuildLiveData
+			// because we discarded events and built the ResourceSet from live objects above
 		}
 	}
 
@@ -410,7 +449,7 @@ applyDrainLoop:
 		"liveObjectCount", len(liveObjects))
 
 	return ApplyResult{
-		LiveState:   a.liveState,
+		LiveData:    a.liveData,
 		ResourceSet: a.lastResourceSet,
 		Error:       nil,
 	}
@@ -814,9 +853,9 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 	var invInfo inventory.Info
 
 	if a.inventoryCM != nil && a.inventoryCM.IsValid() {
-		// Use existing inventory from LiveState
+		// Use existing inventory from LiveData
 		invInfo = a.invInfo
-		log.Log.Info("📦 Using existing inventory from LiveState for destroy",
+		log.Log.Info("📦 Using existing inventory from LiveData for destroy",
 			"id", a.inventoryCM.GetInventoryID(),
 			"unitSlug", a.unitSlug)
 	} else if a.invInfo != nil {
@@ -831,6 +870,30 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 			"unitSlug", a.unitSlug,
 			"spaceID", a.spaceID)
 		return DestroyResult{Error: fmt.Errorf("no inventory found - cannot destroy resources")}
+	}
+
+	// Step 2.5: Ensure inventory is populated for backward compatibility
+	// For old units without inventory tracking, populate inventory from input objects
+	if len(objects) > 0 {
+		existingInv, err := a.comps.InventoryClient.Get(ctx, invInfo, inventory.GetOptions{})
+		inventoryIsEmpty := err != nil || existingInv == nil || len(existingInv.GetObjectRefs()) == 0
+
+		if inventoryIsEmpty {
+			log.Log.Info("📦 Inventory is empty, populating from input objects for backward compatibility",
+				"objectCount", len(objects),
+				"unitSlug", a.unitSlug)
+
+			if invClient, ok := a.comps.InventoryClient.(*InMemInventoryClient); ok {
+				if populateErr := invClient.PopulateFromObjects(ctx, invInfo, objects); populateErr != nil {
+					log.Log.Error(populateErr, "⚠️ Failed to populate inventory from objects, destroy may fail",
+						"unitSlug", a.unitSlug)
+				} else {
+					log.Log.Info("✅ Inventory populated from input objects",
+						"count", len(objects),
+						"unitSlug", a.unitSlug)
+				}
+			}
+		}
 	}
 
 	// Step 3: Inventory Client Setup is already done in initialization
@@ -957,7 +1020,7 @@ drainLoop:
 		"deletedCount", len(objectsToDelete))
 
 	return DestroyResult{
-		LiveState:   nil, // No live state after destroy
+		LiveData:    nil, // No live state after destroy
 		ResourceSet: a.lastResourceSet,
 		Error:       nil,
 	}
@@ -1039,8 +1102,8 @@ func (a *CLIUtilsApplier) validate() error {
 func (a *CLIUtilsApplier) createInventoryConfigMap(metadata InventoryMetadata) *unstructured.Unstructured {
 	// Validate metadata before creating ConfigMap
 	// Possible scenarios where inventory metadata could be empty:
-	// 1. Corrupted LiveState: If LiveState contains a malformed inventory ConfigMap with missing metadata fields
-	// 2. Parsing Errors: When SplitInventoryFromLiveState encounters a ConfigMap without proper inventory labels/annotations
+	// 1. Corrupted LiveData: If LiveData contains a malformed inventory ConfigMap with missing metadata fields
+	// 2. Parsing Errors: When SplitInventoryFromLiveData encounters a ConfigMap without proper inventory labels/annotations
 	// 3. Legacy Data: Old inventory ConfigMaps that don't follow the current naming convention
 	// 4. Manual Intervention: Someone manually created an inventory ConfigMap without proper metadata
 	if metadata.InventoryName == "" {
@@ -1146,6 +1209,9 @@ func (p *EventProcessor) buildResourceSet() ResourceSet {
 }
 
 func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory.Info, *InventoryConfigMap, error) {
+	// Initialize klog for CLI-Utils debugging (only once)
+	initKlog()
+
 	// Create default inventory info
 	defaultInvInfo := &SimpleInventoryInfo{
 		namespace: "default",
@@ -1186,16 +1252,16 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	}
 	factory := util.NewFactory(configFlags)
 
-	// Determine inventory client based on LiveState
+	// Determine inventory client based on LiveData
 	var invClient inventory.Client
 	var invInfo inventory.Info
 	var inventoryCM *InventoryConfigMap
 
-	if len(config.LiveState) > 0 {
-		log.Log.Info("📦 Using in-memory inventory from LiveState")
-		invClient, inventoryCM, _, err = CreateInventoryFromLiveState(context.Background(), config.LiveState, defaultInvInfo)
+	if len(config.LiveData) > 0 {
+		log.Log.Info("📦 Using in-memory inventory from LiveData")
+		invClient, inventoryCM, _, err = CreateInventoryFromLiveData(context.Background(), config.LiveData, defaultInvInfo)
 		if err != nil {
-			log.Log.Error(err, "⚠️ Failed to create inventory from LiveState, falling back to default")
+			log.Log.Error(err, "⚠️ Failed to create inventory from LiveData, falling back to default")
 			invClient = NewInMemInventoryClient()
 			inventoryCM = NewInventoryConfigMap(defaultInvInfo)
 		}
@@ -1254,7 +1320,7 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 		return nil, nil, nil, fmt.Errorf("failed to create destroyer: %w", err)
 	}
 
-	log.Log.Info("✅ Created applier components", "hasLiveState", len(config.LiveState) > 0)
+	log.Log.Info("✅ Created applier components", "hasLiveData", len(config.LiveData) > 0)
 
 	return &ApplierComponents{
 		KubernetesClient: k8sClient,
@@ -1277,8 +1343,8 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 		return nil, fmt.Errorf("failed to create applier components: %w", err)
 	}
 
-	// Create the optimized LiveStateBuilder
-	liveStateBuilder := NewLiveStateBuilder(
+	// Create the optimized LiveDataBuilder
+	liveDataBuilder := NewLiveDataBuilder(
 		comps.InventoryClient,
 		comps.DynamicClient,
 		comps.RestMapper,
@@ -1289,18 +1355,18 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 	// Create StatusPoller for kstatus-based waiting
 	poller := polling.NewStatusPoller(comps.KubernetesClient, comps.RestMapper, polling.Options{})
 
-	log.Log.Info("🚀 Created CLIUtilsApplier with LiveStateBuilder and StatusPoller")
+	log.Log.Info("🚀 Created CLIUtilsApplier with LiveDataBuilder and StatusPoller")
 
 	return &CLIUtilsApplier{
-		comps:            comps,
-		liveState:        config.LiveState,
-		spaceID:          config.SpaceID,
-		unitSlug:         config.UnitSlug,
-		waitTimeout:      config.WaitTimeout,
-		inventoryCM:      inventoryCM,
-		invInfo:          invInfo,
-		liveStateBuilder: liveStateBuilder,
-		poller:           poller,
+		comps:           comps,
+		liveData:        config.LiveData,
+		spaceID:         config.SpaceID,
+		unitSlug:        config.UnitSlug,
+		waitTimeout:     config.WaitTimeout,
+		inventoryCM:     inventoryCM,
+		invInfo:         invInfo,
+		liveDataBuilder: liveDataBuilder,
+		poller:          poller,
 	}, nil
 }
 
@@ -1415,4 +1481,98 @@ func (a *CLIUtilsApplier) waitForCRDsAvailable(ctx context.Context, objects []*u
 			}
 		}
 	}
+}
+
+// shouldTakeOverManager checks if a field manager should be replaced by our manager.
+// We take over kubectl-* managers and old confighub managers to enable proper SSA field deletion.
+// We preserve managers from other controllers (HPA, VPA, etc.) to avoid conflicts.
+func shouldTakeOverManager(manager string) bool {
+	// Take over kubectl managers (kubectl-client-side-apply, kubectl-edit, etc.)
+	if strings.HasPrefix(manager, "kubectl") {
+		return true
+	}
+	// Take over old confighub managers to consolidate ownership
+	if strings.HasPrefix(manager, "confighub") && manager != FieldManager {
+		return true
+	}
+	return false
+}
+
+// clearManagedFieldsForObjects removes kubectl and old confighub managers from resources before apply.
+// This allows SSA to properly handle array item removal (e.g., removing old initContainers)
+// while preserving field ownership from other controllers (HPA, VPA, etc.).
+// This follows the pattern used by Flux kustomize-controller (PR #527).
+func (a *CLIUtilsApplier) clearManagedFieldsForObjects(ctx context.Context, objects []*unstructured.Unstructured) error {
+	for _, obj := range objects {
+		key := client.ObjectKey{
+			Namespace: obj.GetNamespace(),
+			Name:      obj.GetName(),
+		}
+
+		// Get the current resource from cluster
+		current := obj.DeepCopy()
+		err := a.comps.KubernetesClient.Get(ctx, key, current)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				// Resource doesn't exist yet, no need to clear managedFields
+				continue
+			}
+			return fmt.Errorf("failed to get resource %s/%s: %w", obj.GetNamespace(), obj.GetName(), err)
+		}
+
+		// Check if managedFields has entries that we should take over
+		managedFields := current.GetManagedFields()
+		if len(managedFields) == 0 {
+			continue
+		}
+
+		// Filter managedFields: keep entries from other controllers, remove kubectl/confighub
+		var filteredFields []metav1.ManagedFieldsEntry
+		var removedManagers []string
+		for _, mf := range managedFields {
+			if shouldTakeOverManager(mf.Manager) {
+				removedManagers = append(removedManagers, mf.Manager)
+			} else {
+				filteredFields = append(filteredFields, mf)
+			}
+		}
+
+		// If no managers need to be removed, skip this object
+		if len(removedManagers) == 0 {
+			continue
+		}
+
+		log.Log.Info("🔧 Removing kubectl/confighub managers for SSA compatibility",
+			"name", obj.GetName(),
+			"namespace", obj.GetNamespace(),
+			"kind", obj.GetKind(),
+			"removedManagers", removedManagers,
+			"preservedCount", len(filteredFields))
+
+		// Use JSON Patch to only update managedFields without touching the spec
+		// This avoids validation errors from sending the full resource back
+		var patch []byte
+		if len(filteredFields) == 0 {
+			// Remove all managedFields
+			patch = []byte(`[{"op":"remove","path":"/metadata/managedFields"}]`)
+		} else {
+			// Replace with filtered managedFields - need to serialize the entries
+			managedFieldsJSON, err := json.Marshal(filteredFields)
+			if err != nil {
+				log.Log.Error(err, "⚠️ Failed to marshal managedFields, continuing anyway",
+					"name", obj.GetName(),
+					"namespace", obj.GetNamespace())
+				continue
+			}
+			patch = []byte(fmt.Sprintf(`[{"op":"replace","path":"/metadata/managedFields","value":%s}]`, managedFieldsJSON))
+		}
+
+		if err := a.comps.KubernetesClient.Patch(ctx, current, client.RawPatch(types.JSONPatchType, patch)); err != nil {
+			log.Log.Error(err, "⚠️ Failed to patch managedFields, continuing anyway",
+				"name", obj.GetName(),
+				"namespace", obj.GetNamespace())
+			// Continue anyway - this is best-effort
+		}
+	}
+	return nil
 }

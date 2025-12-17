@@ -326,7 +326,7 @@ func (c *YamlDoc) index0(index int) (*YamlDoc, error) {
 }
 
 func (c *YamlDoc) IsEmptyDoc() bool {
-	return c.isEmptyDoc || c.YNode().IsZero() || yaml.IsYNodeNilOrEmpty(c.YNode())
+	return c.isEmptyDoc || yaml.IsYNodeNilOrEmpty(c.YNode()) || c.YNode().IsZero()
 }
 
 func (c *YamlDoc) IsArray() bool {

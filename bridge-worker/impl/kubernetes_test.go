@@ -24,9 +24,11 @@ func TestKubernetesBridgeWorker_Apply_Success(t *testing.T) {
 	// Setup mock expectations
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
+	// After successful apply, expect ApplySynced status (config pushed, waiting for ready)
 	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing &&
-			status.Message == "Resources applied successfully"
+		return status.Status == api.ActionStatusCompleted &&
+			status.Result == api.ActionResultApplySynced &&
+			status.Message == "Resources applied successfully, waiting for ready state"
 	})).Return(nil).Once()
 
 	// Mock the applier factory to return our mock applier
@@ -50,7 +52,7 @@ func TestKubernetesBridgeWorker_Apply_Success(t *testing.T) {
 	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
 		ResourceSet: resourceSet,
 		LiveObjects: []*unstructured.Unstructured{testConfigMap},
-		LiveState:   []byte("mock-live-state"),
+		LiveData:    []byte("mock-live-data"),
 		Error:       nil,
 	})
 
@@ -84,7 +86,7 @@ func TestKubernetesBridgeWorker_Apply_Failure(t *testing.T) {
 	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
 		ResourceSet: nil,
 		LiveObjects: nil,
-		LiveState:   nil,
+		LiveData:    nil,
 		Error:       errors.New("mock apply error"),
 	})
 
@@ -151,10 +153,11 @@ func TestKubernetesBridgeWorker_Apply_EmptyPayload(t *testing.T) {
 
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
-	// Add mock for the LiveState status that Apply now sends
+	// After successful apply, expect ApplySynced status (config pushed, waiting for ready)
 	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing &&
-			status.Message == "Resources applied successfully"
+		return status.Status == api.ActionStatusCompleted &&
+			status.Result == api.ActionResultApplySynced &&
+			status.Message == "Resources applied successfully, waiting for ready state"
 	})).Return(nil).Once()
 
 	// Mock the applier factory to return our mock applier
@@ -168,7 +171,7 @@ func TestKubernetesBridgeWorker_Apply_EmptyPayload(t *testing.T) {
 	mockApplier.On("Apply", mock.Anything, mock.Anything).Return(ApplyResult{
 		ResourceSet: &SimpleResourceSet{Entries: []SimpleResourceSetEntry{}},
 		LiveObjects: []*unstructured.Unstructured{},
-		LiveState:   []byte(""),
+		LiveData:    []byte(""),
 		Error:       nil,
 	})
 

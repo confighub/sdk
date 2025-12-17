@@ -614,9 +614,9 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 		// Intercept Cancel action to process immediately, bypassing the queue
 		if op.Action == api.ActionCancel {
 			log.Printf("📥 Received CANCEL command for function operation %s (Bypassing queue)", op.Payload.QueuedOperationID)
-			
+
 			success := c.unitQueues.CancelOperation(op.Payload.QueuedOperationID)
-			
+
 			// Send acknowledgment
 			startedAt := time.Now()
 			terminatedAt := startedAt
@@ -626,7 +626,7 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 				status = api.ActionStatusFailed
 				message = "Operation not found or already completed"
 			}
-	
+
 			result := &api.ActionResult{
 				UnitID:            op.Payload.InvocationRequest.UnitID,
 				SpaceID:           op.Payload.InvocationRequest.SpaceID,
@@ -777,9 +777,9 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 		// Create a copy for logging with sensitive data redacted
 		logResult := *result
 		// Clear the large/sensitive fields and replace with size info
-		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
-		logResult.Outputs = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Outputs)))
+		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
+		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
 
 		filteredJSON, _ := json.Marshal(logResult)
 		log.Printf("Result body: %s", string(filteredJSON))

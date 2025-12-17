@@ -43,9 +43,10 @@ Examples:
 }
 
 var (
-	workerPatch       bool
-	workerIdentifiers []string
+	workerPatch             bool
+	workerIdentifiers       []string
 	workerUpdatePermissions []string
+	workerUpdateOrgRole     string
 )
 
 func init() {
@@ -55,6 +56,7 @@ func init() {
 	enableFilterFlag(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	bridgeworkerUpdateCmd.Flags().StringVar(&workerUpdateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
 }
 
@@ -137,6 +139,10 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if workerUpdateOrgRole != "" {
+		currentBridgeworker.OrgRole = workerUpdateOrgRole
+	}
+
 	// If this was set from stdin, it will be overridden
 	currentBridgeworker.SpaceID = spaceID
 
@@ -158,8 +164,8 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	spaceID := uuid.MustParse(selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for worker)
-	patchJSON, err := BuildPatchDataWithPermissions(nil, workerUpdatePermissions)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchDataWithPermissions(workerPatchEnhancer, workerUpdatePermissions)
 	if err != nil {
 		return err
 	}
@@ -200,8 +206,8 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for worker)
-	patchJSON, err := BuildPatchDataWithPermissions(nil, workerUpdatePermissions)
+	// Build patch data using consolidated function
+	patchJSON, err := BuildPatchDataWithPermissions(workerPatchEnhancer, workerUpdatePermissions)
 	if err != nil {
 		return err
 	}
@@ -261,4 +267,11 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// workerPatchEnhancer adds worker-specific fields to patch data
+func workerPatchEnhancer(patchMap map[string]interface{}) {
+	if workerUpdateOrgRole != "" {
+		patchMap["OrgRole"] = workerUpdateOrgRole
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/cli-utils/pkg/inventory"
 	"sigs.k8s.io/cli-utils/pkg/object"
@@ -136,12 +137,12 @@ func (c *InMemInventoryClient) setInventory(id inventory.ID, inv *InMemInventory
 	c.inventories[id] = inv
 }
 
-// CreateFromLiveState creates an InMemInventoryClient initialized with LiveState data
-func (c *InMemInventoryClient) CreateFromLiveState(ctx context.Context, liveState []byte, inv inventory.Info) (*InventoryConfigMap, []byte, error) {
-	// Split inventory from LiveState
-	inventoryCM, remainingResources, err := SplitInventoryFromLiveState(liveState)
+// CreateFromLiveData creates an InMemInventoryClient initialized with LiveData data
+func (c *InMemInventoryClient) CreateFromLiveData(ctx context.Context, liveData []byte, inv inventory.Info) (*InventoryConfigMap, []byte, error) {
+	// Split inventory from LiveData
+	inventoryCM, remainingResources, err := SplitInventoryFromLiveData(liveData)
 	if err != nil {
-		return nil, liveState, fmt.Errorf("failed to split inventory from LiveState: %w", err)
+		return nil, liveData, fmt.Errorf("failed to split inventory from LiveData: %w", err)
 	}
 
 	// Process existing inventory or create new one
@@ -181,8 +182,8 @@ func (c *InMemInventoryClient) initializeFromConfigMap(ctx context.Context, inve
 	return nil
 }
 
-// SaveToLiveState updates the LiveState with the current inventory state
-func (c *InMemInventoryClient) SaveToLiveState(inventoryCM *InventoryConfigMap, inventoryInfo inventory.Info, resources []byte) ([]byte, error) {
+// SaveToLiveData updates the LiveData with the current inventory state
+func (c *InMemInventoryClient) SaveToLiveData(inventoryCM *InventoryConfigMap, inventoryInfo inventory.Info, resources []byte) ([]byte, error) {
 	if !inventoryCM.IsValid() {
 		return resources, nil
 	}
@@ -199,12 +200,12 @@ func (c *InMemInventoryClient) SaveToLiveState(inventoryCM *InventoryConfigMap, 
 	}
 
 	// Combine inventory with resources
-	liveState, err := CombineInventoryWithResources(inventoryCM, resources)
+	liveData, err := CombineInventoryWithResources(inventoryCM, resources)
 	if err != nil {
 		return nil, fmt.Errorf("failed to combine inventory with resources: %w", err)
 	}
 
-	return liveState, nil
+	return liveData, nil
 }
 
 // getOrCreateInventory retrieves existing inventory or creates a new one
@@ -220,4 +221,65 @@ func (c *InMemInventoryClient) getOrCreateInventory(inv inventory.Info) inventor
 	}
 
 	return nil
+}
+
+// PopulateFromObjects populates the inventory with object metadata from unstructured objects.
+// This is used for backward compatibility when inventory is empty but objects need to be tracked
+// (e.g., for units created before inventory tracking was added).
+func (c *InMemInventoryClient) PopulateFromObjects(ctx context.Context, inv inventory.Info, objects []*unstructured.Unstructured) error {
+	if len(objects) == 0 {
+		return nil
+	}
+
+	// Convert unstructured objects to ObjMetadataSet
+	objRefs := object.UnstructuredSetToObjMetadataSet(objects)
+	if len(objRefs) == 0 {
+		return nil
+	}
+
+	// Get existing inventory or create new one
+	existingInv, err := c.Get(ctx, inv, inventory.GetOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to get existing inventory: %w", err)
+	}
+
+	var targetInv inventory.Inventory
+	if existingInv != nil {
+		targetInv = existingInv
+		// Merge with existing refs to avoid losing any tracked objects
+		existingRefs := targetInv.GetObjectRefs()
+		objRefs = mergeObjMetadataSets(existingRefs, objRefs)
+	} else {
+		targetInv, err = c.NewInventory(inv)
+		if err != nil {
+			return fmt.Errorf("failed to create new inventory: %w", err)
+		}
+	}
+
+	targetInv.SetObjectRefs(objRefs)
+	return c.CreateOrUpdate(ctx, targetInv, inventory.UpdateOptions{})
+}
+
+// mergeObjMetadataSets merges two ObjMetadataSets, removing duplicates
+func mergeObjMetadataSets(set1, set2 object.ObjMetadataSet) object.ObjMetadataSet {
+	seen := make(map[string]bool)
+	result := make(object.ObjMetadataSet, 0, len(set1)+len(set2))
+
+	for _, ref := range set1 {
+		key := ref.String()
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, ref)
+		}
+	}
+
+	for _, ref := range set2 {
+		key := ref.String()
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, ref)
+		}
+	}
+
+	return result
 }

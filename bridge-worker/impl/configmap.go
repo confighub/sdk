@@ -213,6 +213,7 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 func (w *ConfigMapBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	transformAppConfigToConfigMap(&payload)
 	// TODO: GC configmaps more than a designated amount
+	// FIXME: The configmap will be stored in LiveData rather than LiveState
 	return w.KubernetesBridgeWorker.Apply(wctx, payload)
 }
 

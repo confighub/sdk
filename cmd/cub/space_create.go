@@ -13,14 +13,16 @@ import (
 	"github.com/confighub/sdk/cubapi"
 	cubbyname "github.com/confighub/sdk/cubbyname"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 var spaceCreateArgs struct {
-	namePrefixes []string
-	whereTrigger string
-	setContext   bool
-	permissions  []string
+	namePrefixes  []string
+	whereTrigger  string
+	triggerFilter string
+	setContext    bool
+	permissions   []string
 }
 
 var spaceCreateCmd = &cobra.Command{
@@ -60,6 +62,7 @@ func init() {
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().BoolVar(&spaceCreateArgs.setContext, "set-context", false, "set the newly created space as the default in the current context")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	enableWhereFlag(spaceCreateCmd)
@@ -156,6 +159,18 @@ func runSingleSpaceCreate(args []string) error {
 		newBody.WhereTrigger = spaceCreateArgs.whereTrigger
 	}
 
+	// Set TriggerFilterID if provided
+	if spaceCreateArgs.triggerFilter == "-" {
+		newBody.TriggerFilterID = nil
+	} else if spaceCreateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(spaceCreateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		triggerFilterUUID := uuid.MustParse(triggerFilterID)
+		newBody.TriggerFilterID = &triggerFilterUUID
+	}
+
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateSpaceParams{}
 	if allowExists {
@@ -186,17 +201,33 @@ func runSingleSpaceCreate(args []string) error {
 
 // createBulkCreatePatch creates a JSON patch for bulk create operations
 func createBulkSpaceCreatePatch() ([]byte, error) {
-	// Build patch data with space enhancer
-	var spaceEnhancer PatchEnhancer
+	// Parse TriggerFilterID if provided
+	var triggerFilterUUID *uuid.UUID
+	if spaceCreateArgs.triggerFilter == "-" {
+		// Explicitly clear
+		triggerFilterUUID = nil
+	} else if spaceCreateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(spaceCreateArgs.triggerFilter)
+		if err != nil {
+			return nil, err
+		}
+		parsed := uuid.MustParse(triggerFilterID)
+		triggerFilterUUID = &parsed
+	}
 
-	// Add WhereTrigger if provided
-	if spaceCreateArgs.whereTrigger == "-" || spaceCreateArgs.whereTrigger != "" {
-		spaceEnhancer = func(patchMap map[string]interface{}) {
-			if spaceCreateArgs.whereTrigger == "-" {
-				patchMap["WhereTrigger"] = ""
-			} else {
-				patchMap["WhereTrigger"] = spaceCreateArgs.whereTrigger
-			}
+	// Build patch data with space enhancer
+	spaceEnhancer := func(patchMap map[string]interface{}) {
+		// Add WhereTrigger if provided
+		if spaceCreateArgs.whereTrigger == "-" {
+			patchMap["WhereTrigger"] = ""
+		} else if spaceCreateArgs.whereTrigger != "" {
+			patchMap["WhereTrigger"] = spaceCreateArgs.whereTrigger
+		}
+		// Add TriggerFilterID if provided
+		if spaceCreateArgs.triggerFilter == "-" {
+			patchMap["TriggerFilterID"] = nil
+		} else if triggerFilterUUID != nil {
+			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
 		}
 	}
 

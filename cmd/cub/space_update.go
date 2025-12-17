@@ -15,8 +15,10 @@ import (
 )
 
 var spaceUpdateArgs struct {
-	whereTrigger string
-	permissions  []string
+	whereTrigger    string
+	triggerFilter   string
+	permissions     []string
+	refreshTriggers bool
 }
 
 var spaceUpdateCmd = &cobra.Command{
@@ -51,7 +53,9 @@ func init() {
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)
 	spaceCmd.AddCommand(spaceUpdateCmd)
@@ -129,17 +133,33 @@ func runSingleSpaceUpdate(args []string) error {
 	if isPatch {
 		// Single space patch mode
 
-		// Build patch data using BuildPatchData with space enhancer
-		var spaceEnhancer PatchEnhancer
+		// Parse TriggerFilterID if provided
+		var triggerFilterUUID *uuid.UUID
+		if spaceUpdateArgs.triggerFilter == "-" {
+			// Explicitly clear
+			triggerFilterUUID = nil
+		} else if spaceUpdateArgs.triggerFilter != "" {
+			triggerFilterID, err := parseFilterFlag(spaceUpdateArgs.triggerFilter)
+			if err != nil {
+				return err
+			}
+			parsed := uuid.MustParse(triggerFilterID)
+			triggerFilterUUID = &parsed
+		}
 
-		// Add WhereTrigger if provided
-		if spaceUpdateArgs.whereTrigger == "-" || spaceUpdateArgs.whereTrigger != "" {
-			spaceEnhancer = func(patchMap map[string]interface{}) {
-				if spaceUpdateArgs.whereTrigger == "-" {
-					patchMap["WhereTrigger"] = ""
-				} else {
-					patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
-				}
+		// Build patch data using BuildPatchData with space enhancer
+		spaceEnhancer := func(patchMap map[string]interface{}) {
+			// Add WhereTrigger if provided
+			if spaceUpdateArgs.whereTrigger == "-" {
+				patchMap["WhereTrigger"] = ""
+			} else if spaceUpdateArgs.whereTrigger != "" {
+				patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
+			}
+			// Add TriggerFilterID if provided
+			if spaceUpdateArgs.triggerFilter == "-" {
+				patchMap["TriggerFilterID"] = nil
+			} else if triggerFilterUUID != nil {
+				patchMap["TriggerFilterID"] = triggerFilterUUID.String()
 			}
 		}
 
@@ -198,7 +218,23 @@ func runSingleSpaceUpdate(args []string) error {
 		newBody.WhereTrigger = spaceUpdateArgs.whereTrigger
 	}
 
-	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, *newBody)
+	// Set TriggerFilterID if provided
+	if spaceUpdateArgs.triggerFilter == "-" {
+		newBody.TriggerFilterID = nil
+	} else if spaceUpdateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(spaceUpdateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		triggerFilterUUID := uuid.MustParse(triggerFilterID)
+		newBody.TriggerFilterID = &triggerFilterUUID
+	}
+
+	updateParams := &goclientnew.UpdateSpaceParams{}
+	if spaceUpdateArgs.refreshTriggers {
+		updateParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
+	}
+	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, updateParams, *newBody)
 	if cubapi.IsAPIError(err, spaceRes) {
 		return cubapi.InterpretErrorGeneric(err, spaceRes)
 	}
@@ -210,9 +246,14 @@ func runSingleSpaceUpdate(args []string) error {
 }
 
 func patchSpace(spaceID uuid.UUID, patchData []byte) (*goclientnew.Space, error) {
+	patchParams := &goclientnew.PatchSpaceParams{}
+	if spaceUpdateArgs.refreshTriggers {
+		patchParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
+	}
 	spaceRes, err := cubClientNew.PatchSpaceWithBodyWithResponse(
 		ctx,
 		spaceID,
+		patchParams,
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
@@ -243,17 +284,33 @@ func runBulkSpaceUpdate() error {
 		effectiveWhere = where
 	}
 
-	// Build patch data with space enhancer
-	var spaceEnhancer PatchEnhancer
+	// Parse TriggerFilterID if provided
+	var triggerFilterUUID *uuid.UUID
+	if spaceUpdateArgs.triggerFilter == "-" {
+		// Explicitly clear
+		triggerFilterUUID = nil
+	} else if spaceUpdateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(spaceUpdateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		parsed := uuid.MustParse(triggerFilterID)
+		triggerFilterUUID = &parsed
+	}
 
-	// Add WhereTrigger if provided
-	if spaceUpdateArgs.whereTrigger == "-" || spaceUpdateArgs.whereTrigger != "" {
-		spaceEnhancer = func(patchMap map[string]interface{}) {
-			if spaceUpdateArgs.whereTrigger == "-" {
-				patchMap["WhereTrigger"] = ""
-			} else {
-				patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
-			}
+	// Build patch data with space enhancer
+	spaceEnhancer := func(patchMap map[string]interface{}) {
+		// Add WhereTrigger if provided
+		if spaceUpdateArgs.whereTrigger == "-" {
+			patchMap["WhereTrigger"] = ""
+		} else if spaceUpdateArgs.whereTrigger != "" {
+			patchMap["WhereTrigger"] = spaceUpdateArgs.whereTrigger
+		}
+		// Add TriggerFilterID if provided
+		if spaceUpdateArgs.triggerFilter == "-" {
+			patchMap["TriggerFilterID"] = nil
+		} else if triggerFilterUUID != nil {
+			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
 		}
 	}
 
@@ -268,6 +325,9 @@ func runBulkSpaceUpdate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+	if spaceUpdateArgs.refreshTriggers {
+		params.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
 	}
 
 	// Set include parameter to expand OrganizationID if needed
