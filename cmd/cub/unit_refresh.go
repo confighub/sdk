@@ -59,7 +59,7 @@ func init() {
 
 	// Bulk operation flags
 	unitRefreshCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk refresh (can be repeated or comma-separated)")
-	unitRefreshCmd.Flags().BoolVar(&unitRefreshArgs.dryRun, "dry-run", false, "Preview which units would be refreshed without actually executing")
+	unitRefreshCmd.Flags().BoolVar(&unitRefreshArgs.dryRun, "dry-run", false, "Preview refresh results")
 
 	unitCmd.AddCommand(unitRefreshCmd)
 }
@@ -108,7 +108,12 @@ func runSingleUnitRefresh(unitSlug string) error {
 		return err
 	}
 
-	refreshRes, err := cubClientNew.RefreshUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
+	params := &goclientnew.RefreshUnitParams{}
+	if unitRefreshArgs.dryRun {
+		dryRun := unitRefreshArgs.dryRun
+		params.DryRun = &dryRun
+	}
+	refreshRes, err := cubClientNew.RefreshUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if cubapi.IsAPIError(err, refreshRes) {
 		return cubapi.InterpretErrorGeneric(err, refreshRes)
 	}

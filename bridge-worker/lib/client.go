@@ -229,8 +229,8 @@ func (c *workerClient) Start(ctx context.Context) error {
 	eb.RandomizationFactor = 0.5         // Add ±50% randomization to prevent thundering herd
 	eb.Multiplier = 2.0                  // Double the delay on each retry
 	eb.MaxInterval = 60 * time.Second    // Cap maximum delay at 60 seconds
-	// Note: By default, backoff v5 will stop after 15 minutes.
-	// We explicitly reset the backoff when it reaches Stop to retry forever.
+	// Note: In backoff/v5, ExponentialBackOff.NextBackOff() never returns backoff.Stop,
+	// so retries continue forever, capped at MaxInterval.
 
 	attempt := 0
 	for {
@@ -243,6 +243,8 @@ func (c *workerClient) Start(ctx context.Context) error {
 
 		if err == nil {
 			log.Printf("[INFO] Stream ended normally, will reconnect")
+		} else if errors.Is(err, context.Canceled) {
+			log.Printf("[INFO] Stream stopped: %v", err)
 		} else {
 			log.Printf("[ERROR] Stream error: %v", err)
 		}
@@ -258,12 +260,6 @@ func (c *workerClient) Start(ctx context.Context) error {
 
 		// Calculate the next backoff delay using exponential backoff.
 		delay := eb.NextBackOff()
-		if delay == backoff.Stop {
-			// The backoff has reached its max elapsed time (15 minutes by default).
-			// Reset it to continue retrying indefinitely.
-			eb.Reset()
-			delay = eb.NextBackOff()
-		}
 
 		// Add random jitter (up to 10% of delay) to prevent multiple workers
 		// from reconnecting simultaneously (thundering herd problem).
@@ -374,7 +370,12 @@ func (c *workerClient) startStream(ctx context.Context) error {
 				}
 				break
 			}
-			log.Printf("[ERROR] Network/connection error while reading stream after %d events: %v", eventCount, err)
+			// Context cancellation during shutdown is expected, not an error
+			if errors.Is(err, context.Canceled) {
+				log.Printf("[INFO] Stream read stopped after %d events: %v", eventCount, err)
+			} else {
+				log.Printf("[ERROR] Network/connection error while reading stream after %d events: %v", eventCount, err)
+			}
 			return fmt.Errorf("failed to read from event stream: %w", err)
 		}
 
@@ -710,6 +711,7 @@ func (c *workerClient) getBridgeWorkerSlug() error {
 
 // sendOverriddenStatus sends an aborted status for an operation that was overridden by a newer one.
 // This is called when a new Apply/Destroy operation arrives and supersedes an existing same-type operation.
+// Status is queued for async delivery with infinite retry.
 func (c *workerClient) sendOverriddenStatus(overridden *runningOperation, newOperationID uuid.UUID) {
 	terminatedAt := time.Now()
 	result := &api.ActionResult{
@@ -726,13 +728,17 @@ func (c *workerClient) sendOverriddenStatus(overridden *runningOperation, newOpe
 			TerminatedAt: &terminatedAt,
 		},
 	}
-	if err := c.sendResult(result); err != nil {
-		log.Printf("[ERROR] Failed to send overridden status for operation %s: %v", overridden.operationID, err)
-	}
+	// Queue for async delivery with infinite retry
+	c.unitQueues.QueueStatusEvent(
+		overridden.unitID.String(),
+		result,
+		c.sendResultOnce,
+	)
 }
 
 // sendCancelledStatus sends a cancelled status for an operation that was explicitly cancelled.
 // This marks the original Apply/Destroy operation as Canceled so the CLI knows it's done.
+// Status is queued for async delivery with infinite retry.
 func (c *workerClient) sendCancelledStatus(cancelled *runningOperation) {
 	terminatedAt := time.Now()
 	result := &api.ActionResult{
@@ -749,9 +755,12 @@ func (c *workerClient) sendCancelledStatus(cancelled *runningOperation) {
 			TerminatedAt: &terminatedAt,
 		},
 	}
-	if err := c.sendResult(result); err != nil {
-		log.Printf("[ERROR] Failed to send cancelled status for operation %s: %v", cancelled.operationID, err)
-	}
+	// Queue for async delivery with infinite retry
+	c.unitQueues.QueueStatusEvent(
+		cancelled.unitID.String(),
+		result,
+		c.sendResultOnce,
+	)
 }
 
 // sendResult sends an action result to the ConfigHub server with automatic retry on failure.
@@ -863,6 +872,50 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 	if err != nil {
 		log.Printf("[ERROR] Failed to send result after retries: %v", err)
 		return err
+	}
+
+	return nil
+}
+
+// sendResultOnce sends an action result without retry logic.
+// Used by status queue which handles its own infinite retry.
+// Returns error immediately for caller to handle retry.
+func (c *workerClient) sendResultOnce(result *api.ActionResult) error {
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("failed to marshal result: %v", err)
+	}
+
+	// Log non-heartbeat results with sensitive data redacted
+	if result.Action != api.ActionHeartbeat {
+		logResult := *result
+		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
+		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
+		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
+		filteredJSON, _ := json.Marshal(logResult)
+		log.Printf("Sending result (once): %s", string(filteredJSON))
+	}
+
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf(resultRoute, c.serverURL, c.workerID),
+		bytes.NewBuffer(resultJSON))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.workerSecret))
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err // Retryable network error
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server returned status %d: %s, body: %s",
+			resp.StatusCode, resp.Status, string(body))
 	}
 
 	return nil

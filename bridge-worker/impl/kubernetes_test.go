@@ -26,7 +26,7 @@ func TestKubernetesBridgeWorker_Apply_Success(t *testing.T) {
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
 	// After successful apply, expect ApplySynced status (config pushed, waiting for ready)
 	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusCompleted &&
+		return status.Status == api.ActionStatusProgressing &&
 			status.Result == api.ActionResultApplySynced &&
 			status.Message == "Resources applied successfully, waiting for ready state"
 	})).Return(nil).Once()
@@ -155,7 +155,7 @@ func TestKubernetesBridgeWorker_Apply_EmptyPayload(t *testing.T) {
 	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
 	// After successful apply, expect ApplySynced status (config pushed, waiting for ready)
 	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusCompleted &&
+		return status.Status == api.ActionStatusProgressing &&
 			status.Result == api.ActionResultApplySynced &&
 			status.Message == "Resources applied successfully, waiting for ready state"
 	})).Return(nil).Once()

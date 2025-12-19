@@ -76,7 +76,12 @@ func runSingleUnitDestroy(unitSlug string) error {
 		return err
 	}
 
-	destroyRes, err := cubClientNew.DestroyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID)
+	params := &goclientnew.DestroyUnitParams{}
+	if unitDestroyArgs.dryRun {
+		dryRun := unitDestroyArgs.dryRun
+		params.DryRun = &dryRun
+	}
+	destroyRes, err := cubClientNew.DestroyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if cubapi.IsAPIError(err, destroyRes) {
 		return cubapi.InterpretErrorGeneric(err, destroyRes)
 	}

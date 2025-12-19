@@ -31,6 +31,7 @@ type BridgeWorkerPayload struct {
 	OrganizationID   uuid.UUID         `description:"UUID of the Organization of the Unit on which the action was performed"`
 	TargetID         uuid.UUID         `description:"UUID of the Target attached to the Unit on which the action was performed"`
 
+	DryRun          bool   `description:"Whether the action is a dry run"`
 	Data            []byte `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
 	LiveData        []byte `swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit"`
 	LiveState       []byte `swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit"`

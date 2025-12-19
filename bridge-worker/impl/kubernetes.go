@@ -32,6 +32,10 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
+// LargeWaitTimeout is effectively infinite (~10 years) - disabled per #3220
+// The Bridge should report what Kubernetes reports, not have its own timeout-based failure.
+const LargeWaitTimeout = 87600 * time.Hour
+
 type KubernetesBridgeWorker struct {
 	cfg         *rest.Config
 	applier     K8sApplier // Deprecated: for backward compatibility, will be removed
@@ -64,7 +68,7 @@ func createRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackO
 	case waitTimeout < 2*time.Minute:
 		// Short timeout: quick retries (5s, 10s, 20s, 40s...)
 		b.InitialInterval = 5 * time.Second
-		b.MaxInterval = 1 * time.Minute
+		b.MaxInterval = 5 * time.Minute
 		b.Multiplier = 2.0
 
 	case waitTimeout <= 10*time.Minute:
@@ -76,7 +80,7 @@ func createRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackO
 	default:
 		// Long timeout: slower retries (30s, 60s, 120s, 240s...)
 		b.InitialInterval = 30 * time.Second
-		b.MaxInterval = 10 * time.Minute
+		b.MaxInterval = 5 * time.Minute
 		b.Multiplier = 2.0
 	}
 
@@ -98,7 +102,8 @@ func createRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackO
 	}
 
 	b.RandomizationFactor = 0.1 // Small jitter to prevent thundering herd
-	// Note: MaxElapsedTime would need WithMaxRetries wrapper, keeping it simple for now
+	// Note: In backoff/v5, ExponentialBackOff.NextBackOff() never returns backoff.Stop
+	// so retries are already infinite. MaxInterval caps the growth at 5 minutes.
 	b.Reset()
 	return b
 }
@@ -216,7 +221,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			{
 				Name: targetName,
 				Params: KubernetesWorkerParams{
-					WaitTimeout: "10m0s",
+					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
 			},
 		}
@@ -226,7 +231,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			targets = append(targets, api.Target{
 				Name: legacyTargetName,
 				Params: KubernetesWorkerParams{
-					WaitTimeout: "10m0s",
+					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
 			})
 		}
@@ -250,7 +255,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			Name: api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
-				WaitTimeout: "10m0s",
+				WaitTimeout: LargeWaitTimeout.String(),
 			}.ToMap(),
 		})
 		// Add legacy target for backward compatibility
@@ -259,7 +264,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			targets = append(targets, api.Target{
 				Name: legacyTargetName,
 				Params: KubernetesWorkerParams{
-					WaitTimeout: "10m0s",
+					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
 			})
 		}
@@ -336,7 +341,7 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 	// This enables the "Synced but not Ready" state distinction
 	// The real LiveData will be sent after WaitForApply when we have live resources
 	actionResult := newActionResult(
-		api.ActionStatusCompleted,
+		api.ActionStatusProgressing,
 		api.ActionResultApplySynced,
 		"Resources applied successfully, waiting for ready state",
 	)
@@ -492,20 +497,10 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 
 		log.Log.Error(waitResult.Error, "Failed to wait for resources")
 		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
-			// Use exponential backoff library for retry logic
+			// Use exponential backoff for retry (retries forever, capped at 5min intervals)
 			unitID := payload.UnitID.String()
 			b := createRetryBackoff(workerParams)
-
-			// Get next backoff duration
 			nextBackoff := b.NextBackOff()
-			if nextBackoff == backoff.Stop {
-				// Max elapsed time reached, stop retrying
-				return lib.SafeSendStatus(wctx, newActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultApplyWaitFailed,
-					fmt.Sprintf("Resources not ready after maximum retry time: %v", waitResult.Error),
-				), waitResult.Error)
-			}
 
 			log.Log.Info("Resources not ready, retrying with exponential backoff",
 				"unitID", unitID,
@@ -528,9 +523,13 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 
 	// Success - no retry state to clear since we're stateless now
 
-	yamlData, err := objectsToYAML(waitResult.LiveObjects)
+	// waitResult.LiveObjects contains UNCLEANED live objects from the cluster
+	// We use uncleaned objects for LiveState (status tracking) and cleaned objects for LiveData (config storage)
+
+	// Convert uncleaned objects to YAML for LiveState
+	yamlDataForLiveState, err := objectsToYAML(waitResult.LiveObjects)
 	if err != nil {
-		log.Log.Error(err, "Failed to convert objects to YAML")
+		log.Log.Error(err, "Failed to convert objects to YAML for LiveState")
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultApplyWaitFailed,
@@ -538,14 +537,26 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		), err)
 	}
 
+	// Cleanup objects for LiveData (remove managed fields, status, etc.)
+	cleanedObjects := cleanupObjects(waitResult.LiveObjects)
+	yamlDataForLiveData, err := objectsToYAML(cleanedObjects)
+	if err != nil {
+		log.Log.Error(err, "Failed to convert cleaned objects to YAML for LiveData")
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			fmt.Sprintf("Failed to convert cleaned objects to YAML: %v", err),
+		), err)
+	}
+
 	// Handle inventory in LiveData for CLI Utils applier
-	liveDataData := []byte(yamlData)
+	liveDataData := []byte(yamlDataForLiveData)
 	if w.applierType == CLIUtilsSSA {
-		// Update LiveData with inventory for CLI Utils SSA applier. This should not destroy yamlData.
-		liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+		// Update LiveData with inventory for CLI Utils SSA applier. This should not destroy yamlDataForLiveData.
+		liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, cleanedObjects, []byte(yamlDataForLiveData))
 		if err != nil {
 			log.Log.Error(err, "⚠️ Failed to update LiveData with inventory, using raw YAML")
-			liveDataData = []byte(yamlData)
+			liveDataData = []byte(yamlDataForLiveData)
 		}
 	}
 
@@ -563,9 +574,10 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 		api.ActionResultApplyCompleted,
 		fmt.Sprintf("Applied %d resources successfully at %s", len(waitResult.LiveObjects), time.Now().Format(time.RFC3339)),
 	)
-	// FIXME: LiveObjects and LiveData are already cleaned
+	// LiveData contains cleaned objects (for config storage/drift detection)
+	// LiveState contains uncleaned objects (for status tracking with full metadata)
 	status.LiveData = liveDataData
-	status.LiveState = []byte(yamlData)
+	status.LiveState = []byte(yamlDataForLiveState)
 
 	wctx.SendStatus(status)
 	return nil
@@ -677,6 +689,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		return err
 	}
 
+	// retrievedObjects contains UNCLEANED live objects from the cluster
 	retrievedObjects, err := applier.Refresh(wctx.Context(), objects)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, newActionResult(
@@ -686,9 +699,22 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		), err)
 	}
 
+	// Convert uncleaned objects to YAML for LiveState (status tracking with full metadata)
+	yamlDataForLiveState, err := objectsToYAML(retrievedObjects)
+	if err != nil {
+		log.Log.Error(err, "Failed to convert objects to YAML for LiveState")
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			fmt.Sprintf("Failed to convert objects to YAML for LiveState: %v", err),
+		), err)
+	}
+
+	// Apply extra cleanup (removes status, managed fields, internal annotations, etc.) for LiveData
+	// Note: extraCleanupObjects modifies objects in-place, so we do this after converting to YAML for LiveState
 	yamlData, err := objectsToYAML(extraCleanupObjects(retrievedObjects))
 	if err != nil {
-		log.Log.Error(err, "Failed to convert objects to YAML")
+		log.Log.Error(err, "Failed to convert cleaned objects to YAML for LiveData")
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultRefreshFailed,
@@ -765,8 +791,8 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		} else {
 			result.LiveData = []byte(yamlData)
 		}
-		// FIXME: Use an uncleaned copy of the resources
-		result.LiveState = []byte(yamlData)
+		// LiveState contains uncleaned objects (with full metadata for status tracking)
+		result.LiveState = []byte(yamlDataForLiveState)
 		return wctx.SendStatus(result)
 	}
 
@@ -791,8 +817,8 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	)
 	result.Data = patched
 	result.LiveData = updatedLiveData // Use LiveData with preserved inventory
-	// FIXME: Use an uncleaned copy of the resources
-	result.LiveState = []byte(yamlData)
+	// LiveState contains uncleaned objects (with full metadata for status tracking)
+	result.LiveState = []byte(yamlDataForLiveState)
 	return wctx.SendStatus(result)
 }
 
@@ -881,7 +907,8 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 			return err
 		}
 
-		retrievedObjects, err = getLiveObjects(wctx, man, objects, true)
+		// Return uncleaned objects - we'll cleanup for LiveData below, keep uncleaned for LiveState
+		retrievedObjects, err = getLiveObjects(wctx, man, objects, false)
 		if err != nil {
 			log.Log.Error(err, "Failed to retrieve live objects")
 			return lib.SafeSendStatus(wctx, newActionResult(
@@ -918,9 +945,11 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		return err
 	}
 
-	yamlForLiveData, err := objectsToYAML(retrievedObjects)
+	// Convert uncleaned objects to YAML for LiveState (status tracking with full metadata)
+	// Must be done BEFORE extraCleanupObjects which modifies objects in place
+	yamlForLiveState, err := objectsToYAML(retrievedObjects)
 	if err != nil {
-		log.Log.Error(err, "Failed to convert objects to YAML for live state")
+		log.Log.Error(err, "Failed to convert objects to YAML for LiveState")
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultImportFailed,
@@ -928,16 +957,22 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		), err)
 	}
 
-	//heuristic extra cleanup setups for objects to make them suitable for being unit.Data
-	yamlForData, err := objectsToYAML(extraCleanupObjects(retrievedObjects))
+	// Apply extra cleanup (removes status, managed fields, internal annotations, etc.)
+	// This makes objects suitable for being unit.Data
+	// Note: extraCleanupObjects modifies objects in-place
+	cleanedObjects := extraCleanupObjects(retrievedObjects)
+	yamlForData, err := objectsToYAML(cleanedObjects)
 	if err != nil {
-		log.Log.Error(err, "Failed to convert objects to YAML for data")
+		log.Log.Error(err, "Failed to convert objects to YAML for Data")
 		return lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultImportFailed,
 			fmt.Sprintf("Failed to convert data objects to YAML: %v", err),
 		), err)
 	}
+
+	// Use cleaned objects for LiveData (config storage/inventory)
+	yamlForLiveData := yamlForData
 
 	// Create inventory for imported resources
 
@@ -982,8 +1017,8 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		)
 		result.Data = []byte(yamlForData)
 		result.LiveData = []byte(yamlForLiveData)
-		// FIXME: Use an uncleaned copy of the resources
-		result.LiveState = []byte(yamlForLiveData)
+		// LiveState contains uncleaned objects (with full metadata for status tracking)
+		result.LiveState = []byte(yamlForLiveState)
 		return wctx.SendStatus(result)
 	}
 
@@ -999,8 +1034,8 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		)
 		result.Data = []byte(yamlForData)
 		result.LiveData = []byte(yamlForLiveData)
-		// FIXME: Use an uncleaned copy of the resources
-		result.LiveState = []byte(yamlForLiveData)
+		// LiveState contains uncleaned objects (with full metadata for status tracking)
+		result.LiveState = []byte(yamlForLiveState)
 		return wctx.SendStatus(result)
 	}
 
@@ -1016,8 +1051,8 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		)
 		result.Data = []byte(yamlForData)
 		result.LiveData = []byte(yamlForLiveData)
-		// FIXME: Use an uncleaned copy of the resources
-		result.LiveState = []byte(yamlForLiveData)
+		// LiveState contains uncleaned objects (with full metadata for status tracking)
+		result.LiveState = []byte(yamlForLiveState)
 		return wctx.SendStatus(result)
 	}
 
@@ -1030,8 +1065,8 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 	)
 	result.Data = []byte(yamlForData)
 	result.LiveData = liveDataWithInventory
-	// FIXME: Use an uncleaned copy of the resources
-	result.LiveState = []byte(yamlForLiveData)
+	// LiveState contains uncleaned objects (with full metadata for status tracking)
+	result.LiveState = []byte(yamlForLiveState)
 	return wctx.SendStatus(result)
 }
 
@@ -1155,20 +1190,10 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 
 		log.Log.Error(waitResult.Error, "Failed to wait for resource termination")
 		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
-			// Use exponential backoff library for retry logic
+			// Use exponential backoff for retry (retries forever, capped at 5min intervals)
 			unitID := payload.UnitID.String()
 			b := createRetryBackoff(workerParams)
-
-			// Get next backoff duration
 			nextBackoff := b.NextBackOff()
-			if nextBackoff == backoff.Stop {
-				// Max elapsed time reached, stop retrying
-				return lib.SafeSendStatus(wctx, newActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultDestroyWaitFailed,
-					fmt.Sprintf("Resources not terminated after maximum retry time: %v", waitResult.Error),
-				), waitResult.Error)
-			}
 
 			log.Log.Info("Resources not terminated yet, retrying with exponential backoff",
 				"unitID", unitID,
@@ -1191,20 +1216,36 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 
 	// Success - no retry state to clear since we're stateless now
 
+	// waitResult.LiveObjects contains UNCLEANED remaining objects (if any) from the cluster
+	// After successful destroy, this is typically empty
+
+	// Convert uncleaned objects to YAML for LiveState (status tracking with full metadata)
+	var yamlDataForLiveState string
+	if len(waitResult.LiveObjects) > 0 {
+		var err error
+		yamlDataForLiveState, err = objectsToYAML(waitResult.LiveObjects)
+		if err != nil {
+			log.Log.Error(err, "Failed to convert remaining objects to YAML for LiveState")
+			yamlDataForLiveState = ""
+		}
+	}
+
 	// For CLIUtils applier, use the LiveData from LiveDataBuilder
 	// For other appliers, build LiveData from the returned LiveObjects
 	var liveDataData []byte
 	if w.applierType == CLIUtilsSSA {
 		// CLIUtils already built the LiveData with LiveDataBuilder
-		// Convert LiveObjects to YAML and add inventory
+		// Convert cleaned LiveObjects to YAML and add inventory
 		if len(waitResult.LiveObjects) > 0 {
-			yamlData, err := objectsToYAML(waitResult.LiveObjects)
+			// Cleanup objects for LiveData
+			cleanedObjects := cleanupObjects(waitResult.LiveObjects)
+			yamlData, err := objectsToYAML(cleanedObjects)
 			if err != nil {
 				log.Log.Error(err, "Failed to convert remaining objects to YAML")
 				liveDataData = []byte{}
 			} else {
 				// Add inventory for remaining resources
-				liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, waitResult.LiveObjects, []byte(yamlData))
+				liveDataData, err = w.updateLiveDataWithInventory(wctx.Context(), payload, cleanedObjects, []byte(yamlData))
 				if err != nil {
 					log.Log.Error(err, "Failed to update LiveData with inventory")
 					liveDataData = []byte(yamlData)
@@ -1217,7 +1258,9 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 	} else {
 		// For other appliers, check if anything remains
 		if len(waitResult.LiveObjects) > 0 {
-			yamlData, err := objectsToYAML(waitResult.LiveObjects)
+			// Cleanup objects for LiveData
+			cleanedObjects := cleanupObjects(waitResult.LiveObjects)
+			yamlData, err := objectsToYAML(cleanedObjects)
 			if err != nil {
 				log.Log.Error(err, "Failed to convert remaining objects to YAML")
 				liveDataData = []byte{}
@@ -1252,9 +1295,10 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 		api.ActionResultDestroyCompleted,
 		fmt.Sprintf("Destroyed resources successfully at %s", time.Now().Format(time.RFC3339)),
 	)
+	// LiveData contains cleaned objects (for config storage)
 	result.LiveData = liveDataData
-	// FIXME: Use an uncleaned copy of the resources without the inventory
-	result.LiveState = liveDataData
+	// LiveState contains uncleaned objects (with full metadata for status tracking)
+	result.LiveState = []byte(yamlDataForLiveState)
 
 	return wctx.SendStatus(result)
 }

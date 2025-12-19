@@ -109,7 +109,7 @@ func apiListTargets(spaceID string, whereFilter string, selectParam string, filt
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
 	newParams.Include = &include
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
@@ -142,7 +142,7 @@ func apiListAllTargets(whereFilter string, selectParam string, filterParam strin
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
 	newParams.Include = &include
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

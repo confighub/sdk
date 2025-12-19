@@ -4,6 +4,9 @@
 package main
 
 import (
+	"encoding/base64"
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -64,10 +67,20 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 		action = string(*unitAction.Action)
 	}
 	table.Append([]string{"Action", action})
+	table.Append([]string{"DryRun", fmt.Sprintf("%v", unitAction.DryRun)})
 	table.Append([]string{"Status", string(unitAction.Status)})
 	table.Append([]string{"Created At", unitAction.CreatedAt.String()})
 	table.Append([]string{"User ID", unitAction.UserID.String()})
 	table.Append([]string{"Bridge Worker ID", unitAction.BridgeWorkerID.String()})
-
 	table.Render()
+
+	if len(unitAction.Data) > 0 {
+		tprintRaw("Data:")
+		tprintRaw("-----")
+		dataBytes, err := base64.StdEncoding.DecodeString(unitAction.Data)
+		if err != nil {
+			failOnError(err)
+		}
+		tprintRaw(string(dataBytes))
+	}
 }

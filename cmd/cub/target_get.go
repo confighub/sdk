@@ -16,7 +16,7 @@ var targetGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
 	Short: "Get details about a target",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Get detailed information about a target in a space including its ID, slug, display name, and configuration.
+	Long: getCommandHelp(`Get detailed information about a target in a space including its ID, slug, and configuration.
 
 Examples:
 `+"```"+`
@@ -33,7 +33,7 @@ func init() {
 }
 
 func targetGetCmdRun(cmd *cobra.Command, args []string) error {
-	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, selectFields)
+	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "")
 	if err != nil {
 		return err
 	}
@@ -68,13 +68,33 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(targetDetails.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(targetDetails.Permissions)})
+	view.Append([]string{"Where Trigger", targetDetails.WhereTrigger})
+
+	// Display TriggerFilter - use Slug if expanded, otherwise UUID
+	if extendedTarget.TriggerFilter != nil {
+		view.Append([]string{"Trigger Filter", extendedTarget.TriggerFilter.Slug})
+	} else if targetDetails.TriggerFilterID != nil {
+		view.Append([]string{"Trigger Filter", targetDetails.TriggerFilterID.String()})
+	} else {
+		view.Append([]string{"Trigger Filter", ""})
+	}
+
+	// Display Triggers - use Slugs if expanded, otherwise UUIDs
+	if len(extendedTarget.Triggers) > 0 {
+		view.Append([]string{"Triggers", triggerSliceSlugsToString(extendedTarget.Triggers)})
+	} else if len(targetDetails.TriggerIDs) > 0 {
+		view.Append([]string{"Triggers", uuidSliceToString(targetDetails.TriggerIDs)})
+	} else {
+		view.Append([]string{"Triggers", ""})
+	}
+
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()
 }
 
 func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
 	newParams := &goclientnew.GetTargetParams{}
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

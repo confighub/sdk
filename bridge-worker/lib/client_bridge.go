@@ -16,6 +16,7 @@ import (
 
 func (c *workerClient) processBridgeCommand(workerContext *defaultBridgeWorkerContext, op api.BridgeWorkerEventRequest) error {
 	// Helper to configure the sendResult callback with common metadata.
+	// Status updates are queued for async delivery with infinite retry.
 	setupSendResult := func(action api.ActionType) {
 		startedAt := time.Now()
 		workerContext.sendResult = func(r *api.ActionResult) error {
@@ -28,7 +29,14 @@ func (c *workerClient) processBridgeCommand(workerContext *defaultBridgeWorkerCo
 			r.SpaceID = op.Payload.SpaceID
 			r.RevisionNum = op.Payload.RevisionNum
 			r.QueuedOperationID = op.Payload.QueuedOperationID
-			return c.sendResult(r)
+
+			// Queue for async delivery with infinite retry (non-blocking)
+			c.unitQueues.QueueStatusEvent(
+				op.Payload.UnitID.String(),
+				r,
+				c.sendResultOnce,
+			)
+			return nil // Always return nil - status is queued for async delivery
 		}
 	}
 

@@ -669,6 +669,7 @@ var actionWait = false
 var timeout string
 
 const DefaultTimeoutDuration = 10 * time.Minute
+
 var label []string
 var deleteGate []string
 var spaceIdentifiers []string
@@ -1417,13 +1418,10 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 		display(entities)
 	}
 	if names && getSlug != nil {
-		table := tableView()
+		// Don't print as table. Extra whitespace makes the output harder to use in scripts.
 		for _, entity := range entities {
-			table.Append([]string{
-				getSlug(entity),
-			})
+			tprintRaw(getSlug(entity))
 		}
-		table.Render()
 	}
 	if jsonOutput {
 		displayJSON(entities)

@@ -32,6 +32,10 @@ func parseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams,
 		}
 	}
 
+	// Override WaitTimeout to LargeWaitTimeout per #3220
+	// The Bridge should not have its own timeout-based failure
+	params.WaitTimeout = LargeWaitTimeout.String()
+
 	return params, params.KubeContext, nil
 }
 
@@ -73,6 +77,19 @@ func getLiveObjects(
 		liveObjects[i] = u
 	}
 	return liveObjects, nil
+}
+
+// cleanupObjects applies cleanup() to all objects and returns the cleaned copies.
+// This is used to prepare objects for LiveData (config storage) while preserving
+// the original objects for LiveState (status tracking).
+func cleanupObjects(objects []*unstructured.Unstructured) []*unstructured.Unstructured {
+	cleaned := make([]*unstructured.Unstructured, len(objects))
+	for i, obj := range objects {
+		u := obj.DeepCopy()
+		cleanup(u)
+		cleaned[i] = u
+	}
+	return cleaned
 }
 
 func cleanup(u *unstructured.Unstructured) {

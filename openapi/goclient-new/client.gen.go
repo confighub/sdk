@@ -453,14 +453,14 @@ type ClientInterface interface {
 	GetTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *GetTargetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchTargetWithBody request with any body
-	PatchTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchTargetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTargetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateTargetWithBody request with any body
-	UpdateTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTriggers request
 	ListTriggers(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -520,15 +520,15 @@ type ClientInterface interface {
 	DownloadUnitData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DestroyUnit request
-	DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DestroyUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetUnitExtended request
 	GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ImportUnitWithBody request with any body
-	ImportUnitWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ImportUnitWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadUnitLiveData request
 	DownloadUnitLiveData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -543,7 +543,7 @@ type ClientInterface interface {
 	GetExtendedMutation(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RefreshUnit request
-	RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedRevisions request
 	ListExtendedRevisions(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2288,8 +2288,8 @@ func (c *Client) GetTarget(ctx context.Context, spaceId openapi_types.UUID, targ
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTargetRequestWithBody(c.Server, spaceId, targetId, contentType, body)
+func (c *Client) PatchTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTargetRequestWithBody(c.Server, spaceId, targetId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2300,8 +2300,8 @@ func (c *Client) PatchTargetWithBody(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTargetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTargetRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, targetId, body)
+func (c *Client) PatchTargetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTargetRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, targetId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2312,8 +2312,8 @@ func (c *Client) PatchTargetWithApplicationMergePatchPlusJSONBody(ctx context.Co
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTargetRequestWithBody(c.Server, spaceId, targetId, contentType, body)
+func (c *Client) UpdateTargetWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTargetRequestWithBody(c.Server, spaceId, targetId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2324,8 +2324,8 @@ func (c *Client) UpdateTargetWithBody(ctx context.Context, spaceId openapi_types
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTargetRequest(c.Server, spaceId, targetId, body)
+func (c *Client) UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTargetRequest(c.Server, spaceId, targetId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2588,8 +2588,8 @@ func (c *Client) DownloadUnitData(ctx context.Context, spaceId openapi_types.UUI
 	return c.Client.Do(req)
 }
 
-func (c *Client) DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDestroyUnitRequest(c.Server, spaceId, unitId)
+func (c *Client) DestroyUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DestroyUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDestroyUnitRequest(c.Server, spaceId, unitId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2612,8 +2612,8 @@ func (c *Client) GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID
 	return c.Client.Do(req)
 }
 
-func (c *Client) ImportUnitWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewImportUnitRequestWithBody(c.Server, spaceId, unitId, contentType, body)
+func (c *Client) ImportUnitWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImportUnitRequestWithBody(c.Server, spaceId, unitId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2624,8 +2624,8 @@ func (c *Client) ImportUnitWithBody(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewImportUnitRequest(c.Server, spaceId, unitId, body)
+func (c *Client) ImportUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImportUnitRequest(c.Server, spaceId, unitId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2684,8 +2684,8 @@ func (c *Client) GetExtendedMutation(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRefreshUnitRequest(c.Server, spaceId, unitId)
+func (c *Client) RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshUnitRequest(c.Server, spaceId, unitId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -10961,18 +10961,18 @@ func NewGetTargetRequest(server string, spaceId openapi_types.UUID, targetId ope
 }
 
 // NewPatchTargetRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchTarget builder with application/merge-patch+json body
-func NewPatchTargetRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, body PatchTargetApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchTargetRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, body PatchTargetApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchTargetRequestWithBody(server, spaceId, targetId, "application/merge-patch+json", bodyReader)
+	return NewPatchTargetRequestWithBody(server, spaceId, targetId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchTargetRequestWithBody generates requests for PatchTarget with any type of body
-func NewPatchTargetRequestWithBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchTargetRequestWithBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11002,6 +11002,28 @@ func NewPatchTargetRequestWithBody(server string, spaceId openapi_types.UUID, ta
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -11015,18 +11037,18 @@ func NewPatchTargetRequestWithBody(server string, spaceId openapi_types.UUID, ta
 }
 
 // NewUpdateTargetRequest calls the generic UpdateTarget builder with application/json body
-func NewUpdateTargetRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody) (*http.Request, error) {
+func NewUpdateTargetRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateTargetRequestWithBody(server, spaceId, targetId, "application/json", bodyReader)
+	return NewUpdateTargetRequestWithBody(server, spaceId, targetId, params, "application/json", bodyReader)
 }
 
 // NewUpdateTargetRequestWithBody generates requests for UpdateTarget with any type of body
-func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11056,6 +11078,28 @@ func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, t
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -12382,6 +12426,22 @@ func NewApplyUnitRequest(server string, spaceId openapi_types.UUID, unitId opena
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12498,7 +12558,7 @@ func NewDownloadUnitDataRequest(server string, spaceId openapi_types.UUID, unitI
 }
 
 // NewDestroyUnitRequest generates requests for DestroyUnit
-func NewDestroyUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+func NewDestroyUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DestroyUnitParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12528,6 +12588,28 @@ func NewDestroyUnitRequest(server string, spaceId openapi_types.UUID, unitId ope
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
@@ -12580,18 +12662,18 @@ func NewGetUnitExtendedRequest(server string, spaceId openapi_types.UUID, unitId
 }
 
 // NewImportUnitRequest calls the generic ImportUnit builder with application/json body
-func NewImportUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody) (*http.Request, error) {
+func NewImportUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, body ImportUnitJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewImportUnitRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
+	return NewImportUnitRequestWithBody(server, spaceId, unitId, params, "application/json", bodyReader)
 }
 
 // NewImportUnitRequestWithBody generates requests for ImportUnit with any type of body
-func NewImportUnitRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewImportUnitRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12621,6 +12703,28 @@ func NewImportUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -12929,7 +13033,7 @@ func NewGetExtendedMutationRequest(server string, spaceId openapi_types.UUID, un
 }
 
 // NewRefreshUnitRequest generates requests for RefreshUnit
-func NewRefreshUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+func NewRefreshUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12959,6 +13063,28 @@ func NewRefreshUnitRequest(server string, spaceId openapi_types.UUID, unitId ope
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
@@ -14721,6 +14847,22 @@ func NewBulkPatchTargetsRequestWithBody(server string, params *BulkPatchTargetsP
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.RefreshTriggers != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -17602,14 +17744,14 @@ type ClientWithResponsesInterface interface {
 	GetTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *GetTargetParams, reqEditors ...RequestEditorFn) (*GetTargetResponse, error)
 
 	// PatchTargetWithBodyWithResponse request with any body
-	PatchTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error)
+	PatchTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error)
 
-	PatchTargetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error)
+	PatchTargetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error)
 
 	// UpdateTargetWithBodyWithResponse request with any body
-	UpdateTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
+	UpdateTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
 
-	UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
+	UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
 
 	// ListTriggersWithResponse request
 	ListTriggersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*ListTriggersResponse, error)
@@ -17669,15 +17811,15 @@ type ClientWithResponsesInterface interface {
 	DownloadUnitDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitDataResponse, error)
 
 	// DestroyUnitWithResponse request
-	DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error)
+	DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DestroyUnitParams, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error)
 
 	// GetUnitExtendedWithResponse request
 	GetUnitExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitExtendedResponse, error)
 
 	// ImportUnitWithBodyWithResponse request with any body
-	ImportUnitWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
+	ImportUnitWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
 
-	ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
+	ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error)
 
 	// DownloadUnitLiveDataWithResponse request
 	DownloadUnitLiveDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveDataResponse, error)
@@ -17692,7 +17834,7 @@ type ClientWithResponsesInterface interface {
 	GetExtendedMutationWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*GetExtendedMutationResponse, error)
 
 	// RefreshUnitWithResponse request
-	RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error)
+	RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error)
 
 	// ListExtendedRevisionsWithResponse request
 	ListExtendedRevisionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedRevisionsParams, reqEditors ...RequestEditorFn) (*ListExtendedRevisionsResponse, error)
@@ -23574,16 +23716,16 @@ func (c *ClientWithResponses) GetTargetWithResponse(ctx context.Context, spaceId
 }
 
 // PatchTargetWithBodyWithResponse request with arbitrary body returning *PatchTargetResponse
-func (c *ClientWithResponses) PatchTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error) {
-	rsp, err := c.PatchTargetWithBody(ctx, spaceId, targetId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error) {
+	rsp, err := c.PatchTargetWithBody(ctx, spaceId, targetId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchTargetResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchTargetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error) {
-	rsp, err := c.PatchTargetWithApplicationMergePatchPlusJSONBody(ctx, spaceId, targetId, body, reqEditors...)
+func (c *ClientWithResponses) PatchTargetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *PatchTargetParams, body PatchTargetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTargetResponse, error) {
+	rsp, err := c.PatchTargetWithApplicationMergePatchPlusJSONBody(ctx, spaceId, targetId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -23591,16 +23733,16 @@ func (c *ClientWithResponses) PatchTargetWithApplicationMergePatchPlusJSONBodyWi
 }
 
 // UpdateTargetWithBodyWithResponse request with arbitrary body returning *UpdateTargetResponse
-func (c *ClientWithResponses) UpdateTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error) {
-	rsp, err := c.UpdateTargetWithBody(ctx, spaceId, targetId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTargetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error) {
+	rsp, err := c.UpdateTargetWithBody(ctx, spaceId, targetId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateTargetResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error) {
-	rsp, err := c.UpdateTarget(ctx, spaceId, targetId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error) {
+	rsp, err := c.UpdateTarget(ctx, spaceId, targetId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -23791,8 +23933,8 @@ func (c *ClientWithResponses) DownloadUnitDataWithResponse(ctx context.Context, 
 }
 
 // DestroyUnitWithResponse request returning *DestroyUnitResponse
-func (c *ClientWithResponses) DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error) {
-	rsp, err := c.DestroyUnit(ctx, spaceId, unitId, reqEditors...)
+func (c *ClientWithResponses) DestroyUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DestroyUnitParams, reqEditors ...RequestEditorFn) (*DestroyUnitResponse, error) {
+	rsp, err := c.DestroyUnit(ctx, spaceId, unitId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -23809,16 +23951,16 @@ func (c *ClientWithResponses) GetUnitExtendedWithResponse(ctx context.Context, s
 }
 
 // ImportUnitWithBodyWithResponse request with arbitrary body returning *ImportUnitResponse
-func (c *ClientWithResponses) ImportUnitWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error) {
-	rsp, err := c.ImportUnitWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) ImportUnitWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error) {
+	rsp, err := c.ImportUnitWithBody(ctx, spaceId, unitId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseImportUnitResponse(rsp)
 }
 
-func (c *ClientWithResponses) ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error) {
-	rsp, err := c.ImportUnit(ctx, spaceId, unitId, body, reqEditors...)
+func (c *ClientWithResponses) ImportUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ImportUnitParams, body ImportUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*ImportUnitResponse, error) {
+	rsp, err := c.ImportUnit(ctx, spaceId, unitId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -23862,8 +24004,8 @@ func (c *ClientWithResponses) GetExtendedMutationWithResponse(ctx context.Contex
 }
 
 // RefreshUnitWithResponse request returning *RefreshUnitResponse
-func (c *ClientWithResponses) RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error) {
-	rsp, err := c.RefreshUnit(ctx, spaceId, unitId, reqEditors...)
+func (c *ClientWithResponses) RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error) {
+	rsp, err := c.RefreshUnit(ctx, spaceId, unitId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

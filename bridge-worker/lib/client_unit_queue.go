@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/google/uuid"
 )
@@ -34,8 +35,9 @@ const (
 type UnitQueueManager struct {
 	bridgeQueues      map[string]*unitQueue
 	functionQueues    map[string]*unitQueue
-	operationCancels  sync.Map // Key: uuid.UUID (QueuedOperationID), Value: context.CancelFunc
-	runningOperations sync.Map // Key: string (unitID:category), Value: *runningOperation
+	statusQueues      map[string]*statusQueue // Per-unit queues for async status sending with infinite retry
+	operationCancels  sync.Map                // Key: uuid.UUID (QueuedOperationID), Value: context.CancelFunc
+	runningOperations sync.Map                // Key: string (unitID:category), Value: *runningOperation
 	mu                sync.RWMutex
 	wg                sync.WaitGroup
 	cleanupCtx        context.Context
@@ -129,11 +131,26 @@ type queuedEvent struct {
 	ctx     context.Context
 }
 
+// statusQueue handles async status sending with infinite retry per unit
+type statusQueue struct {
+	unitID   string
+	events   chan *statusEvent
+	ctx      context.Context
+	cancel   context.CancelFunc
+	lastUsed time.Time
+}
+
+type statusEvent struct {
+	result *api.ActionResult
+	sendFn func(*api.ActionResult) error
+}
+
 // NewUnitQueueManager creates a new UnitQueueManager instance
 func NewUnitQueueManager() *UnitQueueManager {
 	return &UnitQueueManager{
 		bridgeQueues:   make(map[string]*unitQueue),
 		functionQueues: make(map[string]*unitQueue),
+		statusQueues:   make(map[string]*statusQueue),
 		errorChannel:   make(chan error, errorChannelBuffer),
 	}
 }
@@ -169,6 +186,9 @@ func (u *UnitQueueManager) Stop() {
 	for _, q := range u.functionQueues {
 		q.cancel()
 	}
+	for _, q := range u.statusQueues {
+		q.cancel()
+	}
 	u.mu.Unlock()
 
 	// Wait for all goroutines to finish (without holding the lock)
@@ -181,6 +201,9 @@ func (u *UnitQueueManager) Stop() {
 		close(q.events)
 	}
 	for _, q := range u.functionQueues {
+		close(q.events)
+	}
+	for _, q := range u.statusQueues {
 		close(q.events)
 	}
 
@@ -308,6 +331,155 @@ func (u *UnitQueueManager) QueueFunctionEvent(ctx context.Context, event api.Fun
 	}
 }
 
+// =============================================================================
+// Status Queue Operations (Async with Infinite Retry)
+// =============================================================================
+// These methods support async status sending with infinite retry per unit.
+// Status updates are queued and sent in FIFO order, retrying forever until
+// successful or the queue is stopped (on shutdown).
+
+// QueueStatusEvent queues a status update for async delivery with infinite retry.
+// Returns immediately (non-blocking). Status is delivered in FIFO order per unit.
+func (u *UnitQueueManager) QueueStatusEvent(
+	unitID string,
+	result *api.ActionResult,
+	sendFn func(*api.ActionResult) error,
+) {
+	q := u.getOrCreateStatusQueue(unitID)
+
+	// Non-blocking send to buffered channel
+	select {
+	case q.events <- &statusEvent{
+		result: result,
+		sendFn: sendFn,
+	}:
+		q.lastUsed = time.Now()
+	default:
+		// Channel full - this should be rare with large buffer
+		log.Printf("[WARN] Status queue full for unit %s, blocking until space available", unitID)
+		q.events <- &statusEvent{
+			result: result,
+			sendFn: sendFn,
+		}
+		q.lastUsed = time.Now()
+	}
+}
+
+func (u *UnitQueueManager) getOrCreateStatusQueue(unitID string) *statusQueue {
+	u.mu.RLock()
+	q, exists := u.statusQueues[unitID]
+	u.mu.RUnlock()
+
+	if exists {
+		return q
+	}
+
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	q, exists = u.statusQueues[unitID]
+	if exists {
+		return q
+	}
+
+	// Create new status queue with large buffer
+	queueCtx, cancel := context.WithCancel(u.cleanupCtx)
+	q = &statusQueue{
+		unitID:   unitID,
+		events:   make(chan *statusEvent, 1000), // Large buffer for status events
+		ctx:      queueCtx,
+		cancel:   cancel,
+		lastUsed: time.Now(),
+	}
+	u.statusQueues[unitID] = q
+
+	// Start processor goroutine
+	u.wg.Add(1)
+	go u.processStatusQueue(q)
+
+	log.Printf("Created status queue for unit %s", unitID)
+	return q
+}
+
+func (u *UnitQueueManager) processStatusQueue(q *statusQueue) {
+	defer u.wg.Done()
+
+	log.Printf("Starting status queue processor for unit %s", q.unitID)
+
+	for {
+		select {
+		case <-q.ctx.Done():
+			// Drop all pending status on shutdown (per requirements)
+			remaining := len(q.events)
+			if remaining > 0 {
+				log.Printf("Dropping %d pending status updates for unit %s on shutdown", remaining, q.unitID)
+			}
+			log.Printf("Stopping status queue processor for unit %s", q.unitID)
+			return
+		case event := <-q.events:
+			u.sendWithInfiniteRetry(q.ctx, event)
+		}
+	}
+}
+
+func (u *UnitQueueManager) sendWithInfiniteRetry(ctx context.Context, event *statusEvent) {
+	eb := &backoff.ExponentialBackOff{
+		InitialInterval:     1 * time.Second,
+		RandomizationFactor: 0.5,
+		Multiplier:          2.0,
+		MaxInterval:         30 * time.Second,
+	}
+
+	attempt := 0
+	for {
+		attempt++
+
+		err := event.sendFn(event.result)
+		if err == nil {
+			if attempt > 1 {
+				log.Printf("[INFO] Status sent successfully after %d attempts", attempt)
+			}
+			return
+		}
+
+		// Check for permanent errors (4xx except 409)
+		if isPermanentError(err) {
+			log.Printf("[ERROR] Permanent error sending status, dropping: %v", err)
+			return
+		}
+
+		// Check if we should stop
+		select {
+		case <-ctx.Done():
+			log.Printf("[WARN] Status queue stopped, dropping status after %d attempts", attempt)
+			return
+		default:
+		}
+
+		// Exponential backoff for retryable errors
+		delay := eb.NextBackOff()
+		log.Printf("[WARN] Status send failed (attempt #%d), retrying in %v: %v", attempt, delay, err)
+
+		select {
+		case <-time.After(delay):
+			// Continue retry
+		case <-ctx.Done():
+			log.Printf("[WARN] Status queue stopped during backoff, dropping status")
+			return
+		}
+	}
+}
+
+// isPermanentError checks if an error is permanent (should not retry)
+func isPermanentError(err error) bool {
+	errStr := err.Error()
+	// 4xx errors except 409 and 429 are permanent
+	return strings.Contains(errStr, "status 4") &&
+		!strings.Contains(errStr, "status 409") &&
+		!strings.Contains(errStr, "status 429")
+}
+
 // cleanupIdleQueues periodically removes idle queues to prevent resource leaks
 func (u *UnitQueueManager) cleanupIdleQueues() {
 	defer u.wg.Done()
@@ -330,6 +502,7 @@ func (u *UnitQueueManager) cleanupIdleQueues() {
 func (u *UnitQueueManager) performCleanup() {
 	now := time.Now()
 	var toCleanup []*unitQueue
+	var statusToCleanup []*statusQueue
 
 	// First pass: identify queues to cleanup (with read lock)
 	u.mu.RLock()
@@ -345,10 +518,19 @@ func (u *UnitQueueManager) performCleanup() {
 			toCleanup = append(toCleanup, q)
 		}
 	}
+	for unitID, q := range u.statusQueues {
+		if now.Sub(q.lastUsed) > queueIdleTimeout {
+			log.Printf("Marking idle status queue for cleanup: unit %s", unitID)
+			statusToCleanup = append(statusToCleanup, q)
+		}
+	}
 	u.mu.RUnlock()
 
 	// Second pass: cancel contexts (no lock held)
 	for _, q := range toCleanup {
+		q.cancel()
+	}
+	for _, q := range statusToCleanup {
 		q.cancel()
 	}
 
@@ -369,6 +551,14 @@ func (u *UnitQueueManager) performCleanup() {
 			log.Printf("Cleaning up idle function queue for unit %s", unitID)
 			close(q.events)
 			delete(u.functionQueues, unitID)
+		}
+	}
+
+	for unitID, q := range u.statusQueues {
+		if now.Sub(q.lastUsed) > queueIdleTimeout {
+			log.Printf("Cleaning up idle status queue for unit %s", unitID)
+			close(q.events)
+			delete(u.statusQueues, unitID)
 		}
 	}
 }

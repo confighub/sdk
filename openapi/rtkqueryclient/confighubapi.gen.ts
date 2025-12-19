@@ -1116,6 +1116,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/target/${queryArg.targetId}`,
           method: 'PATCH',
           body: queryArg.body,
+          params: {
+            refresh_triggers: queryArg.refreshTriggers,
+          },
         }),
         invalidatesTags: ['Target'],
       }),
@@ -1124,6 +1127,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/target/${queryArg.targetId}`,
           method: 'PUT',
           body: queryArg.target,
+          params: {
+            refresh_triggers: queryArg.refreshTriggers,
+          },
         }),
         invalidatesTags: ['Target'],
       }),
@@ -1277,6 +1283,7 @@ const injectedRtkApi = api
           method: 'POST',
           params: {
             revision: queryArg.revision,
+            dry_run: queryArg.dryRun,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1301,6 +1308,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/destroy`,
           method: 'POST',
+          params: {
+            dry_run: queryArg.dryRun,
+          },
         }),
         invalidatesTags: ['Unit'],
       }),
@@ -1315,6 +1325,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/import`,
           method: 'POST',
           body: queryArg.importRequest,
+          params: {
+            dry_run: queryArg.dryRun,
+          },
         }),
         invalidatesTags: ['Unit'],
       }),
@@ -1369,6 +1382,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/refresh`,
           method: 'POST',
+          params: {
+            dry_run: queryArg.dryRun,
+          },
         }),
         invalidatesTags: ['Unit'],
       }),
@@ -1597,6 +1613,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            refresh_triggers: queryArg.refreshTriggers,
           },
         }),
         invalidatesTags: ['Target'],
@@ -1923,6 +1940,8 @@ export type BulkDeleteSpacesApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -1999,6 +2018,8 @@ export type BulkPatchSpacesApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2098,6 +2119,8 @@ export type BulkCreateSpacesApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2199,6 +2222,8 @@ export type BulkDeleteBridgeWorkersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2269,6 +2294,8 @@ export type ListAllBridgeWorkersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2340,6 +2367,8 @@ export type BulkPatchBridgeWorkersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2457,13 +2486,15 @@ export type ListQueuedOperationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2544,6 +2575,8 @@ export type BulkDeleteChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2614,6 +2647,8 @@ export type ListAllChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2695,6 +2730,8 @@ export type BulkPatchChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2788,6 +2825,8 @@ export type BulkCreateChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2857,6 +2896,8 @@ export type BulkCreateChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2930,6 +2971,8 @@ export type BulkDeleteFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3000,6 +3043,8 @@ export type ListAllFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3085,6 +3130,8 @@ export type BulkPatchFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3182,6 +3229,8 @@ export type BulkCreateFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3251,6 +3300,8 @@ export type BulkCreateFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3338,6 +3389,8 @@ export type InvokeFunctionsOnOrgApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3396,6 +3449,8 @@ export type BulkDeleteInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3466,6 +3521,8 @@ export type ListAllInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3547,6 +3604,8 @@ export type BulkPatchInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3645,6 +3704,8 @@ export type BulkCreateInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3714,6 +3775,8 @@ export type BulkCreateInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3792,6 +3855,8 @@ export type BulkDeleteLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3864,6 +3929,8 @@ export type SearchListLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3945,6 +4012,8 @@ export type BulkPatchLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4042,6 +4111,8 @@ export type BulkCreateLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4087,6 +4158,8 @@ export type BulkCreateLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4132,6 +4205,8 @@ export type BulkCreateLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4177,6 +4252,8 @@ export type BulkCreateLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4253,6 +4330,8 @@ export type ListOrganizationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4377,6 +4456,8 @@ export type ListOrganizationMembersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4462,6 +4543,8 @@ export type ListAllRevisionsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4543,6 +4626,8 @@ export type ListSpacesApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4709,6 +4794,8 @@ export type ListBridgeWorkersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4923,6 +5010,8 @@ export type ListChangeSetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5083,6 +5172,8 @@ export type ListFiltersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5271,6 +5362,8 @@ export type InvokeFunctionsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5326,6 +5419,8 @@ export type ListInvocationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5491,6 +5586,8 @@ export type ListLinksApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5668,6 +5765,8 @@ export type ListTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5827,13 +5926,15 @@ export type ListTargetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5869,7 +5970,7 @@ export type ListTargetsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -5908,7 +6009,7 @@ export type GetTargetApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -5931,6 +6032,8 @@ export type PatchTargetApiArg = {
   spaceId: string;
   /** Unique identifier for a target_id */
   targetId: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -5955,8 +6058,10 @@ export type PatchTargetApiArg = {
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
+    TriggerFilterID?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    WhereTrigger?: string | null;
   };
 };
 export type UpdateTargetApiResponse =
@@ -5966,6 +6071,8 @@ export type UpdateTargetApiArg = {
   spaceId: string;
   /** Unique identifier for a target_id */
   targetId: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   target: Target;
 };
 export type ListTriggersApiResponse = /** status 200 OK */ ExtendedTriggerRead[];
@@ -5993,6 +6100,8 @@ export type ListTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6186,6 +6295,8 @@ export type ListUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6358,6 +6469,8 @@ export type PatchUnitApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6474,6 +6587,8 @@ export type UpdateUnitApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6517,6 +6632,8 @@ export type ApplyUnitApiArg = {
   unitId: string;
   /** Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
   revision?: string;
+  /** Dry run mode - validates which units would be applied without executing */
+  dryRun?: boolean;
 };
 export type ApproveUnitApiResponse = /** status 200 OK */ string;
 export type ApproveUnitApiArg = {
@@ -6545,6 +6662,8 @@ export type DestroyUnitApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+  /** Dry run mode - validates which units would be destroyed without executing */
+  dryRun?: boolean;
 };
 export type GetUnitExtendedApiResponse = /** status 200 OK */ UnitExtendedRead;
 export type GetUnitExtendedApiArg = {
@@ -6564,6 +6683,8 @@ export type ImportUnitApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+  /** Dry run mode - not yet implemented */
+  dryRun?: boolean;
   importRequest: ImportRequest;
 };
 export type DownloadUnitLiveDataApiResponse = /** status 200 OK */ string;
@@ -6607,6 +6728,8 @@ export type ListExtendedMutationsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6700,6 +6823,8 @@ export type RefreshUnitApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+  /** Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit */
+  dryRun?: boolean;
 };
 export type ListExtendedRevisionsApiResponse = /** status 200 OK */ ExtendedRevisionRead[];
 export type ListExtendedRevisionsApiArg = {
@@ -6728,6 +6853,8 @@ export type ListExtendedRevisionsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6848,13 +6975,15 @@ export type ListUnitActionsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6928,6 +7057,8 @@ export type ListUnitEventsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7008,6 +7139,8 @@ export type ListViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7169,6 +7302,8 @@ export type BulkDeleteTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7239,6 +7374,8 @@ export type ListAllTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7320,6 +7457,8 @@ export type BulkPatchTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7412,6 +7551,8 @@ export type BulkCreateTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7481,6 +7622,8 @@ export type BulkCreateTagsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7553,13 +7696,15 @@ export type BulkDeleteTargetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7595,7 +7740,7 @@ export type BulkDeleteTargetsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -7623,13 +7768,15 @@ export type ListAllTargetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7665,7 +7812,7 @@ export type ListAllTargetsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -7704,13 +7851,15 @@ export type BulkPatchTargetsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7746,10 +7895,12 @@ export type BulkPatchTargetsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+    Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -7774,8 +7925,10 @@ export type BulkPatchTargetsApiArg = {
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
+    TriggerFilterID?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    WhereTrigger?: string | null;
   };
 };
 export type BulkDeleteTriggersApiResponse = /** status 200 OK */
@@ -7803,6 +7956,8 @@ export type BulkDeleteTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7873,6 +8028,8 @@ export type ListAllTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7954,6 +8111,8 @@ export type BulkPatchTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8056,6 +8215,8 @@ export type BulkCreateTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8125,6 +8286,8 @@ export type BulkCreateTriggersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8207,6 +8370,8 @@ export type BulkDeleteUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8279,6 +8444,8 @@ export type ListAllUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8366,6 +8533,8 @@ export type BulkPatchUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8447,6 +8616,8 @@ export type BulkPatchUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8535,6 +8706,8 @@ export type BulkCreateUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8606,6 +8779,8 @@ export type BulkCreateUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8692,6 +8867,8 @@ export type BulkApplyUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8770,6 +8947,8 @@ export type BulkApproveUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8846,6 +9025,8 @@ export type BulkCancelUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8920,6 +9101,8 @@ export type BulkDestroyUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8996,6 +9179,8 @@ export type BulkRefreshUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9044,7 +9229,7 @@ export type BulkRefreshUnitsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
-  /** Dry run mode - validates which units would be refreshed without executing */
+  /** Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit */
   dryRun?: boolean;
 };
 export type BulkTagUnitsApiResponse = /** status 200 OK */
@@ -9072,6 +9257,8 @@ export type BulkTagUnitsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9145,6 +9332,8 @@ export type ListUsersApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9214,6 +9403,8 @@ export type BulkDeleteViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9284,6 +9475,8 @@ export type ListAllViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9365,6 +9558,8 @@ export type BulkPatchViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9462,6 +9657,8 @@ export type BulkCreateViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9531,6 +9728,8 @@ export type BulkCreateViewsApiArg = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9676,6 +9875,8 @@ export type Space = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9683,8 +9884,6 @@ export type Space = {
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
     Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
-    
-    Currently other entities (e.g., Space.Slug) may not be referenced in the expression.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -9745,6 +9944,8 @@ export type SpaceRead = {
     as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
     Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9752,8 +9953,6 @@ export type SpaceRead = {
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
     Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
-    
-    Currently other entities (e.g., Space.Slug) may not be referenced in the expression.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -10078,8 +10277,14 @@ export type QueuedOperation = {
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
+  /** The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit. */
+  Data?: string;
   /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
   Dependencies?: Uuid[] | null;
+  /** DryRun indicates whether the action is a dry run. */
+  DryRun?: boolean;
+  /** Error details returned by the worker. */
+  ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
@@ -11191,8 +11396,42 @@ export type Target = {
   TargetID?: string;
   /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
+  TriggerFilterID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
+    the list of Triggers returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    
+    The whole string must be query-encoded. */
+  WhereTrigger?: string;
 };
 export type TargetRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -11238,10 +11477,46 @@ export type TargetRead = {
   TargetID?: string;
   /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
+  TriggerFilterID?: Uuid;
+  /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
+  TriggerIDs?: Uuid[];
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
+    the list of Triggers returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    
+    The whole string must be query-encoded. */
+  WhereTrigger?: string;
 };
 export type ExtendedTarget = {
   BridgeWorker?: BridgeWorker;
@@ -11249,6 +11524,8 @@ export type ExtendedTarget = {
   Organization?: Organization;
   Space?: Space;
   Target?: Target;
+  TriggerFilter?: Filter;
+  Triggers?: Trigger[];
 };
 export type ExtendedTargetRead = {
   BridgeWorker?: BridgeWorkerRead;
@@ -11256,6 +11533,8 @@ export type ExtendedTargetRead = {
   Organization?: OrganizationRead;
   Space?: SpaceRead;
   Target?: TargetRead;
+  TriggerFilter?: FilterRead;
+  Triggers?: TriggerRead[];
 };
 export type ExtendedTrigger = {
   BridgeWorker?: BridgeWorker;
@@ -11521,8 +11800,14 @@ export type UnitAction = {
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
+  /** The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit. */
+  Data?: string;
   /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
   Dependencies?: Uuid[] | null;
+  /** DryRun indicates whether the action is a dry run. */
+  DryRun?: boolean;
+  /** Error details returned by the worker. */
+  ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */

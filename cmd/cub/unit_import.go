@@ -45,6 +45,7 @@ Examples:
 
 var unitImportArgs struct {
 	targetSlug string
+	dryRun     bool
 }
 
 func init() {
@@ -54,6 +55,7 @@ func init() {
 	enableFilterFlag(unitImportCmd)
 	// enableQuietFlagForOperation(unitImportCmd)
 	unitImportCmd.Flags().StringVar(&unitImportArgs.targetSlug, "target", "", "target slug to import into")
+	unitImportCmd.Flags().BoolVar(&unitImportArgs.dryRun, "dry-run", false, "Preview imported results")
 
 	unitCmd.AddCommand(unitImportCmd)
 }
@@ -89,7 +91,12 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	importRes, err := cubClientNew.ImportUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, importRequest)
+	params := &goclientnew.ImportUnitParams{}
+	if unitImportArgs.dryRun {
+		dryRun := unitImportArgs.dryRun
+		params.DryRun = &dryRun
+	}
+	importRes, err := cubClientNew.ImportUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params, importRequest)
 	if cubapi.IsAPIError(err, importRes) {
 		return cubapi.InterpretErrorGeneric(err, importRes)
 	}

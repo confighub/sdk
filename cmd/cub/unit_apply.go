@@ -399,13 +399,13 @@ func awaitBulkCompletion(action string, queuedOps []*goclientnew.QueuedOperation
 				continue
 			}
 
-			// Get the most recent event for this operation (first in list)
+			// Get the most recent event for this operation (first in list - they are sorted in apiListUnitEvents)
 			event := events[0]
 
 			status := actionStatus(event.Status)
 			if isTerminalStatus(status) {
 				delete(pending, opID)
-				if !quiet {
+				if !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
 					displayOperationResults(op.UnitID.String(), event)
 				}
 				if status == goclientnew.ActionStatusTypeFailed {

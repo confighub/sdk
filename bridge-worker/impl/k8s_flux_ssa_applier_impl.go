@@ -72,7 +72,8 @@ func (a *SSAApplier) WaitForApply(ctx context.Context, objects []*unstructured.U
 	getLiveCtx, cancel := context.WithTimeout(context.Background(), getLiveTimeout)
 	defer cancel()
 
-	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, true)
+	// Return uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
+	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, false)
 	if err != nil {
 		return WaitResult{Error: fmt.Errorf("failed to get live objects: %w", err)}
 	}
@@ -81,13 +82,15 @@ func (a *SSAApplier) WaitForApply(ctx context.Context, objects []*unstructured.U
 }
 
 // Refresh implements K8sApplier.Refresh
+// Returns uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
 func (a *SSAApplier) Refresh(ctx context.Context, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	if a.kubernetesClient == nil {
 		return nil, fmt.Errorf("kubernetes client is not initialized")
 	}
 	a.setDefaultNamespaceIfNotDeclared(objects)
 
-	retrievedObjects, err := a.getLiveObjects(ctx, objects, true)
+	// Return uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
+	retrievedObjects, err := a.getLiveObjects(ctx, objects, false)
 	if err != nil {
 		log.Log.Error(err, "Failed to retrieve live objects")
 		return nil, fmt.Errorf("failed to retrieve live objects: %v", err)

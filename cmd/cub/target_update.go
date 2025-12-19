@@ -14,6 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var targetUpdateArgs struct {
+	whereTrigger    string
+	triggerFilter   string
+	permissions     []string
+	refreshTriggers bool
+}
+
 var targetUpdateCmd = &cobra.Command{
 	Use:   "update [<slug or id>]",
 	Short: "Update a target or multiple targets",
@@ -45,7 +52,6 @@ Examples:
 var (
 	targetPatch       bool
 	targetIdentifiers []string
-	targetUpdatePermissions []string
 )
 
 func init() {
@@ -54,7 +60,10 @@ func init() {
 	enableWhereFlag(targetUpdateCmd)
 	enableFilterFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringSliceVar(&targetIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk patch (can be repeated or comma-separated)")
-	targetUpdateCmd.Flags().StringSliceVar(&targetUpdatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
 
@@ -147,15 +156,38 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(targetUpdatePermissions, currentTarget.Target.Permissions)
+	err = parsePermissions(targetUpdateArgs.permissions, currentTarget.Target.Permissions)
 	if err != nil {
 		return err
+	}
+
+	// Set WhereTrigger if provided
+	if targetUpdateArgs.whereTrigger == "-" {
+		currentTarget.Target.WhereTrigger = ""
+	} else if targetUpdateArgs.whereTrigger != "" {
+		currentTarget.Target.WhereTrigger = targetUpdateArgs.whereTrigger
+	}
+
+	// Set TriggerFilterID if provided
+	if targetUpdateArgs.triggerFilter == "-" {
+		currentTarget.Target.TriggerFilterID = nil
+	} else if targetUpdateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(targetUpdateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		triggerFilterUUID := uuid.MustParse(triggerFilterID)
+		currentTarget.Target.TriggerFilterID = &triggerFilterUUID
 	}
 
 	// If this was set from stdin, it will be overridden
 	currentTarget.Target.SpaceID = spaceID
 
-	targetRes, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, currentTarget.Target.TargetID, *currentTarget.Target)
+	updateParams := &goclientnew.UpdateTargetParams{}
+	if targetUpdateArgs.refreshTriggers {
+		updateParams.RefreshTriggers = &targetUpdateArgs.refreshTriggers
+	}
+	targetRes, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, currentTarget.Target.TargetID, updateParams, *currentTarget.Target)
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
 	}
@@ -174,8 +206,37 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	spaceID := uuid.MustParse(selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for target)
-	patchJSON, err := BuildPatchDataWithPermissions(nil, targetUpdatePermissions)
+	// Parse TriggerFilterID if provided
+	var triggerFilterUUID *uuid.UUID
+	if targetUpdateArgs.triggerFilter == "-" {
+		// Explicitly clear
+		triggerFilterUUID = nil
+	} else if targetUpdateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(targetUpdateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		parsed := uuid.MustParse(triggerFilterID)
+		triggerFilterUUID = &parsed
+	}
+
+	// Build patch data using consolidated function with target enhancer
+	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add WhereTrigger if provided
+		if targetUpdateArgs.whereTrigger == "-" {
+			patchMap["WhereTrigger"] = ""
+		} else if targetUpdateArgs.whereTrigger != "" {
+			patchMap["WhereTrigger"] = targetUpdateArgs.whereTrigger
+		}
+		// Add TriggerFilterID if provided
+		if targetUpdateArgs.triggerFilter == "-" {
+			patchMap["TriggerFilterID"] = nil
+		} else if triggerFilterUUID != nil {
+			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
+		}
+	}
+
+	patchJSON, err := BuildPatchDataWithPermissions(targetEnhancer, targetUpdateArgs.permissions)
 	if err != nil {
 		return err
 	}
@@ -184,7 +245,11 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("no updates specified")
 	}
 
-	targetRes, err := cubClientNew.PatchTargetWithBodyWithResponse(ctx, spaceID, currentTarget.Target.TargetID, "application/merge-patch+json", bytes.NewReader(patchJSON))
+	patchParams := &goclientnew.PatchTargetParams{}
+	if targetUpdateArgs.refreshTriggers {
+		patchParams.RefreshTriggers = &targetUpdateArgs.refreshTriggers
+	}
+	targetRes, err := cubClientNew.PatchTargetWithBodyWithResponse(ctx, spaceID, currentTarget.Target.TargetID, patchParams, "application/merge-patch+json", bytes.NewReader(patchJSON))
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
 	}
@@ -217,8 +282,37 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for target)
-	patchJSON, err := BuildPatchDataWithPermissions(nil, targetUpdatePermissions)
+	// Parse TriggerFilterID if provided
+	var triggerFilterUUID *uuid.UUID
+	if targetUpdateArgs.triggerFilter == "-" {
+		// Explicitly clear
+		triggerFilterUUID = nil
+	} else if targetUpdateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(targetUpdateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		parsed := uuid.MustParse(triggerFilterID)
+		triggerFilterUUID = &parsed
+	}
+
+	// Build patch data with target enhancer
+	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add WhereTrigger if provided
+		if targetUpdateArgs.whereTrigger == "-" {
+			patchMap["WhereTrigger"] = ""
+		} else if targetUpdateArgs.whereTrigger != "" {
+			patchMap["WhereTrigger"] = targetUpdateArgs.whereTrigger
+		}
+		// Add TriggerFilterID if provided
+		if targetUpdateArgs.triggerFilter == "-" {
+			patchMap["TriggerFilterID"] = nil
+		} else if triggerFilterUUID != nil {
+			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
+		}
+	}
+
+	patchJSON, err := BuildPatchDataWithPermissions(targetEnhancer, targetUpdateArgs.permissions)
 	if err != nil {
 		return err
 	}
@@ -233,6 +327,9 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
+	}
+	if targetUpdateArgs.refreshTriggers {
+		params.RefreshTriggers = &targetUpdateArgs.refreshTriggers
 	}
 	include := "SpaceID,BridgeWorkerID"
 	params.Include = &include

@@ -694,6 +694,10 @@ type ExtendedTarget struct {
 
 	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
+
+	// TriggerFilter Defines an entity filter.
+	TriggerFilter *Filter   `json:"TriggerFilter,omitempty" yaml:"TriggerFilter,omitempty"`
+	Triggers      []Trigger `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
 }
 
 // ExtendedTrigger defines model for ExtendedTrigger.
@@ -1394,8 +1398,17 @@ type QueuedOperation struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
+	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
+	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
+	// DryRun DryRun indicates whether the action is a dry run.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
+	// ErrorDetails Error details returned by the worker.
+	ErrorDetails []ErrorItem `json:"ErrorDetails,omitempty" yaml:"ErrorDetails,omitempty"`
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
@@ -1619,6 +1632,8 @@ type Space struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -1626,8 +1641,6 @@ type Space struct {
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
-	//
-	// Currently other entities (e.g., Space.Slug) may not be referenced in the expression.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -1757,13 +1770,51 @@ type Target struct {
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
-	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
+	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
+	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+
+	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
+	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// WhereTrigger Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	//
+	// The whole string must be query-encoded.
+	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
 }
 
 // TargetCreateOrUpdateResponse defines model for TargetCreateOrUpdateResponse.
@@ -2006,8 +2057,17 @@ type UnitAction struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
+	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
+	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
+	// DryRun DryRun indicates whether the action is a dry run.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
+	// ErrorDetails Error details returned by the worker.
+	ErrorDetails []ErrorItem `json:"ErrorDetails,omitempty" yaml:"ErrorDetails,omitempty"`
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
@@ -2306,6 +2366,8 @@ type BulkDeleteSpacesParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2410,6 +2472,8 @@ type BulkPatchSpacesParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2511,6 +2575,8 @@ type BulkCreateSpacesParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2591,6 +2657,8 @@ type BulkDeleteBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2665,6 +2733,8 @@ type ListAllBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2764,6 +2834,8 @@ type BulkPatchBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2838,13 +2910,15 @@ type ListQueuedOperationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -2903,6 +2977,8 @@ type BulkDeleteChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2977,6 +3053,8 @@ type ListAllChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3083,6 +3161,8 @@ type BulkPatchChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3179,6 +3259,8 @@ type BulkCreateChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3253,6 +3335,8 @@ type BulkCreateChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3306,6 +3390,8 @@ type BulkDeleteFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3380,6 +3466,8 @@ type ListAllFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3496,6 +3584,8 @@ type BulkPatchFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3596,6 +3686,8 @@ type BulkCreateFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3670,6 +3762,8 @@ type BulkCreateFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3729,6 +3823,8 @@ type InvokeFunctionsOnOrgParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3785,6 +3881,8 @@ type BulkDeleteInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3859,6 +3957,8 @@ type ListAllInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3972,6 +4072,8 @@ type BulkPatchInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4075,6 +4177,8 @@ type BulkCreateInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4149,6 +4253,8 @@ type BulkCreateInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4202,6 +4308,8 @@ type BulkDeleteLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4278,6 +4386,8 @@ type SearchListLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4386,6 +4496,8 @@ type BulkPatchLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4486,6 +4598,8 @@ type BulkCreateLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4533,6 +4647,8 @@ type BulkCreateLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4580,6 +4696,8 @@ type BulkCreateLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4627,6 +4745,8 @@ type BulkCreateLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4680,6 +4800,8 @@ type ListOrganizationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4792,6 +4914,8 @@ type ListOrganizationMembersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4857,6 +4981,8 @@ type ListAllRevisionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4943,6 +5069,8 @@ type ListSpacesParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5106,6 +5234,8 @@ type ListBridgeWorkersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5243,6 +5373,8 @@ type ListChangeSetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5377,6 +5509,8 @@ type ListFiltersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5542,6 +5676,8 @@ type InvokeFunctionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5598,6 +5734,8 @@ type ListInvocationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5739,6 +5877,8 @@ type ListLinksParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5875,6 +6015,8 @@ type ListTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6008,13 +6150,15 @@ type ListTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6053,7 +6197,7 @@ type ListTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6081,7 +6225,7 @@ type GetTargetParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6116,11 +6260,25 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug          *string `json:"Slug" yaml:"Slug"`
-	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	ToolchainType   *string             `json:"ToolchainType" yaml:"ToolchainType"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
+}
+
+// PatchTargetParams defines parameters for PatchTarget.
+type PatchTargetParams struct {
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+}
+
+// UpdateTargetParams defines parameters for UpdateTarget.
+type UpdateTargetParams struct {
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
 // ListTriggersParams defines parameters for ListTriggers.
@@ -6146,6 +6304,8 @@ type ListTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6291,6 +6451,8 @@ type ListUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6477,6 +6639,8 @@ type PatchUnitParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6554,6 +6718,8 @@ type UpdateUnitParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6591,12 +6757,27 @@ type UpdateUnitParams struct {
 type ApplyUnitParams struct {
 	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+
+	// DryRun Dry run mode - validates which units would be applied without executing
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ApproveUnitParams defines parameters for ApproveUnit.
 type ApproveUnitParams struct {
 	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+}
+
+// DestroyUnitParams defines parameters for DestroyUnit.
+type DestroyUnitParams struct {
+	// DryRun Dry run mode - validates which units would be destroyed without executing
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// ImportUnitParams defines parameters for ImportUnit.
+type ImportUnitParams struct {
+	// DryRun Dry run mode - not yet implemented
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
@@ -6622,6 +6803,8 @@ type ListExtendedMutationsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6705,6 +6888,12 @@ type GetExtendedMutationParams struct {
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
+// RefreshUnitParams defines parameters for RefreshUnit.
+type RefreshUnitParams struct {
+	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.
 type ListExtendedRevisionsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -6728,6 +6917,8 @@ type ListExtendedRevisionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6836,13 +7027,15 @@ type ListUnitActionsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6901,6 +7094,8 @@ type ListUnitEventsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6966,6 +7161,8 @@ type ListViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7104,6 +7301,8 @@ type BulkDeleteTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7178,6 +7377,8 @@ type ListAllTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7283,6 +7484,8 @@ type BulkPatchTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7378,6 +7581,8 @@ type BulkCreateTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7452,6 +7657,8 @@ type BulkCreateTagsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7505,13 +7712,15 @@ type BulkDeleteTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7550,7 +7759,7 @@ type BulkDeleteTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7579,13 +7788,15 @@ type ListAllTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7624,7 +7835,7 @@ type ListAllTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7659,11 +7870,13 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug          *string `json:"Slug" yaml:"Slug"`
-	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	ToolchainType   *string             `json:"ToolchainType" yaml:"ToolchainType"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
 }
 
 // BulkPatchTargetsParams defines parameters for BulkPatchTargets.
@@ -7689,13 +7902,15 @@ type BulkPatchTargetsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7734,10 +7949,13 @@ type BulkPatchTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
 // BulkDeleteTriggersParams defines parameters for BulkDeleteTriggers.
@@ -7763,6 +7981,8 @@ type BulkDeleteTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7837,6 +8057,8 @@ type ListAllTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7954,6 +8176,8 @@ type BulkPatchTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8061,6 +8285,8 @@ type BulkCreateTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8135,6 +8361,8 @@ type BulkCreateTriggersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8188,6 +8416,8 @@ type BulkDeleteUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8264,6 +8494,8 @@ type ListAllUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8395,6 +8627,8 @@ type BulkPatchUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8486,6 +8720,8 @@ type BulkPatchUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8581,6 +8817,8 @@ type BulkCreateUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8657,6 +8895,8 @@ type BulkCreateUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8710,6 +8950,8 @@ type BulkApplyUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8792,6 +9034,8 @@ type BulkApproveUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8871,6 +9115,8 @@ type BulkCancelUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8947,6 +9193,8 @@ type BulkDestroyUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9026,6 +9274,8 @@ type BulkRefreshUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9078,7 +9328,7 @@ type BulkRefreshUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// DryRun Dry run mode - validates which units would be refreshed without executing
+	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
@@ -9105,6 +9355,8 @@ type BulkTagUnitsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9181,6 +9433,8 @@ type ListUsersParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9246,6 +9500,8 @@ type BulkDeleteViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9320,6 +9576,8 @@ type ListAllViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9430,6 +9688,8 @@ type BulkPatchViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9530,6 +9790,8 @@ type BulkCreateViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9604,6 +9866,8 @@ type BulkCreateViewsParams struct {
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.

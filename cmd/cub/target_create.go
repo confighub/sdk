@@ -32,11 +32,16 @@ Example:
 	RunE: targetCreateCmdRun,
 }
 
+var targetCreateArgs struct {
+	whereTrigger  string
+	triggerFilter string
+	permissions   []string
+}
+
 var fromTarget string
 var fromTargetSpace string
 var providerType string
 var toolchainType string
-var targetCreatePermissions []string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
@@ -45,7 +50,9 @@ func init() {
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
-	targetCreateCmd.Flags().StringSliceVar(&targetCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	targetCreateCmd.Flags().StringVar(&targetCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	targetCreateCmd.Flags().StringVar(&targetCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetCmd.AddCommand(targetCreateCmd)
 }
 
@@ -110,9 +117,28 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(targetCreatePermissions, newTarget.Permissions)
+	err = parsePermissions(targetCreateArgs.permissions, newTarget.Permissions)
 	if err != nil {
 		return err
+	}
+
+	// Set WhereTrigger if provided
+	if targetCreateArgs.whereTrigger == "-" {
+		newTarget.WhereTrigger = ""
+	} else if targetCreateArgs.whereTrigger != "" {
+		newTarget.WhereTrigger = targetCreateArgs.whereTrigger
+	}
+
+	// Set TriggerFilterID if provided
+	if targetCreateArgs.triggerFilter == "-" {
+		newTarget.TriggerFilterID = nil
+	} else if targetCreateArgs.triggerFilter != "" {
+		triggerFilterID, err := parseFilterFlag(targetCreateArgs.triggerFilter)
+		if err != nil {
+			return err
+		}
+		triggerFilterUUID := uuid.MustParse(triggerFilterID)
+		newTarget.TriggerFilterID = &triggerFilterUUID
 	}
 
 	newTarget.SpaceID = spaceID

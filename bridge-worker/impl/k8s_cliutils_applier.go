@@ -56,7 +56,7 @@ const (
 	DefaultInventoryID   = "00000000-0000-0000-0000-000000000000-default"
 	DefaultNamespace     = "default"
 	FieldManager         = "confighub-bridge-worker"
-	DefaultTimeout       = 5 * time.Minute
+	DefaultTimeout       = LargeWaitTimeout
 	PollInterval         = 2 * time.Second
 	InventoryPrefix      = "inventory"
 )
@@ -777,7 +777,8 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 	getLiveCtx, cancel := context.WithTimeout(context.Background(), getLiveTimeout)
 	defer cancel()
 
-	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, true)
+	// Return uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
+	liveObjects, err := a.getLiveObjects(getLiveCtx, objects, false)
 	if err != nil {
 		log.Log.Error(err, "Failed to get live objects after successful wait")
 		// Try to get whatever we can using the fresh context
@@ -789,7 +790,7 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 			}
 			u := obj.DeepCopyObject().(*unstructured.Unstructured)
 			if getErr := a.comps.KubernetesClient.Get(getLiveCtx, key, u); getErr == nil {
-				cleanup(u)
+				// Don't cleanup - caller will cleanup for LiveData, keep uncleaned for LiveState
 				liveObjects = append(liveObjects, u)
 			}
 		}
@@ -819,6 +820,7 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 }
 
 // Refresh implements K8sApplier.Refresh
+// Returns uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
 func (a *CLIUtilsApplier) Refresh(ctx context.Context, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	if err := a.validate(); err != nil {
 		return nil, err
@@ -826,7 +828,8 @@ func (a *CLIUtilsApplier) Refresh(ctx context.Context, objects []*unstructured.U
 
 	a.setDefaultNamespaces(objects)
 	// TODO: This should not return an error in the case of Not Found
-	return a.getLiveObjects(ctx, objects, true)
+	// Return uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
+	return a.getLiveObjects(ctx, objects, false)
 }
 
 // Destroy implements K8sApplier.Destroy following the CLI-Utils algorithm
@@ -1393,15 +1396,15 @@ func (a *CLIUtilsApplier) waitForCRDsAvailable(ctx context.Context, objects []*u
 	// Use the fresh discovery client we already have to avoid cache issues
 	discoveryClient := a.comps.DiscoveryClient
 
-	// Calculate timeout: use 2x the WaitTimeout to give CRDs time to be registered
-	// Default to 4 minutes (2x the default 2-minute WaitTimeout) if not specified
-	var crdCheckTimeout time.Duration = 4 * time.Minute
+	// Calculate timeout: use the WaitTimeout for CRD checks (cancellable via parent context)
+	// Default to LargeWaitTimeout if not specified
+	var crdCheckTimeout time.Duration = LargeWaitTimeout
 	if a.waitTimeout != "" {
 		if waitDuration, err := time.ParseDuration(a.waitTimeout); err == nil {
-			crdCheckTimeout = 2 * waitDuration
-			log.Log.Info("Using 2x WaitTimeout for CRD checks", "timeout", crdCheckTimeout)
+			crdCheckTimeout = waitDuration
+			log.Log.Info("Using WaitTimeout for CRD checks", "timeout", crdCheckTimeout)
 		} else {
-			log.Log.Info("Invalid WaitTimeout, using default 4m for CRD checks", "timeout", a.waitTimeout, "error", err)
+			log.Log.Info("Invalid WaitTimeout, using LargeWaitTimeout for CRD checks", "timeout", a.waitTimeout, "error", err)
 		}
 	}
 
