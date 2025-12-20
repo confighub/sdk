@@ -1486,16 +1486,39 @@ func (a *CLIUtilsApplier) waitForCRDsAvailable(ctx context.Context, objects []*u
 	}
 }
 
+var otherApplierManagers = map[string]bool{
+	// Note(Brian): I have not seen before-first-apply in current versions.
+	// kubectl create uses the manager "kubectl-create". Default fields don't
+	// appear in managedFields.
+	// https://github.com/kubernetes/kubernetes/issues/89954
+	// https://github.com/kubernetes/kubernetes/issues/131476
+	"before-first-apply": true, // Legacy default field manager
+
+	"helm":                 true, // Helm
+	"helm-controller":      true, // Flux HelmRelease
+	"kustomize-controller": true, // Flux Kustomization
+	"argocd-controller":    true, // ArgoCD's default: ArgoCDSSAManager
+	"tanka":                true, // Tanka
+}
+
 // shouldTakeOverManager checks if a field manager should be replaced by our manager.
 // We take over kubectl-* managers and old confighub managers to enable proper SSA field deletion.
 // We preserve managers from other controllers (HPA, VPA, etc.) to avoid conflicts.
+// https://kubernetes.io/docs/reference/using-api/server-side-apply/#transferring-ownership
 func shouldTakeOverManager(manager string) bool {
+	if manager == FieldManager {
+		return false
+	}
 	// Take over kubectl managers (kubectl-client-side-apply, kubectl-edit, etc.)
 	if strings.HasPrefix(manager, "kubectl") {
 		return true
 	}
 	// Take over old confighub managers to consolidate ownership
-	if strings.HasPrefix(manager, "confighub") && manager != FieldManager {
+	if strings.HasPrefix(manager, "confighub") {
+		return true
+	}
+	// Take over other whole-resource appliers the user may be transitioning from
+	if otherApplierManagers[manager] {
 		return true
 	}
 	return false
@@ -1505,6 +1528,8 @@ func shouldTakeOverManager(manager string) bool {
 // This allows SSA to properly handle array item removal (e.g., removing old initContainers)
 // while preserving field ownership from other controllers (HPA, VPA, etc.).
 // This follows the pattern used by Flux kustomize-controller (PR #527).
+// TODO: See https://github.com/kubernetes/kubernetes/issues/99003
+// We may want to change the manager so that we can remove fields not specified in ConfigHub.
 func (a *CLIUtilsApplier) clearManagedFieldsForObjects(ctx context.Context, objects []*unstructured.Unstructured) error {
 	for _, obj := range objects {
 		key := client.ObjectKey{
