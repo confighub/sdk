@@ -23,6 +23,10 @@ var unitDestroyCmd = &cobra.Command{
 	Short: "Destroy configuration units from the target",
 	Long: getCommandHelp(`Destroy configuration units from the target.
 
+A target must be attached to the unit (cub unit set-target can be used to add one), and the
+worker corresponding to the target must be connected and ready (cub worker get can be used to
+get the worker status).
+
 Examples:
 `+"```"+`
   # Destroy a single unit by slug
@@ -92,6 +96,9 @@ func runSingleUnitDestroy(unitSlug string) error {
 		if err != nil {
 			return err
 		}
+	} else if !quiet && !hasAlternativeOutput() {
+		displayStartedOperation(destroyRes.JSON200)
+		return nil
 	}
 
 	// Output JSON if requested

@@ -134,6 +134,7 @@ func (w *ConfigHubBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 			{
 				ToolchainType: workerapi.ToolchainConfigHubYAML,
 				ProviderType:  api.ProviderConfigHub,
+				LiveStateType: workerapi.ToolchainConfigHubYAML,
 				AvailableTargets: []api.Target{
 					{
 						Name:   api.GenerateTargetName(opts.WorkerSlug, api.ProviderConfigHub, workerapi.ToolchainConfigHubYAML, ""),

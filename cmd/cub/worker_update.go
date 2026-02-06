@@ -124,6 +124,10 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentBridgeworker.SpaceID = existingBridgeworker.SpaceID
 		currentBridgeworker.BridgeWorkerID = existingBridgeworker.BridgeWorkerID
 	}
+	err = setAnnotations(&currentBridgeworker.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentBridgeworker.Labels)
 	if err != nil {
 		return err

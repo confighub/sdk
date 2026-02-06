@@ -56,6 +56,10 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Ensure essential fields can't be clobbered
 		currentOrganization.OrganizationID = existingOrganization.OrganizationID
 	}
+	err = setAnnotations(&currentOrganization.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentOrganization.Labels)
 	if err != nil {
 		return err

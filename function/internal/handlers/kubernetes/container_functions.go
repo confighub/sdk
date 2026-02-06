@@ -4,12 +4,14 @@
 package kubernetes
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/labstack/gommon/log"
+	"github.com/swaggest/jsonschema-go"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
@@ -495,6 +497,44 @@ func registerContainerFunctions(fh handler.FunctionRegistry) {
 			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(resourceTypeToContainersPaths),
 		},
 		Function: k8sFnSetContainerPort,
+	})
+	reflector := jsonschema.Reflector{}
+	validationResultSchema, err := reflector.Reflect(api.ValidationResult{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ValidationResult")
+	}
+	valueFilterSchema, err := reflector.Reflect(api.ValueFilter{})
+	if err != nil {
+		log.Errorf("couldn't get schema for api.ValueFilter")
+	}
+	imageResourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImage, k8skit.K8sResourceProvider)
+	fh.RegisterFunction("vet-images", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-images",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName:    "image-filter",
+					Required:         true,
+					Description:      "JSON object with AllowStrings and DenyStrings string lists for filtering container images",
+					DataType:         api.DataTypeValueFilter,
+					ValueConstraints: api.ValueConstraints{Schema: &valueFilterSchema},
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if all images pass the filter, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &validationResultSchema,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Validates that all container images pass the specified allow/deny filter. If AllowStrings is non-empty, all images must be in the allow list. Images in DenyStrings are always rejected.",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: imageResourceTypes,
+		},
+		Function: k8sFnVetImages,
 	})
 }
 
@@ -1056,7 +1096,7 @@ func initContainerFunctions() {
 	}
 }
 
-func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	imageURI := args[0].Value.(string)
 	newReference := args[1].Value.(string)
@@ -1083,7 +1123,7 @@ func k8sFnSetImageReferenceByURI(_ *api.FunctionContext, parsedData gaby.Contain
 	return parsedData, nil, err
 }
 
-func k8sFnSetImageRegistryByRegistry(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetImageRegistryByRegistry(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	imageRegistry := args[0].Value.(string)
 	newRegistry := args[1].Value.(string)
@@ -1099,7 +1139,7 @@ func k8sFnSetImageRegistryByRegistry(_ *api.FunctionContext, parsedData gaby.Con
 	return parsedData, nil, err
 }
 
-func k8sFnSetEnv(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetEnv(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	// The argument value types should be verified before this function is called
 	containerName := args[0].Value.(string)
@@ -1361,7 +1401,7 @@ func k8sSetResources(
 	return newDoc, nil
 }
 
-func k8sFnSetContainerResources(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetContainerResources(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	containerName := args[0].Value.(string)
 	operation := args[1].Value.(string)
@@ -1426,7 +1466,7 @@ func k8sFnSetContainerResources(_ *api.FunctionContext, parsedData gaby.Containe
 	return parsedData, nil, err
 }
 
-func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	var err error
 
@@ -1776,7 +1816,7 @@ func k8sFnSetPodDefaults(_ *api.FunctionContext, parsedData gaby.Container, args
 	return parsedData, nil, nil
 }
 
-func k8sFnSetContainerVolumeMountPath(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetContainerVolumeMountPath(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	// Parse arguments
 	containerName := args[0].Value.(string)
@@ -1974,7 +2014,7 @@ func k8sFnSetContainerVolumeMountPath(_ *api.FunctionContext, parsedData gaby.Co
 	return parsedData, nil, nil
 }
 
-func k8sFnSetContainerPort(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnSetContainerPort(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	// Parse arguments
 	containerName := args[0].Value.(string)
@@ -2085,4 +2125,39 @@ func k8sFnSetContainerPort(_ *api.FunctionContext, parsedData gaby.Container, ar
 		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
 	}
 	return parsedData, nil, nil
+}
+
+func k8sFnVetImages(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	filterString := args[0].Value.(string)
+	var filter api.ValueFilter
+	if err := json.Unmarshal([]byte(filterString), &filter); err != nil {
+		return parsedData, nil, errors.Wrap(err, "failed to parse image-filter argument")
+	}
+
+	// Get all container images using the path registry for the "image" attribute,
+	// passing wildcard "*" for the container-name path argument to match all containers.
+	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(k8skit.K8sResourceProvider, api.AttributeNameContainerImage)
+	images, err := yamlkit.GetStringPaths(parsedData, resourceTypeToPaths, []any{"*"}, k8skit.K8sResourceProvider)
+	if err != nil {
+		return parsedData, nil, errors.Wrap(err, "failed to get container images")
+	}
+
+	var failedAttributes api.AttributeValueList
+	for _, attr := range images {
+		image, ok := attr.Value.(string)
+		if !ok {
+			continue
+		}
+		denied := filter.DenyStrings[image]
+		notAllowed := len(filter.AllowStrings) > 0 && !filter.AllowStrings[image]
+		if denied || notAllowed {
+			failedAttributes = append(failedAttributes, attr)
+		}
+	}
+
+	result := api.ValidationResult{
+		Passed:           len(failedAttributes) == 0,
+		FailedAttributes: failedAttributes,
+	}
+	return parsedData, result, nil
 }

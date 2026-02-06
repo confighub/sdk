@@ -216,7 +216,11 @@ func runSingleTriggerCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}

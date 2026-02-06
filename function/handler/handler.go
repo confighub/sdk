@@ -181,7 +181,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		if err != nil {
 			return nil, errors.Wrap(err, "configuration data parsing error")
 		}
-		newParsedData, functionOutput, err = f.Function(&functionContext, newParsedData, arguments, functionInvocation.LiveState)
+		newParsedData, functionOutput, err = f.Function(&functionContext, newParsedData, arguments)
 		if err == nil && isFilter {
 			validationResult, ok := functionOutput.(api.ValidationResult)
 			if !ok {
@@ -214,7 +214,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 					{Value: functionIndex},
 					{Value: true}, // already converted to YAML
 				}
-				_, newMutationsOutput, err := computeMutations.Function(&functionContext, newParsedData, computeMutationArguments, functionInvocation.LiveState)
+				_, newMutationsOutput, err := computeMutations.Function(&functionContext, newParsedData, computeMutationArguments)
 				if err != nil {
 					// TODO: It would be helpful to return the current configuration.
 					return nil, errors.Wrap(err, "unable to compute mutations")
@@ -605,7 +605,7 @@ func (fh *FunctionHandler) RegisterFunction(functionName string, registration *F
 
 // TODO: Put the function arguments into a struct so that it's extensible
 
-type FunctionImplementation func(*api.FunctionContext, gaby.Container, []api.FunctionArgument, []byte) (gaby.Container, any, error)
+type FunctionImplementation func(*api.FunctionContext, gaby.Container, []api.FunctionArgument) (gaby.Container, any, error)
 
 type FunctionRegistration struct {
 	api.FunctionSignature

@@ -107,8 +107,9 @@ func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return api.BridgeWorkerInfo{
 		SupportedConfigTypes: []*api.ConfigType{
 			{
-				ToolchainType:    workerapi.ToolchainKubernetesYAML,
-				ProviderType:     api.ProviderFluxOCIWriter,
+				ProviderType:  api.ProviderFluxOCIWriter,
+				ToolchainType: workerapi.ToolchainKubernetesYAML,
+				// No LiveStateType
 				AvailableTargets: availableTargets,
 			},
 		},

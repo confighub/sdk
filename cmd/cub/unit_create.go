@@ -137,10 +137,12 @@ var unitCreateArgs struct {
 	changesetSlug     string
 	changeDescription string
 	// Bulk create specific flags
-	destSpaces   []string
-	whereSpace   string
-	namePrefixes []string
-	filterSpace  string
+	destSpaces    []string
+	whereSpace    string
+	namePrefixes  []string
+	filterSpace   string
+	variantLabels []string
+	namePattern   string
 }
 
 func init() {
@@ -166,6 +168,8 @@ func init() {
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	unitCreateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk create (can be repeated or comma-separated)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
+	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.variantLabels, "variant-labels", []string{}, "labels with multiple values for bulk creation in the format of key1=value1|value2,key2=value1|value2|value3")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Unit and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 
 	unitCmd.AddCommand(unitCreateCmd)
 }
@@ -189,8 +193,8 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(unitCreateArgs.destSpaces) == 0 && unitCreateArgs.whereSpace == "" && len(unitCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(unitCreateArgs.destSpaces) == 0 && unitCreateArgs.whereSpace == "" && len(unitCreateArgs.namePrefixes) == 0 && len(unitCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
 		}
 
 		// Validate single-mode-only flags are not used in bulk mode
@@ -198,14 +202,31 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 			unitCreateArgs.importUnitSlug != "" || unitCreateArgs.toolchainType != string(workerapi.ToolchainKubernetesYAML) {
 			return false, errors.New("--upstream-unit, --upstream-space, --import, and --toolchain flags cannot be used in bulk create mode")
 		}
+
+		if len(unitCreateArgs.namePrefixes) > 0 && len(unitCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if unitCreateArgs.namePattern != "" && len(unitCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if unitCreateArgs.namePattern != "" && len(unitCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--name-pattern requires --variant-labels to be set")
+		}
 	} else {
 		// Single create mode validation
 		if len(args) < 1 || len(args) > 2 {
 			return false, errors.New("unit name is required for single unit creation")
 		}
 
-		if filter != "" || where != "" || len(unitIdentifiers) > 0 || len(unitCreateArgs.destSpaces) > 0 || unitCreateArgs.whereSpace != "" || len(unitCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--where, --unit, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			unitCreateArgs.namePattern != "" || len(unitIdentifiers) > 0 ||
+			len(unitCreateArgs.destSpaces) > 0 || unitCreateArgs.whereSpace != "" ||
+			len(unitCreateArgs.namePrefixes) > 0 || len(unitCreateArgs.variantLabels) > 0 {
+			return false, errors.New(
+				"bulk create flags (--where, --unit, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+			)
 		}
 
 		// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
@@ -307,7 +328,11 @@ func runSingleUnitCreate(args []string) error {
 		newUnit.Data = base64Content.String()
 	}
 
-	err := setLabels(&newUnit.Labels)
+	err := setAnnotations(&newUnit.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newUnit.Labels)
 	if err != nil {
 		return err
 	}
@@ -479,6 +504,17 @@ func runBulkUnitCreate() error {
 	if len(unitCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(unitCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Set variant labels parameter if specified
+	if len(unitCreateArgs.variantLabels) > 0 {
+		variantLabels := strings.Join(unitCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabels
+	}
+
+	// Set name pattern if specified
+	if unitCreateArgs.namePattern != "" {
+		params.NamePattern = &unitCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

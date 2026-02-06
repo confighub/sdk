@@ -16,7 +16,10 @@ var spaceCmd = &cobra.Command{
 }
 
 func getSpaceCommandGroupHelp() string {
-	baseHelp := `The space subcommands are used to manage spaces`
+	baseHelp := `The space subcommands are used to manage spaces.
+
+Spaces are explained at https://docs.confighub.com/background/entities/space/.
+A guide for how to use spaces is at https://docs.confighub.com/guide/environments/.`
 	agentContext := `Spaces are organizational boundaries within ConfigHub that contain units, define access control, and provide collaboration contexts.
 
 Key concepts for agents:

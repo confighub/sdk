@@ -65,6 +65,7 @@ func init() {
 	functionLocalCmd.Flags().BoolVar(&localOutputOnly, "output-only", false, "show output without other response details")
 	functionLocalCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
 	functionLocalCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	// livestate-type not supported
 	addStandardDisplayFlags(functionLocalCmd)
 	functionCmd.AddCommand(functionLocalCmd)
 }

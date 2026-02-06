@@ -8,9 +8,11 @@ import (
 )
 
 var unitEventCmd = &cobra.Command{
-	Use:               "unit-event",
-	Short:             "Unit event commands",
-	Long:              getCommandHelp(`The unit-event subcommands are used to manage unit events`, ""),
+	Use:   "unit-event",
+	Short: "Unit event commands",
+	Long: getCommandHelp(`The unit-event subcommands are used to manage unit events.
+
+UnitEvents are explained at https://docs.confighub.com/background/entities/unit-event/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

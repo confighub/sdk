@@ -84,6 +84,7 @@ Bulk Create Examples:
 func init() {
 	addStandardCreateFlags(linkCreateCmd)
 	enableWaitFlag(linkCreateCmd)
+	addLinkFieldFlags(linkCreateCmd)
 
 	// Bulk create specific flags
 	linkCreateCmd.Flags().StringSliceVar(&linkCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -135,6 +136,10 @@ func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 		}
 	}
 
+	if err := validateLinkFieldFlags(); err != nil {
+		return isBulkCreateMode, err
+	}
+
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
 		return isBulkCreateMode, err
 	}
@@ -162,7 +167,7 @@ func linkCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if isBulkCreateMode {
-		return runBulkLinkCreate()
+		return runBulkLinkCreate(cmd)
 	}
 
 	return runSingleLinkCreate(args)
@@ -175,7 +180,11 @@ func runSingleLinkCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newLink.Labels)
+	err := setAnnotations(&newLink.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newLink.Labels)
 	if err != nil {
 		return err
 	}
@@ -216,6 +225,13 @@ func runSingleLinkCreate(args []string) error {
 	newLink.FromUnitID = fromUnitID
 	newLink.ToUnitID = toUnitID
 	newLink.ToSpaceID = uuid.MustParse(toSpaceID)
+	setLinkFieldsOnCreate(newLink)
+
+	// If --make-current is set, initialize revision numbers to current unit revisions
+	if linkMakeCurrent {
+		newLink.UpstreamLastMergedRevisionNum = toUnit.HeadRevisionNum
+		newLink.DownstreamLastMergedRevisionNum = fromUnit.HeadRevisionNum
+	}
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateLinkParams{}
@@ -246,9 +262,9 @@ func runSingleLinkCreate(args []string) error {
 	return err
 }
 
-func runBulkLinkCreate() error {
-	// Build patch data using consolidated function (no entity-specific fields for link in bulk create)
-	patchJSON, err := BuildPatchData(nil)
+func runBulkLinkCreate(cmd *cobra.Command) error {
+	// Build patch data using consolidated function with link-specific field enhancer
+	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
 		return err
 	}

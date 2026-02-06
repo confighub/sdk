@@ -28,6 +28,10 @@ var unitApplyCmd = &cobra.Command{
 	Short: "Apply configuration units to the target",
 	Long: getCommandHelp(`Apply configuration units to the target.
 
+A target must be attached to the unit (cub unit set-target can be used to add one), and the
+worker corresponding to the target must be connected and ready (cub worker get can be used to
+get the worker status).
+
 Examples:
 `+"```"+`
   # Apply a single unit by slug
@@ -202,6 +206,9 @@ func runSingleUnitApply(unitSlug string) error {
 		if err != nil {
 			return err
 		}
+	} else if !quiet && !hasAlternativeOutput() {
+		displayStartedOperation(applyRes.JSON200)
+		return nil
 	}
 
 	if jsonOutput {
@@ -309,6 +316,20 @@ func isTerminalStatus(status goclientnew.ActionStatusType) bool {
 		status == goclientnew.ActionStatusTypeCanceled ||
 		status == goclientnew.ActionStatusTypeFailed ||
 		status == goclientnew.ActionStatusTypeAborted
+}
+
+func displayStartedOperation(queuedOperation *goclientnew.QueuedOperation) {
+	unitID := queuedOperation.UnitID.String()
+	spaceID := queuedOperation.SpaceID.String()
+
+	// Try to get the unit slug for better display
+	// Fallback to UUID if we can't get the slug
+	slug := unitID
+	unitDetails, err := apiGetUnitInSpace(unitID, spaceID, "Slug")
+	if err == nil {
+		slug = unitDetails.Slug
+	}
+	tprint("Action %s on unit %s started", actionType(queuedOperation.Action), slug)
 }
 
 func displayOperationResults(id string, event *goclientnew.UnitEvent) {

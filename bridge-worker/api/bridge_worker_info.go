@@ -11,14 +11,15 @@ import (
 )
 
 type BridgeWorkerInfo struct {
-	SupportedConfigTypes []*ConfigType `json:",omitempty" description:"Configuration types supported by the BridgeWorker"`
+	SupportedConfigTypes []*ConfigType `json:",omitempty" description:"Configuration types of the bridges supported by the worker"`
 }
 
 type ProviderType string
 
 type ConfigType struct {
-	ToolchainType    workerapi.ToolchainType `json:",omitempty" swaggertype:"string" description:"Configuration toolchain and format supported by the BridgeWorker"`
-	ProviderType     ProviderType            `json:",omitempty" swaggertype:"string" description:"Provider subtype of the configuration toolchain supported by the BridgegWorker"`
+	ProviderType     ProviderType            `swaggertype:"string" description:"Type identifying a bridge implementation supported by the worker"`
+	ToolchainType    workerapi.ToolchainType `swaggertype:"string" description:"Configuration toolchain and format implemented by this bridge of the worker"`
+	LiveStateType    workerapi.ToolchainType `json:",omitempty" swaggertype:"string" description:"Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState"`
 	AvailableTargets []Target                `json:",omitempty" description:"Targets known by the BridgeWorker"`
 }
 
@@ -31,19 +32,23 @@ type Target struct {
 // ProviderType corresponds to the service API and client implementation
 // TODO: Revisit whether this makes sense
 const (
-	ProviderConfigHub     ProviderType = "ConfigHub"
-	ProviderKubernetes    ProviderType = "Kubernetes"
-	ProviderFluxOCIWriter ProviderType = "FluxOCIWriter"
-	ProviderConfigMap     ProviderType = "ConfigMap"
-	ProviderOpenTofuAWS   ProviderType = "OpenTofu/AWS"
+	ProviderConfigHub      ProviderType = "ConfigHub"
+	ProviderKubernetes     ProviderType = "Kubernetes"
+	ProviderFluxOCIWriter  ProviderType = "FluxOCIWriter"
+	ProviderFluxRenderer   ProviderType = "FluxRenderer"
+	ProviderConfigMap      ProviderType = "ConfigMap"
+	ProviderOpenTofuAWS    ProviderType = "OpenTofu/AWS"
+	ProviderArgoCDRenderer ProviderType = "ArgoCDRenderer"
 )
 
 var SupportedProviders = map[ProviderType]bool{
-	ProviderConfigHub:     true,
-	ProviderKubernetes:    true,
-	ProviderFluxOCIWriter: true,
-	ProviderConfigMap:     true,
-	ProviderOpenTofuAWS:   true,
+	ProviderConfigHub:      true,
+	ProviderKubernetes:     true,
+	ProviderFluxOCIWriter:  true,
+	ProviderFluxRenderer:   true,
+	ProviderConfigMap:      true,
+	ProviderOpenTofuAWS:    true,
+	ProviderArgoCDRenderer: true,
 }
 
 func IsSupportedProvider(provider ProviderType) bool {

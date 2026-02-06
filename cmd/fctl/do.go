@@ -115,7 +115,7 @@ func fakeFunctionContext(slug string) *api.FunctionContext {
 		SpaceSlug:      spaceSlug,
 		OrganizationID: orgID,
 		RevisionNum:    1,
-		New:            true,
+		NotLive:        true,
 	}
 	return &functionContext
 }

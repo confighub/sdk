@@ -1,6 +1,11 @@
 # FluxOCIWorker Authentication
 
-The `FluxOCIWorker` is a specialized Bridge Worker designed to interact with OCI-compatible container registries. It supports multiple authentication mechanisms to ensure compatibility with various registry configurations and security requirements. This document outlines the key differences of the `FluxOCIWorker` authentication mechanisms and examples of how to run the worker.
+The `FluxOCIWorker` is a specialized Bridge designed to interact with OCI-compatible container registries.
+
+This bridge is deprecated. The `CONFIGHUB_ENABLE_FLUXOCI` environment variable must be set to a non-empty value like "1" in
+order for the bridge to be registered by the cub-worker.
+
+The Bridge supports multiple authentication mechanisms to ensure compatibility with various registry configurations and security requirements. This document outlines the key differences of the `FluxOCIWorker` authentication mechanisms and examples of how to run the worker.
 
 ---
 
@@ -16,26 +21,28 @@ bridge-worker-name-optional
 
 ### Target Parameters
 
-* `Repository`: Expects the OCI hosting service hostname and Repository Prefix. e.g. `ghcr.io/company-1`, `https://123456789012.dkr.ecr.us-east-1.amazonaws.com/org-2`
-* `Tag` (Optional): Confighub will automatically set the tag on each push using the Unit's current RevisionNum being applied. This will have `rev` prefixed to the number, like `rev42`. When Tag is populated, it can be used to explicitly set a value that you want Confighub to publish to the OCI in addition to the default RevisionNum tag. For example `latest` or `trunk`.
-* `Provider`: A value dictating how we authenticate to your OCI. Supported values are:
-  * `Generic`: Expects either the worker or the Target parameters to have a secret to use
-  * `AWS`: AWS IAM profile authentication
-  * `GCP`: GCP Service Account associated to the Pod/Cluser
-  * `Azure`: Azure Service Principal associated to the Pod/Cluser
-  * `None`: meaning however the worker authenticates
-* Kubernetes Secret via `KubernetesSecretName` and `KubernetesSecretNamespace` (optional): If populated, the Confighub Worker will attempt to load the kubernetes secret specified and use those credentials as authentication material.
+- `Repository`: Expects the OCI hosting service hostname and Repository Prefix. e.g. `ghcr.io/company-1`, `https://123456789012.dkr.ecr.us-east-1.amazonaws.com/org-2`
+- `Tag` (Optional): Confighub will automatically set the tag on each push using the Unit's current RevisionNum being applied. This will have `rev` prefixed to the number, like `rev42`. When Tag is populated, it can be used to explicitly set a value that you want Confighub to publish to the OCI in addition to the default RevisionNum tag. For example `latest` or `trunk`.
+- `Provider`: A value dictating how we authenticate to your OCI. Supported values are:
+  - `Generic`: Expects either the worker or the Target parameters to have a secret to use
+  - `AWS`: AWS IAM profile authentication
+  - `GCP`: GCP Service Account associated to the Pod/Cluser
+  - `Azure`: Azure Service Principal associated to the Pod/Cluser
+  - `None`: meaning however the worker authenticates
+- Kubernetes Secret via `KubernetesSecretName` and `KubernetesSecretNamespace` (optional): If populated, the Confighub Worker will attempt to load the kubernetes secret specified and use those credentials as authentication material.
 
 ## Authentication Mechanisms
 
 OCI-compatible registries require authentication to push or pull container images. The `FluxOCIWorker` supports multiple authentication mechanisms to handle different use cases:
 
 1. **Keychains:**
+
    - Used for system-level credential management.
    - Allows seamless integration with tools like Docker and Kubernetes.
    - Example: [Docker Login](https://docs.docker.com/reference/cli/docker/login/).
 
 2. **Docker-Secret Format:**
+
    - Kubernetes-native format for storing registry credentials.
    - Commonly used with `kubectl create secret docker-registry` or `flux create secret`.
    - Example: [Flux Source Secret](https://github.com/fluxcd/flux2/blob/main/pkg/manifestgen/sourcesecret/sourcesecret.go#L252).

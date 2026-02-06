@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/confighub/sdk/bridge-worker/api"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type Worker struct {
@@ -18,6 +19,7 @@ type Worker struct {
 	bridgeWorker   api.BridgeWorker
 	functionWorker api.FunctionWorker
 	client         *workerClient
+	metricsMeter   metric.Meter
 }
 
 func New(url, id, secret string) *Worker {
@@ -38,6 +40,11 @@ func (b *Worker) WithFunctionWorker(functionWorker api.FunctionWorker) *Worker {
 	return b
 }
 
+func (b *Worker) WithMetricsMeter(meter metric.Meter) *Worker {
+	b.metricsMeter = meter
+	return b
+}
+
 // WaitForPendingOperations waits for all in-flight operations to complete
 func (b *Worker) WaitForPendingOperations() {
 	if b.client != nil {
@@ -46,7 +53,14 @@ func (b *Worker) WaitForPendingOperations() {
 }
 
 func (b *Worker) Start(ctx context.Context) error {
-	client := newClient(b.confighubURL, b.workerId, b.workerSecret, b.bridgeWorker, b.functionWorker)
+	client := newClient(
+		b.confighubURL,
+		b.workerId,
+		b.workerSecret,
+		b.bridgeWorker,
+		b.functionWorker,
+		b.metricsMeter,
+	)
 	b.client = client
 
 	subCtx, cancel := context.WithCancel(ctx)

@@ -239,6 +239,10 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentChangeSet.SpaceID = existingChangeSet.SpaceID
 		currentChangeSet.ChangeSetID = existingChangeSet.ChangeSetID
 	}
+	err = setAnnotations(&currentChangeSet.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentChangeSet.Labels)
 	if err != nil {
 		return err

@@ -59,7 +59,11 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&workerDetails.Labels)
+	err := setAnnotations(&workerDetails.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&workerDetails.Labels)
 	if err != nil {
 		return err
 	}

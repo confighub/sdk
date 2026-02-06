@@ -250,6 +250,14 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if viewPatch {
 		// Single view patch mode
 
+		// Add annotations if specified
+		if len(annotation) > 0 {
+			err := setAnnotations(&currentView.Annotations)
+			if err != nil {
+				return err
+			}
+		}
+
 		// Add labels if specified
 		if len(label) > 0 {
 			err := setLabels(&currentView.Labels)
@@ -330,6 +338,10 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentView.OrganizationID = existingView.OrganizationID
 		currentView.SpaceID = existingView.SpaceID
 		currentView.ViewID = existingView.ViewID
+	}
+	err = setAnnotations(&currentView.Annotations)
+	if err != nil {
+		return err
 	}
 	err = setLabels(&currentView.Labels)
 	if err != nil {

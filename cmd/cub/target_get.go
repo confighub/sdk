@@ -62,12 +62,17 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 		view.Append([]string{"Bridge Worker ID", targetDetails.BridgeWorkerID.String()})
 	}
 
+	view.Append([]string{"Provider Type", targetDetails.ProviderType})
+	view.Append([]string{"Toolchain Type", targetDetails.ToolchainType})
+	view.Append([]string{"LiveState Type", targetDetails.LiveStateType})
+
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(targetDetails.Labels)})
-	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(targetDetails.Annotations)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
 	view.Append([]string{"Permissions", permissionsToString(targetDetails.Permissions)})
+
 	view.Append([]string{"Where Trigger", targetDetails.WhereTrigger})
 
 	// Display TriggerFilter - use Slug if expanded, otherwise UUID

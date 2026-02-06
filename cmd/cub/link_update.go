@@ -69,6 +69,7 @@ var (
 func init() {
 	addStandardUpdateFlags(linkUpdateCmd)
 	enableWaitFlag(linkUpdateCmd)
+	addLinkFieldFlags(linkUpdateCmd)
 	linkUpdateCmd.Flags().BoolVar(&linkPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(linkUpdateCmd)
 	enableFilterFlag(linkUpdateCmd)
@@ -158,6 +159,10 @@ func checkLinkConflictingArgs(args []string) bool {
 		}
 	}
 
+	if err := validateLinkFieldFlags(); err != nil {
+		failOnError(err)
+	}
+
 	// Validate label removal only works with patch
 	if err := ValidateLabelRemoval(label, linkPatch); err != nil {
 		failOnError(err)
@@ -174,15 +179,15 @@ func checkLinkConflictingArgs(args []string) bool {
 	return isBulkPatchMode
 }
 
-func runBulkLinkUpdate() error {
+func runBulkLinkUpdate(cmd *cobra.Command) error {
 	// Parse filter parameter
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 {
-		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, or --delete-gate")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) {
+		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, or link field flags")
 	}
 
 	var effectiveWhere string
@@ -199,8 +204,8 @@ func runBulkLinkUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for link)
-	patchJSON, err := BuildPatchData(nil)
+	// Build patch data using consolidated function with link-specific field enhancer
+	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
 		return err
 	}
@@ -230,9 +235,9 @@ func runBulkLinkUpdate() error {
 	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", effectiveWhere)
 }
 
-func runIndividualLinkPatch(linkSlug string) error {
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 {
-		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, or --delete-gate")
+func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) {
+		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, or link field flags")
 	}
 
 	// Get the current link for space and link ID
@@ -247,8 +252,8 @@ func runIndividualLinkPatch(linkSlug string) error {
 	// Get patch data from stdin/filename or use empty patch
 	var patchData []byte
 
-	// Build patch data using consolidated function
-	patchData, err = BuildPatchData(nil)
+	// Build patch data using consolidated function with link-specific field enhancer
+	patchData, err = BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
 		return err
 	}
@@ -287,7 +292,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkLinkConflictingArgs(args)
 
 	if isBulkPatchMode {
-		return runBulkLinkUpdate()
+		return runBulkLinkUpdate(cmd)
 	}
 
 	// Single link update logic
@@ -300,7 +305,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Handle individual patch mode
 	if linkPatch {
-		return runIndividualLinkPatch(args[0])
+		return runIndividualLinkPatch(cmd, args[0])
 	}
 
 	// Traditional update mode requires unit arguments
@@ -332,6 +337,10 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentLink.OrganizationID = existingLink.OrganizationID
 		currentLink.SpaceID = existingLink.SpaceID
 		currentLink.LinkID = existingLink.LinkID
+	}
+	err = setAnnotations(&currentLink.Annotations)
+	if err != nil {
+		return err
 	}
 	err = setLabels(&currentLink.Labels)
 	if err != nil {
@@ -367,6 +376,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentLink.FromUnitID = fromUnitID
 	currentLink.ToUnitID = toUnitID
 	currentLink.ToSpaceID = uuid.MustParse(toSpaceID)
+	setLinkFieldsOnUpdate(currentLink, cmd)
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)
 	if cubapi.IsAPIError(err, linkRes) {

@@ -110,6 +110,7 @@ type ActionResult struct {
 
 	// QueuedOperationID UUID of the operation corresponding to the action request
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	ResourceStatuses  *ResourceStatusMap `json:"ResourceStatuses,omitempty" yaml:"ResourceStatuses,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
@@ -250,7 +251,7 @@ type BridgeWorkerCreateOrUpdateResponse struct {
 
 // BridgeWorkerInfo defines model for BridgeWorkerInfo.
 type BridgeWorkerInfo struct {
-	// SupportedConfigTypes Configuration types supported by the BridgeWorker
+	// SupportedConfigTypes Configuration types of the bridges supported by the worker
 	SupportedConfigTypes []ConfigType `json:"SupportedConfigTypes,omitempty" yaml:"SupportedConfigTypes,omitempty"`
 }
 
@@ -353,10 +354,13 @@ type ConfigType struct {
 	// AvailableTargets Targets known by the BridgeWorker
 	AvailableTargets []TargetType2 `json:"AvailableTargets,omitempty" yaml:"AvailableTargets,omitempty"`
 
-	// ProviderType Provider subtype of the configuration toolchain supported by the BridgegWorker
+	// LiveStateType Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState
+	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
+
+	// ProviderType Type identifying a bridge implementation supported by the worker
 	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
 
-	// ToolchainType Configuration toolchain and format supported by the BridgeWorker
+	// ToolchainType Configuration toolchain and format implemented by this bridge of the worker
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 }
 
@@ -381,6 +385,9 @@ type ErrorItem struct {
 type ErrorMetadata struct {
 	// EntityID Optional ID of the entity this error relates to
 	EntityID string `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+
+	// EntitySlug Optional slug of the entity this error relates to
+	EntitySlug string `json:"EntitySlug,omitempty" yaml:"EntitySlug,omitempty"`
 
 	// EntityType Optional type of the entity this error relates to
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -494,11 +501,10 @@ type ExtendedLink struct {
 	FromUnit *Unit `json:"FromUnit,omitempty" yaml:"FromUnit,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
-	// A Link indicates that config values Provided by the To Unit (the producer) may
-	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
-	// to be matched before values Provided by other Units in the Space (if within the same
-	// Space). Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a Set.
+	// A Link indicates that selected config data from the upstream To Unit (the producer)
+	// should be propagated to the downstream From Unit (the consumer).
+	// Links must be created in the same Space as the From Unit.
+	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
@@ -533,11 +539,10 @@ type ExtendedMutation struct {
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
-	// A Link indicates that config values Provided by the To Unit (the producer) may
-	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
-	// to be matched before values Provided by other Units in the Space (if within the same
-	// Space). Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a Set.
+	// A Link indicates that selected config data from the upstream To Unit (the producer)
+	// should be propagated to the downstream From Unit (the consumer).
+	// Links must be created in the same Space as the From Unit.
+	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -950,10 +955,13 @@ type FunctionInvocationsRequest struct {
 	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
 	NumFilters int `json:"NumFilters,omitempty" yaml:"NumFilters,omitempty"`
 
+	// OnLiveState OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data.
+	OnLiveState bool `json:"OnLiveState,omitempty" yaml:"OnLiveState,omitempty"`
+
 	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
 	StopOnError bool `json:"StopOnError,omitempty" yaml:"StopOnError,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process.
+	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. If OnLiveState is false, it must match the ToolchainType of the Units. If OnLiveState is true, it must match the LiveStateType of the Targets of the Units.
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
 	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
@@ -1084,9 +1092,14 @@ type FunctionWorkerInfo struct {
 
 // ImportFilter defines model for ImportFilter.
 type ImportFilter struct {
-	Operator string   `json:"Operator,omitempty" yaml:"Operator,omitempty"`
-	Type     string   `json:"Type,omitempty" yaml:"Type,omitempty"`
-	Values   []string `json:"Values,omitempty" yaml:"Values,omitempty"`
+	// Operator Operator specifies how to apply the filter (include, exclude, equals, contains, matches)
+	Operator string `json:"Operator,omitempty" yaml:"Operator,omitempty"`
+
+	// Type Type specifies the filter type (namespace, label, resource_type, etc.)
+	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
+
+	// Values Values specifies the filter values
+	Values []string `json:"Values,omitempty" yaml:"Values,omitempty"`
 }
 
 // ImportOptions defines model for ImportOptions.
@@ -1094,10 +1107,13 @@ type ImportOptions map[string]interface{}
 
 // ImportRequest defines model for ImportRequest.
 type ImportRequest struct {
+	// Filters List of ImportFilter expression clauses. Mutually exclusive with Where.
 	Filters          []ImportFilter    `json:"Filters,omitempty" yaml:"Filters,omitempty"`
 	Options          *ImportOptions    `json:"Options,omitempty" yaml:"Options,omitempty"`
 	ResourceInfoList *ResourceInfoList `json:"ResourceInfoList,omitempty" yaml:"ResourceInfoList,omitempty"`
-	Where            string            `json:"Where,omitempty" yaml:"Where,omitempty"`
+
+	// Where Where specifies a unified resource filter expression for import resources and options. It uses SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.
+	Where string `json:"Where,omitempty" yaml:"Where,omitempty"`
 }
 
 // Invocation Defines a function invocation.
@@ -1165,14 +1181,16 @@ type InvocationCreateOrUpdateResponse struct {
 }
 
 // Link Link connects two config Units in a dependency / producer-consumer relationship.
-// A Link indicates that config values Provided by the To Unit (the producer) may
-// satisfy config values Needed by the From Unit (the consumer), and should be attempted
-// to be matched before values Provided by other Units in the Space (if within the same
-// Space). Links must be created in the same Space as the From Unit.
-// They also imply an ordering when Applied or Destroyed as a Set.
+// A Link indicates that selected config data from the upstream To Unit (the producer)
+// should be propagated to the downstream From Unit (the consumer).
+// Links must be created in the same Space as the From Unit.
+// They also imply an ordering when Applied or Destroyed as a group.
 type Link struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility.
+	AutoUpdate bool `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1186,10 +1204,13 @@ type Link struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
+	// DownstreamLastMergedRevisionNum The sequence number of the revision of the downstream unit created by the last merge.
+	DownstreamLastMergedRevisionNum int64 `json:"DownstreamLastMergedRevisionNum,omitempty" yaml:"DownstreamLastMergedRevisionNum,omitempty"`
+
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// FromUnitID Unique identifier the Unit the Link initiates from. Links must be in the same space as the source unit.
+	// FromUnitID Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.
 	FromUnitID openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -1207,17 +1228,32 @@ type Link struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
-	// ToSpaceID Unique identifier the Space of the Unit the Link targets.
+	// ToSpaceID Unique identifier of the Space of the upstream Unit.
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
 
-	// ToUnitID Unique identifier the Unit the Link targets.
+	// ToUnitID Unique identifier of the upstream (producer) Unit.
 	ToUnitID openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+
+	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides.
+	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
+	// UpstreamLastMergedRevisionNum The sequence number of the end revision of the upstream unit that was last merged.
+	UpstreamLastMergedRevisionNum int64 `json:"UpstreamLastMergedRevisionNum,omitempty" yaml:"UpstreamLastMergedRevisionNum,omitempty"`
+
+	// UseLiveState Take data from the LiveState of the upstream Unit rather than from Data.
+	UseLiveState bool `json:"UseLiveState,omitempty" yaml:"UseLiveState,omitempty"`
+
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// WhereMutation Where expression used to filter which Mutations of the downstream Unit can be affected during merge operations.
+	WhereMutation string `json:"WhereMutation,omitempty" yaml:"WhereMutation,omitempty"`
+
+	// WhereResource Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit.
+	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
 
 // LinkCreateOrUpdateResponse defines model for LinkCreateOrUpdateResponse.
@@ -1225,11 +1261,10 @@ type LinkCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
-	// A Link indicates that config values Provided by the To Unit (the producer) may
-	// satisfy config values Needed by the From Unit (the consumer), and should be attempted
-	// to be matched before values Provided by other Units in the Space (if within the same
-	// Space). Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a Set.
+	// A Link indicates that selected config data from the upstream To Unit (the producer)
+	// should be propagated to the downstream From Unit (the consumer).
+	// Links must be created in the same Space as the From Unit.
+	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 }
 
@@ -1277,8 +1312,11 @@ type Mutation struct {
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	TriggerID *UUID              `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. The prefix 'ConfigHub' is reserved.
+	Subgroup  string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
+	TriggerID *UUID  `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
@@ -1316,9 +1354,6 @@ type MutationType string
 type Organization struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-
-	// BillingAccountID Unique identifier for a billing account for the organization. Set to the BillingAccountID of the authenticated Organization.
-	BillingAccountID openapi_types.UUID `json:"BillingAccountID,omitempty" yaml:"BillingAccountID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1412,6 +1447,7 @@ type QueuedOperation struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -1480,6 +1516,48 @@ type ResourceMutation struct {
 
 // ResourceMutationList defines model for ResourceMutationList.
 type ResourceMutationList = []ResourceMutation
+
+// ResourceStatus defines model for ResourceStatus.
+type ResourceStatus struct {
+	// Message Human-readable status details or error message
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Readiness Health state from kstatus (Ready, InProgress, Failed, Unknown)
+	Readiness string `json:"Readiness,omitempty" yaml:"Readiness,omitempty"`
+
+	// SyncStatus Whether config was pushed to the target (Synced or NotSynced)
+	SyncStatus string `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
+
+	// UpdatedAt Timestamp when this resource status was last updated
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+}
+
+// ResourceStatusMap defines model for ResourceStatusMap.
+type ResourceStatusMap map[string]ResourceStatus
+
+// ResourceStatusSummary defines model for ResourceStatusSummary.
+type ResourceStatusSummary struct {
+	// Failed Number of resources with Readiness=Failed
+	Failed int `json:"Failed,omitempty" yaml:"Failed,omitempty"`
+
+	// FirstUpdatedAt Earliest UpdatedAt timestamp across all resources
+	FirstUpdatedAt time.Time `json:"FirstUpdatedAt" yaml:"FirstUpdatedAt"`
+
+	// LastUpdatedAt Most recent UpdatedAt timestamp across all resources
+	LastUpdatedAt time.Time `json:"LastUpdatedAt" yaml:"LastUpdatedAt"`
+
+	// Progressing Number of resources with Readiness=InProgress
+	Progressing int `json:"Progressing,omitempty" yaml:"Progressing,omitempty"`
+
+	// Ready Number of resources with Readiness=Ready
+	Ready int `json:"Ready,omitempty" yaml:"Ready,omitempty"`
+
+	// Synced Number of resources with SyncStatus=Synced
+	Synced int `json:"Synced,omitempty" yaml:"Synced,omitempty"`
+
+	// Total Total number of resources in the unit
+	Total int `json:"Total,omitempty" yaml:"Total,omitempty"`
+}
 
 // ResponseError defines model for ResponseError.
 type ResponseError struct {
@@ -1745,6 +1823,9 @@ type Target struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
+	// LiveStateType LiveStateType specifies the configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML".
+	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
+
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
@@ -1757,7 +1838,7 @@ type Target struct {
 	Parameters  string       `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS".
+	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes".
 	ProviderType string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
@@ -1769,7 +1850,7 @@ type Target struct {
 	// TargetID Unique identifier for a Target.
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
+	// ToolchainType ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
 	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
 	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
 
@@ -2071,6 +2152,7 @@ type UnitAction struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2164,6 +2246,7 @@ type UnitEvent struct {
 
 	// QueuedOperationID QueuedOperationID is the unique identifier for the corresponding queued operation.
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	ResourceStatuses  *ResourceStatusMap `json:"ResourceStatuses,omitempty" yaml:"ResourceStatuses,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
@@ -2186,16 +2269,17 @@ type UnitEvent struct {
 
 // UnitExtended defines model for UnitExtended.
 type UnitExtended struct {
-	Action             *ActionType       `json:"Action,omitempty" yaml:"Action,omitempty"`
-	ActionResult       *ActionResultType `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
-	ActionStartedAt    time.Time         `json:"ActionStartedAt" yaml:"ActionStartedAt"`
-	ActionTerminatedAt time.Time         `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
-	ApprovedByUsers    []string          `json:"ApprovedByUsers" yaml:"ApprovedByUsers"`
-	Drift              string            `json:"Drift,omitempty" yaml:"Drift,omitempty"`
-	FromLinks          []Link            `json:"FromLinks" yaml:"FromLinks"`
-	Status             string            `json:"Status,omitempty" yaml:"Status,omitempty"`
-	SyncStatus         string            `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
-	ToLinks            []Link            `json:"ToLinks" yaml:"ToLinks"`
+	Action                *ActionType            `json:"Action,omitempty" yaml:"Action,omitempty"`
+	ActionResult          *ActionResultType      `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
+	ActionStartedAt       time.Time              `json:"ActionStartedAt" yaml:"ActionStartedAt"`
+	ActionTerminatedAt    time.Time              `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
+	ApprovedByUsers       []string               `json:"ApprovedByUsers" yaml:"ApprovedByUsers"`
+	Drift                 string                 `json:"Drift,omitempty" yaml:"Drift,omitempty"`
+	FromLinks             []Link                 `json:"FromLinks" yaml:"FromLinks"`
+	ResourceStatusSummary *ResourceStatusSummary `json:"ResourceStatusSummary,omitempty" yaml:"ResourceStatusSummary,omitempty"`
+	Status                string                 `json:"Status,omitempty" yaml:"Status,omitempty"`
+	SyncStatus            string                 `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
+	ToLinks               []Link                 `json:"ToLinks" yaml:"ToLinks"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
@@ -2214,13 +2298,14 @@ type UnitExtended struct {
 
 // UnitStatus defines model for UnitStatus.
 type UnitStatus struct {
-	Action             *ActionType       `json:"Action,omitempty" yaml:"Action,omitempty"`
-	ActionResult       *ActionResultType `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
-	ActionStartedAt    time.Time         `json:"ActionStartedAt" yaml:"ActionStartedAt"`
-	ActionTerminatedAt time.Time         `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
-	Drift              string            `json:"Drift,omitempty" yaml:"Drift,omitempty"`
-	Status             string            `json:"Status,omitempty" yaml:"Status,omitempty"`
-	SyncStatus         string            `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
+	Action                *ActionType            `json:"Action,omitempty" yaml:"Action,omitempty"`
+	ActionResult          *ActionResultType      `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
+	ActionStartedAt       time.Time              `json:"ActionStartedAt" yaml:"ActionStartedAt"`
+	ActionTerminatedAt    time.Time              `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
+	Drift                 string                 `json:"Drift,omitempty" yaml:"Drift,omitempty"`
+	ResourceStatusSummary *ResourceStatusSummary `json:"ResourceStatusSummary,omitempty" yaml:"ResourceStatusSummary,omitempty"`
+	Status                string                 `json:"Status,omitempty" yaml:"Status,omitempty"`
+	SyncStatus            string                 `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
 }
 
 // UnitTagRequest defines model for UnitTagRequest.
@@ -2629,6 +2714,12 @@ type BulkCreateSpacesParams struct {
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Space names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Space labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
@@ -3314,6 +3405,12 @@ type BulkCreateChangeSetsParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeSet names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
+	// VariantLabels Comma-separated list of labels with multiple values for cloned ChangeSet labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3741,6 +3838,12 @@ type BulkCreateFiltersParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Filter names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Filter labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A Go-template string for clone name, use .SourceEntity to access the original entity and .Labels to access variant labels
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3801,6 +3904,9 @@ type InvokeFunctionsOnOrgParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
@@ -4232,6 +4338,12 @@ type BulkCreateInvocationsParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Invocation names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Invocation labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -4316,7 +4428,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	// Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 	//
 	// filter
 	//
@@ -4394,7 +4506,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	// Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4453,24 +4565,31 @@ type SearchListLinksParams struct {
 type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	AutoUpdate  *bool               `json:"AutoUpdate" yaml:"AutoUpdate"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug                          *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	WhereMutation *string `json:"WhereMutation" yaml:"WhereMutation"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkPatchLinksParams defines parameters for BulkPatchLinks.
@@ -4504,7 +4623,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	// Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 	//
 	// filter
 	//
@@ -4555,24 +4674,31 @@ type BulkPatchLinksParams struct {
 type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	AutoUpdate  *bool               `json:"AutoUpdate" yaml:"AutoUpdate"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug                          *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	WhereMutation *string `json:"WhereMutation" yaml:"WhereMutation"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkCreateLinksParams defines parameters for BulkCreateLinks.
@@ -4808,7 +4934,7 @@ type ListOrganizationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+	// Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5655,6 +5781,9 @@ type InvokeFunctionsParams struct {
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -5885,7 +6014,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+	// Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5972,24 +6101,31 @@ type GetLinkParams struct {
 type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	AutoUpdate  *bool               `json:"AutoUpdate" yaml:"AutoUpdate"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
-	FromUnitID  *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug      *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID  *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	Slug                          *string             `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	WhereMutation *string `json:"WhereMutation" yaml:"WhereMutation"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // ListTagsParams defines parameters for ListTags.
@@ -6254,10 +6390,11 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Parameters   *string                             `json:"Parameters" yaml:"Parameters"`
-	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
-	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
+	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	LiveStateType *string                             `json:"LiveStateType" yaml:"LiveStateType"`
+	Parameters    *string                             `json:"Parameters" yaml:"Parameters"`
+	Permissions   *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType  *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug" yaml:"Slug"`
@@ -6609,6 +6746,9 @@ type PatchUnitParams struct {
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
+	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
+
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
@@ -6647,7 +6787,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -6672,6 +6812,9 @@ type PatchUnitParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 }
 
 // UpdateUnitParams defines parameters for UpdateUnit.
@@ -6688,6 +6831,9 @@ type UpdateUnitParams struct {
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
+	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
+
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
@@ -6726,7 +6872,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -6751,6 +6897,9 @@ type UpdateUnitParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 }
 
 // ApplyUnitParams defines parameters for ApplyUnit.
@@ -6811,7 +6960,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7636,6 +7785,12 @@ type BulkCreateTagsParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Tag names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Tag labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7864,10 +8019,11 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Parameters   *string                             `json:"Parameters" yaml:"Parameters"`
-	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
-	ProviderType *string                             `json:"ProviderType" yaml:"ProviderType"`
+	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	LiveStateType *string                             `json:"LiveStateType" yaml:"LiveStateType"`
+	Parameters    *string                             `json:"Parameters" yaml:"Parameters"`
+	Permissions   *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType  *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug" yaml:"Slug"`
@@ -8690,6 +8846,9 @@ type BulkPatchUnitsParams struct {
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
+	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
+
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
@@ -8728,7 +8887,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -8753,6 +8912,9 @@ type BulkPatchUnitsParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 }
 
 // BulkCreateUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateUnits.
@@ -8873,6 +9035,12 @@ type BulkCreateUnitsParams struct {
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Unit names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Unit labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -9844,6 +10012,12 @@ type BulkCreateViewsParams struct {
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned View names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values fro cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.

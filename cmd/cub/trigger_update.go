@@ -387,6 +387,10 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.SpaceID = existingTrigger.SpaceID
 		currentTrigger.Trigger.TriggerID = existingTrigger.TriggerID
 	}
+	err = setAnnotations(&currentTrigger.Trigger.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentTrigger.Trigger.Labels)
 	if err != nil {
 		return err

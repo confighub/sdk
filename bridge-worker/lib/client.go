@@ -27,6 +27,8 @@ import (
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/v3/mem"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/net/http2"
 )
 
@@ -34,6 +36,16 @@ const (
 	eventsRoute        = "%s/api/bridge_worker/%s/stream"
 	resultRoute        = "%s/api/bridge_worker/%s/action_result"
 	workerSelfGetRoute = "%s/api/bridge_worker/%s/me"
+)
+
+const (
+	ErrorTypeUnmarshalWorkerEvent   = "failed_to_unmarshal_worker_event"
+	ErrorTypeUnmarshalBridgeEvent   = "failed_to_unmarshal_bridge_event"
+	ErrorTypeUnmarshalFunctionEvent = "failed_to_unmarshal_function_event"
+	ErrorTypeMemoryStatsFailure     = "failed_to_fetch_memory_stats"
+	ErrorTypeHeartbeatResponse      = "failed_to_response_to_heartbeat"
+	ErrorTypeBridgeCommand          = "failed_to_execute_bridge_command"
+	ErrorTypeFunctionCommand        = "failed_to_execute_function_command"
 )
 
 type workerClient struct {
@@ -48,9 +60,17 @@ type workerClient struct {
 	watcherManager *WatcherManager // Manages watcher lifecycle and execution
 	unitQueues     *UnitQueueManager
 	operationsWg   sync.WaitGroup // Track in-flight operations (Apply/Destroy/etc)
+	metricsMeter   metric.Meter
+	eventCounter   metric.Int64Counter
+	actionCounter  metric.Int64Counter
+	errorCounter   metric.Int64Counter
 }
 
-func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.BridgeWorker, functionWorker api.FunctionWorker) *workerClient {
+func newClient(
+	serverURL, workerID, workerSecret string,
+	bridgeWorker api.BridgeWorker, functionWorker api.FunctionWorker,
+	metricsMeter metric.Meter,
+) *workerClient {
 	// Improved: Parse URL and select transport based on scheme
 	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
@@ -98,6 +118,7 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 		functionWorker: functionWorker,
 		watcherManager: NewWatcherManager(10, 50), // 10 workers, queue size 50
 		unitQueues:     NewUnitQueueManager(),
+		metricsMeter:   metricsMeter,
 	}
 
 	// Fetch /api/info to get the WorkerPort and update serverURL
@@ -105,7 +126,26 @@ func newClient(serverURL, workerID, workerSecret string, bridgeWorker api.Bridge
 		log.Printf("[WARN] Failed to fetch worker port from /api/info: %v. Using provided URL as-is: %s", err, serverURL)
 	}
 
+	if err := client.initializeEventCounters(); err != nil {
+		log.Printf("[WARN] Failed to initialize metric counters: %v", err)
+	}
+
 	return client
+}
+
+func (c *workerClient) initializeEventCounters() (err error) {
+	c.eventCounter, err = c.metricsMeter.Int64Counter("worker.events")
+	if err != nil {
+		return err
+	}
+
+	c.actionCounter, err = c.metricsMeter.Int64Counter("worker.actions")
+	if err != nil {
+		return err
+	}
+
+	c.errorCounter, err = c.metricsMeter.Int64Counter("worker.errors")
+	return err
 }
 
 // fetchAndApplyWorkerPort fetches /api/info from the server and updates serverURL with the WorkerPort
@@ -425,9 +465,21 @@ func (c *workerClient) handleEventWithLogging(ctx context.Context, eventType str
 
 	switch eventType {
 	case api.EventWorker, api.EventBridgeWorker, api.EventFunctionWorker:
+		if c.eventCounter != nil {
+			c.eventCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("type", eventType),
+			))
+		}
+
 		c.handleEvent(ctx, eventType, data)
 		return nil
 	default:
+		if c.eventCounter != nil {
+			c.eventCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("type", "unknown"),
+			))
+		}
+
 		return fmt.Errorf("unknown event type: %s", eventType)
 	}
 }
@@ -437,9 +489,22 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 	case api.EventWorker:
 		var op api.WorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
+			if c.errorCounter != nil {
+				c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("error", ErrorTypeUnmarshalWorkerEvent),
+				))
+			}
+
 			log.Printf("[ERROR] Failed to unmarshal worker event: %v", err)
 			return
 		}
+
+		if c.actionCounter != nil {
+			c.actionCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("action", string(op.Action)),
+			))
+		}
+
 		// Handle keepalive events from standby connections
 		if op.Action == "keepalive" || op.Action == "standby" {
 			// Log and discard keepalive/standby events - they're just to keep the connection alive
@@ -458,7 +523,14 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			// Memory Pressure (less than 200MB available)
 			vmStat, err := mem.VirtualMemory()
 			if err != nil {
-				log.Printf("Error getting memory stats: %v", err)
+				if c.errorCounter != nil {
+					c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+						attribute.String("action", string(op.Action)),
+						attribute.String("error", ErrorTypeMemoryStatsFailure),
+					))
+				}
+
+				log.Printf("[ERROR] failed to get memory stats: %v", err)
 			} else if vmStat.Available < 200*1024*1024 { // 200MB in bytes
 				pressureMessages = append(pressureMessages, "MemoryPressure")
 			}
@@ -504,15 +576,34 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			}
 
 			if err := c.sendResult(result); err != nil {
-				log.Printf("Failed to respond heartbeat: %v", err)
+				if c.errorCounter != nil {
+					c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+						attribute.String("action", string(op.Action)),
+						attribute.String("error", ErrorTypeHeartbeatResponse),
+					))
+				}
+
+				log.Printf("[ERROR] Failed to respond heartbeat: %v", err)
 			}
 			return
 		}
 	case api.EventBridgeWorker:
 		var op api.BridgeWorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
+			if c.errorCounter != nil {
+				c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("error", ErrorTypeUnmarshalBridgeEvent),
+				))
+			}
+
 			log.Printf("[ERROR] Failed to unmarshal bridge worker event: %v", err)
 			return
+		}
+
+		if c.actionCounter != nil {
+			c.actionCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("action", string(op.Action)),
+			))
 		}
 
 		// Intercept Cancel action to process immediately, bypassing the queue
@@ -598,6 +689,13 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 					log.Printf("[INFO] Operation %s was canceled for Unit=%s, Action=%s", operationID, event.Payload.UnitID.String(), event.Action)
 				} else {
 					log.Printf("[ERROR] Bridge command processing failed for Unit=%s, Action=%s: %v", event.Payload.UnitID.String(), event.Action, err)
+					if c.errorCounter != nil {
+						c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+							attribute.String("action", string(event.Action)),
+							attribute.String("unit", event.Payload.UnitID.String()),
+							attribute.String("error", ErrorTypeBridgeCommand),
+						))
+					}
 				}
 			} else {
 				log.Printf("[INFO] Bridge command completed successfully for Unit=%s, Action=%s", event.Payload.UnitID.String(), event.Action)
@@ -608,8 +706,20 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 		// Handle events directed to the function worker plugin
 		var op api.FunctionWorkerEventRequest
 		if err := json.Unmarshal(data, &op); err != nil {
+			if c.errorCounter != nil {
+				c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+					attribute.String("error", ErrorTypeUnmarshalFunctionEvent),
+				))
+			}
+
 			log.Printf("[ERROR] Failed to unmarshal function worker event: %v", err)
 			return
+		}
+
+		if c.actionCounter != nil {
+			c.actionCounter.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("action", string(op.Action)),
+			))
 		}
 
 		// Intercept Cancel action to process immediately, bypassing the queue
@@ -672,6 +782,14 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 					log.Printf("[INFO] Operation %s was canceled for Unit=%s, Action=%s", operationID, event.Payload.InvocationRequest.UnitID.String(), event.Action)
 				} else {
 					log.Printf("[ERROR] Function command processing failed for Unit=%s, Action=%s: %v", event.Payload.InvocationRequest.UnitID.String(), event.Action, err)
+
+					if c.errorCounter != nil {
+						c.errorCounter.Add(ctx, 1, metric.WithAttributes(
+							attribute.String("action", string(event.Action)),
+							attribute.String("unit", event.Payload.InvocationRequest.UnitID.String()),
+							attribute.String("error", ErrorTypeFunctionCommand),
+						))
+					}
 				}
 			} else {
 				log.Printf("[INFO] Function command completed successfully for Unit=%s, Action=%s", event.Payload.InvocationRequest.UnitID.String(), event.Action)

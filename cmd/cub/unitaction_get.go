@@ -22,8 +22,11 @@ var unitActionGetCmd = &cobra.Command{
 	RunE:  unitActionGetRun,
 }
 
+var showLiveState bool
+
 func init() {
 	addStandardGetFlags(unitActionGetCmd)
+	unitActionGetCmd.Flags().BoolVar(&showLiveState, "livestate", false, "decode and display the LiveState field")
 	unitActionCmd.AddCommand(unitActionGetCmd)
 }
 
@@ -47,6 +50,7 @@ func unitActionGetRun(cmd *cobra.Command, args []string) error {
 	}
 
 	displayGetResults(action, displayUnitAction)
+
 	return nil
 }
 
@@ -72,15 +76,23 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 	table.Append([]string{"Created At", unitAction.CreatedAt.String()})
 	table.Append([]string{"User ID", unitAction.UserID.String()})
 	table.Append([]string{"Bridge Worker ID", unitAction.BridgeWorkerID.String()})
+	table.Append([]string{"RevisionNum", fmt.Sprintf("%v", unitAction.RevisionNum)})
 	table.Render()
 
 	if len(unitAction.Data) > 0 {
 		tprintRaw("Data:")
 		tprintRaw("-----")
 		dataBytes, err := base64.StdEncoding.DecodeString(unitAction.Data)
-		if err != nil {
-			failOnError(err)
-		}
+		failOnError(err)
 		tprintRaw(string(dataBytes))
+	}
+
+	if showLiveState && len(unitAction.LiveState) > 0 {
+		tprintRaw("")
+		tprintRaw("LiveState:")
+		tprintRaw("----------")
+		liveStateBytes, err := base64.StdEncoding.DecodeString(unitAction.LiveState)
+		failOnError(err)
+		tprintRaw(string(liveStateBytes))
 	}
 }

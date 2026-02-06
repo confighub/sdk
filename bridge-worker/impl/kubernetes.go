@@ -241,6 +241,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 				{
 					ToolchainType:    toolchain,
 					ProviderType:     provider,
+					LiveStateType:    workerapi.ToolchainKubernetesYAML,
 					AvailableTargets: targets,
 				},
 			},
@@ -264,6 +265,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			targets = append(targets, api.Target{
 				Name: legacyTargetName,
 				Params: KubernetesWorkerParams{
+					KubeContext: contextName,
 					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
 			})
@@ -275,6 +277,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			{
 				ToolchainType:    toolchain,
 				ProviderType:     provider,
+				LiveStateType:    workerapi.ToolchainKubernetesYAML,
 				AvailableTargets: targets,
 			},
 		},
@@ -346,6 +349,8 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 		"Resources applied successfully, waiting for ready state",
 	)
 	// Don't set LiveData - let backend keep using its current state
+	// Include per-resource status from Apply (initial status, mostly "InProgress")
+	actionResult.ResourceStatuses = result.ResourceStatuses
 
 	return wctx.SendStatus(actionResult)
 }
@@ -578,6 +583,8 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 	// LiveState contains uncleaned objects (for status tracking with full metadata)
 	status.LiveData = liveDataData
 	status.LiveState = []byte(yamlDataForLiveState)
+	// Include per-resource sync and readiness status
+	status.ResourceStatuses = waitResult.ResourceStatuses
 
 	wctx.SendStatus(status)
 	return nil

@@ -88,6 +88,8 @@ var viewCreateArgs struct {
 	orderBy          string
 	orderByDirection string
 	filterSpace      string
+	variantLabels    []string
+	namePattern      string
 }
 
 func init() {
@@ -105,6 +107,8 @@ func init() {
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	viewCreateCmd.Flags().StringVar(&viewCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original View and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.viewSlugs, "view", []string{}, "target specific views by slug or UUID for bulk create (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -125,8 +129,20 @@ func checkViewCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(viewCreateArgs.destSpaces) == 0 && viewCreateArgs.whereSpace == "" && len(viewCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(viewCreateArgs.destSpaces) == 0 && viewCreateArgs.whereSpace == "" && len(viewCreateArgs.namePrefixes) == 0 && len(viewCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(viewCreateArgs.namePrefixes) > 0 && len(viewCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be use together")
+		}
+
+		if viewCreateArgs.namePattern != "" && len(viewCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if viewCreateArgs.namePattern != "" && len(viewCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--name-pattern requires --variant-labels to be set")
 		}
 	} else {
 		// Single create mode validation
@@ -134,8 +150,13 @@ func checkViewCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single view creation requires: <slug> <filter>")
 		}
 
-		if filter != "" || where != "" || len(viewCreateArgs.viewSlugs) > 0 || len(viewCreateArgs.destSpaces) > 0 || viewCreateArgs.whereSpace != "" || len(viewCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --view, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			viewCreateArgs.namePattern != "" || len(viewCreateArgs.viewSlugs) > 0 ||
+			len(viewCreateArgs.destSpaces) > 0 || viewCreateArgs.whereSpace != "" ||
+			len(viewCreateArgs.namePrefixes) > 0 || len(viewCreateArgs.variantLabels) > 0 {
+			return false, errors.New(
+				"bulk create flags (--filter, --where, --view, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+			)
 		}
 
 		// Validate order-by-direction is only used with order-by
@@ -190,7 +211,11 @@ func runSingleViewCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -307,6 +332,17 @@ func runBulkViewCreate() error {
 	if len(viewCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(viewCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Add variant labels if specified
+	if len(viewCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(viewCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Add name pattern if specified
+	if viewCreateArgs.namePattern != "" {
+		params.NamePattern = &viewCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

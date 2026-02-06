@@ -21,7 +21,9 @@ var unitCmd = &cobra.Command{
 var destroyGate []string
 
 func getUnitCommandGroupHelp() string {
-	baseHelp := `The unit subcommands are used to manage units`
+	baseHelp := `The unit subcommands are used to manage units.
+
+Units are explained at https://docs.confighub.com/background/entities/unit/.`
 	agentContext := `Units are the core configuration entities in ConfigHub, containing structured data like Kubernetes YAML, properties files, or HCL configurations.
 
 Unit lifecycle workflow:

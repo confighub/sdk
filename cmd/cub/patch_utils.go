@@ -34,20 +34,51 @@ func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string)
 	}
 
 	// Enhance with labels, delete gates, permissions, and entity-specific fields
-	return EnhancePatchData(patchData, label, deleteGate, permissions, enhancer)
+	return EnhancePatchData(patchData, annotation, label, deleteGate, permissions, enhancer)
 }
 
 // PatchEnhancer is a function that adds entity-specific fields to patch data.
 // It receives the patch map and should modify it in place.
 type PatchEnhancer func(patchMap map[string]interface{})
 
+func patchKeyValues(existing map[string]interface{}, newKVs []string) error {
+	for _, kvString := range newKVs {
+		keyValue := strings.Split(kvString, "=")
+		switch len(keyValue) {
+		case 1:
+			// Key without value sets empty string
+			existing[keyValue[0]] = ""
+		case 2:
+			key := keyValue[0]
+			value := keyValue[1]
+			if value == "-" {
+				// Mark for removal by setting to null in JSON Merge Patch
+				existing[key] = nil
+			} else {
+				existing[key] = value
+			}
+		default:
+			return fmt.Errorf("expected key=value or key=-: %s", kvString)
+		}
+	}
+
+	return nil
+}
+
 // EnhancePatchData adds labels, delete gates, permissions, and entity-specific fields to existing patch data.
 // This is used when patch data is already constructed and needs to be enhanced.
 // It handles the special case of "-" value for label/delete gate removal in patch operations.
 // The enhancer parameter is optional and can be used to add entity-specific fields.
-func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, permissions []string, enhancer PatchEnhancer) ([]byte, error) {
+func EnhancePatchData(
+	patchData []byte,
+	annotations []string,
+	labels []string,
+	deleteGates []string,
+	permissions []string,
+	enhancer PatchEnhancer,
+) ([]byte, error) {
 	// Check if we need to enhance the patch
-	needsEnhancement := len(labels) > 0 || len(deleteGates) > 0 || len(permissions) > 0 || enhancer != nil
+	needsEnhancement := len(annotations) > 0 || len(labels) > 0 || len(deleteGates) > 0 || len(permissions) > 0 || enhancer != nil
 	if !needsEnhancement {
 		return patchData, nil
 	}
@@ -67,6 +98,26 @@ func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, p
 		enhancer(patchMap)
 	}
 
+	// Add annotations if specified
+	if len(annotations) > 0 {
+		annotationMap := make(map[string]interface{})
+
+		if existingAnnotations, ok := patchMap["Annotations"]; ok {
+			if annotationMapInterface, ok := existingAnnotations.(map[string]interface{}); ok {
+				for k, v := range annotationMapInterface {
+					annotationMap[k] = v
+				}
+			}
+		}
+
+		err := patchKeyValues(annotationMap, annotations)
+		if err != nil {
+			return nil, fmt.Errorf("invalid annotation; %w", err)
+		}
+
+		patchMap["Annotations"] = annotationMap
+	}
+
 	// Add labels if specified
 	if len(labels) > 0 {
 		labelMap := make(map[string]interface{})
@@ -80,24 +131,9 @@ func EnhancePatchData(patchData []byte, labels []string, deleteGates []string, p
 		}
 
 		// Process new labels from command line
-		for _, labelString := range labels {
-			keyValue := strings.Split(labelString, "=")
-			switch len(keyValue) {
-			case 1:
-				// Key without value sets empty string
-				labelMap[keyValue[0]] = ""
-			case 2:
-				key := keyValue[0]
-				value := keyValue[1]
-				if value == "-" {
-					// Mark for removal by setting to null in JSON Merge Patch
-					labelMap[key] = nil
-				} else {
-					labelMap[key] = value
-				}
-			default:
-				return nil, fmt.Errorf("invalid label; expected key=value or key=-: %s", labelString)
-			}
+		err := patchKeyValues(labelMap, labels)
+		if err != nil {
+			return nil, fmt.Errorf("invalid label; %w", err)
 		}
 
 		patchMap["Labels"] = labelMap

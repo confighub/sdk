@@ -122,7 +122,6 @@ func MyFunction(
     ctx *api.FunctionContext,
     parsedData gaby.Container,
     args []api.FunctionArgument,
-    liveState []byte,
 ) (gaby.Container, any, error)
 ```
 
@@ -131,7 +130,6 @@ func MyFunction(
 - `ctx` - Context with unit/space/org metadata
 - `parsedData` - Parsed YAML/JSON documents to operate on
 - `args` - Function arguments from the caller
-- `liveState` - Current live state from the target system (optional)
 
 **Returns:**
 
@@ -308,7 +306,7 @@ For functions that operate on specific YAML paths, consider using the path regis
 ### Validation Functions
 
 ```go
-func ValidateFunction(ctx *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func ValidateFunction(ctx *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
     // Validation logic here...
 
     if validationPassed {
@@ -325,7 +323,7 @@ func ValidateFunction(ctx *api.FunctionContext, parsedData gaby.Container, args 
 ### Readonly Functions
 
 ```go
-func ReadonlyFunction(ctx *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func ReadonlyFunction(ctx *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
     var results api.AttributeValueList
 
     // Extract data from parsedData

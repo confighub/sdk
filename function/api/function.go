@@ -88,6 +88,7 @@ const (
 	DataTypePatchMap             = DataType("PatchMap")
 	DataTypeResourceMutationList = DataType("ResourceMutationList")
 	DataTypeResourceList         = DataType("ResourceList")
+	DataTypeValueFilter          = DataType("ValueFilter")
 
 	// Configuration format types
 	DataTypeJSON       = DataType("JSON")
@@ -228,60 +229,25 @@ const (
 // The FunctionContext contains metadata about the configuration Unit provided as input to a
 // function invocation sequence.
 type FunctionContext struct {
-	// ToolchainType is the ToolchainType of the configuration data and function handlers.
-	ToolchainType workerapi.ToolchainType
-
-	// UnitSlug is the Slug of the configuration Unit.
-	UnitSlug string
-
-	// UnitID is the unique id of the configuration Unit.
-	UnitID uuid.UUID
-
-	// UnitLabels contains the labels of the configuration Unit.
-	UnitLabels map[string]string
-
-	// UnitAnnotations contains the annotations of the configuration Unit.
-	UnitAnnotations map[string]string
-
-	// SpaceID is the id of the Space of the configuration Unit.
-	SpaceID uuid.UUID
-
-	// SpaceSlug is the Slug of the Space of the configuration Unit.
-	SpaceSlug string
-
-	// SpaceLabels contains the labels of the Space of the configuration Unit.
-	SpaceLabels map[string]string
-
-	// SpaceAnnotations contains the annotations of the Space of the configuration Unit.
-	SpaceAnnotations map[string]string
-
-	// OrganizationID is the id of the Organization of the configuration Unit.
-	OrganizationID uuid.UUID
-
-	// TargetID of the configuration Unit to determine the target where the function is executed.
-	// This field is optional.
-	TargetID uuid.UUID
-
-	// BridgeWorkerID is the id of the BridgeWorker that executes the function.
-	// This field is optional.
-	// If not present, the function is executed by the Internal Function Executor.
-	BridgeWorkerID uuid.UUID
-
-	// RevisionID is the unique id of the configuration Revision.
-	RevisionID uuid.UUID
-
-	// RevisionNum is the current/previous HeadRevisionNum of the configuration Unit.
-	RevisionNum int64
-
-	// New is true if the configuration has never been applied (or has been destroyed).
-	New bool
-
-	// PreviousContentHash contains the crc32.ChecksumIEEE of the previous copy of the data,
-	// for determining whether it has been changed since it was last written.
-	PreviousContentHash RevisionHash
-
-	// Usernames of users that have approved this revision of the configuration data.
-	ApprovedBy []string
+	ToolchainType       workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
+	UnitSlug            string                  `description:"Slug of the configuration Unit"`
+	UnitID              uuid.UUID               `description:"Unique ID of the configuration Unit"`
+	UnitLabels          map[string]string       `description:"Labels of the configuration Unit"`
+	UnitAnnotations     map[string]string       `description:"Annotations of the configuration Unit"`
+	SpaceID             uuid.UUID               `description:"ID of the Space of the configuration Unit"`
+	SpaceSlug           string                  `description:"Slug of the Space of the configuration Unit"`
+	SpaceLabels         map[string]string       `description:"Labels of the Space of the configuration Unit"`
+	SpaceAnnotations    map[string]string       `description:"Annotations of the Space of the configuration Unit"`
+	OrganizationID      uuid.UUID               `description:"ID of the Organization of the configuration Unit"`
+	TargetID            uuid.UUID               `json:",omitempty" description:"ID of the Target where the function is executed; optional"`
+	BridgeWorkerID      uuid.UUID               `json:",omitempty" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
+	RevisionID          uuid.UUID               `description:"Unique ID of the configuration Revision"`
+	RevisionNum         int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
+	QueuedOperationID   uuid.UUID               `description:"Unique ID of the operation generating the LiveState for the Unit"`
+	NotLive             bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision or LiveState invocations"`
+	IsLiveState         bool                    `description:"True if the ConfigData is the LiveState of the Unit"`
+	PreviousContentHash RevisionHash            `description:"crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
+	ApprovedBy          []string                `description:"Usernames of users that have approved this revision of the configuration data"`
 }
 
 // InstanceString returns a string that uniquely identifies the configuration Unit and,
@@ -328,7 +294,6 @@ type FunctionInvocationList []FunctionInvocation
 type FunctionInvocationRequest struct {
 	FunctionContext
 	ConfigData          []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
-	LiveState           []byte                 `swaggertype:"string" format:"byte" description:"The most recent live state of the Unit as reported by the bridge worker associated with the Target attached to the Unit."`
 	NumFilters          int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
 	StopOnError         bool                   `description:"If true, stop executing functions on the first error"`
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
@@ -450,6 +415,14 @@ var (
 	ValidationResultFalse = ValidationResult{Passed: false}
 )
 
+// ValueFilter specifies allow and deny sets for value validation.
+// If AllowStrings is non-empty, only values in the map are allowed.
+// Values in DenyStrings are always rejected.
+type ValueFilter struct {
+	AllowStrings map[string]bool `description:"Set of allowed values; if non-empty, only these values are permitted"`
+	DenyStrings  map[string]bool `description:"Set of denied values; these values are always rejected"`
+}
+
 type YAMLPayload struct {
 	Payload string
 }
@@ -531,6 +504,13 @@ type AttributeNameToResourceTypeToPathToVisitorInfoType map[AttributeName]Resour
 
 func ResourceTypeAndNameFromResourceInfo(resourceInfo ResourceInfo) ResourceTypeAndName {
 	return ResourceTypeAndName(string(resourceInfo.ResourceType) + "#" + string(resourceInfo.ResourceNameWithoutScope))
+}
+
+// ResourceTypeAndFullNameFromResourceInfo returns ResourceType#ResourceName (including namespace/scope)
+// Use this for tracking individual resource instances across scopes (e.g., ResourceStatusMap)
+// For Kubernetes: returns "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
+func ResourceTypeAndFullNameFromResourceInfo(resourceInfo ResourceInfo) ResourceTypeAndName {
+	return ResourceTypeAndName(string(resourceInfo.ResourceType) + "#" + string(resourceInfo.ResourceName))
 }
 
 func AttributeNameForResourceType(resourceType ResourceType) AttributeName {

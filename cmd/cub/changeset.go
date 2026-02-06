@@ -8,9 +8,13 @@ import (
 )
 
 var changesetCmd = &cobra.Command{
-	Use:               "changeset",
-	Short:             "ChangeSet commands",
-	Long:              getCommandHelp(`The changeset subcommands are used to manage changesets`, ""),
+	Use:   "changeset",
+	Short: "ChangeSet commands",
+	Long: getCommandHelp(`The changeset subcommands are used to manage changesets.
+
+ChangeSets are explained at https://docs.confighub.com/background/entities/changeset/.
+A guide for how to use ChangeSets is at https://docs.confighub.com/guide/change-apply/.
+`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

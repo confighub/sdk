@@ -118,7 +118,7 @@ var columns string
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
-var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "ResourceStatus", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
 
 // Unit-specific aliases
 var unitAliases = map[string]string{
@@ -160,6 +160,20 @@ var unitCustomColumns = map[string]func(interface{}) string{
 		}
 		return ""
 	},
+	"ResourceStatus": func(obj interface{}) string {
+		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
+			if extendedUnit.UnitStatus != nil && extendedUnit.UnitStatus.ResourceStatusSummary != nil {
+				summary := extendedUnit.UnitStatus.ResourceStatusSummary
+				if summary.Failed > 0 {
+					return fmt.Sprintf("%d/%d Ready, %d Failed", summary.Ready, summary.Total, summary.Failed)
+				}
+				if summary.Total > 0 {
+					return fmt.Sprintf("%d/%d Ready", summary.Ready, summary.Total)
+				}
+			}
+		}
+		return ""
+	},
 }
 
 // Fields required by custom columns
@@ -167,6 +181,7 @@ var unitCustomColumnDependencies = map[string][]string{
 	"DataBytes":        {"Data"},
 	"UpgradeNeeded":    {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
 	"UnappliedChanges": {"HeadRevisionNum", "LiveRevisionNum"},
+	"ResourceStatus":   {"UnitStatus.ResourceStatusSummary"},
 }
 
 func init() {

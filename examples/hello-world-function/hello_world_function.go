@@ -27,7 +27,6 @@ func HelloWorldFunction(
 	ctx *api.FunctionContext,
 	parsedData gaby.Container,
 	args []api.FunctionArgument,
-	liveState []byte,
 ) (gaby.Container, any, error) {
 	// The expected number of arguments is validated by the handler.
 	// The handler also validates the parameter names and types.

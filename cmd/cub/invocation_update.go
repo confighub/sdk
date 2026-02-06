@@ -274,6 +274,10 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentInvocation.SpaceID = existingInvocation.SpaceID
 		currentInvocation.InvocationID = existingInvocation.InvocationID
 	}
+	err = setAnnotations(&currentInvocation.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentInvocation.Labels)
 	if err != nil {
 		return err

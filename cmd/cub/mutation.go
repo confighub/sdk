@@ -8,9 +8,11 @@ import (
 )
 
 var mutationCmd = &cobra.Command{
-	Use:               "mutation",
-	Short:             "Mutation commands",
-	Long:              getCommandHelp(`The mutation subcommands are used to manage mutations`, ""),
+	Use:   "mutation",
+	Short: "Mutation commands",
+	Long: getCommandHelp(`The mutation subcommands are used to manage mutations.
+	
+Mutations are explained at https://docs.confighub.com/background/entities/mutation/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

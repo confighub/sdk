@@ -283,6 +283,10 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentFilter.SpaceID = existingFilter.SpaceID
 		currentFilter.FilterID = existingFilter.FilterID
 	}
+	err = setAnnotations(&currentFilter.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentFilter.Labels)
 	if err != nil {
 		return err

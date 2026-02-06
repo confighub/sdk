@@ -475,9 +475,11 @@ func (u *UnitQueueManager) sendWithInfiniteRetry(ctx context.Context, event *sta
 func isPermanentError(err error) bool {
 	errStr := err.Error()
 	// 4xx errors except 409 and 429 are permanent
-	return strings.Contains(errStr, "status 4") &&
+	return (strings.Contains(errStr, "status 4") &&
 		!strings.Contains(errStr, "status 409") &&
-		!strings.Contains(errStr, "status 429")
+		!strings.Contains(errStr, "status 429")) ||
+		(strings.Contains(errStr, "status 5") &&
+			!strings.Contains(errStr, "status 503"))
 }
 
 // cleanupIdleQueues periodically removes idle queues to prevent resource leaks

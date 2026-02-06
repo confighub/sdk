@@ -8,9 +8,11 @@ import (
 )
 
 var tagCmd = &cobra.Command{
-	Use:               "tag",
-	Short:             "Tag commands",
-	Long:              getCommandHelp(`The tag subcommands are used to manage tags`, ""),
+	Use:   "tag",
+	Short: "Tag commands",
+	Long: getCommandHelp(`The tag subcommands are used to manage tags.
+
+Tags are explained at https://docs.confighub.com/background/entities/tag/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

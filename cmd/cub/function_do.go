@@ -180,6 +180,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
+	functionDoCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	functionCmd.AddCommand(functionDoCmd)
 }
 
@@ -188,7 +189,12 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.NumFilters = 0
 	req.StopOnError = false
 	req.ChangeDescription = changeDescription
-	req.ToolchainType = toolchainType
+	if liveStateType != "" {
+		req.OnLiveState = true
+		req.ToolchainType = liveStateType
+	} else {
+		req.ToolchainType = toolchainType
+	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 			workerSlug,

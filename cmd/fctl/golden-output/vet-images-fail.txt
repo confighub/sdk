@@ -1,0 +1,44 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "Passed": false,
+    "Index": 0,
+    "FailedAttributes": [
+      {
+        "ResourceName": "example/mydep",
+        "ResourceNameWithoutScope": "mydep",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.0.image",
+        "AttributeName": "container-image",
+        "DataType": "string",
+        "Info": {
+          "GetterInvocation": {
+            "FunctionName": "get-image",
+            "Arguments": [
+              {
+                "ParameterName": "container-name",
+                "Value": "nginx"
+              }
+            ]
+          },
+          "SetterInvocations": [
+            {
+              "FunctionName": "set-image",
+              "Arguments": [
+                {
+                  "ParameterName": "container-name",
+                  "Value": "nginx"
+                }
+              ]
+            }
+          ]
+        },
+        "Value": "nginx:latest",
+        "Index": 0
+      }
+    ]
+  }
+]

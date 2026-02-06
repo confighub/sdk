@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit"
-	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
@@ -70,8 +69,8 @@ func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.C
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnComputeMutations(converter, resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnComputeMutations(converter, resourceProvider, functionContext, parsedData, args)
 		},
 	})
 }
@@ -129,8 +128,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetResources(converter, resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetResources(converter, resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-resources-of-type", &handler.FunctionRegistration{
@@ -158,8 +157,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetResourcesOfType(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetResourcesOfType(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-references-of-type", &handler.FunctionRegistration{
@@ -187,8 +186,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnSetReferencesOfType(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetReferencesOfType(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
@@ -208,8 +207,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetPlaceholders(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("vet-placeholders", &handler.FunctionRegistration{
@@ -229,8 +228,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	// TODO: Deprecated in favor of vet-placeholders. Remove this.
@@ -251,8 +250,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnVetPlaceholders(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("search-replace", &handler.FunctionRegistration{
@@ -280,8 +279,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnSearchReplace(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSearchReplace(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-string-path", &handler.FunctionRegistration{
@@ -316,8 +315,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnGetStringPath(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnGetStringPath(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-string-path", &handler.FunctionRegistration{
@@ -352,8 +351,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnSetStringPath(resourceProvider, functionContext, parsedData, args, liveState, true)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnSetStringPath(resourceProvider, functionContext, parsedData, args, true)
 		},
 	})
 	fh.RegisterFunction("get-int-path", &handler.FunctionRegistration{
@@ -388,8 +387,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnGetIntPath(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnGetIntPath(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-int-path", &handler.FunctionRegistration{
@@ -424,8 +423,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnSetIntPath(resourceProvider, functionContext, parsedData, args, liveState, true)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnSetIntPath(resourceProvider, functionContext, parsedData, args, true)
 		},
 	})
 	fh.RegisterFunction("get-bool-path", &handler.FunctionRegistration{
@@ -460,8 +459,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-bool-path", &handler.FunctionRegistration{
@@ -496,8 +495,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, args, liveState, true)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, args, true)
 		},
 	})
 	fh.RegisterFunction("set-path-comment", &handler.FunctionRegistration{
@@ -532,8 +531,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnSetPathComment(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetPathComment(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("delete-path", &handler.FunctionRegistration{
@@ -562,8 +561,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnDeletePath(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnDeletePath(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-default-names", &handler.FunctionRegistration{
@@ -586,8 +585,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AttributeName:         api.AttributeNameDefaultName,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnSetDefaultNames(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetDefaultNames(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-attribute", &handler.FunctionRegistration{
@@ -617,8 +616,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			// No AttributeName, since that's provided as a parameter
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetAttribute(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetAttribute(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-attributes", &handler.FunctionRegistration{
@@ -639,8 +638,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AttributeName:         api.AttributeNameGeneral,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetAttributes(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetAttributes(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("set-attributes", &handler.FunctionRegistration{
@@ -663,8 +662,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnSetAttributes(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetAttributes(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-needed", &handler.FunctionRegistration{
@@ -685,8 +684,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AttributeName:         api.AttributeNameNeededValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetNeeded(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetNeeded(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("get-provided", &handler.FunctionRegistration{
@@ -707,8 +706,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AttributeName:         api.AttributeNameProvidedValue,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetProvided(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetProvided(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("vet-celexpr", &handler.FunctionRegistration{
@@ -738,8 +737,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnCELValidate(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnCELValidate(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	// TODO: Deprecated in favor of vet-celexpr. Remove this.
@@ -770,8 +769,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnCELValidate(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnCELValidate(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
@@ -805,8 +804,38 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnResourceWhereMatch(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnResourceWhereMatch(resourceProvider, functionContext, parsedData, args)
+		},
+	})
+	fh.RegisterFunction("select-where-resource", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "select-where-resource",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "resource-type",
+					Required:      true,
+					Description:   "Resource type (" + resourceProvider.TypeDescription() + ") to match",
+					DataType:      api.DataTypeString,
+				},
+				{
+					ParameterName: "where-expression",
+					Required:      true,
+					Description:   `Conjunction ("AND") of relational expressions applied to field paths that may contain wildcards; e.g., ".spec.template.spec.containers.*.image CONTAINS 'nginx' AND .metadata.namespace == 'default'"`,
+					DataType:      api.DataTypeString,
+				},
+			},
+			OutputInfo:            nil,
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Returns resources for which all terms of the conjunction of relational expressions evaluate to true",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSelectWhereResource(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("yq", &handler.FunctionRegistration{
@@ -835,8 +864,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState, false)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnYQ(resourceProvider, functionContext, parsedData, args, false)
 		},
 	})
 	fh.RegisterFunction("yq-i", &handler.FunctionRegistration{
@@ -859,8 +888,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnYQ(resourceProvider, functionContext, parsedData, args, liveState, true)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnYQ(resourceProvider, functionContext, parsedData, args, true)
 		},
 	})
 	// TODO: Deprecated in favor of vet-approvedby. Remove this.
@@ -890,8 +919,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("vet-approvedby", &handler.FunctionRegistration{
@@ -919,8 +948,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnVetApprovedBy(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
@@ -942,8 +971,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnEnsureContext(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnEnsureContext(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 
@@ -965,8 +994,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			AttributeName:         api.AttributeNameDetail,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnGetDetails(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetDetails(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 
@@ -1002,8 +1031,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnUpsertResource(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnUpsertResource(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 
@@ -1032,8 +1061,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnDeleteResource(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnDeleteResource(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 
@@ -1066,8 +1095,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnPatchMutations(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnPatchMutations(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("reset", &handler.FunctionRegistration{
@@ -1090,8 +1119,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnReset(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnReset(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("replicate", &handler.FunctionRegistration{
@@ -1131,8 +1160,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return genericFnReplicate(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnReplicate(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 	fh.RegisterFunction("vet-jsonschema", &handler.FunctionRegistration{
@@ -1161,8 +1190,8 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
-		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-			return GenericFnVetJSONSchema(resourceProvider, functionContext, parsedData, args, liveState)
+		Function: func(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+			return GenericFnVetJSONSchema(resourceProvider, functionContext, parsedData, args)
 		},
 	})
 }
@@ -1171,7 +1200,7 @@ func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeNa
 	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
 }
 
-func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Default body format is "yaml"
 	bodyFormat := "yaml"
 	if len(args) > 0 {
@@ -1229,7 +1258,7 @@ func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider
 	return parsedData, list, nil
 }
 
-func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	resourceMap, _, err := yamlkit.ResourceAndCategoryTypeMaps(parsedData, resourceProvider)
 	if err != nil {
@@ -1251,7 +1280,7 @@ func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *a
 	return parsedData, list, nil
 }
 
-func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	resourceName := args[1].Value.(string)
 
@@ -1263,13 +1292,13 @@ func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *
 	return parsedData, nil, err
 }
 
-func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	return parsedData, paths, nil
 }
 
-func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	result := api.ValidationResult{
@@ -1279,7 +1308,7 @@ func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.
 	return parsedData, result, nil
 }
 
-func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	searchValue := args[0].Value.(string)
 	replaceValue := args[1].Value.(string)
 
@@ -1289,7 +1318,7 @@ func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionC
 		attributeList[i].Value = strings.ReplaceAll(existingValue, searchValue, replaceValue)
 	}
 
-	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, liveState)
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList)
 }
 
 // GetVisitorMapForPath is used to get visitor info for a resolved path.
@@ -1316,7 +1345,7 @@ func GetVisitorMapForPath(resourceProvider yamlkit.ResourceProvider, rt api.Reso
 	return resourceTypeToPaths
 }
 
-func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1326,7 +1355,7 @@ func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.Fu
 	return parsedData, values, err
 }
 
-func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1337,7 +1366,7 @@ func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.Fu
 	return parsedData, nil, err
 }
 
-func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1347,7 +1376,7 @@ func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.Funct
 	return parsedData, values, err
 }
 
-func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1358,7 +1387,7 @@ func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.Funct
 	return parsedData, nil, err
 }
 
-func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1368,7 +1397,7 @@ func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.Func
 	return parsedData, values, err
 }
 
-func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1379,7 +1408,7 @@ func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.Func
 	return parsedData, nil, err
 }
 
-func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -1404,7 +1433,7 @@ func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.F
 // 	return name
 // }
 
-func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	nameValue := args[0].Value.(string)
 
 	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentValue string) (any, error) {
@@ -1427,7 +1456,7 @@ func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functio
 	return parsedData, nil, err
 }
 
-func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	attributeName := args[0].Value.(string)
 	attributePaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeName(attributeName))
 	if len(attributePaths) == 0 {
@@ -1437,23 +1466,23 @@ func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 	return parsedData, values, err
 }
 
-func genericFnGetAttributes(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetAttributes(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	attributePaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameGeneral)
 	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false)
 	return parsedData, values, err
 }
 
-func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	attributeListString := args[0].Value.(string)
 	var attributeList api.AttributeValueList
 	err := json.Unmarshal([]byte(attributeListString), &attributeList)
 	if err != nil {
 		return parsedData, nil, err
 	}
-	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, liveState)
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList)
 }
 
-func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, liveState []byte) (gaby.Container, any, error) {
+func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList) (gaby.Container, any, error) {
 	var multiErrs []error
 	for _, attribute := range attributeList {
 		var err error
@@ -1468,7 +1497,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not string: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = stringValue
-				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, liveState, false)
+				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, false)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -1481,7 +1510,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 			} else {
 				intValue := int(math.Round(floatValue))
 				setterArgs[2].Value = intValue
-				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, liveState, false)
+				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, false)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -1492,7 +1521,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not bool: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = boolValue
-				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, liveState, false)
+				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, false)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -1507,75 +1536,19 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 	return parsedData, nil, nil
 }
 
-func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	values, err := yamlkit.GetRegisteredNeededStringPaths(parsedData, resourceProvider)
 	// TODO: int, bool
 	return parsedData, values, err
 }
 
-func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	values, err := yamlkit.GetRegisteredProvidedStringPaths(parsedData, resourceProvider)
-	if err != nil {
-		return parsedData, values, err
-	}
 	// TODO: int, bool
-	// TODO: handle multiple different possible liveState formats for different providers
-	// For now, this assumes Kubernetes resources
-	if len(liveState) != 0 {
-		parsedLiveState, err := gaby.ParseAll(liveState)
-		if err != nil {
-			return parsedData, values, err
-		}
-		// TODO: Figure out how to express this in the path registry. For now, just return the resource names.
-		// This assumes the live state contains only the most recent resources.
-		for _, doc := range parsedLiveState {
-			resourceCategory, err := k8skit.K8sResourceProvider.ResourceCategoryGetter(doc)
-			if err != nil {
-				return parsedData, nil, err
-			}
-			resourceType, err := k8skit.K8sResourceProvider.ResourceTypeGetter(doc)
-			if err != nil {
-				return parsedData, nil, err
-			}
-			resourceName, err := k8skit.K8sResourceProvider.ResourceNameGetter(doc)
-			if err != nil {
-				return parsedData, nil, err
-			}
-			scopelessResourceName := k8skit.K8sResourceProvider.RemoveScopeFromResourceName(resourceName)
-			// The getter is needed for matching in the resolve process.
-			getterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-resources-of-type",
-				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: "v1/ConfigMap"}},
-			}
-			attributeValue := api.AttributeValue{
-				AttributeInfo: api.AttributeInfo{
-					AttributeIdentifier: api.AttributeIdentifier{
-						ResourceInfo: api.ResourceInfo{
-							ResourceName:             resourceName,
-							ResourceNameWithoutScope: scopelessResourceName,
-							ResourceType:             resourceType,
-							ResourceCategory:         resourceCategory,
-						},
-						Path:        "metadata.name",
-						InLiveState: true,
-					},
-					AttributeMetadata: api.AttributeMetadata{
-						AttributeName: api.AttributeNameResourceName,
-						DataType:      api.DataTypeString,
-						Info: &api.AttributeDetails{
-							GetterInvocation: getterFunctionInvocation,
-						},
-					},
-				},
-				Value: scopelessResourceName,
-			}
-			values = append(values, attributeValue)
-		}
-	}
-	return parsedData, values, nil
+	return parsedData, values, err
 }
 
-func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	validationExpr := args[0].Value.(string)
 
 	env, err := cel.NewEnv(
@@ -1645,8 +1618,8 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 	return parsedData, failedResult, errors.Join(multiErrors...)
 }
 
-func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []api.CustomStringComparator) (map[string]bool, error) {
-	matchingResources := map[string]bool{}
+func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []api.CustomStringComparator) (map[api.ResourceTypeAndName]bool, error) {
+	matchingResources := map[api.ResourceTypeAndName]bool{}
 
 	// Use VisitPathsDoc to get to the subobjects using the visitor path (left side of |)
 	resourceTypeToPaths := GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(expression.VisitorPath))
@@ -1678,8 +1651,8 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 		}
 
 		if matches {
-			if existingOutput, ok := output.(map[string]bool); ok {
-				existingOutput[string(context.ResourceName)] = true
+			if existingOutput, ok := output.(map[api.ResourceTypeAndName]bool); ok {
+				existingOutput[api.ResourceTypeAndFullNameFromResourceInfo(context.ResourceInfo)] = true
 			}
 		}
 
@@ -1694,32 +1667,32 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 	return matchingResources, nil
 }
 
-func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, functionContext, parsedData, args, liveState)
+func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, functionContext, parsedData, args)
 }
 
-func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
-	resourceType := args[0].Value.(string)
-	whereExpr := args[1].Value.(string)
-
+// findMatchingResourcesWithComparators evaluates a where expression against resources and returns
+// a map of matching resources keyed by ResourceTypeAndName. It also handles the special case of
+// blank whereExpr where it filters by resourceType only.
+func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, resourceType string, whereExpr string) (map[api.ResourceTypeAndName]bool, error) {
 	// Allow blank whereExpr: filter by resourceType only
 	if strings.TrimSpace(whereExpr) == "" {
-		_, categoryTypeMap, err := yamlkit.ResourceAndCategoryTypeMaps(parsedData, resourceProvider)
-		if err != nil {
-			return parsedData, api.ValidationResultFalse, err
-		}
-		for categoryType, names := range categoryTypeMap {
-			// Ignore the category for now.
-			if categoryType.ResourceType == api.ResourceType(resourceType) && len(names) > 0 {
-				return parsedData, api.ValidationResultTrue, nil
+		matchingResources := map[api.ResourceTypeAndName]bool{}
+		_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+			if resourceType == "*" || resourceInfo.ResourceType == api.ResourceType(resourceType) {
+				matchingResources[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
 			}
+			return output, nil
+		})
+		if err != nil {
+			return nil, err
 		}
-		return parsedData, api.ValidationResultFalse, nil
+		return matchingResources, nil
 	}
 
 	expressions, err := api.ParseAndValidateWhereFilter(whereExpr)
 	if err != nil {
-		return parsedData, api.ValidationResultFalse, err
+		return nil, err
 	}
 	// Visit and evaluate.
 	// If we allow wildcards, then theoretically the evaluation could be combinatoric to compare
@@ -1732,7 +1705,7 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 	// With exactly 2 expressions we could pass validation if !match_expr || validate_expr.
 	var multiErrs []error
 	var output any
-	matchingResources := map[string]bool{}
+	matchingResources := map[api.ResourceTypeAndName]bool{}
 	for i, expression := range expressions {
 		// The visitor functions visit all resources of the specified type.
 		// We need to keep track of which resources have matched.
@@ -1750,10 +1723,55 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 			if i == 0 {
 				matchingResources = matchingResourcesForExpression
 			} else {
-				for resourceName, _ := range matchingResources {
-					_, matched := matchingResourcesForExpression[resourceName]
+				for key := range matchingResources {
+					_, matched := matchingResourcesForExpression[key]
 					if !matched {
-						delete(matchingResources, resourceName)
+						delete(matchingResources, key)
+					}
+				}
+			}
+		} else if strings.HasPrefix(expression.Path, "ConfigHub.") {
+			// Handle ConfigHub.* paths that reference ResourceInfo fields
+			matchingResourcesForExpression := map[api.ResourceTypeAndName]bool{}
+			_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+				// Skip resources that don't match the resource type filter
+				if resourceType != "*" && resourceInfo.ResourceType != api.ResourceType(resourceType) {
+					return output, nil
+				}
+				var leftValue any
+				switch expression.Path {
+				case "ConfigHub.ResourceName":
+					leftValue = string(resourceInfo.ResourceName)
+				case "ConfigHub.ResourceNameWithoutScope":
+					leftValue = string(resourceInfo.ResourceNameWithoutScope)
+				case "ConfigHub.ResourceType":
+					leftValue = string(resourceInfo.ResourceType)
+				case "ConfigHub.ResourceCategory":
+					leftValue = string(resourceInfo.ResourceCategory)
+				default:
+					return output, []error{fmt.Errorf("unsupported ConfigHub path: %s", expression.Path)}
+				}
+				found, err := api.EvaluateExpression(&expression.RelationalExpression, leftValue, nil, customComparators)
+				if err != nil {
+					return output, []error{err}
+				}
+				if found {
+					matchingResourcesForExpression[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
+				}
+				return output, nil
+			})
+			if err != nil {
+				multiErrs = append(multiErrs, err)
+				matchingResources = nil
+				break
+			}
+			if i == 0 {
+				matchingResources = matchingResourcesForExpression
+			} else {
+				for key := range matchingResources {
+					_, matched := matchingResourcesForExpression[key]
+					if !matched {
+						delete(matchingResources, key)
 					}
 				}
 			}
@@ -1764,11 +1782,11 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 			getterArgs[1].Value = expression.Path
 			switch expression.DataType {
 			case api.DataTypeString:
-				_, output, err = GenericFnGetStringPath(resourceProvider, functionContext, parsedData, getterArgs, liveState)
+				_, output, err = GenericFnGetStringPath(resourceProvider, functionContext, parsedData, getterArgs)
 			case api.DataTypeInt:
-				_, output, err = GenericFnGetIntPath(resourceProvider, functionContext, parsedData, getterArgs, liveState)
+				_, output, err = GenericFnGetIntPath(resourceProvider, functionContext, parsedData, getterArgs)
 			case api.DataTypeBool:
-				_, output, err = GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, getterArgs, liveState)
+				_, output, err = GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, getterArgs)
 			default:
 				err = fmt.Errorf("unsupported data type %s", expression.DataType)
 			}
@@ -1778,7 +1796,7 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 				break
 			}
 
-			matchingResourcesForExpression := map[string]bool{}
+			matchingResourcesForExpression := map[api.ResourceTypeAndName]bool{}
 			attribValues, ok := output.(api.AttributeValueList)
 			if !ok {
 				log.Errorf("couldn't convert output to api.AttributeValueList")
@@ -1791,16 +1809,16 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				} else if found {
-					matchingResourcesForExpression[string(attribValue.ResourceName)] = true
+					matchingResourcesForExpression[api.ResourceTypeAndFullNameFromResourceInfo(attribValue.ResourceInfo)] = true
 				}
 			}
 			if i == 0 {
 				matchingResources = matchingResourcesForExpression
 			} else {
-				for resourceName, _ := range matchingResources {
-					_, matched := matchingResourcesForExpression[resourceName]
+				for key := range matchingResources {
+					_, matched := matchingResourcesForExpression[key]
 					if !matched {
-						delete(matchingResources, resourceName)
+						delete(matchingResources, key)
 					}
 				}
 			}
@@ -1808,6 +1826,17 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 	}
 	if len(multiErrs) != 0 {
 		err = errors.Join(multiErrs...)
+		return nil, err
+	}
+	return matchingResources, nil
+}
+
+func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	resourceType := args[0].Value.(string)
+	whereExpr := args[1].Value.(string)
+
+	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, functionContext, parsedData, resourceType, whereExpr)
+	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
 	if len(matchingResources) > 0 {
@@ -1816,7 +1845,46 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 	return parsedData, api.ValidationResultFalse, nil
 }
 
-func genericFnComputeMutations(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, modifiedParsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnSelectWhereResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	return GenericFnSelectWhereResourceWithComparators(resourceProvider, nil, functionContext, parsedData, args)
+}
+
+func GenericFnSelectWhereResourceWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	resourceType := args[0].Value.(string)
+	whereExpr := args[1].Value.(string)
+
+	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, functionContext, parsedData, resourceType, whereExpr)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	// Build a list of indices to remove (in reverse order to avoid index shifting)
+	indicesToRemove := []int{}
+	_, err = yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		key := api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)
+		if !matchingResources[key] {
+			indicesToRemove = append(indicesToRemove, index)
+		}
+		return output, nil
+	})
+	if err != nil {
+		return parsedData, nil, fmt.Errorf("failed to identify resources to remove: %v", err)
+	}
+
+	// Remove resources in reverse order to avoid index shifting
+	newParsedData := parsedData
+	for i := len(indicesToRemove) - 1; i >= 0; i-- {
+		idx := indicesToRemove[i]
+		newSlice := make(gaby.Container, len(newParsedData)-1)
+		copy(newSlice[:idx], newParsedData[:idx])
+		copy(newSlice[idx:], newParsedData[idx+1:])
+		newParsedData = newSlice
+	}
+
+	return newParsedData, nil, nil
+}
+
+func genericFnComputeMutations(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, modifiedParsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	configStringData := args[0].Value.(string)
 	functionIndex := int64(args[1].Value.(int))
 	alreadyConverted := false
@@ -1841,7 +1909,7 @@ func genericFnComputeMutations(converter configkit.ConfigConverter, resourceProv
 	return modifiedParsedData, mutations, err
 }
 
-func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	mutationPredicatesString := args[0].Value.(string)
 	var mutationsPredicates api.ResourceMutationList
 	err := json.Unmarshal([]byte(mutationPredicatesString), &mutationsPredicates)
@@ -1859,7 +1927,7 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 	return parsedData, nil, err
 }
 
-func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	mutationPredicatesString := args[0].Value.(string)
 	var mutationsPredicates api.ResourceMutationList
 	err := json.Unmarshal([]byte(mutationPredicatesString), &mutationsPredicates)
@@ -1871,7 +1939,7 @@ func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionCo
 	return parsedData, nil, err
 }
 
-func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, mutating bool) (gaby.Container, any, error) {
+func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, mutating bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	expression := args[0].Value.(string)
 
@@ -1890,7 +1958,7 @@ func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionConte
 	return parsedData, wrappedOutput, nil
 }
 
-func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	numApprovers := args[0].Value.(int)
 
 	// If the data has changed, previous approvers will be cleared.
@@ -1905,7 +1973,7 @@ func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionC
 	return parsedData, api.ValidationResultFalse, nil
 }
 
-func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	addContext := args[0].Value.(bool)
 
 	// Check whether adding context is supported by the resource provider
@@ -1982,13 +2050,13 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 }
 
 // genericFnGetDetails.
-func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	detailPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDetail)
 	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false)
 	return parsedData, values, err
 }
 
-func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	matchResourceType := api.ResourceType(args[0].Value.(string))
 	matchResourceName := api.ResourceName(args[1].Value.(string))
 	replicas := args[2].Value.(int)
@@ -2043,7 +2111,7 @@ func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, functionConte
 	return parsedData, nil, nil
 }
 
-func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Unmarshal the first argument into api.ResourceList
 	resourceListString := args[0].Value.(string)
 	var resourceList api.ResourceList
@@ -2105,7 +2173,7 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, function
 	return parsedData, nil, nil
 }
 
-func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	targetResourceType := api.ResourceType(args[0].Value.(string))
 	targetResourceName := api.ResourceName(args[1].Value.(string))
 
@@ -2212,25 +2280,25 @@ func RegisterPathSetterAndGetter(
 	dataType := setterParameters[len(setterParameters)-1].DataType
 	switch dataType {
 	case api.DataTypeString:
-		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnSetStringVisitor(setterSignature, fc, c, fa, ls, resourceProvider, upsert)
+		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetStringVisitor(setterSignature, fc, c, fa, resourceProvider, upsert)
 		}
-		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnGetStringVisitor(getterSignature, fc, c, fa, ls, resourceProvider)
+		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetStringVisitor(getterSignature, fc, c, fa, resourceProvider)
 		}
 	case api.DataTypeInt:
-		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnSetIntVisitor(setterSignature, fc, c, fa, ls, resourceProvider, upsert)
+		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetIntVisitor(setterSignature, fc, c, fa, resourceProvider, upsert)
 		}
-		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnGetIntVisitor(getterSignature, fc, c, fa, ls, resourceProvider)
+		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetIntVisitor(getterSignature, fc, c, fa, resourceProvider)
 		}
 	case api.DataTypeBool:
-		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnSetBoolVisitor(setterSignature, fc, c, fa, ls, resourceProvider, upsert)
+		setterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnSetBoolVisitor(setterSignature, fc, c, fa, resourceProvider, upsert)
 		}
-		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument, ls []byte) (gaby.Container, any, error) {
-			return genericFnGetBoolVisitor(getterSignature, fc, c, fa, ls, resourceProvider)
+		getterFunction = func(fc *api.FunctionContext, c gaby.Container, fa []api.FunctionArgument) (gaby.Container, any, error) {
+			return genericFnGetBoolVisitor(getterSignature, fc, c, fa, resourceProvider)
 		}
 	default:
 		// Not supported
@@ -2249,7 +2317,7 @@ func RegisterPathSetterAndGetter(
 	})
 }
 
-func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -2269,7 +2337,7 @@ func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.Function
 	return parsedData, nil, err
 }
 
-func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -2288,7 +2356,7 @@ func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.Function
 	return parsedData, values, err
 }
 
-func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -2308,7 +2376,7 @@ func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionCon
 	return parsedData, nil, err
 }
 
-func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -2327,7 +2395,7 @@ func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionCon
 	return parsedData, values, err
 }
 
-func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -2347,7 +2415,7 @@ func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionCo
 	return parsedData, nil, err
 }
 
-func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -2366,7 +2434,7 @@ func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionCo
 	return parsedData, values, err
 }
 
-func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -2376,7 +2444,7 @@ func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.Funct
 	return parsedData, nil, err
 }
 
-func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	schemaMapJSON, ok := args[0].Value.(string)
 	if !ok {
 		return parsedData, api.ValidationResultFalse, errors.New("schema-map must be a string")

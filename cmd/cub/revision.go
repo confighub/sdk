@@ -8,9 +8,11 @@ import (
 )
 
 var revisionCmd = &cobra.Command{
-	Use:               "revision",
-	Short:             "Revision commands",
-	Long:              getCommandHelp(`The revision subcommands are used to manage revisions`, ""),
+	Use:   "revision",
+	Short: "Revision commands",
+	Long: getCommandHelp(`The revision subcommands are used to manage revisions.
+	
+Revisions are explained at https://docs.confighub.com/background/entities/revision/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

@@ -4,9 +4,11 @@
 package kubernetes
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
@@ -14,7 +16,7 @@ import (
 
 var fakeContext api.FunctionContext = api.FunctionContext{
 	UnitSlug: "MyK8sUnit",
-	New:      true,
+	NotLive:  true,
 }
 
 func stringArgsToFunctionArgs(stringArgs []string) []api.FunctionArgument {
@@ -337,7 +339,7 @@ spec:
 			docs, err := gaby.ParseAll([]byte(tc.yamlFixture))
 			assert.NoError(t, err)
 
-			newYaml, _, err := setImageHandler(&fakeContext, docs, stringArgsToFunctionArgs(tc.args), []byte{})
+			newYaml, _, err := setImageHandler(&fakeContext, docs, stringArgsToFunctionArgs(tc.args))
 			assert.NoError(t, err)
 			assert.Contains(t, newYaml.String(), tc.expectedImage)
 		})
@@ -371,7 +373,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageReferenceHandler(&fakeContext, docs, stringArgsToFunctionArgs([]string{"example-container", ":1.15.0"}), []byte{})
+	newYaml, _, err := setImageReferenceHandler(&fakeContext, docs, stringArgsToFunctionArgs([]string{"example-container", ":1.15.0"}))
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "nginx:1.15.0")
 }
@@ -403,7 +405,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageUriHandler(&fakeContext, docs, stringArgsToFunctionArgs([]string{"example-container", "nginx-plus"}), []byte{})
+	newYaml, _, err := setImageUriHandler(&fakeContext, docs, stringArgsToFunctionArgs([]string{"example-container", "nginx-plus"}))
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "nginx-plus:1.14.2")
 }
@@ -431,7 +433,7 @@ spec:
 	args := []string{"test-container", "NEW_VAR=new_value", "EXISTING_VAR="}
 
 	// Call the function
-	output, _, err := k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args), []byte{})
+	output, _, err := k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	// Expected output
@@ -505,12 +507,12 @@ spec:
 	}
 
 	// call the function
-	output, _, err := k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args), []byte{})
+	output, _, err := k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	// call the function again
 	configYaml = output
-	output, _, err = k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args), []byte{})
+	output, _, err = k8sFnSetEnv(&fakeContext, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	expectedYaml := `apiVersion: apps/v1
@@ -555,4 +557,117 @@ spec:
       - name: registry-secret
 `
 	assert.YAMLEq(t, expectedYaml, output.String())
+}
+
+func makeFilterArg(t *testing.T, filter api.ValueFilter) []api.FunctionArgument {
+	t.Helper()
+	b, err := json.Marshal(filter)
+	require.NoError(t, err)
+	return []api.FunctionArgument{{Value: string(b)}}
+}
+
+func TestK8sFnVetImages(t *testing.T) {
+	yamlFixture := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: example
+    spec:
+      containers:
+      - name: app
+        image: myregistry.com/myapp:v1.0
+      - name: sidecar
+        image: myregistry.com/sidecar:v2.0
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	require.NoError(t, err)
+
+	t.Run("all images allowed", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{
+			AllowStrings: map[string]bool{
+				"myregistry.com/myapp:v1.0":   true,
+				"myregistry.com/sidecar:v2.0": true,
+			},
+		})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.True(t, result.Passed)
+		assert.Empty(t, result.FailedAttributes)
+	})
+
+	t.Run("image not in allow list", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{
+			AllowStrings: map[string]bool{
+				"myregistry.com/myapp:v1.0": true,
+			},
+		})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.False(t, result.Passed)
+		assert.Len(t, result.FailedAttributes, 1)
+		assert.Equal(t, "myregistry.com/sidecar:v2.0", result.FailedAttributes[0].Value)
+	})
+
+	t.Run("image in deny list", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{
+			DenyStrings: map[string]bool{
+				"myregistry.com/sidecar:v2.0": true,
+			},
+		})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.False(t, result.Passed)
+		assert.Len(t, result.FailedAttributes, 1)
+		assert.Equal(t, "myregistry.com/sidecar:v2.0", result.FailedAttributes[0].Value)
+	})
+
+	t.Run("deny overrides allow", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{
+			AllowStrings: map[string]bool{
+				"myregistry.com/myapp:v1.0":   true,
+				"myregistry.com/sidecar:v2.0": true,
+			},
+			DenyStrings: map[string]bool{
+				"myregistry.com/sidecar:v2.0": true,
+			},
+		})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.False(t, result.Passed)
+		assert.Len(t, result.FailedAttributes, 1)
+		assert.Equal(t, "myregistry.com/sidecar:v2.0", result.FailedAttributes[0].Value)
+	})
+
+	t.Run("empty filter passes all", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.True(t, result.Passed)
+		assert.Empty(t, result.FailedAttributes)
+	})
+
+	t.Run("all images denied", func(t *testing.T) {
+		args := makeFilterArg(t, api.ValueFilter{
+			DenyStrings: map[string]bool{
+				"myregistry.com/myapp:v1.0":   true,
+				"myregistry.com/sidecar:v2.0": true,
+			},
+		})
+		_, output, err := k8sFnVetImages(&fakeContext, docs, args)
+		require.NoError(t, err)
+		result := output.(api.ValidationResult)
+		assert.False(t, result.Passed)
+		assert.Len(t, result.FailedAttributes, 2)
+	})
 }

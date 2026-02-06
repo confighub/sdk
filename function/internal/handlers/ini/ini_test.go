@@ -17,7 +17,7 @@ import (
 
 var fakeContext = api.FunctionContext{
 	UnitSlug: "MyINIUnit",
-	New:      true,
+	NotLive:  true,
 }
 
 // SimpleAppSchema defines the JSONSchema for the SimpleApp resource type
@@ -188,7 +188,7 @@ func TestVetJSONSchema_ValidINI(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	require.NoError(t, err)
 	assert.NotNil(t, resultData)
 
@@ -218,7 +218,7 @@ func TestVetJSONSchema_InvalidINI_MissingRequired(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	assert.NotNil(t, resultData)
 
 	// Check that validation failed
@@ -252,7 +252,7 @@ func TestVetJSONSchema_InvalidINI_InvalidVersion(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	assert.NotNil(t, resultData)
 
 	// Check that validation failed
@@ -286,7 +286,7 @@ func TestVetJSONSchema_InvalidINI_InvalidPort(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	assert.NotNil(t, resultData)
 
 	// Check that validation failed
@@ -321,7 +321,7 @@ func TestVetJSONSchema_NoSchemaForResourceType(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	require.NoError(t, err)
 	assert.NotNil(t, resultData)
 
@@ -351,7 +351,7 @@ func TestVetJSONSchema_InvalidSchemaMap(t *testing.T) {
 	}
 
 	// Execute the function
-	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args, nil)
+	resultData, result, err := generic.GenericFnVetJSONSchema(inikit.INIResourceProvider, &fakeContext, parsedData, args)
 	assert.NotNil(t, resultData)
 
 	// Check that validation failed due to invalid schema map

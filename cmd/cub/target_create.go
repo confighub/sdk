@@ -27,7 +27,8 @@ Example:
 `+"```"+`
   "{\"KubeContext\":\"kind-space17005\",\"KubeNamespace\":\"default\",\"WaitTimeout\":\"2m0s\"}"
 `+"```"+`
-`, ""),
+
+Targets typically are created by workers, but may also be created using cub target create.`, ""),
 	Args: cobra.RangeArgs(1, 3),
 	RunE: targetCreateCmdRun,
 }
@@ -42,11 +43,13 @@ var fromTarget string
 var fromTargetSpace string
 var providerType string
 var toolchainType string
+var liveStateType string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
-	targetCreateCmd.Flags().StringVarP(&providerType, "provider", "p", "Kubernetes", "The type of provider for the target.\nDefault is Kubernetes.\n\t(e.g., Kubernetes, Terraform, FluxOCIWriter)")
-	targetCreateCmd.Flags().StringVarP(&toolchainType, "toolchain", "t", "Kubernetes/YAML", "The type of toolchain for the target.\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, Terraform)")
+	targetCreateCmd.Flags().StringVarP(&providerType, "provider", "p", "", "The type of provider for the target.\nDefault is Kubernetes.\n\t(e.g., Kubernetes)")
+	targetCreateCmd.Flags().StringVarP(&toolchainType, "toolchain", "t", "", "The type of toolchain for the target.\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
+	targetCreateCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
@@ -97,16 +100,33 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// set toolchainType and providerType if not copying from another target or stdin
-	if fromTarget == "" && fromTargetSpace == "" && !flagPopulateModelFromStdin && flagFilename == "" {
-		newTarget.ToolchainType = toolchainType
-		newTarget.ProviderType = providerType
-	}
+	hasDefaults := fromTarget != "" || fromTargetSpace != "" || flagPopulateModelFromStdin || flagFilename != ""
 
-	err := validateToolchainAndProvider(newTarget.ToolchainType, newTarget.ProviderType)
+	// If set, flags override other data
+	if toolchainType != "" {
+		newTarget.ToolchainType = toolchainType
+	} else if !hasDefaults {
+		newTarget.ToolchainType = "Kubernetes/YAML"
+	}
+	if providerType != "" {
+		newTarget.ProviderType = providerType
+	} else if !hasDefaults {
+		newTarget.ProviderType = "Kubernetes"
+	}
+	if liveStateType != "" {
+		newTarget.LiveStateType = liveStateType
+	}
+	// no default
+
+	err := validateToolchainAndProvider(newTarget.ToolchainType, newTarget.ProviderType, newTarget.LiveStateType)
 	if err != nil {
 		return err
 	}
 
+	err = setAnnotations(&newTarget.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&newTarget.Labels)
 	if err != nil {
 		return err
@@ -176,7 +196,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func validateToolchainAndProvider(toolchainType string, providerType string) error {
+func validateToolchainAndProvider(toolchainType string, providerType string, liveStateType string) error {
 	// Ensure toolchainType and providerType are set and valid. Should never be empty but just in case.
 	if toolchainType == "" || providerType == "" {
 		return errors.New("toolchain and provider must be specified")
@@ -184,7 +204,11 @@ func validateToolchainAndProvider(toolchainType string, providerType string) err
 	if !funcapi.IsSupportedToolchain(workerapi.ToolchainType(toolchainType)) {
 		return errors.New("toolchain must be one of: " + funcapi.SupportedToolchainsToString())
 	}
-	// Technically we need to allow any provider type that a bridge implements
+	if liveStateType != "" && !funcapi.IsSupportedToolchain(workerapi.ToolchainType(liveStateType)) {
+		return errors.New("live state type must be one of: " + funcapi.SupportedToolchainsToString())
+	}
+	// TODO: allow any provider type that a bridge implements by looking at SupportedConfigTypes
+
 	// if providerType != string(api.ProviderKubernetes) &&
 	// 	providerType != string(api.ProviderOpenTofuAWS) &&
 	// 	providerType != string(api.ProviderFluxOCIWriter) &&

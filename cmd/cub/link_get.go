@@ -91,6 +91,28 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 		view.Append([]string{"To Space ID", linkDetails.ToSpaceID.String()})
 	}
 
+	if linkDetails.UpdateType != "" {
+		view.Append([]string{"Update Type", linkDetails.UpdateType})
+	}
+	if linkDetails.AutoUpdate {
+		view.Append([]string{"Auto Update", fmt.Sprintf("%t", linkDetails.AutoUpdate)})
+	}
+	if linkDetails.UseLiveState {
+		view.Append([]string{"Use Live State", fmt.Sprintf("%t", linkDetails.UseLiveState)})
+	}
+	if linkDetails.WhereMutation != "" {
+		view.Append([]string{"Where Mutation", linkDetails.WhereMutation})
+	}
+	if linkDetails.WhereResource != "" {
+		view.Append([]string{"Where Resource", linkDetails.WhereResource})
+	}
+	if linkDetails.UpstreamLastMergedRevisionNum != 0 {
+		view.Append([]string{"Upstream Last Merged Rev", fmt.Sprintf("%d", linkDetails.UpstreamLastMergedRevisionNum)})
+	}
+	if linkDetails.DownstreamLastMergedRevisionNum != 0 {
+		view.Append([]string{"Downstream Last Merged Rev", fmt.Sprintf("%d", linkDetails.DownstreamLastMergedRevisionNum)})
+	}
+
 	view.Render()
 }
 

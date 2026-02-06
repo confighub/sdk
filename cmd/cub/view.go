@@ -8,9 +8,11 @@ import (
 )
 
 var viewCmd = &cobra.Command{
-	Use:               "view",
-	Short:             "View commands",
-	Long:              getCommandHelp(`The view subcommands are used to manage views`, ""),
+	Use:   "view",
+	Short: "View commands",
+	Long: getCommandHelp(`The view subcommands are used to manage views.
+
+Views are explained at https://docs.confighub.com/background/entities/view/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

@@ -43,6 +43,8 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-name > ${DIR}/
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image nginx "mynginx:stable" > ${DIR}/set-image.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-image nginx > ${DIR}/get-image.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-image "*" > ${DIR}/get-image-wildcard.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" vet-images '{"AllowStrings":{"nginx:latest":true,"otel/opentelemetry-collector:latest-amd64":true}}' > ${DIR}/vet-images-pass.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" vet-images '{"DenyStrings":{"nginx:latest":true}}' > ${DIR}/vet-images-fail.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-uri nginx example.myreg.com/nginx > ${DIR}/set-image-uri.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-reference nginx ":v17.5.2" > ${DIR}/set-image-reference.txt
 ${FCTL} do test-data/confighub.yaml "confighub" set-image-reference-by-uri ghcr.io/confighubai/confighub ":testbuild" > ${DIR}/set-image-reference-by-uri.txt
@@ -102,6 +104,8 @@ ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname-subdomain chat 
 ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname-domain cubby.bz > ${DIR}/set-domain.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-path-comment apps/v1/Deployment spec.replicas "TODO: autoscale" > ${DIR}/set-path-comment.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" delete-path apps/v1/Deployment "spec.template.spec.containers.?name=otel-sidecar" > ${DIR}/delete-path.txt
+${FCTL} do test-data/all-in-one.yaml MyApp select-where-resource "*" "ConfigHub.ResourceType IN ('v1/Service','v1/ServiceAccount')" > ${DIR}/select-where-resource.txt
+
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-properties.txt

@@ -33,7 +33,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultOrganizationColumns = []string{"DisplayName", "OrganizationID", "BillingAccountID", "ExternalID"}
+var defaultOrganizationColumns = []string{"DisplayName", "OrganizationID", "ExternalID"}
 
 // Organization-specific aliases
 var organizationAliases = map[string]string{
@@ -70,13 +70,12 @@ func getOrganizationSlug(organization *goclientnew.Organization) string {
 func displayOrganizationList(organizations []*goclientnew.Organization) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Display-Name", "ID", "Billing-ID", "External-ID"})
+		table.SetHeader([]string{"Display-Name", "ID", "External-ID"})
 	}
 	for _, organization := range organizations {
 		table.Append([]string{
 			organization.DisplayName,
 			organization.OrganizationID.String(),
-			organization.BillingAccountID.String(),
 			organization.ExternalID,
 		})
 	}

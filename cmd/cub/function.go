@@ -15,7 +15,10 @@ var functionCmd = &cobra.Command{
 }
 
 func getFunctionCommandGroupHelp() string {
-	baseHelp := `The function subcommands are used to discover and execute functions`
+	baseHelp := `The function subcommands are used to discover and execute functions.
+
+Functions are explained at https://docs.confighub.com/background/entities/function/.
+A guide for how to use functions is at https://docs.confighub.com/guide/functions/.`
 	agentContext := `Functions operate on configuration data stored in ConfigHub without requiring local file retrieval.
 
 Key workflow for agents:

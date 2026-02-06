@@ -30,6 +30,6 @@ func registerCustomFunctions(fh *handler.FunctionHandler) {
 
 // k8sFnEcho is a custom function that returns the same data as input.
 // It is used to test the function worker to demonstrate that a custom function can be registered and used.
-func k8sFnEcho(_ *api.FunctionContext, container gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnEcho(_ *api.FunctionContext, container gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	return container, nil, nil
 }

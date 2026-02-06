@@ -8,9 +8,11 @@ import (
 )
 
 var filterCmd = &cobra.Command{
-	Use:               "filter",
-	Short:             "Filter commands",
-	Long:              getCommandHelp(`The filter subcommands are used to manage filters`, ""),
+	Use:   "filter",
+	Short: "Filter commands",
+	Long: getCommandHelp(`The filter subcommands are used to manage filters.
+
+Filters are explained at https://docs.confighub.com/background/entities/filter/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

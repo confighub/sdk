@@ -1622,18 +1622,135 @@ func EvalYQExpression(expr string, yamlString string) (string, error) {
 	return result, nil
 }
 
+// ComputeMutations and ComputeMutationsForDocs Overview
+//
+// ComputeMutations performs a structured diff between two YAML configurations (represented as
+// gaby.Container, which is a list of parsed YAML documents). It determines what changes were
+// made and records them in a way that can be accumulated over subsequent edits, using api.OffsetMutations
+// and api.AddMutations.
+//
+// ComputeMutations is currently used in three related ways:
+// 1. Diffing two revisions of the same unit to use with PatchMutations in a diff/patch (aka three-way merge) of
+//    a different unit or the same unit (for redo/rebase)
+// 2. Diffing a single change, by a mutating function or a configuration data update or refresh, and accumulating it
+//    with prior mutations to later use to set Predicates to enhance (1).
+// 3. Diffing revisions of two different units to use with api.SubtractMutations to enhance (1)
+//
+// Input:
+//   - previousParsedData: The "before" state (parsed YAML documents)
+//   - modifiedParsedData: The "after" state (parsed YAML documents)
+//   - functionIndex: A sequence number to track which function/operation made the change
+//   - resourceProvider: Toolchain-specific interface for extracting resource metadata
+//
+// Output:
+//   - api.ResourceMutationList: A list of mutations, one per resource/document
+//
+// Algorithm:
+//
+// 1. Resource Matching
+//
+// For each document in the modified data, it tries to find the corresponding document in
+// the previous data:
+//   - Exact name match: If ResourceType and ResourceName match exactly, it's a definite match
+//   - Fuzzy matching: If names don't match, it uses a similarity score based on the number
+//     of path-level differences divided by total lines. This handles renamed resources.
+//   - Match threshold: If the best match score exceeds 1.0, the resource is considered new
+//
+// 2. Path-Level Diff via ComputeMutationsForDocs
+//
+// For matched resources, it performs a deep comparison using a stack-based traversal:
+//   - Compares children of maps recursively
+//   - Detects Add: key exists in modified but not previous
+//   - Detects Update: key exists in both but contents differ
+//   - Detects Delete: key exists in previous but not modified
+//   - Handles arrays by index
+//
+// 3. Mutation Types
+//
+// For each resource, the function assigns a ResourceMutationInfo.MutationType:
+//   - Add: Resource in modified, not in previous
+//   - Update: Resource in both, has path changes
+//   - None: Resource in both, no path changes
+//   - Delete: Resource in previous, not in modified
+//
+// 4. Alias Tracking
+//
+// When resources are matched (even with different names), both the old and new names are
+// recorded in Aliases and AliasesWithoutScopes. This enables tracking resources across renames.
+//
+// Example:
+//
+// Given previousParsedData:
+//
+//	apiVersion: apps/v1
+//	kind: Deployment
+//	metadata:
+//	  name: myapp
+//	spec:
+//	  replicas: 1
+//
+// And modifiedParsedData:
+//
+//	apiVersion: apps/v1
+//	kind: Deployment
+//	metadata:
+//	  name: myapp
+//	spec:
+//	  replicas: 3
+//	  image: nginx:1.20
+//
+// ComputeMutations would return:
+//
+//	ResourceMutationList{
+//	  {
+//	    Resource: {ResourceType: "apps/v1/Deployment", ResourceName: "default/myapp", ...},
+//	    ResourceMutationInfo: {MutationType: Update, Index: 1},
+//	    PathMutationMap: {
+//	      "spec.replicas": {MutationType: Update, Value: "3"},
+//	      "spec.image":    {MutationType: Add, Value: "nginx:1.20"},
+//	    },
+//	    Aliases: {"default/myapp": {}},
+//	  },
+//	}
+
 // ComputeMutationsForDocs determines the edits that have been performed to transform the previousDoc
 // into modifiedDoc. The resulting mutations are associated with the provided functionIndex.
 // The pathMutationMap is modified in place.
 func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap) {
 	// TODO: Determine whether there should be any error conditions.
 
-	// TODO: Decide how to tombstone removed paths so they are not later re-added
+	// NOTE: We do not tombstone removed paths in mutations so they are not later re-added
 	// by a patch. Example: a port in a Service is removed from a downstream unit and
 	// some part of that port spec is modified in the upstream unit. The next PatchMutations
-	// for upgrade would reinsert the port.
+	// for upgrade would reinsert the port. We handle that by removing them from the mutations
+	// before they are patched with api.SubtractMutations and/or by selecting mutations eligible to
+	// be patched, by setting the Predicate values.
+
+	// There's also the reciprocal issue of what to do in the case that a field is modified
+	// in a downstream unit and a block of configuration around it (e.g., a resource or a container)
+	// is removed from the upstream unit. For now, we will remove those deletions using api.SubtractMutations.
 
 	// TODO: Handle associative lists using schema information from the ResourceProvider.
+	// Essentially, a generalized equivalent of Kubernetes strategic merge patch.
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
+	// https://github.com/kubernetes/apimachinery/blob/master/pkg/util/strategicpatch/patch.go
+	//
+	// Right now mutations specify numerical array indices:
+	//   "spec.template.spec.containers.0.env.3": {
+	//     "Index": 1,
+	//     "MutationType": "Delete",
+	//     "Predicate": true,
+	//     "Value": "value: confighubplaceholder\nname: DATABASE_USER\n"
+	//   },
+	//   "spec.template.spec.containers.0.env.4": {
+	//     "Index": 1,
+	//     "MutationType": "Delete",
+	//     "Predicate": true,
+	//     "Value": "value: confighubplaceholder\nname: DATABASE_PASSWORD\n"
+	//   },
+	// The paths could use the associative matching syntax from ResolveAssociativePaths. In any case,
+	// the merge keys aren't explicitly mentioned and the values may not be present, so the information
+	// is not available to PatchMutations.
 
 	// TODO: Decide what to do about embedded accessors
 
@@ -1861,6 +1978,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 	// We could start with either the previous docs or the modified docs. I chose the latter, since the
 	// modified docs represent the new/current content.
 
+	// Resource Matching
+	// For each document in the modified data, find the corresponding document in the previous data.
 	mutations := api.ResourceMutationList{}
 	previousDocMatched := make([]bool, len(previousParsedData))
 	minUnmatchedPreviousDocIndex := 0
@@ -1904,10 +2023,13 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				continue
 			}
 
-			// Do a deep diff
+			// Path-Level Diff
+			// Compute the detailed path-level differences between the two documents.
 			tmpMutationMap := api.MutationMap{}
 			ComputeMutationsForDocs("", previousDoc, modifiedDoc, functionIndex, tmpMutationMap)
 
+			// Exact name match
+			// If ResourceType and ResourceName match exactly, it's a definite match (score = 0).
 			// TODO: favor exact match
 			// TODO: special-case changes of a placeholder scope to a non-placeholder scope
 			previousResourceNameOnly := resourceProvider.RemoveScopeFromResourceName(previousResourceName)
@@ -1915,7 +2037,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				matchIndex = previousDocIndex
 				bestMatchScore = 0.0
 				pathMutationMap = tmpMutationMap
-				// Re-initialize aliases and aliasesWithoutScopes
+				// Alias Tracking - record both old and new names
 				aliases = map[api.ResourceName]struct{}{
 					previousResourceName: {},
 				}
@@ -1924,6 +2046,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				}
 				break
 			}
+			// Fuzzy matching
+			// If names don't match, use similarity score based on number of path differences.
 			// TODO: Figure out a better way to determine name changes.
 			// Kustomize records name changes when they occur at the field mutation level, but
 			// that doesn't work for out-of-band (non-filter) changes.
@@ -1950,6 +2074,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			}
 		}
 
+		// Unmatched resources are Adds
 		// If no match was found, then we need to add this resource. During Create,
 		// including cloning, the previous data should be empty.
 		if matchIndex < 0 || bestMatchScore > maxMatchScore {
@@ -1980,9 +2105,10 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			continue
 		}
 
+		// Matched resource - record Update or None mutation
 		// A match for the resource was found. It possibly was changed.
 
-		// Add new aliases, if any
+		// Alias Tracking - add new aliases for the modified resource name
 		aliases[modifiedResourceName] = struct{}{}
 		aliasesWithoutScopes[modifiedResourceNameOnly] = struct{}{}
 		mutation := api.ResourceMutation{
@@ -2022,6 +2148,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		}
 	}
 
+	// Unmatched previous resources are Deletes
 	// Any remaining unmatched resources were deletions.
 	for minUnmatchedPreviousDocIndex < len(previousDocMatched) {
 		// Skip matched resources
@@ -2063,7 +2190,10 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 	return mutations, nil
 }
 
-// PatchMutations replays the mutations in mutationsPatch on the provided configuration data.
+// PatchMutations applies a set of mutations to configuration data, effectively "replaying"
+// recorded changes onto a YAML document. It's the inverse of ComputeMutations - where
+// ComputeMutations determines what changed, PatchMutations applies those changes.
+//
 // mutationsPatch is sometimes generated from other configuration units, such as in the canonical
 // case of upgrade from upstream. Or may be generated from past revisions or even live state.
 // So it may not match the provided configuration data in some ways, such as resource names
@@ -2072,6 +2202,52 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 // mutationsPredicates is expected to have been generated from the mutations corresponding to the
 // configuration data being patched. So it is expected to match the contents of parsedData.
 // It is acceptable for mutationsPredicates to be nil.
+//
+// Algorithm:
+//
+// 1. Process Each Document
+//
+// For each document in parsedData:
+//
+// Resource Matching:
+//   - Tries to find matching patch by current resource name
+//   - Falls back to originalName annotation (for cloned resources)
+//   - Falls back to AliasesWithoutScopes from predicates
+//
+// Predicate Filtering (Resource Level):
+//   - If predicate exists and Predicate == false, skip the entire resource
+//
+// Resource-Level Mutations:
+//
+//	| MutationType     | Action                                           |
+//	|------------------|--------------------------------------------------|
+//	| Add / Replace    | Replace entire document with the mutation's Value|
+//	| Delete           | Set document to nil (filtered on serialization)  |
+//	| None             | Skip (no changes)                                |
+//	| Update           | Process path-level mutations                     |
+//
+// 2. Path-Level Mutations
+//
+// For Update mutations, process each path in PathMutationMap:
+//
+//   - Sort paths: Process parent paths before children (lexicographic sort)
+//
+//   - Predicate filtering: Check path and all parent paths for Predicate == false
+//
+//   - Apply by type:
+//
+//     | MutationType     | Action                                    |
+//     |------------------|-------------------------------------------|
+//     | Add / Replace    | Set value at path (overwrites)            |
+//     | Update           | Merge value at path (preserves comments)  |
+//     | Delete           | Remove the path from document             |
+//
+// Key Behaviors:
+//   - Alias awareness: Matches resources even when names differ between patch and target
+//   - Predicate filtering: Allows selective application of changes
+//   - Comment preservation: Update mutations try to preserve YAML comments
+//   - Parent-first ordering: Ensures parent paths are applied before children
+//   - Graceful handling: Logs errors but continues processing other mutations
 func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider) (gaby.Container, error) {
 	// If mutationsPredicates is nil, then mutationPredicateMap will be empty.
 	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
@@ -2094,6 +2270,10 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
 		mutationPatchMap[resourceInfoKey] = i
 	}
+
+	// Track which patch mutations were matched to existing documents.
+	// Unmatched Add/Replace mutations need to be appended as new documents.
+	matchedPatchIndices := make(map[int]bool)
 
 	for docIndex, doc := range parsedData {
 		resourceCategory, resourceType, resourceName, err := GetResourceCategoryTypeName(doc, resourceProvider)
@@ -2164,6 +2344,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			}
 		}
 
+		matchedPatchIndices[mutationPatchIndex] = true
 		resourcePatchMutation := &mutationsPatch[mutationPatchIndex].ResourceMutationInfo
 		switch resourcePatchMutation.MutationType {
 		case api.MutationTypeAdd, api.MutationTypeReplace:
@@ -2290,6 +2471,25 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			case api.MutationTypeNone:
 				// Shouldn't happen for paths, but also shouldn't be anything to do
 			}
+		}
+	}
+
+	// Append new documents for Add/Replace mutations that didn't match any existing document.
+	for i := range mutationsPatch {
+		if matchedPatchIndices[i] {
+			continue
+		}
+		resourcePatchMutation := &mutationsPatch[i].ResourceMutationInfo
+		switch resourcePatchMutation.MutationType {
+		case api.MutationTypeAdd, api.MutationTypeReplace:
+			valueString := resourcePatchMutation.Value
+			valueDoc, err := gaby.ParseYAML([]byte(valueString))
+			if err != nil {
+				log.Infof("error parsing value for unmatched resource %s: %v",
+					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource), err)
+				continue
+			}
+			parsedData = append(parsedData, valueDoc)
 		}
 	}
 

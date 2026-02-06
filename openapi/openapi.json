@@ -19,10 +19,6 @@
     {
       "url": "https://hub.confighub.com/api",
       "description": "production"
-    },
-    {
-      "url": "http://localhost:9090/api",
-      "description": "local"
     }
   ],
   "security": [
@@ -479,6 +475,24 @@
             "name": "name_prefixes",
             "in": "query",
             "description": "Comma-separated list of prefixes to apply to cloned Space names",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Space labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
             "required": false,
             "schema": {
               "type": "string"
@@ -2310,6 +2324,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned ChangeSet labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.\n\nWhere expression to select destination spaces for cloning changesets\n\nThe whole string must be query-encoded.",
@@ -3077,6 +3109,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Filter labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A Go-template string for clone name, use .SourceEntity to access the original entity and .Labels to access variant labels",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.\n\nWhere expression to select destination spaces for cloning filters\n\nThe whole string must be query-encoded.",
@@ -3398,6 +3448,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "subgroup",
+            "in": "query",
+            "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -4140,6 +4199,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Invocation labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.\n\nWhere expression to select destination spaces for cloning invocations\n\nThe whole string must be query-encoded.",
@@ -4358,7 +4435,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.\n\nfilter\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.\n\nfilter\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -4512,7 +4589,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -4642,7 +4719,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.\n\nfilter\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.\n\nfilter\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -4691,6 +4768,11 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "AutoUpdate": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -4703,6 +4785,11 @@
                   "DisplayName": {
                     "type": "string",
                     "description": "Friendly name for the entity.",
+                    "nullable": true
+                  },
+                  "DownstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
                     "nullable": true
                   },
                   "FromUnitID": {
@@ -4737,9 +4824,34 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "UpdateType": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UseLiveState": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "Version": {
                     "type": "integer",
                     "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+                    "nullable": true
+                  },
+                  "WhereMutation": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "WhereResource": {
+                    "type": "string",
+                    "description": "",
                     "nullable": true
                   }
                 },
@@ -4952,6 +5064,11 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "AutoUpdate": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -4964,6 +5081,11 @@
                   "DisplayName": {
                     "type": "string",
                     "description": "Friendly name for the entity.",
+                    "nullable": true
+                  },
+                  "DownstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
                     "nullable": true
                   },
                   "FromUnitID": {
@@ -4998,9 +5120,34 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "UpdateType": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UseLiveState": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "Version": {
                     "type": "integer",
                     "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+                    "nullable": true
+                  },
+                  "WhereMutation": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "WhereResource": {
+                    "type": "string",
+                    "description": "",
                     "nullable": true
                   }
                 },
@@ -5203,7 +5350,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Organizations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Organization: BillingAccountID, CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Organizations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -10068,6 +10215,15 @@
             }
           },
           {
+            "name": "subgroup",
+            "in": "query",
+            "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.\n\nFinding all units created by cloning can be done using the expression `UpstreamRevisionNum \u003e 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum \u003e LiveRevisionNum`.\n\nThe whole string must be query-encoded.",
@@ -11063,7 +11219,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -11231,7 +11387,7 @@
             }
           },
           "200": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that selected config data from the upstream To Unit (the producer)\nshould be propagated to the downstream From Unit (the consumer).\nLinks must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a group.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11590,6 +11746,11 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "AutoUpdate": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -11602,6 +11763,11 @@
                   "DisplayName": {
                     "type": "string",
                     "description": "Friendly name for the entity.",
+                    "nullable": true
+                  },
+                  "DownstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
                     "nullable": true
                   },
                   "FromUnitID": {
@@ -11636,9 +11802,34 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "UpdateType": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamLastMergedRevisionNum": {
+                    "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UseLiveState": {
+                    "type": "boolean",
+                    "description": "",
+                    "nullable": true
+                  },
                   "Version": {
                     "type": "integer",
                     "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+                    "nullable": true
+                  },
+                  "WhereMutation": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "WhereResource": {
+                    "type": "string",
+                    "description": "",
                     "nullable": true
                   }
                 },
@@ -11659,7 +11850,7 @@
             }
           },
           "200": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that selected config data from the upstream To Unit (the producer)\nshould be propagated to the downstream From Unit (the consumer).\nLinks must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a group.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11780,7 +11971,7 @@
             }
           },
           "200": {
-            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set.",
+            "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that selected config data from the upstream To Unit (the producer)\nshould be propagated to the downstream From Unit (the consumer).\nLinks must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a group.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13230,6 +13421,11 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "LiveStateType": {
+                    "type": "string",
+                    "description": "",
                     "nullable": true
                   },
                   "Parameters": {
@@ -14757,6 +14953,16 @@
               }
             }
           },
+          "423": {
+            "description": "Unable to delete the unit(s) due to an inflight operation on the unit(s)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -14956,6 +15162,15 @@
             }
           },
           {
+            "name": "resolve",
+            "in": "query",
+            "description": "Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "merge_source",
             "in": "query",
             "description": "Merge source unit. Currently it must be a unit ID or 'Self'.",
@@ -14985,7 +15200,7 @@
           {
             "name": "where_mutation",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -15018,6 +15233,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "subgroup",
+            "in": "query",
+            "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -15272,6 +15496,15 @@
             }
           },
           {
+            "name": "resolve",
+            "in": "query",
+            "description": "Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "merge_source",
             "in": "query",
             "description": "Merge source unit. Currently it must be a unit ID or 'Self'.",
@@ -15301,7 +15534,7 @@
           {
             "name": "where_mutation",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -15334,6 +15567,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "subgroup",
+            "in": "query",
+            "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -16431,7 +16673,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -19070,6 +19312,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Tag labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.\n\nWhere expression to select destination spaces for cloning tags\n\nThe whole string must be query-encoded.",
@@ -19632,6 +19892,11 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "LiveStateType": {
+                    "type": "string",
+                    "description": "",
                     "nullable": true
                   },
                   "Parameters": {
@@ -20738,6 +21003,16 @@
               }
             }
           },
+          "423": {
+            "description": "Unable to delete entities due to a inflight operation using one or more of the entities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Unit.",
             "content": {
@@ -20970,6 +21245,15 @@
             }
           },
           {
+            "name": "resolve",
+            "in": "query",
+            "description": "Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "merge_source",
             "in": "query",
             "description": "Merge source unit. Currently it must be a unit ID or 'Self'.",
@@ -20999,7 +21283,7 @@
           {
             "name": "where_mutation",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Mutations returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.\n\nUsed to filter which mutations are affected during merge operations.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -21032,6 +21316,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "subgroup",
+            "in": "query",
+            "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -21283,6 +21576,24 @@
             "name": "name_prefixes",
             "in": "query",
             "description": "Comma-separated list of prefixes to apply to cloned Unit names",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Unit labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
             "required": false,
             "schema": {
               "type": "string"
@@ -23262,6 +23573,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values fro cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.\n\nWhere expression to select destination spaces for cloning views\n\nThe whole string must be query-encoded.",
@@ -23510,6 +23839,9 @@
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceStatuses": {
+            "$ref": "#/components/schemas/ResourceStatusMap"
           },
           "Result": {
             "$ref": "#/components/schemas/ActionResultType"
@@ -23825,7 +24157,7 @@
             "items": {
               "$ref": "#/components/schemas/ConfigType"
             },
-            "description": "Configuration types supported by the BridgeWorker",
+            "description": "Configuration types of the bridges supported by the worker",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -24048,14 +24380,19 @@
             "description": "Targets known by the BridgeWorker",
             "x-go-type-skip-optional-pointer": true
           },
+          "LiveStateType": {
+            "type": "string",
+            "description": "Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState",
+            "x-go-type-skip-optional-pointer": true
+          },
           "ProviderType": {
             "type": "string",
-            "description": "Provider subtype of the configuration toolchain supported by the BridgegWorker",
+            "description": "Type identifying a bridge implementation supported by the worker",
             "x-go-type-skip-optional-pointer": true
           },
           "ToolchainType": {
             "type": "string",
-            "description": "Configuration toolchain and format supported by the BridgeWorker",
+            "description": "Configuration toolchain and format implemented by this bridge of the worker",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -24095,6 +24432,11 @@
           "EntityID": {
             "type": "string",
             "description": "Optional ID of the entity this error relates to",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "EntitySlug": {
+            "type": "string",
+            "description": "Optional slug of the entity this error relates to",
             "x-go-type-skip-optional-pointer": true
           },
           "EntityType": {
@@ -24794,6 +25136,11 @@
             "description": "NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.",
             "x-go-type-skip-optional-pointer": true
           },
+          "OnLiveState": {
+            "type": "boolean",
+            "description": "OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "StopOnError": {
             "type": "boolean",
             "description": "StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.",
@@ -24801,7 +25148,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process.",
+            "description": "ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. If OnLiveState is false, it must match the ToolchainType of the Units. If OnLiveState is true, it must match the LiveStateType of the Targets of the Units.",
             "x-go-type-skip-optional-pointer": true
           },
           "Triggers": {
@@ -25071,10 +25418,12 @@
         "properties": {
           "Operator": {
             "type": "string",
+            "description": "Operator specifies how to apply the filter (include, exclude, equals, contains, matches)",
             "x-go-type-skip-optional-pointer": true
           },
           "Type": {
             "type": "string",
+            "description": "Type specifies the filter type (namespace, label, resource_type, etc.)",
             "x-go-type-skip-optional-pointer": true
           },
           "Values": {
@@ -25082,6 +25431,7 @@
             "items": {
               "type": "string"
             },
+            "description": "Values specifies the filter values",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -25098,6 +25448,7 @@
             "items": {
               "$ref": "#/components/schemas/ImportFilter"
             },
+            "description": "List of ImportFilter expression clauses. Mutually exclusive with Where.",
             "x-go-type-skip-optional-pointer": true
           },
           "Options": {
@@ -25108,6 +25459,7 @@
           },
           "Where": {
             "type": "string",
+            "description": "Where specifies a unified resource filter expression for import resources and options. It uses SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, \u003c, \u003e, \u003c=, \u003e=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -25272,6 +25624,11 @@
             "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
             "x-go-type-skip-optional-pointer": true
           },
+          "AutoUpdate": {
+            "type": "boolean",
+            "description": "Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
@@ -25300,6 +25657,12 @@
             "description": "Friendly name for the entity.",
             "x-go-type-skip-optional-pointer": true
           },
+          "DownstreamLastMergedRevisionNum": {
+            "type": "integer",
+            "description": "The sequence number of the revision of the downstream unit created by the last merge.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
           "EntityType": {
             "type": "string",
             "description": "The type of entity.",
@@ -25308,7 +25671,7 @@
           },
           "FromUnitID": {
             "type": "string",
-            "description": "Unique identifier the Unit the Link initiates from. Links must be in the same space as the source unit.",
+            "description": "Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
@@ -25349,16 +25712,21 @@
           },
           "ToSpaceID": {
             "type": "string",
-            "description": "Unique identifier the Space of the Unit the Link targets.",
+            "description": "Unique identifier of the Space of the upstream Unit.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "ToUnitID": {
             "type": "string",
-            "description": "Unique identifier the Unit the Link targets.",
+            "description": "Unique identifier of the upstream (producer) Unit.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UpdateType": {
+            "type": "string",
+            "description": "The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides.",
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {
@@ -25369,15 +25737,36 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
+          "UpstreamLastMergedRevisionNum": {
+            "type": "integer",
+            "description": "The sequence number of the end revision of the upstream unit that was last merged.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UseLiveState": {
+            "type": "boolean",
+            "description": "Take data from the LiveState of the upstream Unit rather than from Data.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Version": {
             "type": "integer",
             "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
             "format": "int64",
             "readOnly": false,
             "x-go-type-skip-optional-pointer": true
+          },
+          "WhereMutation": {
+            "type": "string",
+            "description": "Where expression used to filter which Mutations of the downstream Unit can be affected during merge operations.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "WhereResource": {
+            "type": "string",
+            "description": "Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit.",
+            "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that config values Provided by the To Unit (the producer) may\nsatisfy config values Needed by the From Unit (the consumer), and should be attempted\nto be matched before values Provided by other Units in the Space (if within the same\nSpace). Links must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a Set."
+        "description": "Link connects two config Units in a dependency / producer-consumer relationship.\nA Link indicates that selected config data from the upstream To Unit (the producer)\nshould be propagated to the downstream From Unit (the consumer).\nLinks must be created in the same Space as the From Unit.\nThey also imply an ordering when Applied or Destroyed as a group."
       },
       "LinkCreateOrUpdateResponse": {
         "type": "object",
@@ -25492,6 +25881,11 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "Subgroup": {
+            "type": "string",
+            "description": "User-defined category for the Mutation. The prefix 'ConfigHub' is reserved.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "TriggerID": {
             "$ref": "#/components/schemas/UUID"
           },
@@ -25578,14 +25972,6 @@
               "type": "string"
             },
             "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "BillingAccountID": {
-            "type": "string",
-            "description": "Unique identifier for a billing account for the organization. Set to the BillingAccountID of the authenticated Organization.",
-            "format": "uuid",
-            "readOnly": true,
-            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
           "CreatedAt": {
@@ -25775,6 +26161,11 @@
             "description": "ExtraParams contains additional parameters for the operation in string format.",
             "x-go-type-skip-optional-pointer": true
           },
+          "LiveState": {
+            "type": "string",
+            "format": "base64",
+            "x-go-type-skip-optional-pointer": true
+          },
           "OrganizationID": {
             "type": "string",
             "description": "OrganizationID is the unique identifier of the organization this operation belongs to.",
@@ -25921,6 +26312,83 @@
           "$ref": "#/components/schemas/ResourceMutation"
         },
         "nullable": true
+      },
+      "ResourceStatus": {
+        "type": "object",
+        "properties": {
+          "Message": {
+            "type": "string",
+            "description": "Human-readable status details or error message",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Readiness": {
+            "type": "string",
+            "description": "Health state from kstatus (Ready, InProgress, Failed, Unknown)",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SyncStatus": {
+            "type": "string",
+            "description": "Whether config was pushed to the target (Synced or NotSynced)",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "description": "Timestamp when this resource status was last updated",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ResourceStatusMap": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ResourceStatus"
+        }
+      },
+      "ResourceStatusSummary": {
+        "type": "object",
+        "properties": {
+          "Failed": {
+            "type": "integer",
+            "description": "Number of resources with Readiness=Failed",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FirstUpdatedAt": {
+            "type": "string",
+            "description": "Earliest UpdatedAt timestamp across all resources",
+            "format": "date-time",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LastUpdatedAt": {
+            "type": "string",
+            "description": "Most recent UpdatedAt timestamp across all resources",
+            "format": "date-time",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Progressing": {
+            "type": "integer",
+            "description": "Number of resources with Readiness=InProgress",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Ready": {
+            "type": "integer",
+            "description": "Number of resources with Readiness=Ready",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Synced": {
+            "type": "integer",
+            "description": "Number of resources with SyncStatus=Synced",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Total": {
+            "type": "integer",
+            "description": "Total number of resources in the unit",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "ResponseError": {
         "type": "object",
@@ -26437,6 +26905,11 @@
             "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
             "x-go-type-skip-optional-pointer": true
           },
+          "LiveStateType": {
+            "type": "string",
+            "description": "LiveStateType specifies the configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include \"Kubernetes/YAML\" and \"ConfigHub/YAML\".",
+            "x-go-type-skip-optional-pointer": true
+          },
           "OrganizationID": {
             "type": "string",
             "description": "Unique identifier for an organization.",
@@ -26454,7 +26927,7 @@
           },
           "ProviderType": {
             "type": "string",
-            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\" or \"OpenTofu/AWS\".",
+            "description": "ProviderType specifies the cloud or infrastructure provider for this target, such as \"Kubernetes\".",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -26478,7 +26951,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\".",
+            "description": "ToolchainType specifies the type of toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"ConfigHub/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\".",
             "x-go-type-skip-optional-pointer": true
           },
           "TriggerFilterID": {
@@ -27013,6 +27486,11 @@
             "description": "ExtraParams contains additional parameters for the operation in string format.",
             "x-go-type-skip-optional-pointer": true
           },
+          "LiveState": {
+            "type": "string",
+            "format": "base64",
+            "x-go-type-skip-optional-pointer": true
+          },
           "OrganizationID": {
             "type": "string",
             "description": "OrganizationID is the unique identifier of the organization this operation belongs to.",
@@ -27169,6 +27647,9 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "ResourceStatuses": {
+            "$ref": "#/components/schemas/ResourceStatusMap"
+          },
           "Result": {
             "$ref": "#/components/schemas/ActionResultType"
           },
@@ -27271,6 +27752,9 @@
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
+          "ResourceStatusSummary": {
+            "$ref": "#/components/schemas/ResourceStatusSummary"
+          },
           "Status": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
@@ -27316,6 +27800,9 @@
           "Drift": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceStatusSummary": {
+            "$ref": "#/components/schemas/ResourceStatusSummary"
           },
           "Status": {
             "type": "string",

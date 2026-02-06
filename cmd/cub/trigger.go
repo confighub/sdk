@@ -8,9 +8,11 @@ import (
 )
 
 var triggerCmd = &cobra.Command{
-	Use:               "trigger",
-	Short:             "Trigger commands",
-	Long:              getCommandHelp(`The trigger subcommands are used to manage triggers`, ""),
+	Use:   "trigger",
+	Short: "Trigger commands",
+	Long: getCommandHelp(`The trigger subcommands are used to manage triggers.
+
+Triggers are explained at https://docs.confighub.com/background/entities/trigger/.`, ""),
 	PersistentPreRunE: spacePreRunE,
 }
 

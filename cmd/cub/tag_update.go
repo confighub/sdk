@@ -183,6 +183,14 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if tagPatch {
 		// Single tag patch mode
 
+		// Add annotations if specified
+		if len(annotation) > 0 {
+			err := setAnnotations(&currentTag.Annotations)
+			if err != nil {
+				return err
+			}
+		}
+
 		// Add labels if specified
 		if len(label) > 0 {
 			err := setLabels(&currentTag.Labels)
@@ -228,6 +236,10 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTag.OrganizationID = existingTag.OrganizationID
 		currentTag.SpaceID = existingTag.SpaceID
 		currentTag.TagID = existingTag.TagID
+	}
+	err = setAnnotations(&currentTag.Annotations)
+	if err != nil {
+		return err
 	}
 	err = setLabels(&currentTag.Labels)
 	if err != nil {

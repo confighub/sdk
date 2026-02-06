@@ -17,7 +17,11 @@ var unitImportCmd = &cobra.Command{
 	Short: "Import a unit from various sources using unified import filters",
 	Long: getCommandHelp(`Import a unit from various sources using unified import filters.
 
-Default mode (with config-file):
+A target must be attached to the unit (cub unit set-target can be used to add one), and the
+worker corresponding to the target must be connected and ready (cub worker get can be used to
+get the worker status).
+
+	Default mode (with config-file):
 `+"```"+`
   cub unit import myunit resources.json
 `+"```"+`
@@ -44,18 +48,18 @@ Examples:
 }
 
 var unitImportArgs struct {
-	targetSlug string
-	dryRun     bool
+	targetSlug    string
+	dryRun        bool
+	whereResource string
 }
 
 func init() {
-	addStandardCreateFlags(unitImportCmd)
+	addStandardDisplayFlags(unitImportCmd)
 	enableActionWaitFlag(unitImportCmd)
-	enableWhereFlag(unitImportCmd)
-	enableFilterFlag(unitImportCmd)
 	// enableQuietFlagForOperation(unitImportCmd)
 	unitImportCmd.Flags().StringVar(&unitImportArgs.targetSlug, "target", "", "target slug to import into")
 	unitImportCmd.Flags().BoolVar(&unitImportArgs.dryRun, "dry-run", false, "Preview imported results")
+	unitImportCmd.Flags().StringVar(&unitImportArgs.whereResource, "where-resource", "", "Resource filter expression using SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.")
 
 	unitCmd.AddCommand(unitImportCmd)
 }
@@ -85,9 +89,8 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
-		// New unified mode - set the Where field from the --where flag
-		if where != "" {
-			importRequest.Where = where
+		if unitImportArgs.whereResource != "" {
+			importRequest.Where = unitImportArgs.whereResource
 		}
 	}
 
@@ -102,6 +105,22 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if actionWait {
 		return awaitCompletion("import", importRes.JSON200)
+	} else if !quiet && !hasAlternativeOutput() {
+		displayStartedOperation(importRes.JSON200)
+		return nil
+	}
+
+	if jsonOutput {
+		displayJSON(importRes.JSON200)
+	}
+	if jq != "" {
+		displayJQ(importRes.JSON200)
+	}
+	if yamlOutput {
+		displayYAML(importRes.JSON200)
+	}
+	if yq != "" {
+		displayYQ(importRes.JSON200)
 	}
 
 	return nil

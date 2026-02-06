@@ -17,7 +17,9 @@ import (
 var unitSetTargetCmd = &cobra.Command{
 	Use:   "set-target <unit-slug> <target-slug> | set-target <target-slug>",
 	Short: "Set target for unit(s)",
-	Long: getCommandHelp(`Set target for unit(s). Supports two modes:
+	Long: getCommandHelp(`Set target for unit(s). 
+
+Supports two modes:
 
 Single unit mode:
 `+"```"+`
@@ -30,7 +32,9 @@ Bulk mode:
   cub unit set-target <target-slug> --unit unit1,unit2,unit3
 `+"```"+`
 
-Use "-" as target-slug to unset/clear the target.`, ""),
+Use "-" as target-slug to unset/clear the target.
+
+Targets typically are created by workers, but may also be created using cub target create.`, ""),
 	Args:        cobra.RangeArgs(1, 2),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        unitSetTargetCmdRun,

@@ -67,11 +67,13 @@ Bulk Create Examples:
 }
 
 var tagCreateArgs struct {
-	destSpaces   []string
-	whereSpace   string
-	namePrefixes []string
-	tagSlugs     []string
-	filterSpace  string
+	destSpaces    []string
+	whereSpace    string
+	namePrefixes  []string
+	tagSlugs      []string
+	filterSpace   string
+	variantLabels []string
+	namePattern   string
 }
 
 func init() {
@@ -83,6 +85,8 @@ func init() {
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	tagCreateCmd.Flags().StringVar(&tagCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	tagCreateCmd.Flags().StringVar(&tagCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Tag and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	tagCreateCmd.Flags().StringSliceVar(&tagCreateArgs.tagSlugs, "tag", []string{}, "target specific tags by slug or UUID for bulk create (can be repeated or comma-separated)")
 	tagCreateCmd.Flags().StringVar(&tagCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -103,8 +107,24 @@ func checkTagCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(tagCreateArgs.destSpaces) == 0 && tagCreateArgs.whereSpace == "" && len(tagCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(tagCreateArgs.destSpaces) == 0 && tagCreateArgs.whereSpace == "" && len(tagCreateArgs.namePrefixes) == 0 && len(tagCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(tagCreateArgs.namePrefixes) > 0 && len(tagCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if tagCreateArgs.namePattern != "" && len(tagCreateArgs.namePrefixes) > 0 {
+			return false, errors.New(
+				"--name-pattern and --name-prefix cannot be used together",
+			)
+		}
+
+		if tagCreateArgs.namePattern != "" && len(tagCreateArgs.variantLabels) == 0 {
+			return false, errors.New(
+				"--name-pattern requires --variant-labels to be set",
+			)
 		}
 	} else {
 		// Single create mode validation
@@ -112,8 +132,13 @@ func checkTagCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single tag creation requires: <slug>")
 		}
 
-		if filter != "" || where != "" || len(tagCreateArgs.tagSlugs) > 0 || len(tagCreateArgs.destSpaces) > 0 || tagCreateArgs.whereSpace != "" || len(tagCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --tag, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			tagCreateArgs.namePattern != "" || len(tagCreateArgs.tagSlugs) > 0 ||
+			len(tagCreateArgs.destSpaces) > 0 || tagCreateArgs.whereSpace != "" ||
+			len(tagCreateArgs.namePrefixes) > 0 || len(tagCreateArgs.variantLabels) > 0 {
+			return false, errors.New(
+				"bulk create flags (--filter, --where, --tag, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+			)
 		}
 	}
 
@@ -158,7 +183,11 @@ func runSingleTagCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -237,6 +266,17 @@ func runBulkTagCreate() error {
 	if len(tagCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(tagCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Add variant labels if specified
+	if len(tagCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(tagCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Add name pattern if specified
+	if tagCreateArgs.namePattern != "" {
+		params.NamePattern = &tagCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

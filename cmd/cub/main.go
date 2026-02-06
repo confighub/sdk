@@ -670,10 +670,15 @@ var timeout string
 
 const DefaultTimeoutDuration = 10 * time.Minute
 
+var annotation []string
 var label []string
 var deleteGate []string
 var spaceIdentifiers []string
 var allowExists bool
+
+func enableAnnotationFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&annotation, "annotation", []string{}, "annotations in key=value format; can separate by commas and/or use multiple instances of the flag")
+}
 
 func enableLabelFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&label, "label", []string{}, "labels in key=value format; can separate by commas and/or use multiple instances of the flag")
@@ -687,26 +692,44 @@ func enableDeleteGateFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&deleteGate, "delete-gate", []string{}, "delete gates in key[=true] format; can separate by commas and/or use multiple instances of the flag")
 }
 
-func setLabels(labelMap *map[string]string) error {
-	if label != nil && len(label) != 0 {
-		if *labelMap == nil {
-			*labelMap = map[string]string{}
+func setKeyValues(kvStrings []string, kvMap *map[string]string) error {
+	if kvStrings != nil && len(kvStrings) != 0 {
+		if *kvMap == nil {
+			*kvMap = map[string]string{}
 		}
-		for _, labelString := range label {
-			keyValue := strings.Split(labelString, "=")
+		for _, kvString := range kvStrings {
+			keyValue := strings.Split(kvString, "=")
 			switch len(keyValue) {
 			case 1:
-				(*labelMap)[keyValue[0]] = ""
+				(*kvMap)[keyValue[0]] = ""
 			case 2:
 				// Note: For patch operations, value "-" indicates removal and is handled
 				// by BuildPatchData and EnhancePatchData functions. This function only
 				// handles non-patch (Put) operations where removal is not supported.
-				(*labelMap)[keyValue[0]] = keyValue[1]
+				(*kvMap)[keyValue[0]] = keyValue[1]
 			default:
-				return fmt.Errorf("invalid label; expected key=value: %s", labelString)
+				return fmt.Errorf("expected key=value: %s", kvString)
 			}
 		}
 	}
+	return nil
+}
+
+func setAnnotations(annotationMap *map[string]string) error {
+	err := setKeyValues(annotation, annotationMap)
+	if err != nil {
+		return fmt.Errorf("invalid annotation: %w", err)
+	}
+
+	return nil
+}
+
+func setLabels(labelMap *map[string]string) error {
+	err := setKeyValues(label, labelMap)
+	if err != nil {
+		return fmt.Errorf("invalid label; %w", err)
+	}
+
 	return nil
 }
 
@@ -1090,6 +1113,7 @@ func addStandardListFlags(cmd *cobra.Command) {
 }
 
 func addStandardCreateFlags(cmd *cobra.Command) {
+	enableAnnotationFlag(cmd)
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)
 	enableAllowExistsFlag(cmd)
@@ -1104,6 +1128,7 @@ func addStandardGetFlags(cmd *cobra.Command) {
 }
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
+	enableAnnotationFlag(cmd)
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)
 	enableFromStdinFlag(cmd)
@@ -1714,7 +1739,17 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			if !quiet {
 				// Display error for this unit
 				if result.Error.ErrorMetadata != nil && result.Error.ErrorMetadata.EntityID != "" {
-					tprint("Failed to %s unit %s: %s", action, result.Error.ErrorMetadata.EntityID, result.Error.Message)
+					if result.Error.ErrorMetadata.EntitySlug != "" {
+						tprint(
+							"Failed to %s unit %s (%s): %s",
+							action,
+							result.Error.ErrorMetadata.EntitySlug,
+							result.Error.ErrorMetadata.EntityID,
+							result.Error.Message,
+						)
+					} else {
+						tprint("Failed to %s unit %s: %s", action, result.Error.ErrorMetadata.EntityID, result.Error.Message)
+					}
 				} else {
 					tprint("Failed: %s", result.Error.Message)
 				}

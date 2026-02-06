@@ -70,6 +70,8 @@ var changesetCreateArgs struct {
 	changesetSlugs []string
 	description    string
 	filterSpace    string
+	variantLabels  []string
+	namePattern    string
 }
 
 func init() {
@@ -84,6 +86,8 @@ func init() {
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original ChangeSet and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.changesetSlugs, "changeset", []string{}, "target specific changesets by slug or UUID for bulk create (can be repeated or comma-separated)")
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -104,8 +108,20 @@ func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(changesetCreateArgs.destSpaces) == 0 && changesetCreateArgs.whereSpace == "" && len(changesetCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(changesetCreateArgs.destSpaces) == 0 && changesetCreateArgs.whereSpace == "" && len(changesetCreateArgs.namePrefixes) == 0 && len(changesetCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(changesetCreateArgs.namePrefixes) > 0 && len(changesetCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if changesetCreateArgs.namePattern != "" && len(changesetCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if changesetCreateArgs.namePattern != "" && len(changesetCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--name-pattern requires --variant-labels to be set")
 		}
 	} else {
 		// Single create mode validation
@@ -113,8 +129,13 @@ func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single changeset creation requires: <slug>")
 		}
 
-		if filter != "" || where != "" || len(changesetCreateArgs.changesetSlugs) > 0 || len(changesetCreateArgs.destSpaces) > 0 || changesetCreateArgs.whereSpace != "" || len(changesetCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --changeset, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || changesetCreateArgs.namePattern != "" ||
+			len(changesetCreateArgs.changesetSlugs) > 0 || len(changesetCreateArgs.destSpaces) > 0 ||
+			changesetCreateArgs.whereSpace != "" || len(changesetCreateArgs.namePrefixes) > 0 ||
+			len(changesetCreateArgs.variantLabels) > 0 {
+			return false, errors.New(
+				"bulk create flags (--filter, --where, --changeset, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+			)
 		}
 	}
 
@@ -159,7 +180,11 @@ func runSingleChangeSetCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -251,6 +276,17 @@ func runBulkChangeSetCreate() error {
 	if len(changesetCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(changesetCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Add variant labels if specified
+	if len(changesetCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(changesetCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Add name pattern if specified
+	if changesetCreateArgs.namePattern != "" {
+		params.NamePattern = &changesetCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

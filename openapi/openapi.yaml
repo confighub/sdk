@@ -14,8 +14,6 @@ info:
 servers:
 - description: production
   url: https://hub.confighub.com/api
-- description: local
-  url: http://localhost:9090/api
 security:
 - bearerAuth: []
 paths:
@@ -518,6 +516,21 @@ paths:
       - description: Comma-separated list of prefixes to apply to cloned Space names
         in: query
         name: name_prefixes
+        required: false
+        schema:
+          type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Space labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
         required: false
         schema:
           type: string
@@ -2244,6 +2257,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          ChangeSet labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -3073,6 +3101,20 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Filter labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: A Go-template string for clone name, use .SourceEntity to access
+          the original entity and .Labels to access variant labels
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -3339,6 +3381,13 @@ paths:
         required: false
         schema:
           format: uuid
+          type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
           type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
@@ -4159,6 +4208,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Invocation labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -4386,7 +4450,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 
           filter
 
@@ -4549,7 +4613,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -4704,7 +4768,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 
           filter
 
@@ -4780,6 +4844,10 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AutoUpdate:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -4792,6 +4860,10 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
+                DownstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -4820,11 +4892,31 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                UpstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
+                UseLiveState:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereMutation:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -5143,6 +5235,10 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AutoUpdate:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -5155,6 +5251,10 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
+                DownstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -5183,11 +5283,31 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                UpstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
+                UseLiveState:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereMutation:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -5336,7 +5456,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+          Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -9032,6 +9152,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Units returned. The expression syntax was inspired by SQL.
@@ -9856,7 +9983,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -10008,11 +10135,10 @@ paths:
                 $ref: '#/components/schemas/Link'
           description: |-
             Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+            A Link indicates that selected config data from the upstream To Unit (the producer)
+            should be propagated to the downstream From Unit (the consumer).
+            Links must be created in the same Space as the From Unit.
+            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -10259,6 +10385,10 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AutoUpdate:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -10271,6 +10401,10 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
+                DownstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -10299,11 +10433,31 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                UpstreamLastMergedRevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
+                UseLiveState:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereMutation:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -10313,11 +10467,10 @@ paths:
                 $ref: '#/components/schemas/Link'
           description: |-
             Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+            A Link indicates that selected config data from the upstream To Unit (the producer)
+            should be propagated to the downstream From Unit (the consumer).
+            Links must be created in the same Space as the From Unit.
+            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -10394,11 +10547,10 @@ paths:
                 $ref: '#/components/schemas/Link'
           description: |-
             Link connects two config Units in a dependency / producer-consumer relationship.
-            A Link indicates that config values Provided by the To Unit (the producer) may
-            satisfy config values Needed by the From Unit (the consumer), and should be attempted
-            to be matched before values Provided by other Units in the Space (if within the same
-            Space). Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a Set.
+            A Link indicates that selected config data from the upstream To Unit (the producer)
+            should be propagated to the downstream From Unit (the consumer).
+            Links must be created in the same Space as the From Unit.
+            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -11521,6 +11673,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                LiveStateType:
+                  description: ""
+                  nullable: true
+                  type: string
                 Parameters:
                   description: ""
                   nullable: true
@@ -12733,6 +12889,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unit could not be deleted.
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete the unit(s) due to an inflight operation on
+            the unit(s)
         "500":
           content:
             application/json:
@@ -12889,6 +13052,13 @@ paths:
         required: false
         schema:
           type: string
+      - description: Resolve specified non-automatically resolved link from this (downstream)
+          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+        in: query
+        name: resolve
+        required: false
+        schema:
+          type: string
       - description: Merge source unit. Currently it must be a unit ID or 'Self'.
         in: query
         name: merge_source
@@ -12951,7 +13121,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -12992,6 +13162,13 @@ paths:
         required: false
         schema:
           format: uuid
+          type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
           type: string
       requestBody:
         content:
@@ -13200,6 +13377,13 @@ paths:
         required: false
         schema:
           type: string
+      - description: Resolve specified non-automatically resolved link from this (downstream)
+          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+        in: query
+        name: resolve
+        required: false
+        schema:
+          type: string
       - description: Merge source unit. Currently it must be a unit ID or 'Self'.
         in: query
         name: merge_source
@@ -13262,7 +13446,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -13303,6 +13487,13 @@ paths:
         required: false
         schema:
           format: uuid
+          type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
           type: string
       requestBody:
         content:
@@ -14055,7 +14246,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           The whole string must be query-encoded.
         in: query
@@ -16391,6 +16582,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Tag labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -17021,6 +17227,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                LiveStateType:
+                  description: ""
+                  nullable: true
+                  type: string
                 Parameters:
                   description: ""
                   nullable: true
@@ -18134,6 +18344,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unable to delete entities
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entities due to a inflight operation using
+            one or more of the entities
         "500":
           content:
             application/json:
@@ -18460,6 +18677,13 @@ paths:
         required: false
         schema:
           type: string
+      - description: Resolve specified non-automatically resolved link from this (downstream)
+          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+        in: query
+        name: resolve
+        required: false
+        schema:
+          type: string
       - description: Merge source unit. Currently it must be a unit ID or 'Self'.
         in: query
         name: merge_source
@@ -18522,7 +18746,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -18563,6 +18787,13 @@ paths:
         required: false
         schema:
           format: uuid
+          type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
           type: string
       requestBody:
         content:
@@ -18818,6 +19049,21 @@ paths:
       - description: Comma-separated list of prefixes to apply to cloned Unit names
         in: query
         name: name_prefixes
+        required: false
+        schema:
+          type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Unit labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
         required: false
         schema:
           type: string
@@ -20888,6 +21134,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values fro cloned
+          View labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -21115,6 +21376,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        ResourceStatuses:
+          $ref: '#/components/schemas/ResourceStatusMap'
         Result:
           $ref: '#/components/schemas/ActionResultType'
         RevisionNum:
@@ -21385,7 +21648,7 @@ components:
     BridgeWorkerInfo:
       properties:
         SupportedConfigTypes:
-          description: Configuration types supported by the BridgeWorker
+          description: Configuration types of the bridges supported by the worker
           items:
             $ref: '#/components/schemas/ConfigType'
           type: array
@@ -21582,13 +21845,18 @@ components:
             $ref: '#/components/schemas/TargetType2'
           type: array
           x-go-type-skip-optional-pointer: true
+        LiveStateType:
+          description: Configuration toolchain and format of the LiveState for this
+            bridge; required in order to invoke functions on LiveState
+          type: string
+          x-go-type-skip-optional-pointer: true
         ProviderType:
-          description: Provider subtype of the configuration toolchain supported by
-            the BridgegWorker
+          description: Type identifying a bridge implementation supported by the worker
           type: string
           x-go-type-skip-optional-pointer: true
         ToolchainType:
-          description: Configuration toolchain and format supported by the BridgeWorker
+          description: Configuration toolchain and format implemented by this bridge
+            of the worker
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -21618,6 +21886,10 @@ components:
       properties:
         EntityID:
           description: Optional ID of the entity this error relates to
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntitySlug:
+          description: Optional slug of the entity this error relates to
           type: string
           x-go-type-skip-optional-pointer: true
         EntityType:
@@ -22136,6 +22408,11 @@ components:
             remaining functions, but don't report an error.
           type: integer
           x-go-type-skip-optional-pointer: true
+        OnLiveState:
+          description: OnLiveState indicates that the functions should be invoked
+            on the LiveState rather than the Data.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         StopOnError:
           description: StopOnError indicates whether to stop executing functions from
             the FunctionInvocations list on the first error, or to execute all of
@@ -22147,7 +22424,9 @@ components:
         ToolchainType:
           description: ToolchainType specifies the type of toolchain for these function
             invocations. This determines which configuration formats the functions
-            can process.
+            can process. If OnLiveState is false, it must match the ToolchainType
+            of the Units. If OnLiveState is true, it must match the LiveStateType
+            of the Targets of the Units.
           type: string
           x-go-type-skip-optional-pointer: true
         Triggers:
@@ -22362,12 +22641,17 @@ components:
     ImportFilter:
       properties:
         Operator:
+          description: Operator specifies how to apply the filter (include, exclude,
+            equals, contains, matches)
           type: string
           x-go-type-skip-optional-pointer: true
         Type:
+          description: Type specifies the filter type (namespace, label, resource_type,
+            etc.)
           type: string
           x-go-type-skip-optional-pointer: true
         Values:
+          description: Values specifies the filter values
           items:
             type: string
           type: array
@@ -22379,6 +22663,8 @@ components:
     ImportRequest:
       properties:
         Filters:
+          description: List of ImportFilter expression clauses. Mutually exclusive
+            with Where.
           items:
             $ref: '#/components/schemas/ImportFilter'
           type: array
@@ -22388,6 +22674,15 @@ components:
         ResourceInfoList:
           $ref: '#/components/schemas/ResourceInfoList'
         Where:
+          description: 'Where specifies a unified resource filter expression for import
+            resources and options. It uses SQL-inspired syntax, similar to the where-filter
+            function. Supports conjunctions with AND. String operators: =, !=, <,
+            >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with
+            LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support
+            POSIX regular expressions. Kubernetes-specific filters include import.include_system
+            for system namespaces like kube-system, import.include_cluster for cluster-scoped
+            resources like ClusterRole, and import.include_custom for custom resource
+            types.'
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -22516,11 +22811,10 @@ components:
     Link:
       description: |-
         Link connects two config Units in a dependency / producer-consumer relationship.
-        A Link indicates that config values Provided by the To Unit (the producer) may
-        satisfy config values Needed by the From Unit (the consumer), and should be attempted
-        to be matched before values Provided by other Units in the Space (if within the same
-        Space). Links must be created in the same Space as the From Unit.
-        They also imply an ordering when Applied or Destroyed as a Set.
+        A Link indicates that selected config data from the upstream To Unit (the producer)
+        should be propagated to the downstream From Unit (the consumer).
+        Links must be created in the same Space as the From Unit.
+        They also imply an ordering when Applied or Destroyed as a group.
       properties:
         Annotations:
           additionalProperties:
@@ -22528,6 +22822,12 @@ components:
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
           type: object
+          x-go-type-skip-optional-pointer: true
+        AutoUpdate:
+          description: Automatically update the downstream Unit when the upstream
+            Unit changes. Always treated as true for links with no UpdateType, for
+            backward compatibility.
+          type: boolean
           x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
@@ -22554,14 +22854,20 @@ components:
           description: Friendly name for the entity.
           type: string
           x-go-type-skip-optional-pointer: true
+        DownstreamLastMergedRevisionNum:
+          description: The sequence number of the revision of the downstream unit
+            created by the last merge.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         FromUnitID:
-          description: Unique identifier the Unit the Link initiates from. Links must
-            be in the same space as the source unit.
+          description: Unique identifier of the downstream (consumer) Unit. Links
+            must be in the same space as the source unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -22596,15 +22902,20 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ToSpaceID:
-          description: Unique identifier the Space of the Unit the Link targets.
+          description: Unique identifier of the Space of the upstream Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
         ToUnitID:
-          description: Unique identifier the Unit the Link targets.
+          description: Unique identifier of the upstream (producer) Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdateType:
+          description: The ConfigHub operation performed using this Link. Valid values
+            are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides.
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -22615,12 +22926,33 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        UpstreamLastMergedRevisionNum:
+          description: The sequence number of the end revision of the upstream unit
+            that was last merged.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UseLiveState:
+          description: Take data from the LiveState of the upstream Unit rather than
+            from Data.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
             control. The value read must be sent in calls to Update.
           format: int64
           readOnly: false
           type: integer
+          x-go-type-skip-optional-pointer: true
+        WhereMutation:
+          description: Where expression used to filter which Mutations of the downstream
+            Unit can be affected during merge operations.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereResource:
+          description: Where expression used to select which resources of the upstream
+            Unit should be eligible for propagation to the downstream Unit.
+          type: string
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
@@ -22723,6 +23055,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        Subgroup:
+          description: User-defined category for the Mutation. The prefix 'ConfigHub'
+            is reserved.
+          type: string
+          x-go-type-skip-optional-pointer: true
         TriggerID:
           $ref: '#/components/schemas/UUID'
         UnitID:
@@ -22793,14 +23130,6 @@ components:
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
           type: object
-          x-go-type-skip-optional-pointer: true
-        BillingAccountID:
-          description: Unique identifier for a billing account for the organization.
-            Set to the BillingAccountID of the authenticated Organization.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          readOnly: true
-          type: string
           x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
@@ -22974,6 +23303,10 @@ components:
             in string format.
           type: string
           x-go-type-skip-optional-pointer: true
+        LiveState:
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: OrganizationID is the unique identifier of the organization
             this operation belongs to.
@@ -23114,6 +23447,66 @@ components:
         $ref: '#/components/schemas/ResourceMutation'
       nullable: true
       type: array
+    ResourceStatus:
+      properties:
+        Message:
+          description: Human-readable status details or error message
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Readiness:
+          description: Health state from kstatus (Ready, InProgress, Failed, Unknown)
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SyncStatus:
+          description: Whether config was pushed to the target (Synced or NotSynced)
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: Timestamp when this resource status was last updated
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ResourceStatusMap:
+      additionalProperties:
+        $ref: '#/components/schemas/ResourceStatus'
+      type: object
+    ResourceStatusSummary:
+      properties:
+        Failed:
+          description: Number of resources with Readiness=Failed
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        FirstUpdatedAt:
+          description: Earliest UpdatedAt timestamp across all resources
+          format: date-time
+          nullable: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LastUpdatedAt:
+          description: Most recent UpdatedAt timestamp across all resources
+          format: date-time
+          nullable: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Progressing:
+          description: Number of resources with Readiness=InProgress
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Ready:
+          description: Number of resources with Readiness=Ready
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Synced:
+          description: Number of resources with SyncStatus=Synced
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Total:
+          description: Total number of resources in the unit
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
     ResponseError:
       properties:
         Details:
@@ -23583,6 +23976,12 @@ components:
             attributes of entities for the purpose of grouping and filtering them.
           type: object
           x-go-type-skip-optional-pointer: true
+        LiveStateType:
+          description: LiveStateType specifies the configuration toolchain and format
+            of the LiveState for the bridge corresponding to this Target. Possible
+            values include "Kubernetes/YAML" and "ConfigHub/YAML".
+          type: string
+          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -23603,7 +24002,7 @@ components:
           $ref: '#/components/schemas/Permissions'
         ProviderType:
           description: ProviderType specifies the cloud or infrastructure provider
-            for this target, such as "Kubernetes" or "OpenTofu/AWS".
+            for this target, such as "Kubernetes".
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -23624,8 +24023,9 @@ components:
           x-go-type-skip-optional-pointer: true
         ToolchainType:
           description: ToolchainType specifies the type of toolchain supported by
-            this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
-            "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
+            this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
+            "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML",
+            "AppConfig/INI".
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
@@ -24163,6 +24563,10 @@ components:
             in string format.
           type: string
           x-go-type-skip-optional-pointer: true
+        LiveState:
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: OrganizationID is the unique identifier of the organization
             this operation belongs to.
@@ -24309,6 +24713,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        ResourceStatuses:
+          $ref: '#/components/schemas/ResourceStatusMap'
         Result:
           $ref: '#/components/schemas/ActionResultType'
         RevisionNum:
@@ -24391,6 +24797,8 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
+        ResourceStatusSummary:
+          $ref: '#/components/schemas/ResourceStatusSummary'
         Status:
           type: string
           x-go-type-skip-optional-pointer: true
@@ -24425,6 +24833,8 @@ components:
         Drift:
           type: string
           x-go-type-skip-optional-pointer: true
+        ResourceStatusSummary:
+          $ref: '#/components/schemas/ResourceStatusSummary'
         Status:
           type: string
           x-go-type-skip-optional-pointer: true

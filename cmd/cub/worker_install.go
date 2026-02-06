@@ -291,6 +291,18 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 						},
 					},
 				},
+				"volumeMounts": []map[string]interface{}{
+					{
+						"name":      "tmp",
+						"mountPath": "/tmp",
+					},
+				},
+			},
+		},
+		"volumes": []map[string]interface{}{
+			{
+				"name":     "tmp",
+				"emptyDir": map[string]interface{}{},
 			},
 		},
 	}

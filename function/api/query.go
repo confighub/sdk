@@ -265,13 +265,13 @@ func isValidImportOperator(operator string) bool {
 // ImportFilter
 type ImportFilter struct {
 	// Type specifies the filter type (namespace, label, resource_type, etc.)
-	Type string `json:",omitempty"`
+	Type string `json:",omitempty" description:"Type specifies the filter type (namespace, label, resource_type, etc.)"`
 
 	// Operator specifies how to apply the filter (include, exclude, equals, contains, matches)
-	Operator string `json:",omitempty"`
+	Operator string `json:",omitempty" description:"Operator specifies how to apply the filter (include, exclude, equals, contains, matches)"`
 
 	// Values specifies the filter values
-	Values []string `json:",omitempty"`
+	Values []string `json:",omitempty" description:"Values specifies the filter values"`
 }
 
 // ImportOptions represents extensible import configuration

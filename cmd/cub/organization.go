@@ -11,9 +11,11 @@ import (
 )
 
 var organizationCmd = &cobra.Command{
-	Use:               "organization",
-	Short:             "Organization commands",
-	Long:              getCommandHelp(`The organization subcommands are used to manage organizations`, ""),
+	Use:   "organization",
+	Short: "Organization commands",
+	Long: getCommandHelp(`The organization subcommands are used to manage organizations.
+	
+Organizations are explained at https://docs.confighub.com/background/entities/organization/.`, ""),
 	PersistentPreRunE: organizationPreRunE,
 }
 

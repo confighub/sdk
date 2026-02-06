@@ -152,6 +152,14 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	api.ResourceType("trident.netapp.io/v1/TridentConfigurator"): {},
 }
 
+// IsClusterScoped returns true if the given apiVersion and kind represent a cluster-scoped resource.
+// It checks against the known cluster-scoped resource types in K8sClusterScopedResourceTypes.
+func IsClusterScoped(apiVersion, kind string) bool {
+	resourceType := api.ResourceType(apiVersion + "/" + kind)
+	_, ok := K8sClusterScopedResourceTypes[resourceType]
+	return ok
+}
+
 // K8sNamespacedResourceTypes contains all known namespaced resource types
 var K8sNamespacedResourceTypes = map[api.ResourceType]struct{}{
 	api.ResourceType("v1/Pod"):                                   {},

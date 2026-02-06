@@ -74,6 +74,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             allow_exists: queryArg.allowExists,
           },
         }),
@@ -246,6 +248,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             where_space: queryArg.whereSpace,
             filter_space: queryArg.filterSpace,
             allow_exists: queryArg.allowExists,
@@ -309,6 +313,8 @@ const injectedRtkApi = api
               contains: queryArg.contains,
               include: queryArg.include,
               name_prefixes: queryArg.namePrefixes,
+              variant_labels: queryArg.variantLabels,
+              name_pattern: queryArg.namePattern,
               where_space: queryArg.whereSpace,
               filter_space: queryArg.filterSpace,
               allow_exists: queryArg.allowExists,
@@ -332,6 +338,7 @@ const injectedRtkApi = api
           params: {
             dry_run: queryArg.dryRun,
             change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
             where: queryArg.where,
             filter: queryArg.filter,
             resource_type: queryArg.resourceType,
@@ -406,6 +413,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             where_space: queryArg.whereSpace,
             filter_space: queryArg.filterSpace,
             allow_exists: queryArg.allowExists,
@@ -891,6 +900,7 @@ const injectedRtkApi = api
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
             change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
             where: queryArg.where,
             filter: queryArg.filter,
             resource_type: queryArg.resourceType,
@@ -1245,6 +1255,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
+            resolve: queryArg.resolve,
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
@@ -1252,6 +1263,7 @@ const injectedRtkApi = api
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
             change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1266,6 +1278,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
+            resolve: queryArg.resolve,
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
@@ -1273,6 +1286,7 @@ const injectedRtkApi = api
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
             change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1568,6 +1582,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             where_space: queryArg.whereSpace,
             filter_space: queryArg.filterSpace,
             allow_exists: queryArg.allowExists,
@@ -1725,6 +1741,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
+            resolve: queryArg.resolve,
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
@@ -1732,6 +1749,7 @@ const injectedRtkApi = api
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
             change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1747,6 +1765,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             where_space: queryArg.whereSpace,
             filter_space: queryArg.filterSpace,
             allow_exists: queryArg.allowExists,
@@ -1904,6 +1924,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             name_prefixes: queryArg.namePrefixes,
+            variant_labels: queryArg.variantLabels,
+            name_pattern: queryArg.namePattern,
             where_space: queryArg.whereSpace,
             filter_space: queryArg.filterSpace,
             allow_exists: queryArg.allowExists,
@@ -2169,6 +2191,10 @@ export type BulkCreateSpacesApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned Space names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned Space labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity */
   allowExists?: string;
   body: {
@@ -2875,6 +2901,10 @@ export type BulkCreateChangeSetsApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned ChangeSet names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned ChangeSet labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3279,6 +3309,10 @@ export type BulkCreateFiltersApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned Filter names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned Filter labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A Go-template string for clone name, use .SourceEntity to access the original entity and .Labels to access variant labels */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3368,6 +3402,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   dryRun?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Units returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3754,6 +3790,10 @@ export type BulkCreateInvocationsApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned Invocation names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned Invocation labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -3863,7 +3903,7 @@ export type BulkDeleteLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+    Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
     
     filter
     
@@ -3937,7 +3977,7 @@ export type SearchListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+    Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4020,7 +4060,7 @@ export type BulkPatchLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+    Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
     
     filter
     
@@ -4067,12 +4107,14 @@ export type BulkPatchLinksApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    AutoUpdate?: boolean | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
+    DownstreamLastMergedRevisionNum?: number | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -4082,8 +4124,13 @@ export type BulkPatchLinksApiArg = {
     Slug?: string | null;
     ToSpaceID?: string | null;
     ToUnitID?: string | null;
+    UpdateType?: string | null;
+    UpstreamLastMergedRevisionNum?: number | null;
+    UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    WhereMutation?: string | null;
+    WhereResource?: string | null;
   };
 };
 export type BulkCreateLinksApiResponse = /** status 200 OK */
@@ -4285,12 +4332,14 @@ export type BulkCreateLinksApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    AutoUpdate?: boolean | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
+    DownstreamLastMergedRevisionNum?: number | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -4300,8 +4349,13 @@ export type BulkCreateLinksApiArg = {
     Slug?: string | null;
     ToSpaceID?: string | null;
     ToUnitID?: string | null;
+    UpdateType?: string | null;
+    UpstreamLastMergedRevisionNum?: number | null;
+    UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    WhereMutation?: string | null;
+    WhereResource?: string | null;
   };
 };
 export type GetMeApiResponse =
@@ -4338,7 +4392,7 @@ export type ListOrganizationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Organization: BillingAccountID, CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+    Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5341,6 +5395,8 @@ export type InvokeFunctionsApiArg = {
   dryRun?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Units returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -5594,7 +5650,7 @@ export type ListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: CreatedAt, DeleteGates, DisplayName, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdatedAt.
+    Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5646,11 +5702,10 @@ export type ListLinksApiArg = {
 };
 export type CreateLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
-A Link indicates that config values Provided by the To Unit (the producer) may
-satisfy config values Needed by the From Unit (the consumer), and should be attempted
-to be matched before values Provided by other Units in the Space (if within the same
-Space). Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a Set. */ LinkRead;
+A Link indicates that selected config data from the upstream To Unit (the producer)
+should be propagated to the downstream From Unit (the consumer).
+Links must be created in the same Space as the From Unit.
+They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
 export type CreateLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5692,11 +5747,10 @@ export type GetLinkApiArg = {
 };
 export type PatchLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
-A Link indicates that config values Provided by the To Unit (the producer) may
-satisfy config values Needed by the From Unit (the consumer), and should be attempted
-to be matched before values Provided by other Units in the Space (if within the same
-Space). Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a Set. */ LinkRead;
+A Link indicates that selected config data from the upstream To Unit (the producer)
+should be propagated to the downstream From Unit (the consumer).
+Links must be created in the same Space as the From Unit.
+They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
 export type PatchLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -5707,12 +5761,14 @@ export type PatchLinkApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    AutoUpdate?: boolean | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
+    DownstreamLastMergedRevisionNum?: number | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -5722,17 +5778,21 @@ export type PatchLinkApiArg = {
     Slug?: string | null;
     ToSpaceID?: string | null;
     ToUnitID?: string | null;
+    UpdateType?: string | null;
+    UpstreamLastMergedRevisionNum?: number | null;
+    UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    WhereMutation?: string | null;
+    WhereResource?: string | null;
   };
 };
 export type UpdateLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
-A Link indicates that config values Provided by the To Unit (the producer) may
-satisfy config values Needed by the From Unit (the consumer), and should be attempted
-to be matched before values Provided by other Units in the Space (if within the same
-Space). Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a Set. */ LinkRead;
+A Link indicates that selected config data from the upstream To Unit (the producer)
+should be propagated to the downstream From Unit (the consumer).
+Links must be created in the same Space as the From Unit.
+They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
 export type UpdateLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6050,6 +6110,7 @@ export type PatchTargetApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    LiveStateType?: string | null;
     Parameters?: string | null;
     Permissions?: {
       [key: string]: object | null;
@@ -6442,6 +6503,8 @@ export type PatchUnitApiArg = {
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
+  /** Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*. */
+  resolve?: string;
   /** Merge source unit. Currently it must be a unit ID or 'Self'. */
   mergeSource?: string;
   /** Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -6477,7 +6540,7 @@ export type PatchUnitApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
     
     Used to filter which mutations are affected during merge operations.
     
@@ -6499,6 +6562,8 @@ export type PatchUnitApiArg = {
   tag?: string;
   /** Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode */
   changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -6560,6 +6625,8 @@ export type UpdateUnitApiArg = {
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
+  /** Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*. */
+  resolve?: string;
   /** Merge source unit. Currently it must be a unit ID or 'Self'. */
   mergeSource?: string;
   /** Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -6595,7 +6662,7 @@ export type UpdateUnitApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
     
     Used to filter which mutations are affected during merge operations.
     
@@ -6617,6 +6684,8 @@ export type UpdateUnitApiArg = {
   tag?: string;
   /** Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode */
   changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
   unit: Unit;
 };
 export type ApplyUnitApiResponse =
@@ -6736,7 +6805,7 @@ export type ListExtendedMutationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7601,6 +7670,10 @@ export type BulkCreateTagsApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned Tag names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned Tag labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7917,6 +7990,7 @@ export type BulkPatchTargetsApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    LiveStateType?: string | null;
     Parameters?: string | null;
     Permissions?: {
       [key: string]: object | null;
@@ -8589,6 +8663,8 @@ export type BulkPatchUnitsApiArg = {
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
+  /** Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*. */
+  resolve?: string;
   /** Merge source unit. Currently it must be a unit ID or 'Self'. */
   mergeSource?: string;
   /** Merge base revision of the merge source, which provides the base configuration data of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -8624,7 +8700,7 @@ export type BulkPatchUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+    Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
     
     Used to filter which mutations are affected during merge operations.
     
@@ -8646,6 +8722,8 @@ export type BulkPatchUnitsApiArg = {
   tag?: string;
   /** Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode */
   changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -8758,6 +8836,10 @@ export type BulkCreateUnitsApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned Unit names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values for cloned Unit labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -9707,6 +9789,10 @@ export type BulkCreateViewsApiArg = {
   include?: string;
   /** Comma-separated list of prefixes to apply to cloned View names */
   namePrefixes?: string;
+  /** Comma-separated list of labels with multiple values fro cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3 */
+  variantLabels?: string;
+  /** A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}' */
+  namePattern?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Spaces returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -9791,6 +9877,8 @@ export type ErrorItem = {
 export type ErrorMetadata = {
   /** Optional ID of the entity this error relates to */
   EntityID?: string;
+  /** Optional slug of the entity this error relates to */
+  EntitySlug?: string;
   /** Optional type of the entity this error relates to */
   EntityType?: string;
   /** Collection of error details */
@@ -9976,13 +10064,15 @@ export type TargetType2 = {
 export type ConfigType = {
   /** Targets known by the BridgeWorker */
   AvailableTargets?: TargetType2[];
-  /** Provider subtype of the configuration toolchain supported by the BridgegWorker */
+  /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
+  LiveStateType?: string;
+  /** Type identifying a bridge implementation supported by the worker */
   ProviderType?: string;
-  /** Configuration toolchain and format supported by the BridgeWorker */
+  /** Configuration toolchain and format implemented by this bridge of the worker */
   ToolchainType?: string;
 };
 export type BridgeWorkerInfo = {
-  /** Configuration types supported by the BridgeWorker */
+  /** Configuration types of the bridges supported by the worker */
   SupportedConfigTypes?: ConfigType[];
 };
 export type Schema = any;
@@ -10169,8 +10259,6 @@ export type OrganizationRead = {
   Annotations?: {
     [key: string]: string;
   };
-  /** Unique identifier for a billing account for the organization. Set to the BillingAccountID of the authenticated Organization. */
-  BillingAccountID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -10228,6 +10316,19 @@ export type ActionType =
   | 'Import'
   | 'N/A'
   | 'Refresh';
+export type ResourceStatus = {
+  /** Human-readable status details or error message */
+  Message?: string;
+  /** Health state from kstatus (Ready, InProgress, Failed, Unknown) */
+  Readiness?: string;
+  /** Whether config was pushed to the target (Synced or NotSynced) */
+  SyncStatus?: string;
+  /** Timestamp when this resource status was last updated */
+  UpdatedAt?: string;
+};
+export type ResourceStatusMap = {
+  [key: string]: ResourceStatus;
+};
 export type ActionResultType =
   | 'ApplyFailed'
   | 'ApplyWaitFailed'
@@ -10261,6 +10362,7 @@ export type ActionResult = {
   Message?: string;
   /** UUID of the operation corresponding to the action request */
   QueuedOperationID?: string;
+  ResourceStatuses?: ResourceStatusMap;
   Result?: ActionResultType;
   RevisionNum?: number;
   /** UUID of the Space of the Unit on which the action is performed */
@@ -10287,6 +10389,7 @@ export type QueuedOperation = {
   ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
+  LiveState?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;
   /** QueuedOperationID is the unique identifier for the queued unit action. */
@@ -10661,9 +10764,11 @@ export type FunctionInvocationsRequest = {
   Invocations?: Uuid[];
   /** NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error. */
   NumFilters?: number;
+  /** OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data. */
+  OnLiveState?: boolean;
   /** StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked. */
   StopOnError?: boolean;
-  /** ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. */
+  /** ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. If OnLiveState is false, it must match the ToolchainType of the Units. If OnLiveState is true, it must match the LiveStateType of the Targets of the Units. */
   ToolchainType?: string;
   /** Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored. */
   Triggers?: Uuid[];
@@ -10914,13 +11019,17 @@ export type Link = {
   Annotations?: {
     [key: string]: string;
   };
+  /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
+  AutoUpdate?: boolean;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
   };
   /** Friendly name for the entity. */
   DisplayName?: string;
-  /** Unique identifier the Unit the Link initiates from. Links must be in the same space as the source unit. */
+  /** The sequence number of the revision of the downstream unit created by the last merge. */
+  DownstreamLastMergedRevisionNum?: number;
+  /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
@@ -10934,18 +11043,30 @@ export type Link = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  /** Unique identifier the Space of the Unit the Link targets. */
+  /** Unique identifier of the Space of the upstream Unit. */
   ToSpaceID?: string;
-  /** Unique identifier the Unit the Link targets. */
+  /** Unique identifier of the upstream (producer) Unit. */
   ToUnitID: string;
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides. */
+  UpdateType?: string;
+  /** The sequence number of the end revision of the upstream unit that was last merged. */
+  UpstreamLastMergedRevisionNum?: number;
+  /** Take data from the LiveState of the upstream Unit rather than from Data. */
+  UseLiveState?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Where expression used to filter which Mutations of the downstream Unit can be affected during merge operations. */
+  WhereMutation?: string;
+  /** Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit. */
+  WhereResource?: string;
 };
 export type LinkRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
     [key: string]: string;
   };
+  /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
+  AutoUpdate?: boolean;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -10956,9 +11077,11 @@ export type LinkRead = {
   };
   /** Friendly name for the entity. */
   DisplayName?: string;
+  /** The sequence number of the revision of the downstream unit created by the last merge. */
+  DownstreamLastMergedRevisionNum?: number;
   /** The type of entity. */
   EntityType?: string;
-  /** Unique identifier the Unit the Link initiates from. Links must be in the same space as the source unit. */
+  /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
@@ -10972,14 +11095,24 @@ export type LinkRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  /** Unique identifier the Space of the Unit the Link targets. */
+  /** Unique identifier of the Space of the upstream Unit. */
   ToSpaceID?: string;
-  /** Unique identifier the Unit the Link targets. */
+  /** Unique identifier of the upstream (producer) Unit. */
   ToUnitID: string;
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides. */
+  UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
+  /** The sequence number of the end revision of the upstream unit that was last merged. */
+  UpstreamLastMergedRevisionNum?: number;
+  /** Take data from the LiveState of the upstream Unit rather than from Data. */
+  UseLiveState?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Where expression used to filter which Mutations of the downstream Unit can be affected during merge operations. */
+  WhereMutation?: string;
+  /** Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit. */
+  WhereResource?: string;
 };
 export type ExtendedLink = {
   Error?: ResponseError;
@@ -11375,6 +11508,8 @@ export type Target = {
   Labels?: {
     [key: string]: string;
   };
+  /** LiveStateType specifies the configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
+  LiveStateType?: string;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
@@ -11386,7 +11521,7 @@ export type Target = {
      */
   Parameters?: string;
   Permissions?: Permissions;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -11394,7 +11529,7 @@ export type Target = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
+  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
   TriggerFilterID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -11456,6 +11591,8 @@ export type TargetRead = {
   Labels?: {
     [key: string]: string;
   };
+  /** LiveStateType specifies the configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
+  LiveStateType?: string;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
@@ -11467,7 +11604,7 @@ export type TargetRead = {
      */
   Parameters?: string;
   Permissions?: Permissions;
-  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes" or "OpenTofu/AWS". */
+  /** ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes". */
   ProviderType: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
@@ -11475,7 +11612,7 @@ export type TargetRead = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
+  /** ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
   ToolchainType: string;
   TriggerFilterID?: Uuid;
   /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
@@ -11578,6 +11715,8 @@ export type Mutation = {
   RevisionNum?: number;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** User-defined category for the Mutation. The prefix 'ConfigHub' is reserved. */
+  Subgroup?: string;
   TriggerID?: Uuid;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -11618,6 +11757,8 @@ export type MutationRead = {
   RevisionNum?: number;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** User-defined category for the Mutation. The prefix 'ConfigHub' is reserved. */
+  Subgroup?: string;
   TriggerID?: Uuid;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -11636,6 +11777,7 @@ export type UnitEvent = {
   OrganizationID?: string;
   /** QueuedOperationID is the unique identifier for the corresponding queued operation. */
   QueuedOperationID?: string;
+  ResourceStatuses?: ResourceStatusMap;
   Result?: ActionResultType;
   RevisionNum?: number;
   /** Unique identifier for a space. */
@@ -11663,6 +11805,7 @@ export type UnitEventRead = {
   OrganizationID?: string;
   /** QueuedOperationID is the unique identifier for the corresponding queued operation. */
   QueuedOperationID?: string;
+  ResourceStatuses?: ResourceStatusMap;
   Result?: ActionResultType;
   RevisionNum?: number;
   /** Unique identifier for a space. */
@@ -11678,12 +11821,29 @@ export type UnitEventRead = {
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
+export type ResourceStatusSummary = {
+  /** Number of resources with Readiness=Failed */
+  Failed?: number;
+  /** Earliest UpdatedAt timestamp across all resources */
+  FirstUpdatedAt?: string | null;
+  /** Most recent UpdatedAt timestamp across all resources */
+  LastUpdatedAt?: string | null;
+  /** Number of resources with Readiness=InProgress */
+  Progressing?: number;
+  /** Number of resources with Readiness=Ready */
+  Ready?: number;
+  /** Number of resources with SyncStatus=Synced */
+  Synced?: number;
+  /** Total number of resources in the unit */
+  Total?: number;
+};
 export type UnitStatus = {
   Action?: ActionType;
   ActionResult?: ActionResultType;
   ActionStartedAt?: string | null;
   ActionTerminatedAt?: string | null;
   Drift?: string;
+  ResourceStatusSummary?: ResourceStatusSummary;
   Status?: string;
   SyncStatus?: string;
 };
@@ -11737,6 +11897,7 @@ export type UnitExtended = {
   ApprovedByUsers?: string[] | null;
   Drift?: string;
   FromLinks?: Link[] | null;
+  ResourceStatusSummary?: ResourceStatusSummary;
   Status?: string;
   SyncStatus?: string;
   ToLinks?: Link[] | null;
@@ -11750,14 +11911,18 @@ export type UnitExtendedRead = {
   ApprovedByUsers?: string[] | null;
   Drift?: string;
   FromLinks?: LinkRead[] | null;
+  ResourceStatusSummary?: ResourceStatusSummary;
   Status?: string;
   SyncStatus?: string;
   ToLinks?: LinkRead[] | null;
   Unit?: UnitRead;
 };
 export type ImportFilter = {
+  /** Operator specifies how to apply the filter (include, exclude, equals, contains, matches) */
   Operator?: string;
+  /** Type specifies the filter type (namespace, label, resource_type, etc.) */
   Type?: string;
+  /** Values specifies the filter values */
   Values?: string[];
 };
 export type ImportOptions = {
@@ -11765,9 +11930,11 @@ export type ImportOptions = {
 };
 export type ResourceInfoList = ResourceInfo[];
 export type ImportRequest = {
+  /** List of ImportFilter expression clauses. Mutually exclusive with Where. */
   Filters?: ImportFilter[];
   Options?: ImportOptions;
   ResourceInfoList?: ResourceInfoList;
+  /** Where specifies a unified resource filter expression for import resources and options. It uses SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types. */
   Where?: string;
 };
 export type ExtendedMutation = {
@@ -11810,6 +11977,7 @@ export type UnitAction = {
   ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
+  LiveState?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;
   /** QueuedOperationID is the unique identifier for the queued unit action. */

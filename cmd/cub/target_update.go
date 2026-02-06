@@ -141,11 +141,15 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTarget.Target.TargetID = existingTarget.TargetID
 	}
 
-	err = validateToolchainAndProvider(currentTarget.Target.ToolchainType, currentTarget.Target.ProviderType)
+	err = validateToolchainAndProvider(currentTarget.Target.ToolchainType, currentTarget.Target.ProviderType, currentTarget.Target.LiveStateType)
 	if err != nil {
 		return err
 	}
 
+	err = setAnnotations(&currentTarget.Target.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&currentTarget.Target.Labels)
 	if err != nil {
 		return err

@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	neturl "net/url"
 	"os"
 	"os/signal"
@@ -14,7 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/labstack/echo-contrib/echoprometheus"
+	"github.com/labstack/echo/v4"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -41,6 +46,8 @@ The available ProviderTypes are:
 
 - ConfigHub
 - Kubernetes
+- FluxRenderer
+- ArgoCDRenderer
 - OpenTofu/AWS
 - ConfigMap
 
@@ -59,6 +66,9 @@ The other environment variables it expects are:
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
 - CONFIGHUB_WORKER_ID: The worker ID
 - CONFIGHUB_WORKER_SECRET: The worker secret
+- CONFIGHUB_WORKER_HTTP_SERVER_ENABLED: When set, enables a HTTP server with a prometheus exporter endpoint
+- CONFIGHUB_WORKER_HTTP_SERVER_PORT: The port to listen for a server, currently only exposes metrics
+- CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
 `,
 	SilenceErrors:     true,
 	SilenceUsage:      true,
@@ -67,10 +77,12 @@ The other environment variables it expects are:
 }
 
 const (
-	defaultConfighubScheme = "https"
-	defaultConfighubHost   = "hub.confighub.com"
-	defaultConfighubURL    = defaultConfighubScheme + "://" + defaultConfighubHost
-	defaultWorkerPort      = "443"
+	defaultConfighubScheme           = "https"
+	defaultConfighubHost             = "hub.confighub.com"
+	defaultConfighubURL              = defaultConfighubScheme + "://" + defaultConfighubHost
+	defaultWorkerPort                = "443"
+	defaultServerPort                = "9092"
+	defaultHTTPServerShutdownTimeout = 5 * time.Second
 )
 
 var rootArgs struct {
@@ -186,11 +198,13 @@ func init() {
 
 // These are lowercase to make the provider type matching case insensitive
 const (
-	LowerProviderTypeConfigHub     = "confighub"
-	LowerProviderTypeKubernetes    = "kubernetes"
-	LowerProviderTypeFluxOCIWriter = "fluxociwriter"
-	LowerProviderTypeOpenTofuAWS   = "opentofu/aws"
-	LowerProviderTypeConfigMap     = "configmap"
+	LowerProviderTypeConfigHub      = "confighub"
+	LowerProviderTypeKubernetes     = "kubernetes"
+	LowerProviderTypeFluxOCIWriter  = "fluxociwriter"
+	LowerProviderTypeFluxRenderer   = "fluxrenderer"
+	LowerProviderTypeOpenTofuAWS    = "opentofu/aws"
+	LowerProviderTypeConfigMap      = "configmap"
+	LowerProviderTypeArgoCDRenderer = "argocdrenderer"
 )
 
 // NOTE: The FluxOCIWriter provider type is disabled by default for now and may be deprecated in the future.
@@ -199,10 +213,12 @@ const (
 
 var availableBridgeWorkers = map[string]api.BridgeWorker{
 	// ConfigHub worker is special - it will be initialized in rootRunE with a client
-	LowerProviderTypeKubernetes: impl.NewKubernetesBridgeWorker(),
+	LowerProviderTypeKubernetes:   impl.NewKubernetesBridgeWorker(),
+	LowerProviderTypeFluxRenderer: &impl.FluxRendererWorker{},
 	// LowerProviderTypeFluxOCIWriter:       fluxOCIWorker,
-	LowerProviderTypeOpenTofuAWS: &impl.OpenTofuAWSWorker{},
-	LowerProviderTypeConfigMap:   &impl.ConfigMapBridgeWorker{},
+	LowerProviderTypeOpenTofuAWS:    &impl.OpenTofuAWSWorker{},
+	LowerProviderTypeConfigMap:      &impl.ConfigMapBridgeWorker{},
+	LowerProviderTypeArgoCDRenderer: &impl.ArgoCDRendererWorker{},
 }
 var fluxOCIWorker = impl.NewFluxOCIWorker()
 
@@ -217,8 +233,10 @@ var opentofuFunctionWorker = impl.NewOpentofuFunctionWorker()
 
 // Map of available function workers by provider type
 var availableFunctionWorkers = map[string][]api.FunctionWorker{
-	LowerProviderTypeConfigHub:  []api.FunctionWorker{confighubFunctionWorker},
-	LowerProviderTypeKubernetes: []api.FunctionWorker{k8sFunctionWorker},
+	LowerProviderTypeConfigHub:      []api.FunctionWorker{confighubFunctionWorker},
+	LowerProviderTypeKubernetes:     []api.FunctionWorker{k8sFunctionWorker},
+	LowerProviderTypeFluxRenderer:   []api.FunctionWorker{k8sFunctionWorker},
+	LowerProviderTypeArgoCDRenderer: []api.FunctionWorker{k8sFunctionWorker},
 	// LowerProviderTypeFluxOCIWriter: []api.FunctionWorker{k8sFunctionWorker},
 	LowerProviderTypeOpenTofuAWS: []api.FunctionWorker{opentofuFunctionWorker},
 	LowerProviderTypeConfigMap:   []api.FunctionWorker{propertiesFunctionWorker, appyamlFunctionWorker, tomlFunctionWorker, iniFunctionWorker},
@@ -247,13 +265,26 @@ func providerTypeToToolchainsAndProvider(lowerProviderType string) ([]workerapi.
 		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderKubernetes
 	case LowerProviderTypeFluxOCIWriter:
 		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderFluxOCIWriter
+	case LowerProviderTypeFluxRenderer:
+		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderFluxRenderer
 	case LowerProviderTypeOpenTofuAWS:
 		return []workerapi.ToolchainType{workerapi.ToolchainOpenTofuHCL}, api.ProviderOpenTofuAWS
+	case LowerProviderTypeArgoCDRenderer:
+		return []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML}, api.ProviderArgoCDRenderer
 	case LowerProviderTypeConfigMap:
 		return []workerapi.ToolchainType{workerapi.ToolchainAppConfigProperties, workerapi.ToolchainAppConfigYAML, workerapi.ToolchainAppConfigTOML, workerapi.ToolchainAppConfigINI}, api.ProviderConfigMap
 	default:
 		return []workerapi.ToolchainType{}, ""
 	}
+}
+
+func newHTTPServer() *echo.Echo {
+	rootRouter := echo.New()
+	rootRouter.HideBanner = true
+	internalRouter := rootRouter.Group("/internal")
+	internalRouter.GET("/metrics", echoprometheus.NewHandler())
+
+	return rootRouter
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
@@ -432,53 +463,87 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		}
 	} // Note: If err != nil, finalURL remains rootArgs.configHubURL
 
+	metricsProvider, err := lib.NewPrometheusProvider()
+	if err != nil {
+		return fmt.Errorf("failed to instantiate prometheus provider: %w", err)
+	}
+
+	metricsMeter := metricsProvider.Meter("confighub-worker")
+
+	var httpServer *echo.Echo
+	if httpServerEnabled := os.Getenv("CONFIGHUB_WORKER_HTTP_SERVER_ENABLED"); httpServerEnabled != "" && httpServerEnabled != "0" {
+		httpServer = newHTTPServer()
+	}
+
 	w := lib.New(finalURL, // Use the potentially modified URL
 		rootArgs.workerID,
 		rootArgs.workerSecret).
 		WithBridgeWorker(bridgeDispatcher).
-		WithFunctionWorker(functionDispatcher)
+		WithFunctionWorker(functionDispatcher).
+		WithMetricsMeter(metricsMeter)
 
-	// Start worker in a goroutine so we can handle signals
-	errChan := make(chan error, 1)
-	go func() {
-		if err := w.Start(ctx); err != nil {
-			errChan <- err
-		}
-		close(errChan)
-	}()
-
-	// Wait for either signal or worker error
-	select {
-	case sig := <-sigChan:
-		log.FromContext(ctx).Info("Received signal, initiating graceful shutdown", "signal", sig)
-
-		// Sleep for configured delay to allow new pod to become active
-		// This ensures smooth handoff in rolling updates with our standby promotion system
-		if rootArgs.gracePeriodDelay > 0 {
-			log.FromContext(ctx).Info("Waiting for smooth handoff to new pod...", "delay_seconds", rootArgs.gracePeriodDelay)
-			time.Sleep(time.Duration(rootArgs.gracePeriodDelay) * time.Second)
-		}
-
-		// Wait for all pending operations to complete first
-		// This ensures Apply/Destroy/etc operations fully complete including sending final status
-		w.WaitForPendingOperations()
-
-		// Now cancel context to stop accepting new work and close SSE stream
-		cancel()
-
-		// Wait for worker goroutine to exit
-		if err := <-errChan; err != nil {
-			// Just log the error message without stack trace
-			log.FromContext(context.Background()).Info("Worker stopped with error during shutdown", "error", err.Error())
-		}
-
-		log.FromContext(context.Background()).Info("Worker shutdown completed gracefully")
-	case err := <-errChan:
-		if err != nil {
-			log.FromContext(context.Background()).Info("Failed to start worker", "error", err.Error())
-			return err
-		}
+	// Start worker in a errgroup with the http server so we can handle signals
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return w.Start(ctx)
+	})
+	if httpServer != nil {
+		eg.Go(func() error {
+			port := os.Getenv("CONFIGHUB_WORKER_HTTP_SERVER_PORT")
+			if port == "" {
+				port = defaultServerPort
+			}
+			if startErr := httpServer.Start(":" + port); startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {
+				return errors.Wrap(startErr, "HTTP server unexpected failure")
+			}
+			return nil
+		})
 	}
+
+	sig := <-sigChan
+	log.FromContext(ctx).Info("Received signal, initiating graceful shutdown", "signal", sig)
+
+	// Sleep for configured delay to allow new pod to become active
+	// This ensures smooth handoff in rolling updates with our standby promotion system
+	if rootArgs.gracePeriodDelay > 0 {
+		log.FromContext(ctx).Info("Waiting for smooth handoff to new pod...", "delay_seconds", rootArgs.gracePeriodDelay)
+		time.Sleep(time.Duration(rootArgs.gracePeriodDelay) * time.Second)
+	}
+
+	// Wait for all pending operations to complete first
+	// This ensures Apply/Destroy/etc operations fully complete including sending final status
+	w.WaitForPendingOperations()
+
+	// Now cancel context to stop accepting new work and close SSE stream
+	cancel()
+
+	if httpServer != nil {
+		serverShutdownTimeout := defaultHTTPServerShutdownTimeout
+		if shutdownOverride := os.Getenv("CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT"); shutdownOverride != "" {
+			override, err := strconv.Atoi(shutdownOverride)
+			if err != nil {
+				log.FromContext(context.Background()).Info("Failed to parse HTTP server shutdown override, using default", "error", err)
+			} else {
+				serverShutdownTimeout = time.Duration(override) * time.Second
+			}
+		}
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			log.FromContext(context.Background()).Info(
+				"Worker HTTP server stopped with an error during shutdown",
+				"error", err.Error(),
+			)
+		}
+		cancel()
+	}
+
+	// Wait for worker goroutine to exit
+	if err := eg.Wait(); err != nil {
+		// Just log the error message without stack trace
+		log.FromContext(context.Background()).Info("Worker stopped with error during shutdown", "error", err.Error())
+	}
+
+	log.FromContext(context.Background()).Info("Worker shutdown completed gracefully")
 	return nil
 }
 

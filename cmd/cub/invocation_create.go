@@ -103,6 +103,8 @@ var invocationCreateArgs struct {
 	namePrefixes    []string
 	invocationSlugs []string
 	filterSpace     string
+	variantLabels   []string
+	namePattern     string
 }
 
 func init() {
@@ -115,6 +117,8 @@ func init() {
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntity to access the original Invocation and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.invocationSlugs, "invocation", []string{}, "target specific invocations by slug or UUID for bulk create (can be repeated or comma-separated)")
 	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -135,8 +139,20 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(invocationCreateArgs.destSpaces) == 0 && invocationCreateArgs.whereSpace == "" && len(invocationCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(invocationCreateArgs.destSpaces) == 0 && invocationCreateArgs.whereSpace == "" && len(invocationCreateArgs.namePrefixes) == 0 && len(invocationCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(invocationCreateArgs.namePrefixes) > 0 && len(invocationCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if invocationCreateArgs.namePattern != "" && len(invocationCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern cannot be used with --name-prefix")
+		}
+
+		if invocationCreateArgs.namePattern != "" && len(invocationCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--variant-labels needs to be set when using --name-pattern")
 		}
 	} else {
 		// Single create mode validation
@@ -144,8 +160,13 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...]")
 		}
 
-		if filter != "" || where != "" || len(invocationCreateArgs.invocationSlugs) > 0 || len(invocationCreateArgs.destSpaces) > 0 || invocationCreateArgs.whereSpace != "" || len(invocationCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --invocation, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			invocationCreateArgs.namePattern != "" || len(invocationCreateArgs.invocationSlugs) > 0 ||
+			len(invocationCreateArgs.destSpaces) > 0 || invocationCreateArgs.whereSpace != "" ||
+			len(invocationCreateArgs.namePrefixes) > 0 || len(invocationCreateArgs.variantLabels) > 0 {
+			return false, errors.New(
+				"bulk create flags (--filter, --where, --invocation, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+			)
 		}
 	}
 
@@ -190,7 +211,11 @@ func runSingleInvocationCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -287,6 +312,17 @@ func runBulkInvocationCreate() error {
 	if len(invocationCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(invocationCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Add variant labels if specified
+	if len(invocationCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(invocationCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Add name pattern if specified
+	if invocationCreateArgs.namePattern != "" {
+		params.NamePattern = &invocationCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

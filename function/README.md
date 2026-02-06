@@ -92,7 +92,7 @@ yamlkit provides a set of visitor functions to make these path traversals straig
 Here's the code for `set-string-path`, which sets a string value at the specified YAML path:
 
 ```
-func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)

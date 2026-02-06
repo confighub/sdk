@@ -23,6 +23,10 @@ var unitRefreshCmd = &cobra.Command{
 	Short: "Refresh a configuration unit from the target",
 	Long: getCommandHelp(`Refresh a configuration unit from the target. If no unit is specified, performs bulk refresh based on filter criteria.
 
+A target must be attached to the unit (cub unit set-target can be used to add one), and the
+worker corresponding to the target must be connected and ready (cub worker get can be used to
+get the worker status).
+
 Single unit refresh:
 `+"```"+`
   cub unit refresh my-unit
@@ -124,6 +128,9 @@ func runSingleUnitRefresh(unitSlug string) error {
 		if err != nil {
 			return err
 		}
+	} else if !quiet && !hasAlternativeOutput() {
+		displayStartedOperation(refreshRes.JSON200)
+		return nil
 	}
 
 	if jsonOutput {

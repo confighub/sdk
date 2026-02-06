@@ -75,7 +75,7 @@ func init() {
 	helmUpgradeCmd.Flags().StringVar(&helmUpgradeArgs.repo, "repo", "", "specify the chart repository URL where to locate the requested chart")
 	helmUpgradeCmd.Flags().StringVar(&helmUpgradeArgs.namespace, "namespace", "default", "namespace to install the release into (only used for metadata if not actually installing)")
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.updateCRDs, "update-crds", false, "update CRDs unit if it exists")
-	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.usePlaceholder, "use-placeholder", true, "use confighubplaceholder placeholder")
+	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.usePlaceholder, "use-placeholder", false, "use confighubplaceholder placeholder")
 	helmUpgradeCmd.Flags().BoolVar(&helmUpgradeArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm upgrade --skip-crds'")
 
 	// Enable wait flag for this command
@@ -92,11 +92,11 @@ func helmUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 	helmUpgradeArgs.releaseName = args[0]
 	helmUpgradeArgs.chartName = args[1]
 
-	// use placeholder to render chart by default
-	replaceMeNamespace := "confighubplaceholder"
-	// if we don't want to use placeholder, set it to namespace at the render time
-	if !helmUpgradeArgs.usePlaceholder {
-		replaceMeNamespace = helmUpgradeArgs.namespace
+	// by default, use the actual namespace for rendering
+	replaceMeNamespace := helmUpgradeArgs.namespace
+	// if use-placeholder flag is set, use placeholder instead
+	if helmUpgradeArgs.usePlaceholder {
+		replaceMeNamespace = "confighubplaceholder"
 	}
 
 	// Initialize Helm SDK objects

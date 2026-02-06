@@ -14,7 +14,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
+	funcApi "github.com/confighub/sdk/function/api"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -174,20 +175,21 @@ type ApplierComponents struct {
 
 // CLIUtilsApplier implements K8sApplier using kubernetes-sigs/cli-utils
 type CLIUtilsApplier struct {
-	comps            *ApplierComponents
-	liveData         []byte
-	spaceID          string
-	unitSlug         string
-	waitTimeout      string // WaitTimeout duration string for resource readiness
-	inventoryCM      *InventoryConfigMap
-	invInfo          inventory.Info
-	applyObjects     []*unstructured.Unstructured // Store objects for WaitForApply
-	applyCompleted   bool                         // Flag to track if apply has been completed
-	destroyObjects   []*unstructured.Unstructured // Store objects for WaitForDestroy
-	destroyCompleted bool                         // Flag to track if destroy has been completed
-	liveDataBuilder  *LiveDataBuilder             // Optimized LiveData builder
-	lastResourceSet  ResourceSet                  // Store the last ResourceSet for retrieval
-	poller           *polling.StatusPoller        // Status poller for kstatus-based waiting
+	comps              *ApplierComponents
+	liveData           []byte
+	spaceID            string
+	unitSlug           string
+	waitTimeout        string // WaitTimeout duration string for resource readiness
+	inventoryCM        *InventoryConfigMap
+	invInfo            inventory.Info
+	applyObjects       []*unstructured.Unstructured // Store objects for WaitForApply
+	applyCompleted     bool                         // Flag to track if apply has been completed
+	destroyObjects     []*unstructured.Unstructured // Store objects for WaitForDestroy
+	destroyCompleted   bool                         // Flag to track if destroy has been completed
+	liveDataBuilder    *LiveDataBuilder             // Optimized LiveData builder
+	lastResourceSet    ResourceSet                  // Store the last ResourceSet for retrieval
+	poller             *polling.StatusPoller        // Status poller for kstatus-based waiting
+	lastResourceStatus api.ResourceStatusMap        // Store per-resource status from last wait operation
 }
 
 // InventoryMetadata contains extracted inventory metadata
@@ -410,9 +412,10 @@ applyDrainLoop:
 		log.Log.Error(err, "Failed to get live objects")
 		// Return with what we have
 		return ApplyResult{
-			LiveData:    a.liveData,
-			ResourceSet: NewSimpleResourceSet(),
-			Error:       nil, // Don't fail Apply, let WaitForApply handle it
+			LiveData:         a.liveData,
+			ResourceSet:      NewSimpleResourceSet(),
+			ResourceStatuses: a.lastResourceStatus,
+			Error:            nil, // Don't fail Apply, let WaitForApply handle it
 		}
 	}
 
@@ -449,9 +452,10 @@ applyDrainLoop:
 		"liveObjectCount", len(liveObjects))
 
 	return ApplyResult{
-		LiveData:    a.liveData,
-		ResourceSet: a.lastResourceSet,
-		Error:       nil,
+		LiveData:         a.liveData,
+		ResourceSet:      a.lastResourceSet,
+		ResourceStatuses: a.lastResourceStatus,
+		Error:            nil,
 	}
 }
 
@@ -740,6 +744,77 @@ func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, objects []*
 		// The apply operation itself succeeded, reconciliation will continue
 	}
 
+	// Build per-resource status map for reporting
+	a.lastResourceStatus = make(api.ResourceStatusMap)
+	now := time.Now()
+	for id, rs := range lastStatus {
+		if rs == nil {
+			continue
+		}
+		// Build key: "apiVersion/kind#namespace/name" matching K8sResourceProviderType format
+		// Use RESTMapper to resolve full GVK from GroupKind.
+		// Note: cli-utils ObjMetadata only contains GroupKind, not GroupVersionKind,
+		// so we need the RESTMapper to look up the Version component.
+		mapping, err := a.comps.RestMapper.RESTMapping(id.GroupKind)
+		var resourceType string
+		if err != nil {
+			log.Log.Error(err, "Failed to resolve GVK", "groupKind", id.GroupKind.String())
+			// GVK resolution can fail when CRDs are not installed, the API server is
+			// unreachable, or the resource type was deleted between apply and status check.
+			// In these cases, we fall back to a "group/kind" key (without version) and mark
+			// the resource as ReadinessUnknown since we can't determine its actual state.
+			if id.GroupKind.Group != "" {
+				resourceType = id.GroupKind.Group + "/" + id.GroupKind.Kind
+			} else {
+				resourceType = id.GroupKind.Kind
+			}
+			resourceName := id.Namespace + "/" + id.Name
+			key := funcApi.ResourceTypeAndName(resourceType + "#" + resourceName)
+			a.lastResourceStatus[key] = api.ResourceStatus{
+				SyncStatus: api.ResourceSyncStatusSynced,
+				Readiness:  api.ResourceReadinessUnknown,
+				Message:    fmt.Sprintf("Failed to resolve GVK: %v", err),
+				UpdatedAt:  now,
+			}
+			continue
+		}
+		gvk := mapping.GroupVersionKind
+		if gvk.Group != "" {
+			resourceType = gvk.Group + "/" + gvk.Version + "/" + gvk.Kind
+		} else {
+			resourceType = gvk.Version + "/" + gvk.Kind
+		}
+		// Always use namespace/name format, even for cluster-scoped resources (empty namespace)
+		resourceName := id.Namespace + "/" + id.Name
+		key := funcApi.ResourceTypeAndName(resourceType + "#" + resourceName)
+
+		resourceStatus := api.ResourceStatus{
+			SyncStatus: api.ResourceSyncStatusSynced, // If we're in wait phase, apply already succeeded
+			UpdatedAt:  now,
+		}
+
+		// Map kstatus to our readiness type
+		switch rs.Status {
+		case status.CurrentStatus:
+			resourceStatus.Readiness = api.ResourceReadinessReady
+		case status.InProgressStatus:
+			resourceStatus.Readiness = api.ResourceReadinessInProgress
+		case status.FailedStatus:
+			resourceStatus.Readiness = api.ResourceReadinessFailed
+			if rs.Error != nil {
+				resourceStatus.Message = rs.Error.Error()
+			}
+		case status.TerminatingStatus:
+			resourceStatus.Readiness = api.ResourceReadinessTerminating
+		default:
+			resourceStatus.Readiness = api.ResourceReadinessUnknown
+		}
+
+		a.lastResourceStatus[key] = resourceStatus
+	}
+
+	log.Log.Info("📊 Built per-resource status map", "count", len(a.lastResourceStatus))
+
 	return nil
 }
 
@@ -814,8 +889,9 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 		"changeSetEntries", len(a.lastResourceSet.GetEntries()))
 
 	return WaitResult{
-		LiveObjects: liveObjects,
-		ResourceSet: a.lastResourceSet,
+		LiveObjects:      liveObjects,
+		ResourceSet:      a.lastResourceSet,
+		ResourceStatuses: a.lastResourceStatus,
 	}
 }
 
@@ -1248,12 +1324,18 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	freshDiscovery := &FreshDiscoveryClient{DiscoveryClient: discoveryClient}
 	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(freshDiscovery)
 
-	// Create kubectl factory
-	configFlags := genericclioptions.NewConfigFlags(true)
-	if config.KubeContext != "" {
-		configFlags.Context = &config.KubeContext
+	// Create kubectl factory using SimpleRESTClientGetter to avoid cached disk discovery
+	// This prevents errors when running in read-only filesystems (e.g., Kubernetes pods)
+	// where the default ConfigFlags would try to write to ~/.kube/cache/discovery/
+	// The alternative would be to set the cache directory to be under /tmp and add
+	// a /tmp emptyDir volume to the worker, which needs to be done for other reasons.
+	// The reason we didn't do that here is for consistency across different Kubernetes
+	// client calls.
+	restClientGetter := &SimpleRESTClientGetter{
+		restConfig: cfg,
+		restMapper: restMapper,
 	}
-	factory := util.NewFactory(configFlags)
+	factory := util.NewFactory(restClientGetter)
 
 	// Determine inventory client based on LiveData
 	var invClient inventory.Client

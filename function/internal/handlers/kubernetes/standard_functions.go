@@ -563,7 +563,7 @@ const OriginalNameAnnotation = "confighub.com/OriginalName"
 
 var originalNamePath = "metadata.annotations." + yamlkit.EscapeDotsInPathSegment(OriginalNameAnnotation)
 
-func k8sFnGetPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnGetPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
 	// Ignore those. They aren't a problem for apply.
@@ -578,7 +578,7 @@ func k8sFnGetPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ [
 	return parsedData, paths, nil
 }
 
-func k8sFnNoPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnNoPlaceholders(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, k8skit.K8sResourceProvider, yamlkit.PlaceHolderBlockApplyInt)...)
 	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
@@ -655,17 +655,17 @@ func evaluateResourceQuantityComparison(expr *api.RelationalExpression, value st
 	return evaluateResourceQuantityRelationalExpression(expr, resourceQuantity), nil
 }
 
-func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, liveState []byte) (gaby.Container, any, error) {
+func k8sFnResourceWhereMatch(functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Create custom comparator for Kubernetes resource quantities
 	customComparators := []api.CustomStringComparator{
 		NewResourceQuantityComparison(),
 	}
 
 	// Use the extensible generic function with the Kubernetes-specific resource quantity comparator
-	return generic.GenericFnResourceWhereMatchWithComparators(k8skit.K8sResourceProvider, customComparators, functionContext, parsedData, args, liveState)
+	return generic.GenericFnResourceWhereMatchWithComparators(k8skit.K8sResourceProvider, customComparators, functionContext, parsedData, args)
 }
 
-func k8sFnVetSchemas(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnVetSchemas(_ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// See https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go
 	schemaLocations := []string{
 		"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json",

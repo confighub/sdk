@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/confighub/sdk/bridge-worker/api"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -68,18 +69,20 @@ func (s *SimpleResourceSet) Add(entry SimpleResourceSetEntry) {
 
 // ApplyResult contains the result of an apply operation
 type ApplyResult struct {
-	ResourceSet ResourceSet
-	LiveObjects []*unstructured.Unstructured
-	LiveData    []byte // Updated LiveData including inventory
-	LiveState   []byte
-	Error       error
+	ResourceSet      ResourceSet
+	LiveObjects      []*unstructured.Unstructured
+	LiveData         []byte // Updated LiveData including inventory
+	LiveState        []byte
+	ResourceStatuses api.ResourceStatusMap // Per-resource sync and readiness status
+	Error            error
 }
 
 // WaitResult contains the result of a wait operation
 type WaitResult struct {
-	LiveObjects []*unstructured.Unstructured
-	ResourceSet ResourceSet
-	Error       error
+	LiveObjects      []*unstructured.Unstructured
+	ResourceSet      ResourceSet
+	ResourceStatuses api.ResourceStatusMap // Per-resource sync and readiness status
+	Error            error
 }
 
 // DestroyResult contains the result of a destroy operation

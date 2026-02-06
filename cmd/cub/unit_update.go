@@ -179,6 +179,7 @@ Important: Only one of config-file, --restore, --upgrade, or --merge-source (wit
 var (
 	changeDescription string
 	restore           string
+	resolve           string
 	isUpgrade         bool
 	isPatch           bool
 	changesetSlug     string
@@ -196,6 +197,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
+	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve non-automatically resolved links: Link:* for all, Link:<uuid> or Link:<slug> for a specific link, or just <slug> (e.g., space/link-name)")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
@@ -269,8 +271,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && !isUpgrade && mergeSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset"))
 		}
 	}
 
@@ -292,6 +294,9 @@ func checkConflictingArgs(args []string) bool {
 	if restore != "" {
 		optionsSet++
 	}
+	if resolve != "" {
+		optionsSet++
+	}
 	if isUpgrade {
 		optionsSet++
 	}
@@ -310,12 +315,12 @@ func checkConflictingArgs(args []string) bool {
 	}
 
 	if optionsSet > 1 {
-		failOnError(fmt.Errorf("only one of --restore, --upgrade, or --merge-source should be specified"))
+		failOnError(fmt.Errorf("only one of --restore, --resolve, --upgrade, or --merge-source should be specified"))
 	}
 
-	dataFromEntity := restore != "" || isUpgrade || mergeSource != ""
+	dataFromEntity := restore != "" || resolve != "" || isUpgrade || mergeSource != ""
 	if dataFromEntity && len(args) > 1 {
-		failOnError(fmt.Errorf("only one of --restore, --upgrade, --merge-source, or config-file should be specified"))
+		failOnError(fmt.Errorf("only one of --restore, --resolve, --upgrade, --merge-source, or config-file should be specified"))
 	}
 
 	if isPatch && flagReplace {
@@ -415,7 +420,11 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			currentUnit.UnitID = existingUnit.UnitID
 
 		}
-		// For non-patch operations, handle labels in the traditional way
+		// For non-patch operations, handle annotations and labels in the traditional way
+		err = setAnnotations(&currentUnit.Annotations)
+		if err != nil {
+			return err
+		}
 		err = setLabels(&currentUnit.Labels)
 		if err != nil {
 			return err
@@ -470,6 +479,14 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			// It's a formatted restore specification
 			newParams.Restore = &restoreFormatted
 		}
+	}
+
+	if resolve != "" {
+		resolveFormatted, err := formatResolveParameter(resolve)
+		if err != nil {
+			return err
+		}
+		newParams.Resolve = &resolveFormatted
 	}
 
 	if mergeSource != "" {
@@ -717,6 +734,15 @@ func runBulkUnitUpdate() error {
 		params.Restore = &restoreFormatted
 	}
 
+	// Add resolve parameter if specified
+	if resolve != "" {
+		resolveFormatted, err := formatResolveParameter(resolve)
+		if err != nil {
+			return err
+		}
+		params.Resolve = &resolveFormatted
+	}
+
 	if dryRun {
 		params.DryRun = &dryRun
 	}
@@ -774,6 +800,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams := &goclientnew.PatchUnitParams{}
 	patchParams.RevisionId = updateParams.RevisionId
 	patchParams.Restore = updateParams.Restore
+	patchParams.Resolve = updateParams.Resolve
 	patchParams.DryRun = updateParams.DryRun
 	patchParams.Upgrade = updateParams.Upgrade
 	patchParams.MergeSource = updateParams.MergeSource
@@ -1008,4 +1035,48 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 	} else {
 		return "", false, fmt.Errorf("invalid revision value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum/HeadRevisionNum", revisionSpec)
 	}
+}
+
+// formatResolveParameter parses the resolve parameter and returns the formatted value.
+// Accepts:
+// - "Link:*" - resolves all non-auto-update links
+// - "Link:<uuid>" - resolves a specific link by UUID
+// - "<slug>" or "<space>/<slug>" - resolves a link by slug, converted to "Link:<uuid>"
+func formatResolveParameter(resolve string) (string, error) {
+	// Check for "Link:*" wildcard
+	if resolve == "Link:*" {
+		return resolve, nil
+	}
+
+	// Check for "Link:<identifier>" format
+	if strings.HasPrefix(resolve, "Link:") {
+		identifier := strings.TrimPrefix(resolve, "Link:")
+		// If it's already a UUID, pass as-is
+		if _, err := uuid.Parse(identifier); err == nil {
+			return resolve, nil
+		}
+		// Otherwise, try to parse the identifier as a link slug
+		linkUUID, err := parseEntityIdentifierSingle[goclientnew.Link](
+			identifier,
+			EntityTypeLink,
+			apiGetLinkFromSlugInSpace,
+			func(l *goclientnew.Link) string { return l.LinkID.String() },
+		)
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve link '%s': %w", identifier, err)
+		}
+		return fmt.Sprintf("Link:%s", linkUUID), nil
+	}
+
+	// No "Link:" prefix - treat the whole string as a link slug
+	linkUUID, err := parseEntityIdentifierSingle[goclientnew.Link](
+		resolve,
+		EntityTypeLink,
+		apiGetLinkFromSlugInSpace,
+		func(l *goclientnew.Link) string { return l.LinkID.String() },
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve link '%s': %w", resolve, err)
+	}
+	return fmt.Sprintf("Link:%s", linkUUID), nil
 }

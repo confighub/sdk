@@ -283,7 +283,7 @@ func initMetadataFunctions() {
 	)
 }
 
-func k8sFnEnsureNamespaces(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnEnsureNamespaces(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	// TODO: verbose logging
 	for _, doc := range parsedData {
 		resourceName, err := k8skit.K8sResourceProvider.ResourceNameGetter(doc)
@@ -321,7 +321,7 @@ func k8sFnEnsureNamespaces(_ *api.FunctionContext, parsedData gaby.Container, _ 
 	return parsedData, nil, nil
 }
 
-func k8sFnNeededNamespaces(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, _ []byte) (gaby.Container, any, error) {
+func k8sFnNeededNamespaces(_ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	// No arguments
 	resourceTypeToNamespacePath := yamlkit.GetPathRegistryForAttributeName(k8skit.K8sResourceProvider, AttributeNameNamespaceNameReference)
 	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, k8skit.K8sResourceProvider)

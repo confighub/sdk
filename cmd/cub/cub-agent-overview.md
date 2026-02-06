@@ -449,7 +449,7 @@ cub trigger create --space SPACE_SLUG replicated Mutation \
 - **AppConfig/YAML**: Application YAML configurations
 - **AppConfig/TOML**: Application TOML configurations
 - **AppConfig/INI**: Application INI configurations
-- **OpenTofu/HCL**: OpenTofu/Terraform HCL configurations
+- **OpenTofu/HCL**: OpenTofu HCL configurations
 
 Functions are toolchain-specific, so ensure you're using the right function for your configuration type.
 

@@ -81,15 +81,17 @@ Bulk Create Examples:
 }
 
 var filterCreateArgs struct {
-	destSpaces   []string
-	whereSpace   string
-	namePrefixes []string
-	filterSlugs  []string
-	whereField   string
-	whereData    string
-	resourceType string
-	fromSpace    string
-	filterSpace  string
+	destSpaces    []string
+	whereSpace    string
+	namePrefixes  []string
+	filterSlugs   []string
+	whereField    string
+	whereData     string
+	resourceType  string
+	fromSpace     string
+	filterSpace   string
+	variantLabels []string
+	namePattern   string
 }
 
 func init() {
@@ -107,6 +109,8 @@ func init() {
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	filterCreateCmd.Flags().StringVar(&filterCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Filter and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.filterSlugs, "filter-entity", []string{}, "target specific filters by slug or UUID for bulk create (can be repeated or comma-separated)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -128,8 +132,20 @@ func checkFilterCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(filterCreateArgs.destSpaces) == 0 && filterCreateArgs.whereSpace == "" && len(filterCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if len(filterCreateArgs.destSpaces) == 0 && filterCreateArgs.whereSpace == "" && len(filterCreateArgs.namePrefixes) == 0 && len(filterCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(filterCreateArgs.namePrefixes) > 0 && len(filterCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if filterCreateArgs.namePattern != "" && len(filterCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if filterCreateArgs.namePattern != "" && len(filterCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--variant-labels needs to be set if using --name-pattern")
 		}
 	} else {
 		// Single create mode validation
@@ -137,8 +153,11 @@ func checkFilterCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("single filter creation requires: <slug> <from> [options...]")
 		}
 
-		if filter != "" || where != "" || len(filterCreateArgs.filterSlugs) > 0 || len(filterCreateArgs.destSpaces) > 0 || filterCreateArgs.whereSpace != "" || len(filterCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --filter-entity, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			filterCreateArgs.namePattern != "" || len(filterCreateArgs.filterSlugs) > 0 ||
+			len(filterCreateArgs.destSpaces) > 0 || filterCreateArgs.whereSpace != "" ||
+			len(filterCreateArgs.namePrefixes) > 0 || len(filterCreateArgs.variantLabels) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --filter-entity, --dest-space, --where-space, --name-prefix, --variant-labels) can only be used without positional arguments")
 		}
 	}
 
@@ -183,7 +202,11 @@ func runSingleFilterCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -307,6 +330,17 @@ func runBulkFilterCreate() error {
 	if len(filterCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(filterCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Add variant labels if specified
+	if len(filterCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(filterCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Add name pattern if specified
+	if filterCreateArgs.namePattern != "" {
+		params.NamePattern = &filterCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

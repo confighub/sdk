@@ -23,6 +23,8 @@ var spaceCreateArgs struct {
 	triggerFilter string
 	setContext    bool
 	permissions   []string
+	variantLabels []string
+	namePattern   string
 }
 
 var spaceCreateCmd = &cobra.Command{
@@ -65,6 +67,8 @@ func init() {
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().BoolVar(&spaceCreateArgs.setContext, "set-context", false, "set the newly created space as the default in the current context")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Space and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	enableWhereFlag(spaceCreateCmd)
 	enableFilterFlag(spaceCreateCmd)
 	spaceCmd.AddCommand(spaceCreateCmd)
@@ -80,8 +84,20 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--space and --where flags are mutually exclusive")
 		}
 
-		if len(spaceCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires --name-prefix")
+		if len(spaceCreateArgs.namePrefixes) == 0 && len(spaceCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires --name-prefix or --variant-labels")
+		}
+
+		if len(spaceCreateArgs.namePrefixes) > 0 && len(spaceCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if spaceCreateArgs.namePattern != "" && len(spaceCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if spaceCreateArgs.namePattern != "" && len(spaceCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--variant-labels needs to be set when using --name-pattern")
 		}
 	} else {
 		// Single create mode validation
@@ -89,8 +105,10 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("space name is required for single space creation")
 		}
 
-		if filter != "" || where != "" || len(spaceIdentifiers) > 0 || len(spaceCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" ||
+			spaceCreateArgs.namePattern != "" || len(spaceIdentifiers) > 0 ||
+			len(spaceCreateArgs.namePrefixes) > 0 || len(spaceCreateArgs.variantLabels) > 0 {
+			return false, errors.New("bulk create flags (--filter, --where, --space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments")
 		}
 	}
 
@@ -129,7 +147,11 @@ func runSingleSpaceCreate(args []string) error {
 			return err
 		}
 	}
-	err := setLabels(&newBody.Labels)
+	err := setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
+	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
 	}
@@ -282,6 +304,17 @@ func runBulkSpaceCreate() error {
 	if len(spaceCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(spaceCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	// Set variant labels if specified
+	if len(spaceCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(spaceCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	// Set name patter if specified
+	if spaceCreateArgs.namePattern != "" {
+		params.NamePattern = &spaceCreateArgs.namePattern
 	}
 
 	// Call the bulk create API

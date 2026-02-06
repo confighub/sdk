@@ -196,6 +196,10 @@ func runSingleSpaceUpdate(args []string) error {
 		newBody.OrganizationID = currentSpace.OrganizationID
 		newBody.SpaceID = currentSpace.SpaceID
 	}
+	err = setAnnotations(&newBody.Annotations)
+	if err != nil {
+		return err
+	}
 	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
