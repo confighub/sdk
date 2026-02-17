@@ -20,6 +20,7 @@ var unitApplyArgs struct {
 	dryRun          bool
 	unitIdentifiers []string
 	revision        string
+	driftMode       string
 }
 
 var unitApplyCmd = &cobra.Command{
@@ -77,6 +78,7 @@ func init() {
 	unitApplyCmd.Flags().BoolVar(&unitApplyArgs.dryRun, "dry-run", false, "Perform a dry run without actually applying")
 	unitApplyCmd.Flags().StringSliceVar(&unitApplyArgs.unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	unitApplyCmd.Flags().StringVar(&unitApplyArgs.revision, "revision", "", "Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
+	unitApplyCmd.Flags().StringVar(&unitApplyArgs.driftMode, "drift-mode", "", "Drift reconciliation mode (OnDemand, ContinuousApply, ContinuousRefresh)")
 	unitCmd.AddCommand(unitApplyCmd)
 }
 
@@ -194,6 +196,9 @@ func runSingleUnitApply(unitSlug string) error {
 	if revisionParam != nil {
 		params.Revision = revisionParam
 	}
+	if unitApplyArgs.driftMode != "" {
+		params.DriftMode = &unitApplyArgs.driftMode
+	}
 
 	applyRes, err := cubClientNew.ApplyUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if cubapi.IsAPIError(err, applyRes) {
@@ -274,6 +279,9 @@ func runBulkUnitApply() error {
 	}
 	if revisionParam != nil {
 		params.Revision = revisionParam
+	}
+	if unitApplyArgs.driftMode != "" {
+		params.DriftMode = &unitApplyArgs.driftMode
 	}
 
 	// Call the bulk apply endpoint

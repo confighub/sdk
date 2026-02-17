@@ -14,7 +14,8 @@ import (
 )
 
 var unitRefreshArgs struct {
-	dryRun bool
+	dryRun    bool
+	driftMode string
 }
 
 var unitRefreshCmd = &cobra.Command{
@@ -64,6 +65,7 @@ func init() {
 	// Bulk operation flags
 	unitRefreshCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk refresh (can be repeated or comma-separated)")
 	unitRefreshCmd.Flags().BoolVar(&unitRefreshArgs.dryRun, "dry-run", false, "Preview refresh results")
+	unitRefreshCmd.Flags().StringVar(&unitRefreshArgs.driftMode, "drift-mode", "", "Drift reconciliation mode (OnDemand, ContinuousApply, ContinuousRefresh)")
 
 	unitCmd.AddCommand(unitRefreshCmd)
 }
@@ -116,6 +118,9 @@ func runSingleUnitRefresh(unitSlug string) error {
 	if unitRefreshArgs.dryRun {
 		dryRun := unitRefreshArgs.dryRun
 		params.DryRun = &dryRun
+	}
+	if unitRefreshArgs.driftMode != "" {
+		params.DriftMode = &unitRefreshArgs.driftMode
 	}
 	refreshRes, err := cubClientNew.RefreshUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
 	if cubapi.IsAPIError(err, refreshRes) {
@@ -181,6 +186,9 @@ func runBulkUnitRefresh() error {
 	if unitRefreshArgs.dryRun {
 		dryRun := unitRefreshArgs.dryRun
 		params.DryRun = &dryRun
+	}
+	if unitRefreshArgs.driftMode != "" {
+		params.DriftMode = &unitRefreshArgs.driftMode
 	}
 
 	// Execute bulk refresh

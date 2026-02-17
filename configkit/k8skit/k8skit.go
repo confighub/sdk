@@ -63,6 +63,7 @@ const (
 )
 
 var K8sInternalAnnotationPrefixes = []string{
+	ContextKeyPrefix, // ConfigHub
 	KubectlPrefix,
 	KubernetesPrefix,
 	DeploymentPrefix,
@@ -344,14 +345,14 @@ func (*K8sResourceProviderType) NameSeparator() string {
 }
 
 const (
-	contextKeyPrefix = "confighub.com/"
-	contextPathPrefx = ".metadata.annotations."
+	ContextKeyPrefix = "confighub.com/"
+	ContextPathPrefx = ".metadata.annotations."
 )
 
 func (*K8sResourceProviderType) ContextPath(contextField string) string {
 	// PascalCase is expected for contextField
-	safeKey := yamlkit.EscapeDotsInPathSegment(contextKeyPrefix + contextField)
-	return contextPathPrefx + safeKey
+	safeKey := yamlkit.EscapeDotsInPathSegment(ContextKeyPrefix + contextField)
+	return ContextPathPrefx + safeKey
 }
 
 // The conversions are no-ops since Kubernetes/YAML is already YAML.

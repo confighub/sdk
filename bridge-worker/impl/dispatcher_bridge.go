@@ -70,12 +70,17 @@ func (d *BridgeDispatcher) getWorker(toolchainType workerapi.ToolchainType, prov
 	return worker, nil
 }
 
+// ID returns an empty BridgeWorkerID since the dispatcher aggregates multiple workers.
+func (d *BridgeDispatcher) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{}
+}
+
 // Info returns aggregated information about all registered workers
 func (d *BridgeDispatcher) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	var supportedConfigTypes []*api.ConfigType
+	var supportedConfigTypes []*api.SupportedConfigType
 
 	// Collect info from all registered workers
 	for _, worker := range d.workers {

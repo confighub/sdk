@@ -100,3 +100,15 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 func buildWhereClauseFromSpaces(spaceIds []string) (string, error) {
 	return buildWhereClauseFromIdentifiers(spaceIds, "SpaceID", "Slug")
 }
+
+// addSpaceIDToWhereClause adds space constraint to where clause, for reuse across commands
+func addSpaceIDToWhereClause(whereClause, spaceID string) string {
+	if spaceID == "*" {
+		return whereClause
+	}
+	spaceConstraint := fmt.Sprintf("SpaceID = '%s'", spaceID)
+	if whereClause != "" {
+		return fmt.Sprintf("%s AND %s", whereClause, spaceConstraint)
+	}
+	return spaceConstraint
+}

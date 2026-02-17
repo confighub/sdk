@@ -41,6 +41,14 @@ func NewExampleBridge(name, baseDir string) (*ExampleBridge, error) {
 // Define a unique ProviderType for this bridge
 const ProviderFilesystem = api.ProviderType("Filesystem")
 
+// ID returns the provider type and toolchain types for this bridge.
+func (eb *ExampleBridge) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   ProviderFilesystem,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+	}
+}
+
 // Info returns information about the bridge's capabilities
 // For this particular bridge, it will offer a target for each subdirectory in the base directory.
 func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
@@ -70,10 +78,14 @@ func (eb *ExampleBridge) Info(opts api.InfoOptions) api.BridgeInfo {
 		// ConfigHub users can create additional targets for a config type. Those targets will get routed to this bridge.
 		// That means that if you assign a unit to the target and perform a bridge operation, the bridge will be called
 		// with the unit and the target.
-		SupportedConfigTypes: []*api.ConfigType{
+		SupportedConfigTypes: []*api.SupportedConfigType{
 			{
-				ToolchainType:    workerapi.ToolchainKubernetesYAML,
-				ProviderType:     ProviderFilesystem,
+				ConfigTypeSignature: api.ConfigTypeSignature{
+					ConfigType: api.ConfigType{
+						ToolchainType: workerapi.ToolchainKubernetesYAML,
+						ProviderType:  ProviderFilesystem,
+					},
+				},
 				AvailableTargets: targets,
 			},
 		},

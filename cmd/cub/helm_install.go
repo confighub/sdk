@@ -7,17 +7,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
-	"strings"
 
-	"github.com/confighub/sdk/helmutils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/engine"
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -78,6 +70,7 @@ var helmInstallArgs struct {
 	releaseName    string
 	usePlaceholder bool // Use confighubplaceholder placeholder for rendering
 	skipCRDs       bool // Skip CRDs from crds/ directory only (mirrors helm install --skip-crds)
+	targetSlug     string
 }
 
 func init() {
@@ -90,6 +83,7 @@ func init() {
 
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.usePlaceholder, "use-placeholder", false, "use confighubplaceholder placeholder")
 	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm install --skip-crds'")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.targetSlug, "target", "", "target for the units")
 
 	// Enable wait flag for this command
 	enableWaitFlag(helmInstallCmd)
@@ -102,7 +96,7 @@ func init() {
 }
 
 // createNamespaceUnit creates a new unit representing a Kubernetes namespace.
-func createNamespaceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, namespaceName string, releaseNameForSlug string, unitLabels map[string]string) (*goclientnew.Unit, error) {
+func createNamespaceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, namespaceName string, releaseNameForSlug string, unitLabels map[string]string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
 	namespaceResource := fmt.Sprintf(`apiVersion: v1
 kind: Namespace
 metadata:
@@ -123,6 +117,7 @@ metadata:
 		ToolchainType: toolchainType,
 		Data:          base64.StdEncoding.EncodeToString([]byte(namespaceResource)),
 		Labels:        unitLabels,
+		TargetID:      targetID,
 	}
 
 	// For a new unit without cloning, params can be an empty struct.
@@ -143,7 +138,7 @@ metadata:
 }
 
 // createCRDsUnit creates a new unit representing the CRDs from a Helm chart.
-func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, crdYAMLContent string, releaseName string, unitLabels map[string]string) (*goclientnew.Unit, error) {
+func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, crdYAMLContent string, releaseName string, unitLabels map[string]string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
 	unitSlug := releaseName + "-crds"
 	toolchainType := "Kubernetes/YAML"
 
@@ -158,6 +153,7 @@ func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 		ToolchainType: toolchainType,
 		Data:          base64.StdEncoding.EncodeToString([]byte(crdYAMLContent)),
 		Labels:        unitLabels,
+		TargetID:      targetID,
 	}
 
 	createParams := goclientnew.CreateUnitParams{}
@@ -175,7 +171,7 @@ func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses
 }
 
 // createResourceUnit creates a new unit representing the regular resources from a Helm chart.
-func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, unitLabels map[string]string, namespace string) (*goclientnew.Unit, error) {
+func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, unitLabels map[string]string, namespace string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
 	unitSlug := releaseName
 	toolchainType := "Kubernetes/YAML"
 
@@ -184,19 +180,7 @@ func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithRespo
 		return nil, fmt.Errorf("internal error: selected space ID '%s' is not a valid UUID: %w", spaceIDStr, err)
 	}
 
-	// Prepend namespace YAML if namespace is specified and not default
-	var finalYAMLContent string
-	if namespace != "" && namespace != "default" {
-		namespaceResource := fmt.Sprintf(`apiVersion: v1
-kind: Namespace
-metadata:
-  name: %s
----
-`, namespace)
-		finalYAMLContent = namespaceResource + resourceYAMLContent
-	} else {
-		finalYAMLContent = resourceYAMLContent
-	}
+	finalYAMLContent := prependNamespaceResource(resourceYAMLContent, namespace)
 
 	apiUnit := goclientnew.Unit{
 		SpaceID:       parsedSpaceID,
@@ -204,6 +188,7 @@ metadata:
 		ToolchainType: toolchainType,
 		Data:          base64.StdEncoding.EncodeToString([]byte(finalYAMLContent)),
 		Labels:        unitLabels,
+		TargetID:      targetID,
 	}
 
 	createParams := goclientnew.CreateUnitParams{}
@@ -270,137 +255,43 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 	helmInstallArgs.releaseName = args[0]
 	helmInstallArgs.chartName = args[1]
 
-	// by default, use the actual namespace for rendering
-	replaceMeNamespace := helmInstallArgs.namespace
-	// if use-placeholder flag is set, use placeholder instead
-	if helmInstallArgs.usePlaceholder {
-		replaceMeNamespace = "confighubplaceholder"
-	}
-
-	// TODO: helmInstallArgs.namespace will be used for creating <release>-ns object
-
-	// Initialize Helm SDK objects
-	settings := cli.New()
-	actionConfig := new(action.Configuration)
-	// You might need to provide a logger to actionConfig, e.g., using Genericclioptions.NewConfigFlags
-	// For simplicity here, we'll proceed without deep K8s client config if only templating.
-	if err := actionConfig.Init(nil /*settings.RESTClientGetter()*/, replaceMeNamespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
-		// Simple logger: prints to stdout. Replace with a more sophisticated logger if needed.
-		fmt.Printf(format+"\n", v...)
-	}); err != nil {
-		return fmt.Errorf("failed to initialize Helm action configuration: %w", err)
-	}
-
-	// Set up chart path options
-	chartPathOptions := action.ChartPathOptions{
-		Version: helmInstallArgs.version,
-		RepoURL: helmInstallArgs.repo, // Used if chartNameOrPath is not 'repo/chart' and repo needs to be specified.
-	}
-
-	// Locate the chart (handles local paths, URLs, and repository charts)
-	cp, err := chartPathOptions.LocateChart(helmInstallArgs.chartName, settings)
-	if err != nil {
-		return fmt.Errorf("failed to locate chart %s (version: %s, repo: %s): %w", helmInstallArgs.chartName, helmInstallArgs.version, helmInstallArgs.repo, err)
-	}
-
-	// 1. Load the chart.
-	chrt, err := loader.Load(cp) // Use the path returned by LocateChart
-	if err != nil {
-		return fmt.Errorf("failed to load chart from %s: %w", cp, err)
-	}
-
-	// 2. Collect values using the shared function
-	userSuppliedValues, err := loadHelmValues(helmInstallArgs.valuesFiles, helmInstallArgs.set)
+	// Render the Helm chart using the shared rendering pipeline
+	renderResult, err := renderHelmChart(helmRenderInput{
+		releaseName:    helmInstallArgs.releaseName,
+		chartName:      helmInstallArgs.chartName,
+		valuesFiles:    helmInstallArgs.valuesFiles,
+		set:            helmInstallArgs.set,
+		version:        helmInstallArgs.version,
+		repo:           helmInstallArgs.repo,
+		namespace:      helmInstallArgs.namespace,
+		usePlaceholder: helmInstallArgs.usePlaceholder,
+		skipCRDs:       helmInstallArgs.skipCRDs,
+	})
 	if err != nil {
 		return err
 	}
 
-	// 2.5. Process dependencies (this filters out disabled subcharts)
-	// This must be called BEFORE ToRenderValues to properly handle subchart conditions
-	if err := chartutil.ProcessDependencies(chrt, userSuppliedValues); err != nil {
-		return fmt.Errorf("failed to process chart dependencies: %w", err)
-	}
+	unitLabels := renderResult.UnitLabels
 
-	// 2.6. Create unit labels with chart metadata
-	// All Helm labels are sourced from Chart.yaml metadata (required for Helm upgrade/rollback operations)
-	unitLabels := map[string]string{
-		helmutils.HelmReleaseLabel: helmInstallArgs.releaseName,
-	}
-	if chrt.Metadata != nil {
-		if chrt.Metadata.Name != "" {
-			unitLabels[helmutils.HelmChartLabel] = chrt.Metadata.Name
+	// Resolve target if specified
+	var targetID *uuid.UUID
+	if helmInstallArgs.targetSlug != "" {
+		id, err := parseEntityIdentifierSingle[goclientnew.Target](
+			helmInstallArgs.targetSlug,
+			EntityTypeTarget,
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
+		if err != nil {
+			return err
 		}
-		if chrt.Metadata.APIVersion != "" {
-			unitLabels[helmutils.HelmChartAPIVersionLabel] = chrt.Metadata.APIVersion
-		}
-		if chrt.Metadata.Version != "" {
-			unitLabels[helmutils.HelmChartVersionLabel] = chrt.Metadata.Version
-		}
-		if chrt.Metadata.AppVersion != "" {
-			unitLabels[helmutils.HelmAppVersionLabel] = chrt.Metadata.AppVersion
-		}
+		targetID = &id
 	}
-
-	// 3. Build render-time values.
-	releaseOptions := chartutil.ReleaseOptions{
-		Name:      helmInstallArgs.releaseName,
-		Namespace: replaceMeNamespace,
-		Revision:  1,
-		IsInstall: true, // Simulates helm template / fresh install scenario
-	}
-	valuesToRender, err := chartutil.ToRenderValues(chrt, userSuppliedValues, releaseOptions, chartutil.DefaultCapabilities)
-	if err != nil {
-		return fmt.Errorf("failed to prepare render values: %w", err)
-	}
-
-	// 4. Render using Helm's engine.
-	renderingEngine := engine.Engine{}
-	renderedResources, err := renderingEngine.Render(chrt, valuesToRender)
-	if err != nil {
-		return fmt.Errorf("template render failed: %w", err)
-	}
-
-	// 4.5. Extract CRDs from the chart's crds/ directory
-	// Many charts package CRDs separately in a crds/ directory that aren't processed as templates
-	// --skip-crds flag only affects these CRDs, not templated CRDs
-	var crdContent strings.Builder
-	if !helmInstallArgs.skipCRDs {
-		crdFiles := chrt.CRDObjects()
-		if len(crdFiles) > 0 {
-			for _, crdFile := range crdFiles {
-				if crdContent.Len() > 0 {
-					crdContent.WriteString("---\n")
-				}
-				crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
-				crdContent.WriteString(string(crdFile.File.Data))
-				crdContent.WriteString("\n")
-			}
-		}
-	}
-
-	// 5. Split resources into CRDs and regular resources
-	splitResult, err := splitHelmResources(renderedResources, chrt.Name())
-	if err != nil {
-		return err
-	}
-
-	// Combine CRDs from crds/ directory with any CRDs from templates
-	if crdContent.Len() > 0 {
-		if splitResult.CRDs != "" {
-			splitResult.CRDs = crdContent.String() + "---\n" + splitResult.CRDs
-		} else {
-			splitResult.CRDs = crdContent.String()
-		}
-	} else if helmInstallArgs.skipCRDs && chrt.CRDObjects() != nil && len(chrt.CRDObjects()) > 0 {
-		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
-	}
-
-	// Namespace is now prepended to the main resource unit instead of creating a separate unit
 
 	// Create a unit for CRDs if any were found
 	var crdUnit *goclientnew.Unit
-	if len(splitResult.CRDs) > 0 {
-		createdCRDsUnit, err := createCRDsUnit(ctx, cubClientNew, selectedSpaceID, splitResult.CRDs, helmInstallArgs.releaseName, unitLabels)
+	if len(renderResult.CRDs) > 0 {
+		createdCRDsUnit, err := createCRDsUnit(ctx, cubClientNew, selectedSpaceID, renderResult.CRDs, helmInstallArgs.releaseName, unitLabels, targetID)
 		if err != nil {
 			return fmt.Errorf("failed to create CRDs unit: %w", err)
 		}
@@ -418,8 +309,8 @@ func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create a unit for regular resources if any were found
-	if len(splitResult.Resources) > 0 {
-		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, splitResult.Resources, helmInstallArgs.releaseName, unitLabels, helmInstallArgs.namespace)
+	if len(renderResult.Resources) > 0 {
+		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, renderResult.Resources, helmInstallArgs.releaseName, unitLabels, helmInstallArgs.namespace, targetID)
 		if err != nil {
 			return fmt.Errorf("failed to create resources unit: %w", err)
 		}

@@ -4,6 +4,7 @@
 package api
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -469,4 +470,32 @@ func SubtractMutations(mutations, subtractMutations ResourceMutationList) Resour
 	}
 
 	return result
+}
+
+// AttributeValueListToResourceMutationList converts an AttributeValueList to an equivalent
+// ResourceMutationList by grouping attribute values by resource and creating Update mutations
+// for each attribute path.
+func AttributeValueListToResourceMutationList(avl AttributeValueList) ResourceMutationList {
+	resourceMap := make(map[ResourceTypeAndName]int)
+	var mutations ResourceMutationList
+
+	for _, av := range avl {
+		key := ResourceTypeAndNameFromResourceInfo(av.ResourceInfo)
+		idx, exists := resourceMap[key]
+		if !exists {
+			idx = len(mutations)
+			resourceMap[key] = idx
+			mutations = append(mutations, ResourceMutation{
+				Resource:             av.ResourceInfo,
+				ResourceMutationInfo: MutationInfo{MutationType: MutationTypeUpdate},
+				PathMutationMap:      make(MutationMap),
+			})
+		}
+		mutations[idx].PathMutationMap[av.Path] = MutationInfo{
+			MutationType: MutationTypeUpdate,
+			Value:        fmt.Sprint(av.Value),
+		}
+	}
+
+	return mutations
 }

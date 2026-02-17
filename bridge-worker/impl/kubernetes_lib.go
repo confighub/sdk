@@ -12,6 +12,7 @@ import (
 
 	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,6 +23,27 @@ import (
 	"github.com/confighub/sdk/configkit/k8skit"
 	funcapi "github.com/confighub/sdk/function/api"
 )
+
+// Keep consistent with K8sResourceProviderType.ContextPath
+const (
+	SpaceIDAnnotation     = k8skit.ContextKeyPrefix + "SpaceID"
+	UnitSlugAnnotation    = k8skit.ContextKeyPrefix + "UnitSlug"
+	RevisionNumAnnotation = k8skit.ContextKeyPrefix + "RevisionNum"
+)
+
+// ensureConfigHubContext sets ConfigHub context annotations (UnitSlug, SpaceID, RevisionNum)
+// on the given Kubernetes object. These annotations correspond to the paths returned by
+// K8sResourceProvider.ContextPath() for each field.
+func ensureConfigHubContext(obj *unstructured.Unstructured, unitSlug, spaceID string, revisionNum int64) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[UnitSlugAnnotation] = unitSlug
+	annotations[SpaceIDAnnotation] = spaceID
+	annotations[RevisionNumAnnotation] = fmt.Sprintf("%d", revisionNum)
+	obj.SetAnnotations(annotations)
+}
 
 // parseTargetParams extracts and parses target parameters
 func parseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams, string, error) {
@@ -49,32 +71,36 @@ func parseObjects(data []byte) ([]*unstructured.Unstructured, error) {
 	return objects, nil
 }
 
+// getLiveObjects fetches live versions of expected objects from the cluster.
+// When skipNotFound is true, resources that return a NotFound error are silently
+// skipped (e.g., not yet created during ArgoCD sync). All other errors (permission
+// denied, network timeouts, RBAC failures) are always returned immediately.
 func getLiveObjects(
-	wctx api.BridgeWorkerContext,
-	manager ResourceManager,
+	ctx context.Context,
+	k8sClient KubernetesClient,
 	objects []*unstructured.Unstructured,
 	doCleanup bool,
+	skipNotFound bool,
 ) ([]*unstructured.Unstructured, error) {
-	k8sCli := manager.Client() // Use the Client() method of the ResourceManager
-	if k8sCli == nil {
-		return nil, fmt.Errorf("resource manager client is nil")
-	}
-
-	liveObjects := make([]*unstructured.Unstructured, len(objects))
-	for i, obj := range objects {
-		key := client.ObjectKey{
+	var liveObjects []*unstructured.Unstructured
+	for _, obj := range objects {
+		u := obj.DeepCopyObject().(*unstructured.Unstructured)
+		if err := k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: obj.GetNamespace(),
 			Name:      obj.GetName(),
-		}
-		u := obj.DeepCopyObject().(*unstructured.Unstructured)
-		if err := k8sCli.Get(wctx.Context(), key, u); err != nil {
+		}, u); err != nil {
+			if skipNotFound && apierrors.IsNotFound(err) {
+				log.Log.Info("Resource not found in cluster, skipping",
+					"name", obj.GetName(), "namespace", obj.GetNamespace(),
+					"kind", obj.GetKind())
+				continue
+			}
 			return nil, err
 		}
-
 		if doCleanup {
 			cleanup(u)
 		}
-		liveObjects[i] = u
+		liveObjects = append(liveObjects, u)
 	}
 	return liveObjects, nil
 }

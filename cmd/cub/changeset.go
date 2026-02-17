@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -26,4 +28,16 @@ func init() {
 // buildWhereClauseFromChangeSets generates a WHERE clause from changeset identifiers
 func buildWhereClauseFromChangeSets(changesetIds []string) (string, error) {
 	return buildWhereClauseFromIdentifiers(changesetIds, "ChangeSetID", "Slug")
+}
+
+// addChangeSetIDToWhereClause adds changeset constraint to where clause, for reuse across commands
+func addChangeSetIDToWhereClause(whereClause, changesetID string) string {
+	if changesetID == "" {
+		return whereClause
+	}
+	changesetConstraint := fmt.Sprintf("ChangeSetID = '%s'", changesetID)
+	if whereClause != "" {
+		return fmt.Sprintf("%s AND %s", whereClause, changesetConstraint)
+	}
+	return changesetConstraint
 }

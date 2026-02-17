@@ -31,12 +31,13 @@ const (
 // It creates/updates the Application in the cluster (with auto-sync disabled),
 // then calls the ArgoCD API to get the rendered manifests.
 func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, config Config) (*RenderResult, error) {
-	app, err := parseApplication(appYAML)
+	app, err := ParseApplication(appYAML)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Application: %w", err)
 	}
 
 	disableAutoSync(app)
+	// TODO: ensureConfigHubContext
 
 	if err := createOrUpdateApplication(ctx, k8sClient, app); err != nil {
 		return nil, fmt.Errorf("failed to create/update Application: %w", err)
@@ -65,8 +66,8 @@ func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, 
 	}, nil
 }
 
-// parseApplication parses YAML bytes into an unstructured Application and validates it.
-func parseApplication(data []byte) (*unstructured.Unstructured, error) {
+// ParseApplication parses YAML bytes into an unstructured Application and validates it.
+func ParseApplication(data []byte) (*unstructured.Unstructured, error) {
 	jsonData, err := sigsyaml.YAMLToJSON(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)

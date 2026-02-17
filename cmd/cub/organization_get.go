@@ -56,6 +56,7 @@ func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view.Append([]string{"Delete Gates", deleteGatesToString(organizationDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(organizationDetails.Annotations)})
 	view.Append([]string{"External ID", organizationDetails.ExternalID})
+	view.Append([]string{"Email Domain", organizationDetails.EmailDomain})
 	view.Render()
 }
 

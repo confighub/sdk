@@ -84,6 +84,13 @@ func (p *FluxOCIParams) ToMap() map[string]interface{} {
 	return result
 }
 
+func (f FluxOCIWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderFluxOCIWriter,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+	}
+}
+
 // Info shows FluxOCIWorker api.BridgeWorkerInfo.
 // If the worker is not configured with REPO and TAG,
 // we will not provide any default targets
@@ -105,11 +112,15 @@ func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	}
 
 	return api.BridgeWorkerInfo{
-		SupportedConfigTypes: []*api.ConfigType{
+		SupportedConfigTypes: []*api.SupportedConfigType{
 			{
-				ProviderType:  api.ProviderFluxOCIWriter,
-				ToolchainType: workerapi.ToolchainKubernetesYAML,
-				// No LiveStateType
+				ConfigTypeSignature: api.ConfigTypeSignature{
+					ConfigType: api.ConfigType{
+						ProviderType:  api.ProviderFluxOCIWriter,
+						ToolchainType: workerapi.ToolchainKubernetesYAML,
+						// No LiveStateType
+					},
+				},
 				AvailableTargets: availableTargets,
 			},
 		},

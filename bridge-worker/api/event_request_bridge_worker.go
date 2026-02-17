@@ -18,6 +18,7 @@ type BridgeWorkerPayload struct {
 	QueuedOperationID uuid.UUID               `description:"UUID of the operation corresponding to the requested action"`
 	ToolchainType     workerapi.ToolchainType `description:"ToolchainType of the Unit on which the action was performed"`
 	ProviderType      ProviderType            `description:"ProviderType of the Target attached to the Unit on which the action was performed"`
+	BridgeHandle      string                  `json:",omitempty" description:"Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates"`
 
 	// Keep relatively consistent with FunctionContext
 	UnitSlug         string            `description:"Slug of the Unit on which the action was performed"`
@@ -31,14 +32,16 @@ type BridgeWorkerPayload struct {
 	OrganizationID   uuid.UUID         `description:"UUID of the Organization of the Unit on which the action was performed"`
 	TargetID         uuid.UUID         `description:"UUID of the Target attached to the Unit on which the action was performed"`
 
-	DryRun          bool   `description:"Whether the action is a dry run"`
-	Data            []byte `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
-	LiveData        []byte `swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit"`
-	LiveState       []byte `swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit"`
-	TargetParams    []byte `swaggertype:"string" format:"byte" description:"Parameters of the Target attached to the Unit on which the action was performed"`
-	ExtraParams     []byte `swaggertype:"string" format:"byte" description:"Additional parameters associated with the action sent to the worker"`
-	RevisionNum     int64  `description:"Sequence number of the revision of the Unit on which the action was performed"`
-	LiveRevisionNum int64  `description:"Sequence number of the current live revision of the Unit on which the action was performed"`
+	DryRun          bool              `description:"Whether the action is a dry run"`
+	Data            []byte            `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
+	LiveData        []byte            `swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit"`
+	LiveState       []byte            `swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit"`
+	TargetOptions   map[string]string `json:",omitempty" description:"Options from the matching ConfigType of the Target for the Unit's ToolchainType"`
+	TargetParams    []byte            `swaggertype:"string" format:"byte" description:"Parameters of the Target attached to the Unit on which the action was performed"`
+	ExtraParams     []byte            `swaggertype:"string" format:"byte" description:"Additional parameters associated with the action sent to the worker"`
+	RevisionNum             int64                  `description:"Sequence number of the revision of the Unit on which the action was performed"`
+	LiveRevisionNum         int64                  `description:"Sequence number of the current live revision of the Unit on which the action was performed"`
+	DriftReconciliationMode DriftReconciliationMode `description:"The drift reconciliation mode for the unit at the time of the operation"`
 }
 
 type RefreshParams struct {

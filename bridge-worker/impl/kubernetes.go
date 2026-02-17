@@ -173,6 +173,13 @@ func (p KubernetesWorkerParams) ToMap() map[string]interface{} {
 	return result
 }
 
+func (w *KubernetesBridgeWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderKubernetes,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+	}
+}
+
 func (w *KubernetesBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return w.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderKubernetes)
 }
@@ -219,7 +226,8 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 
 		targets := []api.Target{
 			{
-				Name: targetName,
+				BridgeHandle: "cluster",
+				Name:         targetName,
 				Params: KubernetesWorkerParams{
 					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
@@ -229,7 +237,8 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		if defaultName && toolchain == workerapi.ToolchainKubernetesYAML {
 			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, "")
 			targets = append(targets, api.Target{
-				Name: legacyTargetName,
+				BridgeHandle: "cluster",
+				Name:         legacyTargetName,
 				Params: KubernetesWorkerParams{
 					WaitTimeout: LargeWaitTimeout.String(),
 				}.ToMap(),
@@ -237,11 +246,15 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		}
 
 		return api.BridgeWorkerInfo{
-			SupportedConfigTypes: []*api.ConfigType{
+			SupportedConfigTypes: []*api.SupportedConfigType{
 				{
-					ToolchainType:    toolchain,
-					ProviderType:     provider,
-					LiveStateType:    workerapi.ToolchainKubernetesYAML,
+					ConfigTypeSignature: api.ConfigTypeSignature{
+						ConfigType: api.ConfigType{
+							ToolchainType: toolchain,
+							ProviderType:  provider,
+							LiveStateType: workerapi.ToolchainKubernetesYAML,
+						},
+					},
 					AvailableTargets: targets,
 				},
 			},
@@ -253,7 +266,8 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
 		targets = append(targets, api.Target{
-			Name: api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
+			BridgeHandle: contextName,
+			Name:         api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: LargeWaitTimeout.String(),
@@ -263,7 +277,8 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		if toolchain == workerapi.ToolchainKubernetesYAML {
 			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, contextName)
 			targets = append(targets, api.Target{
-				Name: legacyTargetName,
+				BridgeHandle: contextName,
+				Name:         legacyTargetName,
 				Params: KubernetesWorkerParams{
 					KubeContext: contextName,
 					WaitTimeout: LargeWaitTimeout.String(),
@@ -273,11 +288,15 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	}
 
 	return api.BridgeWorkerInfo{
-		SupportedConfigTypes: []*api.ConfigType{
+		SupportedConfigTypes: []*api.SupportedConfigType{
 			{
-				ToolchainType:    toolchain,
-				ProviderType:     provider,
-				LiveStateType:    workerapi.ToolchainKubernetesYAML,
+				ConfigTypeSignature: api.ConfigTypeSignature{
+					ConfigType: api.ConfigType{
+						ToolchainType: toolchain,
+						ProviderType:  provider,
+						LiveStateType: workerapi.ToolchainKubernetesYAML,
+					},
+				},
 				AvailableTargets: targets,
 			},
 		},
@@ -372,11 +391,12 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 	}
 
 	return ApplierConfig{
-		KubeContext: kubeContext,
-		LiveData:    payload.LiveData,
-		SpaceID:     payload.SpaceID.String(),
-		UnitSlug:    payload.UnitSlug,
-		WaitTimeout: workerParams.WaitTimeout,
+		KubeContext:  kubeContext,
+		LiveData:     payload.LiveData,
+		SpaceID:      payload.SpaceID.String(),
+		UnitSlug:     payload.UnitSlug,
+		RevisionNum:  payload.RevisionNum,
+		WaitTimeout:  workerParams.WaitTimeout,
 	}, nil
 }
 
@@ -915,7 +935,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		}
 
 		// Return uncleaned objects - we'll cleanup for LiveData below, keep uncleaned for LiveState
-		retrievedObjects, err = getLiveObjects(wctx, man, objects, false)
+		retrievedObjects, err = getLiveObjects(wctx.Context(), man.Client(), objects, false, false)
 		if err != nil {
 			log.Log.Error(err, "Failed to retrieve live objects")
 			return lib.SafeSendStatus(wctx, newActionResult(

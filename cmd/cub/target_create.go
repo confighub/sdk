@@ -212,9 +212,9 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 	// if providerType != string(api.ProviderKubernetes) &&
 	// 	providerType != string(api.ProviderOpenTofuAWS) &&
 	// 	providerType != string(api.ProviderFluxOCIWriter) &&
-	// 	providerType != string(api.ProviderConfigMap) {
+	// 	providerType != string(api.ProviderConfigMapRenderer) {
 	// 	// NOTE: FluxOCI deliberately not mentioned
-	// 	return errors.New("provider must be one of: Kubernetes, OpenTofu/AWS, ConfigMap")
+	// 	return errors.New("provider must be one of: Kubernetes, OpenTofu/AWS, ConfigMapRenderer")
 	// }
 	if providerType == string(api.ProviderOpenTofuAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
 		return errors.New("provider OpenTofu/AWS requires toolchain OpenTofu/HCL")
@@ -223,14 +223,14 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 		toolchainType != string(workerapi.ToolchainKubernetesYAML) {
 		return fmt.Errorf("provider %s requires toolchain Kubernetes/YAML", providerType)
 	}
-	if providerType == string(api.ProviderConfigMap) &&
+	if providerType == string(api.ProviderConfigMapRenderer) &&
 		toolchainType != string(workerapi.ToolchainAppConfigProperties) &&
 		toolchainType != string(workerapi.ToolchainAppConfigYAML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigTOML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigINI) &&
 		toolchainType != string(workerapi.ToolchainAppConfigEnv) {
 		// NOTE: Env deliberately not mentioned
-		return errors.New("provider ConfigMap requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, or AppConfig/INI")
+		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, or AppConfig/INI")
 	}
 	return nil
 }

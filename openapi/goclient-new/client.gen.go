@@ -12666,6 +12666,22 @@ func NewApplyUnitRequest(server string, spaceId openapi_types.UUID, unitId opena
 
 		}
 
+		if params.DriftMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "drift_mode", runtime.ParamLocationQuery, *params.DriftMode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -13295,6 +13311,22 @@ func NewRefreshUnitRequest(server string, spaceId openapi_types.UUID, unitId ope
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DriftMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "drift_mode", runtime.ParamLocationQuery, *params.DriftMode); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16503,6 +16535,22 @@ func NewBulkApplyUnitsRequest(server string, params *BulkApplyUnitsParams) (*htt
 
 		}
 
+		if params.DriftMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "drift_mode", runtime.ParamLocationQuery, *params.DriftMode); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -16918,6 +16966,22 @@ func NewBulkRefreshUnitsRequest(server string, params *BulkRefreshUnitsParams) (
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DriftMode != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "drift_mode", runtime.ParamLocationQuery, *params.DriftMode); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

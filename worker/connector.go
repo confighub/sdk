@@ -92,9 +92,13 @@ func (c *ConfighubConnector) Start() error {
 
 type NullBridgeWorker struct{}
 
+func (n *NullBridgeWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{}
+}
+
 func (n *NullBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return api.BridgeWorkerInfo{
-		SupportedConfigTypes: []*api.ConfigType{},
+		SupportedConfigTypes: []*api.SupportedConfigType{},
 	}
 }
 

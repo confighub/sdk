@@ -147,7 +147,13 @@ type ApiInfo struct {
 	ClientID       string `json:"ClientID,omitempty" yaml:"ClientID,omitempty"`
 	DeviceAuthURL  string `json:"DeviceAuthURL,omitempty" yaml:"DeviceAuthURL,omitempty"`
 	DeviceTokenURL string `json:"DeviceTokenURL,omitempty" yaml:"DeviceTokenURL,omitempty"`
-	RedirectURI    string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
+
+	// OCIHost OCI registry host for pulling configuration artifacts.
+	OCIHost string `json:"OCIHost,omitempty" yaml:"OCIHost,omitempty"`
+
+	// OCIPort OCI registry port for pulling configuration artifacts.
+	OCIPort     string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
+	RedirectURI string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
 
 	// Revision Service revision identifier for support cases.
 	Revision string `json:"Revision,omitempty" yaml:"Revision,omitempty"`
@@ -160,6 +166,24 @@ type ApiInfo struct {
 type ApproveResponse struct {
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Message string         `json:"Message,omitempty" yaml:"Message,omitempty"`
+}
+
+// BridgeOption defines model for BridgeOption.
+type BridgeOption struct {
+	// DataType Data type of the option
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Description Description of the option
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// Example Example value
+	Example string `json:"Example,omitempty" yaml:"Example,omitempty"`
+
+	// Name Name of the option in PascalCase
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// Required Whether the option is required
+	Required bool `json:"Required,omitempty" yaml:"Required,omitempty"`
 }
 
 // BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
@@ -252,7 +276,7 @@ type BridgeWorkerCreateOrUpdateResponse struct {
 // BridgeWorkerInfo defines model for BridgeWorkerInfo.
 type BridgeWorkerInfo struct {
 	// SupportedConfigTypes Configuration types of the bridges supported by the worker
-	SupportedConfigTypes []ConfigType `json:"SupportedConfigTypes,omitempty" yaml:"SupportedConfigTypes,omitempty"`
+	SupportedConfigTypes []SupportedConfigType `json:"SupportedConfigTypes,omitempty" yaml:"SupportedConfigTypes,omitempty"`
 }
 
 // BridgeWorkerStatus BridgeWorkerStatus represents the status information of a bridge worker within the system.
@@ -347,21 +371,6 @@ type ChangeSetCreateOrUpdateResponse struct {
 type Column struct {
 	// Name Name of the column in PascalCase without spaces or dashes, if built-in, entity attribute (e.g., Labels.Environment), or extended attribute (e.g., UpstreamUnit.HeadRevisionNum)
 	Name string `json:"Name" yaml:"Name"`
-}
-
-// ConfigType defines model for ConfigType.
-type ConfigType struct {
-	// AvailableTargets Targets known by the BridgeWorker
-	AvailableTargets []TargetType2 `json:"AvailableTargets,omitempty" yaml:"AvailableTargets,omitempty"`
-
-	// LiveStateType Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState
-	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
-
-	// ProviderType Type identifying a bridge implementation supported by the worker
-	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
-
-	// ToolchainType Configuration toolchain and format implemented by this bridge of the worker
-	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 }
 
 // DeleteResponse Response for successful delete operation
@@ -1367,6 +1376,9 @@ type Organization struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
+	// EmailDomain Unique email domain name for the External Identity Provider record matching this organization
+	EmailDomain string `json:"EmailDomain,omitempty" yaml:"EmailDomain,omitempty"`
+
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
@@ -1438,6 +1450,9 @@ type QueuedOperation struct {
 
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
+	// DriftReconciliationMode The drift reconciliation mode for the unit at the time of the operation.
+	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
 
 	// DryRun DryRun indicates whether the action is a dry run.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
@@ -1746,6 +1761,24 @@ type Subjects struct {
 	UserIDs map[string]bool `json:"UserIDs,omitempty" yaml:"UserIDs,omitempty"`
 }
 
+// SupportedConfigType defines model for SupportedConfigType.
+type SupportedConfigType struct {
+	// AvailableTargets Targets known by the BridgeWorker. Optional.
+	AvailableTargets []TargetType2 `json:"AvailableTargets,omitempty" yaml:"AvailableTargets,omitempty"`
+
+	// LiveStateType Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState
+	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
+
+	// Options Supported bridge options
+	Options []BridgeOption `json:"Options,omitempty" yaml:"Options,omitempty"`
+
+	// ProviderType Type identifying a bridge implementation supported by the worker
+	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
+
+	// ToolchainType Configuration toolchain and format implemented by this bridge of the worker
+	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+}
+
 // Tag Defines a Tag that can be used to identify a set of Revisions across Units.
 type Tag struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1802,8 +1835,14 @@ type Target struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
+	// BridgeHandle Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates.
+	BridgeHandle string `json:"BridgeHandle,omitempty" yaml:"BridgeHandle,omitempty"`
+
 	// BridgeWorkerID Unique identifier for a Bridge Worker associated with the Target.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+
+	// ConfigTypes ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target.
+	ConfigTypes []TargetConfigType `json:"ConfigTypes,omitempty" yaml:"ConfigTypes,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1823,22 +1862,24 @@ type Target struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
-	// LiveStateType LiveStateType specifies the configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML".
+	// LiveStateType LiveStateType specifies the first/default configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML".
 	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
+
+	// Options Bridge option values for the first ProviderType. The options must be predefined by the ConfigType in the BridgeWorker.
+	Options map[string]string `json:"Options,omitempty" yaml:"Options,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
-	// Parameters Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
+	// Parameters Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
 	//
 	// For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
 	// The Parameters object may contain the following fields:
 	// - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
-	// - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
 	Parameters  string       `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// ProviderType ProviderType specifies the cloud or infrastructure provider for this target, such as "Kubernetes".
+	// ProviderType ProviderType specifies the first/default cloud or infrastructure provider for this target, such as "Kubernetes".
 	ProviderType string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
@@ -1850,7 +1891,7 @@ type Target struct {
 	// TargetID Unique identifier for a Target.
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
+	// ToolchainType ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
 	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
 	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
 
@@ -1898,6 +1939,19 @@ type Target struct {
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
 }
 
+// TargetConfigType defines model for TargetConfigType.
+type TargetConfigType struct {
+	// LiveStateType Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState
+	LiveStateType string            `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
+	Options       map[string]string `json:"Options,omitempty" yaml:"Options,omitempty"`
+
+	// ProviderType Type identifying a bridge implementation supported by the worker
+	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
+
+	// ToolchainType Configuration toolchain and format implemented by this bridge of the worker
+	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+}
+
 // TargetCreateOrUpdateResponse defines model for TargetCreateOrUpdateResponse.
 type TargetCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
@@ -1908,10 +1962,13 @@ type TargetCreateOrUpdateResponse struct {
 
 // TargetType2 defines model for TargetType2.
 type TargetType2 struct {
-	// Name Used to set the Slug and DisplayName of the Target created in ConfigHub
+	// BridgeHandle Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates
+	BridgeHandle string `json:"BridgeHandle,omitempty" yaml:"BridgeHandle,omitempty"`
+
+	// Name Used to set the Slug and DisplayName of the Target created in ConfigHub. Optional.
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
 
-	// Params Used to set the Parameters of the Target created in ConfigHub
+	// Params Deprecated. Used to set the Parameters of the Target created in ConfigHub
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
 }
 
@@ -2058,6 +2115,9 @@ type Unit struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
+	// DriftReconciliationMode When the drift reconciliation mode is OnDemand, then the live state of the Target is updated only on Apply actions and the unit Data is updated only on Refresh actions. When the mode is ContinuousApply the live state is updated to match the last applied state when it has drifted from that state. When the mode is ContinuousRefresh, the unit Data is updated when it has drifted from the live state. The mode can be changed via the drift_mode parameter on Apply and Refresh operations. If the drift reconciliation mode is set in the opposing direction on the Unit (i.e., ContinuousApply when Refresh is invoked or ContinuousRefresh when Apply is invoked) and is not changed to a compatible value, then the operation will fail.
+	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
+
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
@@ -2094,6 +2154,9 @@ type Unit struct {
 
 	// PreviousLiveRevisionNum Sequence number the previous Revision applied. 0 if no live revision.
 	PreviousLiveRevisionNum int64 `json:"PreviousLiveRevisionNum,omitempty" yaml:"PreviousLiveRevisionNum,omitempty"`
+
+	// ProviderType ProviderType identifies which bridge to use in the case that the Target supports multiple ProviderTypes.
+	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -2143,6 +2206,9 @@ type UnitAction struct {
 
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
+
+	// DriftReconciliationMode The drift reconciliation mode for the unit at the time of the operation.
+	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
 
 	// DryRun DryRun indicates whether the action is a dry run.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
@@ -3009,7 +3075,7 @@ type ListQueuedOperationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3937,7 +4003,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -4830,7 +4896,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select FromUnits for created links
 	//
@@ -4879,7 +4945,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select ToUnits for created links
 	//
@@ -4934,7 +5000,7 @@ type ListOrganizationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+	// Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5813,7 +5879,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6294,7 +6360,7 @@ type ListTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6380,8 +6446,10 @@ type GetTargetParams struct {
 // PatchTargetApplicationMergePatchPlusJSONBody defines parameters for PatchTarget.
 type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Annotations    *map[string]*string       `json:"Annotations" yaml:"Annotations"`
+	BridgeHandle   *string                   `json:"BridgeHandle" yaml:"BridgeHandle"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ConfigTypes    *[]map[string]interface{} `json:"ConfigTypes" yaml:"ConfigTypes"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6392,6 +6460,7 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	LiveStateType *string                             `json:"LiveStateType" yaml:"LiveStateType"`
+	Options       *map[string]*string                 `json:"Options" yaml:"Options"`
 	Parameters    *string                             `json:"Parameters" yaml:"Parameters"`
 	Permissions   *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 	ProviderType  *string                             `json:"ProviderType" yaml:"ProviderType"`
@@ -6596,7 +6665,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6718,6 +6787,7 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -6909,6 +6979,9 @@ type ApplyUnitParams struct {
 
 	// DryRun Dry run mode - validates which units would be applied without executing
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
+	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // ApproveUnitParams defines parameters for ApproveUnit.
@@ -7041,6 +7114,9 @@ type GetExtendedMutationParams struct {
 type RefreshUnitParams struct {
 	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
+	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.
@@ -7184,7 +7260,7 @@ type ListUnitActionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7875,7 +7951,7 @@ type BulkDeleteTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7951,7 +8027,7 @@ type ListAllTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8009,8 +8085,10 @@ type ListAllTargetsParams struct {
 // BulkPatchTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTargets.
 type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Annotations    *map[string]*string       `json:"Annotations" yaml:"Annotations"`
+	BridgeHandle   *string                   `json:"BridgeHandle" yaml:"BridgeHandle"`
+	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ConfigTypes    *[]map[string]interface{} `json:"ConfigTypes" yaml:"ConfigTypes"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -8021,6 +8099,7 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	LiveStateType *string                             `json:"LiveStateType" yaml:"LiveStateType"`
+	Options       *map[string]*string                 `json:"Options" yaml:"Options"`
 	Parameters    *string                             `json:"Parameters" yaml:"Parameters"`
 	Permissions   *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 	ProviderType  *string                             `json:"ProviderType" yaml:"ProviderType"`
@@ -8066,7 +8145,7 @@ type BulkPatchTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8580,7 +8659,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8658,7 +8737,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8746,6 +8825,7 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -8791,7 +8871,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8942,6 +9022,7 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -8987,7 +9068,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9126,7 +9207,7 @@ type BulkApplyUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9177,6 +9258,9 @@ type BulkApplyUnitsParams struct {
 
 	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+
+	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
+	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // BulkApproveUnitsParams defines parameters for BulkApproveUnits.
@@ -9210,7 +9294,7 @@ type BulkApproveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9291,7 +9375,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9369,7 +9453,7 @@ type BulkDestroyUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9450,7 +9534,7 @@ type BulkRefreshUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9498,6 +9582,9 @@ type BulkRefreshUnitsParams struct {
 
 	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
+	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // BulkTagUnitsParams defines parameters for BulkTagUnits.
@@ -9531,7 +9618,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//

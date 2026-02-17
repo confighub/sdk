@@ -4,6 +4,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -80,5 +83,36 @@ func displayExtendedBridgeWorkerDetails(extendedWorker *goclientnew.ExtendedBrid
 	view.Append([]string{"Last Message", displayWorker.LastMessage})
 	view.Append([]string{"Last Seen At", displayWorker.LastSeenAt.String()})
 	view.Append([]string{"IP Address", displayWorker.IPAddress})
+
+	// Show SupportedConfigTypes from ProvidedInfo
+	if displayWorker.ProvidedInfo != nil && displayWorker.ProvidedInfo.BridgeWorkerInfo != nil {
+		for i, sct := range displayWorker.ProvidedInfo.BridgeWorkerInfo.SupportedConfigTypes {
+			prefix := fmt.Sprintf("ConfigType[%d]", i)
+			lstDisplay := sct.LiveStateType
+			if lstDisplay == "" {
+				lstDisplay = "(none)"
+			}
+			view.Append([]string{prefix, fmt.Sprintf("%s / %s / %s", sct.ProviderType, sct.ToolchainType, lstDisplay)})
+			if len(sct.Options) > 0 {
+				var optNames []string
+				for _, opt := range sct.Options {
+					optNames = append(optNames, opt.Name)
+				}
+				view.Append([]string{prefix + " Options", strings.Join(optNames, ", ")})
+			}
+			if len(sct.AvailableTargets) > 0 {
+				var targetNames []string
+				for _, t := range sct.AvailableTargets {
+					if t.BridgeHandle != "" {
+						targetNames = append(targetNames, t.BridgeHandle)
+					} else if t.Name != "" {
+						targetNames = append(targetNames, t.Name)
+					}
+				}
+				view.Append([]string{prefix + " Targets", strings.Join(targetNames, ", ")})
+			}
+		}
+	}
+
 	view.Render()
 }

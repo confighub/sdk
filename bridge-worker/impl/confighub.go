@@ -9,9 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -26,115 +24,47 @@ import (
 )
 
 type ConfigHubBridgeWorker struct {
-	serverURL    string
-	serverPort   string
-	workerID     string
-	workerSecret string
-	client       *goclientnew.ClientWithResponses
-	authSession  *cubapi.AuthSession
-	mu           sync.RWMutex
-	stopRefresh  chan struct{}
+	client *lib.WorkerFrontdoorClient
 }
 
 var _ api.BridgeWorker = (*ConfigHubBridgeWorker)(nil)
 
 // NewConfigHubBridgeWorker creates a new ConfigHubBridgeWorker
-func NewConfigHubBridgeWorker(serverURL, serverPort, workerID, workerSecret string) *ConfigHubBridgeWorker {
-	worker := &ConfigHubBridgeWorker{
-		serverURL:    serverURL,
-		serverPort:   serverPort,
-		workerID:     workerID,
-		workerSecret: workerSecret,
-		stopRefresh:  make(chan struct{}),
-	}
-
-	// Initialize the client with authentication
-	if err := worker.refreshAuth(); err != nil {
-		log.Log.Error(err, "Failed to initialize authentication for ConfigHub bridge worker")
-	}
-
-	// Start token refresh goroutine
-	go worker.tokenRefreshLoop()
-
+func NewConfigHubBridgeWorker() *ConfigHubBridgeWorker {
+	// We'll initialize the worker in Start()
+	worker := &ConfigHubBridgeWorker{}
 	return worker
 }
 
-// refreshAuth exchanges worker credentials for a JWT token and updates the client
-func (w *ConfigHubBridgeWorker) refreshAuth() error {
-	// Get JWT token using worker credentials
-	url := w.serverURL
-	if w.serverPort != "" {
-		url += ":" + w.serverPort
-	}
-
-	log.Log.Info("Attempting ConfigHub bridge worker authentication",
-		"url", url,
-		"workerID", w.workerID,
-		"hasSecret", w.workerSecret != "")
-
-	authSession, err := cubapi.PerformWorkerAuth(url, w.workerID, w.workerSecret)
-	if err != nil {
-		wrappedErr := errors.WithStack(err)
-		log.Log.Error(wrappedErr, "Worker authentication failed",
-			"url", url,
-			"workerID", w.workerID)
-		return errors.Wrap(err, "failed to authenticate worker")
-	}
-
-	// Create a new client with the JWT token
-	client, err := goclientnew.NewClientWithResponses(url+"/api", func(c *goclientnew.Client) error {
-		c.RequestEditors = append(c.RequestEditors, func(ctx context.Context, req *http.Request) error {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authSession.AccessToken))
-			return nil
-		})
-		return nil
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to create authenticated client")
-	}
-
-	// Update the client and auth session under lock
-	w.mu.Lock()
+func (w *ConfigHubBridgeWorker) Init(client *lib.WorkerFrontdoorClient) error {
 	w.client = client
-	w.authSession = authSession
-	w.mu.Unlock()
-
-	log.Log.Info("Successfully refreshed ConfigHub bridge worker authentication")
 	return nil
-}
-
-// tokenRefreshLoop refreshes the token every 23 hours
-func (w *ConfigHubBridgeWorker) tokenRefreshLoop() {
-	ticker := time.NewTicker(23 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			if err := w.refreshAuth(); err != nil {
-				log.Log.Error(err, "Failed to refresh authentication token")
-			}
-		case <-w.stopRefresh:
-			return
-		}
-	}
 }
 
 // getClient returns the authenticated client (thread-safe)
 func (w *ConfigHubBridgeWorker) getClient() *goclientnew.ClientWithResponses {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-	return w.client
+	return w.client.GetClient()
+}
+
+func (w *ConfigHubBridgeWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderConfigHub,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainConfigHubYAML},
+	}
 }
 
 // Info returns the bridge worker information
 func (w *ConfigHubBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return api.BridgeWorkerInfo{
-		SupportedConfigTypes: []*api.ConfigType{
+		SupportedConfigTypes: []*api.SupportedConfigType{
 			{
-				ToolchainType: workerapi.ToolchainConfigHubYAML,
-				ProviderType:  api.ProviderConfigHub,
-				LiveStateType: workerapi.ToolchainConfigHubYAML,
+				ConfigTypeSignature: api.ConfigTypeSignature{
+					ConfigType: api.ConfigType{
+						ToolchainType: workerapi.ToolchainConfigHubYAML,
+						ProviderType:  api.ProviderConfigHub,
+						LiveStateType: workerapi.ToolchainConfigHubYAML,
+					},
+				},
 				AvailableTargets: []api.Target{
 					{
 						Name:   api.GenerateTargetName(opts.WorkerSlug, api.ProviderConfigHub, workerapi.ToolchainConfigHubYAML, ""),
@@ -180,23 +110,12 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 	// Check if client is initialized
 	client := w.getClient()
 	if client == nil {
-		// Try to refresh auth once more
-		if err := w.refreshAuth(); err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultApplyFailed,
-				fmt.Sprintf("ConfigHub bridge authentication failed: %v", err),
-			), err)
-		}
-		client = w.getClient()
-		if client == nil {
-			err := errors.WithStack(errors.New("failed to initialize ConfigHub API client"))
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultApplyFailed,
-				err.Error(),
-			), err)
-		}
+		err := errors.WithStack(errors.New("ConfigHub API client not initialized"))
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			err.Error(),
+		), err)
 	}
 
 	// Send progressing status
@@ -398,23 +317,12 @@ func (w *ConfigHubBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload ap
 	// Check if client is initialized
 	client := w.getClient()
 	if client == nil {
-		// Try to refresh auth once more
-		if err := w.refreshAuth(); err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultDestroyFailed,
-				fmt.Sprintf("ConfigHub bridge authentication failed: %v", err),
-			), err)
-		}
-		client = w.getClient()
-		if client == nil {
-			err := errors.WithStack(errors.New("failed to initialize ConfigHub API client"))
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultDestroyFailed,
-				err.Error(),
-			), err)
-		}
+		err := errors.WithStack(errors.New("ConfigHub API client not initialized"))
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultDestroyFailed,
+			err.Error(),
+		), err)
 	}
 
 	// Send progressing status
@@ -526,23 +434,12 @@ func (w *ConfigHubBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload ap
 	// Check if client is initialized
 	client := w.getClient()
 	if client == nil {
-		// Try to refresh auth once more
-		if err := w.refreshAuth(); err != nil {
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultRefreshFailed,
-				fmt.Sprintf("ConfigHub bridge authentication failed: %v", err),
-			), err)
-		}
-		client = w.getClient()
-		if client == nil {
-			err := errors.WithStack(errors.New("failed to initialize ConfigHub API client"))
-			return lib.SafeSendStatus(wctx, newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultRefreshFailed,
-				err.Error(),
-			), err)
-		}
+		err := errors.WithStack(errors.New("ConfigHub API client not initialized"))
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			err.Error(),
+		), err)
 	}
 
 	// Send progressing status
@@ -782,7 +679,7 @@ func (w *ConfigHubBridgeWorker) importFromResourceInfoList(wctx api.BridgeWorker
 	// Build inventory by retrieving each resource from ConfigHub
 	var entities []interface{}
 	for _, resourceInfo := range resourceInfoList {
-		entity, err := cubapi.GetEntityBySlug(context.Background(), w.client, resourceInfo.ResourceType, payload.SpaceID.String(), resourceInfo.ResourceName)
+		entity, err := cubapi.GetEntityBySlug(context.Background(), w.client.GetClient(), resourceInfo.ResourceType, payload.SpaceID.String(), resourceInfo.ResourceName)
 		if err != nil {
 			log.Log.Error(err, "Failed to get entity", "type", resourceInfo.ResourceType, "slug", resourceInfo.ResourceName)
 			// Continue with other entities rather than failing the entire import
@@ -885,7 +782,7 @@ func (w *ConfigHubBridgeWorker) importFromFilters(wctx api.BridgeWorkerContext, 
 	}
 
 	// Fetch entities using the list function
-	entities, err := cubapi.ListEntitiesForImport(context.Background(), w.client, payload.SpaceID.String(), entityType, whereFilter)
+	entities, err := cubapi.ListEntitiesForImport(context.Background(), w.client.GetClient(), payload.SpaceID.String(), entityType, whereFilter)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, &api.ActionResult{
 			UnitID:            payload.UnitID,
@@ -1186,7 +1083,7 @@ func extractSlugFromEntity(entity interface{}) string {
 
 // Finalize performs cleanup operations
 func (w *ConfigHubBridgeWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// Stop the token refresh goroutine
-	close(w.stopRefresh)
+	// Shut down the client
+	w.client.Close()
 	return nil
 }

@@ -41,6 +41,13 @@ func (p *OpenTofuAWSParams) ToMap() map[string]interface{} {
 	return result
 }
 
+func (w *OpenTofuAWSWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderOpenTofuAWS,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainOpenTofuHCL},
+	}
+}
+
 func (w *OpenTofuAWSWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	profile := os.Getenv("AWS_PROFILE")
 	if profile == "" {
@@ -52,10 +59,14 @@ func (w *OpenTofuAWSWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	}
 
 	return api.BridgeWorkerInfo{
-		SupportedConfigTypes: []*api.ConfigType{
+		SupportedConfigTypes: []*api.SupportedConfigType{
 			{
-				ToolchainType: workerapi.ToolchainOpenTofuHCL,
-				ProviderType:  api.ProviderOpenTofuAWS,
+				ConfigTypeSignature: api.ConfigTypeSignature{
+					ConfigType: api.ConfigType{
+						ToolchainType: workerapi.ToolchainOpenTofuHCL,
+						ProviderType:  api.ProviderOpenTofuAWS,
+					},
+				},
 				AvailableTargets: []api.Target{
 					{
 						Name: api.GenerateTargetName(opts.WorkerSlug, api.ProviderOpenTofuAWS, workerapi.ToolchainOpenTofuHCL, ""),

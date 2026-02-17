@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/confighub/sdk/bridge-worker/api"
@@ -24,6 +25,13 @@ type ArgoCDRendererWorker struct {
 }
 
 var _ api.BridgeWorker = (*ArgoCDRendererWorker)(nil)
+
+func (w *ArgoCDRendererWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderArgoCDRenderer,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+	}
+}
 
 func (w *ArgoCDRendererWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderArgoCDRenderer)
@@ -94,10 +102,58 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 }
 
 func (w *ArgoCDRendererWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	// Parse target parameters to get KubeContext
+	var params KubernetesWorkerParams
+	if len(payload.TargetParams) > 0 {
+		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
+			wctx.SendStatus(newActionResult(
+				api.ActionStatusFailed,
+				api.ActionResultDestroyFailed,
+				fmt.Sprintf("failed to parse target parameters: %v", err),
+			))
+			return fmt.Errorf("failed to parse target parameters: %w", err)
+		}
+	}
+
+	// Create Kubernetes client to delete the ArgoCD Application resource
+	k8sClient, err := createArgoCDRendererK8sClient(params.KubeContext)
+	if err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultDestroyFailed,
+			fmt.Sprintf("failed to create Kubernetes client: %v", err),
+		))
+		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	// Parse the Application from the payload data
+	app, err := argocdrenderer.ParseApplication(payload.Data)
+	if err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultDestroyFailed,
+			fmt.Sprintf("failed to parse Application: %v", err),
+		))
+		return fmt.Errorf("failed to parse Application: %w", err)
+	}
+
+	// Delete the Application resource from the cluster
+	if err := k8sClient.Delete(wctx.Context(), app); err != nil {
+		if !apierrors.IsNotFound(err) {
+			wctx.SendStatus(newActionResult(
+				api.ActionStatusFailed,
+				api.ActionResultDestroyFailed,
+				fmt.Sprintf("failed to delete Application: %v", err),
+			))
+			return fmt.Errorf("failed to delete Application: %w", err)
+		}
+		// Already gone, treat as success
+	}
+
 	result := newActionResult(
-		api.ActionStatusNone,
-		api.ActionResultNone,
-		fmt.Sprintf("Destroy hasn't been implemented yet: %s", time.Now().Format(time.RFC3339)),
+		api.ActionStatusCompleted,
+		api.ActionResultDestroyCompleted,
+		fmt.Sprintf("Destroyed successfully at %s", time.Now().Format(time.RFC3339)),
 	)
 	return wctx.SendStatus(result)
 }

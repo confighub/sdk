@@ -17,6 +17,7 @@ import (
 var targetUpdateArgs struct {
 	whereTrigger    string
 	triggerFilter   string
+	liveStateType   string
 	permissions     []string
 	refreshTriggers bool
 }
@@ -63,6 +64,7 @@ func init() {
 	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type (use '-' to clear).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
@@ -139,6 +141,13 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTarget.Target.OrganizationID = existingTarget.OrganizationID
 		currentTarget.Target.SpaceID = existingTarget.SpaceID
 		currentTarget.Target.TargetID = existingTarget.TargetID
+	}
+
+	// Set LiveStateType if provided
+	if targetUpdateArgs.liveStateType == "-" {
+		currentTarget.Target.LiveStateType = ""
+	} else if targetUpdateArgs.liveStateType != "" {
+		currentTarget.Target.LiveStateType = targetUpdateArgs.liveStateType
 	}
 
 	err = validateToolchainAndProvider(currentTarget.Target.ToolchainType, currentTarget.Target.ProviderType, currentTarget.Target.LiveStateType)
@@ -226,6 +235,12 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data using consolidated function with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add LiveStateType if provided
+		if targetUpdateArgs.liveStateType == "-" {
+			patchMap["LiveStateType"] = ""
+		} else if targetUpdateArgs.liveStateType != "" {
+			patchMap["LiveStateType"] = targetUpdateArgs.liveStateType
+		}
 		// Add WhereTrigger if provided
 		if targetUpdateArgs.whereTrigger == "-" {
 			patchMap["WhereTrigger"] = ""
@@ -302,6 +317,12 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add LiveStateType if provided
+		if targetUpdateArgs.liveStateType == "-" {
+			patchMap["LiveStateType"] = ""
+		} else if targetUpdateArgs.liveStateType != "" {
+			patchMap["LiveStateType"] = targetUpdateArgs.liveStateType
+		}
 		// Add WhereTrigger if provided
 		if targetUpdateArgs.whereTrigger == "-" {
 			patchMap["WhereTrigger"] = ""

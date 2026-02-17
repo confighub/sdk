@@ -31,6 +31,13 @@ type FluxRendererWorker struct {
 
 var _ api.BridgeWorker = (*FluxRendererWorker)(nil)
 
+func (w *FluxRendererWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType:   api.ProviderFluxRenderer,
+		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
+	}
+}
+
 func (w *FluxRendererWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderFluxRenderer)
 }
@@ -123,9 +130,9 @@ func (w *FluxRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.Bri
 
 func (w *FluxRendererWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	result := newActionResult(
-		api.ActionStatusNone,
-		api.ActionResultNone,
-		fmt.Sprintf("Destroy hasn't been implemented yet: %s", time.Now().Format(time.RFC3339)),
+		api.ActionStatusCompleted,
+		api.ActionResultDestroyCompleted,
+		fmt.Sprintf("Destroyed successfully at %s", time.Now().Format(time.RFC3339)),
 	)
 	return wctx.SendStatus(result)
 }

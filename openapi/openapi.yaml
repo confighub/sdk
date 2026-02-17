@@ -1333,7 +1333,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -3419,7 +3419,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -5129,7 +5129,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Where expression to select FromUnits for created links
 
@@ -5186,7 +5186,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Where expression to select ToUnits for created links
 
@@ -5456,7 +5456,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+          Supported attributes for filtering on Organization: CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -9189,7 +9189,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -11238,7 +11238,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -11647,11 +11647,22 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                BridgeHandle:
+                  description: ""
+                  nullable: true
+                  type: string
                 BridgeWorkerID:
                   description: ""
                   format: uuid
                   nullable: true
                   type: string
+                ConfigTypes:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -11677,6 +11688,13 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Options:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Parameters:
                   description: ""
                   nullable: true
@@ -12562,7 +12580,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -13232,6 +13250,10 @@ paths:
                     when the Data is changed.
                   nullable: true
                   type: string
+                ProviderType:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -13604,6 +13626,13 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: 'Drift reconciliation mode. Valid values: OnDemand, ContinuousApply,
+          ContinuousRefresh. If not specified, the current value on the Unit is used.'
+        in: query
+        name: drift_mode
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -14493,6 +14522,13 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: 'Drift reconciliation mode. Valid values: OnDemand, ContinuousApply,
+          ContinuousRefresh. If not specified, the current value on the Unit is used.'
+        in: query
+        name: drift_mode
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -14949,7 +14985,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -16804,7 +16840,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -16965,7 +17001,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -17120,7 +17156,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -17201,11 +17237,22 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                BridgeHandle:
+                  description: ""
+                  nullable: true
+                  type: string
                 BridgeWorkerID:
                   description: ""
                   format: uuid
                   nullable: true
                   type: string
+                ConfigTypes:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -17231,6 +17278,13 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Options:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Parameters:
                   description: ""
                   nullable: true
@@ -18230,7 +18284,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18400,7 +18454,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18592,7 +18646,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -18857,6 +18911,10 @@ paths:
                     when the Data is changed.
                   nullable: true
                   type: string
+                ProviderType:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -18985,7 +19043,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19193,6 +19251,10 @@ paths:
                     when the Data is changed.
                   nullable: true
                   type: string
+                ProviderType:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -19322,7 +19384,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19395,6 +19457,13 @@ paths:
           etc.
         in: query
         name: revision
+        required: false
+        schema:
+          type: string
+      - description: 'Drift reconciliation mode. Valid values: OnDemand, ContinuousApply,
+          ContinuousRefresh. If not specified, the current value on the Unit is used.'
+        in: query
+        name: drift_mode
         required: false
         schema:
           type: string
@@ -19502,7 +19571,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19669,7 +19738,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -19834,7 +19903,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -20006,7 +20075,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -20074,6 +20143,13 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: 'Drift reconciliation mode. Valid values: OnDemand, ContinuousApply,
+          ContinuousRefresh. If not specified, the current value on the Unit is used.'
+        in: query
+        name: drift_mode
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -20177,7 +20253,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -21477,6 +21553,16 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        OCIHost:
+          description: OCI registry host for pulling configuration artifacts.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OCIPort:
+          description: OCI registry port for pulling configuration artifacts.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         RedirectURI:
           readOnly: true
           type: string
@@ -21500,6 +21586,29 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    BridgeOption:
+      properties:
+        DataType:
+          description: Data type of the option
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Description:
+          description: Description of the option
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Example:
+          description: Example value
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Name:
+          description: Name of the option in PascalCase
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Required:
+          description: Whether the option is required
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+      type: object
     BridgeWorker:
       description: |-
         BridgeWorker represents a bridge worker in ConfigHub.
@@ -21513,6 +21622,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -21566,6 +21677,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -21610,6 +21724,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -21650,7 +21766,7 @@ components:
         SupportedConfigTypes:
           description: Configuration types of the bridges supported by the worker
           items:
-            $ref: '#/components/schemas/ConfigType'
+            $ref: '#/components/schemas/SupportedConfigType'
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
@@ -21712,6 +21828,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -21767,6 +21885,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -21780,6 +21901,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -21836,29 +21959,6 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Name
-      type: object
-    ConfigType:
-      properties:
-        AvailableTargets:
-          description: Targets known by the BridgeWorker
-          items:
-            $ref: '#/components/schemas/TargetType2'
-          type: array
-          x-go-type-skip-optional-pointer: true
-        LiveStateType:
-          description: Configuration toolchain and format of the LiveState for this
-            bridge; required in order to invoke functions on LiveState
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ProviderType:
-          description: Type identifying a bridge implementation supported by the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ToolchainType:
-          description: Configuration toolchain and format implemented by this bridge
-            of the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
       type: object
     DeleteResponse:
       description: Response for successful delete operation
@@ -22227,6 +22327,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -22283,6 +22385,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -22301,6 +22406,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -22691,6 +22798,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -22752,6 +22861,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -22765,6 +22877,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -22818,6 +22932,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -22874,6 +22990,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -22893,6 +23012,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -23126,6 +23247,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -23156,6 +23279,11 @@ components:
           description: Friendly name for the entity.
           type: string
           x-go-type-skip-optional-pointer: true
+        EmailDomain:
+          description: Unique email domain name for the External Identity Provider
+            record matching this organization
+          type: string
+          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
@@ -23169,6 +23297,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -23182,6 +23313,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -23287,6 +23420,11 @@ components:
             $ref: '#/components/schemas/UUID'
           nullable: true
           type: array
+          x-go-type-skip-optional-pointer: true
+        DriftReconciliationMode:
+          description: The drift reconciliation mode for the unit at the time of the
+            operation.
+          type: string
           x-go-type-skip-optional-pointer: true
         DryRun:
           description: DryRun indicates whether the action is a dry run.
@@ -23670,6 +23808,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -23707,6 +23847,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -23722,6 +23865,8 @@ components:
           $ref: '#/components/schemas/Permissions'
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -23821,12 +23966,43 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
+    SupportedConfigType:
+      properties:
+        AvailableTargets:
+          description: Targets known by the BridgeWorker. Optional.
+          items:
+            $ref: '#/components/schemas/TargetType2'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        LiveStateType:
+          description: Configuration toolchain and format of the LiveState for this
+            bridge; required in order to invoke functions on LiveState
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Options:
+          description: Supported bridge options
+          items:
+            $ref: '#/components/schemas/BridgeOption'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ProviderType:
+          description: Type identifying a bridge implementation supported by the worker
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToolchainType:
+          description: Configuration toolchain and format implemented by this bridge
+            of the worker
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     Tag:
       description: Defines a Tag that can be used to identify a set of Revisions across
         Units.
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -23866,6 +24042,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -23879,6 +24058,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -23928,16 +24109,30 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
           type: object
+          x-go-type-skip-optional-pointer: true
+        BridgeHandle:
+          description: Identifier used by the Bridge to refer to discovered/enabled
+            Target credentials and coordinates.
+          type: string
           x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: Unique identifier for a Bridge Worker associated with the Target.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+          x-go-type-skip-optional-pointer: true
+        ConfigTypes:
+          description: ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples)
+            supported by this Target.
+          items:
+            $ref: '#/components/schemas/TargetConfigType'
+          type: array
           x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
@@ -23971,16 +24166,26 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
           type: object
           x-go-type-skip-optional-pointer: true
         LiveStateType:
-          description: LiveStateType specifies the configuration toolchain and format
-            of the LiveState for the bridge corresponding to this Target. Possible
-            values include "Kubernetes/YAML" and "ConfigHub/YAML".
+          description: LiveStateType specifies the first/default configuration toolchain
+            and format of the LiveState for the bridge corresponding to this Target.
+            Possible values include "Kubernetes/YAML" and "ConfigHub/YAML".
           type: string
+          x-go-type-skip-optional-pointer: true
+        Options:
+          additionalProperties:
+            type: string
+          description: Bridge option values for the first ProviderType. The options
+            must be predefined by the ConfigType in the BridgeWorker.
+          type: object
           x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an organization.
@@ -23990,23 +24195,24 @@ components:
           x-go-type-skip-optional-pointer: true
         Parameters:
           description: |
-            Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
+            Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
 
             For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
             The Parameters object may contain the following fields:
             - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
-            - "WaitTimeout" (string): A duration string (e.g., "5m", "2m30s") specifying how long to wait for resources to reach a ready state. Defaults to "2m0s".
           type: string
           x-go-type-skip-optional-pointer: true
         Permissions:
           $ref: '#/components/schemas/Permissions'
         ProviderType:
-          description: ProviderType specifies the cloud or infrastructure provider
-            for this target, such as "Kubernetes".
+          description: ProviderType specifies the first/default cloud or infrastructure
+            provider for this target, such as "Kubernetes".
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -24022,8 +24228,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ToolchainType:
-          description: ToolchainType specifies the type of toolchain supported by
-            this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
+          description: ToolchainType specifies the type of the first/default toolchain
+            supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
             "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML",
             "AppConfig/INI".
           type: string
@@ -24095,6 +24301,28 @@ components:
       - ToolchainType
       - ProviderType
       type: object
+    TargetConfigType:
+      properties:
+        LiveStateType:
+          description: Configuration toolchain and format of the LiveState for this
+            bridge; required in order to invoke functions on LiveState
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Options:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ProviderType:
+          description: Type identifying a bridge implementation supported by the worker
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToolchainType:
+          description: Configuration toolchain and format implemented by this bridge
+            of the worker
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     TargetCreateOrUpdateResponse:
       properties:
         Error:
@@ -24104,14 +24332,20 @@ components:
       type: object
     TargetType2:
       properties:
+        BridgeHandle:
+          description: Identifier used by the Bridge to refer to discovered/enabled
+            Target credentials and coordinates
+          type: string
+          x-go-type-skip-optional-pointer: true
         Name:
           description: Used to set the Slug and DisplayName of the Target created
-            in ConfigHub
+            in ConfigHub. Optional.
           type: string
           x-go-type-skip-optional-pointer: true
         Params:
           additionalProperties: {}
-          description: Used to set the Parameters of the Target created in ConfigHub
+          description: Deprecated. Used to set the Parameters of the Target created
+            in ConfigHub
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
@@ -24129,6 +24363,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -24198,6 +24434,9 @@ components:
           $ref: '#/components/schemas/UUID'
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -24211,6 +24450,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -24293,6 +24534,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -24363,6 +24606,21 @@ components:
           description: Friendly name for the entity.
           type: string
           x-go-type-skip-optional-pointer: true
+        DriftReconciliationMode:
+          description: When the drift reconciliation mode is OnDemand, then the live
+            state of the Target is updated only on Apply actions and the unit Data
+            is updated only on Refresh actions. When the mode is ContinuousApply the
+            live state is updated to match the last applied state when it has drifted
+            from that state. When the mode is ContinuousRefresh, the unit Data is
+            updated when it has drifted from the live state. The mode can be changed
+            via the drift_mode parameter on Apply and Refresh operations. If the drift
+            reconciliation mode is set in the opposing direction on the Unit (i.e.,
+            ContinuousApply when Refresh is invoked or ContinuousRefresh when Apply
+            is invoked) and is not changed to a compatible value, then the operation
+            will fail.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
@@ -24390,6 +24648,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -24442,8 +24703,15 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
+        ProviderType:
+          description: ProviderType identifies which bridge to use in the case that
+            the Target supports multiple ProviderTypes.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -24547,6 +24815,11 @@ components:
             $ref: '#/components/schemas/UUID'
           nullable: true
           type: array
+          x-go-type-skip-optional-pointer: true
+        DriftReconciliationMode:
+          description: The drift reconciliation mode for the unit at the time of the
+            operation.
+          type: string
           x-go-type-skip-optional-pointer: true
         DryRun:
           description: DryRun indicates whether the action is a dry run.
@@ -24901,6 +25174,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -24936,6 +25211,8 @@ components:
       properties:
         Annotations:
           additionalProperties:
+            maxLength: 128
+            pattern: ^(.|\n)*$
             type: string
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
@@ -24989,6 +25266,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
             type: string
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
@@ -25011,6 +25291,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
           type: string
           x-go-type-skip-optional-pointer: true
         SpaceID:

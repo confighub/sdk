@@ -136,6 +136,8 @@ func (c *workerClient) handleWatchApply(workerContext api.BridgeWorkerContext, p
 			// Create a new context that uses the watcher context
 			watchContext := &defaultBridgeWorkerContext{
 				ctx:        watcherCtx,
+				serverURL:  workerContext.GetServerURL(),
+				workerID:   workerContext.GetWorkerID(),
 				sendResult: workerContext.SendStatus,
 			}
 
@@ -199,6 +201,8 @@ func (c *workerClient) handleWatchDestroy(workerContext api.BridgeWorkerContext,
 			// Create a new context that uses the watcher context
 			watchContext := &defaultBridgeWorkerContext{
 				ctx:        watcherCtx,
+				serverURL:  workerContext.GetServerURL(),
+				workerID:   workerContext.GetWorkerID(),
 				sendResult: workerContext.SendStatus,
 			}
 

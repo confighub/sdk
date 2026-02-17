@@ -137,8 +137,8 @@ func performUserAuth(coordinate Coordinate, noBrowser bool) (*cubapi.AuthSession
 	codeVerifier := generateCodeVerifier()
 	codeChallenge := generateCodeChallenge(codeVerifier)
 
-	// Get device login information directly from WorkOS
-	deviceInfo, err := getDeviceLoginInfoFromWorkOS(apiInfo.ClientID, codeChallenge, apiInfo.DeviceAuthURL)
+	// Get device login information from the identity provider
+	deviceInfo, err := getDeviceLoginInfo(apiInfo.ClientID, codeChallenge, apiInfo.DeviceAuthURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device login info: %w", err)
 	}
@@ -167,8 +167,8 @@ func performUserAuth(coordinate Coordinate, noBrowser bool) (*cubapi.AuthSession
 		}
 	}
 
-	// Poll for token exchange directly with WorkOS
-	session, err := pollForDeviceTokenWithWorkOS(apiInfo.ClientID, deviceInfo.DeviceCode, codeVerifier, apiInfo.DeviceTokenURL, deviceInfo.Interval, deviceInfo.ExpiresIn)
+	// Poll for token exchange
+	session, err := pollForDeviceToken(apiInfo.ClientID, deviceInfo.DeviceCode, codeVerifier, apiInfo.DeviceTokenURL, deviceInfo.Interval, deviceInfo.ExpiresIn)
 	if err != nil {
 		return nil, fmt.Errorf("device authentication failed: %w", err)
 	}
@@ -247,10 +247,12 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 	if err != nil {
 		return err
 	}
+
 	err = contextManager.SaveConfig()
 	if err != nil {
 		return fmt.Errorf("failed to save context: %w", err)
 	}
+
 	return nil
 }
 
@@ -291,7 +293,7 @@ func generateCodeChallenge(codeVerifier string) string {
 	return codeVerifier
 }
 
-// DeviceLoginInfo represents the response from WorkOS device login
+// DeviceLoginInfo represents the response from the identity provider's device authorization endpoint
 type DeviceLoginInfo struct {
 	DeviceCode              string `json:"device_code"`
 	UserCode                string `json:"user_code"`
@@ -301,15 +303,15 @@ type DeviceLoginInfo struct {
 	Interval                int    `json:"interval"`
 }
 
-// getDeviceLoginInfoFromWorkOS gets device login information directly from WorkOS
-func getDeviceLoginInfoFromWorkOS(clientID, codeChallenge, deviceAuthURL string) (*DeviceLoginInfo, error) {
-	// Call WorkOS device authorization endpoint
+// getDeviceLoginInfo requests device authorization from the identity provider
+func getDeviceLoginInfo(clientID, codeChallenge, deviceAuthURL string) (*DeviceLoginInfo, error) {
 	params := url.Values{}
 	params.Set("client_id", clientID)
 	params.Set("code_challenge", codeChallenge)
-	params.Set("code_challenge_method", "plain") // Using plain for simplicity
-	// Make POST request with form data
-	req, err := http.NewRequest("POST", deviceAuthURL, strings.NewReader(params.Encode()))
+	params.Set("code_challenge_method", "plain")
+	params.Set("scope", "openid email")
+
+	req, err := http.NewRequest(http.MethodPost, deviceAuthURL, strings.NewReader(params.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create device authorization request: %w", err)
 	}
@@ -319,43 +321,41 @@ func getDeviceLoginInfoFromWorkOS(clientID, codeChallenge, deviceAuthURL string)
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call WorkOS device authorization: %w", err)
+		return nil, fmt.Errorf("device authorization request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("WorkOS device authorization failed: %s", string(body))
+		return nil, fmt.Errorf("device authorization failed (HTTP %d): %s", resp.StatusCode, string(body))
 	}
 
 	var deviceInfo DeviceLoginInfo
 	if err := json.NewDecoder(resp.Body).Decode(&deviceInfo); err != nil {
-		return nil, fmt.Errorf("failed to decode WorkOS response: %w", err)
+		return nil, fmt.Errorf("failed to decode device authorization response: %w", err)
 	}
 
 	return &deviceInfo, nil
 }
 
-// pollForDeviceTokenWithWorkOS polls WorkOS directly for token exchange
-func pollForDeviceTokenWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string, interval, expiresIn int) (*cubapi.AuthSession, error) {
+// pollForDeviceToken polls the identity provider's token endpoint until the device is authorized
+func pollForDeviceToken(clientID, deviceCode, codeVerifier, tokenURL string, interval, expiresIn int) (*cubapi.AuthSession, error) {
 	startTime := time.Now()
 	expiryTime := startTime.Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
 
 	for time.Now().Before(expiryTime) {
-		// Try to exchange device code for tokens directly with WorkOS
-		session, err := exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL)
+		session, err := exchangeDeviceCodeForTokens(clientID, deviceCode, codeVerifier, tokenURL)
 		if err == nil {
 			return session, nil
 		}
 
-		// Handle different error types
 		switch {
 		case strings.Contains(err.Error(), "authorization_pending"):
 			// Continue polling
 		case strings.Contains(err.Error(), "slow_down"):
-			// Increase polling interval (double it)
-			pollInterval = pollInterval * 2
+			// Increase polling interval (add 5 seconds per RFC 8628)
+			pollInterval = pollInterval + 5*time.Second
 			tprint("Rate limited, slowing down polling...")
 		case strings.Contains(err.Error(), "access_denied"):
 			return nil, fmt.Errorf("authentication was denied: %w", err)
@@ -365,16 +365,27 @@ func pollForDeviceTokenWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL s
 			return nil, err
 		}
 
-		// Wait before next poll
 		time.Sleep(pollInterval)
 	}
 
 	return nil, fmt.Errorf("device authentication timed out")
 }
 
-// exchangeDeviceCodeForTokensWithWorkOS exchanges the device code for tokens directly with WorkOS
-func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, tokenURL string) (*cubapi.AuthSession, error) {
-	// Call WorkOS token endpoint
+// tokenResponse represents the token response from an OAuth2 identity provider.
+// Some providers include user and organization info inline; others require JWT extraction.
+type tokenResponse struct {
+	AccessToken    string      `json:"access_token"`
+	RefreshToken   string      `json:"refresh_token"`
+	OrganizationID string      `json:"organization_id"`
+	User           cubapi.User `json:"user"`
+	IDToken        string      `json:"id_token"`
+	TokenType      string      `json:"token_type"`
+	ExpiresIn      int         `json:"expires_in"`
+	Scope          string      `json:"scope"`
+}
+
+// exchangeDeviceCodeForTokens exchanges the device code for tokens
+func exchangeDeviceCodeForTokens(clientID, deviceCode, codeVerifier, tokenURL string) (*cubapi.AuthSession, error) {
 	params := url.Values{}
 	params.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	params.Set("device_code", deviceCode)
@@ -391,13 +402,13 @@ func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, t
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call WorkOS token endpoint: %w", err)
+		return nil, fmt.Errorf("token exchange request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		// Parse error response
 		var errorResp struct {
 			Error       string `json:"error"`
 			Description string `json:"error_description"`
@@ -416,25 +427,14 @@ func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, t
 				return nil, fmt.Errorf("token exchange failed: %s - %s", errorResp.Error, errorResp.Description)
 			}
 		}
-
 		return nil, fmt.Errorf("token exchange failed: %s", string(body))
 	}
-	body, _ := io.ReadAll(resp.Body)
-	// tprint("Token exchange response: %s", string(body))
-	// Parse WorkOS token response
-	var tokenResp struct {
-		AccessToken    string      `json:"access_token"`
-		RefreshToken   string      `json:"refresh_token"`
-		OrganizationID string      `json:"organization_id"`
-		User           cubapi.User `json:"user"`
-	}
 
-	err = json.Unmarshal(body, &tokenResp)
-	if err != nil {
+	var tokenResp tokenResponse
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal token response: %w", err)
 	}
 
-	// Convert to cubapi.AuthSession
 	session := &cubapi.AuthSession{
 		AccessToken:    tokenResp.AccessToken,
 		RefreshToken:   tokenResp.RefreshToken,
@@ -443,7 +443,70 @@ func exchangeDeviceCodeForTokensWithWorkOS(clientID, deviceCode, codeVerifier, t
 		AuthType:       cubapi.AuthTypeJWT,
 	}
 
+	// If user info was not provided inline in the response, extract from the JWT access token
+	if session.User.Email == "" {
+		user, orgID, err := extractUserInfoFromJWT(tokenResp.AccessToken)
+		if err == nil {
+			session.User = user
+			if session.OrganizationID == "" {
+				session.OrganizationID = orgID
+			}
+		}
+	}
+
 	return session, nil
+}
+
+// extractUserInfoFromJWT extracts user information from a JWT access token's claims.
+// This is used as a fallback when the token response does not include inline user/org info.
+func extractUserInfoFromJWT(accessToken string) (cubapi.User, string, error) {
+	var (
+		user  cubapi.User
+		orgID string
+	)
+
+	parts := strings.Split(accessToken, ".")
+	if len(parts) != 3 {
+		return user, "", fmt.Errorf("invalid JWT token format")
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return user, "", fmt.Errorf("failed to decode JWT payload: %w", err)
+	}
+
+	var claims struct {
+		Sub               string         `json:"sub"`
+		Email             string         `json:"email"`
+		PreferredUsername string         `json:"preferred_username"`
+		GivenName         string         `json:"given_name"`
+		FamilyName        string         `json:"family_name"`
+		Name              string         `json:"name"`
+		OrgID             string         `json:"org_id"`
+		Organization      map[string]any `json:"organization"`
+	}
+
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return user, "", fmt.Errorf("failed to parse JWT claims: %w", err)
+	}
+
+	user.Email = claims.Email
+	user.FirstName = claims.GivenName
+	user.LastName = claims.FamilyName
+	if claims.OrgID != "" {
+		orgID = claims.OrgID
+	} else {
+		for _, v := range claims.Organization {
+			if childKV, ok := v.(map[string]any); ok {
+				if idAny, ok := childKV["id"]; ok {
+					orgID = idAny.(string)
+					break
+				}
+			}
+		}
+	}
+
+	return user, orgID, nil
 }
 
 // parseJWTToken parses a JWT token and returns the payload as JSON

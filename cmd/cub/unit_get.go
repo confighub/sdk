@@ -138,6 +138,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view := tableView()
 		view.Append([]string{"Name", unitDetails.Unit.Slug})
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
+		view.Append([]string{"Provider Type", unitDetails.Unit.ProviderType})
 
 		// Not implemented yet
 		// Show Set name if available
@@ -168,6 +169,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Last Applied Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LastAppliedRevisionNum)})
 		view.Append([]string{"Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LiveRevisionNum)})
 		view.Append([]string{"Previous Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.PreviousLiveRevisionNum)})
+		view.Append([]string{"Drift Reconciliation Mode", unitDetails.Unit.DriftReconciliationMode})
 
 		// Show upstream unit info if available
 		if unitDetails.Unit.UpstreamUnitID != nil && *unitDetails.Unit.UpstreamUnitID != uuid.Nil {

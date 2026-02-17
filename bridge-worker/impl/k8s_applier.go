@@ -120,6 +120,7 @@ type ApplierConfig struct {
 	LiveData    []byte // LiveData containing inventory and resources
 	SpaceID     string // SpaceID for inventory identification
 	UnitSlug    string // UnitSlug for inventory identification
+	RevisionNum int64  // RevisionNum for the revision being applied
 	WaitTimeout string // WaitTimeout duration string for resource readiness
 }
 

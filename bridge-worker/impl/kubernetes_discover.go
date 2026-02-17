@@ -22,6 +22,7 @@ import (
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/third_party/gaby"
 )
 
 // ResourceTypeInfo holds information about a discovered resource type
@@ -872,7 +873,7 @@ func (rd *ResourceDiscovery) shouldForceInclude(resource *unstructured.Unstructu
 // evaluateComplexPathFilter evaluates complex path-based filters with support for wildcards and indices
 // Returns true if the resource should be excluded based on the filter
 func (rd *ResourceDiscovery) evaluateComplexPathFilter(resource *unstructured.Unstructured, filter goclientnew.ImportFilter) bool {
-	pathParts := strings.Split(filter.Type, ".")
+	pathParts := gaby.DotPathToSlice(filter.Type)
 
 	// Find the first wildcard or numeric index that requires iteration
 	iterationIndex := rd.findIterationPoint(pathParts)

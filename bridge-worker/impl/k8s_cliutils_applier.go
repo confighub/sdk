@@ -45,10 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// Constants for annotations and labels
 const (
-	SpaceIDAnnotation  = "confighub.com/SpaceID"
-	UnitSlugAnnotation = "confighub.com/UnitSlug"
 	// Using a nil UUID (all zeros) as the default when SpaceID is not provided
 	// This is a valid UUID format that won't cause parsing errors
 	DefaultSpaceID       = "00000000-0000-0000-0000-000000000000"
@@ -179,6 +176,7 @@ type CLIUtilsApplier struct {
 	liveData           []byte
 	spaceID            string
 	unitSlug           string
+	revisionNum        int64
 	waitTimeout        string // WaitTimeout duration string for resource readiness
 	inventoryCM        *InventoryConfigMap
 	invInfo            inventory.Info
@@ -220,6 +218,7 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		return ApplyResult{Error: err}
 	}
 
+	a.ensureConfigHubContextOnObjects(objects)
 	a.setDefaultNamespaces(objects)
 	log.Log.Info("🚀 Starting apply operation", "count", len(objects))
 
@@ -1220,6 +1219,12 @@ func (a *CLIUtilsApplier) createInventoryConfigMap(metadata InventoryMetadata) *
 	}
 }
 
+func (a *CLIUtilsApplier) ensureConfigHubContextOnObjects(objects []*unstructured.Unstructured) {
+	for _, obj := range objects {
+		ensureConfigHubContext(obj, a.unitSlug, a.spaceID, a.revisionNum)
+	}
+}
+
 func (a *CLIUtilsApplier) setDefaultNamespaces(objects []*unstructured.Unstructured) {
 	if a.comps.KubernetesClient == nil {
 		return
@@ -1447,6 +1452,7 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 		liveData:        config.LiveData,
 		spaceID:         config.SpaceID,
 		unitSlug:        config.UnitSlug,
+		revisionNum:     config.RevisionNum,
 		waitTimeout:     config.WaitTimeout,
 		inventoryCM:     inventoryCM,
 		invInfo:         invInfo,

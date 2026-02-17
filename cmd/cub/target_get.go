@@ -62,9 +62,24 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 		view.Append([]string{"Bridge Worker ID", targetDetails.BridgeWorkerID.String()})
 	}
 
+	if targetDetails.BridgeHandle != "" {
+		view.Append([]string{"Bridge Handle", targetDetails.BridgeHandle})
+	}
 	view.Append([]string{"Provider Type", targetDetails.ProviderType})
 	view.Append([]string{"Toolchain Type", targetDetails.ToolchainType})
 	view.Append([]string{"LiveState Type", targetDetails.LiveStateType})
+	if len(targetDetails.Options) > 0 {
+		view.Append([]string{"Options", mapToString(targetDetails.Options)})
+	}
+	if len(targetDetails.ConfigTypes) > 0 {
+		for i, ct := range targetDetails.ConfigTypes {
+			prefix := fmt.Sprintf("ConfigType[%d]", i)
+			view.Append([]string{prefix, fmt.Sprintf("%s / %s / %s", ct.ProviderType, ct.ToolchainType, ct.LiveStateType)})
+			if len(ct.Options) > 0 {
+				view.Append([]string{prefix + " Options", mapToString(ct.Options)})
+			}
+		}
+	}
 
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", targetDetails.UpdatedAt.String()})

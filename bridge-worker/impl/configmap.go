@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/bridge-worker/api"
@@ -82,19 +83,42 @@ func generateConfigMapFromData(args *configMapTemplateArgs) []byte {
 	return out.Bytes()
 }
 
-func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	// Support multiple AppConfig types
-	supportedToolchains := []workerapi.ToolchainType{
-		workerapi.ToolchainAppConfigProperties,
-		workerapi.ToolchainAppConfigTOML,
-		workerapi.ToolchainAppConfigINI,
-		workerapi.ToolchainAppConfigYAML,
+func (w *ConfigMapBridgeWorker) ID() api.BridgeWorkerID {
+	return api.BridgeWorkerID{
+		ProviderType: api.ProviderConfigMapRenderer,
+		// Support multiple AppConfig types
+		ToolchainTypes: []workerapi.ToolchainType{
+			workerapi.ToolchainAppConfigProperties,
+			workerapi.ToolchainAppConfigTOML,
+			workerapi.ToolchainAppConfigINI,
+			workerapi.ToolchainAppConfigYAML,
+		},
 	}
+}
 
-	var configTypes []*api.ConfigType
+func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
+	id := w.ID()
+	supportedToolchains := id.ToolchainTypes
+
+	// Don't create a Target for every ToolchainType. Just advertise their availability.
+
+	var configTypes []*api.SupportedConfigType
 	for _, toolchain := range supportedToolchains {
-		info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, toolchain, api.ProviderConfigMap)
-		configTypes = append(configTypes, info.SupportedConfigTypes...)
+		newConfigType := &api.SupportedConfigType{
+			ConfigTypeSignature: api.ConfigTypeSignature{
+				ConfigType: api.ConfigType{
+					ProviderType:  id.ProviderType,
+					ToolchainType: toolchain,
+					LiveStateType: workerapi.ToolchainKubernetesYAML,
+				},
+			},
+			AvailableTargets: []api.Target{
+				{
+					BridgeHandle: "ConfigMap", // no secret needed, can be identical for all ToolchainTypes
+				},
+			},
+		}
+		configTypes = append(configTypes, newConfigType)
 	}
 
 	return api.BridgeWorkerInfo{
@@ -212,14 +236,18 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 
 func (w *ConfigMapBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	transformAppConfigToConfigMap(&payload)
-	// TODO: GC configmaps more than a designated amount
-	// FIXME: The configmap will be stored in LiveData rather than LiveState
-	return w.KubernetesBridgeWorker.Apply(wctx, payload)
+	status := newActionResult(
+		api.ActionStatusCompleted,
+		api.ActionResultApplyCompleted,
+		fmt.Sprintf("Rendered ConfigMap successfully at %s", time.Now().Format(time.RFC3339)),
+	)
+	status.LiveState = payload.Data
+	return wctx.SendStatus(status)
 }
 
 func (w *ConfigMapBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	transformAppConfigToConfigMap(&payload)
-	return w.KubernetesBridgeWorker.WatchForApply(wctx, payload)
+	// ConfigMapRenderer doesn't apply to a cluster, so there's nothing to watch
+	return nil
 }
 
 func (w *ConfigMapBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
@@ -241,17 +269,19 @@ func (w *ConfigMapBridgeWorker) Import(wctx api.BridgeWorkerContext, payload api
 }
 
 func (w *ConfigMapBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// TODO: delete all generated configmaps
-	transformAppConfigToConfigMap(&payload)
-	return w.KubernetesBridgeWorker.Destroy(wctx, payload)
+	result := newActionResult(
+		api.ActionStatusCompleted,
+		api.ActionResultDestroyCompleted,
+		fmt.Sprintf("Destroyed successfully at %s", time.Now().Format(time.RFC3339)),
+	)
+	return wctx.SendStatus(result)
 }
 
 func (w *ConfigMapBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// TODO: delete all generated configmaps
-	transformAppConfigToConfigMap(&payload)
-	return w.KubernetesBridgeWorker.WatchForDestroy(wctx, payload)
+	// ConfigMapRenderer doesn't apply to a cluster, so there's nothing to watch
+	return nil
 }
 
 func (w *ConfigMapBridgeWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	return w.KubernetesBridgeWorker.Finalize(wctx, payload)
+	return nil
 }
