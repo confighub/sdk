@@ -10,6 +10,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 type Worker struct {
@@ -27,6 +28,7 @@ func New(url, id, secret string) *Worker {
 		confighubURL: url,
 		workerId:     id,
 		workerSecret: secret,
+		metricsMeter: noop.Meter{},
 	}
 }
 
