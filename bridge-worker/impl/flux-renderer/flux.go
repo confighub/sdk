@@ -11,6 +11,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// NOTE: The results of rendering aren't being deployed as the renderer unit, so UnitSlug and SpaceID
+// annotations should not be added by the renderer. They will be added by the deployment bridge.
+
 // RenderFlux renders a Flux HelmRelease or Kustomization to Kubernetes manifests.
 // It automatically detects the resource type and calls the appropriate renderer.
 //

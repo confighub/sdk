@@ -55,6 +55,7 @@ const (
 	DefaultNamespace     = "default"
 	FieldManager         = "confighub-bridge-worker"
 	DefaultTimeout       = LargeWaitTimeout
+	MinimalTimeout       = 10 * time.Millisecond
 	PollInterval         = 2 * time.Second
 	InventoryPrefix      = "inventory"
 )
@@ -250,12 +251,12 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		// from the API layer (added during preprocessing or by functions).
 		if len(objects) > 0 {
 			annotations := objects[0].GetAnnotations()
-			if spaceID := annotations[SpaceIDAnnotation]; spaceID != "" {
+			if spaceID := annotations[k8skit.SpaceIDAnnotation]; spaceID != "" {
 				invMetadata.SpaceID = spaceID
 			} else {
 				log.Log.Info("⚠️ SpaceID not found in annotations, using default")
 			}
-			if unitSlug := annotations[UnitSlugAnnotation]; unitSlug != "" {
+			if unitSlug := annotations[k8skit.UnitSlugAnnotation]; unitSlug != "" {
 				invMetadata.UnitSlug = unitSlug
 			} else {
 				log.Log.Info("⚠️ UnitSlug not found in annotations, using default")
@@ -390,10 +391,13 @@ applyDrainLoop:
 			"remaining", remainingTime.String(),
 			"timeout", waitTimeout.String())
 	} else {
-		waitTimeout = DefaultTimeout // Use the default timeout (60s)
-		log.Log.Info("⏳ Using default timeout", "timeout", waitTimeout.String())
+		waitTimeout = MinimalTimeout // Use the minimal timeout, and then continue in WaitForApply
+		log.Log.Info("⏳ Using minimal timeout", "timeout", waitTimeout.String())
 	}
 
+	// FIXME: We shouldn't really be waiting here. Resources that never become ready block this
+	// forever when using a long timeout. Example: A Flux Kustomization with suspend true
+	// never sets observedGeneration, so kstatus never considers it ready.
 	log.Log.Info("⏳ Waiting for resources to be ready")
 	if err := a.waitForResourcesReady(ctx, resourceObjects, waitTimeout); err != nil {
 		log.Log.Error(err, "Some resources failed to become ready")
@@ -1209,9 +1213,9 @@ func (a *CLIUtilsApplier) createInventoryConfigMap(metadata InventoryMetadata) *
 					InventoryIDLabel: metadata.InventoryID,
 				},
 				"annotations": map[string]interface{}{
-					FunctionAnnotation: "inventory",
-					SpaceIDAnnotation:  metadata.SpaceID,
-					UnitSlugAnnotation: metadata.UnitSlug,
+					FunctionAnnotation:        "inventory",
+					k8skit.SpaceIDAnnotation:  metadata.SpaceID,
+					k8skit.UnitSlugAnnotation: metadata.UnitSlug,
 				},
 			},
 			"data": map[string]interface{}{},

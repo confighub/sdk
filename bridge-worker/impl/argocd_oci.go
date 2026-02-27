@@ -20,6 +20,7 @@ import (
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	funcApi "github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/helmutils"
 	"github.com/confighub/sdk/ociutils"
 	"github.com/confighub/sdk/workerapi"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +53,10 @@ func NewArgoCDOCIWorker(workerID, workerSecret string) *ArgoCDOCIWorker {
 var _ api.BridgeWorker = (*ArgoCDOCIWorker)(nil)
 var _ api.WatchableWorker = (*ArgoCDOCIWorker)(nil)
 
+// argoCDWaitTimeout is the timeout for waiting on ArgoCD Application sync.
+// Defaults to LargeWaitTimeout; overridable in tests.
+var argoCDWaitTimeout = LargeWaitTimeout
+
 func (w *ArgoCDOCIWorker) ID() api.BridgeWorkerID {
 	return api.BridgeWorkerID{
 		ProviderType:   api.ProviderArgoCDOCI,
@@ -62,7 +67,6 @@ func (w *ArgoCDOCIWorker) ID() api.BridgeWorkerID {
 // ArgoCDOCIWorkerParams contains the configuration parameters for the ArgoCD OCI bridge worker.
 type ArgoCDOCIWorkerParams struct {
 	KubeContext          string `json:",omitempty"`
-	WaitTimeout          string `json:",omitempty"`
 	ArgoCDNamespace      string `json:",omitempty"` // Namespace where ArgoCD Application will be created (default: "argocd")
 	DestinationServer    string `json:",omitempty"` // Target cluster API server URL (default: "https://kubernetes.default.svc")
 	DestinationNamespace string `json:",omitempty"` // Target namespace for deployed resources (default: "default")
@@ -120,18 +124,15 @@ const (
 	argoCDFinalizer           = "resources-finalizer.argocd.argoproj.io"
 	argoCDSyncPolicyAutomated = "automated"
 	argoCDSyncOptionCreateNS  = "CreateNamespace=true"
+	argoCDSyncOptionSSA       = "ServerSideApply=true"
 	k8sKindSecret             = "Secret"
 )
 
 // Annotation and label keys
 const (
 	annotationExternalLink     = "link.argocd.argoproj.io/external-link"
-	keyUnitSlug                = "confighub.com/UnitSlug"
-	annotationSpaceID          = "confighub.com/SpaceID"
-	annotationRevisionNum      = "confighub.com/RevisionNum"
 	labelArgoCDSecretType      = "argocd.argoproj.io/secret-type"
 	labelArgoCDSecretTypeValue = "repo-creds"
-	labelManagedBy             = "confighub.com/managed-by"
 	labelManagedByValue        = "argocd-oci-bridge"
 )
 
@@ -176,18 +177,41 @@ type argoCDApplicationArgs struct {
 	PruneEnabled         bool
 	SelfHealEnabled      bool
 	ConfigHubURL         string
+	// Helm-specific fields
+	IsHelm          bool   // When true, generate Helm-style source (no path, chart version as targetRevision)
+	HelmReleaseName string // Helm release name (from HelmRelease label)
+	HelmChartName   string // Helm chart name (from HelmChart label)
 }
 
 const defaultConfigHubURL = "https://hub.confighub.com"
 
 func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
+	// Build source configuration: Helm charts use repoURL+targetRevision+helm.releaseName (no path),
+	// while plain manifests use repoURL+path+targetRevision.
+	source := map[string]interface{}{
+		"repoURL":        args.OCIRepoURL,
+		"targetRevision": args.TargetRevision,
+	}
+	if args.IsHelm {
+		// Helm OCI source: set chart name, no path, add helm section with releaseName
+		source["chart"] = args.HelmChartName
+		helmSection := map[string]interface{}{}
+		if args.HelmReleaseName != "" {
+			helmSection["releaseName"] = args.HelmReleaseName
+		}
+		if len(helmSection) > 0 {
+			source["helm"] = helmSection
+		}
+	} else {
+		// OCIPath is a user-configurable parameter (default ".") from ArgoCDOCIWorkerParams,
+		// specifying the path within the OCI artifact where manifests reside.
+		// Not applicable for Helm charts since ArgoCD consumes the entire chart tar.gz.
+		source["path"] = args.OCIPath
+	}
+
 	spec := map[string]interface{}{
 		"project": args.Project,
-		"source": map[string]interface{}{
-			"repoURL":        args.OCIRepoURL,
-			"path":           args.OCIPath,
-			"targetRevision": args.TargetRevision,
-		},
+		"source":  source,
 		"destination": map[string]interface{}{
 			"server":    args.DestinationServer,
 			"namespace": args.DestinationNamespace,
@@ -195,7 +219,7 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 	}
 
 	spec["syncPolicy"] = map[string]interface{}{
-		"syncOptions": []interface{}{argoCDSyncOptionCreateNS},
+		"syncOptions": []interface{}{argoCDSyncOptionCreateNS, argoCDSyncOptionSSA},
 	}
 	if args.SyncPolicy == argoCDSyncPolicyAutomated {
 		spec["syncPolicy"].(map[string]interface{})["automated"] = map[string]interface{}{
@@ -219,18 +243,17 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 				"finalizers": []interface{}{
 					argoCDFinalizer,
 				},
-				"labels": map[string]interface{}{keyUnitSlug: args.UnitSlug},
 				"annotations": map[string]interface{}{
-					keyUnitSlug:            args.UnitSlug,
-					annotationSpaceID:      args.SpaceID,
-					annotationRevisionNum:  args.RevisionNum,
-					annotationExternalLink: fmt.Sprintf(configHubUnitURLFormat, configHubURL, args.SpaceID, args.UnitID),
+					k8skit.UnitSlugAnnotation:    args.UnitSlug,
+					k8skit.SpaceIDAnnotation:     args.SpaceID,
+					k8skit.RevisionNumAnnotation: args.RevisionNum,
+					annotationExternalLink:       fmt.Sprintf(configHubUnitURLFormat, configHubURL, args.SpaceID, args.UnitID),
 				},
 			},
 			"spec": spec,
 			"operation": map[string]interface{}{
 				"sync": map[string]interface{}{
-					"syncOptions": []interface{}{argoCDSyncOptionCreateNS},
+					"syncOptions": []interface{}{argoCDSyncOptionCreateNS, argoCDSyncOptionSSA},
 				},
 			},
 		},
@@ -272,9 +295,6 @@ func parseArgoCDOCIParams(payload api.BridgeWorkerPayload) (ArgoCDOCIWorkerParam
 	}
 	if params.TargetRevision == "" {
 		params.TargetRevision = defaultTargetRevision
-	}
-	if params.WaitTimeout == "" {
-		params.WaitTimeout = LargeWaitTimeout.String()
 	}
 
 	return params, nil
@@ -324,7 +344,7 @@ func generateArgoCDRepoCreds(host, namespace, workerID, workerSecret string, isH
 				"namespace": namespace,
 				"labels": map[string]interface{}{
 					labelArgoCDSecretType: labelArgoCDSecretTypeValue,
-					labelManagedBy:        labelManagedByValue,
+					k8skit.LabelManagedBy: labelManagedByValue,
 				},
 			},
 			"type":       "Opaque",
@@ -395,6 +415,19 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 	// Generate a stable name based on SpaceSlug and UnitSlug for in-place updates
 	appName := k8skit.K8sResourceProvider.NormalizeName(fmt.Sprintf("%s-%s", payload.SpaceSlug, payload.UnitSlug))
 
+	// Detect Helm units by checking for all required Helm labels
+	// (HelmRelease, HelmChart, HelmChartVersion, HelmChartAPIVersion).
+	// When detected, override targetRevision with the chart version.
+	isHelm := helmutils.IsHelmChart(payload.UnitLabels)
+	var helmReleaseName string
+	var helmChartName string
+	if isHelm {
+		metadata := helmutils.ExtractHelmMetadata(payload.UnitLabels, payload.UnitSlug)
+		targetRevision = metadata.ChartVersion
+		helmReleaseName = metadata.ReleaseName
+		helmChartName = metadata.ChartName
+	}
+
 	args := &argoCDApplicationArgs{
 		Name:                 appName,
 		ArgoCDNamespace:      params.ArgoCDNamespace,
@@ -412,6 +445,9 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 		PruneEnabled:         params.PruneEnabled,
 		SelfHealEnabled:      params.SelfHealEnabled,
 		ConfigHubURL:         wctx.GetServerURL(),
+		IsHelm:               isHelm,
+		HelmReleaseName:      helmReleaseName,
+		HelmChartName:        helmChartName,
 	}
 
 	applicationYAML, err := generateArgoCDApplication(args)
@@ -419,7 +455,7 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 		return params, fmt.Errorf("failed to generate ArgoCD Application: %w", err)
 	}
 
-	log.Log.Info("Generated ArgoCD Application", "name", appName, "namespace", params.ArgoCDNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision)
+	log.Log.Info("Generated ArgoCD Application", "name", appName, "namespace", params.ArgoCDNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision, "isHelm", isHelm)
 
 	// Generate repo-creds Secret if credentials are available and not disabled
 	if !skipRepoCreds && !params.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
@@ -517,16 +553,7 @@ func (w *ArgoCDOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload ap
 		return err
 	}
 
-	// Parse timeout
-	var timeout time.Duration
-	if params.WaitTimeout != "" {
-		if t, parseErr := time.ParseDuration(params.WaitTimeout); parseErr == nil {
-			timeout = t
-		}
-	}
-	if timeout == 0 {
-		timeout = LargeWaitTimeout
-	}
+	timeout := argoCDWaitTimeout
 
 	ctx := wctx.Context()
 	pollInterval := 5 * time.Second

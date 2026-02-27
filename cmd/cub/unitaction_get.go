@@ -80,6 +80,19 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 	table.Append([]string{"Drift Reconciliation Mode", unitAction.DriftReconciliationMode})
 	table.Render()
 
+	if len(unitAction.ErrorDetails) > 0 {
+		tprintRaw("")
+		tprintRaw("ErrorDetails:")
+		tprintRaw("-------------")
+		for _, item := range unitAction.ErrorDetails {
+			if item.Item != "" {
+				tprintRaw(fmt.Sprintf("  %s: %s", item.Item, item.Description))
+			} else {
+				tprintRaw(fmt.Sprintf("  %s", item.Description))
+			}
+		}
+	}
+
 	if len(unitAction.Data) > 0 {
 		tprintRaw("Data:")
 		tprintRaw("-----")

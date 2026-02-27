@@ -24,13 +24,6 @@ import (
 	funcapi "github.com/confighub/sdk/function/api"
 )
 
-// Keep consistent with K8sResourceProviderType.ContextPath
-const (
-	SpaceIDAnnotation     = k8skit.ContextKeyPrefix + "SpaceID"
-	UnitSlugAnnotation    = k8skit.ContextKeyPrefix + "UnitSlug"
-	RevisionNumAnnotation = k8skit.ContextKeyPrefix + "RevisionNum"
-)
-
 // ensureConfigHubContext sets ConfigHub context annotations (UnitSlug, SpaceID, RevisionNum)
 // on the given Kubernetes object. These annotations correspond to the paths returned by
 // K8sResourceProvider.ContextPath() for each field.
@@ -39,9 +32,9 @@ func ensureConfigHubContext(obj *unstructured.Unstructured, unitSlug, spaceID st
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
-	annotations[UnitSlugAnnotation] = unitSlug
-	annotations[SpaceIDAnnotation] = spaceID
-	annotations[RevisionNumAnnotation] = fmt.Sprintf("%d", revisionNum)
+	annotations[k8skit.UnitSlugAnnotation] = unitSlug
+	annotations[k8skit.SpaceIDAnnotation] = spaceID
+	annotations[k8skit.RevisionNumAnnotation] = fmt.Sprintf("%d", revisionNum)
 	obj.SetAnnotations(annotations)
 }
 

@@ -10,11 +10,12 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/confighub/sdk/configkit/k8skit"
 	funcApi "github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/helmutils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -878,7 +879,6 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 func TestArgoCDOCIWorkerParams_JSONMarshaling(t *testing.T) {
 	params := ArgoCDOCIWorkerParams{
 		KubeContext:          "test-context",
-		WaitTimeout:          "5m",
 		ArgoCDNamespace:      "argocd",
 		DestinationServer:    "https://kubernetes.default.svc",
 		DestinationNamespace: "production",
@@ -914,7 +914,6 @@ func TestArgoCDOCIWorkerParams_OmitEmpty(t *testing.T) {
 	jsonStr := string(jsonBytes)
 	// Check that empty fields are omitted
 	assert.NotContains(t, jsonStr, "KubeContext")
-	assert.NotContains(t, jsonStr, "WaitTimeout")
 	assert.NotContains(t, jsonStr, "ArgoCDNamespace")
 	// OCIRepoURL should be present
 	assert.Contains(t, jsonStr, "OCIRepoURL")
@@ -1480,80 +1479,6 @@ func TestArgoCDOCIWorker_Refresh_UnknownStatus(t *testing.T) {
 	assert.Contains(t, capturedResult.Message, "sync=Unknown")
 }
 
-func TestArgoCDOCIWorker_WatchForApply_Timeout(t *testing.T) {
-	mockCtx := setupMockContext(t)
-	mockCtx.On("GetServerURL").Return("").Maybe()
-	mockClient := new(MockK8sClient)
-
-	// Override kubernetesClientFactory
-	originalFactory := kubernetesClientFactory
-	kubernetesClientFactory = func(kubeContext string) (KubernetesClient, ResourceManager, error) {
-		return mockClient, nil, nil
-	}
-	defer func() { kubernetesClientFactory = originalFactory }()
-
-	// Use very short timeout
-	shortTimeoutParams := []byte(`{
-		"KubeContext": "test-context",
-		"WaitTimeout": "1ms",
-		"OCIRepoURL": "oci://ghcr.io/myorg/manifests"
-	}`)
-
-	// Setup mock expectations for SendStatus
-	// 1. Initial waiting status
-	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for ArgoCD Application to sync and become healthy...")
-	// 2. Intermediate progress status (sent before timeout check)
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing && status.ResourceStatuses != nil
-	})).Return(nil).Maybe()
-	// Also accept progress messages with "ArgoCD Application" prefix
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing &&
-			strings.Contains(status.Message, "ArgoCD Application")
-	})).Return(nil).Maybe()
-	// 3. Timeout failure
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusFailed &&
-			status.Result == api.ActionResultApplyWaitFailed &&
-			strings.Contains(status.Message, "timed out")
-	})).Return(nil).Once()
-
-	// Mock K8s client Get - return a still-progressing Application
-	mockClient.On("Get",
-		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		mock.MatchedBy(func(key client.ObjectKey) bool { return true }),
-		mock.MatchedBy(func(obj client.Object) bool { return true }),
-		mock.Anything,
-	).Return(nil).Run(func(args mock.Arguments) {
-		obj := args.Get(2).(*unstructured.Unstructured)
-		obj.SetAPIVersion(argoCDAPIVersion)
-		obj.SetKind(argoCDKindApplication)
-		obj.Object["status"] = map[string]interface{}{
-			"health": map[string]interface{}{"status": argoCDHealthStatusProgressing},
-			"sync":   map[string]interface{}{"status": argoCDSyncStatusOutOfSync},
-			"operationState": map[string]interface{}{
-				"phase": argoCDOperationPhaseRunning,
-			},
-		}
-		// Sleep past the timeout
-		time.Sleep(5 * time.Millisecond)
-	}).Maybe()
-
-	worker := &ArgoCDOCIWorker{}
-
-	spaceID := uuid.New()
-	payload := api.BridgeWorkerPayload{
-		TargetParams: shortTimeoutParams,
-		UnitSlug:     "my-app",
-		SpaceID:      spaceID,
-		RevisionNum:  1,
-		Data:         testConfigMapYAML,
-	}
-
-	err := worker.WatchForApply(mockCtx, payload)
-	assert.Error(t, err)
-}
-
 func TestArgoCDOCIWorker_WatchForApply_ContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mockCtx := new(MockBridgeWorkerContext)
@@ -1748,7 +1673,7 @@ func TestGenerateArgoCDRepoCreds_HTTP(t *testing.T) {
 	assert.Contains(t, yamlStr, "name: confighub-oci-creds-localhost-9092")
 	assert.Contains(t, yamlStr, "namespace: argocd")
 	assert.Contains(t, yamlStr, "argocd.argoproj.io/secret-type: repo-creds")
-	assert.Contains(t, yamlStr, "confighub.com/managed-by: argocd-oci-bridge")
+	assert.Contains(t, yamlStr, k8skit.LabelManagedBy+": argocd-oci-bridge")
 	assert.Contains(t, yamlStr, "type: oci")
 	assert.Contains(t, yamlStr, "url: oci://localhost:9092")
 	assert.Contains(t, yamlStr, "username: worker-123")
@@ -1989,84 +1914,6 @@ func TestArgoCDOCIWorker_WatchForDestroy_TransformError_IsPermanent(t *testing.T
 	// The error should be a backoff.PermanentError so it is not retried
 	var permErr *backoff.PermanentError
 	assert.True(t, errors.As(err, &permErr), "transform error should be wrapped in backoff.PermanentError")
-}
-
-func TestArgoCDOCIWorker_WatchForApply_StaleStateNotCompleted(t *testing.T) {
-	// When ArgoCD shows Synced+Healthy but operationPhase is "Running",
-	// the poll should NOT declare completion (stale state from previous revision).
-	mockCtx := setupMockContext(t)
-	mockCtx.On("GetServerURL").Return("").Maybe()
-	mockClient := new(MockK8sClient)
-
-	originalFactory := kubernetesClientFactory
-	kubernetesClientFactory = func(kubeContext string) (KubernetesClient, ResourceManager, error) {
-		return mockClient, nil, nil
-	}
-	defer func() { kubernetesClientFactory = originalFactory }()
-
-	// Use very short timeout so the test finishes quickly
-	shortTimeoutParams := []byte(`{
-		"KubeContext": "test-context",
-		"WaitTimeout": "1ms",
-		"OCIRepoURL": "oci://ghcr.io/myorg/manifests"
-	}`)
-
-	// Setup mock expectations for SendStatus
-	setupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for ArgoCD Application to sync and become healthy...")
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing && status.ResourceStatuses != nil
-	})).Return(nil).Maybe()
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusProgressing &&
-			strings.Contains(status.Message, "ArgoCD Application")
-	})).Return(nil).Maybe()
-	// Expect timeout failure — NOT completion
-	mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusFailed &&
-			status.Result == api.ActionResultApplyWaitFailed &&
-			strings.Contains(status.Message, "timed out")
-	})).Return(nil).Once()
-
-	// Mock K8s client Get - Synced+Healthy but operationPhase=Running (stale state)
-	mockClient.On("Get",
-		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		mock.MatchedBy(func(key client.ObjectKey) bool { return true }),
-		mock.MatchedBy(func(obj client.Object) bool { return true }),
-		mock.Anything,
-	).Return(nil).Run(func(args mock.Arguments) {
-		obj := args.Get(2).(*unstructured.Unstructured)
-		obj.SetAPIVersion(argoCDAPIVersion)
-		obj.SetKind(argoCDKindApplication)
-		obj.SetName("test-app")
-		obj.SetNamespace("argocd")
-		obj.Object["status"] = map[string]interface{}{
-			"health": map[string]interface{}{"status": argoCDHealthStatusHealthy},
-			"sync":   map[string]interface{}{"status": argoCDSyncStatusSynced},
-			"operationState": map[string]interface{}{
-				"phase": argoCDOperationPhaseRunning,
-			},
-		}
-		time.Sleep(5 * time.Millisecond)
-	}).Maybe()
-
-	worker := &ArgoCDOCIWorker{}
-
-	spaceID := uuid.New()
-	payload := api.BridgeWorkerPayload{
-		TargetParams: shortTimeoutParams,
-		UnitSlug:     "my-app",
-		SpaceID:      spaceID,
-		RevisionNum:  1,
-		Data:         testConfigMapYAML,
-	}
-
-	err := worker.WatchForApply(mockCtx, payload)
-	// Should timeout, NOT complete successfully
-	assert.Error(t, err)
-	// Should never have sent a completed status
-	mockCtx.AssertNotCalled(t, "SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-		return status.Status == api.ActionStatusCompleted
-	}))
 }
 
 func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
@@ -2317,6 +2164,238 @@ func TestGetLiveObjects_SkipNotFound(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, result)
 	})
+}
+
+// Helm-specific Application CR tests
+
+func TestGenerateArgoCDApplication_HelmSource(t *testing.T) {
+	args := &argoCDApplicationArgs{
+		Name:                 "test-helm-app",
+		ArgoCDNamespace:      "argocd",
+		UnitSlug:             "my-release",
+		UnitID:               "unit-uuid-123",
+		SpaceID:              "space-uuid-456",
+		RevisionNum:          "1",
+		Project:              "default",
+		OCIRepoURL:           "oci://oci.hub.confighub.com/unit/production/my-release",
+		OCIPath:              ".",
+		TargetRevision:       "1.2.3",
+		DestinationServer:    "https://kubernetes.default.svc",
+		DestinationNamespace: "default",
+		SyncPolicy:           "automated",
+		PruneEnabled:         true,
+		SelfHealEnabled:      true,
+		IsHelm:               true,
+		HelmReleaseName:      "my-release",
+		HelmChartName:        "nginx",
+	}
+
+	yamlBytes, err := generateArgoCDApplication(args)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, yamlBytes)
+
+	yamlStr := string(yamlBytes)
+
+	// Verify Helm source: chart set, no path, targetRevision is chart version, helm.releaseName set
+	assert.Contains(t, yamlStr, "chart: nginx")
+	assert.Contains(t, yamlStr, "repoURL: oci://oci.hub.confighub.com/unit/production/my-release")
+	assert.Contains(t, yamlStr, "targetRevision: 1.2.3")
+	assert.NotContains(t, yamlStr, "path:")
+	assert.Contains(t, yamlStr, "releaseName: my-release")
+
+	// Standard fields should still be present
+	assert.Contains(t, yamlStr, "apiVersion: argoproj.io/v1alpha1")
+	assert.Contains(t, yamlStr, "kind: Application")
+	assert.Contains(t, yamlStr, "name: test-helm-app")
+	assert.Contains(t, yamlStr, "prune: true")
+	assert.Contains(t, yamlStr, "selfHeal: true")
+}
+
+func TestGenerateArgoCDApplication_NonHelmSourceHasPath(t *testing.T) {
+	args := &argoCDApplicationArgs{
+		Name:                 "test-plain-app",
+		ArgoCDNamespace:      "argocd",
+		UnitSlug:             "my-app",
+		UnitID:               "unit-uuid-123",
+		SpaceID:              "space-uuid-456",
+		RevisionNum:          "1",
+		Project:              "default",
+		OCIRepoURL:           "oci://oci.hub.confighub.com/unit/production/my-app",
+		OCIPath:              ".",
+		TargetRevision:       "latest",
+		DestinationServer:    "https://kubernetes.default.svc",
+		DestinationNamespace: "default",
+		SyncPolicy:           "manual",
+		IsHelm:               false,
+	}
+
+	yamlBytes, err := generateArgoCDApplication(args)
+	assert.NoError(t, err)
+
+	yamlStr := string(yamlBytes)
+
+	// Non-Helm source should have path
+	assert.Contains(t, yamlStr, "path: .")
+	assert.Contains(t, yamlStr, "targetRevision: latest")
+}
+
+func TestGenerateArgoCDApplication_HelmSource_EmptyReleaseName(t *testing.T) {
+	args := &argoCDApplicationArgs{
+		Name:                 "helm-app-no-release",
+		ArgoCDNamespace:      "argocd",
+		UnitSlug:             "my-chart",
+		SpaceID:              "space-123",
+		RevisionNum:          "1",
+		Project:              "default",
+		OCIRepoURL:           "oci://ghcr.io/myorg/charts",
+		TargetRevision:       "1.0.0",
+		DestinationServer:    "https://kubernetes.default.svc",
+		DestinationNamespace: "default",
+		SyncPolicy:           "manual",
+		IsHelm:               true,
+		HelmReleaseName:      "",
+		HelmChartName:        "nginx",
+	}
+
+	yamlBytes, err := generateArgoCDApplication(args)
+	assert.NoError(t, err)
+
+	yamlStr := string(yamlBytes)
+
+	// Should have chart but no releaseName or helm section when releaseName is empty
+	assert.Contains(t, yamlStr, "chart: nginx")
+	assert.NotContains(t, yamlStr, "releaseName:")
+	assert.NotContains(t, yamlStr, "path:")
+}
+
+func TestTransformToArgoCDOCIApplication_HelmUnit(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	spaceID := uuid.New()
+	unitID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetParams: testArgoCDOCITargetParams,
+		UnitSlug:     "my-release",
+		UnitID:       unitID,
+		SpaceSlug:    "production",
+		SpaceID:      spaceID,
+		RevisionNum:  1,
+		Data:         testConfigMapYAML,
+		UnitLabels: map[string]string{
+			helmutils.HelmReleaseLabel:         "my-release",
+			helmutils.HelmChartLabel:           "nginx",
+			helmutils.HelmChartVersionLabel:    "1.2.3",
+			helmutils.HelmChartAPIVersionLabel: "v2",
+		},
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+
+	// Should generate Helm-style source with chart name, chart version and release name
+	assert.Contains(t, yamlStr, "chart: nginx")
+	assert.Contains(t, yamlStr, "targetRevision: 1.2.3")
+	assert.NotContains(t, yamlStr, "path:")
+	assert.Contains(t, yamlStr, "releaseName: my-release")
+
+	// Standard fields
+	assert.Contains(t, yamlStr, "apiVersion: argoproj.io/v1alpha1")
+	assert.Contains(t, yamlStr, "kind: Application")
+}
+
+func TestTransformToArgoCDOCIApplication_HelmUnit_InferredOCI(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://hub.confighub.com")
+
+	spaceID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		UnitSlug:     "my-release",
+		SpaceSlug:    "production",
+		SpaceID:      spaceID,
+		RevisionNum:  5,
+		Data:         testConfigMapYAML,
+		UnitLabels: map[string]string{
+			helmutils.HelmReleaseLabel:         "my-release",
+			helmutils.HelmChartLabel:           "nginx",
+			helmutils.HelmChartVersionLabel:    "2.0.0",
+			helmutils.HelmChartAPIVersionLabel: "v2",
+		},
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+
+	// Helm unit: targetRevision should be the chart version, not the OCI tag
+	assert.Contains(t, yamlStr, "targetRevision: 2.0.0")
+	assert.NotContains(t, yamlStr, "path:")
+	// OCI URL should still be auto-constructed
+	assert.Contains(t, yamlStr, "repoURL: oci://oci.hub.confighub.com/unit/production/my-release")
+}
+
+func TestTransformToArgoCDOCIApplication_NonHelmUnit_PreservesPath(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	spaceID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetParams: testArgoCDOCITargetParams,
+		UnitSlug:     "my-app",
+		SpaceSlug:    "production",
+		SpaceID:      spaceID,
+		RevisionNum:  1,
+		Data:         testConfigMapYAML,
+		// No Helm labels
+		UnitLabels: map[string]string{},
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+
+	// Non-Helm: should have path and standard targetRevision
+	assert.Contains(t, yamlStr, "path: apps/myapp")
+	assert.Contains(t, yamlStr, "targetRevision: v1.0.0")
+}
+
+func TestTransformToArgoCDOCIApplication_PartialHelmLabels_NotHelm(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	spaceID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetParams: testArgoCDOCITargetParams,
+		UnitSlug:     "my-app",
+		SpaceSlug:    "production",
+		SpaceID:      spaceID,
+		RevisionNum:  1,
+		Data:         testConfigMapYAML,
+		// Partial Helm labels (missing HelmChartAPIVersion)
+		UnitLabels: map[string]string{
+			helmutils.HelmReleaseLabel:      "my-release",
+			helmutils.HelmChartLabel:        "nginx",
+			helmutils.HelmChartVersionLabel: "1.0.0",
+		},
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+
+	// Partial labels should NOT trigger Helm mode
+	assert.Contains(t, yamlStr, "path:")
+	assert.Contains(t, yamlStr, "targetRevision: v1.0.0")
 }
 
 func TestTransformToArgoCDOCIApplication_SkipRepoCreds(t *testing.T) {

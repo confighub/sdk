@@ -152,6 +152,8 @@ type ActionResult struct {
 	// ResourceStatuses contains per-resource sync and readiness status.
 	// Key format: "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
 	ResourceStatuses ResourceStatusMap `json:",omitempty" description:"Per-resource sync and readiness status"`
+	// ErrorMessages contains warning or error messages to surface to the user.
+	ErrorMessages []string `json:",omitempty" description:"Warning or error messages to surface to the user"`
 }
 
 const MaxConfigDataLength = 64 * 1024 * 1024 // 64MB

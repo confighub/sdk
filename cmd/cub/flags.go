@@ -39,6 +39,7 @@ const DefaultTimeoutDuration = 10 * time.Minute
 var annotation []string
 var label []string
 var deleteGate []string
+var option []string
 var spaceIdentifiers []string
 var allowExists bool
 
@@ -122,6 +123,19 @@ func setDeleteGates(deleteGateMap *map[string]bool) error {
 			}
 		}
 	}
+	return nil
+}
+
+func enableOptionFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&option, "option", []string{}, "bridge options in key=value format; can separate by commas and/or use multiple instances of the flag")
+}
+
+func setOptions(optionMap *map[string]string) error {
+	err := setKeyValues(option, optionMap)
+	if err != nil {
+		return fmt.Errorf("invalid option: %w", err)
+	}
+
 	return nil
 }
 

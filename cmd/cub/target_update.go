@@ -64,6 +64,7 @@ func init() {
 	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	enableOptionFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type (use '-' to clear).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	targetCmd.AddCommand(targetUpdateCmd)
@@ -167,6 +168,10 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	err = setOptions(&currentTarget.Target.Options)
+	if err != nil {
+		return err
+	}
 
 	// Parse and set permissions
 	err = parsePermissions(targetUpdateArgs.permissions, currentTarget.Target.Permissions)
@@ -235,6 +240,19 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data using consolidated function with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add Options if provided
+		if len(option) > 0 {
+			optionMap := make(map[string]interface{})
+			if existingOptions, ok := patchMap["Options"]; ok {
+				if optionMapInterface, ok := existingOptions.(map[string]interface{}); ok {
+					for k, v := range optionMapInterface {
+						optionMap[k] = v
+					}
+				}
+			}
+			_ = patchKeyValues(optionMap, option)
+			patchMap["Options"] = optionMap
+		}
 		// Add LiveStateType if provided
 		if targetUpdateArgs.liveStateType == "-" {
 			patchMap["LiveStateType"] = ""
@@ -317,6 +335,19 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
+		// Add Options if provided
+		if len(option) > 0 {
+			optionMap := make(map[string]interface{})
+			if existingOptions, ok := patchMap["Options"]; ok {
+				if optionMapInterface, ok := existingOptions.(map[string]interface{}); ok {
+					for k, v := range optionMapInterface {
+						optionMap[k] = v
+					}
+				}
+			}
+			_ = patchKeyValues(optionMap, option)
+			patchMap["Options"] = optionMap
+		}
 		// Add LiveStateType if provided
 		if targetUpdateArgs.liveStateType == "-" {
 			patchMap["LiveStateType"] = ""

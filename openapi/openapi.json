@@ -16358,7 +16358,7 @@
           {
             "name": "dry_run",
             "in": "query",
-            "description": "Dry run mode - not yet implemented",
+            "description": "Dry run mode - returns import data in the operation/action",
             "required": false,
             "schema": {
               "type": "boolean"
@@ -23912,6 +23912,14 @@
             "type": "string",
             "description": "Updated configuration Data of the Unit (for refresh and import)",
             "format": "base64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ErrorMessages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Warning or error messages to surface to the user",
             "x-go-type-skip-optional-pointer": true
           },
           "LiveData": {

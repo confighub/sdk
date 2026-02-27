@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/third_party/gaby"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/cli-utils/pkg/inventory"
@@ -18,8 +19,6 @@ const (
 	YAMLSeparator = "---"
 	// InventoryIDLabel is the label key for inventory ID
 	InventoryIDLabel = "cli-utils.sigs.k8s.io/inventory-id"
-	// ManagedByLabel is the label key for managed-by
-	ManagedByLabel = "app.kubernetes.io/managed-by"
 	// FunctionAnnotation is the annotation key for function
 	FunctionAnnotation = "config.k8s.io/function"
 	// InventoryDataKey is the key for inventory data in ConfigMap
@@ -71,8 +70,8 @@ func NewInventoryConfigMapWithOptions(inv inventory.Info, opts InventoryOptions)
 				"name":      name,
 				"namespace": inv.GetNamespace(),
 				"labels": map[string]interface{}{
-					InventoryIDLabel: string(inv.GetID()),
-					ManagedByLabel:   "confighub",
+					InventoryIDLabel:      string(inv.GetID()),
+					k8skit.LabelManagedBy: "confighub",
 				},
 				"annotations": annotations,
 			},

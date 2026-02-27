@@ -20,12 +20,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	sigsyaml "sigs.k8s.io/yaml"
+
+	"github.com/confighub/sdk/configkit/yamlkit"
 )
 
 const (
 	argoCDAPIVersion = "argoproj.io/v1alpha1"
 	argoCDKind       = "Application"
+	// ArgoCDTrackingIDAnnotation is the annotation ArgoCD adds to track resources.
+	ArgoCDTrackingIDAnnotation = "argocd.argoproj.io/tracking-id"
 )
+
+// NOTE: The results of rendering aren't being deployed as the renderer unit, so UnitSlug and SpaceID
+// annotations should not be added by the renderer. They will be added by the deployment bridge.
 
 // RenderArgoCD renders an ArgoCD Application to Kubernetes manifests.
 // It creates/updates the Application in the cluster (with auto-sync disabled),
@@ -36,7 +43,7 @@ func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, 
 		return nil, fmt.Errorf("failed to parse Application: %w", err)
 	}
 
-	disableAutoSync(app)
+	DisableAutoSync(app)
 	// TODO: ensureConfigHubContext
 
 	if err := createOrUpdateApplication(ctx, k8sClient, app); err != nil {
@@ -54,7 +61,27 @@ func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, 
 		return nil, fmt.Errorf("failed to get manifests from ArgoCD: %w", err)
 	}
 
-	yamlBytes, err := convertManifestsToYAML(manifestResp.Manifests)
+	yamlBytes, err := convertManifestsToYAML(k8sClient, manifestResp.Manifests)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert manifests to YAML: %w", err)
+	}
+
+	return &RenderResult{
+		Manifests:  yamlBytes,
+		Revision:   manifestResp.Revision,
+		SourceType: manifestResp.SourceType,
+	}, nil
+}
+
+// RenderExistingArgoCD renders manifests for an ArgoCD Application that already exists in the cluster.
+// Unlike RenderArgoCD, it does not create or update the Application.
+func RenderExistingArgoCD(ctx context.Context, k8sClient client.Client, appName, appNamespace string, config Config) (*RenderResult, error) {
+	manifestResp, err := getManifestsWithRetry(ctx, config, appName, appNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get manifests from ArgoCD: %w", err)
+	}
+
+	yamlBytes, err := convertManifestsToYAML(k8sClient, manifestResp.Manifests)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert manifests to YAML: %w", err)
 	}
@@ -88,9 +115,17 @@ func ParseApplication(data []byte) (*unstructured.Unstructured, error) {
 	return obj, nil
 }
 
-// disableAutoSync removes spec.syncPolicy.automated to prevent ArgoCD from deploying.
-func disableAutoSync(app *unstructured.Unstructured) {
-	unstructured.RemoveNestedField(app.Object, "spec", "syncPolicy", "automated")
+// DisableAutoSync sets spec.syncPolicy.automated.enabled to false to prevent ArgoCD
+// from deploying. This preserves the rest of the automated policy (prune, selfHeal, etc.)
+// while ensuring the controller skips automated sync.
+func DisableAutoSync(app *unstructured.Unstructured) {
+	// Ensure the automated map exists before setting enabled
+	automated, found, _ := unstructured.NestedMap(app.Object, "spec", "syncPolicy", "automated")
+	if !found || automated == nil {
+		// No automated policy — nothing to disable
+		return
+	}
+	unstructured.SetNestedField(app.Object, false, "spec", "syncPolicy", "automated", "enabled")
 }
 
 // createOrUpdateApplication creates the Application in the cluster, or updates it if it exists.
@@ -194,11 +229,39 @@ func getManifests(ctx context.Context, config Config, appName, appNamespace stri
 }
 
 // convertManifestsToYAML converts JSON manifest strings to a multi-document YAML byte slice.
-func convertManifestsToYAML(manifests []string) ([]byte, error) {
+// It strips the ArgoCD tracking-id annotation from each resource and adds a placeholder
+// namespace to namespaced resources.
+func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte, error) {
 	var docs []string
 
 	for i, manifest := range manifests {
-		yamlBytes, err := sigsyaml.JSONToYAML([]byte(manifest))
+		// Parse JSON into unstructured to remove tracking annotation
+		obj := &unstructured.Unstructured{}
+		if err := obj.UnmarshalJSON([]byte(manifest)); err != nil {
+			return nil, fmt.Errorf("failed to parse manifest %d: %w", i, err)
+		}
+
+		// Remove the ArgoCD tracking-id annotation
+		annotations := obj.GetAnnotations()
+		if _, ok := annotations[ArgoCDTrackingIDAnnotation]; ok {
+			delete(annotations, ArgoCDTrackingIDAnnotation)
+			if len(annotations) == 0 {
+				annotations = nil
+			}
+			obj.SetAnnotations(annotations)
+		}
+
+		// Set placeholder namespace on namespaced resources
+		if isNamespaced, err := k8sClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
+			obj.SetNamespace(yamlkit.PlaceHolderBlockApplyString)
+		}
+
+		// Marshal back to JSON, then convert to YAML
+		jsonBytes, err := obj.MarshalJSON()
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal manifest %d to JSON: %w", i, err)
+		}
+		yamlBytes, err := sigsyaml.JSONToYAML(jsonBytes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert manifest %d to YAML: %w", i, err)
 		}
@@ -206,4 +269,27 @@ func convertManifestsToYAML(manifests []string) ([]byte, error) {
 	}
 
 	return []byte(strings.Join(docs, "---\n")), nil
+}
+
+// HasAutoSync checks whether an ArgoCD Application has autosync enabled.
+//
+// Per ArgoCD docs, autosync is enabled when:
+//   - spec.syncPolicy.automated is present (even if empty: `automated: {}`)
+//   - AND spec.syncPolicy.automated.enabled is NOT explicitly set to false
+//
+// Setting enabled to null or omitting it is treated as enabled.
+// Setting enabled to false disables autosync even if prune/selfHeal/allowEmpty are set.
+func HasAutoSync(app *unstructured.Unstructured) bool {
+	automated, found, _ := unstructured.NestedMap(app.Object, "spec", "syncPolicy", "automated")
+	if !found || automated == nil {
+		return false
+	}
+
+	// Check if enabled is explicitly set to false
+	enabled, found, _ := unstructured.NestedBool(app.Object, "spec", "syncPolicy", "automated", "enabled")
+	if found && !enabled {
+		return false
+	}
+
+	return true
 }

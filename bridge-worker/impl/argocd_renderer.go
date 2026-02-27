@@ -4,27 +4,45 @@
 package impl
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/cenkalti/backoff/v5"
+	"github.com/cockroachdb/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/bridge-worker/api"
 	argocdrenderer "github.com/confighub/sdk/bridge-worker/impl/argocd-renderer"
+	"github.com/confighub/sdk/bridge-worker/lib"
+	funcapi "github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/workerapi"
 )
 
 // ArgoCDRendererWorker renders ArgoCD Application resources to Kubernetes manifests
 // by creating the Application in the cluster and calling the ArgoCD API to get
 // the rendered manifests.
+//
+// When IsAuthoritative=true, Apply and Destroy of the Application resource
+// are delegated to KubernetesBridgeWorker (SSA). WatchForApply then renders manifests
+// via the ArgoCD API and returns them as LiveState.
+//
+// When IsAuthoritative=false (default), the Application must already exist in the cluster.
+// The bridge only reads rendered manifests without modifying the Application.
 type ArgoCDRendererWorker struct {
 	KubernetesBridgeWorker KubernetesBridgeWorker
 }
 
 var _ api.BridgeWorker = (*ArgoCDRendererWorker)(nil)
+var _ api.WatchableWorker = (*ArgoCDRendererWorker)(nil)
 
 func (w *ArgoCDRendererWorker) ID() api.BridgeWorkerID {
 	return api.BridgeWorkerID{
@@ -34,11 +52,86 @@ func (w *ArgoCDRendererWorker) ID() api.BridgeWorkerID {
 }
 
 func (w *ArgoCDRendererWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderArgoCDRenderer)
+	info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderArgoCDRenderer)
+	for i := range info.SupportedConfigTypes {
+		info.SupportedConfigTypes[i].Options = append(info.SupportedConfigTypes[i].Options, api.BridgeOption{
+			Name:        "IsAuthoritative",
+			Description: "When true, the bridge creates/updates/deletes the ArgoCD Application resource. When false (default), the Application must already exist and the bridge only reads rendered manifests from it.",
+			Required:    false,
+			DataType:    funcapi.DataTypeBool,
+		})
+	}
+	return info
+}
+
+// isAuthoritative returns whether the bridge should manage the resource lifecycle.
+// Defaults to false if not set.
+func isAuthoritative(payload api.BridgeWorkerPayload) bool {
+	if v, ok := payload.TargetOptions["IsAuthoritative"]; ok {
+		return v == "true"
+	}
+	return false
+}
+
+// getArgoCDConfig reads ArgoCD configuration from environment variables.
+func getArgoCDConfig() argocdrenderer.Config {
+	config := argocdrenderer.Config{
+		ServerAddress: os.Getenv("ARGOCD_SERVER"),
+		AuthToken:     os.Getenv("ARGOCD_AUTH_TOKEN"),
+		Insecure:      os.Getenv("ARGOCD_INSECURE") != "false",
+	}
+	if config.ServerAddress == "" {
+		config.ServerAddress = "argocd-server.argocd.svc.cluster.local"
+	}
+	return config
+}
+
+// disableAutoSyncInPayload parses the Application YAML from the payload,
+// disables autosync, re-serializes, and returns a modified payload.
+func disableAutoSyncInPayload(payload api.BridgeWorkerPayload) (api.BridgeWorkerPayload, error) {
+	app, err := argocdrenderer.ParseApplication(payload.Data)
+	if err != nil {
+		return payload, fmt.Errorf("failed to parse Application: %w", err)
+	}
+
+	argocdrenderer.DisableAutoSync(app)
+
+	jsonBytes, err := app.MarshalJSON()
+	if err != nil {
+		return payload, fmt.Errorf("failed to marshal Application to JSON: %w", err)
+	}
+	yamlBytes, err := sigsyaml.JSONToYAML(jsonBytes)
+	if err != nil {
+		return payload, fmt.Errorf("failed to convert Application to YAML: %w", err)
+	}
+
+	modified := payload
+	modified.Data = yamlBytes
+	return modified, nil
 }
 
 func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// Parse target parameters to get KubeContext
+	if !isAuthoritative(payload) {
+		return w.applyNonAuthoritative(wctx, payload)
+	}
+
+	// Authoritative: disable autosync and delegate to KubernetesBridgeWorker for SSA apply
+	modifiedPayload, err := disableAutoSyncInPayload(payload)
+	if err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to prepare Application: %v", err),
+		))
+		return fmt.Errorf("failed to prepare Application: %w", err)
+	}
+
+	return w.KubernetesBridgeWorker.Apply(wctx, modifiedPayload)
+}
+
+// applyNonAuthoritative verifies the Application exists, checks for autosync warnings,
+// and renders manifests via the ArgoCD API without creating/updating the Application.
+func (w *ArgoCDRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	var params KubernetesWorkerParams
 	if len(payload.TargetParams) > 0 {
 		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
@@ -51,7 +144,6 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 		}
 	}
 
-	// Create Kubernetes client to manage ArgoCD Application resources
 	k8sClient, err := createArgoCDRendererK8sClient(params.KubeContext)
 	if err != nil {
 		wctx.SendStatus(newActionResult(
@@ -62,15 +154,7 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 		return fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
-	// Read ArgoCD configuration from environment
-	config := argocdrenderer.Config{
-		ServerAddress: os.Getenv("ARGOCD_SERVER"),
-		AuthToken:     os.Getenv("ARGOCD_AUTH_TOKEN"),
-		Insecure:      os.Getenv("ARGOCD_INSECURE") != "false",
-	}
-	if config.ServerAddress == "" {
-		config.ServerAddress = "argocd-server.argocd.svc.cluster.local"
-	}
+	config := getArgoCDConfig()
 	if config.AuthToken == "" {
 		wctx.SendStatus(newActionResult(
 			api.ActionStatusFailed,
@@ -80,8 +164,54 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 		return fmt.Errorf("ARGOCD_AUTH_TOKEN environment variable is required")
 	}
 
-	// Render the ArgoCD Application
-	result, err := argocdrenderer.RenderArgoCD(wctx.Context(), payload.Data, k8sClient, config)
+	app, err := argocdrenderer.ParseApplication(payload.Data)
+	if err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to parse Application: %v", err),
+		))
+		return fmt.Errorf("failed to parse Application: %w", err)
+	}
+
+	appName := app.GetName()
+	appNamespace := app.GetNamespace()
+	if appNamespace == "" {
+		appNamespace = "argocd"
+	}
+
+	// Verify Application exists in the cluster
+	existing := &unstructured.Unstructured{}
+	existing.SetAPIVersion(app.GetAPIVersion())
+	existing.SetKind(app.GetKind())
+	key := types.NamespacedName{Namespace: appNamespace, Name: appName}
+	if err := k8sClient.Get(wctx.Context(), key, existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			wctx.SendStatus(newActionResult(
+				api.ActionStatusFailed,
+				api.ActionResultApplyFailed,
+				fmt.Sprintf("Application %s/%s not found in cluster (IsAuthoritative=false requires the Application to already exist)", appNamespace, appName),
+			))
+			return fmt.Errorf("Application %s/%s not found: %w", appNamespace, appName, err)
+		}
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to get Application %s/%s: %v", appNamespace, appName, err),
+		))
+		return fmt.Errorf("failed to get Application %s/%s: %w", appNamespace, appName, err)
+	}
+
+	// Check for autosync warning
+	var errorMessages []string
+	if argocdrenderer.HasAutoSync(existing) {
+		errorMessages = append(errorMessages, fmt.Sprintf(
+			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it.",
+			appNamespace, appName))
+	}
+
+	// Render manifests via ArgoCD API (Application already exists)
+	result, err := argocdrenderer.RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
 	if err != nil {
 		wctx.SendStatus(newActionResult(
 			api.ActionStatusFailed,
@@ -91,80 +221,148 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 		return fmt.Errorf("failed to render ArgoCD Application: %w", err)
 	}
 
-	// Return the rendered manifests in LiveState
 	status := newActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultApplyCompleted,
 		fmt.Sprintf("Rendered successfully at %s (revision: %s, sourceType: %s)", time.Now().Format(time.RFC3339), result.Revision, result.SourceType),
 	)
 	status.LiveState = result.Manifests
+	status.ErrorMessages = errorMessages
 	return wctx.SendStatus(status)
 }
 
 func (w *ArgoCDRendererWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// Parse target parameters to get KubeContext
+	if !isAuthoritative(payload) {
+		// Non-authoritative: do not delete the Application
+		result := newActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultDestroyCompleted,
+			fmt.Sprintf("Destroy is a no-op for non-authoritative Application at %s", time.Now().Format(time.RFC3339)),
+		)
+		return wctx.SendStatus(result)
+	}
+
+	// Authoritative: delegate to KubernetesBridgeWorker for SSA destroy
+	return w.KubernetesBridgeWorker.Destroy(wctx, payload)
+}
+
+func (w *ArgoCDRendererWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	if isAuthoritative(payload) {
+		return w.KubernetesBridgeWorker.Refresh(wctx, payload)
+	}
+
+	return w.refreshNonAuthoritative(wctx, payload)
+}
+
+// refreshNonAuthoritative fetches the Application from the cluster, checks for autosync,
+// renders manifests, and compares with previous LiveState to detect drift.
+func (w *ArgoCDRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	var params KubernetesWorkerParams
 	if len(payload.TargetParams) > 0 {
 		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
 			wctx.SendStatus(newActionResult(
 				api.ActionStatusFailed,
-				api.ActionResultDestroyFailed,
+				api.ActionResultRefreshFailed,
 				fmt.Sprintf("failed to parse target parameters: %v", err),
 			))
 			return fmt.Errorf("failed to parse target parameters: %w", err)
 		}
 	}
 
-	// Create Kubernetes client to delete the ArgoCD Application resource
 	k8sClient, err := createArgoCDRendererK8sClient(params.KubeContext)
 	if err != nil {
 		wctx.SendStatus(newActionResult(
 			api.ActionStatusFailed,
-			api.ActionResultDestroyFailed,
+			api.ActionResultRefreshFailed,
 			fmt.Sprintf("failed to create Kubernetes client: %v", err),
 		))
 		return fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
-	// Parse the Application from the payload data
+	config := getArgoCDConfig()
+	if config.AuthToken == "" {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			"ARGOCD_AUTH_TOKEN environment variable is required",
+		))
+		return fmt.Errorf("ARGOCD_AUTH_TOKEN environment variable is required")
+	}
+
 	app, err := argocdrenderer.ParseApplication(payload.Data)
 	if err != nil {
 		wctx.SendStatus(newActionResult(
 			api.ActionStatusFailed,
-			api.ActionResultDestroyFailed,
+			api.ActionResultRefreshFailed,
 			fmt.Sprintf("failed to parse Application: %v", err),
 		))
 		return fmt.Errorf("failed to parse Application: %w", err)
 	}
 
-	// Delete the Application resource from the cluster
-	if err := k8sClient.Delete(wctx.Context(), app); err != nil {
-		if !apierrors.IsNotFound(err) {
-			wctx.SendStatus(newActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultDestroyFailed,
-				fmt.Sprintf("failed to delete Application: %v", err),
-			))
-			return fmt.Errorf("failed to delete Application: %w", err)
-		}
-		// Already gone, treat as success
+	appName := app.GetName()
+	appNamespace := app.GetNamespace()
+	if appNamespace == "" {
+		appNamespace = "argocd"
 	}
 
-	result := newActionResult(
-		api.ActionStatusCompleted,
-		api.ActionResultDestroyCompleted,
-		fmt.Sprintf("Destroyed successfully at %s", time.Now().Format(time.RFC3339)),
-	)
-	return wctx.SendStatus(result)
-}
+	// Fetch Application from cluster
+	existing := &unstructured.Unstructured{}
+	existing.SetAPIVersion(app.GetAPIVersion())
+	existing.SetKind(app.GetKind())
+	key := types.NamespacedName{Namespace: appNamespace, Name: appName}
+	if err := k8sClient.Get(wctx.Context(), key, existing); err != nil {
+		if apierrors.IsNotFound(err) {
+			status := newActionResult(
+				api.ActionStatusCompleted,
+				api.ActionResultRefreshAndDrifted,
+				fmt.Sprintf("Application %s/%s not found in cluster", appNamespace, appName),
+			)
+			return wctx.SendStatus(status)
+		}
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			fmt.Sprintf("failed to get Application %s/%s: %v", appNamespace, appName, err),
+		))
+		return fmt.Errorf("failed to get Application %s/%s: %w", appNamespace, appName, err)
+	}
 
-func (w *ArgoCDRendererWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	result := newActionResult(
-		api.ActionStatusNone,
-		api.ActionResultNone,
-		fmt.Sprintf("Refresh hasn't been implemented yet: %s", time.Now().Format(time.RFC3339)),
-	)
-	return wctx.SendStatus(result)
+	// Check for autosync warning
+	var errorMessages []string
+	if argocdrenderer.HasAutoSync(existing) {
+		errorMessages = append(errorMessages, fmt.Sprintf(
+			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it.",
+			appNamespace, appName))
+	}
+
+	// Render manifests via ArgoCD API
+	renderResult, err := argocdrenderer.RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
+	if err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			fmt.Sprintf("failed to render ArgoCD Application: %v", err),
+		))
+		return fmt.Errorf("failed to render ArgoCD Application: %w", err)
+	}
+
+	// Compare rendered manifests with previous LiveState to detect drift
+	drifted := !bytes.Equal(renderResult.Manifests, payload.LiveState)
+
+	var resultType api.ActionResultType
+	var msg string
+	if drifted {
+		resultType = api.ActionResultRefreshAndDrifted
+		msg = fmt.Sprintf("Drift detected at %s (revision: %s)", time.Now().Format(time.RFC3339), renderResult.Revision)
+	} else {
+		resultType = api.ActionResultRefreshAndNoDrift
+		msg = fmt.Sprintf("No drift detected at %s (revision: %s)", time.Now().Format(time.RFC3339), renderResult.Revision)
+	}
+
+	status := newActionResult(api.ActionStatusCompleted, resultType, msg)
+	status.LiveState = renderResult.Manifests
+	status.ErrorMessages = errorMessages
+	return wctx.SendStatus(status)
 }
 
 func (w *ArgoCDRendererWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
@@ -181,13 +379,186 @@ func (w *ArgoCDRendererWorker) Finalize(wctx api.BridgeWorkerContext, payload ap
 }
 
 func (w *ArgoCDRendererWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// ArgoCDRenderer doesn't apply to a cluster, so there's nothing to watch
+	if !isAuthoritative(payload) {
+		// Non-authoritative Apply already sends ApplyCompleted directly
+		return nil
+	}
+
+	// Authoritative: wait for the Application resource to be ready,
+	// then render manifests via ArgoCD API
+	return w.watchForApplyAuthoritative(wctx, payload)
+}
+
+// watchForApplyAuthoritative waits for the Application resource to be ready in the cluster,
+// then calls the ArgoCD API to render manifests and sends ApplyCompleted with LiveState.
+func (w *ArgoCDRendererWorker) watchForApplyAuthoritative(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	workerParams, _, err := parseTargetParams(payload)
+	if err != nil {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			err.Error(),
+		), err))
+	}
+
+	applier, err := w.KubernetesBridgeWorker.getOrCreateApplier(payload)
+	if err != nil {
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			err.Error(),
+		), err)
+	}
+
+	// Parse objects from payload (the Application YAML with autosync disabled)
+	modifiedPayload, err := disableAutoSyncInPayload(payload)
+	if err != nil {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			err.Error(),
+		), err))
+	}
+
+	objects, err := parseObjects(modifiedPayload.Data)
+	if err != nil {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			err.Error(),
+		), err))
+	}
+
+	if err := wctx.SendStatus(newActionResult(
+		api.ActionStatusProgressing,
+		api.ActionResultNone,
+		"Waiting for Application resource to be ready...",
+	)); err != nil {
+		return err
+	}
+
+	// Parse timeout from worker params
+	var timeout time.Duration
+	if workerParams.WaitTimeout != "" {
+		if t, err := time.ParseDuration(workerParams.WaitTimeout); err != nil {
+			log.Log.Error(err, "Invalid wait timeout format, using default", "timeout", workerParams.WaitTimeout)
+		} else {
+			timeout = t
+		}
+	}
+
+	// Wait for the Application resource to be ready
+	waitResult := applier.WaitForApply(wctx.Context(), objects, timeout)
+	if waitResult.Error != nil {
+		if errors.Is(waitResult.Error, context.Canceled) {
+			log.Log.Info("Apply wait cancelled")
+			return nil
+		}
+		if errors.Is(waitResult.Error, ErrOperationInterrupted) {
+			return nil
+		}
+		select {
+		case <-wctx.Context().Done():
+			log.Log.Info("Apply operation was cancelled/overridden, not sending failure status")
+			return nil
+		default:
+		}
+
+		log.Log.Error(waitResult.Error, "Failed to wait for Application resource")
+		if errors.Is(waitResult.Error, context.DeadlineExceeded) {
+			b := createRetryBackoff(workerParams)
+			nextBackoff := b.NextBackOff()
+			lib.SafeSendStatus(wctx, newActionResult(
+				api.ActionStatusProgressing,
+				api.ActionResultNone,
+				fmt.Sprintf("Application not ready, retrying in %v: %v", nextBackoff, waitResult.Error),
+			), waitResult.Error)
+			return backoff.RetryAfter(int(nextBackoff.Seconds()))
+		}
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			waitResult.Error.Error(),
+		), waitResult.Error)
+	}
+
+	// Application is ready — now render manifests via ArgoCD API
+	config := getArgoCDConfig()
+	if config.AuthToken == "" {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			"ARGOCD_AUTH_TOKEN environment variable is required",
+		), fmt.Errorf("ARGOCD_AUTH_TOKEN environment variable is required")))
+	}
+
+	k8sClient, err := createArgoCDRendererK8sClient(workerParams.KubeContext)
+	if err != nil {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			fmt.Sprintf("failed to create Kubernetes client: %v", err),
+		), err))
+	}
+
+	app, err := argocdrenderer.ParseApplication(payload.Data)
+	if err != nil {
+		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			fmt.Sprintf("failed to parse Application: %v", err),
+		), err))
+	}
+
+	appName := app.GetName()
+	appNamespace := app.GetNamespace()
+	if appNamespace == "" {
+		appNamespace = "argocd"
+	}
+
+	if err := wctx.SendStatus(newActionResult(
+		api.ActionStatusProgressing,
+		api.ActionResultNone,
+		"Rendering manifests via ArgoCD API...",
+	)); err != nil {
+		return err
+	}
+
+	renderResult, err := argocdrenderer.RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
+	if err != nil {
+		return lib.SafeSendStatus(wctx, newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyWaitFailed,
+			fmt.Sprintf("failed to render ArgoCD Application: %v", err),
+		), err)
+	}
+
+	// Check if operation was cancelled while rendering
+	select {
+	case <-wctx.Context().Done():
+		log.Log.Info("Apply operation was cancelled/overridden, skipping completion status")
+		return nil
+	default:
+	}
+
+	status := newActionResult(
+		api.ActionStatusCompleted,
+		api.ActionResultApplyCompleted,
+		fmt.Sprintf("Rendered successfully at %s (revision: %s, sourceType: %s)", time.Now().Format(time.RFC3339), renderResult.Revision, renderResult.SourceType),
+	)
+	status.LiveState = renderResult.Manifests
+
+	wctx.SendStatus(status)
 	return nil
 }
 
 func (w *ArgoCDRendererWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	// ArgoCDRenderer doesn't apply to a cluster, so there's nothing to watch
-	return nil
+	if !isAuthoritative(payload) {
+		return nil
+	}
+
+	// Authoritative: delegate to KubernetesBridgeWorker
+	return w.KubernetesBridgeWorker.WatchForDestroy(wctx, payload)
 }
 
 // createArgoCDRendererK8sClient creates a Kubernetes client for managing ArgoCD Application resources.

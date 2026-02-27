@@ -54,6 +54,7 @@ func init() {
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
 	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	enableOptionFlag(targetCreateCmd)
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetCmd.AddCommand(targetCreateCmd)
@@ -132,6 +133,10 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	err = setDeleteGates(&newTarget.DeleteGates)
+	if err != nil {
+		return err
+	}
+	err = setOptions(&newTarget.Options)
 	if err != nil {
 		return err
 	}

@@ -6764,7 +6764,7 @@ export type ImportUnitApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
-  /** Dry run mode - not yet implemented */
+  /** Dry run mode - returns import data in the operation/action */
   dryRun?: boolean;
   importRequest: ImportRequest;
 };
@@ -10400,6 +10400,8 @@ export type ActionResult = {
   Action?: ActionType;
   /** Updated configuration Data of the Unit (for refresh and import) */
   Data?: string;
+  /** Warning or error messages to surface to the user */
+  ErrorMessages?: string[];
   /** Live Data corresponding to the Unit (for inventory and drift detection) */
   LiveData?: string;
   /** Live State corresponding to the Unit (for status determination) */

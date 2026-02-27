@@ -8,11 +8,13 @@ import (
 
 	"github.com/confighub/sdk/configkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
+// Deprecated: This functionality should be implemented in bridges going forward.
 func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -43,7 +45,7 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 	addContext := args[0].Value.(bool)
 
 	// Check whether adding context is supported by the resource provider
-	if resourceProvider.ContextPath("UnitSlug") == "" {
+	if resourceProvider.ContextPath(constants.UnitSlugKeySuffix) == "" {
 		// Not supported, so just return
 		return parsedData, nil, nil
 	}
@@ -69,31 +71,31 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 
 	for _, doc := range parsedData {
 		if addContext {
-			_, err := doc.SetP(functionContext.UnitSlug, resourceProvider.ContextPath("UnitSlug"))
+			_, err := doc.SetP(functionContext.UnitSlug, resourceProvider.ContextPath(constants.UnitSlugKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
 			}
-			_, err = doc.SetP(functionContext.SpaceID.String(), resourceProvider.ContextPath("SpaceID"))
+			_, err = doc.SetP(functionContext.SpaceID.String(), resourceProvider.ContextPath(constants.SpaceIDKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
 			}
 			if addRevisionNum {
-				_, err = doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath("RevisionNum"))
+				_, err = doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
 				if err != nil {
 					return parsedData, nil, err
 				}
 			}
 		} else {
-			err := doc.DeleteP(resourceProvider.ContextPath("UnitSlug"))
+			err := doc.DeleteP(resourceProvider.ContextPath(constants.UnitSlugKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
 			}
-			err = doc.DeleteP(resourceProvider.ContextPath("SpaceID"))
+			err = doc.DeleteP(resourceProvider.ContextPath(constants.SpaceIDKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
 			}
 			// Delete the RevisionNum regardless
-			err = doc.DeleteP(resourceProvider.ContextPath("RevisionNum"))
+			err = doc.DeleteP(resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
 			}
@@ -105,7 +107,7 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 		if newHash != functionContext.PreviousContentHash {
 			revisionNum++
 			for _, doc := range parsedData {
-				_, err := doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath("RevisionNum"))
+				_, err := doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
 				if err != nil {
 					return parsedData, nil, err
 				}

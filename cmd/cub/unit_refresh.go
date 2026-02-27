@@ -129,6 +129,7 @@ func runSingleUnitRefresh(unitSlug string) error {
 
 	// Handle wait flag
 	if actionWait {
+		// awaitCompletion will print a unit-centric message !quiet && !hasAlternativeOutput()
 		err = awaitCompletion("refresh", refreshRes.JSON200)
 		if err != nil {
 			return err

@@ -101,6 +101,9 @@ type ActionResult struct {
 	// Data Updated configuration Data of the Unit (for refresh and import)
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
+	// ErrorMessages Warning or error messages to surface to the user
+	ErrorMessages []string `json:"ErrorMessages,omitempty" yaml:"ErrorMessages,omitempty"`
+
 	// LiveData Live Data corresponding to the Unit (for inventory and drift detection)
 	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
 
@@ -6998,7 +7001,7 @@ type DestroyUnitParams struct {
 
 // ImportUnitParams defines parameters for ImportUnit.
 type ImportUnitParams struct {
-	// DryRun Dry run mode - not yet implemented
+	// DryRun Dry run mode - returns import data in the operation/action
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 

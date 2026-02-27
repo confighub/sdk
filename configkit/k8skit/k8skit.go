@@ -8,12 +8,16 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/gosimple/slug"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+// LabelManagedBy is the standard Kubernetes label for identifying the managing tool.
+const LabelManagedBy = "app.kubernetes.io/managed-by"
 
 // Kubernetes annotation prefixes that should be removed during cleanup
 // Cannot import directly from k8s.io/pkg/apis/core because it is private
@@ -347,6 +351,10 @@ func (*K8sResourceProviderType) NameSeparator() string {
 const (
 	ContextKeyPrefix = "confighub.com/"
 	ContextPathPrefx = ".metadata.annotations."
+
+	SpaceIDAnnotation     = ContextKeyPrefix + constants.SpaceIDKeySuffix
+	UnitSlugAnnotation    = ContextKeyPrefix + constants.UnitSlugKeySuffix
+	RevisionNumAnnotation = ContextKeyPrefix + constants.RevisionNumKeySuffix
 )
 
 func (*K8sResourceProviderType) ContextPath(contextField string) string {

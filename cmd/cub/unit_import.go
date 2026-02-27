@@ -31,16 +31,16 @@ Unified import filter mode currently supports Kubernetes resource filtering:
 Examples:
 `+"```"+`
   # Include custom resources
-  cub unit import myunit --where "metadata.namespace = 'import-test-default' AND import.include_custom = true"
+  cub unit import myunit --where-resource "metadata.namespace = 'import-test-default' AND import.include_custom = true"
 
   # Combined scenario
-  cub unit import myunit --where "metadata.namespace = 'import-test-default' AND import.include_system = true AND import.include_custom = true"
+  cub unit import myunit --where-resource "metadata.namespace = 'import-test-default' AND import.include_system = true AND import.include_custom = true"
 
   # Resource type filtering
-  cub unit import myunit --where "kind = 'ConfigMap' AND metadata.namespace IN ('import-test-default', 'import-test-production')"
+  cub unit import myunit --where-resource "kind = 'ConfigMap' AND metadata.namespace IN ('import-test-default', 'import-test-production')"
 
   # Complex path filtering with wildcards
-  cub unit import myunit --where "metadata.namespace IN ('import-test-default', 'import-test-production') AND spec.template.spec.containers.*.image = 'nginx:latest'"
+  cub unit import myunit --where-resource "metadata.namespace IN ('import-test-default', 'import-test-production') AND spec.template.spec.containers.*.image = 'nginx:latest'"
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 2),
@@ -104,7 +104,11 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, importRes)
 	}
 	if actionWait {
-		return awaitCompletion("import", importRes.JSON200)
+		// awaitCompletion will print a unit-centric message !quiet && !hasAlternativeOutput()
+		err = awaitCompletion("import", importRes.JSON200)
+		if err != nil {
+			return err
+		}
 	} else if !quiet && !hasAlternativeOutput() {
 		displayStartedOperation(importRes.JSON200)
 		return nil

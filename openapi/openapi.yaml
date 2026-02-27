@@ -14019,7 +14019,7 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: Dry run mode - not yet implemented
+      - description: Dry run mode - returns import data in the operation/action
         in: query
         name: dry_run
         required: false
@@ -21431,6 +21431,12 @@ components:
           description: Updated configuration Data of the Unit (for refresh and import)
           format: base64
           type: string
+          x-go-type-skip-optional-pointer: true
+        ErrorMessages:
+          description: Warning or error messages to surface to the user
+          items:
+            type: string
+          type: array
           x-go-type-skip-optional-pointer: true
         LiveData:
           description: Live Data corresponding to the Unit (for inventory and drift
