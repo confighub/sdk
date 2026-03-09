@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/helmutils"
+	"github.com/confighub/sdk/bridge-impl/helmutils"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/action"

@@ -22,14 +22,18 @@ help:
 .PHONY: clean
 clean:
 	@rm -f $(CUB_CMD)
-	@rm -f ./bridge-worker/bin/*
-	@rm -f ./function/bin/*
+	@rm -f ./cmd/bin/*
 	@rm -rf ./test/results
+
+# All sibling modules that need prep (mod download/tidy)
+SIBLING_MODULES = ./function-impl ./bridge-impl ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/bctl \
+	./configkit/yqkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit \
+	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit
 
 .PHONY: all-prep
 all-prep:
-	go mod download
-	go mod tidy
+	cd core && go mod download && go mod tidy
+	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && cd $$mod && go mod download && go mod tidy && cd $(CURDIR) ; done
 
 .PHONY: all-local
 all-local: all-prep build-cli build-funcexec build-worker ## Builds all the things locally (no docker) without tests or lints
@@ -41,38 +45,47 @@ all: all-local ## Builds all the things, without tests or lints
 lint: ## Run linters
 ifdef CI
 	mkdir -p ./test/results
-	golangci-lint run --out-format json ./... > ./test/results/public-lint-tests.json
+	cd core && golangci-lint run --out-format json ./... > ../test/results/public-lint-tests.json
 else
-	golangci-lint run -v ./...
+	cd core && golangci-lint run -v ./...
 	gitleaks detect -v --redact
 endif
 
 .PHONY: format
 format: ## Format source code based on golang-ci configuration
-	golangci-lint run --fix -v ./...
+	cd core && golangci-lint run --fix -v ./...
 
 # RELEASE is for non-container builds
+# Use abspath so the output path survives the cd into cmd/cub
+CUB_CMD_ABS=$(abspath $(CUB_CMD))
+
 .PHONY: build-cli
 build-cli: ## Build the CLI
 ifdef RELEASE
-	go build \
+	cd ./cmd/cub && go build \
 	-ldflags "-X main.BuildTag=$$(git rev-parse HEAD) \
 	-X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-	-v -o $(CUB_CMD)-${OS}-${ARCH} ./cmd/cub
+	-v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
 else
-	go build \
+	cd ./cmd/cub && go build \
 	-ldflags "-X main.BuildTag=$$(git rev-parse HEAD) \
 	-X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-	-v -o $(CUB_CMD) ./cmd/cub
+	-v -o $(CUB_CMD_ABS) .
 endif
+
+# Sibling modules that contain tests
+TEST_MODULES = ./function-impl ./bridge-impl \
+	./configkit/k8skit ./configkit/propkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit
 
 .PHONY: test
 test: ## Run golang tests
 ifdef CI
-	go test -v ./...
+	cd core && go test -v ./...
+	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && cd $$mod && go test -v ./... && cd $(CURDIR) ; done
 else
 	mkdir -p ./test/results
-	gotestsum --junitfile ./test/results/public-unit-tests.xml -- -race -coverprofile=./test/results/public-cover.out -v ./...
+	cd core && gotestsum --junitfile ../test/results/public-unit-tests.xml -- -race -coverprofile=../test/results/public-cover.out -v ./...
+	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && cd $$mod && go test -race -v ./... && cd $(CURDIR) ; done
 endif
 
 .PHONY: cover
@@ -84,15 +97,15 @@ endif
 
 .PHONY: build-worker
 build-worker: ## Build bridge worker
-	$(MAKE) -C ./bridge-worker all
+	$(MAKE) -C ./bridge-impl all
 
 .PHONY: build-funcexec
 build-funcexec: ## Build standalone function execuctor and its CLI
-	cd ./function && $(MAKE) all
+	cd ./function-impl && $(MAKE) all
 
 .PHONY: test-funcexec
 test-funcexec: ## Test standalone function executor, its CLI, and functions
-	cd ./function && $(MAKE) manual-test
+	cd ./function-impl && $(MAKE) manual-test
 
 .PHONY: kind-up
 kind-up: ## Create a kind cluster

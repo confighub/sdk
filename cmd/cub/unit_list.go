@@ -98,7 +98,7 @@ Approval workflow:
 - Find units with apply gates: --where 'LEN(ApplyGates) > 0'
 
 Content filtering:
-- By resource type: --resource-type apps/v1/Deployment --where-data "spec.replicas > 1"
+- By resource type: --resource-type apps/v1/Deployment --where-data "spec.replicas > 1" (--resource-type is optional; omitting it searches all resource types)
 - By labels: --where "Labels.app = 'myapp'"
 - By creation time: --where "CreatedAt > '2025-01-01T00:00:00'"
 

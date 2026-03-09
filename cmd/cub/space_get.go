@@ -136,6 +136,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Invocations", fmt.Sprintf("%d", extendedSpace.TotalInvocationCount)})
 	view.Append([]string{"# Targets", fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))})
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})
+	view.Append([]string{"# Attributes", fmt.Sprintf("%d", extendedSpace.TotalAttributeCount)})
 	view.Render()
 }
 
@@ -144,6 +145,7 @@ func apiGetExtendedSpace(spaceID string, selectParam string) (*goclientnew.Exten
 	summary := true
 	newParams.Summary = &summary
 	// Include expanded TriggerFilter and Triggers for display
+	//include := "TriggerFilterID,TriggerIDs,AttributeFilterID,AttributeIDs"
 	include := "TriggerFilterID,TriggerIDs"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)

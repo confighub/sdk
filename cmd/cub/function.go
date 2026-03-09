@@ -36,7 +36,10 @@ Functions are toolchain-specific (Kubernetes/YAML, OpenTofu/HCL, etc.) and opera
 	return getCommandHelp(baseHelp, agentContext)
 }
 
+var executorSpace string
+
 func init() {
 	addSpaceFlags(functionCmd)
+	functionCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
 	rootCmd.AddCommand(functionCmd)
 }

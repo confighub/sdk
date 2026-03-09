@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/confighub/sdk/bridge-worker/impl"
+	"github.com/confighub/sdk/bridge-impl"
 	"github.com/confighub/sdk/bridge-worker/lib"
 )
 
@@ -355,8 +355,8 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	providerTypes := strings.Split(workerProviderTypesStr, ",")
 
 	// Initialize appropriate workers based on the input
-	bridgeDispatcher := impl.NewBridgeDispatcher()
-	functionDispatcher := impl.NewFunctionDispatcher()
+	bridgeDispatcher := lib.NewBridgeDispatcher()
+	functionDispatcher := lib.NewFunctionDispatcher()
 
 	// For multiple provider types or explicitly using generic worker, use dispatchers
 	log.FromContext(context.Background()).Info("Using dispatcher pattern for multi-provider/multi-toolchain support with unit-level serialization")

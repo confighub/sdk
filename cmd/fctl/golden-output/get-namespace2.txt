@@ -10,7 +10,7 @@ OUTPUT
     "Path": "metadata.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",
@@ -34,7 +34,7 @@ OUTPUT
     "Path": "subjects.0.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",
@@ -58,7 +58,7 @@ OUTPUT
     "Path": "subjects.1.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",

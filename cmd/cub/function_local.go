@@ -11,7 +11,7 @@ import (
 
 	functionlogger "github.com/labstack/gommon/log"
 
-	"github.com/confighub/sdk/function"
+	funcimpl "github.com/confighub/sdk/function-impl"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/workerapi"
 	"github.com/spf13/cobra"
@@ -65,6 +65,7 @@ func init() {
 	functionLocalCmd.Flags().BoolVar(&localOutputOnly, "output-only", false, "show output without other response details")
 	functionLocalCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
 	functionLocalCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	functionLocalCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	// livestate-type not supported
 	addStandardDisplayFlags(functionLocalCmd)
 	functionCmd.AddCommand(functionLocalCmd)
@@ -80,7 +81,7 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 	toolchainTypeEnum := workerapi.ToolchainType(toolchainTypeString)
 
 	// Create function executor
-	functionExecutor := function.NewStandardExecutor()
+	functionExecutor := funcimpl.NewStandardExecutor()
 
 	// Get registered functions to validate the function exists
 	registeredFunctions := functionExecutor.RegisteredFunctions()
@@ -136,6 +137,7 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 			ToolchainType: toolchainTypeEnum,
 		},
 		ConfigData:          inputData,
+		WhereResource:       whereResource,
 		FunctionInvocations: functionInvocations,
 	}
 

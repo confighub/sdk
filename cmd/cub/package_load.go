@@ -45,6 +45,8 @@ var createdViews = map[string]goclientnew.View{}
 var createdFilters = map[string]goclientnew.Filter{}
 var createdTags = map[string]goclientnew.Tag{}
 var createdInvocations = map[string]goclientnew.Invocation{}
+var createdTriggers = map[string]goclientnew.Trigger{}
+var createdAttributes = map[string]goclientnew.Attribute{}
 
 func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 	source := args[0]
@@ -346,6 +348,48 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Created invocation %s with id %s in space %s", invocation.Slug, resp.JSON200.InvocationID.String(), invocation.SpaceSlug)
 		createdInvocations[invocation.SpaceSlug+"/"+invocation.Slug] = *resp.JSON200
 	}
+	// Load Triggers
+	for _, trigger := range manifest.Triggers {
+		if prefix != "" {
+			trigger.SpaceSlug = prefix + "-" + trigger.SpaceSlug
+		}
+		triggerDetails, err := loadTriggerDetails(source, trigger)
+		if err != nil {
+			return err
+		}
+		triggerDetails.SpaceID = createdSpaces[trigger.SpaceSlug].SpaceID
+
+		resp, err := cubClientNew.CreateTriggerWithResponse(ctx, createdSpaces[trigger.SpaceSlug].SpaceID, nil, *triggerDetails)
+		if err != nil {
+			return err
+		}
+		if resp.JSON200 == nil {
+			return fmt.Errorf("failed to create trigger %s: %s", trigger.Slug, resp.Body)
+		}
+		tprint("Created trigger %s with id %s in space %s", trigger.Slug, resp.JSON200.TriggerID.String(), trigger.SpaceSlug)
+		createdTriggers[trigger.SpaceSlug+"/"+trigger.Slug] = *resp.JSON200
+	}
+	// Load Attributes
+	for _, attribute := range manifest.Attributes {
+		if prefix != "" {
+			attribute.SpaceSlug = prefix + "-" + attribute.SpaceSlug
+		}
+		attributeDetails, err := loadAttributeDetails(source, attribute)
+		if err != nil {
+			return err
+		}
+		attributeDetails.SpaceID = createdSpaces[attribute.SpaceSlug].SpaceID
+
+		resp, err := cubClientNew.CreateAttributeWithResponse(ctx, createdSpaces[attribute.SpaceSlug].SpaceID, nil, *attributeDetails)
+		if err != nil {
+			return err
+		}
+		if resp.JSON200 == nil {
+			return fmt.Errorf("failed to create attribute %s: %s", attribute.Slug, resp.Body)
+		}
+		tprint("Created attribute %s with id %s in space %s", attribute.Slug, resp.JSON200.AttributeID.String(), attribute.SpaceSlug)
+		createdAttributes[attribute.SpaceSlug+"/"+attribute.Slug] = *resp.JSON200
+	}
 	return nil
 }
 
@@ -486,6 +530,34 @@ func loadInvocationDetails(dir string, invocation InvocationEntry) (*goclientnew
 	}
 	invocationDetails.Slug = invocation.Slug
 	return invocationDetails, nil
+}
+
+func loadTriggerDetails(dir string, trigger TriggerEntry) (*goclientnew.Trigger, error) {
+	jsonBytes, err := os.ReadFile(dir + trigger.DetailsLoc)
+	if err != nil {
+		return nil, err
+	}
+	triggerDetails := &goclientnew.Trigger{}
+	err = json.Unmarshal(jsonBytes, triggerDetails)
+	if err != nil {
+		return nil, err
+	}
+	triggerDetails.Slug = trigger.Slug
+	return triggerDetails, nil
+}
+
+func loadAttributeDetails(dir string, attribute AttributeEntry) (*goclientnew.Attribute, error) {
+	jsonBytes, err := os.ReadFile(dir + attribute.DetailsLoc)
+	if err != nil {
+		return nil, err
+	}
+	attributeDetails := &goclientnew.Attribute{}
+	err = json.Unmarshal(jsonBytes, attributeDetails)
+	if err != nil {
+		return nil, err
+	}
+	attributeDetails.Slug = attribute.Slug
+	return attributeDetails, nil
 }
 
 func loadRemotePackage(sourceURL string, prefix string) error {
@@ -783,6 +855,48 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			return fmt.Errorf("failed to create invocation %s: %s", invocation.Slug, resp.Body)
 		}
 		tprint("Created invocation %s with id %s in space %s", invocation.Slug, resp.JSON200.InvocationID.String(), invocation.SpaceSlug)
+	}
+
+	// Process triggers
+	for _, trigger := range manifest.Triggers {
+		if prefix != "" {
+			trigger.SpaceSlug = prefix + "-" + trigger.SpaceSlug
+		}
+		triggerDetails, err := loader.LoadTriggerDetails(trigger)
+		if err != nil {
+			return fmt.Errorf("failed to load remote trigger %s: %w", trigger.Slug, err)
+		}
+		triggerDetails.SpaceID = createdSpaces[trigger.SpaceSlug].SpaceID
+
+		resp, err := cubClientNew.CreateTriggerWithResponse(ctx, createdSpaces[trigger.SpaceSlug].SpaceID, nil, *triggerDetails)
+		if err != nil {
+			return err
+		}
+		if resp.JSON200 == nil {
+			return fmt.Errorf("failed to create trigger %s: %s", trigger.Slug, resp.Body)
+		}
+		tprint("Created trigger %s with id %s in space %s", trigger.Slug, resp.JSON200.TriggerID.String(), trigger.SpaceSlug)
+	}
+
+	// Process attributes
+	for _, attribute := range manifest.Attributes {
+		if prefix != "" {
+			attribute.SpaceSlug = prefix + "-" + attribute.SpaceSlug
+		}
+		attributeDetails, err := loader.LoadAttributeDetails(attribute)
+		if err != nil {
+			return fmt.Errorf("failed to load remote attribute %s: %w", attribute.Slug, err)
+		}
+		attributeDetails.SpaceID = createdSpaces[attribute.SpaceSlug].SpaceID
+
+		resp, err := cubClientNew.CreateAttributeWithResponse(ctx, createdSpaces[attribute.SpaceSlug].SpaceID, nil, *attributeDetails)
+		if err != nil {
+			return err
+		}
+		if resp.JSON200 == nil {
+			return fmt.Errorf("failed to create attribute %s: %s", attribute.Slug, resp.Body)
+		}
+		tprint("Created attribute %s with id %s in space %s", attribute.Slug, resp.JSON200.AttributeID.String(), attribute.SpaceSlug)
 	}
 
 	tprint("Successfully loaded remote package from %s", sourceURL)

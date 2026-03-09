@@ -74,6 +74,7 @@ func init() {
 	enableWaitFlag(functionExecCmd)
 	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
+	functionExecCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	functionExecCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionExecCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "Invoke the functions on the live state and use the flag value as the toolchain type for live state.")

@@ -1,0 +1,12 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "confighubplaceholder/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "ResourceBody": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: confighubplaceholder\n  name: mydep\n  namespace: confighubplaceholder\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: confighubplaceholder\n  strategy: {}\n  template:\n    metadata:\n      labels:\n        app: confighubplaceholder\n    spec:\n      serviceAccountName: confighubplaceholder\n      containers:\n      - image: confighubplaceholder:latest\n        name: main\n        ports:\n        - containerPort: 8080\n        resources: {}\n        env:\n        - value: confighubplaceholder\n          name: DATABASE_HOST\n        - value: confighubplaceholder\n          name: DATABASE_PORT\n        - value: confighubplaceholder\n          name: DATABASE_NAME\n        - value: confighubplaceholder\n          name: DATABASE_USER\n        - value: confighubplaceholder\n          name: DATABASE_PASSWORD\n        envFrom:\n        - configMapRef:\n            name: confighubplaceholder\n"
+  }
+]

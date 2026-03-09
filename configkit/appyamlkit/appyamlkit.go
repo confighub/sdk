@@ -6,6 +6,7 @@ package appyamlkit
 
 import (
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 )
@@ -15,16 +16,30 @@ import (
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type AppConfigYAMLResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*AppConfigYAMLResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type AppConfigYAMLResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// AppConfigYAMLResourceProvider implements the ResourceProvider interface for AppConfig/YAML.
-var AppConfigYAMLResourceProvider = &AppConfigYAMLResourceProviderType{}
+// NewAppConfigYAMLResourceProvider creates a new AppConfigYAMLResourceProviderType with its own path registry.
+func NewAppConfigYAMLResourceProvider() *AppConfigYAMLResourceProviderType {
+	return &AppConfigYAMLResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
+}
+
+func (rp *AppConfigYAMLResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *AppConfigYAMLResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
+}
+
+func (*AppConfigYAMLResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*AppConfigYAMLResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -36,8 +51,6 @@ func (*AppConfigYAMLResourceProviderType) ResourceCategoryGetter(doc *gaby.YamlD
 	// TODO: check that the document is non-empty?
 	return api.ResourceCategoryAppConfig, nil
 }
-
-var AppConfigYAMLNonSpaceScopedEntityTypes = map[api.ResourceType]bool{}
 
 const (
 	ResourceTypeNoSchema = api.ResourceType("NoSchema")
@@ -83,6 +96,21 @@ func (*AppConfigYAMLResourceProviderType) SetResourceName(doc *gaby.YamlDoc, nam
 	return err
 }
 
+func (rp *AppConfigYAMLResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (rp *AppConfigYAMLResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 func (*AppConfigYAMLResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -108,8 +136,8 @@ func (*AppConfigYAMLResourceProviderType) ContextPath(contextField string) strin
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*AppConfigYAMLResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, AppConfigYAMLResourceProvider)
+func (rp *AppConfigYAMLResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (c *AppConfigYAMLResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {

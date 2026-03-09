@@ -112,8 +112,18 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.DownstreamLastMergedRevisionNum != 0 {
 		view.Append([]string{"Downstream Last Merged Rev", fmt.Sprintf("%d", linkDetails.DownstreamLastMergedRevisionNum)})
 	}
+	if linkDetails.Bindings != nil && len(*linkDetails.Bindings) > 0 {
+		view.Append([]string{"Bindings", fmt.Sprintf("%d bindings", len(*linkDetails.Bindings))})
+	}
 
 	view.Render()
+
+	if linkDetails.Bindings != nil && len(*linkDetails.Bindings) > 0 && verbose {
+		tprintRaw("")
+		tprintRaw("Bindings:")
+		tprintRaw("---------")
+		displayJSON(linkDetails.Bindings)
+	}
 }
 
 func apiGetLink(linkID string, selectParam string) (*goclientnew.Link, error) {

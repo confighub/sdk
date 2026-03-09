@@ -12,6 +12,7 @@ import (
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
@@ -24,13 +25,13 @@ import (
 // - How to return modified data
 // - Error handling patterns
 func HelloWorldFunction(
-	ctx *api.FunctionContext,
-	parsedData gaby.Container,
-	args []api.FunctionArgument,
+	fArgs handler.FunctionImplementationArguments,
 ) (gaby.Container, any, error) {
 	// The expected number of arguments is validated by the handler.
 	// The handler also validates the parameter names and types.
 	// Extract the greeting parameter
+	parsedData := fArgs.ParsedData
+	args := fArgs.Arguments
 	greeting := args[0].Value.(string)
 
 	// Confirm that we have any resources to work with
@@ -51,7 +52,7 @@ func HelloWorldFunction(
 		}
 		return output, []error{}
 	}
-	_, err := yamlkit.VisitResources(parsedData, nil, k8skit.K8sResourceProvider, visitor)
+	_, err := yamlkit.VisitResources(parsedData, nil, k8skit.NewK8sResourceProvider(), visitor)
 
 	// Return the modified data
 	// The second return value is for function output (like validation results or extracted data)

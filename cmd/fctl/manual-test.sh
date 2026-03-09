@@ -8,11 +8,11 @@ mkdir -p ${DIR}
 rm -f ${DIR}/*
 
 if [ -z "$FCTL" ] ; then
-    FCTL=../../function/bin/fctl
+    FCTL=../bin/fctl
 fi
 
 if [ -z "$FSRV" ] ; then
-    FSRV=../../function/bin/functionsrv
+    FSRV=../bin/functionsrv
 fi
 
 ${FSRV} &
@@ -56,9 +56,14 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-port nginx htt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults true true true true true > ${DIR}/set-pod-defaults.yaml
 ${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-schemas > ${DIR}/vet-schemas-set-pod-defaults.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
+
+# Test new defaulting functions (split from set-pod-defaults)
+${FCTL} do test-data/namespace.yaml "MyNS" --data-only set-pod-security-defaults > ${DIR}/set-pod-security-defaults.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-automount-service-account-token-false > ${DIR}/set-automount-service-account-token-false.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-container-security-context-defaults > ${DIR}/set-pod-container-security-context-defaults.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-container-resources-defaults > ${DIR}/set-container-resources-defaults.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-container-probe-defaults > ${DIR}/set-container-probe-defaults.yaml
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-default-names "template:{{.UnitSlug | normalizeName}}-{{.SpaceSlug | normalizeName}}" > ${DIR}/set-default-names.txt
-${FCTL} do test-data/service.yaml "MyApp" get-attributes > ${DIR}/get-attributes.txt
-${FCTL} do test-data/deployment.yaml "MyApp" get-attributes > ${DIR}/get-attributes2.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyApp" get-needed > ${DIR}/get-needed.txt
 ${FCTL} do test-data/hpa.yaml "MyObj" get-needed > ${DIR}/get-needed2.txt
 ${FCTL} do test-data/kubernetes-headlamp.yaml "Headlamp" get-needed > ${DIR}/get-needed3.txt
@@ -105,6 +110,7 @@ ${FCTL} do test-data/cubby-frontend.yaml "Frontend" set-hostname-domain cubby.bz
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-path-comment apps/v1/Deployment spec.replicas "TODO: autoscale" > ${DIR}/set-path-comment.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" delete-path apps/v1/Deployment "spec.template.spec.containers.?name=otel-sidecar" > ${DIR}/delete-path.txt
 ${FCTL} do test-data/all-in-one.yaml MyApp select-where-resource "*" "ConfigHub.ResourceType IN ('v1/Service','v1/ServiceAccount')" > ${DIR}/select-where-resource.txt
+${FCTL} do --where-resource "ConfigHub.ResourceType = 'apps/v1/Deployment'" test-data/all-in-one.yaml "MyUnit" get-resources > ${DIR}/get-resources-where-resource.txt
 
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-properties.txt
@@ -133,8 +139,8 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deplo
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deployment" "spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot" true > ${DIR}/set-bool-path-upsert-assoc.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deployment" "spec.template.spec.containers.0.securityContext.|runAsNonRoot" true > ${DIR}/set-bool-path-upsert-existence.txt
 
-# These maps are unordered, so this may be problematic, but...
- ${FCTL} listpaths  > ${DIR}/listpaths.txt
+# These maps are unordered, so this is problematic
+# ${FCTL} listpaths  > ${DIR}/listpaths.txt
 
  ${FCTL} shutdown
 

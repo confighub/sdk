@@ -222,6 +222,13 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
 		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResourcesFromExtended(unitDetails))})
 
+		if len(unitDetails.Unit.NeededPaths) > 0 {
+			view.Append([]string{"Needed Paths", fmt.Sprintf("%d paths", len(unitDetails.Unit.NeededPaths))})
+		}
+		if len(unitDetails.Unit.ProvidedPaths) > 0 {
+			view.Append([]string{"Provided Paths", fmt.Sprintf("%d paths", len(unitDetails.Unit.ProvidedPaths))})
+		}
+
 		view.Render()
 
 		if len(*unitDetails.Unit.MutationSources) != 0 && verbose {
@@ -230,6 +237,19 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			tprintRaw("-----------------")
 			// TODO: Make this prettier
 			displayJSON(unitDetails.Unit.MutationSources)
+		}
+
+		if len(unitDetails.Unit.NeededPaths) > 0 && verbose {
+			tprintRaw("")
+			tprintRaw("Needed Paths:")
+			tprintRaw("-------------")
+			displayJSON(unitDetails.Unit.NeededPaths)
+		}
+		if len(unitDetails.Unit.ProvidedPaths) > 0 && verbose {
+			tprintRaw("")
+			tprintRaw("Provided Paths:")
+			tprintRaw("---------------")
+			displayJSON(unitDetails.Unit.ProvidedPaths)
 		}
 	}
 	if dataOnly && flagFilename != "" {

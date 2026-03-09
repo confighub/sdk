@@ -14,9 +14,9 @@ OUTPUT
         "Path": "spec.template.spec.containers.0.image",
         "AttributeName": "container-image",
         "DataType": "string",
-        "Info": {
+        "Details": {
           "GetterInvocation": {
-            "FunctionName": "get-image",
+            "FunctionName": "get-container-image",
             "Arguments": [
               {
                 "ParameterName": "container-name",
@@ -26,7 +26,7 @@ OUTPUT
           },
           "SetterInvocations": [
             {
-              "FunctionName": "set-image",
+              "FunctionName": "set-container-image",
               "Arguments": [
                 {
                   "ParameterName": "container-name",

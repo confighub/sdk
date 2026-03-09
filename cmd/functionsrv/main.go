@@ -22,7 +22,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/confighub/sdk/function/server"
+	"github.com/confighub/sdk/function-impl/server"
 )
 
 var (

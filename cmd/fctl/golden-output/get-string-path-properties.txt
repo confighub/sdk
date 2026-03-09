@@ -8,7 +8,7 @@ OUTPUT
     "ResourceType": "SimpleApp",
     "ResourceCategory": "AppConfig",
     "Path": "database.host",
-    "AttributeName": "attribute-value",
+    "AttributeName": "none",
     "DataType": "string",
     "Value": "localhost",
     "Index": 0

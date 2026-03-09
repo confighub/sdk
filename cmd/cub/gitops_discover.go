@@ -87,7 +87,7 @@ func runDiscover(targetSlug string) ([]byte, *goclientnew.Target, error) {
 	}
 
 	// Build the where clause for import
-	whereClause := "import.include_custom = true AND kind IN ('Application','HelmRelease','Kustomization')"
+	whereClause := "import.include_custom = true AND import.include_owned = true AND kind IN ('Application','HelmRelease','Kustomization')"
 	if whereResource != "" {
 		whereClause += " AND " + whereResource
 	}

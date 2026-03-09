@@ -107,7 +107,7 @@ kind: Pod
 			if err != nil {
 				t.Fatalf("failed to parse YAML: %v", err)
 			}
-			got, _, err := K8sResourceProvider.ResourceAndCategoryTypeMaps(docs)
+			got, _, err := NewK8sResourceProvider().ResourceAndCategoryTypeMaps(docs)
 			if tt.name == "Missing metadata" {
 				assert.Error(t, err, "name not found")
 			} else {
@@ -138,7 +138,7 @@ func TestK8sFnResourceCategoryTypeMap(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Call the function
-	_, result, err := K8sResourceProvider.ResourceAndCategoryTypeMaps(docs)
+	_, result, err := NewK8sResourceProvider().ResourceAndCategoryTypeMaps(docs)
 	assert.NoError(t, err)
 
 	// Expected result

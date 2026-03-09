@@ -93,9 +93,17 @@ func init() {
 
 func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	workerSlug := args[0]
+	spaceID := uuid.MustParse(selectedSpaceID)
 	worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
 	if err != nil {
-		return err
+		// Worker not found, create it on the fly
+		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
+			SpaceID: spaceID,
+			Slug:    workerSlug,
+		}, spaceID)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Handle export-secret-only flag first

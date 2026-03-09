@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/configkit/yqkit"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
@@ -198,7 +198,7 @@ func displayYAML(entity any) {
 func displayYQ(entity any) {
 	outBytes, err := yaml.Marshal(entity)
 	failOnError(err)
-	yqBytes, err := yamlkit.EvalYQExpression(yq, string(outBytes))
+	yqBytes, err := yqkit.EvalYQExpression(yq, string(outBytes))
 	failOnError(err)
 	tprintRaw(string(yqBytes))
 }
@@ -310,6 +310,8 @@ type ModelConstraint interface {
 		goclientnew.UnitEvent |
 		goclientnew.UnitAction |
 		goclientnew.ExtendedUnit |
+		goclientnew.Attribute |
+		goclientnew.ExtendedAttribute |
 		Context
 }
 
@@ -327,7 +329,8 @@ type DeleteConstraint interface {
 		goclientnew.DeleteTargetResponse |
 		goclientnew.DeleteTriggerResponse |
 		goclientnew.DeleteUnitResponse |
-		goclientnew.DeleteViewResponse
+		goclientnew.DeleteViewResponse |
+		goclientnew.DeleteAttributeResponse
 }
 
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {

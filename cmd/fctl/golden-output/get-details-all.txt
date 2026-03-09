@@ -10,7 +10,7 @@ OUTPUT
     "Path": "spec.replicas",
     "AttributeName": "replicas",
     "DataType": "int",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-replicas",
         "Arguments": null
@@ -34,7 +34,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.image#reference",
     "AttributeName": "container-image-reference",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
     "Value": ":latest",
@@ -48,18 +48,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.image#uri",
     "AttributeName": "container-repository-uri",
     "DataType": "string",
-    "Info": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-image-uri",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "main"
-            }
-          ]
-        }
-      ],
+    "Details": {
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
     "Value": "confighubplaceholder",
@@ -73,7 +62,7 @@ OUTPUT
     "Path": "spec.ports.0.port",
     "AttributeName": "port",
     "DataType": "int",
-    "Info": {
+    "Details": {
       "Description": "The port that will be exposed by this service."
     },
     "Value": 80,
@@ -87,10 +76,24 @@ OUTPUT
     "Path": "spec.ports.0.targetPort",
     "AttributeName": "target-port",
     "DataType": "int",
-    "Info": {
+    "Details": {
       "Description": "Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod's container ports. If this is not specified, the value of the 'port' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the 'port' field. More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service"
     },
     "Value": 8080,
+    "Index": 0
+  },
+  {
+    "ResourceName": "confighubplaceholder/myservice",
+    "ResourceNameWithoutScope": "myservice",
+    "ResourceType": "v1/Service",
+    "ResourceCategory": "Resource",
+    "Path": "spec.type",
+    "AttributeName": "service-type",
+    "DataType": "string",
+    "Details": {
+      "Description": "type determines how the Service is exposed. Defaults to ClusterIP. Valid options are ExternalName, ClusterIP, NodePort, and LoadBalancer. \"ClusterIP\" allocates a cluster-internal IP address for load-balancing to endpoints. Endpoints are determined by the selector or if that is not specified, by manual construction of an Endpoints object or EndpointSlice objects. If clusterIP is \"None\", no virtual IP is allocated and the endpoints are published as a set of endpoints rather than a virtual IP. \"NodePort\" builds on ClusterIP and allocates a port on every node which routes to the same endpoints as the clusterIP. \"LoadBalancer\" builds on NodePort and creates an external load-balancer (if supported in the current cloud) which routes to the same endpoints as the clusterIP. \"ExternalName\" aliases this service to the specified externalName. Several other fields do not apply to ExternalName services. More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
+    },
+    "Value": "ClusterIP",
     "Index": 0
   }
 ]

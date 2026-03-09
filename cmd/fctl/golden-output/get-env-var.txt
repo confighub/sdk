@@ -10,7 +10,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.env.1.value",
     "AttributeName": "env-value",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-env-var",
         "Arguments": [

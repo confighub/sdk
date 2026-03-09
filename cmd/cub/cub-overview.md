@@ -61,6 +61,7 @@ The supported entities are:
 - `filter`
 - `changeset`
 - `tag`
+- `attribute`
 
 In general, the CLI identifies entities using names.
 

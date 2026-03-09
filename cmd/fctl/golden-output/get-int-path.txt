@@ -10,7 +10,7 @@ OUTPUT
     "Path": "spec.replicas",
     "AttributeName": "replicas",
     "DataType": "int",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-replicas",
         "Arguments": null

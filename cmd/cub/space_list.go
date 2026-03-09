@@ -83,7 +83,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
 
 // Space-specific aliases
 var spaceAliases = map[string]string{
@@ -128,7 +128,7 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Environment", "#Units", "#Links", "#Tags", "#ChangeSets", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets"})
+		table.SetHeader([]string{"Name", "Environment", "#Units", "#Links", "#Tags", "#ChangeSets", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"})
 	}
 	for _, extendedSpace := range extendedSpaces {
 		environment := ""
@@ -150,6 +150,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 			fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
 			fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
 			fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
+			fmt.Sprintf("%d", extendedSpace.TotalAttributeCount),
 		})
 	}
 	table.Render()

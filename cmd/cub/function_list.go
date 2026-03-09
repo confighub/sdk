@@ -118,7 +118,11 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 	}
 
 	if selectedSpaceID == "*" {
-		orgFuncsRes, err := cubClientNew.ListOrgFunctionsWithResponse(ctx)
+		orgListParams := &goclientnew.ListOrgFunctionsParams{}
+		if executorSpace != "" {
+			orgListParams.ExecutorSpace = &executorSpace
+		}
+		orgFuncsRes, err := cubClientNew.ListOrgFunctionsWithResponse(ctx, orgListParams)
 		if cubapi.IsAPIError(err, orgFuncsRes) {
 			return entity, funcs, cubapi.InterpretErrorGeneric(err, orgFuncsRes)
 		}

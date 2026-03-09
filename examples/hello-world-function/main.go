@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	function "github.com/confighub/sdk/function"
+	funcimpl "github.com/confighub/sdk/function-impl"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/worker"
 	"github.com/confighub/sdk/workerapi"
@@ -17,9 +17,9 @@ import (
 
 func main() {
 	// Use the following instead if you want an empty executor with just the custom function registered:
-	// executor := function.NewEmptyExecutor()
+	// executor := funcimpl.NewEmptyExecutor()
 
-	executor := function.NewStandardExecutor()
+	executor := funcimpl.NewStandardExecutor()
 	executor.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
 		FunctionSignature: GetHelloWorldFunctionSignature(),
 		Function:          HelloWorldFunction,

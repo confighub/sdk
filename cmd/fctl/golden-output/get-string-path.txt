@@ -8,7 +8,7 @@ OUTPUT
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "spec.template.spec.dnsPolicy",
-    "AttributeName": "attribute-value",
+    "AttributeName": "none",
     "DataType": "string",
     "Value": "ClusterFirst",
     "Index": 0

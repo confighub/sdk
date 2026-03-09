@@ -96,6 +96,8 @@ func SplitResources(renderedResources map[string]string, sourceName string) (*Sp
 		regularDocs []resourceDoc
 	)
 
+	rp := NewK8sResourceProvider()
+
 	for fileName, content := range renderedResources {
 		// Skip empty files, partials, or NOTES.txt
 		if strings.TrimSpace(content) == "" || strings.HasPrefix(filepath.Base(fileName), "_") || filepath.Base(fileName) == "NOTES.txt" {
@@ -111,12 +113,12 @@ func SplitResources(renderedResources map[string]string, sourceName string) (*Sp
 
 		for _, doc := range docs {
 			// Use k8skit to extract resource type (apiVersion/kind)
-			resourceType, err := K8sResourceProvider.ResourceTypeGetter(doc)
+			resourceType, err := rp.ResourceTypeGetter(doc)
 			if err != nil {
 				return nil, fmt.Errorf("failed to extract resource type from YAML in file '%s': %w", fileName, err)
 			}
 			// Use k8skit to extract resource name (namespace/name or /name for cluster-scoped)
-			resourceName, err := K8sResourceProvider.ResourceNameGetter(doc)
+			resourceName, err := rp.ResourceNameGetter(doc)
 			if err != nil {
 				return nil, fmt.Errorf("failed to extract resource name from YAML in file '%s': %w", fileName, err)
 			}

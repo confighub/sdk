@@ -10,7 +10,7 @@ OUTPUT
     "Path": "metadata.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",
@@ -34,7 +34,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.envFrom.0.configMapRef.name",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",
@@ -55,35 +55,10 @@ OUTPUT
     "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "Path": "spec.template.spec.containers.0.image#uri",
-    "AttributeName": "container-repository-uri",
-    "DataType": "string",
-    "Info": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-image-uri",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "main"
-            }
-          ]
-        }
-      ],
-      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
-    },
-    "Value": "confighubplaceholder",
-    "Index": 0
-  },
-  {
-    "ResourceName": "confighubplaceholder/confighubplaceholder",
-    "ResourceNameWithoutScope": "confighubplaceholder",
-    "ResourceType": "apps/v1/Deployment",
-    "ResourceCategory": "Resource",
     "Path": "spec.template.spec.serviceAccountName",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",

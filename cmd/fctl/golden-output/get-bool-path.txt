@@ -8,7 +8,7 @@ OUTPUT
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
     "Path": "spec.paused",
-    "AttributeName": "attribute-value",
+    "AttributeName": "none",
     "DataType": "bool",
     "Value": false,
     "Index": 0

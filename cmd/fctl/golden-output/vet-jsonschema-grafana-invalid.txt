@@ -44,7 +44,7 @@ OUTPUT
         "ResourceType": "GrafanaLDAP",
         "ResourceCategory": "AppConfig",
         "Path": "servers.0.search_base_dns",
-        "AttributeName": "attribute-value",
+        "AttributeName": "none",
         "DataType": "",
         "Value": null,
         "Index": 0

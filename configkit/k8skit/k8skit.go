@@ -103,66 +103,25 @@ var K8sInternalLabelPrefixes = []string{
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type K8sResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*K8sResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type K8sResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// K8sResourceProvider implements the ResourceProvider and ConfigConverter interfaces for Kubernetes/YAML.
-var K8sResourceProvider = &K8sResourceProviderType{}
-
-// kustomize keeps a list of namespaced resource types, which we may want to consider using:
-// https://github.com/kubernetes-sigs/kustomize/blob/65567a37331715052d98e9b538d6bdb5089da8cc/kyaml/openapi/openapi.go#L94
-
-// TODO: Make it possible to update this list dynamically
-
-var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("v1/Namespace"):                                                   {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRole"):                       {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRoleBinding"):                {},
-	api.ResourceType("apiextensions.k8s.io/v1/CustomResourceDefinition"):               {},
-	api.ResourceType("admissionregistration.k8s.io/v1/MutatingWebhookConfiguration"):   {},
-	api.ResourceType("admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration"): {},
-	api.ResourceType("apiregistration.k8s.io/v1/APIService"):                           {},
-	api.ResourceType("storage.k8s.io/v1/StorageClass"):                                 {},
-	api.ResourceType("storage.k8s.io/v1/CSIDriver"):                                    {},
-	api.ResourceType("networking.k8s.io/v1/IngressClass"):                              {},
-	// Traefik
-	api.ResourceType("gateway.networking.k8s.io/v1/GatewayClass"):       {},
-	api.ResourceType("gateway.networking.k8s.io/v1beta1/GatewayClass"):  {},
-	api.ResourceType("gateway.networking.k8s.io/v1alpha1/GatewayClass"): {},
-	api.ResourceType("hub.traefik.io/v1/AccessControlPolicy"):           {},
-	api.ResourceType("hub.traefik.io/v1beta1/AccessControlPolicy"):      {},
-	api.ResourceType("hub.traefik.io/v1alpha1/AccessControlPolicy"):     {},
-	//  External Secrets Operator
-	api.ResourceType("external-secrets.io/v1/ClusterExternalSecret"):             {},
-	api.ResourceType("external-secrets.io/v1beta1/ClusterExternalSecret"):        {},
-	api.ResourceType("external-secrets.io/v1alpha1/ClusterExternalSecret"):       {},
-	api.ResourceType("generators.external-secrets.io/v1/ClusterGenerator"):       {},
-	api.ResourceType("generators.external-secrets.io/v1beta1/ClusterGenerator"):  {},
-	api.ResourceType("generators.external-secrets.io/v1alpha1/ClusterGenerator"): {},
-	api.ResourceType("external-secrets.io/v1/ClusterPushSecret"):                 {},
-	api.ResourceType("external-secrets.io/v1beta1/ClusterPushSecret"):            {},
-	api.ResourceType("external-secrets.io/v1alpha1/ClusterPushSecret"):           {},
-	api.ResourceType("external-secrets.io/v1/ClusterSecretStore"):                {},
-	api.ResourceType("external-secrets.io/v1beta1/ClusterSecretStore"):           {},
-	api.ResourceType("external-secrets.io/v1alpha1/ClusterSecretStore"):          {},
-	// Cert Manager
-	api.ResourceType("cert-manager.io/v1/ClusterIssuer"): {},
-	// FluxCD: none
-	// Trident
-	api.ResourceType("trident.netapp.io/v1/TridentConfigurator"): {},
+// NewK8sResourceProvider creates a new K8sResourceProviderType with its own path registry.
+func NewK8sResourceProvider() *K8sResourceProviderType {
+	return &K8sResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
 }
 
-// IsClusterScoped returns true if the given apiVersion and kind represent a cluster-scoped resource.
-// It checks against the known cluster-scoped resource types in K8sClusterScopedResourceTypes.
-func IsClusterScoped(apiVersion, kind string) bool {
-	resourceType := api.ResourceType(apiVersion + "/" + kind)
-	_, ok := K8sClusterScopedResourceTypes[resourceType]
-	return ok
+func (rp *K8sResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *K8sResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
 }
 
 // K8sNamespacedResourceTypes contains all known namespaced resource types
@@ -295,6 +254,21 @@ func (*K8sResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string) 
 	return err
 }
 
+func (*K8sResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (*K8sResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
 	if resourceTypeA == resourceTypeB {
 		return true
@@ -316,8 +290,8 @@ func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceT
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*K8sResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, K8sResourceProvider)
+func (rp *K8sResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (*K8sResourceProviderType) TypeDescription() string {
@@ -332,8 +306,8 @@ func IsDNSLabelRune(c rune) bool {
 
 const nameSeparatorString = "-"
 
-// ToDNSLabel converts a string to one limited to the DNS1123 character set.
-func ToDNSLabel(s string) string {
+// K8sNormalizeName converts a string to one limited to the DNS1123 character set.
+func K8sNormalizeName(s string) string {
 	s = cases.Title(language.Und, cases.NoLower).String(s)
 	s = strings.ReplaceAll(s, "_", nameSeparatorString)
 	s = strings.ToLower(slug.Make(s))
@@ -341,7 +315,7 @@ func ToDNSLabel(s string) string {
 }
 
 func (*K8sResourceProviderType) NormalizeName(name string) string {
-	return ToDNSLabel(name)
+	return K8sNormalizeName(name)
 }
 
 func (*K8sResourceProviderType) NameSeparator() string {
@@ -357,10 +331,14 @@ const (
 	RevisionNumAnnotation = ContextKeyPrefix + constants.RevisionNumKeySuffix
 )
 
-func (*K8sResourceProviderType) ContextPath(contextField string) string {
+func K8sContextPath(contextField string) string {
 	// PascalCase is expected for contextField
 	safeKey := yamlkit.EscapeDotsInPathSegment(ContextKeyPrefix + contextField)
 	return ContextPathPrefx + safeKey
+}
+
+func (*K8sResourceProviderType) ContextPath(contextField string) string {
+	return K8sContextPath(contextField)
 }
 
 // The conversions are no-ops since Kubernetes/YAML is already YAML.

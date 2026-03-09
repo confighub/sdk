@@ -393,7 +393,7 @@ cub unit list --space SPACE_SLUG --where "CreatedAt > '2025-01-01T00:00:00'"
 # Find approved units
 cub unit list --space SPACE_SLUG --where 'LEN(ApprovedBy) > 0'
 
-# Find units with Kubernetes Deployments that could run as root (--resource-type must be specified when --where-data is specified)
+# Find units with Kubernetes Deployments that could run as root (--resource-type is optional; omitting it searches all resource types)
 cub unit list --space "*" --resource-type apps/v1/Deployment --where-data "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true"
 ```
 

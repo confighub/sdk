@@ -179,6 +179,7 @@ func init() {
 	enableWaitFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
+	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionDoCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	functionCmd.AddCommand(functionDoCmd)
@@ -189,6 +190,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.NumFilters = 0
 	req.StopOnError = false
 	req.ChangeDescription = changeDescription
+	req.WhereResource = whereResource
 	if liveStateType != "" {
 		req.OnLiveState = true
 		req.ToolchainType = liveStateType
@@ -451,6 +453,9 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	var resp *[]goclientnew.FunctionInvocationsResponse
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
+		if executorSpace != "" {
+			newParams.ExecutorSpace = &executorSpace
+		}
 		if invokeArgs.Where != "" {
 			newParams.Where = &invokeArgs.Where
 		}

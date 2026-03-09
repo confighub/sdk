@@ -52,7 +52,7 @@ database:
 
 	for _, tt := range tests {
 		t.Run(string(tt.name), func(t *testing.T) {
-			yamlData, err := PropertiesResourceProvider.NativeToYAML([]byte(tt.data))
+			yamlData, err := NewPropertiesResourceProvider().NativeToYAML([]byte(tt.data))
 			assert.NoError(t, err)
 			if !slices.Equal(yamlData, []byte(tt.want)) {
 				t.Errorf("%s: want %s got %s", tt.name, tt.want, string(yamlData))
@@ -101,7 +101,7 @@ database.ssl.enabled=true
 
 	for _, tt := range tests {
 		t.Run(string(tt.name), func(t *testing.T) {
-			propData, err := PropertiesResourceProvider.YAMLToNative([]byte(tt.data))
+			propData, err := NewPropertiesResourceProvider().YAMLToNative([]byte(tt.data))
 			assert.NoError(t, err)
 			if !slices.Equal(propData, []byte(tt.want)) {
 				t.Errorf("%s: want %s got %s", tt.name, tt.want, string(propData))

@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 	"gopkg.in/yaml.v3"
@@ -20,16 +21,30 @@ import (
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type TOMLResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*TOMLResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type TOMLResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// TOMLResourceProvider implements the ResourceProvider interface for AppConfig/TOML.
-var TOMLResourceProvider = &TOMLResourceProviderType{}
+// NewTOMLResourceProvider creates a new TOMLResourceProviderType with its own path registry.
+func NewTOMLResourceProvider() *TOMLResourceProviderType {
+	return &TOMLResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
+}
+
+func (*TOMLResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
+
+func (rp *TOMLResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *TOMLResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
+}
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*TOMLResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -86,6 +101,21 @@ func (*TOMLResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string)
 	return err
 }
 
+func (rp *TOMLResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (rp *TOMLResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 func (*TOMLResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -111,8 +141,8 @@ func (*TOMLResourceProviderType) ContextPath(contextField string) string {
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*TOMLResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, TOMLResourceProvider)
+func (rp *TOMLResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (*TOMLResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {

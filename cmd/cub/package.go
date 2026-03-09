@@ -42,6 +42,8 @@ type PackageManifest struct {
 	Filters     []FilterEntry     `json:"filters"`
 	Tags        []TagEntry        `json:"tags"`
 	Invocations []InvocationEntry `json:"invocations"`
+	Triggers    []TriggerEntry    `json:"triggers,omitempty"`
+	Attributes  []AttributeEntry  `json:"attributes,omitempty"`
 }
 
 type SpaceEntry struct {
@@ -102,6 +104,18 @@ type InvocationEntry struct {
 	Slug       string `json:"slug"`
 	SpaceSlug  string `json:"space_slug"`
 	WorkerSlug string `json:"worker_slug,omitempty"` // Reference to BridgeWorker (optional)
+	DetailsLoc string `json:"details_loc"`
+}
+
+type TriggerEntry struct {
+	Slug       string `json:"slug"`
+	SpaceSlug  string `json:"space_slug"`
+	DetailsLoc string `json:"details_loc"`
+}
+
+type AttributeEntry struct {
+	Slug       string `json:"slug"`
+	SpaceSlug  string `json:"space_slug"`
 	DetailsLoc string `json:"details_loc"`
 }
 
@@ -378,6 +392,36 @@ func (r *RemotePackageLoader) LoadInvocationDetails(invocation InvocationEntry) 
 
 	invocationDetails.Slug = invocation.Slug
 	return &invocationDetails, nil
+}
+
+func (r *RemotePackageLoader) LoadTriggerDetails(trigger TriggerEntry) (*goclientnew.Trigger, error) {
+	data, err := r.LoadFile(trigger.DetailsLoc)
+	if err != nil {
+		return nil, err
+	}
+
+	var triggerDetails goclientnew.Trigger
+	if err := json.Unmarshal(data, &triggerDetails); err != nil {
+		return nil, fmt.Errorf("failed to parse trigger details: %w", err)
+	}
+
+	triggerDetails.Slug = trigger.Slug
+	return &triggerDetails, nil
+}
+
+func (r *RemotePackageLoader) LoadAttributeDetails(attribute AttributeEntry) (*goclientnew.Attribute, error) {
+	data, err := r.LoadFile(attribute.DetailsLoc)
+	if err != nil {
+		return nil, err
+	}
+
+	var attributeDetails goclientnew.Attribute
+	if err := json.Unmarshal(data, &attributeDetails); err != nil {
+		return nil, fmt.Errorf("failed to parse attribute details: %w", err)
+	}
+
+	attributeDetails.Slug = attribute.Slug
+	return &attributeDetails, nil
 }
 
 // isRemoteURL determines if a path is a remote URL

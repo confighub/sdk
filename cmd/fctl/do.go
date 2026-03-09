@@ -81,6 +81,7 @@ func InvokeFunction(
 	toolchain workerapi.ToolchainType,
 	data []byte,
 	functionContext *api.FunctionContext,
+	whereRes string,
 	functionName string,
 	args ...string,
 ) (*api.FunctionInvocationResponse, error) {
@@ -97,6 +98,7 @@ func InvokeFunction(
 		ConfigData:          data,
 		FunctionContext:     *functionContext,
 		FunctionInvocations: functions,
+		WhereResource:       whereRes,
 		NumFilters:          0,
 		StopOnError:         false,
 	})
@@ -143,13 +145,14 @@ func newDoCommand() *cobra.Command {
 			functionName := args[2]
 			invokeArgs := args[3:]
 
-			respMsg, err := InvokeFunction(transportConfig, toolchain, content, fakeFunctionContext(unitName), functionName, invokeArgs...)
+			respMsg, err := InvokeFunction(transportConfig, toolchain, content, fakeFunctionContext(unitName), whereResource, functionName, invokeArgs...)
 			failOnError(err)
 			outputFunctionInvocationResponse(content, respMsg)
 		},
 	}
 	cmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	cmd.Flags().BoolVar(&outputOnly, "output-only", false, "show function output only")
+	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 
 	return cmd
 }
@@ -158,6 +161,7 @@ var dataOnly bool
 var outputOnly bool
 var numFilters int
 var stop bool
+var whereResource string
 
 func newDoSeqCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -183,6 +187,7 @@ func newDoSeqCommand() *cobra.Command {
 			respMsg, err := client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
 				FunctionContext:     *fakeFunctionContext(unitName),
 				ConfigData:          content,
+				WhereResource:       whereResource,
 				NumFilters:          numFilters,
 				StopOnError:         stop,
 				FunctionInvocations: functionList,
@@ -193,6 +198,7 @@ func newDoSeqCommand() *cobra.Command {
 	}
 	cmd.Flags().IntVar(&numFilters, "num-filters", 0, "number of validating functions to treat as filters")
 	cmd.Flags().BoolVar(&stop, "stop", false, "stop on error")
+	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 
 	return cmd
 }

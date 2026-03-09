@@ -10,7 +10,7 @@ OUTPUT
     "Path": "metadata.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "SetterInvocations": [
         {
           "FunctionName": "set-references-of-type",

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/go-ini/ini"
@@ -22,16 +23,30 @@ import (
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type INIResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*INIResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type INIResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// INIResourceProvider implements the ResourceProvider interface for AppConfig/INI.
-var INIResourceProvider = &INIResourceProviderType{}
+// NewINIResourceProvider creates a new INIResourceProviderType with its own path registry.
+func NewINIResourceProvider() *INIResourceProviderType {
+	return &INIResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
+}
+
+func (*INIResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
+
+func (rp *INIResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *INIResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
+}
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*INIResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -88,6 +103,21 @@ func (*INIResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string) 
 	return err
 }
 
+func (rp *INIResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (rp *INIResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 func (*INIResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -113,8 +143,8 @@ func (*INIResourceProviderType) ContextPath(contextField string) string {
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*INIResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, INIResourceProvider)
+func (rp *INIResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (*INIResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {

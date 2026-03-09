@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/gosimple/slug"
@@ -21,16 +22,30 @@ import (
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type HclResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*HclResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type HclResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// HclResourceProvider implements the ResourceProvider interface for OpenTofu/HCL.
-var HclResourceProvider = &HclResourceProviderType{}
+// NewHclResourceProvider creates a new HclResourceProviderType with its own path registry.
+func NewHclResourceProvider() *HclResourceProviderType {
+	return &HclResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
+}
+
+func (*HclResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
+
+func (rp *HclResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *HclResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
+}
 
 // Block metadata are translated to properties at known paths, unlike tfjson's nested
 // blocks, because that also enables resource/data paths to be at fixed locations rather
@@ -125,6 +140,21 @@ func (*HclResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string) 
 	return err
 }
 
+func (rp *HclResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (rp *HclResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 const nameSeparatorString = "_"
 
 func (*HclResourceProviderType) NormalizeName(name string) string {
@@ -145,8 +175,8 @@ func (*HclResourceProviderType) ContextPath(contextField string) string {
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*HclResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, HclResourceProvider)
+func (rp *HclResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (*HclResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {

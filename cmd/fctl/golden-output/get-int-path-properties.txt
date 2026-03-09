@@ -8,7 +8,7 @@ OUTPUT
     "ResourceType": "SimpleApp",
     "ResourceCategory": "AppConfig",
     "Path": "database.port",
-    "AttributeName": "attribute-value",
+    "AttributeName": "none",
     "DataType": "int",
     "Value": 5432,
     "Index": 0

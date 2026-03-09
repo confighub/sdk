@@ -174,7 +174,7 @@ func getAnnotationKey(contextField string) string {
 	// The ContextPath method returns the full path like ".metadata.annotations.confighub~1com/UnitSlug"
 	// where dots are escaped with ~1 (tilde escaping)
 	// We need to extract just the annotation key and unescape it
-	fullPath := k8skit.K8sResourceProvider.ContextPath(contextField)
+	fullPath := k8skit.K8sContextPath(contextField)
 	// Remove the ".metadata.annotations." prefix
 	key := strings.TrimPrefix(fullPath, ".metadata.annotations.")
 	// Unescape the tilde-encoded dots using gaby's UnescapeDotsInPathSegment

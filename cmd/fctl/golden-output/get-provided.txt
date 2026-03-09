@@ -10,7 +10,7 @@ OUTPUT
     "Path": "metadata.name",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-resources-of-type",
         "Arguments": [

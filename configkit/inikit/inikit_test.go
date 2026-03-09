@@ -20,7 +20,7 @@ ip = 10.0.0.1
 dc = eqdc10
 `)
 
-	yamlData, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI to YAML: %v", err)
 	}
@@ -45,7 +45,7 @@ server:
   dc: eqdc10
 `)
 
-	iniData, err := INIResourceProvider.YAMLToNative(yamlData)
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert YAML to INI: %v", err)
 	}
@@ -60,7 +60,7 @@ server:
 }
 
 func TestEmptyINI(t *testing.T) {
-	yamlData, err := INIResourceProvider.NativeToYAML([]byte{})
+	yamlData, err := NewINIResourceProvider().NativeToYAML([]byte{})
 	if err != nil {
 		t.Fatalf("Failed on empty input: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestEmptyINI(t *testing.T) {
 }
 
 func TestEmptyYAML(t *testing.T) {
-	iniData, err := INIResourceProvider.YAMLToNative([]byte{})
+	iniData, err := NewINIResourceProvider().YAMLToNative([]byte{})
 	if err != nil {
 		t.Fatalf("Failed on empty input: %v", err)
 	}
@@ -87,12 +87,12 @@ version = 1.0.0
 `)
 
 	// INI -> YAML -> INI
-	yamlData, err := INIResourceProvider.NativeToYAML(originalINI)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(originalINI)
 	if err != nil {
 		t.Fatalf("Failed INI to YAML conversion: %v", err)
 	}
 
-	iniData, err := INIResourceProvider.YAMLToNative(yamlData)
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed YAML to INI conversion: %v", err)
 	}
@@ -130,7 +130,7 @@ port = 5432
 enabled = true
 `)
 
-	yamlData, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI with nested sections to YAML: %v", err)
 	}
@@ -164,7 +164,7 @@ database:
     enabled: true
 `)
 
-	iniData, err := INIResourceProvider.YAMLToNative(yamlData)
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert nested YAML to INI: %v", err)
 	}
@@ -191,7 +191,7 @@ max_connections = 100
 description = A test database
 `)
 
-	yamlData, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI with mixed types to YAML: %v", err)
 	}
@@ -223,7 +223,7 @@ features.1 = logging
 name = MyApplication
 `)
 
-	yamlData, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI with array notation to YAML: %v", err)
 	}
@@ -248,7 +248,7 @@ verbose = false
 enabled = true
 `)
 
-	yamlData, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI with boolean values to YAML: %v", err)
 	}
@@ -272,7 +272,7 @@ database:
   user: admin
 `)
 
-	iniData, err := INIResourceProvider.YAMLToNative(yamlData)
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert YAML to INI: %v", err)
 	}
@@ -311,7 +311,7 @@ database:
     enabled: false
 `)
 
-	iniData, err := INIResourceProvider.YAMLToNative(yamlData)
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert YAML with nested boolean to INI: %v", err)
 	}
@@ -330,7 +330,7 @@ database:
 	}
 
 	// Round trip: convert back to YAML and verify the boolean is still false
-	yamlDataBack, err := INIResourceProvider.NativeToYAML(iniData)
+	yamlDataBack, err := NewINIResourceProvider().NativeToYAML(iniData)
 	if err != nil {
 		t.Fatalf("Failed to convert INI back to YAML: %v", err)
 	}

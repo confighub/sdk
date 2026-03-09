@@ -14,7 +14,7 @@ import (
 	bridgeapi "github.com/confighub/sdk/bridge-worker/api"
 	"github.com/confighub/sdk/cubapi"
 	api "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/helmutils"
+	"github.com/confighub/sdk/bridge-impl/helmutils"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/confighub/sdk/workerapi"
 	"github.com/google/uuid"

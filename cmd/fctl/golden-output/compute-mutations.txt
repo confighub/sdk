@@ -22,7 +22,7 @@ OUTPUT
         "Predicate": true,
         "Value": "10\n"
       },
-      "spec.template.spec.containers.0.resources": {
+      "spec.template.spec.containers.?name=nginx;@0.resources": {
         "MutationType": "Update",
         "Index": 0,
         "Predicate": true,

@@ -309,6 +309,14 @@ func displayEntityResult(result cubapi.ApplyResult, action string) {
 				})
 			}
 		}
+	case EntityTypeAttribute:
+		if attr, ok := result.Entity.(*goclientnew.Attribute); ok {
+			if action == "created" {
+				displayCreateResults(attr, entityName, result.EntityName, result.EntityID, displayAttributeDetails)
+			} else {
+				displayUpdateResults(attr, entityName, result.EntityName, result.EntityID, displayAttributeDetails)
+			}
+		}
 	}
 }
 

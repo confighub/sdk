@@ -36,6 +36,7 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&filter, "filter", "", "filter to apply (slug, space/filter, or UUID)")
 	runCmd.PersistentFlags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	runCmd.PersistentFlags().StringVar(&whereData, "where-data", "", "where data filter")
+	runCmd.PersistentFlags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	runCmd.PersistentFlags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	//These flags don't make sense in the context of cub run because it assumes one function will be explicitly specified on the command line
 	//runCmd.PersistentFlags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
@@ -52,6 +53,7 @@ func init() {
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	runCmd.PersistentFlags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	runCmd.PersistentFlags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
+	runCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
 
 	RegisterFunctionsAsCobraCommands()
 

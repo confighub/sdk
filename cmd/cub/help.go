@@ -7,8 +7,6 @@ import (
 	"embed"
 	"os"
 	"path/filepath"
-
-	"github.com/charmbracelet/glamour"
 )
 
 const (
@@ -42,22 +40,7 @@ func getCommandHelp(baseHelp string, agentContext string) string {
 }
 
 func getFormattedContent(content string) string {
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(80),
-	)
-	if err != nil {
-		// Fallback to raw markdown if glamour fails
-		return content
-	}
-
-	formatted, err := renderer.Render(content)
-	if err != nil {
-		// Fallback to raw markdown if rendering fails
-		return content
-	}
-
-	return formatted
+	return content
 }
 
 func getFormattedOverview() string {

@@ -13,7 +13,7 @@ import (
 const MaxSlugLength = 128
 
 func makeSlug(providedText string) string {
-	return cubkit.ConfigHubResourceProvider.NormalizeName(providedText)
+	return cubkit.CubNormalizeName(providedText)
 }
 
 // truncateWithHash truncates s to maxLen, replacing excess chars with a hash suffix.

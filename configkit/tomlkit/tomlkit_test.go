@@ -26,7 +26,7 @@ enabled = true
   dc = "eqdc10"
 `)
 
-	yamlData, err := TOMLResourceProvider.NativeToYAML(tomlData)
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML(tomlData)
 	if err != nil {
 		t.Fatalf("Failed to convert TOML to YAML: %v", err)
 	}
@@ -55,7 +55,7 @@ servers:
     dc: eqdc10
 `)
 
-	tomlData, err := TOMLResourceProvider.YAMLToNative(yamlData)
+	tomlData, err := NewTOMLResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert YAML to TOML: %v", err)
 	}
@@ -70,7 +70,7 @@ servers:
 }
 
 func TestEmptyTOML(t *testing.T) {
-	yamlData, err := TOMLResourceProvider.NativeToYAML([]byte{})
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML([]byte{})
 	if err != nil {
 		t.Fatalf("Failed on empty input: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestEmptyTOML(t *testing.T) {
 }
 
 func TestEmptyYAML(t *testing.T) {
-	tomlData, err := TOMLResourceProvider.YAMLToNative([]byte{})
+	tomlData, err := NewTOMLResourceProvider().YAMLToNative([]byte{})
 	if err != nil {
 		t.Fatalf("Failed on empty input: %v", err)
 	}
@@ -97,12 +97,12 @@ version = "1.0.0"
 `)
 
 	// TOML -> YAML -> TOML
-	yamlData, err := TOMLResourceProvider.NativeToYAML(originalTOML)
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML(originalTOML)
 	if err != nil {
 		t.Fatalf("Failed TOML to YAML conversion: %v", err)
 	}
 
-	tomlData, err := TOMLResourceProvider.YAMLToNative(yamlData)
+	tomlData, err := NewTOMLResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed YAML to TOML conversion: %v", err)
 	}
@@ -127,7 +127,7 @@ name = "MyApplication"
 version = "1.0.0"
 `)
 
-	yamlData, err := TOMLResourceProvider.NativeToYAML(tomlData)
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML(tomlData)
 	if err != nil {
 		t.Fatalf("Failed to convert TOML with arrays to YAML: %v", err)
 	}
@@ -161,7 +161,7 @@ port = 5432
 enabled = true
 `)
 
-	yamlData, err := TOMLResourceProvider.NativeToYAML(tomlData)
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML(tomlData)
 	if err != nil {
 		t.Fatalf("Failed to convert nested TOML to YAML: %v", err)
 	}
@@ -194,7 +194,7 @@ app:
   version: 1.0.0
 `)
 
-	tomlData, err := TOMLResourceProvider.YAMLToNative(yamlData)
+	tomlData, err := NewTOMLResourceProvider().YAMLToNative(yamlData)
 	if err != nil {
 		t.Fatalf("Failed to convert YAML with arrays to TOML: %v", err)
 	}
@@ -221,7 +221,7 @@ max_connections = 100
 description = "Primary database"
 `)
 
-	yamlData, err := TOMLResourceProvider.NativeToYAML(tomlData)
+	yamlData, err := NewTOMLResourceProvider().NativeToYAML(tomlData)
 	if err != nil {
 		t.Fatalf("Failed to convert TOML with mixed types to YAML: %v", err)
 	}

@@ -6,6 +6,7 @@ package propkit
 
 import (
 	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
 )
@@ -15,16 +16,30 @@ import (
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-type PropertiesResourceProviderType struct{}
-
-var pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
-
-func (*PropertiesResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return pathRegistry
+type PropertiesResourceProviderType struct {
+	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
+	attributeRegistry api.AttributeNameToAttributeDescriptor
 }
 
-// PropertiesResourceProvider implements the ResourceProvider interface for AppConfig/Properties.
-var PropertiesResourceProvider = &PropertiesResourceProviderType{}
+// NewPropertiesResourceProvider creates a new PropertiesResourceProviderType with its own path registry.
+func NewPropertiesResourceProvider() *PropertiesResourceProviderType {
+	return &PropertiesResourceProviderType{
+		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
+		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+	}
+}
+
+func (rp *PropertiesResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return rp.pathRegistry
+}
+
+func (rp *PropertiesResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return rp.attributeRegistry
+}
+
+func (*PropertiesResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*PropertiesResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -81,6 +96,21 @@ func (*PropertiesResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name s
 	return err
 }
 
+func (rp *PropertiesResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return id, nil
+}
+
+func (rp *PropertiesResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	_, err := doc.SetP(id, resourceIDPath)
+	return err
+}
+
 func (*PropertiesResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -106,8 +136,8 @@ func (*PropertiesResourceProviderType) ContextPath(contextField string) string {
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML
 // documents, from from names to categories+types and categories+types to names.
-func (*PropertiesResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
-	return yamlkit.ResourceAndCategoryTypeMaps(docs, PropertiesResourceProvider)
+func (rp *PropertiesResourceProviderType) ResourceAndCategoryTypeMaps(docs gaby.Container) (resourceMap yamlkit.ResourceNameToCategoryTypesMap, categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, err error) {
+	return yamlkit.ResourceAndCategoryTypeMaps(docs, rp)
 }
 
 func (*PropertiesResourceProviderType) RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName {

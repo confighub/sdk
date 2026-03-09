@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -186,6 +187,7 @@ const (
 	EntityTypeUnit         = "Unit"
 	EntityTypeLink         = "Link"
 	EntityTypeSet          = "Set"
+	EntityTypeAttribute    = "Attribute"
 )
 
 // EntityInSpace type constraint for all entities that reside in spaces
@@ -193,7 +195,7 @@ type EntityInSpace interface {
 	goclientnew.Filter | goclientnew.View | goclientnew.Invocation |
 		goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet |
 		goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit |
-		goclientnew.Link
+		goclientnew.Link | goclientnew.Attribute
 }
 
 // apiGetEntityFromSlugInSpaceFunc is a function type for getting entities by slug in a space
@@ -399,8 +401,42 @@ func populateNewModelFromStdin(v interface{}) error {
 }
 
 func mergeEntityWithData(v any, data []byte) error {
-	// Hopefully this also works fine for JSON
-	return yaml.Unmarshal(data, v)
+	// Parse YAML/JSON input into a generic structure, then re-marshal as JSON
+	// and unmarshal into the target. This ensures that generated types with
+	// UnmarshalJSON (e.g., union types) are handled correctly even when the
+	// input is YAML.
+	var generic interface{}
+	if err := yaml.Unmarshal(data, &generic); err != nil {
+		return err
+	}
+	jsonData, err := json.Marshal(convertYAMLToJSON(generic))
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(jsonData, v)
+}
+
+// convertYAMLToJSON converts YAML-unmarshaled data to JSON-compatible types.
+// The yaml.v3 library produces map[string]interface{} for mappings, which is
+// already JSON-compatible. However, map keys from yaml.v3 can sometimes be
+// non-string types in edge cases, so we normalize them here.
+func convertYAMLToJSON(v interface{}) interface{} {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		result := make(map[string]interface{}, len(val))
+		for k, v := range val {
+			result[k] = convertYAMLToJSON(v)
+		}
+		return result
+	case []interface{}:
+		result := make([]interface{}, len(val))
+		for i, v := range val {
+			result[i] = convertYAMLToJSON(v)
+		}
+		return result
+	default:
+		return v
+	}
 }
 
 func populateModelFromFile(v any, filename string) error {

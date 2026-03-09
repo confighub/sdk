@@ -22,7 +22,8 @@ func YAMLToHCL(yamlData []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse YAML document list: %w", err)
 	}
-	_, categoryTypeMap, err := HclResourceProvider.ResourceAndCategoryTypeMaps(parsedData)
+	rp := NewHclResourceProvider()
+	_, categoryTypeMap, err := rp.ResourceAndCategoryTypeMaps(parsedData)
 
 	var hclBlocks []string
 	for _, doc := range parsedData {

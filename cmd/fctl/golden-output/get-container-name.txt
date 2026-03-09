@@ -10,7 +10,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.name",
     "AttributeName": "container-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-container-name",
         "Arguments": null
@@ -27,7 +27,7 @@ OUTPUT
     "Path": "spec.template.spec.containers.1.name",
     "AttributeName": "container-name",
     "DataType": "string",
-    "Info": {
+    "Details": {
       "GetterInvocation": {
         "FunctionName": "get-container-name",
         "Arguments": null
