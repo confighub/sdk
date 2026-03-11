@@ -77,6 +77,7 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 	table.Append([]string{"User ID", unitAction.UserID.String()})
 	table.Append([]string{"Bridge Worker ID", unitAction.BridgeWorkerID.String()})
 	table.Append([]string{"RevisionNum", fmt.Sprintf("%v", unitAction.RevisionNum)})
+	table.Append([]string{"UnitActionNum", fmt.Sprintf("%v", unitAction.UnitActionNum)})
 	table.Append([]string{"Drift Reconciliation Mode", unitAction.DriftReconciliationMode})
 	table.Render()
 

@@ -11,6 +11,38 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
+func registerGetReferencesOfType(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	fh.RegisterFunction("get-references-of-type", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "get-references-of-type",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "resource-type",
+					Required:      true,
+					Description:   "Type (" + resourceProvider.TypeDescription() + ") of the config references to get",
+					DataType:      api.DataTypeString,
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "references",
+				Description: "Values of the references targeting the specified type",
+				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &attributeValueListSchema,
+			},
+			Mutating:              false,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Gets references targeting the specified type",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			return genericFnGetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+		},
+	})
+}
+
 func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	fh.RegisterFunction("set-references-of-type", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -45,6 +77,17 @@ func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configki
 
 func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {
 	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
+}
+
+func genericFnGetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	resourceType := args[0].Value.(string)
+
+	paths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeNameForResourceType(api.ResourceType(resourceType)))
+	if paths == nil {
+		return parsedData, nil, nil
+	}
+	values, err := yamlkit.GetStringPaths(parsedData, paths, []any{}, resourceProvider, nil)
+	return parsedData, values, err
 }
 
 func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

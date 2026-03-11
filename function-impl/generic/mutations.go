@@ -6,6 +6,7 @@ package generic
 import (
 	"encoding/json"
 
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/configkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
@@ -44,6 +45,12 @@ func RegisterComputeMutations(fh handler.FunctionRegistry, converter configkit.C
 					Description:   "If true, the config-doc-list is already converted to YAML",
 					DataType:      api.DataTypeBool,
 				},
+				{
+					ParameterName: "reverse",
+					Required:      false,
+					Description:   "If true, treat the previous config data as the modified config data instead",
+					DataType:      api.DataTypeBool,
+				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "mutations",
@@ -69,8 +76,24 @@ func genericFnComputeMutations(converter configkit.ConfigConverter, resourceProv
 	configStringData := args[0].Value.(string)
 	functionIndex := int64(args[1].Value.(int))
 	alreadyConverted := false
+	reverse := false
 	if len(args) > 2 {
-		alreadyConverted = args[2].Value.(bool)
+		if args[2].ParameterName == "already-converted" || args[2].ParameterName == "" {
+			alreadyConverted = args[2].Value.(bool)
+		} else if args[2].ParameterName == "reverse" {
+			reverse = args[2].Value.(bool)
+		} else {
+			return modifiedParsedData, nil, errors.Errorf("invalid parameter " + args[2].ParameterName)
+		}
+		if len(args) > 3 {
+			if args[3].ParameterName == "reverse" || args[3].ParameterName == "" {
+				reverse = args[3].Value.(bool)
+			} else if args[3].ParameterName == "already-converted" {
+				alreadyConverted = args[3].Value.(bool)
+			} else {
+				return modifiedParsedData, nil, errors.Errorf("invalid parameter " + args[2].ParameterName)
+			}
+		}
 	}
 
 	var err error
@@ -86,7 +109,12 @@ func genericFnComputeMutations(converter configkit.ConfigConverter, resourceProv
 		return modifiedParsedData, nil, err
 	}
 
-	mutations, err := yamlkit.ComputeMutations(previousParsedData, modifiedParsedData, functionIndex, resourceProvider)
+	var mutations api.ResourceMutationList
+	if reverse {
+		mutations, err = yamlkit.ComputeMutations(modifiedParsedData, previousParsedData, functionIndex, resourceProvider)
+	} else {
+		mutations, err = yamlkit.ComputeMutations(previousParsedData, modifiedParsedData, functionIndex, resourceProvider)
+	}
 	return modifiedParsedData, mutations, err
 }
 

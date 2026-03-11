@@ -211,6 +211,7 @@ func init() {
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	enableWaitFlag(unitUpdateCmd)
+	enableDisplayMutationsFlag(unitUpdateCmd)
 	unitCmd.AddCommand(unitUpdateCmd)
 }
 
@@ -363,6 +364,11 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Save prior state for distinguishing new vs prior mutations and fetching old values
+	priorHeadMutationNum := currentUnit.HeadMutationNum
+	priorRevisionNum := currentUnit.HeadRevisionNum
+	unitSlug := currentUnit.Slug
 
 	newParams := &goclientnew.UpdateUnitParams{}
 
@@ -582,6 +588,38 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Display results
 
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
+
+	// Display mutations if requested
+	if displayMutations {
+		tprintRaw("")
+		// Build description of the update operation
+		updateDesc := "PatchUnit"
+		if restore != "" {
+			updateDesc = "restore to " + restore
+		} else if isUpgrade {
+			updateDesc = "upgrade"
+		} else if mergeSource != "" {
+			updateDesc = "merge from " + mergeSource
+		} else if resolve != "" {
+			updateDesc = "resolve " + resolve
+		} else if len(args) > 1 {
+			updateDesc = "update from " + args[1]
+		}
+		if dryRun {
+			// Dry-run returns the unit as it would look after the update,
+			// including MutationSources with the proposed mutations.
+			displayMutationsForUnit(unitDetails, priorHeadMutationNum, updateDesc, "dry-run")
+		} else {
+			// Fetch updated unit to get the latest MutationSources
+			updatedUnit, err := apiGetUnitInSpace(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*")
+			if err != nil {
+				return err
+			}
+			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
+			displayMutationsForUnit(updatedUnit, priorHeadMutationNum, updateDesc, priorRevision)
+		}
+	}
+
 	return nil
 }
 

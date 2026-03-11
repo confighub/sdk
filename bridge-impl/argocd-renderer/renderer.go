@@ -29,6 +29,10 @@ const (
 	argoCDKind       = "Application"
 	// ArgoCDTrackingIDAnnotation is the annotation ArgoCD adds to track resources.
 	ArgoCDTrackingIDAnnotation = "argocd.argoproj.io/tracking-id"
+	// ArgoCDRefreshAnnotation triggers ArgoCD to re-fetch sources from git.
+	ArgoCDRefreshAnnotation = "argocd.argoproj.io/refresh"
+	// ArgoCDHydrateAnnotation triggers ArgoCD to re-hydrate rendered manifests.
+	ArgoCDHydrateAnnotation = "argocd.argoproj.io/hydrate"
 )
 
 // NOTE: The results of rendering aren't being deployed as the renderer unit, so UnitSlug and SpaceID
@@ -269,6 +273,33 @@ func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte
 	}
 
 	return []byte(strings.Join(docs, "---\n")), nil
+}
+
+// SetRefreshAnnotations adds refresh and hydrate annotations to an Application
+// to trigger ArgoCD to re-fetch sources from git and re-render manifests.
+func SetRefreshAnnotations(app *unstructured.Unstructured) {
+	annotations := app.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[ArgoCDRefreshAnnotation] = "normal"
+	annotations[ArgoCDHydrateAnnotation] = "normal"
+	app.SetAnnotations(annotations)
+}
+
+// PatchRefreshAnnotations patches the refresh and hydrate annotations on an existing
+// Application resource in the cluster to trigger ArgoCD to re-fetch and re-render.
+func PatchRefreshAnnotations(ctx context.Context, k8sClient client.Client, appName, appNamespace string) error {
+	app := &unstructured.Unstructured{}
+	app.SetAPIVersion(argoCDAPIVersion)
+	app.SetKind(argoCDKind)
+	app.SetName(appName)
+	app.SetNamespace(appNamespace)
+
+	patch := []byte(fmt.Sprintf(`{"metadata":{"annotations":{%q:"normal",%q:"normal"}}}`,
+		ArgoCDRefreshAnnotation, ArgoCDHydrateAnnotation))
+
+	return k8sClient.Patch(ctx, app, client.RawPatch(types.MergePatchType, patch))
 }
 
 // HasAutoSync checks whether an ArgoCD Application has autosync enabled.

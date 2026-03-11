@@ -177,6 +177,7 @@ func init() {
 	enableFilterFlag(functionDoCmd)
 	addStandardDisplayFlags(functionDoCmd)
 	enableWaitFlag(functionDoCmd)
+	enableDisplayMutationsFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
@@ -586,6 +587,12 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	newBody, err := initializeFunctionInvocationsRequest(args)
 	failOnError(err)
 
+	// Save prior HeadMutationNums if displaying mutations
+	var priorHeadMutationNums map[string]priorUnitInfo
+	if displayMutations {
+		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
+	}
+
 	// Handle revision flag
 	if revisionIdentifier != "" {
 		resp, err = invokeFunctionsOnRevision(revisionIdentifier, *newBody, dryRun)
@@ -686,6 +693,17 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
+
+	// Display mutations if requested
+	if displayMutations {
+		// Build description from function names
+		funcDesc := ""
+		if len(args) > 0 {
+			funcDesc = args[0]
+		}
+		displayMutationsFromFunctionResponse(resp, dryRun, priorHeadMutationNums, funcDesc)
+	}
+
 	return nil
 }
 

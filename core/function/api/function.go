@@ -394,7 +394,7 @@ type ResourceInfo struct {
 	ResourceNameWithoutScope ResourceName     `swaggertype:"string" description:"Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>"`
 	ResourceType             ResourceType     `swaggertype:"string" description:"Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)"`
 	ResourceCategory         ResourceCategory `json:",omitempty" swaggertype:"string" description:"Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig"`
-	ResourceID               string           `json:",omitempty" swaggertype:"string" description:"Unique identifier for a resource within a configuration unit; a UUID stored as a context annotation on the resource"`
+	ResourceID               string           `json:",omitempty" swaggertype:"string" description:"Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations"`
 }
 type ResourceInfoList []ResourceInfo
 

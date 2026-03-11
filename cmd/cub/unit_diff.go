@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/cobra"
 )
@@ -41,17 +42,20 @@ const (
 var unitDiffCmd = &cobra.Command{
 	Use:   "diff <unit-slug> [fromRev] [toRev]",
 	Short: "Show differences between revisions",
-	Long: getCommandHelp(`Show differences between revisions of a unit.
+	Long: getCommandHelp(`Show differences between revisions of a unit, or between two units.
 
 Revision References:
   - Absolute: 123, 456
   - Named: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum
   - Relative: -1, -2, -3 (N revisions back from HeadRevisionNum)
+  - Tag: Tag:release-v1.0
+  - ChangeSet: ChangeSet:feature-deploy
 
 Output Formats:
   - Default: Line-numbered format with color
   - Unified: Use -u for unified diff format (like git diff)
   - Color: Use -c to enable color in unified diff
+  - Mutations: Use --display-mutations for structured mutation display
 
 Examples:
 `+"```"+`
@@ -73,6 +77,12 @@ Examples:
   # Unified diff format
   cub unit diff -u my-unit
   cub unit diff -uc my-unit --from=-1
+
+  # Cross-unit diff
+  cub unit diff my-unit --with-unit other-unit
+
+  # Show mutations instead of text diff
+  cub unit diff my-unit --display-mutations
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 3),
@@ -80,10 +90,12 @@ Examples:
 }
 
 var unitDiffArgs struct {
-	unifiedDiff bool
-	colorOutput bool
-	fromRev     string
-	toRev       string
+	unifiedDiff      bool
+	colorOutput      bool
+	fromRev          string
+	toRev            string
+	withUnit         string
+	displayMutations bool
 }
 
 func init() {
@@ -91,6 +103,8 @@ func init() {
 	unitDiffCmd.Flags().BoolVarP(&unitDiffArgs.colorOutput, "color", "c", false, "colorize the unified diff output (default: true for numbered diff)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LiveRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", defaultTo, "target revision (defaults to HeadRevisionNum)")
+	unitDiffCmd.Flags().StringVar(&unitDiffArgs.withUnit, "with-unit", "", "second unit for cross-unit diff (slug, space/slug, or UUID)")
+	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
 	unitCmd.AddCommand(unitDiffCmd)
 }
 
@@ -400,8 +414,42 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Resolve revision numbers
-	revFromNum, err := resolveRevisionNumber(unitSlug, revFrom)
+	// Get the first unit
+	unit, err := apiGetUnitFromSlug(unitSlug, "*")
+	if err != nil {
+		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
+	}
+
+	// Get the second unit if --with-unit is specified (cross-unit diff)
+	var toUnit *goclientnew.Unit
+	if unitDiffArgs.withUnit != "" {
+		toUnit, err = parseEntityIdentifierSingleAsEntity[goclientnew.Unit](
+			unitDiffArgs.withUnit,
+			"unit",
+			"*",
+			apiGetUnitFromSlugInSpace,
+			func(u *goclientnew.Unit) string { return u.UnitID.String() },
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get second unit %s: %w", unitDiffArgs.withUnit, err)
+		}
+	} else {
+		toUnit = unit
+	}
+
+	// Resolve revision numbers using parseSelectedRevisionParameter
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, unit.UnitID, unit.SpaceID.String(), unit.HeadRevisionNum)
+	if err != nil {
+		return err
+	}
+
+	toFormatted, toIsUUID, err := parseSelectedRevisionParameter(revTo, toUnit.UnitID, toUnit.SpaceID.String(), toUnit.HeadRevisionNum)
+	if err != nil {
+		return err
+	}
+
+	// Resolve to revision numbers for fetching data
+	revFromNum, err := resolveFormattedRevision(fromFormatted, fromIsUUID, unit)
 	if err != nil {
 		return err
 	}
@@ -409,7 +457,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("revision %s not found or is invalid", revFrom)
 	}
 
-	revToNum, err := resolveRevisionNumber(unitSlug, revTo)
+	revToNum, err := resolveFormattedRevision(toFormatted, toIsUUID, toUnit)
 	if err != nil {
 		return err
 	}
@@ -417,19 +465,13 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("revision %s not found or is invalid", revTo)
 	}
 
-	// Get unit ID
-	unit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for now
-	if err != nil {
-		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
-	}
-
 	// Get revision data for both revisions
-	revFromData, err := apiGetRevisionFromNumber(revFromNum, unit.UnitID.String(), "*") // get all fields for now
+	revFromData, err := apiGetRevisionFromNumber(revFromNum, unit.UnitID.String(), "*")
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d: %v", revFromNum, err)
 	}
 
-	revToData, err := apiGetRevisionFromNumber(revToNum, unit.UnitID.String(), "*") //get all fields for now
+	revToData, err := apiGetRevisionFromNumber(revToNum, toUnit.UnitID.String(), "*")
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d: %v", revToNum, err)
 	}
@@ -445,19 +487,88 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to decode revision %d data: %v", revToNum, err)
 	}
 
-	// Compute diff
-	// toData is the base content
-	// fromData is newer content
-	diffSegments := ComputeStructuredDiff(string(fromData), string(toData))
-
-	// Print diff in requested format
-	if unitDiffArgs.unifiedDiff {
-		oldFile := fmt.Sprintf("%s/%s/%d", selectedSpaceSlug, unitSlug, revFromNum)
-		newFile := fmt.Sprintf("%s/%s/%d", selectedSpaceSlug, unitSlug, revToNum)
-		printUnifiedDiff(diffSegments, oldFile, newFile)
+	if unitDiffArgs.displayMutations {
+		// Display mutations instead of text diff
+		lookupMutationsUnitID = toUnit.UnitID.String()
+		displayMutationsFromDryRun(revFromData.Data, revToData.Data, toUnit.SpaceID.String(), "diff")
 	} else {
-		printNumberedDiff(diffSegments)
+		// Compute text diff
+		diffSegments := ComputeStructuredDiff(string(fromData), string(toData))
+
+		// Format file labels
+		fromLabel := formatDiffLabel(unitSlug, revFromNum)
+		toLabel := formatDiffLabel(unitSlugOrWith(unitSlug, unitDiffArgs.withUnit), revToNum)
+
+		// Print diff in requested format
+		if unitDiffArgs.unifiedDiff {
+			printUnifiedDiff(diffSegments, fromLabel, toLabel)
+		} else {
+			printNumberedDiff(diffSegments)
+		}
 	}
 
 	return nil
+}
+
+func formatDiffLabel(unitSlug string, revNum int64) string {
+	return fmt.Sprintf("%s/%s/%d", selectedSpaceSlug, unitSlug, revNum)
+}
+
+func unitSlugOrWith(slug, withUnit string) string {
+	if withUnit != "" {
+		return withUnit
+	}
+	return slug
+}
+
+// resolveFormattedRevision converts a parseSelectedRevisionParameter result to a revision number.
+func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.Unit) (int64, error) {
+	if isUUID {
+		// It's a revision UUID - look it up
+		rev, err := apiGetRevisionFromUUID(formatted, unit.UnitID.String())
+		if err != nil {
+			return 0, err
+		}
+		return rev.RevisionNum, nil
+	}
+
+	// Check named revision values
+	switch formatted {
+	case "HeadRevisionNum":
+		return unit.HeadRevisionNum, nil
+	case "LiveRevisionNum":
+		return unit.LiveRevisionNum, nil
+	case "LastAppliedRevisionNum":
+		return unit.LastAppliedRevisionNum, nil
+	case "PreviousLiveRevisionNum":
+		return unit.PreviousLiveRevisionNum, nil
+	}
+
+	// Check for Tag: or ChangeSet: prefix - these need API lookup
+	if strings.HasPrefix(formatted, "Tag:") || strings.HasPrefix(formatted, "ChangeSet:") ||
+		strings.HasPrefix(formatted, "Before:") {
+		// Use the API restore parameter to let the server resolve this
+		// For now, fall back to resolveRevisionNumber for simple numeric cases
+		return resolveRevisionNumber(unit.Slug, formatted)
+	}
+
+	// Try parsing as number
+	num, err := strconv.ParseInt(formatted, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not resolve revision '%s'", formatted)
+	}
+	return num, nil
+}
+
+// apiGetRevisionFromUUID fetches a revision by UUID.
+func apiGetRevisionFromUUID(revisionUUID string, unitID string) (*goclientnew.Revision, error) {
+	where := fmt.Sprintf("RevisionID = '%s'", revisionUUID)
+	revisions, err := apiListRevisions(selectedSpaceID, unitID, where, "RevisionNum", "")
+	if err != nil {
+		return nil, err
+	}
+	if len(revisions) == 0 {
+		return nil, fmt.Errorf("revision %s not found", revisionUUID)
+	}
+	return revisions[0].Revision, nil
 }

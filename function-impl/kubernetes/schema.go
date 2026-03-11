@@ -22,12 +22,17 @@ import (
 	"k8s.io/kubectl/pkg/util/openapi"
 )
 
-var schemaFinder *SchemaFinder
+var (
+	schemaFinder     *SchemaFinder
+	schemaFinderOnce sync.Once
+	schemaFinderErr  error
+)
 
 func InitSchemaFinder() error {
-	var err error
-	schemaFinder, err = NewSchemaFinder()
-	return err
+	schemaFinderOnce.Do(func() {
+		schemaFinder, schemaFinderErr = NewSchemaFinder()
+	})
+	return schemaFinderErr
 }
 
 type SchemaFinder struct {

@@ -72,6 +72,7 @@ func init() {
 	enableFilterFlag(functionExecCmd)
 	addStandardDisplayFlags(functionExecCmd)
 	enableWaitFlag(functionExecCmd)
+	enableDisplayMutationsFlag(functionExecCmd)
 	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionExecCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
@@ -205,6 +206,24 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		file = args[0]
 	}
+
+	// Save prior HeadMutationNums if displaying mutations
+	var priorHeadMutationNums map[string]priorUnitInfo
+	if displayMutations {
+		// Build effective WHERE clause
+		var effectiveWhere string
+		if len(unitIdentifiers) > 0 {
+			whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
+			if err != nil {
+				return err
+			}
+			effectiveWhere = whereClause
+		} else {
+			effectiveWhere = where
+		}
+		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, "")
+	}
+
 	resp, err := executeFunctionsFromFile(file, where, unitIdentifiers)
 	if err != nil {
 		return err
@@ -259,5 +278,15 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
+
+	// Display mutations if requested
+	if displayMutations {
+		execDesc := "function exec"
+		if file != "" && file != "-" {
+			execDesc = "function exec " + file
+		}
+		displayMutationsFromFunctionResponse(resp, dryRun, priorHeadMutationNums, execDesc)
+	}
+
 	return nil
 }

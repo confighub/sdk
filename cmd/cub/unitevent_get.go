@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -72,6 +74,7 @@ func displayUnitEvent(event *goclientnew.UnitEvent) {
 	table.Append([]string{"Result", result})
 	table.Append([]string{"Status", string(actionStatus(event.Status))})
 	table.Append([]string{"Created At", event.CreatedAt.String()})
+	table.Append([]string{"UnitEventNum", fmt.Sprintf("%v", event.UnitEventNum)})
 	table.Append([]string{"Terminated At", event.TerminatedAt.String()})
 	table.Append([]string{"Message", event.Message})
 

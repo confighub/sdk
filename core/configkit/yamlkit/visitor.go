@@ -478,8 +478,9 @@ func GetPathsAnyType(
 		case bool:
 			currentDataType = api.DataTypeBool
 		default:
-			// Invalid; strings supported in a dedicated function
-			return output, fmt.Errorf("type %T not supported", v)
+			// Non-scalar value (map, slice, etc.) - serialize as YAML
+			currentDataType = api.DataTypeYAML
+			currentValue = strings.TrimRight(currentDoc.String(), "\n")
 		}
 
 		// Apply type filtering based on dataType parameter

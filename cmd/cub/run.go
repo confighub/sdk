@@ -54,6 +54,7 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	runCmd.PersistentFlags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	runCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
+	runCmd.PersistentFlags().BoolVar(&displayMutations, "display-mutations", false, "display resource mutations")
 
 	RegisterFunctionsAsCobraCommands()
 
@@ -225,6 +226,12 @@ func RegisterFunctionsAsCobraCommands() {
 						},
 					}
 
+					// Save prior HeadMutationNums if displaying mutations
+					var priorHeadMutationNums map[string]priorUnitInfo
+					if displayMutations {
+						priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
+					}
+
 					invokeArgs := &invokeArgs{
 						Where:        effectiveWhere,
 						FilterID:     filterID,
@@ -292,6 +299,12 @@ func RegisterFunctionsAsCobraCommands() {
 							}
 						}
 					}
+
+					// Display mutations if requested
+					if displayMutations {
+						displayMutationsFromFunctionResponse(respMsgs, dryRun, priorHeadMutationNums, cmdDef.FunctionName)
+					}
+
 					return nil
 				},
 			}

@@ -84,6 +84,7 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 func init() {
 	addStandardGetFlags(unitGetCmd)
 	enableWebFlag(unitGetCmd)
+	enableDisplayMutationsFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
 	unitCmd.AddCommand(unitGetCmd)
@@ -220,6 +221,8 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		}
 
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
+		view.Append([]string{"Head Unit Action Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitActionNum)})
+		view.Append([]string{"Head Unit Event Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitEventNum)})
 		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResourcesFromExtended(unitDetails))})
 
 		if len(unitDetails.Unit.NeededPaths) > 0 {
@@ -231,12 +234,16 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		view.Render()
 
-		if len(*unitDetails.Unit.MutationSources) != 0 && verbose {
+		if len(*unitDetails.Unit.MutationSources) != 0 && (verbose || displayMutations) {
 			tprintRaw("")
 			tprintRaw("Mutation Sources:")
 			tprintRaw("-----------------")
-			// TODO: Make this prettier
-			displayJSON(unitDetails.Unit.MutationSources)
+			if displayMutations {
+				lookupMutationsUnitID = unitDetails.Unit.UnitID.String()
+				displayResourceMutationList(unitDetails.Unit.MutationSources, true, 0, "", "")
+			} else {
+				displayJSON(unitDetails.Unit.MutationSources)
+			}
 		}
 
 		if len(unitDetails.Unit.NeededPaths) > 0 && verbose {

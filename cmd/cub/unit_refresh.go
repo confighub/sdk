@@ -61,6 +61,7 @@ func init() {
 	addStandardDisplayFlags(unitRefreshCmd)
 	enableWhereFlag(unitRefreshCmd)
 	enableFilterFlag(unitRefreshCmd)
+	enableDisplayMutationsFlag(unitRefreshCmd)
 
 	// Bulk operation flags
 	unitRefreshCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk refresh (can be repeated or comma-separated)")
@@ -114,6 +115,12 @@ func runSingleUnitRefresh(unitSlug string) error {
 		return err
 	}
 
+	// Save prior HeadMutationNum for mutation display
+	priorHeadMutationNum := configUnit.HeadMutationNum
+	priorRevisionNum := configUnit.HeadRevisionNum
+	refreshUnitSlug := configUnit.Slug
+	priorData := configUnit.Data
+
 	params := &goclientnew.RefreshUnitParams{}
 	if unitRefreshArgs.dryRun {
 		dryRun := unitRefreshArgs.dryRun
@@ -128,7 +135,7 @@ func runSingleUnitRefresh(unitSlug string) error {
 	}
 
 	// Handle wait flag
-	if actionWait {
+	if actionWait || displayMutations {
 		// awaitCompletion will print a unit-centric message !quiet && !hasAlternativeOutput()
 		err = awaitCompletion("refresh", refreshRes.JSON200)
 		if err != nil {
@@ -150,6 +157,28 @@ func runSingleUnitRefresh(unitSlug string) error {
 	}
 	if yq != "" {
 		displayYQ(refreshRes.JSON200)
+	}
+
+	// Display mutations if requested
+	if displayMutations {
+		tprintRaw("")
+		if unitRefreshArgs.dryRun {
+			// For dry-run, get the refreshed config data and compute mutations
+			refreshedUnit, err := apiGetUnitInSpace(configUnit.UnitID.String(), configUnit.SpaceID.String(), "*")
+			if err != nil {
+				return err
+			}
+			lookupMutationsUnitID = configUnit.UnitID.String()
+			displayMutationsFromDryRun(priorData, refreshedUnit.Data, configUnit.SpaceID.String(), "refresh")
+		} else {
+			// For non-dry-run, get the updated unit and display mutations
+			updatedUnit, err := apiGetUnitInSpace(configUnit.UnitID.String(), configUnit.SpaceID.String(), "*")
+			if err != nil {
+				return err
+			}
+			priorRevision := fmt.Sprintf("%s/%d", refreshUnitSlug, priorRevisionNum)
+			displayMutationsForUnit(updatedUnit, priorHeadMutationNum, "refresh", priorRevision)
+		}
 	}
 
 	return nil

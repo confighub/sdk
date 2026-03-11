@@ -86,15 +86,17 @@ func getArgoCDConfig() argocdrenderer.Config {
 	return config
 }
 
-// disableAutoSyncInPayload parses the Application YAML from the payload,
-// disables autosync, re-serializes, and returns a modified payload.
-func disableAutoSyncInPayload(payload api.BridgeWorkerPayload) (api.BridgeWorkerPayload, error) {
+// prepareApplicationPayload parses the Application YAML from the payload,
+// disables autosync, adds refresh/hydrate annotations to trigger ArgoCD to
+// re-fetch sources from git, re-serializes, and returns a modified payload.
+func prepareApplicationPayload(payload api.BridgeWorkerPayload) (api.BridgeWorkerPayload, error) {
 	app, err := argocdrenderer.ParseApplication(payload.Data)
 	if err != nil {
 		return payload, fmt.Errorf("failed to parse Application: %w", err)
 	}
 
 	argocdrenderer.DisableAutoSync(app)
+	argocdrenderer.SetRefreshAnnotations(app)
 
 	jsonBytes, err := app.MarshalJSON()
 	if err != nil {
@@ -115,8 +117,8 @@ func (w *ArgoCDRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.B
 		return w.applyNonAuthoritative(wctx, payload)
 	}
 
-	// Authoritative: disable autosync and delegate to KubernetesBridgeWorker for SSA apply
-	modifiedPayload, err := disableAutoSyncInPayload(payload)
+	// Authoritative: disable autosync, add refresh annotations, and delegate to KubernetesBridgeWorker for SSA apply
+	modifiedPayload, err := prepareApplicationPayload(payload)
 	if err != nil {
 		wctx.SendStatus(newActionResult(
 			api.ActionStatusFailed,
@@ -208,6 +210,16 @@ func (w *ArgoCDRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContex
 		errorMessages = append(errorMessages, fmt.Sprintf(
 			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it.",
 			appNamespace, appName))
+	}
+
+	// Patch refresh/hydrate annotations to trigger ArgoCD to re-fetch sources from git
+	if err := argocdrenderer.PatchRefreshAnnotations(wctx.Context(), k8sClient, appName, appNamespace); err != nil {
+		wctx.SendStatus(newActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to patch refresh annotations on Application %s/%s: %v", appNamespace, appName, err),
+		))
+		return fmt.Errorf("failed to patch refresh annotations on Application %s/%s: %w", appNamespace, appName, err)
 	}
 
 	// Render manifests via ArgoCD API (Application already exists)
@@ -410,17 +422,8 @@ func (w *ArgoCDRendererWorker) watchForApplyAuthoritative(wctx api.BridgeWorkerC
 		), err)
 	}
 
-	// Parse objects from payload (the Application YAML with autosync disabled)
-	modifiedPayload, err := disableAutoSyncInPayload(payload)
-	if err != nil {
-		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultApplyWaitFailed,
-			err.Error(),
-		), err))
-	}
-
-	objects, err := parseObjects(modifiedPayload.Data)
+	// Parse objects from payload (already prepared with autosync disabled and refresh annotations by Apply)
+	objects, err := parseObjects(payload.Data)
 	if err != nil {
 		return backoff.Permanent(lib.SafeSendStatus(wctx, newActionResult(
 			api.ActionStatusFailed,

@@ -36,17 +36,23 @@ var _ api.WatchableWorker = (*ConfigMapBridgeWorker)(nil)
 
 // We also add a label so we can select all ConfigMaps for this Unit
 
+// Pruning is disabled for supported appliers.
+// TODO: Implement support in the Kubernetes bridge by removing the ConfigMap from the inventory.
+
 const configMapTemplateString = `apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{.Name}}
   namespace: {{.Namespace}}
   labels:
-    confighub.com/UnitSlug: {{.UnitSlug}}
+    confighub.com/UnitID: id{{.UnitID}}
   annotations:
     confighub.com/UnitSlug: {{.UnitSlug}}
     confighub.com/SpaceID: {{.SpaceID}}
     confighub.com/RevisionNum: "{{.RevisionNum}}"
+    argocd.argoproj.io/sync-options: Prune=false
+    kustomize.toolkit.fluxcd.io/prune: disabled
+immutable: true
 data:
   {{.DataName}}: |
 {{.ConfigData}}
@@ -55,6 +61,7 @@ data:
 type configMapTemplateArgs struct {
 	Name        string
 	Namespace   string
+	UnitID      string
 	UnitSlug    string
 	SpaceID     string
 	RevisionNum string
@@ -224,6 +231,7 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) {
 	args := &configMapTemplateArgs{
 		Name:        k8skit.K8sNormalizeName(payload.UnitSlug + "-" + nameSuffix),
 		Namespace:   namespace,
+		UnitID:      payload.UnitID.String(),
 		UnitSlug:    payload.UnitSlug,
 		SpaceID:     payload.SpaceID.String(),
 		RevisionNum: fmt.Sprintf("%d", payload.RevisionNum),

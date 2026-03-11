@@ -17,8 +17,7 @@ import (
 
 // There is just one set of pre-generated schemas for all executors and all handlers
 var (
-	schemasInitialized         bool
-	schemasMutex               sync.Mutex
+	schemasOnce                sync.Once
 	resourceListSchema         jsonschema.Schema
 	resourceInfoListSchema     jsonschema.Schema
 	attributeValueListSchema   jsonschema.Schema
@@ -28,45 +27,41 @@ var (
 )
 
 func InitTypeSchemas() {
-	schemasMutex.Lock()
-	defer schemasMutex.Unlock()
-	if schemasInitialized {
-		return
-	}
-	var err error
-	reflector := jsonschema.Reflector{}
-	resourceListSchema, err = reflector.Reflect(api.ResourceList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.ResourceList")
-	}
-	resourceInfoListSchema, err = reflector.Reflect(api.ResourceInfoList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.ResourceInfoList")
-	}
-	attributeValueListSchema, err = reflector.Reflect(api.AttributeValueList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.AttributeValueList")
-	}
-	validationResultListSchema, err = reflector.Reflect(api.ValidationResultList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.ValidationResultList")
-	}
-	yamlPayloadSchema, err = reflector.Reflect(api.YAMLPayload{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.YAMLPayload")
-	}
-	resourceMutationListSchema, err = reflector.Reflect(api.ResourceMutationList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.ResourceMutationList")
-	}
-	schemasInitialized = true
+	schemasOnce.Do(func() {
+		var err error
+		reflector := jsonschema.Reflector{}
+		resourceListSchema, err = reflector.Reflect(api.ResourceList{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.ResourceList")
+		}
+		resourceInfoListSchema, err = reflector.Reflect(api.ResourceInfoList{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.ResourceInfoList")
+		}
+		attributeValueListSchema, err = reflector.Reflect(api.AttributeValueList{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.AttributeValueList")
+		}
+		validationResultListSchema, err = reflector.Reflect(api.ValidationResultList{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.ValidationResultList")
+		}
+		yamlPayloadSchema, err = reflector.Reflect(api.YAMLPayload{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.YAMLPayload")
+		}
+		resourceMutationListSchema, err = reflector.Reflect(api.ResourceMutationList{})
+		if err != nil {
+			log.Errorf("couldn't get schema for api.ResourceMutationList")
+		}
+	})
 }
 
 func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	InitTypeSchemas()
 	registerGetResources(fh, converter, resourceProvider)
 	registerGetResourcesOfType(fh, converter, resourceProvider)
-	registerSetReferencesOfType(fh, converter, resourceProvider)
+	registerGetReferencesOfType(fh, converter, resourceProvider)
 	registerSetReferencesOfType(fh, converter, resourceProvider)
 	registerGetPlaceholders(fh, converter, resourceProvider)
 	registerGetPlaceholderMutations(fh, converter, resourceProvider)
