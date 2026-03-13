@@ -21,12 +21,49 @@ Build the example worker:
 
     go build
 
-Set up environment and run:
+### Running locally with `cub worker run`
 
-    export CONFIGHUB_WORKER_ID=...
-    export CONFIGHUB_WORKER_SECRET=...
-    export CONFIGHUB_URL=...
+The simplest way to run the example is with `cub worker run`, which automatically creates the worker and sets up the environment:
+
+    cub worker run --space $SPACE --executable ./kyverno my-kyverno-worker
+
+This will create the worker if it doesn't exist, set the required environment variables (`CONFIGHUB_WORKER_ID`, `CONFIGHUB_WORKER_SECRET`, `CONFIGHUB_URL`), and start the executable. The `kyverno` CLI must be in PATH.
+
+### Running directly with environment variables
+
+Alternatively, you can set up the environment manually:
+
+    eval "$(cub worker get-envs --space $SPACE my-kyverno-worker)"
     ./kyverno
+
+### Installing in a Kubernetes cluster
+
+To deploy the worker in a Kubernetes cluster, first build and push a container image:
+
+    docker build -f Dockerfile -t my-registry/kyverno-worker:latest .
+    docker push my-registry/kyverno-worker:latest
+
+Then install using `cub worker install`:
+
+    # Create the worker unit in ConfigHub
+    cub worker install --space $SPACE \
+      --unit kyverno-worker-unit \
+      --target $TARGET \
+      --image my-registry/kyverno-worker:latest \
+      my-kyverno-worker
+
+    # Apply the worker unit to the cluster
+    cub unit apply --space $SPACE kyverno-worker-unit
+
+    # Wait for the namespace and deployment, then install the secret
+    kubectl -n confighub wait --for=create deployment/my-kyverno-worker --timeout=120s
+    cub worker install --space $SPACE \
+      --export-secret-only \
+      -n confighub \
+      my-kyverno-worker 2>/dev/null | kubectl apply -f -
+
+    # Wait for the worker to be ready
+    kubectl -n confighub rollout status deployment/my-kyverno-worker --timeout=120s
 
 The worker connects to ConfigHub and registers the `vet-kyverno` function alongside the standard built-in functions.
 

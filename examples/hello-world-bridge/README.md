@@ -8,31 +8,60 @@ Log into ConfigHub with the CLI:
 
     cub auth login
 
-Once authenticated, create a Worker:
-
-    cub worker create hello-bridge
-
-Grab the Worker ID and Secret with:
-
-    cub worker get hello-bridge --include-secret
-
-Set the environment:
-
-    export CONFIGHUB_WORKER_ID=...
-    export CONFIGHUB_WORKER_SECRET=...
-    export EXAMPLE_BRIDGE_DIR=/tmp/confighub-example-bridge  # Optional: defaults to /tmp/confighub-example-bridge
-
-Create a the base directory and a test subdirectory (which will become a target):
-
-    mkdir -p /tmp/confighub-example-bridge/dev
-
 Build the example in this directory:
 
     go build
 
-Run the bridge:
+### Running locally with `cub worker run`
 
+The simplest way to run the example is with `cub worker run`, which automatically creates the worker and sets up the environment:
+
+    cub worker run --space $SPACE --executable ./hello-world-bridge hello-bridge
+
+This will create the worker if it doesn't exist, set the required environment variables (`CONFIGHUB_WORKER_ID`, `CONFIGHUB_WORKER_SECRET`, `CONFIGHUB_URL`), and start the executable.
+
+### Running directly with environment variables
+
+Alternatively, you can set up the environment manually:
+
+    eval "$(cub worker get-envs --space $SPACE hello-bridge)"
+    export EXAMPLE_BRIDGE_DIR=/tmp/confighub-example-bridge  # Optional: defaults to /tmp/confighub-example-bridge
     ./hello-world-bridge
+
+### Installing in a Kubernetes cluster
+
+To deploy the worker in a Kubernetes cluster, first build and push a container image:
+
+    docker build -f Dockerfile -t my-registry/hello-world-bridge:latest .
+    docker push my-registry/hello-world-bridge:latest
+
+Then install using `cub worker install`:
+
+    # Create the worker unit in ConfigHub
+    cub worker install --space $SPACE \
+      --unit hello-bridge-unit \
+      --target $TARGET \
+      --image my-registry/hello-world-bridge:latest \
+      hello-bridge
+
+    # Apply the worker unit to the cluster
+    cub unit apply --space $SPACE hello-bridge-unit
+
+    # Wait for the namespace and deployment, then install the secret
+    kubectl -n confighub wait --for=create deployment/hello-bridge --timeout=120s
+    cub worker install --space $SPACE \
+      --export-secret-only \
+      -n confighub \
+      hello-bridge 2>/dev/null | kubectl apply -f -
+
+    # Wait for the worker to be ready
+    kubectl -n confighub rollout status deployment/hello-bridge --timeout=120s
+
+### Verifying the worker
+
+Create a the base directory and a test subdirectory (which will become a target):
+
+    mkdir -p /tmp/confighub-example-bridge/dev
 
 It should connect to ConfigHub and display:
 

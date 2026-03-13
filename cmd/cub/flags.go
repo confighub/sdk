@@ -32,9 +32,11 @@ var noheader = false
 var webFlag = false
 var wait = true
 var actionWait = false
+var getWait = false
 var timeout string
 
 const DefaultTimeoutDuration = 10 * time.Minute
+const DefaultCreationTimeoutDuration = 30 * time.Second
 
 var annotation []string
 var label []string
@@ -227,6 +229,12 @@ func enableWaitFlag(cmd *cobra.Command) {
 func enableActionWaitFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&actionWait, "wait", false, "wait for completion")
 	cmd.Flags().StringVar(&timeout, "timeout", DefaultTimeoutDuration.String(), "completion timeout as a duration with units, such as 10s or 2m")
+}
+
+// enableGetWaitFlag is for get commands that may need to wait for resource creation
+func enableGetWaitFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&getWait, "wait", false, "wait for resource to be created")
+	cmd.Flags().StringVar(&timeout, "timeout", DefaultCreationTimeoutDuration.String(), "creation timeout as a duration with units, such as 10s or 2m")
 }
 
 func validateSpaceFlag(bulk bool) error {

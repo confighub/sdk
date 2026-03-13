@@ -8,27 +8,55 @@ Log into ConfigHub with the CLI:
 
     cub auth login
 
-Once authenticated, create a Worker:
-
-    cub worker create helloworld
-
-Grab the Worker ID and Secret with:
-
-    cub worker get helloworld --include-secret
-
-Set the environment:
-
-    export CONFIGHUB_WORKER_ID=...
-    export CONFIGHUB_WORKER_SECRET=...
-    export CONFIGHUB_URL=...
-
-The last one is only necessary if you're not using https://hub.confighub.com. Now build the app in this directory with
+Build the example in this directory:
 
     go build
 
-and run it with:
+### Running locally with `cub worker run`
 
+The simplest way to run the example is with `cub worker run`, which automatically creates the worker and sets up the environment:
+
+    cub worker run --space $SPACE --executable ./hello-world-function helloworld
+
+This will create the worker if it doesn't exist, set the required environment variables (`CONFIGHUB_WORKER_ID`, `CONFIGHUB_WORKER_SECRET`, `CONFIGHUB_URL`), and start the executable.
+
+### Running directly with environment variables
+
+Alternatively, you can set up the environment manually:
+
+    eval "$(cub worker get-envs --space $SPACE helloworld)"
     ./hello-world-function
+
+### Installing in a Kubernetes cluster
+
+To deploy the worker in a Kubernetes cluster, first build and push a container image:
+
+    docker build -f Dockerfile -t my-registry/hello-world-function:latest .
+    docker push my-registry/hello-world-function:latest
+
+Then install using `cub worker install`:
+
+    # Create the worker unit in ConfigHub
+    cub worker install --space $SPACE \
+      --unit helloworld-unit \
+      --target $TARGET \
+      --image my-registry/hello-world-function:latest \
+      helloworld
+
+    # Apply the worker unit to the cluster
+    cub unit apply --space $SPACE helloworld-unit
+
+    # Wait for the namespace and deployment, then install the secret
+    kubectl -n confighub wait --for=create deployment/helloworld --timeout=120s
+    cub worker install --space $SPACE \
+      --export-secret-only \
+      -n confighub \
+      helloworld 2>/dev/null | kubectl apply -f -
+
+    # Wait for the worker to be ready
+    kubectl -n confighub rollout status deployment/helloworld --timeout=120s
+
+### Verifying the worker
 
 It should connect to ConfigHub and get ready for action. Now create a target:
 

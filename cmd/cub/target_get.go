@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/confighub/sdk/cubapi"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -22,6 +23,9 @@ Examples:
 `+"```"+`
   # Get details about a target
   cub target get --space my-space --json my-target
+
+  # Wait for target to be created (e.g., by a worker registering)
+  cub target get --space my-space --wait my-target
 `+"```"+`
 `, ""),
 	RunE: targetGetCmdRun,
@@ -29,10 +33,15 @@ Examples:
 
 func init() {
 	addStandardGetFlags(targetGetCmd)
+	enableGetWaitFlag(targetGetCmd)
 	targetCmd.AddCommand(targetGetCmd)
 }
 
 func targetGetCmdRun(cmd *cobra.Command, args []string) error {
+	if getWait {
+		return targetGetWait(args[0])
+	}
+
 	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "")
 	if err != nil {
 		return err
@@ -40,6 +49,35 @@ func targetGetCmdRun(cmd *cobra.Command, args []string) error {
 
 	displayGetResults(targetDetails, displayTargetDetails)
 	return nil
+}
+
+func targetGetWait(slug string) error {
+	timeoutDuration := DefaultCreationTimeoutDuration
+	if timeout != "" {
+		d, err := time.ParseDuration(timeout)
+		if err != nil {
+			return fmt.Errorf("invalid timeout: %w", err)
+		}
+		timeoutDuration = d
+	}
+
+	deadline := time.Now().Add(timeoutDuration)
+	interval := 2 * time.Second
+
+	for {
+		targetDetails, err := apiGetTargetFromSlug(slug, selectedSpaceID, "")
+		if err == nil {
+			displayGetResults(targetDetails, displayTargetDetails)
+			return nil
+		}
+		if !cubapi.IsNotFoundError(err) {
+			return err
+		}
+		if time.Now().Add(interval).After(deadline) {
+			return fmt.Errorf("timed out waiting for target %s to be created", slug)
+		}
+		time.Sleep(interval)
+	}
 }
 
 func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {

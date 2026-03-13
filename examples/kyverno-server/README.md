@@ -33,14 +33,60 @@ Build the example worker:
 
     go build
 
-Set up environment and run:
+### Running locally with `cub worker run`
 
-    export CONFIGHUB_WORKER_ID=...
-    export CONFIGHUB_WORKER_SECRET=...
-    export CONFIGHUB_URL=...
+The simplest way to run the example is with `cub worker run`, which automatically creates the worker and sets up the environment:
+
+    cub worker run --space $SPACE \
+      --executable ./kyverno-server \
+      -e "KYVERNO_URL=https://localhost:9443" \
+      -e "KYVERNO_SKIP_TLS_VERIFY=true" \
+      my-kyverno-server
+
+This will create the worker if it doesn't exist, set the required environment variables (`CONFIGHUB_WORKER_ID`, `CONFIGHUB_WORKER_SECRET`, `CONFIGHUB_URL`), and start the executable.
+
+### Running directly with environment variables
+
+Alternatively, you can set up the environment manually:
+
+    eval "$(cub worker get-envs --space $SPACE my-kyverno-server)"
     export KYVERNO_URL=https://kyverno-svc.kyverno.svc:443
     export KYVERNO_SKIP_TLS_VERIFY=true  # for development
     ./kyverno-server
+
+### Installing in a Kubernetes cluster
+
+To deploy the worker in a Kubernetes cluster, first build and push a container image:
+
+    docker build -f Dockerfile -t my-registry/kyverno-server-worker:latest .
+    docker push my-registry/kyverno-server-worker:latest
+
+Then install using `cub worker install`:
+
+    # Create the worker unit in ConfigHub
+    cub worker install --space $SPACE \
+      --unit kyverno-server-unit \
+      --target $TARGET \
+      -n kyverno-worker \
+      --image my-registry/kyverno-server-worker:latest \
+      -e "KYVERNO_URL=https://kyverno-svc.kyverno.svc:443" \
+      -e "KYVERNO_SKIP_TLS_VERIFY=true" \
+      my-kyverno-server
+
+    # Apply the worker unit to the cluster
+    cub unit apply --space $SPACE kyverno-server-unit
+
+    # Wait for the namespace and deployment, then install the secret
+    kubectl -n kyverno-worker wait --for=create deployment/my-kyverno-server --timeout=120s
+    cub worker install --space $SPACE \
+      --export-secret-only \
+      -n kyverno-worker \
+      my-kyverno-server 2>/dev/null | kubectl apply -f -
+
+    # Wait for the worker to be ready
+    kubectl -n kyverno-worker rollout status deployment/my-kyverno-server --timeout=120s
+
+For a complete end-to-end demo, see [demo.sh](demo.sh).
 
 The worker connects to ConfigHub and registers the `vet-kyverno-server` function.
 

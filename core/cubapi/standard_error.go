@@ -51,6 +51,16 @@ func IsAPIError(err error, resp APIResponse) bool {
 	return false
 }
 
+// IsNotFoundError returns true if the error represents a 404 Not Found response
+// or a "not found" error from a slug lookup.
+func IsNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "HTTP 404") || strings.Contains(msg, "not found")
+}
+
 // InterpretErrorGeneric checks the response for any errors and returns an error if found.
 // If we found no non-nil JSON4xx or JSON5xx, presumably it is a 2xx success or client initiated termination.
 func InterpretErrorGeneric(err error, resp interface{}) error {

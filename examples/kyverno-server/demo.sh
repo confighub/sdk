@@ -89,17 +89,8 @@ echo "Waiting for k8s-worker deployment..."
 kubectl -n confighub rollout status deployment/"$K8S_WORKER" --timeout=120s
 
 echo "Waiting for target to be created by the server..."
-for i in $(seq 1 30); do
-  if cub target get --space "$SPACE" "$K8S_TARGET" &>/dev/null; then
-    echo "Target $K8S_TARGET is ready."
-    break
-  fi
-  if [ "$i" -eq 30 ]; then
-    echo "ERROR: Timed out waiting for target $K8S_TARGET"
-    exit 1
-  fi
-  sleep 2
-done
+cub target get --space "$SPACE" --wait --timeout 60s "$K8S_TARGET" &>/dev/null
+echo "Target $K8S_TARGET is ready."
 echo ""
 
 # --- Install Kyverno via ConfigHub -------------------------------------------
