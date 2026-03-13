@@ -174,7 +174,7 @@ spec:
 			require.NoError(t, err)
 
 			// Combine mutations
-			combined := api.AddMutations(firstMutations, secondMutations)
+			combined := yamlkit.AddMutations(firstMutations, secondMutations)
 
 			tt.validateResult(t, combined)
 		})
@@ -403,7 +403,7 @@ spec:
 			require.NoError(t, err)
 
 			// Subtract target changes from source changes
-			result := api.SubtractMutations(sourceMutations, targetMutations)
+			result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 			tt.validateResult(t, result)
 		})
@@ -796,7 +796,7 @@ spec:
 		require.NoError(t, err)
 
 		// Step 3: Subtract target changes from source changes
-		finalMutations := api.SubtractMutations(sourceMutations, targetMutations)
+		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Step 4: Apply final mutations to target
 		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
@@ -888,7 +888,7 @@ spec:
 		require.NoError(t, err)
 
 		// Subtract and patch
-		finalMutations := api.SubtractMutations(sourceMutations, targetMutations)
+		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
@@ -953,7 +953,7 @@ spec:
 		require.NoError(t, err)
 
 		// Subtract and patch
-		finalMutations := api.SubtractMutations(sourceMutations, targetMutations)
+		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
@@ -1058,7 +1058,7 @@ spec:
 		assert.True(t, hasImage, "Target should have image mutation")
 
 		// Subtract target changes from source
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result to the target
 		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
@@ -1153,7 +1153,7 @@ spec:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
@@ -1254,7 +1254,7 @@ spec:
 		_, hasCpu := targetMutations[0].PathMutationMap[cpuPath]
 		assert.True(t, hasCpu, "Target should have cpu mutation")
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// The resources delete should be subtracted because target modified a child path
 		// Check that the resources delete mutation is not in the result
@@ -1366,7 +1366,7 @@ spec:
 		_, targetCpu := targetMutations[0].PathMutationMap[cpuPath]
 		assert.True(t, targetCpu, "Target should have cpu mutation")
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Verify the result structure
 		require.Len(t, result, 1, "Should have one resource mutation")
@@ -1453,7 +1453,7 @@ spec:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result
 		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
@@ -1534,7 +1534,7 @@ metadata:
 		assert.True(t, sourceHasVersion, "Source should have version mutation")
 		assert.True(t, targetHasVersion, "Target should have version mutation")
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// The version path should be removed from result (Case 1 exact match)
 		if len(result) > 0 {
@@ -1605,7 +1605,7 @@ metadata:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := api.SubtractMutations(sourceMutations, targetMutations)
+		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply and verify target's annotations are preserved
 		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())

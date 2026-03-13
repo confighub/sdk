@@ -30,8 +30,10 @@ require (
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/confighub/sdk v0.0.0 // indirect
 	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
@@ -144,8 +146,10 @@ replace (
 	github.com/confighub/sdk => ../../core
 	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
 	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
 	github.com/confighub/sdk/configkit/hclkit => ../../configkit/hclkit
 	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
 	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
 	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit

@@ -22,7 +22,7 @@ func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.Confi
 				ResultName:  "passed",
 				Description: "True if no duplicate merge keys found, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,

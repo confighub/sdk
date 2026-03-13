@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/confighub/sdk/worker/api"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

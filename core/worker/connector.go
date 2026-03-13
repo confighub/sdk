@@ -17,9 +17,8 @@ import (
 
 	"context"
 
-	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/confighub/sdk/bridge-worker/lib"
-	funcApi "github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/worker/lib"
 	"github.com/confighub/sdk/function/executor"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 )
@@ -80,16 +79,9 @@ func (c *ConfighubConnector) Start() error {
 		bw = &NullBridgeWorker{}
 	}
 
-	var fw api.FunctionWorker
-	if c.functionExecutor != nil {
-		fw = &FunctionWorkerAdapter{executor: c.functionExecutor}
-	} else {
-		fw = &NullFunctionWorker{}
-	}
-
 	worker := lib.New(workerUrl, c.workerID, c.workerSecret).
 		WithBridgeWorker(bw).
-		WithFunctionWorker(fw)
+		WithFunctionExecutor(c.functionExecutor)
 
 	return worker.Start(context.Background())
 }
@@ -124,35 +116,4 @@ func (n *NullBridgeWorker) Finalize(wctx api.BridgeWorkerContext, payload api.Br
 
 func (n *NullBridgeWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	return nil
-}
-
-type NullFunctionWorker struct{}
-
-func (n *NullFunctionWorker) Info() api.FunctionWorkerInfo {
-	return api.FunctionWorkerInfo{}
-}
-
-func (n *NullFunctionWorker) Invoke(ctx api.FunctionWorkerContext, req funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
-	return funcApi.FunctionInvocationResponse{}, nil
-}
-
-type FunctionWorkerAdapter struct {
-	executor executor.FunctionExecutor
-}
-
-func (a *FunctionWorkerAdapter) Info() api.FunctionWorkerInfo {
-	return api.FunctionWorkerInfo{
-		SupportedFunctions: a.executor.RegisteredFunctions(),
-	}
-}
-
-func (a *FunctionWorkerAdapter) Invoke(workerCtx api.FunctionWorkerContext, request funcApi.FunctionInvocationRequest) (funcApi.FunctionInvocationResponse, error) {
-	resp, err := a.executor.Invoke(workerCtx.Context(), &request)
-	if err != nil {
-		return funcApi.FunctionInvocationResponse{}, err
-	}
-	if resp == nil {
-		return funcApi.FunctionInvocationResponse{}, nil
-	}
-	return *resp, nil
 }

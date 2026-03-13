@@ -12,7 +12,7 @@ The intent is that, like command-line tools and other API-based automation, Conf
 
 Many kinds of configuration data, such as Kubernetes resources and cloud resources serialized in some Infrastructure as Code format, have well defined, stable schemas, like APIs. Such data is well suited to be operated on by stable functions. Kustomize operates on Kubernetes resources based on the same principle.
 
-Functions are currently implemented for a number of configuration formats, including Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, and OpenTofu/HCL. See the [Configuration formats](#configuration-formats-other-than-kubernetesyaml) section for more details.
+Functions are currently implemented for a number of configuration formats, including Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, and OpenTofu/HCL. See the [Configuration formats](#configuration-formats-other-than-kubernetesyaml) section for more details.
 
 ## Authoring functions
 
@@ -453,6 +453,8 @@ The following configuration formats are supported, identified by their Toolchain
 - AppConfig/YAML — plain YAML application configuration (`ToolchainAppConfigYAML`)
 - AppConfig/TOML (`ToolchainAppConfigTOML`)
 - AppConfig/INI (`ToolchainAppConfigINI`)
+- AppConfig/JSON (`ToolchainAppConfigJSON`)
+- AppConfig/Env — env files with KEY=value lines (`ToolchainAppConfigEnv`)
 - OpenTofu/HCL (`ToolchainOpenTofuHCL`)
 - ConfigHub/YAML — internal ConfigHub YAML format (`ToolchainConfigHubYAML`)
 

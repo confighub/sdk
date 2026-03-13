@@ -12933,9 +12933,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
+            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
+            that handles the actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -13284,9 +13284,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
+            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
+            that handles the actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -13371,9 +13371,9 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap).
-            Each Target is associated with a specific BridgeWorker that handles the
-            actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
+            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
+            that handles the actual deployment actions (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -14812,7 +14812,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -20473,7 +20473,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -20813,7 +20813,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -26057,9 +26057,9 @@ components:
       description: Target represents a deployment target in ConfigHub. It defines
         where configuration should be applied, including the toolchain type (e.g.,
         Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-        AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each
-        Target is associated with a specific BridgeWorker that handles the actual
-        deployment actions (e.g. Apply, Destroy).
+        AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
+        OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
+        that handles the actual deployment actions (e.g. Apply, Destroy).
       properties:
         Annotations:
           additionalProperties:
@@ -26185,7 +26185,7 @@ components:
           description: ToolchainType specifies the type of the first/default toolchain
             supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
             "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML",
-            "AppConfig/INI".
+            "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env".
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
@@ -26708,7 +26708,8 @@ components:
         ToolchainType:
           description: ToolchainType specifies the type of toolchain for this unit.
             Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties",
-            "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
+            "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON",
+            "AppConfig/Env", "ConfigHub/YAML".
           type: string
           x-go-type-skip-optional-pointer: true
         UnitID:
@@ -27332,6 +27333,10 @@ components:
           $ref: '#/components/schemas/BridgeWorkerInfo'
         FunctionWorkerInfo:
           $ref: '#/components/schemas/FunctionWorkerInfo'
+        IsServerWorker:
+          description: If true, this is the server-hosted worker. Only one per organization.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
       type: object
   securitySchemes:
     bearerAuth:

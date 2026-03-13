@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -23,14 +22,14 @@ import (
 // ComputeMutations performs a structured diff between two YAML configurations (represented as
 // gaby.Container, which is a list of parsed YAML documents). It determines what changes were
 // made and records them in a way that can be accumulated over subsequent edits, using api.OffsetMutations
-// and api.AddMutations.
+// and AddMutations.
 //
 // ComputeMutations is currently used in three related ways:
 // 1. Diffing two revisions of the same unit to use with PatchMutations in a diff/patch (aka three-way merge) of
 //    a different unit or the same unit (for redo/rebase)
 // 2. Diffing a single change, by a mutating function or a configuration data update or refresh, and accumulating it
 //    with prior mutations to later use to set Predicates to enhance (1).
-// 3. Diffing revisions of two different units to use with api.SubtractMutations to enhance (1)
+// 3. Diffing revisions of two different units to use with SubtractMutations to enhance (1)
 //
 // Input:
 //   - previousParsedData: The "before" state (parsed YAML documents)
@@ -234,12 +233,12 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 	// by a patch. Example: a port in a Service is removed from a downstream unit and
 	// some part of that port spec is modified in the upstream unit. The next PatchMutations
 	// for upgrade would reinsert the port. We handle that by removing them from the mutations
-	// before they are patched with api.SubtractMutations and/or by selecting mutations eligible to
+	// before they are patched with SubtractMutations and/or by selecting mutations eligible to
 	// be patched, by setting the Predicate values.
 
 	// There's also the reciprocal issue of what to do in the case that a field is modified
 	// in a downstream unit and a block of configuration around it (e.g., a resource or a container)
-	// is removed from the upstream unit. For now, we will remove those deletions using api.SubtractMutations.
+	// is removed from the upstream unit. For now, we will remove those deletions using SubtractMutations.
 
 	// TODO: Decide what to do about embedded accessors
 
@@ -528,11 +527,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 	}
 }
 
-// FIXME: Remove this once all existing clones are converted to Aliases/AliasesWithoutScopes.
-const OriginalNameAnnotation = "confighub.com/OriginalName"
-
-var originalNamePath = "metadata.annotations." + EscapeDotsInPathSegment(OriginalNameAnnotation)
-
 // ComputeMutations performs a kind of diff between two configuration Units where it determines what
 // modifications were made at the resource/element level and at the path level. They are recorded in a
 // way that can be accumulated and updated over subsequent edits and transformations.
@@ -578,6 +572,13 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		modifiedResourceName := modifiedResourceInfo.ResourceName
 		modifiedResourceNameOnly := modifiedResourceInfo.ResourceNameWithoutScope
 		modifiedResourceID := modifiedResourceInfo.ResourceID
+
+		// When MatchByIDOnly is set and the resource has a ResourceID, only match by
+		// ResourceID, skipping name-based and fuzzy matching. This prevents immutable
+		// resources with hash-suffixed names (e.g., ConfigMaps) from being incorrectly
+		// matched to other versions of the same base resource.
+		matchByIDOnly := api.IsUUID(modifiedResourceID) &&
+			GetMutationOptions(modifiedDoc, resourceProvider) == MatchByIDOnly
 
 		// Check whether the "next" resource obviously matches in the previous doc list.
 		// If not, we need to search for it. We could make maps of type and name to index,
@@ -635,6 +636,11 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 					previousResourceNameOnly: {},
 				}
 				break
+			}
+
+			// When MatchByIDOnly is set, skip name-based and fuzzy matching.
+			if matchByIDOnly {
+				continue
 			}
 
 			// Exact name match
@@ -759,8 +765,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		}
 	}
 
-	// Unmatched previous resources are Deletes
-	// Any remaining unmatched resources were deletions.
+	// Unmatched previous resources are Deletes.
 	for minUnmatchedPreviousDocIndex < len(previousDocMatched) {
 		// Skip matched resources
 		if previousDocMatched[minUnmatchedPreviousDocIndex] {
@@ -773,6 +778,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		if err != nil {
 			return nil, err
 		}
+
 		previousResourceName := previousResourceInfo.ResourceName
 		previousResourceNameOnly := previousResourceInfo.ResourceNameWithoutScope
 		mutations = append(mutations, api.ResourceMutation{
@@ -862,54 +868,35 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 //   - Parent-first ordering: Ensures parent paths are applied before children
 //   - Graceful handling: Logs errors but continues processing other mutations
 func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider) (gaby.Container, error) {
-	// If mutationsPredicates is nil, then mutationPredicateMap will be empty.
-	// When multiple mutation sources exist for the same resource (e.g., one from
-	// clone and one from triggers), prefer the one with Predicate=true so that
-	// the resource is not incorrectly filtered out during upgrade.
-	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
+	// Build predicate index with prefer-predicate dedup: when multiple mutation sources
+	// exist for the same resource (e.g., one from clone and one from triggers), prefer
+	// the one with Predicate=true so the resource is not incorrectly filtered out.
+	predicateIdx := api.NewResourceMutationIndex(mutationsPredicates)
 	for i := range mutationsPredicates {
 		resourceInfo := mutationsPredicates[i].Resource
-		// ResourceNameWithoutScope is a new field so it may not be present in all cases.
 		if resourceInfo.ResourceNameWithoutScope == "" {
 			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
 		}
-		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		if existingIdx, exists := mutationPredicateMap[resourceInfoKey]; exists {
-			// Don't let a Predicate=false entry overwrite a Predicate=true entry
+		key := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
+		if existingIdx, exists := predicateIdx.NameMap[key]; exists {
 			if mutationsPredicates[existingIdx].ResourceMutationInfo.Predicate &&
 				!mutationsPredicates[i].ResourceMutationInfo.Predicate {
 				continue
 			}
 		}
-		mutationPredicateMap[resourceInfoKey] = i
-	}
-
-	mutationPatchMap := make(map[api.ResourceTypeAndName]int)
-	patchResourceIDMap := make(map[string]int)
-	for i := range mutationsPatch {
-		resourceInfo := mutationsPatch[i].Resource
-		if resourceInfo.ResourceNameWithoutScope == "" {
-			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
-		}
-		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		mutationPatchMap[resourceInfoKey] = i
+		predicateIdx.NameMap[key] = i
 		if api.IsUUID(resourceInfo.ResourceID) {
-			patchResourceIDMap[resourceInfo.ResourceID] = i
-		}
-	}
-
-	predicateResourceIDMap := make(map[string]int)
-	for i := range mutationsPredicates {
-		if api.IsUUID(mutationsPredicates[i].Resource.ResourceID) {
-			if existingIdx, exists := predicateResourceIDMap[mutationsPredicates[i].Resource.ResourceID]; exists {
+			if existingIdx, exists := predicateIdx.ResourceIDMap[resourceInfo.ResourceID]; exists {
 				if mutationsPredicates[existingIdx].ResourceMutationInfo.Predicate &&
 					!mutationsPredicates[i].ResourceMutationInfo.Predicate {
 					continue
 				}
 			}
-			predicateResourceIDMap[mutationsPredicates[i].Resource.ResourceID] = i
+			predicateIdx.ResourceIDMap[resourceInfo.ResourceID] = i
 		}
 	}
+
+	patchIdx := api.NewResourceMutationIndex(mutationsPatch)
 
 	// Track which patch mutations were matched to existing documents.
 	// Unmatched Add/Replace mutations need to be appended as new documents.
@@ -920,75 +907,24 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		if err != nil {
 			return parsedData, err
 		}
-		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)
 
-		// Try ResourceID-based predicate lookup first, fall back to name-based
-		mutationPredicateIndex, hasPredicate := 0, false
-		if api.IsUUID(docResourceInfo.ResourceID) {
-			mutationPredicateIndex, hasPredicate = predicateResourceIDMap[docResourceInfo.ResourceID]
-		}
-		if !hasPredicate {
-			mutationPredicateIndex, hasPredicate = mutationPredicateMap[resourceInfoKey]
-		}
+		// Find predicate for this document
+		mutationPredicateIndex, hasPredicate := predicateIdx.Find(*docResourceInfo, nil)
 
 		// Filter the patch.
 		if hasPredicate && !mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate {
-			slog.Info("patch filtered", "resource", resourceInfoKey)
+			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
 			continue
 		}
 
-		aliasInfo := api.ResourceInfo{
-			ResourceType:     docResourceInfo.ResourceType,
-			ResourceCategory: docResourceInfo.ResourceCategory,
+		// Find patch for this document, using predicate aliases as additional aliases
+		var predicateAliases map[api.ResourceName]struct{}
+		if hasPredicate {
+			predicateAliases = mutationsPredicates[mutationPredicateIndex].AliasesWithoutScopes
 		}
-		var aliasInfoKey api.ResourceTypeAndName
-
-		// FIXME: Remove this once all existing clones are converted to AliasesWithoutScopes.
-		// TODO: This assumes the unit may be a clone, in which case it may be
-		// patched from upstream. If the patch were from a clone to be applied
-		// upstream, we'd need to get this information and pass it in.
-		originalName, found, err := YamlSafePathGetValue[string](doc, api.ResolvedPath(originalNamePath), true)
-		if err != nil {
-			return parsedData, err
-		}
-		if found {
-			aliasInfo.ResourceName = api.ResourceName(originalName)
-			aliasInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(api.ResourceName(originalName))
-			aliasInfoKey = api.ResourceTypeAndNameFromResourceInfo(aliasInfo)
-		}
-
-		// Try ResourceID-based patch lookup first
-		mutationPatchIndex, ok := 0, false
-		if api.IsUUID(docResourceInfo.ResourceID) {
-			mutationPatchIndex, ok = patchResourceIDMap[docResourceInfo.ResourceID]
-		}
+		mutationPatchIndex, ok := patchIdx.Find(*docResourceInfo, predicateAliases)
 		if !ok {
-			mutationPatchIndex, ok = mutationPatchMap[resourceInfoKey]
-		}
-		if !ok {
-			// originalInfoKey might be "", but that's ok
-			mutationPatchIndex, ok = mutationPatchMap[aliasInfoKey]
-			if !ok {
-				// If present, mutationsPredicates is expected to have been generated from the mutations
-				// corresponding to the configuration data being patched. Therefore, it may
-				// contain the aliases for resources present in the configuration.
-				if hasPredicate {
-					// We may have already checked a couple of these, but just check them all.
-					for alias := range mutationsPredicates[mutationPredicateIndex].AliasesWithoutScopes {
-						// TODO: This doesn't work for resource type changes, like Deployment -> StatefulSet
-						// We don't need to set aliasInfo.ResourceName
-						aliasInfo.ResourceNameWithoutScope = alias
-						aliasInfoKey = api.ResourceTypeAndNameFromResourceInfo(aliasInfo)
-						mutationPatchIndex, ok = mutationPatchMap[aliasInfoKey]
-						if ok {
-							break
-						}
-					}
-				}
-				if !ok {
-					continue
-				}
-			}
+			continue
 		}
 
 		matchedPatchIndices[mutationPatchIndex] = true
@@ -1000,7 +936,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			valueString := resourcePatchMutation.Value
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
-				slog.Info("error parsing value for resource", "resource", string(resourceInfoKey), "error", err)
+				slog.Info("error parsing value for resource", "resource", string(api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)), "error", err)
 			}
 			parsedData[docIndex] = valueDoc
 			// Some paths also could have been modified
@@ -1017,42 +953,19 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			// Update at the resource level means some paths were modified.
 		}
 
-		// PathMutationMap is a map, which could be in arbitrary order.
-		// We should process parents before children, so we copy the map into an array
-		// and sort it.
-		patches := make([]*api.MutationMapEntry, len(mutationsPatch[mutationPatchIndex].PathMutationMap))
-		patchIndex := 0
-		for patchPath, patchMutation := range mutationsPatch[mutationPatchIndex].PathMutationMap {
-			patches[patchIndex] = &api.MutationMapEntry{
-				Path:         patchPath,
-				MutationInfo: &patchMutation,
-			}
-			patchIndex++
-		}
-		sort.Slice(patches, func(i, j int) bool {
-			return patches[i].Path < patches[j].Path
-		})
+		// Sort paths so parents are processed before children.
+		patches := api.SortedMutationMapEntries(mutationsPatch[mutationPatchIndex].PathMutationMap)
 
 		for i := range patches {
 			patchPath := api.ResolvedPath(ResolveAssociativeSegments(doc, string(patches[i].Path)))
 			patchMutation := patches[i].MutationInfo
-			// Check for patches that conflict with the patch.
+			// Check for patches that conflict with the predicate.
 			// TODO: Break down the patch.
 			if hasPredicate {
-				filtered := false
-				// Check all path prefixes in the map bottom up. We use gaby.DotPathToSlice to handle
-				// escaping and quoting, if any.
-				pathSegments := gaby.DotPathToSlice(string(patchPath))
-				for len(pathSegments) > 0 {
-					filteredPath := JoinPathSegments(pathSegments)
-					predicateMutation, hasFilter := mutationsPredicates[mutationPredicateIndex].PathMutationMap[api.ResolvedPath(filteredPath)]
-					if hasFilter && !predicateMutation.Predicate {
-						filtered = true
-						break
-					}
-					pathSegments = pathSegments[:len(pathSegments)-1]
-				}
-				if filtered {
+				// Walk up path ancestors to find if any predicate filters this path.
+				_, predicateMutation, hasFilter := api.FindAncestorPath(
+					mutationsPredicates[mutationPredicateIndex].PathMutationMap, patchPath)
+				if hasFilter && !predicateMutation.Predicate {
 					slog.Debug("path filtered", "path", string(patchPath))
 					continue
 				}
@@ -1225,41 +1138,320 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 	return err
 }
 
+// AddMutations merges newMutations into (existing) mutations and returns the result.
+// It's used to accumulate changes over sequential edits, creating a compiled history
+// of all modifications.
+//
+// Algorithm:
+//
+// 1. Process Each New Mutation
+//
+// For each mutation in newMutations:
+//
+// Resource Matching:
+//   - First tries to match by current ResourceTypeAndName
+//   - If not found, checks AliasesWithoutScopes to handle renamed resources
+//   - If still not found, appends as a new resource mutation
+//
+// Resource-Level Merge Rules:
+//
+//	| Existing Type    | New Type              | Result              |
+//	|------------------|-----------------------|---------------------|
+//	| Any              | None                  | Keep existing       |
+//	| Any              | Delete or Replace     | Replace with new    |
+//	| None             | Any (non-None)        | Replace with new    |
+//	| Delete           | Any (non-Delete)      | Change to Replace   |
+//	| Add/Update       | Add/Update            | Merge path mutations|
+//
+// 2. Path-Level Merge
+//
+// When merging Add/Update mutations, the path mutations are combined:
+//   - Exact path match: Update the value, preserving the original mutation type
+//     (except Delete → non-Delete becomes Replace)
+//   - New path is prefix of existing: Remove existing child paths (the new value supersedes them)
+//   - New path not found: Add it to the map.
+//
+// One implication of this approach is that a path and value might appear at the resource level
+// or in the path map at a higher level (path prefix), or even at multiple levels, and can be
+// then overridden by a value of a more specific path. The values need to be patched from least
+// specific to most specific in order to produce the resulting configuration data.
+//
+// 3. Alias Tracking
+//
+// Merges aliases from both mutations to track all names the resource has had.
+//
+// Key Behaviors:
+//   - Accumulative: Designed to be called repeatedly as changes occur
+//   - Last-write-wins for values: New values replace old values at the same path
+//   - Type preservation: Original mutation type is preserved (Add stays Add, Update stays Update)
+//   - Alias awareness: Handles resources that have been renamed between mutations
+func AddMutations(mutations, newMutations api.ResourceMutationList) api.ResourceMutationList {
+	idx := api.NewResourceMutationIndex(mutations)
+	for i := range newMutations {
+		mi, present := idx.Find(newMutations[i].Resource, newMutations[i].AliasesWithoutScopes)
+		if !present {
+			mutations = append(mutations, newMutations[i])
+			continue
+		}
+		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeNone {
+			continue
+		}
+		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete ||
+			newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeReplace ||
+			mutations[mi].ResourceMutationInfo.MutationType == api.MutationTypeNone {
+			mutations[mi] = newMutations[i]
+			continue
+		}
+		if mutations[mi].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+			mutations[mi] = newMutations[i]
+			mutations[mi].ResourceMutationInfo.MutationType = api.MutationTypeReplace
+			continue
+		}
+
+		// Update the resource name, which may have changed.
+		mutations[mi].Resource.ResourceName = newMutations[i].Resource.ResourceName
+		mutations[mi].Resource.ResourceNameWithoutScope = newMutations[i].Resource.ResourceNameWithoutScope
+		if mutations[mi].Aliases == nil {
+			mutations[mi].Aliases = make(map[api.ResourceName]struct{})
+		}
+		for alias := range newMutations[i].Aliases {
+			mutations[mi].Aliases[alias] = struct{}{}
+		}
+		if mutations[mi].AliasesWithoutScopes == nil {
+			mutations[mi].AliasesWithoutScopes = make(map[api.ResourceName]struct{})
+		}
+		for alias := range newMutations[i].AliasesWithoutScopes {
+			mutations[mi].AliasesWithoutScopes[alias] = struct{}{}
+		}
+
+		// Merge the path mutations. The overall MutationType, Add or Update or Replace, should remain the same.
+		// If newMutations contains a path that's a prefix of paths in mutations, we need to remove them.
+		// If the path matches, then we need to look at the existing MutationType.
+		// Otherwise we add the path.
+		// Process new paths sorted from least to most specific so that parent paths are
+		// processed before children, ensuring child cleanup is correct.
+		existingIdx := api.NewPathPrefixIndex(mutations[mi].PathMutationMap)
+		for _, entry := range api.SortedMutationMapEntries(newMutations[i].PathMutationMap) {
+			path := entry.Path
+			mutation := *entry.MutationInfo
+			// Exact match: update in place, preserving the original mutation type.
+			if existing, ok := mutations[mi].PathMutationMap[path]; ok {
+				mutationType := existing.MutationType
+				if mutationType == api.MutationTypeDelete &&
+					mutation.MutationType != api.MutationTypeDelete {
+					mutationType = api.MutationTypeReplace
+				}
+				mutations[mi].PathMutationMap[path] = api.MutationInfo{
+					MutationType: mutationType,
+					Index:        mutation.Index,
+					Predicate:    mutation.Predicate,
+					Value:        mutation.Value,
+				}
+			} else {
+				// New path: add it and remove any existing child paths it supersedes.
+				mutations[mi].PathMutationMap[path] = mutation
+				for _, childPath := range existingIdx.ChildPaths(path) {
+					delete(mutations[mi].PathMutationMap, childPath)
+				}
+			}
+		}
+	}
+	return mutations
+}
+
+// SubtractMutations removes mutations that overlap with subtractMutations from mutations.
+// It's used in three-way merging to ensure that changes made in a target unit take precedence
+// over changes from a source unit.
+//
+// Use Case:
+//
+// When merging source unit changes into a target unit:
+//   - Source: base → sourceEnd (upstream changes)
+//   - Target: base → target (local customizations)
+//   - Result: SubtractMutations(sourceMutations, targetMutations) gives changes that
+//     won't overwrite local customizations
+//
+// Both operands are expected to be mutation diffs produced by ComputeMutations.
+// ComputeMutations generates Add, Delete, Update, and None mutations (not Replace).
+// None means the resource was present but not changed. AddMutations is what converts
+// Delete followed by Add to Replace. Replace is handled here just in case, but not expected.
+// Update at the resource level has an empty Value - all values are in the PathMutationMap.
+//
+// Algorithm:
+//
+// 1. Resource Matching
+//
+// For each mutation, find corresponding subtraction mutation by:
+//   - Current ResourceTypeAndName
+//   - AliasesWithoutScopes from either mutation (handles renamed resources)
+//
+// 2. Resource-Level Subtraction
+//
+//	| Subtract Type | Mutation Type | Result                                     |
+//	|---------------|---------------|--------------------------------------------|
+//	| Delete        | Any           | Remove entirely (target deleted)           |
+//	| Replace       | Any           | Remove entirely (target redefined)         |
+//	| None          | Any           | Keep mutation (target didn't change it)    |
+//	| Any           | None          | Keep mutation (source didn't change it)    |
+//	| Update/Add    | Delete        | Remove (don't delete what target modified) |
+//	| Update/Add    | Update/Add    | Process path-level subtraction             |
+//
+// 3. Path-Level Subtraction
+//
+// For each path in the mutation's PathMutationMap:
+//   - Case 1 - Exact match: Path exists in subtractMutations → remove it
+//   - Case 2 - Subtract path is prefix: e.g., subtract has spec.containers.0,
+//     mutation has spec.containers.0.image → remove it (parent was changed)
+//   - Case 3 - Mutation path is prefix: e.g., mutation has spec.containers.0 (whole block),
+//     subtract has spec.containers.0.image → if the mutation is a Delete, skip it entirely
+//     (can't partially un-delete). Otherwise, keep the mutation and add the subtractMutation
+//     paths. PatchMutations processes paths from least specific to most specific, so the
+//     subtractMutation's more specific paths will override the mutation's value.
+//
+// Key Behaviors:
+//   - Target precedence: Changes in subtractMutations take priority
+//   - Alias awareness: Matches resources across renames
+//   - Partial expansion: Only expands paths as needed, keeping unaffected branches whole
+//   - Type conversion: If all paths are subtracted from an Update, it becomes None
+func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) api.ResourceMutationList {
+	subtractIdx := api.NewResourceMutationIndex(subtractMutations)
+
+	result := make(api.ResourceMutationList, 0, len(mutations))
+
+	for i := range mutations {
+		mutation := mutations[i]
+
+		si, found := subtractIdx.Find(mutation.Resource, mutation.AliasesWithoutScopes)
+		if !found {
+			// No matching subtraction, keep the mutation as is
+			result = append(result, mutation)
+			continue
+		}
+
+		subtractMutation := subtractMutations[si]
+
+		// Handle resource-level subtraction
+
+		// We expect both operands to be mutations diffs produced by ComputeMutations.
+		// ComputeMutations just generates Add, Delete, Update, and None mutations.
+		// None means that the resource was present, but not changed.
+		// It's AddMutations that converts Delete followed by Add to Replace and
+		// Add followed by Update to just Add. We handle Replace here just in case, but
+		// don't really expect to see it.
+		// Update at the resource level will have an empty Value -- all of the values will be
+		// associated with paths.
+
+		// If the resource was deleted in subtractMutations, don't include any changes to it
+		if subtractMutation.ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+			// Resource was deleted in target - don't include any source changes
+			continue
+		}
+
+		// If the resource was replaced in subtractMutations, remove it entirely
+		// (the target has completely redefined this resource)
+		if subtractMutation.ResourceMutationInfo.MutationType == api.MutationTypeReplace {
+			// Resource was replaced in target - don't include source changes
+			// Replace means the target deleted and re-added the resource.
+			continue
+		}
+
+		// Otherwise the resource was not deleted in the target
+
+		// Handle MutationType None
+		// in mutation - changes nothing, so it's safe to keep
+		// in subtractMutation - the target didn't override anything, so keep it
+		if mutation.ResourceMutationInfo.MutationType == api.MutationTypeNone ||
+			subtractMutation.ResourceMutationInfo.MutationType == api.MutationTypeNone {
+			result = append(result, mutation)
+			continue
+		}
+
+		// If the mutation is a Delete at resource level, and the subtraction is Update or Add,
+		// then the target has modified paths and the deletion should not be allowed.
+		if mutation.ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+			// Target modified the resource, don't delete it
+			continue
+		}
+
+		// If the resource was added or updated in subtractMutations and independently added,
+		// replaced, or updated in mutations, then merge the two.
+
+		// For Update at resource level, we need to filter out path mutations
+		// that were changed in the target
+		newMutation := api.ResourceMutation{
+			Resource:             mutation.Resource,
+			ResourceMutationInfo: mutation.ResourceMutationInfo,
+			PathMutationMap:      make(api.MutationMap),
+			Aliases:              mutation.Aliases,
+			AliasesWithoutScopes: mutation.AliasesWithoutScopes,
+		}
+
+		// Process each path mutation using sorted iteration and efficient prefix lookups.
+		subtractPrefixIdx := api.NewPathPrefixIndex(subtractMutation.PathMutationMap)
+		for _, entry := range api.SortedMutationMapEntries(mutation.PathMutationMap) {
+			path := entry.Path
+			pathMutation := *entry.MutationInfo
+
+			// Case 1: Exact match - subtract this path
+			if _, found := subtractMutation.PathMutationMap[path]; found {
+				continue
+			}
+
+			// Case 2: Check if a subtract path is an ancestor of the mutation path.
+			// e.g., subtract has spec.containers.0 and we have spec.containers.0.image
+			// In this case, the target changed a parent, so don't apply child changes.
+			// Walk up path segments doing map lookups: O(depth) instead of O(n).
+			if api.HasAncestorPath(subtractMutation.PathMutationMap, path) {
+				continue
+			}
+
+			// Case 3: Check if the mutation path is an ancestor of any subtract path.
+			// e.g., we have spec.containers.0 (a large block) and subtract has spec.containers.0.image
+			// Use the prefix index for O(log n) lookup.
+			childPaths := subtractPrefixIdx.ChildPaths(path)
+			if len(childPaths) > 0 {
+				// If the mutation is a Delete, we can't partially un-delete, so skip it entirely
+				if pathMutation.MutationType == api.MutationTypeDelete {
+					continue
+				}
+				// Keep the mutation path and add the subtractMutation paths that override it.
+				// Since PatchMutations processes paths from least specific to most specific,
+				// the subtractMutation's more specific paths will override the mutation's value.
+				newMutation.PathMutationMap[path] = pathMutation
+				for _, childPath := range childPaths {
+					newMutation.PathMutationMap[childPath] = subtractMutation.PathMutationMap[childPath]
+				}
+			} else {
+				// No child subtract paths, keep the mutation as-is
+				newMutation.PathMutationMap[path] = pathMutation
+			}
+		}
+
+		// If we removed all path mutations and the resource-level mutation was Update,
+		// convert to None
+		if len(newMutation.PathMutationMap) == 0 &&
+			(newMutation.ResourceMutationInfo.MutationType == api.MutationTypeUpdate) {
+			newMutation.ResourceMutationInfo.MutationType = api.MutationTypeNone
+		}
+
+		// Only add if there's something left
+		if newMutation.ResourceMutationInfo.MutationType != api.MutationTypeNone || len(result) > 0 {
+			result = append(result, newMutation)
+		}
+	}
+
+	return result
+}
+
 // FindMutationIndex looks up the mutation index for a specific resource and path
 // in a ResourceMutationList. It matches the resource by ResourceTypeAndName,
-// handling aliases and scope changes (same pattern as api.AddMutations).
+// handling aliases and scope changes (same pattern as AddMutations).
 // For the path, it walks up parent paths to find the most specific mutation index,
 // falling back to the resource-level index if no path-level match is found.
 // Returns the mutation index and true if found.
 func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.ResourceInfo, path api.ResolvedPath) (int64, bool) {
-	// Build lookup maps by ResourceTypeAndName and ResourceID
-	mutationMap := make(map[api.ResourceTypeAndName]int, len(mutationSources))
-	findResourceIDMap := make(map[string]int, len(mutationSources))
-	for i := range mutationSources {
-		resourceInfo := mutationSources[i].Resource
-		if resourceInfo.ResourceNameWithoutScope == "" {
-			_, resourceNameWithoutScope, _ := strings.Cut(string(resourceInfo.ResourceName), "/")
-			resourceInfo.ResourceNameWithoutScope = api.ResourceName(resourceNameWithoutScope)
-		}
-		mutationMap[api.ResourceTypeAndNameFromResourceInfo(resourceInfo)] = i
-		if api.IsUUID(resourceInfo.ResourceID) {
-			findResourceIDMap[resourceInfo.ResourceID] = i
-		}
-	}
-
-	// Try ResourceID-based lookup first
-	mi, found := 0, false
-	if api.IsUUID(resource.ResourceID) {
-		mi, found = findResourceIDMap[resource.ResourceID]
-	}
-	if !found {
-		// Fall back to name-based lookup
-		if resource.ResourceNameWithoutScope == "" {
-			_, resourceNameWithoutScope, _ := strings.Cut(string(resource.ResourceName), "/")
-			resource.ResourceNameWithoutScope = api.ResourceName(resourceNameWithoutScope)
-		}
-		mi, found = mutationMap[api.ResourceTypeAndNameFromResourceInfo(resource)]
-	}
+	idx := api.NewResourceMutationIndex(mutationSources)
+	mi, found := idx.Find(resource, nil)
 	if !found {
 		return 0, false
 	}

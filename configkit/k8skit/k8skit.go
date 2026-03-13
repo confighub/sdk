@@ -10,6 +10,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/gosimple/slug"
 	"golang.org/x/text/cases"
@@ -355,4 +356,8 @@ func (*K8sResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 
 func (*K8sResourceProviderType) DataType() api.DataType {
 	return api.DataTypeYAML
+}
+
+func (*K8sResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainKubernetesYAML
 }

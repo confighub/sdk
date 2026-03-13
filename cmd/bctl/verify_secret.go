@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/confighub/sdk/bridge-worker/token"
+	"github.com/confighub/sdk/worker/token"
 )
 
 var verifySecretCmd = &cobra.Command{

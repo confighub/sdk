@@ -27,7 +27,7 @@ func registerGetReferencesOfType(fh handler.FunctionRegistry, converter configki
 				ResultName:  "references",
 				Description: "Values of the references targeting the specified type",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,

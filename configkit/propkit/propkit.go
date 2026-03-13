@@ -8,6 +8,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
@@ -150,4 +151,8 @@ func (*PropertiesResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, re
 
 func (*PropertiesResourceProviderType) DataType() api.DataType {
 	return api.DataTypeProperties
+}
+
+func (*PropertiesResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainAppConfigProperties
 }

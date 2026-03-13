@@ -4,61 +4,14 @@
 package generic
 
 import (
-	"sync"
-
-	"github.com/labstack/gommon/log"
-	"github.com/swaggest/jsonschema-go"
-
 	"github.com/confighub/sdk/configkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
 )
 
-// There is just one set of pre-generated schemas for all executors and all handlers
-var (
-	schemasOnce                sync.Once
-	resourceListSchema         jsonschema.Schema
-	resourceInfoListSchema     jsonschema.Schema
-	attributeValueListSchema   jsonschema.Schema
-	validationResultListSchema jsonschema.Schema
-	yamlPayloadSchema          jsonschema.Schema
-	resourceMutationListSchema jsonschema.Schema
-)
-
-func InitTypeSchemas() {
-	schemasOnce.Do(func() {
-		var err error
-		reflector := jsonschema.Reflector{}
-		resourceListSchema, err = reflector.Reflect(api.ResourceList{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.ResourceList")
-		}
-		resourceInfoListSchema, err = reflector.Reflect(api.ResourceInfoList{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.ResourceInfoList")
-		}
-		attributeValueListSchema, err = reflector.Reflect(api.AttributeValueList{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.AttributeValueList")
-		}
-		validationResultListSchema, err = reflector.Reflect(api.ValidationResultList{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.ValidationResultList")
-		}
-		yamlPayloadSchema, err = reflector.Reflect(api.YAMLPayload{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.YAMLPayload")
-		}
-		resourceMutationListSchema, err = reflector.Reflect(api.ResourceMutationList{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.ResourceMutationList")
-		}
-	})
-}
-
 func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	InitTypeSchemas()
+	api.InitTypeSchemas()
 	registerGetResources(fh, converter, resourceProvider)
 	registerGetResourcesOfType(fh, converter, resourceProvider)
 	registerGetReferencesOfType(fh, converter, resourceProvider)
@@ -94,7 +47,6 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerGetDetails(fh, converter, resourceProvider)
 	registerUpsertResource(fh, converter, resourceProvider)
 	registerDeleteResource(fh, converter, resourceProvider)
-	RegisterComputeMutations(fh, converter, resourceProvider)
 	registerPatchMutations(fh, converter, resourceProvider)
 	registerReset(fh, converter, resourceProvider)
 	registerReplicate(fh, converter, resourceProvider)

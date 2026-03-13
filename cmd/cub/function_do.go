@@ -822,10 +822,16 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 								details += " " + detail
 							}
 							tprint("%v%s", payload.Passed, details)
-							tprintRaw("Attributes:")
+							if len(payload.FailedAttributes) > 0 {
+								tprintRaw("Attributes:")
+							}
 							for j := range payload.FailedAttributes {
-								tprint("%v %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
-									payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType)
+								description := ""
+								if payload.FailedAttributes[j].Details != nil {
+									description = payload.FailedAttributes[j].Details.Description
+								}
+								tprint("%v %s %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
+									payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType, description)
 							}
 						}
 					} else if outputRaw {

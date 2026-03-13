@@ -35,7 +35,7 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 				ResultName:  "passed",
 				Description: "True if all resources pass schema validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,

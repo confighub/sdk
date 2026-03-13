@@ -8,7 +8,7 @@ import (
 	"regexp"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/gommon/log"
+	"log/slog"
 	"github.com/swaggest/jsonschema-go"
 
 	"github.com/confighub/sdk/configkit"
@@ -22,11 +22,11 @@ func registerVetValues(fh handler.FunctionRegistry, converter configkit.ConfigCo
 	reflector := jsonschema.Reflector{}
 	validationResultSchema, err := reflector.Reflect(api.ValidationResult{})
 	if err != nil {
-		log.Errorf("couldn't get schema for api.ValidationResult")
+		slog.Error("couldn't get schema for api.ValidationResult")
 	}
 	valueFilterSchema, err := reflector.Reflect(api.ValueFilter{})
 	if err != nil {
-		log.Errorf("couldn't get schema for api.ValueFilter")
+		slog.Error("couldn't get schema for api.ValueFilter")
 	}
 	fh.RegisterFunction("vet-values", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/labstack/gommon/log"
+	"log/slog"
 	"github.com/swaggest/jsonschema-go"
 
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -510,11 +510,11 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	reflector := jsonschema.Reflector{}
 	validationResultSchema, err := reflector.Reflect(api.ValidationResult{})
 	if err != nil {
-		log.Errorf("couldn't get schema for api.ValidationResult")
+		slog.Error("couldn't get schema for api.ValidationResult")
 	}
 	valueFilterSchema, err := reflector.Reflect(api.ValueFilter{})
 	if err != nil {
-		log.Errorf("couldn't get schema for api.ValueFilter")
+		slog.Error("couldn't get schema for api.ValueFilter")
 	}
 	imageResourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImage, rp)
 	fh.RegisterFunction("vet-images", &handler.FunctionRegistration{
@@ -677,13 +677,15 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 	imageRegexp = regexp.MustCompile(imageRegexpString)
 	segmentNames := imageRegexp.SubexpNames()
 	if len(segmentNames) != 5 {
-		log.Fatalf("Image regexp doesn't contain exactly 4 segments: %d", len(segmentNames))
+		slog.Error("Image regexp doesn't contain exactly 4 segments", "count", len(segmentNames))
+		panic("Image regexp doesn't contain exactly 4 segments")
 	}
 
 	imageURIReferenceRegexp = regexp.MustCompile(imageURIReferenceRegexpString)
 	segmentNames = imageURIReferenceRegexp.SubexpNames()
 	if len(segmentNames) != 3 {
-		log.Fatalf("Image URI+reference regexp doesn't contain exactly 2 segments: %d", len(segmentNames))
+		slog.Error("Image URI+reference regexp doesn't contain exactly 2 segments", "count", len(segmentNames))
+		panic("Image URI+reference regexp doesn't contain exactly 2 segments")
 	}
 
 	for resourceType, containerPaths := range resourceTypeToContainersPaths {
@@ -952,7 +954,8 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 	dnsSubdomainRegexp = regexp.MustCompile(dnsSubdomainDomainRegexpString)
 	segmentNames = dnsSubdomainRegexp.SubexpNames()
 	if len(segmentNames) != 3 {
-		log.Fatalf("DNS subdomain+domain regexp doesn't contain exactly 2 segments: %d", len(segmentNames))
+		slog.Error("DNS subdomain+domain regexp doesn't contain exactly 2 segments", "count", len(segmentNames))
+		panic("DNS subdomain+domain regexp doesn't contain exactly 2 segments")
 	}
 
 	subdomainGetterFunctionInvocation := &api.FunctionInvocation{
@@ -1207,7 +1210,7 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, 
 							continue
 						}
 						if len(pairPaths) > 1 {
-							log.Error("Expected resolveAssociativePaths to return at most one result")
+							slog.Error("Expected resolveAssociativePaths to return at most one result")
 						}
 						pairPath := pairPaths[0]
 						if err := envs.DeleteP(string(pairPath.Path)); err != nil {
@@ -1495,7 +1498,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 		if !ok {
 			continue // Skip resource kinds we don't handle
 		}
-		log.Infof("traversing resource of type " + string(resourceType))
+		slog.Info("traversing resource", "resourceType", string(resourceType))
 
 		for _, podSpecPath := range podSpecPaths {
 			// For some of these attributes, we don't care whether or how they were set.
@@ -1507,7 +1510,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 				continue
 			}
 			if !hasPodSpec {
-				log.Infof("no pod spec")
+				slog.Info("no pod spec")
 
 				// Shouldn't happen, but be resilient
 				continue

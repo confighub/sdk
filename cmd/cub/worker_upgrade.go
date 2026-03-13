@@ -43,13 +43,15 @@ used is "worker".
 }
 
 var workerUpgradeArgs struct {
-	filename string
-	unitSlug string
+	filename  string
+	unitSlug  string
+	reference string
 }
 
 func init() {
 	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.filename, "filename", "", "local file containing worker configuration")
 	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.unitSlug, "unit", "", "unit slug containing worker configuration")
+	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.reference, "reference", "", "target image reference (e.g., :v1.0); overrides server version")
 	addSpaceFlags(workerUpgradeCmd)
 	enableWaitFlag(workerUpgradeCmd)
 
@@ -63,9 +65,14 @@ func workerUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("exactly one of --filename or --unit must be specified")
 	}
 
-	// Get the target image reference from API info
-	apiInfo := GetApiInfo()
-	targetImageReference := ":" + apiInfo.Build
+	// Get the target image reference: --reference flag overrides server version
+	var targetImageReference string
+	if workerUpgradeArgs.reference != "" {
+		targetImageReference = workerUpgradeArgs.reference
+	} else {
+		apiInfo := GetApiInfo()
+		targetImageReference = ":" + apiInfo.Build
+	}
 
 	if workerUpgradeArgs.filename != "" {
 		return upgradeWorkerInFile(workerUpgradeArgs.filename, targetImageReference)

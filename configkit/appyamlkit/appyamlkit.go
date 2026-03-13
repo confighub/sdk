@@ -8,6 +8,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 )
 
@@ -162,4 +163,8 @@ func (*AppConfigYAMLResourceProviderType) YAMLToNative(yamlData []byte) ([]byte,
 
 func (*AppConfigYAMLResourceProviderType) DataType() api.DataType {
 	return api.DataTypeYAML
+}
+
+func (*AppConfigYAMLResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainAppConfigYAML
 }

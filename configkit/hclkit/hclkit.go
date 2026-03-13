@@ -11,6 +11,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/gosimple/slug"
 	"golang.org/x/text/cases"
@@ -193,4 +194,8 @@ func (*HclResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceT
 
 func (*HclResourceProviderType) DataType() api.DataType {
 	return api.DataTypeHCL
+}
+
+func (*HclResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainOpenTofuHCL
 }

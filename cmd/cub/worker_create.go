@@ -40,11 +40,13 @@ var workerCreateArgs struct {
 
 var workerCreatePermissions []string
 var workerCreateOrgRole string
+var workerCreateIsServerWorker bool
 
 func init() {
 	addStandardCreateFlags(workerCreateCmd)
 	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	workerCreateCmd.Flags().StringVar(&workerCreateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
+	workerCreateCmd.Flags().BoolVar(&workerCreateIsServerWorker, "is-server-worker", false, "mark this worker as the server-hosted worker (only one per organization)")
 	workerCmd.AddCommand(workerCreateCmd)
 }
 
@@ -83,6 +85,13 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if workerCreateOrgRole != "" {
 		workerDetails.OrgRole = workerCreateOrgRole
+	}
+
+	if workerCreateIsServerWorker {
+		if workerDetails.ProvidedInfo == nil {
+			workerDetails.ProvidedInfo = &goclientnew.WorkerInfo{}
+		}
+		workerDetails.ProvidedInfo.IsServerWorker = true
 	}
 
 	workerDetails, err = apiCreateWorker(workerDetails, workerDetails.SpaceID)

@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -45,25 +44,20 @@ Here the provider types are case-insensitive and they can be comma-separated, li
 var workerRunArgs struct {
 	workerProviderTypes string
 	envs                []string
-	enableMultiplexer   bool
+	executable          string
 	daemon              bool
 }
 
 func init() {
 	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
-	workerRunCmd.Flags().BoolVar(&workerRunArgs.enableMultiplexer, "enable-multiplexer", true, "Enable multiplexer mode with prefixes and multi-worker support (default: true)")
+	workerRunCmd.Flags().StringVar(&workerRunArgs.executable, "executable", "", "Path to worker executable (overrides CONFIGHUB_WORKER_EXECUTABLE env var)")
 	workerRunCmd.Flags().BoolVarP(&workerRunArgs.daemon, "daemon", "d", false, "Run worker in background (daemon mode)")
 
 	workerCmd.AddCommand(workerRunCmd)
 }
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
-	// Auto-enable multiplexer if worker type contains comma
-	if strings.Contains(workerRunArgs.workerProviderTypes, ",") && !cmd.Flags().Changed("enable-multiplexer") {
-		workerRunArgs.enableMultiplexer = true
-	}
-
 	spaceID := uuid.MustParse(selectedSpaceID)
 	worker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
@@ -77,8 +71,11 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Binary must be placed in ~/.confighub/bin/cub-worker-run unless specified in env var
-	workerExecutable := os.Getenv("CONFIGHUB_WORKER_EXECUTABLE")
+	// Priority: --executable flag > CONFIGHUB_WORKER_EXECUTABLE env > default path
+	workerExecutable := workerRunArgs.executable
+	if workerExecutable == "" {
+		workerExecutable = os.Getenv("CONFIGHUB_WORKER_EXECUTABLE")
+	}
 	if workerExecutable == "" {
 		workerExecutable = filepath.Join(os.Getenv("HOME"), CONFIGHUB_DIR, "bin", "cub-worker-run")
 	}

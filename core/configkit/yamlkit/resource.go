@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/workerapi"
 )
 
 // This is not in a more general place because it is expected to be used after conversion of other
@@ -36,6 +37,7 @@ type ResourceProvider interface {
 	// numeric indices to wildcards for lookup. Returns ("", false) if no merge key
 	// is defined for the path.
 	MergeKeyForPath(resourceType api.ResourceType, path string) (string, bool)
+	GetToolchainType() workerapi.ToolchainType
 }
 
 type ResourceTypeToPathPrefixSetType map[api.ResourceType]map[string]struct{}
@@ -74,6 +76,10 @@ func GetResourceInfo(doc *gaby.YamlDoc, resourceProvider ResourceProvider) (*api
 		ResourceID:               resourceID,
 	}
 	return resourceInfo, nil
+}
+
+func GetToolchainPath(rp ResourceProvider) string {
+	return api.GetToolchainPath(rp.GetToolchainType())
 }
 
 type ResourceNameToCategoryTypesMap map[api.ResourceName][]api.ResourceCategoryType

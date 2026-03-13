@@ -24,13 +24,15 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/workerapi"
 )
 
-// FunctionProvider defines the interface for a toolchain that registers functions.
-type FunctionProvider interface {
-	RegisterFunctions(fh FunctionRegistry)
-	SetPathRegistry(fh FunctionRegistry)
-	GetToolchainPath() string
+// ToolchainProvider combines the ConfigConverter and ResourceProvider interfaces.
+// All built-in resource providers (k8skit, cubkit, etc.) implement both.
+type ToolchainProvider interface {
+	configkit.ConfigConverter
+	yamlkit.ResourceProvider
+	GetToolchainType() workerapi.ToolchainType
 }
 
 // FunctionRegistry defines the interface for registering functions.
@@ -38,18 +40,14 @@ type FunctionProvider interface {
 type FunctionRegistry interface {
 	RegisterFunction(functionName string, registration *FunctionRegistration) error
 	GetHandlerImplementation(functionName string) FunctionImplementation
-	SetPathRegistry(pathRegistry api.AttributeNameToResourceTypeToPathToVisitorInfoType)
 	GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType
 	GetAttributes() []api.AttributeName
-	SetConverter(converter configkit.ConfigConverter)
 	GetConverter() configkit.ConfigConverter
-	SetResourceProvider(resourceProvider yamlkit.ResourceProvider)
 	GetResourceProvider() yamlkit.ResourceProvider
 }
 
 type FunctionHandler struct {
 	functionMap      map[string]*FunctionRegistration
-	pathRegistry     api.AttributeNameToResourceTypeToPathToVisitorInfoType
 	converter        configkit.ConfigConverter
 	resourceProvider yamlkit.ResourceProvider
 }
@@ -57,10 +55,15 @@ type FunctionHandler struct {
 // Ensure FunctionHandler implements FunctionRegistry
 var _ FunctionRegistry = (*FunctionHandler)(nil)
 
-func NewFunctionHandler() *FunctionHandler {
+// NewFunctionHandler creates a new FunctionHandler with the given provider.
+// The provider supplies the converter and resource provider, and the
+// compute-mutations function is automatically registered.
+func NewFunctionHandler(provider ToolchainProvider) *FunctionHandler {
 	fh := &FunctionHandler{}
 	fh.functionMap = make(map[string]*FunctionRegistration)
-	fh.pathRegistry = make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
+	fh.converter = provider
+	fh.resourceProvider = provider
+	fh.registerComputeMutations()
 	return fh
 }
 
@@ -72,16 +75,8 @@ func (fh *FunctionHandler) GetHandlerImplementation(functionName string) Functio
 	return registration.Function
 }
 
-func (fh *FunctionHandler) SetConverter(converter configkit.ConfigConverter) {
-	fh.converter = converter
-}
-
 func (fh *FunctionHandler) GetConverter() configkit.ConfigConverter {
 	return fh.converter
-}
-
-func (fh *FunctionHandler) SetResourceProvider(resourceProvider yamlkit.ResourceProvider) {
-	fh.resourceProvider = resourceProvider
 }
 
 func (fh *FunctionHandler) GetResourceProvider() yamlkit.ResourceProvider {
@@ -244,7 +239,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 					return nil, errors.New("compute mutations returned invalid output")
 				}
 				// log.Debugf("%v", newMutations)
-				mutations = api.AddMutations(mutations, newMutations)
+				mutations = yamlkit.AddMutations(mutations, newMutations)
 				mutators = append(mutators, functionIndex)
 				serializedData = newSerializedData
 			}
@@ -598,7 +593,7 @@ func (fh *FunctionHandler) List(c echo.Context) error {
 
 func (fh *FunctionHandler) ListPaths(c echo.Context) error {
 	// TODO: pagination
-	return c.JSON(http.StatusOK, fh.pathRegistry) //nolint:wrapcheck // basic return
+	return c.JSON(http.StatusOK, fh.resourceProvider.GetPathRegistry()) //nolint:wrapcheck // basic return
 }
 
 func (fh *FunctionHandler) RegisterFunction(functionName string, registration *FunctionRegistration) error {
@@ -637,20 +632,16 @@ type FunctionRegistration struct {
 	Function FunctionImplementation `json:"-"` // implementation
 }
 
-// SetPathRegistry sets the path registry.
-func (fh *FunctionHandler) SetPathRegistry(pathRegistry api.AttributeNameToResourceTypeToPathToVisitorInfoType) {
-	fh.pathRegistry = pathRegistry
-}
-
-// GetPathRegistry returns the path registry.
+// GetPathRegistry returns the path registry from the resource provider.
 func (fh *FunctionHandler) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return fh.pathRegistry
+	return fh.resourceProvider.GetPathRegistry()
 }
 
 // GetAttributes returns the list of registered attribute names from the path registry.
 func (fh *FunctionHandler) GetAttributes() []api.AttributeName {
-	attributes := make([]api.AttributeName, 0, len(fh.pathRegistry))
-	for attrName := range fh.pathRegistry {
+	pathRegistry := fh.resourceProvider.GetPathRegistry()
+	attributes := make([]api.AttributeName, 0, len(pathRegistry))
+	for attrName := range pathRegistry {
 		attributes = append(attributes, attrName)
 	}
 	return attributes

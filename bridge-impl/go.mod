@@ -6,6 +6,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cockroachdb/errors v1.11.3
 	github.com/confighub/sdk v0.0.0
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
 	github.com/drone/envsubst/v2 v2.0.0-20210730161058-179042472c46
@@ -60,6 +61,7 @@ require (
 	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000 // indirect
@@ -228,8 +230,10 @@ require (
 replace (
 	github.com/confighub/sdk => ../core
 	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
 	github.com/confighub/sdk/configkit/hclkit => ../configkit/hclkit
 	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
 	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
 	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit

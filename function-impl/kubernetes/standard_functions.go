@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
+	"log/slog"
+
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
-	"github.com/labstack/gommon/log"
-	"github.com/swaggest/jsonschema-go"
 	"github.com/yannh/kubeconform/pkg/resource"
 	"github.com/yannh/kubeconform/pkg/validator"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
@@ -30,15 +30,7 @@ import (
 func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
 	generic.RegisterStandardFunctions(fh, rp, rp)
 
-	reflector := jsonschema.Reflector{}
-	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.AttributeValueList")
-	}
-	validationResultListSchema, err := reflector.Reflect(api.ValidationResultList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.ValidationResultList")
-	}
+	api.InitTypeSchemas()
 	// Override some functions with extended implementations
 	fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -47,7 +39,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				ResultName:  "path",
 				Description: "Resource paths containing placeholder values",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -66,7 +58,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				ResultName:  "passed",
 				Description: "True if no placeholders remain, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -101,7 +93,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				ResultName:  "matched",
 				Description: "True if filter passed for at least one resource, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -121,7 +113,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -141,7 +133,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -235,7 +227,7 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 	namespaceNbrs := kustomizeexcerpts.NbrSlice{}
 	err := yaml.Unmarshal([]byte(kustomizeexcerpts.NameReferenceFieldSpecs), &namespaceNbrs)
 	if err != nil {
-		log.Errorf("couldn't unmarshal NameReferenceFieldSpecs: %v", err)
+		slog.Error("couldn't unmarshal NameReferenceFieldSpecs", "error", err)
 	} else {
 		// Split the backreferences by type and also invert the backreferences to references
 		for _, nbr := range namespaceNbrs {
@@ -519,7 +511,7 @@ func addDescriptionToPathInfos(resourceType api.ResourceType, pathInfos api.Path
 	for k := range pathInfos {
 		schemaInfo, err := LookupPath(string(resourceType), string(pathInfos[k].Path))
 		if err != nil {
-			log.Errorf("failed to find schema info for path %s of group/version/kind %s: %v", string(pathInfos[k].Path), string(resourceType), err)
+			slog.Error("failed to find schema info for path", "path", string(pathInfos[k].Path), "gvk", string(resourceType), "error", err)
 		}
 		if err == nil && schemaInfo.Description != "" {
 			if pathInfos[k].Details == nil {
@@ -531,12 +523,6 @@ func addDescriptionToPathInfos(resourceType api.ResourceType, pathInfos api.Path
 	}
 }
 
-// TODO: Remove these once all originalName annotations are gone
-
-const OriginalNameAnnotation = "confighub.com/OriginalName"
-
-var originalNamePath = "metadata.annotations." + yamlkit.EscapeDotsInPathSegment(OriginalNameAnnotation)
-
 func makeK8sFnGetPlaceholders(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 		return k8sFnGetPlaceholders(rp, fArgs.ParsedData)
@@ -545,16 +531,7 @@ func makeK8sFnGetPlaceholders(rp *k8skit.K8sResourceProviderType) handler.Functi
 
 func k8sFnGetPlaceholders(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyString)
-	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
-	// Ignore those. They aren't a problem for apply.
-	filteredPaths := make(api.AttributeValueList, 0, len(paths))
-	for _, pathValue := range paths {
-		// There may be one of these for each resource in the unit. Remove them all.
-		if string(pathValue.Path) != originalNamePath {
-			filteredPaths = append(filteredPaths, pathValue)
-		}
-	}
-	paths = append(filteredPaths, yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyInt)...)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyInt)...)
 	return parsedData, paths, nil
 }
 
@@ -567,17 +544,8 @@ func makeK8sFnNoPlaceholders(rp *k8skit.K8sResourceProviderType) handler.Functio
 func k8sFnNoPlaceholders(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
 	paths := yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyString)
 	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyInt)...)
-	// OriginalName annotations can contain confighubplaceholder values for namespaces and/or names.
-	// Ignore those. They aren't a problem for apply.
-	filteredPaths := make(api.AttributeValueList, 0, len(paths))
-	for _, pathValue := range paths {
-		// There may be one of these for each resource in the unit. Remove them all.
-		if string(pathValue.Path) != originalNamePath {
-			filteredPaths = append(filteredPaths, pathValue)
-		}
-	}
 	result := api.ValidationResult{
-		Passed: len(filteredPaths) == 0,
+		Passed: len(paths) == 0,
 	}
 	return parsedData, result, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 	"gopkg.in/yaml.v3"
 )
@@ -155,6 +156,10 @@ func (*TOMLResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resource
 
 func (*TOMLResourceProviderType) DataType() api.DataType {
 	return api.DataTypeTOML
+}
+
+func (*TOMLResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainAppConfigTOML
 }
 
 // NativeToYAML converts TOML data to YAML format using native libraries.

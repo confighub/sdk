@@ -8,49 +8,28 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/handler"
-	"github.com/confighub/sdk/function-impl/appyaml"
-	"github.com/confighub/sdk/function-impl/confighub"
-	"github.com/confighub/sdk/function-impl/ini"
-	"github.com/confighub/sdk/function-impl/kubernetes"
-	"github.com/confighub/sdk/function-impl/opentofu"
-	"github.com/confighub/sdk/function-impl/properties"
-	"github.com/confighub/sdk/function-impl/toml"
+	funcimpl "github.com/confighub/sdk/function-impl"
 
 	"github.com/labstack/echo/v4"
 )
 
-type FunctionServer struct {
-	confighubHandler  *handler.FunctionHandler
-	kubernetesHandler *handler.FunctionHandler
-	propertiesHandler *handler.FunctionHandler
-	opentofuHandler   *handler.FunctionHandler
-	appyamlHandler    *handler.FunctionHandler
-	tomlHandler       *handler.FunctionHandler
-	iniHandler        *handler.FunctionHandler
-}
-
-func registerFunctionHandler(parent *echo.Group, h **handler.FunctionHandler, p handler.FunctionProvider) {
-	*h = handler.NewFunctionHandler()
-	p.RegisterFunctions(*h)
-	p.SetPathRegistry(*h)
-	group := parent.Group(p.GetToolchainPath())
-	setupToolchainRootAPI(group, *h)
-
-}
-
 func echoSetup(rootRouter *echo.Echo) {
-	s := &FunctionServer{}
+	exec := funcimpl.NewStandardExecutor()
 	apiRouter := rootRouter.Group("/function")
 	setupAPIRootAPI(apiRouter)
 
-	registerFunctionHandler(apiRouter, &s.confighubHandler, confighub.NewConfigHubRegistrar())
-	registerFunctionHandler(apiRouter, &s.kubernetesHandler, kubernetes.NewKubernetesRegistrar())
-	registerFunctionHandler(apiRouter, &s.propertiesHandler, properties.NewPropertiesRegistrar())
-	registerFunctionHandler(apiRouter, &s.appyamlHandler, appyaml.NewAppConfigYAMLRegistrar())
-	registerFunctionHandler(apiRouter, &s.tomlHandler, toml.NewTOMLRegistrar())
-	registerFunctionHandler(apiRouter, &s.iniHandler, ini.NewINIRegistrar())
-	registerFunctionHandler(apiRouter, &s.opentofuHandler, opentofu.NewOpenTofuRegistrar())
+	for toolchain := range exec.RegisteredFunctions() {
+		fh, ok := exec.GetHandler(toolchain)
+		if !ok {
+			continue
+		}
+		rp := fh.GetResourceProvider()
+		path := yamlkit.GetToolchainPath(rp)
+		group := apiRouter.Group(path)
+		setupToolchainRootAPI(group, fh)
+	}
 }
 
 func setupAPIRootAPI(apiRouter *echo.Group) {

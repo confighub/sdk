@@ -1,185 +1,84 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-// Package functions is the main entry point for the function executor.
-// It is responsible for registering functions and invoking them.
-
-// The executor currently supports the following toolchains:
-// - ConfigHub YAML
-// - Kubernetes YAML
-// - OpenTofu HCL
-// - AppConfig Properties
-// - AppConfig YAML
-// - AppConfig TOML
-// - AppConfig INI
-
-// Example:
+// Package impl is the main entry point for the function executor.
+// It provides NewStandardExecutor and NewStandardExecutorWithAttributes for
+// creating executors with all built-in toolchain functions registered.
 //
-//	func main() {
-//		executor := NewEmptyExecutor()
-//		executor.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
-//			FunctionSignature: api.FunctionSignature{
-//				FunctionName: "hello-world",
-//				FunctionType: api.FunctionTypeCustom,
-//			},
-//		})
-//	}
-
-// Once the executor is initialized, it can be used to invoke functions. The FunctionExecutor can
-// be used in conjunction with worker.ConfighubConnector to receive function invocations from ConfigHub.
+// For custom function executors that don't need all built-in functions,
+// use executor.NewEmptyExecutor() from the core executor package.
 package impl
 
 import (
-	"context"
-	"fmt"
-
+	"github.com/confighub/sdk/configkit/appyamlkit"
+	"github.com/confighub/sdk/configkit/cubkit"
+	"github.com/confighub/sdk/configkit/envkit"
+	"github.com/confighub/sdk/configkit/hclkit"
+	"github.com/confighub/sdk/configkit/inikit"
+	"github.com/confighub/sdk/configkit/jsonkit"
+	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/configkit/propkit"
+	"github.com/confighub/sdk/configkit/tomlkit"
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/function/executor"
 	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/function-impl/appjson"
+	"github.com/confighub/sdk/function-impl/appyaml"
+	"github.com/confighub/sdk/function-impl/confighub"
+	"github.com/confighub/sdk/function-impl/env"
 	"github.com/confighub/sdk/function-impl/generic"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/function-impl/ini"
+	"github.com/confighub/sdk/function-impl/kubernetes"
+	"github.com/confighub/sdk/function-impl/opentofu"
+	"github.com/confighub/sdk/function-impl/properties"
+	"github.com/confighub/sdk/function-impl/toml"
 )
 
-// implementation notes:
-// The executor (along with worker.ConfighubConnector) is currently a wrapper around other code in the public repo for the purpose of exploring
-// a clear and simple public API for custom function authoring and execution.
-// Some experimentation with the interface is expected and as well as some refactoring behind the scenes.
-
-type FunctionExecutor struct {
-	signatureRegistry map[workerapi.ToolchainType]map[string]api.FunctionSignature
-	functionRegistry  map[workerapi.ToolchainType]handler.FunctionHandler
-	resourceProviders map[workerapi.ToolchainType]yamlkit.ResourceProvider
+// toolchainSetup pairs a provider with its function registration function.
+type toolchainSetup struct {
+	provider   handler.ToolchainProvider
+	registerFn func(handler.FunctionRegistry)
 }
 
-// NewEmptyExecutor creates a new FunctionExecutor with no functions registered.
-func NewEmptyExecutor() *FunctionExecutor {
-	return &FunctionExecutor{
-		signatureRegistry: make(map[workerapi.ToolchainType]map[string]api.FunctionSignature),
-		functionRegistry:  make(map[workerapi.ToolchainType]handler.FunctionHandler),
-		resourceProviders: make(map[workerapi.ToolchainType]yamlkit.ResourceProvider),
-	}
-}
-
-// NewStandardExecutor creates a new FunctionExecutor with the standard functions registered.
-// This is a convenience function that creates a new executor with the standard functions registered
+// NewStandardExecutor creates a new FunctionExecutor with the standard functions registered
 // for all toolchains.
-func NewStandardExecutor() *FunctionExecutor {
-	executor := NewEmptyExecutor()
-
-	registrators := map[workerapi.ToolchainType]func(*handler.FunctionHandler){
-		workerapi.ToolchainConfigHubYAML:       RegisterConfigHub,
-		workerapi.ToolchainKubernetesYAML:      RegisterKubernetes,
-		workerapi.ToolchainOpenTofuHCL:         RegisterOpenTofu,
-		workerapi.ToolchainAppConfigProperties: RegisterProperties,
-		workerapi.ToolchainAppConfigYAML:       RegisterAppConfigYAML,
-		workerapi.ToolchainAppConfigTOML:       RegisterTOML,
-		workerapi.ToolchainAppConfigINI:        RegisterINI,
-	}
-
-	for toolchain, registrator := range registrators {
-		fh := handler.NewFunctionHandler()
-		registrator(fh)
-		executor.functionRegistry[toolchain] = *fh
-		executor.resourceProviders[toolchain] = fh.GetResourceProvider()
-		executor.signatureRegistry[toolchain] = make(map[string]api.FunctionSignature)
-		for name, registration := range fh.ListCore() {
-			executor.signatureRegistry[toolchain][name] = registration.FunctionSignature
-		}
-	}
-	return executor
-}
-
-func (e *FunctionExecutor) RegisterFunction(toolchain workerapi.ToolchainType, registration handler.FunctionRegistration) error {
-	if _, ok := e.signatureRegistry[toolchain]; !ok {
-		// if this is the first time we're registering a function for this toolchain,
-		// we need to initialize the signature registry for this toolchain
-		e.signatureRegistry[toolchain] = make(map[string]api.FunctionSignature)
-	}
-	if _, ok := e.signatureRegistry[toolchain][registration.FunctionSignature.FunctionName]; ok {
-		return fmt.Errorf("function %s already registered", registration.FunctionSignature.FunctionName)
-	}
-	e.signatureRegistry[toolchain][registration.FunctionSignature.FunctionName] = registration.FunctionSignature
-
-	functionHandler, ok := e.functionRegistry[toolchain]
-	if !ok {
-		// if this is the first time we're registering a function for this toolchain,
-		// we need to initialize the function handler for this toolchain
-		newHandler := handler.NewFunctionHandler()
-
-		// Registrators set converter and resource provider on the handler.
-		registrators := map[workerapi.ToolchainType]func(*handler.FunctionHandler){
-			workerapi.ToolchainConfigHubYAML:       RegisterConfigHub,
-			workerapi.ToolchainKubernetesYAML:      RegisterKubernetes,
-			workerapi.ToolchainOpenTofuHCL:         RegisterOpenTofu,
-			workerapi.ToolchainAppConfigProperties: RegisterProperties,
-			workerapi.ToolchainAppConfigYAML:       RegisterAppConfigYAML,
-			workerapi.ToolchainAppConfigTOML:       RegisterTOML,
-			workerapi.ToolchainAppConfigINI:        RegisterINI,
-		}
-		registrator, hasRegistrator := registrators[toolchain]
-		if !hasRegistrator {
-			return fmt.Errorf("no registrator found for toolchain %s", toolchain)
-		}
-		registrator(newHandler)
-
-		// compute-mutations is a required standard function that will be used during execution of
-		// any function registered with this handler. Therefore we need to register it here.
-		generic.RegisterComputeMutations(newHandler, newHandler.GetConverter(), newHandler.GetResourceProvider())
-		e.functionRegistry[toolchain] = *newHandler
-		e.resourceProviders[toolchain] = newHandler.GetResourceProvider()
-		functionHandler = *newHandler
-	}
-	functionHandler.RegisterFunction(registration.FunctionSignature.FunctionName, &registration)
-
-	return nil
-}
-
-// GetResourceProvider returns the ResourceProvider for the given toolchain type.
-func (e *FunctionExecutor) GetResourceProvider(toolchain workerapi.ToolchainType) (yamlkit.ResourceProvider, bool) {
-	rp, ok := e.resourceProviders[toolchain]
-	return rp, ok
-}
-
-// ResourceTypePathsEntry pairs a resource type with paths and optional getter/setter invocations.
-// Each entry corresponds to one call to yamlkit.RegisterPathsByAttributeName.
-// For non-built-in attributes, invocations default to get-<slug>/set-<slug> if nil.
-type ResourceTypePathsEntry struct {
-	ResourceType     api.ResourceType
-	Paths            api.PathToVisitorInfoType
-	GetterInvocation *api.FunctionInvocation
-	SetterInvocation *api.FunctionInvocation
-}
-
-// AttributeRegistration contains the information needed to register a dynamic attribute.
-// The AttributeName is used as the slug for generating getter/setter function names
-// (get-<name>, set-<name>).
-type AttributeRegistration struct {
-	AttributeName     api.AttributeName
-	ToolchainType     workerapi.ToolchainType
-	Description       string
-	ResourceTypePaths []ResourceTypePathsEntry
-	Parameters        []api.FunctionParameter
+func NewStandardExecutor() *executor.ConcreteFunctionExecutor {
+	return NewStandardExecutorWithAttributes(nil)
 }
 
 // NewStandardExecutorWithAttributes creates a new FunctionExecutor with the standard functions
 // registered, plus any dynamic attributes. Attributes are registered directly on the
-// FunctionHandler before it is stored, avoiding the map-copy issue.
-func NewStandardExecutorWithAttributes(attributes []AttributeRegistration) *FunctionExecutor {
-	executor := NewEmptyExecutor()
+// FunctionHandler before signatures are captured, avoiding the map-copy issue.
+func NewStandardExecutorWithAttributes(attributes []executor.AttributeRegistration) *executor.ConcreteFunctionExecutor {
+	exec := executor.NewEmptyExecutor()
 
-	registrators := map[workerapi.ToolchainType]func(*handler.FunctionHandler){
-		workerapi.ToolchainConfigHubYAML:       RegisterConfigHub,
-		workerapi.ToolchainKubernetesYAML:      RegisterKubernetes,
-		workerapi.ToolchainOpenTofuHCL:         RegisterOpenTofu,
-		workerapi.ToolchainAppConfigProperties: RegisterProperties,
-		workerapi.ToolchainAppConfigYAML:       RegisterAppConfigYAML,
-		workerapi.ToolchainAppConfigTOML:       RegisterTOML,
-		workerapi.ToolchainAppConfigINI:        RegisterINI,
+	cubRP := cubkit.NewConfigHubResourceProvider()
+	k8sRP := k8skit.NewK8sResourceProvider()
+	hclRP := hclkit.NewHclResourceProvider()
+	propRP := propkit.NewPropertiesResourceProvider()
+	appyamlRP := appyamlkit.NewAppConfigYAMLResourceProvider()
+	tomlRP := tomlkit.NewTOMLResourceProvider()
+	iniRP := inikit.NewINIResourceProvider()
+	jsonRP := jsonkit.NewJSONResourceProvider()
+	envRP := envkit.NewEnvResourceProvider()
+
+	setups := []toolchainSetup{
+		{cubRP, func(fh handler.FunctionRegistry) { confighub.RegisterFunctions(cubRP, fh) }},
+		{k8sRP, func(fh handler.FunctionRegistry) { kubernetes.RegisterFunctions(k8sRP, fh) }},
+		{hclRP, func(fh handler.FunctionRegistry) { opentofu.RegisterFunctions(hclRP, fh) }},
+		{propRP, func(fh handler.FunctionRegistry) { properties.RegisterFunctions(propRP, fh) }},
+		{appyamlRP, func(fh handler.FunctionRegistry) { appyaml.RegisterFunctions(appyamlRP, fh) }},
+		{tomlRP, func(fh handler.FunctionRegistry) { toml.RegisterFunctions(tomlRP, fh) }},
+		{iniRP, func(fh handler.FunctionRegistry) { ini.RegisterFunctions(iniRP, fh) }},
+		{jsonRP, func(fh handler.FunctionRegistry) { appjson.RegisterFunctions(jsonRP, fh) }},
+		{envRP, func(fh handler.FunctionRegistry) { env.RegisterFunctions(envRP, fh) }},
 	}
 
-	for toolchain, registrator := range registrators {
-		fh := handler.NewFunctionHandler()
-		registrator(fh)
+	for _, setup := range setups {
+		fh := exec.CreateAndRegisterHandler(setup.provider)
+		setup.registerFn(fh)
+		toolchain := setup.provider.GetToolchainType()
 
 		// Register dynamic attributes for this toolchain
 		for _, attr := range attributes {
@@ -250,24 +149,7 @@ func NewStandardExecutorWithAttributes(attributes []AttributeRegistration) *Func
 			}
 		}
 
-		executor.functionRegistry[toolchain] = *fh
-		executor.resourceProviders[toolchain] = fh.GetResourceProvider()
-		executor.signatureRegistry[toolchain] = make(map[string]api.FunctionSignature)
-		for name, registration := range fh.ListCore() {
-			executor.signatureRegistry[toolchain][name] = registration.FunctionSignature
-		}
+		exec.CaptureSignatures(toolchain)
 	}
-	return executor
-}
-
-func (e *FunctionExecutor) RegisteredFunctions() map[workerapi.ToolchainType]map[string]api.FunctionSignature {
-	return e.signatureRegistry
-}
-
-func (e *FunctionExecutor) Invoke(ctx context.Context, functionInvocation *api.FunctionInvocationRequest) (*api.FunctionInvocationResponse, error) {
-	handler, ok := e.functionRegistry[functionInvocation.ToolchainType]
-	if !ok {
-		return nil, fmt.Errorf("no handler found for toolchain %s", functionInvocation.ToolchainType)
-	}
-	return handler.InvokeCore(ctx, functionInvocation)
+	return exec
 }

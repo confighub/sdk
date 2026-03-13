@@ -24,7 +24,7 @@ func registerUpsertResource(fh handler.FunctionRegistry, converter configkit.Con
 					Required:         true,
 					Description:      "ResourceList containing the resource to upsert",
 					DataType:         api.DataTypeResourceList,
-					ValueConstraints: api.ValueConstraints{Schema: &resourceListSchema},
+					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceListSchema},
 				},
 				{
 					ParameterName: "resource-type",

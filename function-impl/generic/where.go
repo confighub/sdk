@@ -13,7 +13,7 @@ import (
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/third_party/gaby"
-	"github.com/labstack/gommon/log"
+	"log/slog"
 )
 
 func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []api.CustomStringComparator) (map[api.ResourceTypeAndName]bool, error) {
@@ -87,7 +87,7 @@ func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.Config
 				ResultName:  "matched",
 				Description: "True if filter passed for at least one resource, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultListSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
 			Validating:            true,
@@ -239,7 +239,7 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 			matchingResourcesForExpression := map[api.ResourceTypeAndName]bool{}
 			attribValues, ok := output.(api.AttributeValueList)
 			if !ok {
-				log.Errorf("couldn't convert output to api.AttributeValueList")
+				slog.Error("couldn't convert output to api.AttributeValueList")
 				multiErrs = append(multiErrs, fmt.Errorf("internal error"))
 				continue
 			}

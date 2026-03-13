@@ -11,7 +11,7 @@ import (
 	"maps"
 	"strings"
 
-	bridgeapi "github.com/confighub/sdk/bridge-worker/api"
+	bridgeapi "github.com/confighub/sdk/worker/api"
 	"github.com/confighub/sdk/cubapi"
 	api "github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/bridge-impl/helmutils"

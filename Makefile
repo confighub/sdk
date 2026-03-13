@@ -25,18 +25,24 @@ clean:
 	@rm -f ./cmd/bin/*
 	@rm -rf ./test/results
 
-# All sibling modules that need prep (mod download/tidy)
-SIBLING_MODULES = ./function-impl ./bridge-impl ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/bctl \
+# Sibling modules that contain tests
+TEST_MODULES = ./function-impl ./bridge-impl   \
 	./configkit/yqkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit \
-	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit
+	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
+	./configkit/jsonkit ./configkit/envkit
+CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/bctl
+EXAMPLE_MODULES = ./examples/hello-world-bridge ./examples/hello-world-function \
+	./examples/kube-score ./examples/kyverno ./examples/kyverno-server
+# All sibling modules that need prep (mod download/tidy)
+SIBLING_MODULES = $(TEST_MODULES) $(CMD_MODULES) $(EXAMPLE_MODULES)
 
 .PHONY: all-prep
 all-prep:
 	cd core && go mod download && go mod tidy
-	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && cd $$mod && go mod download && go mod tidy && cd $(CURDIR) ; done
+	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && (cd $$mod && go mod download && go mod tidy) ; done
 
 .PHONY: all-local
-all-local: all-prep build-cli build-funcexec build-worker ## Builds all the things locally (no docker) without tests or lints
+all-local: all-prep build-cli build-funcexec build-worker build-examples ## Builds all the things locally (no docker) without tests or lints
 
 .PHONY: all
 all: all-local ## Builds all the things, without tests or lints
@@ -73,19 +79,15 @@ else
 	-v -o $(CUB_CMD_ABS) .
 endif
 
-# Sibling modules that contain tests
-TEST_MODULES = ./function-impl ./bridge-impl \
-	./configkit/k8skit ./configkit/propkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit
-
 .PHONY: test
 test: ## Run golang tests
 ifdef CI
 	cd core && go test -v ./...
-	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && cd $$mod && go test -v ./... && cd $(CURDIR) ; done
+	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -v ./...) ; done
 else
 	mkdir -p ./test/results
 	cd core && gotestsum --junitfile ../test/results/public-unit-tests.xml -- -race -coverprofile=../test/results/public-cover.out -v ./...
-	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && cd $$mod && go test -race -v ./... && cd $(CURDIR) ; done
+	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -race -v ./...) ; done
 endif
 
 .PHONY: cover
@@ -98,6 +100,10 @@ endif
 .PHONY: build-worker
 build-worker: ## Build bridge worker
 	$(MAKE) -C ./bridge-impl all
+
+.PHONY: build-examples
+build-examples: ## Build example workers
+	@for mod in $(EXAMPLE_MODULES); do echo "=== Building $$mod ===" && (cd $$mod && go build ./...) ; done
 
 .PHONY: build-funcexec
 build-funcexec: ## Build standalone function execuctor and its CLI

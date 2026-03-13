@@ -9,18 +9,17 @@ import (
 	"log"
 	"os"
 
-	funcimpl "github.com/confighub/sdk/function-impl"
+	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/function/executor"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/worker"
 	"github.com/confighub/sdk/workerapi"
 )
 
 func main() {
-	// Use the following instead if you want an empty executor with just the custom function registered:
-	// executor := funcimpl.NewEmptyExecutor()
-
-	executor := funcimpl.NewStandardExecutor()
-	executor.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
+	exec := executor.NewEmptyExecutor()
+	exec.RegisterToolchain(k8skit.NewK8sResourceProvider())
+	exec.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
 		FunctionSignature: GetHelloWorldFunctionSignature(),
 		Function:          HelloWorldFunction,
 	})
@@ -29,7 +28,7 @@ func main() {
 		WorkerID:         os.Getenv("CONFIGHUB_WORKER_ID"),
 		WorkerSecret:     os.Getenv("CONFIGHUB_WORKER_SECRET"),
 		ConfigHubURL:     os.Getenv("CONFIGHUB_URL"),
-		FunctionExecutor: executor,
+		FunctionExecutor: exec,
 	})
 
 	if err != nil {

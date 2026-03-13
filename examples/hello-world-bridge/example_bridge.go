@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/confighub/sdk/worker/api"
 	"github.com/confighub/sdk/workerapi"
 )
 

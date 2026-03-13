@@ -32,8 +32,11 @@ The available ProviderTypes are:
 
 - ConfigHub
 - Kubernetes
+- ConfigMapRenderer
+- ArgoCDRenderer
+- FluxRenderer
+- ArgoCDOCI
 - OpenTofu/AWS
-- ConfigMap
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 
@@ -51,7 +54,7 @@ See the worker guide (https://docs.confighub.com/guide/workers/) for more detail
 }
 
 var workerInstallArgs struct {
-  workerProviderTypes string
+	workerProviderTypes string
 	envs                []string
 	export              bool
 	includeSecret       bool
@@ -219,7 +222,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		"apiVersion": "rbac.authorization.k8s.io/v1",
 		"kind":       "ClusterRoleBinding",
 		"metadata": map[string]interface{}{
-			"name": "confighub-worker-admin",
+			"name": fmt.Sprintf("%s-%s-admin", namespace, workerInstallArgs.serviceAccount),
 		},
 		"roleRef": map[string]interface{}{
 			"apiGroup": "rbac.authorization.k8s.io",

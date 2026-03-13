@@ -10,8 +10,7 @@ import (
 	"github.com/confighub/sdk/function/api"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/third_party/gaby"
-	"github.com/labstack/gommon/log"
-	"github.com/swaggest/jsonschema-go"
+	"log/slog"
 )
 
 func registerGetPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
@@ -31,7 +30,7 @@ func registerGetPath(fh handler.FunctionRegistry, converter configkit.ConfigConv
 				ResultName:  "path",
 				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -83,7 +82,7 @@ func registerGetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 				ResultName:  "path",
 				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -182,7 +181,7 @@ func registerGetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 				ResultName:  "path",
 				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -281,7 +280,7 @@ func registerGetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 				ResultName:  "path",
 				Description: "Value of the specified attribute path",
 				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &attributeValueListSchema,
+				Schema:      &api.AttributeValueListSchema,
 			},
 			Mutating:              false,
 			Validating:            false,
@@ -431,12 +430,6 @@ func RegisterPathSetterAndGetter(
 
 	resourceTypes := yamlkit.ResourceTypesForAttribute(attributeName, resourceProvider)
 
-	reflector := jsonschema.Reflector{}
-	attributeValueListSchema, err := reflector.Reflect(api.AttributeValueList{})
-	if err != nil {
-		log.Errorf("couldn't get schema for api.AttributeValueList")
-	}
-
 	if defaults {
 		// Defaults mode: getter returns any type, setter takes no value parameter,
 		// and a vet- function validates current values match defaults.
@@ -454,7 +447,7 @@ func RegisterPathSetterAndGetter(
 			ResultName:  name,
 			Description: description,
 			OutputType:  api.OutputTypeAttributeValueList,
-			Schema:      &attributeValueListSchema,
+			Schema:      &api.AttributeValueListSchema,
 		}
 		getterSignature := &api.FunctionSignature{
 			FunctionName:          "get-" + name,
@@ -507,10 +500,6 @@ func RegisterPathSetterAndGetter(
 			vetParameters[i] = parameters[i]
 			vetParameters[i].Description += "vet"
 		}
-		validationResultSchema, err := reflector.Reflect(api.ValidationResult{})
-		if err != nil {
-			log.Errorf("couldn't get schema for api.ValidationResult")
-		}
 		vetSignature := &api.FunctionSignature{
 			FunctionName: "vet-" + name,
 			Parameters:   vetParameters,
@@ -518,7 +507,7 @@ func RegisterPathSetterAndGetter(
 				ResultName:  "passed",
 				Description: "True if all defaults are correctly set, false otherwise",
 				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &validationResultSchema,
+				Schema:      &api.ValidationResultListSchema,
 			},
 			Validating:            true,
 			Hermetic:              true,
@@ -573,7 +562,7 @@ func RegisterPathSetterAndGetter(
 		ResultName:  setterParameters[valueParameter].ParameterName,
 		Description: setterParameters[valueParameter].Description,
 		OutputType:  api.OutputTypeAttributeValueList,
-		Schema:      &attributeValueListSchema,
+		Schema:      &api.AttributeValueListSchema,
 	}
 	getterSignature := &api.FunctionSignature{
 		FunctionName:          "get-" + name,
@@ -614,7 +603,7 @@ func RegisterPathSetterAndGetter(
 		}
 	default:
 		// Not supported
-		log.Error("unsupported setter/getter data type " + string(dataType))
+		slog.Error("unsupported setter/getter data type", "dataType", string(dataType))
 		return
 	}
 	if addSetter {

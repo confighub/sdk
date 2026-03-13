@@ -115,14 +115,14 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 	}
 
 	// Build the validation result with failed attributes.
-	state := &kyvernoValidationState{passed: false}
+	result := api.ValidationResultFalse
 
 	// Build a resource info map for path lookups.
 	resourceInfoMap := buildResourceInfoMap(parsedData, rp)
 
 	for _, f := range failures {
 		detail := fmt.Sprintf("policy %q rule %q failed: %s", f.policyName, f.ruleName, f.message)
-		state.details = append(state.details, detail)
+		result.Details = append(result.Details, detail)
 
 		path := ""
 		if f.path != "" {
@@ -144,20 +144,10 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 				},
 			},
 		}
-		state.failedAttributes = append(state.failedAttributes, failedAttr)
+		result.FailedAttributes = append(result.FailedAttributes, failedAttr)
 	}
 
-	failureResult := api.ValidationResultFalse
-	failureResult.Details = state.details
-	failureResult.FailedAttributes = state.failedAttributes
-	return parsedData, failureResult, nil
-}
-
-// kyvernoValidationState accumulates validation results.
-type kyvernoValidationState struct {
-	passed           bool
-	details          []string
-	failedAttributes api.AttributeValueList
+	return parsedData, result, nil
 }
 
 // kyvernoFailure represents a parsed failure from kyverno CLI output.

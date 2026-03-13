@@ -24,9 +24,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/confighub/sdk/bridge-worker/api"
-	"github.com/confighub/sdk/bridge-impl"
-	"github.com/confighub/sdk/bridge-worker/lib"
+	"github.com/confighub/sdk/bridge-impl/argocd"
+	argocdrenderer "github.com/confighub/sdk/bridge-impl/argocd-renderer"
+	"github.com/confighub/sdk/bridge-impl/configmap"
+	"github.com/confighub/sdk/bridge-impl/confighub"
+	"github.com/confighub/sdk/bridge-impl/flux"
+	fluxrenderer "github.com/confighub/sdk/bridge-impl/flux-renderer"
+	"github.com/confighub/sdk/bridge-impl/kubernetes"
+	"github.com/confighub/sdk/bridge-impl/opentofu"
+	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/worker/lib"
+	funcimpl "github.com/confighub/sdk/function-impl"
 )
 
 var rootCmd = &cobra.Command{
@@ -94,11 +102,13 @@ var rootArgs struct {
 	inCluster              bool
 	authMethod             string // "kubernetes", "cloud", "docker-config", "keychain"
 	kubernetesSecretPath   string
-	enableMultiplexer      bool // Enable new multiplexer mode with prefixes
-	gracePeriodDelay       int  // Delay in seconds after SIGTERM before starting shutdown
+	gracePeriodDelay int // Delay in seconds after SIGTERM before starting shutdown
 	// autoRefresh  bool
 	enableFluxOCI bool
 }
+
+// A single shared standard executor for all provider types.
+var standardExecutor = funcimpl.NewStandardExecutor()
 
 func init() {
 	url := defaultConfighubURL
@@ -143,11 +153,6 @@ func init() {
 		inCluster = true
 	}
 
-	enableMultiplexer := true
-	if os.Getenv("ENABLE_MULTIPLEXER") == "false" {
-		enableMultiplexer = false
-	}
-
 	gracePeriodDelay := 10 // default 10 seconds
 	if gpd := os.Getenv("GRACE_PERIOD_DELAY"); gpd != "" {
 		if delay, err := strconv.Atoi(gpd); err == nil && delay >= 0 {
@@ -161,11 +166,10 @@ func init() {
 	}
 	if rootArgs.enableFluxOCI {
 		availableBridgeWorkers[LowerProviderTypeFluxOCIWriter] = fluxOCIWorker
-		availableFunctionWorkers[LowerProviderTypeFluxOCIWriter] = []api.FunctionWorker{k8sFunctionWorker}
 	}
 
 	workerProviderTypesStr := ""
-	for wt := range availableFunctionWorkers {
+	for wt := range availableBridgeWorkers {
 		workerProviderTypesStr += "," + wt
 	}
 	workerProviderTypesStr = strings.TrimPrefix(workerProviderTypesStr, ",")
@@ -191,20 +195,19 @@ func init() {
 		rootCmd.PersistentFlags().StringVar(&rootArgs.kubernetesSecretPath, "kubernetes-secret-path", kubernetesSecretPath, "Path to the Kubernetes secret mounted as a volume. For use with k8s auth-method and FluxOCIWorker (KUBERNETES_SECRET_PATH)")
 	}
 
-	rootCmd.PersistentFlags().BoolVar(&rootArgs.enableMultiplexer, "enable-multiplexer", enableMultiplexer, "Enable multiplexer mode with prefixes and multi-worker support (default: true, ENABLE_MULTIPLEXER)")
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
 
 // These are lowercase to make the provider type matching case insensitive
 const (
-	LowerProviderTypeConfigHub      = "confighub"
-	LowerProviderTypeKubernetes     = "kubernetes"
-	LowerProviderTypeFluxOCIWriter  = "fluxociwriter"
-	LowerProviderTypeFluxRenderer   = "fluxrenderer"
-	LowerProviderTypeOpenTofuAWS    = "opentofu/aws"
+	LowerProviderTypeConfigHub         = "confighub"
+	LowerProviderTypeKubernetes        = "kubernetes"
+	LowerProviderTypeFluxOCIWriter     = "fluxociwriter"
+	LowerProviderTypeFluxRenderer      = "fluxrenderer"
+	LowerProviderTypeOpenTofuAWS       = "opentofu/aws"
 	LowerProviderTypeConfigMapRenderer = "configmaprenderer"
-	LowerProviderTypeArgoCDRenderer = "argocdrenderer"
-	LowerProviderTypeArgoCDOCI      = "argocdoci"
+	LowerProviderTypeArgoCDRenderer    = "argocdrenderer"
+	LowerProviderTypeArgoCDOCI         = "argocdoci"
 )
 
 // NOTE: The FluxOCIWriter provider type is disabled by default for now and may be deprecated in the future.
@@ -212,37 +215,17 @@ const (
 // Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
 
 var availableBridgeWorkers = map[string]api.BridgeWorker{
-	LowerProviderTypeConfigHub:    impl.NewConfigHubBridgeWorker(),
-	LowerProviderTypeKubernetes:   impl.NewKubernetesBridgeWorker(),
-	LowerProviderTypeFluxRenderer: &impl.FluxRendererWorker{},
+	LowerProviderTypeConfigHub:    confighub.NewConfigHubBridgeWorker(),
+	LowerProviderTypeKubernetes:   kubernetes.NewKubernetesBridgeWorker(),
+	LowerProviderTypeFluxRenderer: fluxrenderer.NewFluxRendererWorker(),
 	// LowerProviderTypeFluxOCIWriter:       fluxOCIWorker,
-	LowerProviderTypeOpenTofuAWS:    &impl.OpenTofuAWSWorker{},
-	LowerProviderTypeConfigMapRenderer:      &impl.ConfigMapBridgeWorker{},
-	LowerProviderTypeArgoCDRenderer: &impl.ArgoCDRendererWorker{},
+	LowerProviderTypeOpenTofuAWS:       opentofu.NewOpenTofuAWSWorker(),
+	LowerProviderTypeConfigMapRenderer: configmap.NewConfigMapBridgeWorker(),
+	LowerProviderTypeArgoCDRenderer:    argocdrenderer.NewArgoCDRendererWorker(),
 	// ArgoCDOCI worker is initialized in rootRunE with credentials (like ConfigHub worker)
+	LowerProviderTypeArgoCDOCI: nil, // placeholder, initialized in rootRunE
 }
-var fluxOCIWorker = impl.NewFluxOCIWorker()
-
-// Initialize individual function workers first
-var confighubFunctionWorker = impl.NewConfigHubFunctionWorker()
-var k8sFunctionWorker = impl.NewKubernetesFunctionWorker()
-var propertiesFunctionWorker = impl.NewPropertiesFunctionWorker()
-var appyamlFunctionWorker = impl.NewAppConfigYAMLFunctionWorker()
-var tomlFunctionWorker = impl.NewTOMLFunctionWorker()
-var iniFunctionWorker = impl.NewINIFunctionWorker()
-var opentofuFunctionWorker = impl.NewOpentofuFunctionWorker()
-
-// Map of available function workers by provider type
-var availableFunctionWorkers = map[string][]api.FunctionWorker{
-	LowerProviderTypeConfigHub:      []api.FunctionWorker{confighubFunctionWorker},
-	LowerProviderTypeKubernetes:     []api.FunctionWorker{k8sFunctionWorker},
-	LowerProviderTypeFluxRenderer:   []api.FunctionWorker{k8sFunctionWorker},
-	LowerProviderTypeArgoCDRenderer: []api.FunctionWorker{k8sFunctionWorker},
-	// LowerProviderTypeFluxOCIWriter: []api.FunctionWorker{k8sFunctionWorker},
-	LowerProviderTypeOpenTofuAWS:       []api.FunctionWorker{opentofuFunctionWorker},
-	LowerProviderTypeConfigMapRenderer: []api.FunctionWorker{propertiesFunctionWorker, appyamlFunctionWorker, tomlFunctionWorker, iniFunctionWorker},
-	LowerProviderTypeArgoCDOCI:         []api.FunctionWorker{k8sFunctionWorker},
-}
+var fluxOCIWorker = flux.NewFluxOCIWorker()
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
 	// ignore required flag marking for version command
@@ -270,7 +253,6 @@ func newHTTPServer() *echo.Echo {
 func rootRunE(cmd *cobra.Command, args []string) error {
 	if rootArgs.enableFluxOCI {
 		availableBridgeWorkers[LowerProviderTypeFluxOCIWriter] = fluxOCIWorker
-		availableFunctionWorkers[LowerProviderTypeFluxOCIWriter] = []api.FunctionWorker{k8sFunctionWorker}
 	}
 
 	workerProviderTypesStr := strings.ToLower(rootArgs.workerProviderTypesStr)
@@ -285,78 +267,11 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		return errors.New("frontdoor client initialization failed")
 	}
 
-	// Check if multiplexer mode is enabled
-	if !rootArgs.enableMultiplexer {
-
-		log.FromContext(context.Background()).Info("Running in legacy mode (multiplexer explicitly disabled)")
-
-		// In legacy mode, only support single provider type
-		if strings.Contains(workerProviderTypesStr, ",") {
-			return fmt.Errorf("multiple provider types not supported in legacy mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true")
-		}
-
-		// Handle ConfigHub and ArgoCDOCI workers specially - they need credentials
-		var bridgeWorker api.BridgeWorker
-		var ok bool
-
-		// Use the old behavior - direct worker without dispatcher
-		bridgeWorker, ok = availableBridgeWorkers[workerProviderTypesStr]
-		if !ok {
-			return fmt.Errorf("unknown bridge worker %s", workerProviderTypesStr)
-		}
-
-		if workerProviderTypesStr == LowerProviderTypeConfigHub {
-			configHubWorker, _ := bridgeWorker.(*impl.ConfigHubBridgeWorker)
-			if configHubWorker == nil {
-				ok = false
-			} else {
-				err := configHubWorker.Init(frontdoorClient)
-				if err != nil {
-					return err
-				}
-			}
-		} else if workerProviderTypesStr == LowerProviderTypeArgoCDOCI {
-			bridgeWorker = impl.NewArgoCDOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
-			ok = true
-		}
-
-		// Currently disabled by default
-		if rootArgs.enableFluxOCI && workerProviderTypesStr == LowerProviderTypeFluxOCIWriter {
-			// Additional initialization for FluxOCIWorker
-			if fluxWorker, ok := bridgeWorker.(*impl.FluxOCIWorker); ok {
-				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
-					rootArgs.inCluster,
-					rootArgs.authMethod,
-					rootArgs.kubernetesSecretPath,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to initialize FluxOCIWorker: %w", err)
-				}
-			}
-		}
-
-		functionWorkers, ok := availableFunctionWorkers[workerProviderTypesStr]
-		if !ok {
-			return fmt.Errorf("provider type %s has no function executors", workerProviderTypesStr)
-		}
-
-		if len(functionWorkers) != 1 {
-			fmt.Errorf("provider type %s requires multiplexer mode. Remove --enable-multiplexer=false or set ENABLE_MULTIPLEXER=true.", workerProviderTypesStr)
-		}
-
-		// Use legacy mode without dispatcher
-		return runWorkerLegacy(bridgeWorker, functionWorkers[0])
-	}
-
-	// New multiplexer mode
-	// workerProviderTypesStr is a comma separated string like "kubernetes,configmap"
-
 	// Split the provider types string by comma
 	providerTypes := strings.Split(workerProviderTypesStr, ",")
 
 	// Initialize appropriate workers based on the input
 	bridgeDispatcher := lib.NewBridgeDispatcher()
-	functionDispatcher := lib.NewFunctionDispatcher()
 
 	// For multiple provider types or explicitly using generic worker, use dispatchers
 	log.FromContext(context.Background()).Info("Using dispatcher pattern for multi-provider/multi-toolchain support with unit-level serialization")
@@ -369,7 +284,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 		// Handle ArgoCDOCI workers specially - they need credentials at construction time
 		if lowerProviderType == LowerProviderTypeArgoCDOCI {
-			directBridgeWorker = impl.NewArgoCDOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
+			directBridgeWorker = argocd.NewArgoCDOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
 			ok = true
 		} else {
 			directBridgeWorker, ok = availableBridgeWorkers[lowerProviderType]
@@ -388,7 +303,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 		// Handle ConfigHub worker specially - it needs authentication
 		if lowerProviderType == LowerProviderTypeConfigHub {
-			configHubWorker, _ := directBridgeWorker.(*impl.ConfigHubBridgeWorker)
+			configHubWorker, _ := directBridgeWorker.(*confighub.ConfigHubBridgeWorker)
 			if configHubWorker == nil {
 				ok = false
 			} else {
@@ -402,8 +317,8 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		// Currently disabled by default
 		// Special case for FluxOCIWriter - initialize it
 		if rootArgs.enableFluxOCI && lowerProviderType == LowerProviderTypeFluxOCIWriter {
-			if fluxWorker, ok := directBridgeWorker.(*impl.FluxOCIWorker); ok {
-				err := impl.NewFluxOCIWorkerConfig(fluxWorker,
+			if fluxWorker, ok := directBridgeWorker.(*flux.FluxOCIWorker); ok {
+				err := flux.NewFluxOCIWorkerConfig(fluxWorker,
 					rootArgs.inCluster,
 					rootArgs.authMethod,
 					rootArgs.kubernetesSecretPath,
@@ -428,21 +343,6 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 					"toolchainType", toolchainType,
 					"providerType", providerType)
 			}
-		}
-
-		// Register function executor based on provider type
-		if directFunctionWorkers, ok := availableFunctionWorkers[lowerProviderType]; ok {
-			// Register with function dispatcher if not already registered
-			for _, directFunctionWorker := range directFunctionWorkers {
-				toolchainTypes := directFunctionWorker.Info().ToolchainTypes
-				for _, toolchainType := range toolchainTypes {
-					functionDispatcher.RegisterWorker(toolchainType, directFunctionWorker)
-					log.FromContext(context.Background()).Info("Registered function executor",
-						"toolchainType", toolchainType)
-				}
-			}
-		} else {
-			return fmt.Errorf("no function executors for provider type %s", lowerProviderType)
 		}
 	}
 
@@ -495,7 +395,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		rootArgs.workerID,
 		rootArgs.workerSecret).
 		WithBridgeWorker(bridgeDispatcher).
-		WithFunctionWorker(functionDispatcher).
+		WithFunctionExecutor(standardExecutor).
 		WithMetricsMeter(metricsMeter)
 
 	// Start worker in a errgroup with the http server so we can handle signals
@@ -563,89 +463,6 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runWorkerLegacy(bridgeWorker api.BridgeWorker, functionWorker api.FunctionWorker) error {
-	// Create a context that will be cancelled on SIGTERM or SIGINT
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Setup signal handling for graceful shutdown - only trap SIGTERM
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM)
-
-	// Check if the URL already contains a port
-	parsedURL, err := neturl.Parse(rootArgs.configHubURL)
-	if err != nil {
-		// Handle potential parsing error, though init() should prevent this
-		log.FromContext(ctx).Error(err, "Failed to parse configHubURL", "url", rootArgs.configHubURL)
-		// Decide on fallback behavior, e.g., use default or return error
-		// For now, let's proceed with the potentially malformed URL, assuming init handled basics
-	}
-
-	finalURL := rootArgs.configHubURL // Default to original URL
-
-	if err == nil { // Only proceed if parsing was successful
-		hostname := parsedURL.Hostname() // Get hostname without port
-		if hostname == "" {
-			log.FromContext(ctx).Info("Could not extract hostname from URL, not modifying port", "url", rootArgs.configHubURL)
-		} else if parsedURL.Scheme == "" {
-			// Handle case where scheme is missing (though init tries to add https)
-			log.FromContext(ctx).Info("URL scheme is missing, cannot reliably reconstruct URL with new port", "url", rootArgs.configHubURL)
-		} else {
-			// Always use the workerPort, replacing existing or appending
-			// Reconstruct the URL: scheme://hostname:workerPort
-			finalURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.workerPort)
-		}
-	} // Note: If err != nil, finalURL remains rootArgs.configHubURL
-
-	w := lib.New(finalURL, // Use the potentially modified URL
-		rootArgs.workerID,
-		rootArgs.workerSecret).
-		WithBridgeWorker(bridgeWorker).
-		WithFunctionWorker(functionWorker)
-
-	// Start worker in a goroutine so we can handle signals
-	errChan := make(chan error, 1)
-	go func() {
-		if err := w.Start(ctx); err != nil {
-			errChan <- err
-		}
-		close(errChan)
-	}()
-
-	// Wait for either signal or worker error
-	select {
-	case sig := <-sigChan:
-		log.FromContext(ctx).Info("Received signal, initiating graceful shutdown", "signal", sig)
-
-		// Sleep for configured delay to allow new pod to become active
-		// This ensures smooth handoff in rolling updates with our standby promotion system
-		if rootArgs.gracePeriodDelay > 0 {
-			log.FromContext(ctx).Info("Waiting for smooth handoff to new pod...", "delay_seconds", rootArgs.gracePeriodDelay)
-			time.Sleep(time.Duration(rootArgs.gracePeriodDelay) * time.Second)
-		}
-
-		// Wait for all pending operations to complete first
-		// This ensures Apply/Destroy/etc operations fully complete including sending final status
-		w.WaitForPendingOperations()
-
-		// Now cancel context to stop accepting new work and close SSE stream
-		cancel()
-
-		// Wait for worker goroutine to exit
-		if err := <-errChan; err != nil {
-			// Just log the error message without stack trace
-			log.FromContext(context.Background()).Info("Worker stopped with error during shutdown", "error", err.Error())
-		}
-
-		log.FromContext(context.Background()).Info("Worker shutdown completed gracefully")
-	case err := <-errChan:
-		if err != nil {
-			log.FromContext(context.Background()).Info("Failed to start worker", "error", err.Error())
-			return err
-		}
-	}
-	return nil
-}
 
 func main() {
 	logr := zap.New(zap.UseDevMode(true))

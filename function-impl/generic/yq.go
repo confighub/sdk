@@ -30,7 +30,7 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 				ResultName:  "yq output",
 				Description: "Output from yq",
 				OutputType:  api.OutputTypeYAML,
-				Schema:      &yamlPayloadSchema,
+				Schema:      &api.YAMLPayloadSchema,
 			},
 			Mutating:              false,
 			Validating:            false,

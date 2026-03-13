@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/confighub/sdk/bridge-worker/api"
+	"github.com/confighub/sdk/worker/api"
 	"github.com/confighub/sdk/cubapi"
 	funcapi "github.com/confighub/sdk/function/api"
 	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
@@ -233,9 +233,9 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 		toolchainType != string(workerapi.ToolchainAppConfigYAML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigTOML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigINI) &&
+		toolchainType != string(workerapi.ToolchainAppConfigJSON) &&
 		toolchainType != string(workerapi.ToolchainAppConfigEnv) {
-		// NOTE: Env deliberately not mentioned
-		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, or AppConfig/INI")
+		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, or AppConfig/Env")
 	}
 	return nil
 }

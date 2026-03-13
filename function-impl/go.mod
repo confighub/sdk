@@ -6,8 +6,10 @@ require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/confighub/sdk v0.0.0
 	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000
@@ -15,7 +17,6 @@ require (
 	github.com/google/cel-go v0.24.1
 	github.com/google/gnostic v0.7.0
 	github.com/labstack/echo/v4 v4.13.3
-	github.com/labstack/gommon v0.4.2
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggest/jsonschema-go v0.3.78
 	github.com/wk8/go-ordered-map/v2 v2.1.8
@@ -74,6 +75,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -136,8 +138,10 @@ require (
 replace (
 	github.com/confighub/sdk => ../core
 	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
 	github.com/confighub/sdk/configkit/hclkit => ../configkit/hclkit
 	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
 	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
 	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit

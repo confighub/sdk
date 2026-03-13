@@ -43,12 +43,18 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 	workerapi.ToolchainAppConfigYAML:       "/yaml",
 	workerapi.ToolchainAppConfigTOML:       "/toml",
 	workerapi.ToolchainAppConfigINI:        "/ini",
+	workerapi.ToolchainAppConfigJSON:       "/json",
+	workerapi.ToolchainAppConfigEnv:        "/env",
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",
 }
 
 func IsSupportedToolchain(toolchain workerapi.ToolchainType) bool {
 	_, supported := SupportedToolchains[toolchain]
 	return supported
+}
+
+func GetToolchainPath(toolchain workerapi.ToolchainType) string {
+	return SupportedToolchains[toolchain]
 }
 
 func SupportedToolchainsToString() string {
@@ -445,12 +451,45 @@ type AttributeDetails struct {
 	Description       string               `json:",omitempty" description:"Description of the attribute"`
 }
 
+type Score string
+
+const (
+	ScoreCritical = Score("Critical")
+	ScoreHigh     = Score("High")
+	ScoreMedium   = Score("Medium")
+	ScoreLow      = Score("Low")
+	ScoreNone     = Score("")
+)
+
+var ScoreToNumber = map[Score]int{
+	ScoreCritical: 4,
+	ScoreHigh:     3,
+	ScoreMedium:   2,
+	ScoreLow:      1,
+	ScoreNone:     0,
+}
+
+var NumberToScore = map[int]Score{
+	4: ScoreCritical,
+	3: ScoreHigh,
+	2: ScoreMedium,
+	1: ScoreLow,
+	0: ScoreNone,
+}
+
+func ScoreMax(a, b Score) Score {
+	anum := ScoreToNumber[a]
+	bnum := ScoreToNumber[b]
+	return NumberToScore[max(anum, bnum)]
+}
+
 // AttributeValue provides the value of an attribute in addition to information about the attribute.
 type AttributeValue struct {
 	AttributeInfo
 	Value   any    `description:"Value of the attribute at the specified Path"`
 	Comment string `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
 	Index   int    `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
+	Score   Score  `json:",omitempty" description:"Score of finding attributed to this Path"`
 }
 type AttributeValueList []AttributeValue
 
@@ -459,6 +498,7 @@ type AttributeValueList []AttributeValue
 type ValidationResult struct {
 	Passed           bool               `description:"True if valid, false otherwise"`
 	Index            int                `description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
+	MaxScore         Score              `json:",omitempty" description:"Maximum score of all findings"`
 	Details          []string           `json:",omitempty" description:"Optional list of failure details"`
 	FailedAttributes AttributeValueList `json:",omitempty" description:"optional list of failed attributes; preferred over Details"`
 }

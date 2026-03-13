@@ -23,7 +23,7 @@ func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConver
 					Required:         true,
 					Description:      "Mutations with predicates set to true if they should be reset",
 					DataType:         api.DataTypeResourceMutationList,
-					ValueConstraints: api.ValueConstraints{Schema: &resourceMutationListSchema},
+					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
 			},
 			Mutating:              true,

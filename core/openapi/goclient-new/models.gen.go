@@ -860,7 +860,7 @@ type ExtendedTarget struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// TriggerFilter Defines an entity filter.
@@ -952,7 +952,7 @@ type ExtendedUnit struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -2077,7 +2077,7 @@ type TagCreateOrUpdateResponse struct {
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
 }
 
-// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 type Target struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -2138,7 +2138,7 @@ type Target struct {
 	// TargetID Unique identifier for a Target.
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI".
+	// ToolchainType ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env".
 	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
 	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
 
@@ -2203,7 +2203,7 @@ type TargetConfigType struct {
 type TargetCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 }
 
@@ -2424,7 +2424,7 @@ type Unit struct {
 	SpaceID  openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	TargetID *UUID              `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UnitID Unique identifier for a Unit.
@@ -2757,6 +2757,9 @@ type ViewCreateOrUpdateResponse struct {
 type WorkerInfo struct {
 	BridgeWorkerInfo   *BridgeWorkerInfo   `json:"BridgeWorkerInfo,omitempty" yaml:"BridgeWorkerInfo,omitempty"`
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
+
+	// IsServerWorker If true, this is the server-hosted worker. Only one per organization.
+	IsServerWorker bool `json:"IsServerWorker,omitempty" yaml:"IsServerWorker,omitempty"`
 }
 
 // BulkDeleteSpacesParams defines parameters for BulkDeleteSpaces.
@@ -7639,7 +7642,7 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -9677,7 +9680,7 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -9874,7 +9877,7 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML".
+	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.

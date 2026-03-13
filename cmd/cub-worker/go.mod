@@ -6,6 +6,7 @@ require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/confighub/sdk v0.0.0
 	github.com/confighub/sdk/bridge-impl v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo-contrib v0.17.4
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/spf13/cobra v1.10.1
@@ -39,13 +40,14 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000 // indirect
-	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -160,6 +162,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spyzhov/ajson v0.9.6 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/swaggest/jsonschema-go v0.3.78 // indirect
 	github.com/swaggest/refl v1.4.0 // indirect
@@ -233,8 +236,10 @@ replace (
 	github.com/confighub/sdk => ../../core
 	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
 	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
 	github.com/confighub/sdk/configkit/hclkit => ../../configkit/hclkit
 	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
 	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
 	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit

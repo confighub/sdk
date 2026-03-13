@@ -14,7 +14,8 @@ const (
 	ToolchainAppConfigYAML       ToolchainType = "AppConfig/YAML"
 	ToolchainAppConfigTOML       ToolchainType = "AppConfig/TOML"
 	ToolchainAppConfigINI        ToolchainType = "AppConfig/INI"
-	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env" // TODO
+	ToolchainAppConfigJSON       ToolchainType = "AppConfig/JSON"
+	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env"
 )
 
 const MaxToolchainTypeLength = 128

@@ -60,6 +60,9 @@ func ParseAll(y []byte) (Container, error) {
 func (m Container) Search(path ...string) Container {
 	var results Container
 	for _, c := range m {
+		if c == nil {
+			continue
+		}
 		if result := c.Search(path...); result != nil {
 			results = append(results, result)
 		}
@@ -71,7 +74,7 @@ func (m Container) Search(path ...string) Container {
 }
 
 func (m Container) Data() interface{} {
-	if len(m) == 0 {
+	if len(m) == 0 || m[0] == nil {
 		return nil
 	}
 	return m[0].Data()
@@ -80,7 +83,7 @@ func (m Container) Data() interface{} {
 func (m Container) String() string {
 	var result []string
 	for _, c := range m {
-		if c.IsEmptyDoc() {
+		if c == nil || c.IsEmptyDoc() {
 			continue
 		}
 		result = append(result, c.String())

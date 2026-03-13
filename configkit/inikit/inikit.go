@@ -13,6 +13,7 @@ import (
 	"github.com/confighub/sdk/configkit/yamlkit"
 	"github.com/confighub/sdk/constants"
 	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/workerapi"
 	"github.com/confighub/sdk/third_party/gaby"
 	"github.com/go-ini/ini"
 	"gopkg.in/yaml.v3"
@@ -157,6 +158,10 @@ func (*INIResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceT
 
 func (*INIResourceProviderType) DataType() api.DataType {
 	return api.DataTypeINI
+}
+
+func (*INIResourceProviderType) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainAppConfigINI
 }
 
 // parseINIValue attempts to convert an INI value string to the appropriate type.

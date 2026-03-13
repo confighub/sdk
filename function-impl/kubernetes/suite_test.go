@@ -14,9 +14,8 @@ import (
 var testResourceProvider *k8skit.K8sResourceProviderType
 
 func TestMain(m *testing.M) {
-	kc := handler.NewFunctionHandler()
-	registrar := NewKubernetesRegistrar()
-	registrar.RegisterFunctions(kc)
-	testResourceProvider = registrar.GetResourceProvider()
+	testResourceProvider = k8skit.NewK8sResourceProvider()
+	kc := handler.NewFunctionHandler(testResourceProvider)
+	RegisterFunctions(testResourceProvider, kc)
 	os.Exit(m.Run())
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/confighub/sdk/third_party/gaby"
 	k8sschema "github.com/confighub/sdk/function-impl/third_party/kubernetes"
 	openapi_v2 "github.com/google/gnostic/openapiv2"
-	"github.com/labstack/gommon/log"
+	"log/slog"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kube-openapi/pkg/util/proto"
 	"k8s.io/kubectl/pkg/util/openapi"
@@ -271,7 +271,7 @@ func (e *SchemaFinder) lookupField(resourceSchema proto.Schema, fieldPath string
 			// If we're looking up a field in an array, we want to look it up in the array's subtype
 			currentSchema = t.SubType
 			if !integerLiteralOnlyRegexp.MatchString(field) && !strings.ContainsAny(field, "*?") {
-				log.Errorf("field %s was expected to be an array index", field)
+				slog.Error("field was expected to be an array index", "field", field)
 			}
 			fields = fields[1:]
 
