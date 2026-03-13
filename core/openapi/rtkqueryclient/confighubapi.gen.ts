@@ -3063,7 +3063,7 @@ export type ListQueuedOperationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3981,7 +3981,7 @@ export type InvokeFunctionsOnOrgApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -4809,7 +4809,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Where expression to select FromUnits for created links
     
@@ -4856,7 +4856,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Where expression to select ToUnits for created links
     
@@ -6153,7 +6153,7 @@ export type InvokeFunctionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -6773,7 +6773,7 @@ export type ListTargetsApiArg = {
   select?: string;
 };
 export type CreateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type CreateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6814,7 +6814,7 @@ export type GetTargetApiArg = {
   targetId: string;
 };
 export type PatchTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type PatchTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6859,7 +6859,7 @@ export type PatchTargetApiArg = {
   };
 };
 export type UpdateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type UpdateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7097,7 +7097,7 @@ export type ListUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -7327,7 +7327,7 @@ export type PatchUnitApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -7790,7 +7790,7 @@ export type ListUnitActionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitID.
+    Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7872,7 +7872,7 @@ export type ListUnitEventsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitID, UpdatedAt.
+    Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9195,7 +9195,7 @@ export type BulkDeleteUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9269,7 +9269,7 @@ export type ListAllUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9358,7 +9358,7 @@ export type BulkPatchUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9497,7 +9497,7 @@ export type BulkPatchUnitsApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -9536,7 +9536,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9663,7 +9663,7 @@ export type BulkCreateUnitsApiArg = {
     Slug?: string | null;
     /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -9702,7 +9702,7 @@ export type BulkApplyUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9784,7 +9784,7 @@ export type BulkApproveUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9862,7 +9862,7 @@ export type BulkCancelUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9938,7 +9938,7 @@ export type BulkDestroyUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10016,7 +10016,7 @@ export type BulkRefreshUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10096,7 +10096,7 @@ export type BulkTagUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -11193,6 +11193,8 @@ export type FunctionWorkerInfo = {
 export type WorkerInfo = {
   BridgeWorkerInfo?: BridgeWorkerInfo;
   FunctionWorkerInfo?: FunctionWorkerInfo;
+  /** If true, this is the server-hosted worker. Only one per organization. */
+  IsServerWorker?: boolean;
 };
 export type BridgeWorker = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -11409,6 +11411,8 @@ export type QueuedOperation = {
     | 'delivered';
   /** TargetID is the unique identifier of the target this operation is directed to. */
   TargetID?: string;
+  /** UnitActionNum is the sequence number of this unit action. */
+  UnitActionNum?: number;
   /** UnitID is the unique identifier of the unit this operation is performed on. */
   UnitID?: string;
   /** User-Agent string of the API call. */
@@ -11697,7 +11701,7 @@ export type MutationMap = {
 export type ResourceInfo = {
   /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Unique identifier for a resource within a configuration unit; a UUID stored as a context annotation on the resource */
+  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
@@ -11919,7 +11923,7 @@ export type Unit = {
   /** Unique identifier for a space. */
   SpaceID?: string;
   TargetID?: Uuid;
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -11941,7 +11945,7 @@ export type AttributeInfo = {
   Path?: string;
   /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Unique identifier for a resource within a configuration unit; a UUID stored as a context annotation on the resource */
+  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
@@ -11991,6 +11995,10 @@ export type UnitRead = {
   HeadMutationNum?: number;
   /** Sequence number the head Revision. */
   HeadRevisionNum?: number;
+  /** Sequence number of the head unit action (queued operation). */
+  HeadUnitActionNum?: number;
+  /** Sequence number of the head unit event. */
+  HeadUnitEventNum?: number;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -12021,7 +12029,7 @@ export type UnitRead = {
   /** Unique identifier for a space. */
   SpaceID?: string;
   TargetID?: Uuid;
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -12088,7 +12096,7 @@ export type Link = {
   ToUnitID: string;
   /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides. */
   UpdateType?: string;
-  /** The sequence number of the end revision of the upstream unit that was last merged. */
+  /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
   /** Take data from the LiveState of the upstream Unit rather than from Data. */
   UseLiveState?: boolean;
@@ -12143,7 +12151,7 @@ export type LinkRead = {
   UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
-  /** The sequence number of the end revision of the upstream unit that was last merged. */
+  /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
   /** Take data from the LiveState of the upstream Unit rather than from Data. */
   UseLiveState?: boolean;
@@ -12593,7 +12601,7 @@ export type Target = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env". */
   ToolchainType: string;
   TriggerFilterID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12683,7 +12691,7 @@ export type TargetRead = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI". */
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env". */
   ToolchainType: string;
   TriggerFilterID?: Uuid;
   /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
@@ -12857,6 +12865,8 @@ export type UnitEvent = {
   Status?: ActionStatusType;
   TerminatedAt?: string | null;
   UnitEventID?: string;
+  /** Sequence number for this unit event. */
+  UnitEventNum?: number;
   /** Unique identifier for a Unit. */
   UnitID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12885,6 +12895,8 @@ export type UnitEventRead = {
   Status?: ActionStatusType;
   TerminatedAt?: string | null;
   UnitEventID?: string;
+  /** Sequence number for this unit event. */
+  UnitEventNum?: number;
   /** Unique identifier for a Unit. */
   UnitID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
@@ -13073,6 +13085,8 @@ export type UnitAction = {
     | 'delivered';
   /** TargetID is the unique identifier of the target this operation is directed to. */
   TargetID?: string;
+  /** UnitActionNum is the sequence number of this unit action. */
+  UnitActionNum?: number;
   /** UnitID is the unique identifier of the unit this operation is performed on. */
   UnitID?: string;
   /** User-Agent string of the API call. */
