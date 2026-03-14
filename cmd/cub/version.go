@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	Version   = "dev"
 	BuildTag  = "unknown"
 	BuildDate = "unknown"
 )
@@ -27,10 +28,12 @@ func init() {
 
 func versionCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Printf("Client Version:\n")
+	fmt.Printf("  Version:    %s\n", Version)
 	fmt.Printf("  Commit:     %s\n", BuildTag)
 	fmt.Printf("  Build Date: %s\n", BuildDate)
 	apiInfo := GetApiInfo()
 	fmt.Printf("Server Version:\n")
 	fmt.Printf("  URL:        %s\n", contextManager.ActiveContext().Coordinate.ServerURL)
+	fmt.Printf("  Version:    %s\n", apiInfo.Version)
 	fmt.Printf("  Commit:     %s\n", apiInfo.Build)
 }

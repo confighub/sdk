@@ -63,8 +63,7 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 
 	if addContext {
 		// If the data has changed, the revision will be incremented.
-		newHash := api.HashConfigData([]byte(parsedData.String()))
-		if newHash != functionContext.PreviousContentHash {
+		if api.ConfigDataHasChanged(functionContext, parsedData.Bytes()) {
 			revisionNum++
 		}
 	}
@@ -103,8 +102,7 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 	}
 	if addRevisionNum && addContext && revisionNum == functionContext.RevisionNum {
 		// We may need to update the revision number if this function changed the data.
-		newHash := api.HashConfigData([]byte(parsedData.String()))
-		if newHash != functionContext.PreviousContentHash {
+		if api.ConfigDataHasChanged(functionContext, []byte(parsedData.String())) {
 			revisionNum++
 			for _, doc := range parsedData {
 				_, err := doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath(constants.RevisionNumKeySuffix))

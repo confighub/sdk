@@ -28,6 +28,9 @@ func InvokeFunctions(
 	if reqMsg.FunctionContext.PreviousContentHash == api.RevisionHash(0) {
 		reqMsg.PreviousContentHash = api.HashConfigData(reqMsg.ConfigData)
 	}
+	if reqMsg.FunctionContext.PreviousDataHash == api.DataHash("") {
+		reqMsg.PreviousDataHash = api.HashConfigDataSHA256(reqMsg.ConfigData)
+	}
 	reqMsg.ToolchainType = toolchain
 	marshaled, err := json.Marshal(reqMsg)
 	if err != nil {

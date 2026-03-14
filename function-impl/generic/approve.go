@@ -81,8 +81,7 @@ func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionC
 	numApprovers := args[0].Value.(int)
 
 	// If the data has changed, previous approvers will be cleared.
-	newHash := api.HashConfigData([]byte(parsedData.String()))
-	if newHash != functionContext.PreviousContentHash {
+	if api.ConfigDataHasChanged(functionContext, parsedData.Bytes()) {
 		return parsedData, api.ValidationResultFalse, nil
 	}
 

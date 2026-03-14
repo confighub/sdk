@@ -90,3 +90,7 @@ func (m Container) String() string {
 	}
 	return strings.Join(result, "---\n")
 }
+
+func (m Container) Bytes() []byte {
+	return []byte(m.String())
+}

@@ -6,6 +6,8 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
@@ -19,9 +21,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: Change to sha256
-
 // RevisionHash represents a crc32.ChecksumIEEE of configuration data.
+// Deprecated: Use DataHash (SHA256) instead for new code.
 // In Go, conversion of uint32 to int32 doesn't lose information. The
 // 32 bits are retained. We use int32 because a number of languages and
 // systems don't handle unsigned integers.
@@ -30,6 +31,26 @@ type RevisionHash int32
 func HashConfigData(data []byte) RevisionHash {
 	//nolint:gosec // negative numbers are fine, they just need to be unique
 	return RevisionHash(crc32.ChecksumIEEE(data))
+}
+
+// DataHash represents a SHA256 hash of configuration data, encoded as a hexadecimal string.
+// This is the same hash algorithm used by git and container images.
+type DataHash string
+
+// HashConfigDataSHA256 computes the SHA256 hash of configuration data and returns it as a hex string.
+func HashConfigDataSHA256(data []byte) DataHash {
+	hash := sha256.Sum256(data)
+	return DataHash(hex.EncodeToString(hash[:]))
+}
+
+// ConfigDataHasChanged returns true if the given data differs from the previous data
+// identified by the hashes in the FunctionContext. It prefers PreviousDataHash (SHA256)
+// when available, falling back to PreviousContentHash (CRC32) for legacy units.
+func ConfigDataHasChanged(functionContext *FunctionContext, data []byte) bool {
+	if functionContext.PreviousDataHash != "" {
+		return HashConfigDataSHA256(data) != functionContext.PreviousDataHash
+	}
+	return HashConfigData(data) != functionContext.PreviousContentHash
 }
 
 // The worker API ToolchainType identifies the configuration serialization format
@@ -271,7 +292,8 @@ type FunctionContext struct {
 	QueuedOperationID   uuid.UUID               `description:"Unique ID of the operation generating the LiveState for the Unit"`
 	NotLive             bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision or LiveState invocations"`
 	IsLiveState         bool                    `description:"True if the ConfigData is the LiveState of the Unit"`
-	PreviousContentHash RevisionHash            `description:"crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
+	PreviousContentHash RevisionHash            `description:"Deprecated: Use PreviousDataHash instead. crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
+	PreviousDataHash    DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 	ApprovedBy          []string                `description:"Usernames of users that have approved this revision of the configuration data"`
 }
 

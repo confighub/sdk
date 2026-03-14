@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	Version   = "dev"
 	BuildTag  = "unknown"
 	BuildDate = "unknown"
 )
@@ -27,6 +28,7 @@ func init() {
 
 func versionCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Printf("Worker Version:\n")
+	fmt.Printf("  Version:    %s\n", Version)
 	fmt.Printf("  Commit:     %s\n", BuildTag)
 	fmt.Printf("  Build Date: %s\n", BuildDate)
 }

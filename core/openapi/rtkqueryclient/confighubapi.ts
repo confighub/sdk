@@ -11,6 +11,10 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const baseQuery = fetchBaseQuery({
   baseUrl: '/api',
   credentials: 'include', // This enables sending cookies with requests
+  isJsonContentType: (headers) => {
+    const ct = headers.get('Content-Type') ?? '';
+    return ct.includes('json');
+  },
   prepareHeaders: (headers, { endpoint }) => {
     // Set content type for operations that require merge-patch+json
     if (

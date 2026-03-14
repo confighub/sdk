@@ -220,6 +220,9 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Bridge Worker ID", unitDetails.Unit.BridgeWorkerID.String()})
 		}
 
+		if unitDetails.Unit.DataHash != "" {
+			view.Append([]string{"Data Hash", unitDetails.Unit.DataHash})
+		}
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
 		view.Append([]string{"Head Unit Action Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitActionNum)})
 		view.Append([]string{"Head Unit Event Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitEventNum)})

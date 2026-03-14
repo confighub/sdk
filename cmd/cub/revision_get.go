@@ -100,6 +100,9 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 			view.Append([]string{"ChangeSet ID", rev.ChangeSetID.String()})
 		}
 
+		if rev.DataHash != "" {
+			view.Append([]string{"Data Hash", rev.DataHash})
+		}
 		view.Append([]string{"Organization ID", rev.OrganizationID.String()})
 
 		if rev.ApplyGates != nil && len(rev.ApplyGates) != 0 {

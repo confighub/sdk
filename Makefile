@@ -9,6 +9,14 @@ BRIDGE_WORKER?=confighub-worker
 SHA_SUM := $(shell git rev-parse HEAD)
 CUB_CMD?=./bin/cub
 RELEASE?= # 'true|1' Set to true to build a release version of the CLI
+VERSION?=
+LDFLAGS :=
+ifneq ($(VERSION),)
+  LDFLAGS := -ldflags "\
+    -X main.Version=$(VERSION) \
+    -X main.BuildTag=$$(git rev-parse HEAD) \
+    -X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+endif
 
 .DEFAULT_GOAL:=help
 
@@ -30,7 +38,7 @@ TEST_MODULES = ./function-impl ./bridge-impl   \
 	./configkit/yqkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit
-CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/bctl
+CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl
 EXAMPLE_MODULES = ./examples/hello-world-bridge ./examples/hello-world-function \
 	./examples/kube-score ./examples/kyverno ./examples/kyverno-server
 # All sibling modules that need prep (mod download/tidy)
@@ -68,15 +76,9 @@ CUB_CMD_ABS=$(abspath $(CUB_CMD))
 .PHONY: build-cli
 build-cli: ## Build the CLI
 ifdef RELEASE
-	cd ./cmd/cub && go build \
-	-ldflags "-X main.BuildTag=$$(git rev-parse HEAD) \
-	-X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-	-v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
+	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
 else
-	cd ./cmd/cub && go build \
-	-ldflags "-X main.BuildTag=$$(git rev-parse HEAD) \
-	-X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-	-v -o $(CUB_CMD_ABS) .
+	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS) .
 endif
 
 .PHONY: test
