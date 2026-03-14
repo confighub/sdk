@@ -1,0 +1,51 @@
+name: Build and Release CLI Binaries
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-binaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Build
+        run: |
+          echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }} version ${{ github.ref_name }}"
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            VERSION=${{ github.ref_name }} RELEASE=1 make build-cli
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            VERSION=${{ github.ref_name }} RELEASE=1 make build-worker
+
+      - name: Upload binaries to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create the release if it doesn't exist yet
+          gh release create ${{ github.ref_name }} \
+            --title "${{ github.ref_name }}" \
+            --generate-notes 2>/dev/null || true
+          gh release upload ${{ github.ref_name }} \
+            ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }} \
+            ./bin/cub-worker-run-${{ matrix.goos }}-${{ matrix.goarch }} \
+            --clobber
