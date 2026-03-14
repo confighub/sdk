@@ -101,7 +101,7 @@ endif
 
 .PHONY: build-worker
 build-worker: ## Build bridge worker
-	$(MAKE) -C ./bridge-impl all
+	$(MAKE) -C ./bridge-impl BINARY_DIR=../bin all
 
 .PHONY: build-examples
 build-examples: ## Build example workers
