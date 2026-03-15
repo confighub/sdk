@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var upgradeVersion string
+
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade cub to the latest version",
@@ -23,6 +25,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func init() {
+	upgradeCmd.Flags().StringVar(&upgradeVersion, "version", "", "Version to install (e.g. v1.2.3). Defaults to latest.")
 	rootCmd.AddCommand(upgradeCmd)
 }
 
@@ -36,7 +39,10 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unsupported operating system: %s", osName)
 	}
 
-	// TODO: Version check
+	if upgradeVersion != "" && upgradeVersion == Version {
+		tprint("Already running %s", upgradeVersion)
+		return nil
+	}
 
 	// Determine binary location
 	homeDir, err := os.UserHomeDir()
@@ -53,10 +59,15 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cub binary not found at %s", cubPath)
 	}
 
-	// Download URLs
-	bucket := "confighub-downloads-6554c6cc"
-	cubURL := fmt.Sprintf("https://%s.s3.amazonaws.com/public/cub-%s-%s-latest", bucket, osName, arch)
-	cubWorkerURL := fmt.Sprintf("https://%s.s3.amazonaws.com/public/cub-worker-run-%s-%s-latest", bucket, osName, arch)
+	// Download URLs from GitHub Releases
+	var baseURL string
+	if upgradeVersion != "" {
+		baseURL = fmt.Sprintf("https://github.com/confighub/sdk/releases/download/%s", upgradeVersion)
+	} else {
+		baseURL = "https://github.com/confighub/sdk/releases/latest/download"
+	}
+	cubURL := fmt.Sprintf("%s/cub-%s-%s", baseURL, osName, arch)
+	cubWorkerURL := fmt.Sprintf("%s/cub-worker-run-%s-%s", baseURL, osName, arch)
 
 	// Download binaries to temp files
 	tprint("Downloading cub binary...")
