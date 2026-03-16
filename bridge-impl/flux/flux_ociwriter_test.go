@@ -221,7 +221,7 @@ func TestFluxOCIWorker_Apply_Success(t *testing.T) {
 		return mockOCIClient, nil
 	}
 
-	worker := FluxOCIWorker{
+	worker := FluxOCIWriterWorker{
 		LoginToRegistryFunc: mockLoginToRegistry,
 	}
 	payload := api.BridgeWorkerPayload{
@@ -258,7 +258,7 @@ func TestFluxOCIWorker_Apply_Error(t *testing.T) {
 		return mockOCIClient, nil
 	}
 
-	worker := FluxOCIWorker{
+	worker := FluxOCIWriterWorker{
 		LoginToRegistryFunc: mockLoginToRegistry,
 	}
 	payload := api.BridgeWorkerPayload{
@@ -333,7 +333,7 @@ func TestFluxOCIWorker_Destroy_Success(t *testing.T) {
 		return mockOCIClient, nil
 	}
 
-	worker := FluxOCIWorker{
+	worker := FluxOCIWriterWorker{
 		LoginToRegistryFunc: mockLoginToRegistry,
 	}
 	payload := createMockBridgeWorkerPayload(repositoryBaseURL, "v1.0", "true", 1)
@@ -358,7 +358,7 @@ func TestFluxOCIWorker_Destroy_DeletionNotAllowed(t *testing.T) {
 		"image deletion not allowed",
 	))).Return(nil).Once()
 
-	worker := FluxOCIWorker{}
+	worker := FluxOCIWriterWorker{}
 	payload := createMockBridgeWorkerPayload(repositoryBaseURL, "v1.0", "false", 1)
 
 	err := worker.Destroy(mockCtx, payload)

@@ -31,7 +31,7 @@ import (
 	"github.com/confighub/sdk/workerapi"
 )
 
-type FluxOCIWorker struct {
+type FluxOCIWriterWorker struct {
 	Config              *FluxOCIWorkerConfig
 	LoginToRegistryFunc func(ctx context.Context, workerConfig *FluxOCIWorkerConfig, params *FluxOCIParams, newClientFunc NewClientFunc) (OCIClient, error)
 }
@@ -44,13 +44,13 @@ type applyOutput struct {
 }
 
 // Default implementation of LoginToRegistryFunc
-func NewFluxOCIWorker() *FluxOCIWorker {
-	return &FluxOCIWorker{
+func NewFluxOCIWriterWorker() *FluxOCIWriterWorker {
+	return &FluxOCIWriterWorker{
 		LoginToRegistryFunc: LoginToRegistry,
 	}
 }
 
-var _ api.BridgeWorker = (*FluxOCIWorker)(nil)
+var _ api.BridgeWorker = (*FluxOCIWriterWorker)(nil)
 
 var (
 	ErrImageHasNotBeenApplied  = errors.New("image has not been applied")
@@ -85,19 +85,19 @@ func (p *FluxOCIParams) ToMap() map[string]interface{} {
 	return result
 }
 
-func (f FluxOCIWorker) ID() api.BridgeWorkerID {
+func (f FluxOCIWriterWorker) ID() api.BridgeWorkerID {
 	return api.BridgeWorkerID{
 		ProviderType:   api.ProviderFluxOCIWriter,
 		ToolchainTypes: []workerapi.ToolchainType{workerapi.ToolchainKubernetesYAML},
 	}
 }
 
-// Info shows FluxOCIWorker api.BridgeWorkerInfo.
+// Info shows FluxOCIWriterWorker api.BridgeWorkerInfo.
 // If the worker is not configured with REPO and TAG,
 // we will not provide any default targets
 // Repository and Tag are generally passed via FluxOCIParams
 // and read from the BridgeWorkerPayload
-func (f FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
+func (f FluxOCIWriterWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 	repository := os.Getenv("REPO")
 	if repository == "" {
 		repository = "// rerun with -e REPO=<your registry>"
@@ -306,7 +306,7 @@ func ParseFluxOCIParams(payload api.BridgeWorkerPayload) (*FluxOCIParams, error)
 	return params, nil
 }
 
-func (f FluxOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (f FluxOCIWriterWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	params, err := ParseFluxOCIParams(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
@@ -402,7 +402,7 @@ func (f FluxOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWor
 	return wctx.SendStatus(status)
 }
 
-func (f FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (f FluxOCIWriterWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	params, err := ParseFluxOCIParams(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
@@ -529,7 +529,7 @@ func (f FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.BridgeW
 	return err
 }
 
-func (f FluxOCIWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (f FluxOCIWriterWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	params, err := ParseFluxOCIParams(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
@@ -657,7 +657,7 @@ func (f FluxOCIWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeWo
 	return fmt.Errorf("manifest.yaml not found in image")
 }
 
-func (f FluxOCIWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (f FluxOCIWriterWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	params, err := ParseFluxOCIParams(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
@@ -722,7 +722,7 @@ func (f FluxOCIWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeW
 	return wctx.SendStatus(result)
 }
 
-func (f FluxOCIWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+func (f FluxOCIWriterWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
 	if err := wctx.SendStatus(common.NewActionResult(
 		api.ActionStatusProgressing,
 		api.ActionResultNone,

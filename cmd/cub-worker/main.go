@@ -203,6 +203,7 @@ const (
 	LowerProviderTypeConfigHub         = "confighub"
 	LowerProviderTypeKubernetes        = "kubernetes"
 	LowerProviderTypeFluxOCIWriter     = "fluxociwriter"
+	LowerProviderTypeFluxOCI           = "fluxoci"
 	LowerProviderTypeFluxRenderer      = "fluxrenderer"
 	LowerProviderTypeOpenTofuAWS       = "opentofu/aws"
 	LowerProviderTypeConfigMapRenderer = "configmaprenderer"
@@ -225,7 +226,7 @@ var availableBridgeWorkers = map[string]api.BridgeWorker{
 	// ArgoCDOCI worker is initialized in rootRunE with credentials (like ConfigHub worker)
 	LowerProviderTypeArgoCDOCI: nil, // placeholder, initialized in rootRunE
 }
-var fluxOCIWorker = flux.NewFluxOCIWorker()
+var fluxOCIWorker = flux.NewFluxOCIWriterWorker()
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
 	// ignore required flag marking for version command
@@ -282,9 +283,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		var directBridgeWorker api.BridgeWorker
 		var ok bool
 
-		// Handle ArgoCDOCI workers specially - they need credentials at construction time
+		// Handle workers that need credentials at construction time
 		if lowerProviderType == LowerProviderTypeArgoCDOCI {
 			directBridgeWorker = argocd.NewArgoCDOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
+			ok = true
+		} else if lowerProviderType == LowerProviderTypeFluxOCI {
+			directBridgeWorker = flux.NewFluxOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
 			ok = true
 		} else {
 			directBridgeWorker, ok = availableBridgeWorkers[lowerProviderType]
@@ -317,7 +321,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		// Currently disabled by default
 		// Special case for FluxOCIWriter - initialize it
 		if rootArgs.enableFluxOCI && lowerProviderType == LowerProviderTypeFluxOCIWriter {
-			if fluxWorker, ok := directBridgeWorker.(*flux.FluxOCIWorker); ok {
+			if fluxWorker, ok := directBridgeWorker.(*flux.FluxOCIWriterWorker); ok {
 				err := flux.NewFluxOCIWorkerConfig(fluxWorker,
 					rootArgs.inCluster,
 					rootArgs.authMethod,

@@ -138,6 +138,11 @@ const (
 	labelManagedByValue        = "argocd-oci-bridge"
 )
 
+// Shared bridge constants
+const (
+	defaultPollInterval = 5 * time.Second
+)
+
 // OCI registry constants
 const (
 	ociURLScheme           = "oci://"
@@ -186,6 +191,14 @@ type argoCDApplicationArgs struct {
 }
 
 const defaultConfigHubURL = "https://hub.confighub.com"
+
+// configHubURLWithDefault returns the given URL if non-empty, otherwise defaultConfigHubURL.
+func configHubURLWithDefault(u string) string {
+	if u == "" {
+		return defaultConfigHubURL
+	}
+	return u
+}
 
 func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 	// Build source configuration: Helm charts use repoURL+targetRevision+helm.releaseName (no path),
@@ -558,7 +571,7 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 	timeout := argoCDWaitTimeout
 
 	ctx := wctx.Context()
-	pollInterval := 5 * time.Second
+	pollInterval := defaultPollInterval
 	startTime := time.Now()
 
 	for {
@@ -652,7 +665,7 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 				), yamlErr)
 			}
 
-			liveDataData := w.buildLiveData(wctx.Context(), payload, cleanedObjects, liveDataYAML)
+			liveDataData := w.BuildLiveData(wctx.Context(), payload, cleanedObjects, liveDataYAML)
 
 			// Check if operation was cancelled/overridden while waiting
 			select {
@@ -800,7 +813,7 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 		), yamlErr)
 	}
 
-	liveDataBytes := w.buildLiveData(wctx.Context(), payload, cleanedApp, liveDataYAML)
+	liveDataBytes := w.BuildLiveData(wctx.Context(), payload, cleanedApp, liveDataYAML)
 
 	// --- Downstream resource discovery from ArgoCD .status.resources[] ---
 	syncDrifted := (overallSync != argoCDSyncStatusSynced)
@@ -901,20 +914,6 @@ func (w *ArgoCDOCIWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload 
 	// Filter out Secret objects — repo-creds are shared infrastructure and should not be deleted per-unit
 	payload.Data = filterOutSecrets(payload.Data)
 	return w.KubernetesBridgeWorker.WatchForDestroy(wctx, payload)
-}
-
-// buildLiveData returns the live data YAML, optionally updated with inventory for CLI Utils applier.
-func (w *ArgoCDOCIWorker) buildLiveData(ctx context.Context, payload api.BridgeWorkerPayload, cleanedObjects []*unstructured.Unstructured, rawYAML string) []byte {
-	data := []byte(rawYAML)
-	if w.GetApplierType() == kubernetes.CLIUtilsSSA {
-		liveDataWithInv, invErr := w.UpdateLiveDataWithInventory(ctx, payload, cleanedObjects, data)
-		if invErr != nil {
-			log.Log.Error(invErr, "Failed to update LiveData with inventory, using raw YAML")
-		} else {
-			data = liveDataWithInv
-		}
-	}
-	return data
 }
 
 // filterOutSecrets removes Secret objects from multi-doc YAML data.

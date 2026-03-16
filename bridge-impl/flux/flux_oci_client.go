@@ -81,7 +81,7 @@ type FluxOCIWorkerConfig struct {
 	KubernetesSecretCredentials string
 }
 
-func NewFluxOCIWorkerConfig(worker *FluxOCIWorker, inCluster bool, authMethod, k8sSecretPath string) error {
+func NewFluxOCIWorkerConfig(worker *FluxOCIWriterWorker, inCluster bool, authMethod, k8sSecretPath string) error {
 	creds := ""
 	if authMethod == AuthMethodKubernetes && k8sSecretPath != "" {
 		var err error

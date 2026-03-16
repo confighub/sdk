@@ -1322,6 +1322,20 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 	return wctx.SendStatus(result)
 }
 
+// BuildLiveData returns the live data YAML, optionally updated with inventory for CLI Utils applier.
+func (w *KubernetesBridgeWorker) BuildLiveData(ctx context.Context, payload api.BridgeWorkerPayload, cleanedObjects []*unstructured.Unstructured, rawYAML string) []byte {
+	data := []byte(rawYAML)
+	if w.applierType == CLIUtilsSSA {
+		liveDataWithInv, invErr := w.UpdateLiveDataWithInventory(ctx, payload, cleanedObjects, data)
+		if invErr != nil {
+			log.Log.Error(invErr, "Failed to update LiveData with inventory, using raw YAML")
+		} else {
+			data = liveDataWithInv
+		}
+	}
+	return data
+}
+
 // Finalize implements api.BridgeWorker.Finalize
 // This method is called when the worker is being shutdown or cleaned up
 func (w *KubernetesBridgeWorker) Finalize(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {

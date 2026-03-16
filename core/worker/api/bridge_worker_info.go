@@ -132,6 +132,7 @@ const (
 	ProviderConfigHub         ProviderType = "ConfigHub"
 	ProviderKubernetes        ProviderType = "Kubernetes"
 	ProviderFluxOCIWriter     ProviderType = "FluxOCIWriter"
+	ProviderFluxOCI           ProviderType = "FluxOCI"
 	ProviderFluxRenderer      ProviderType = "FluxRenderer"
 	ProviderArgoCDRenderer    ProviderType = "ArgoCDRenderer"
 	ProviderArgoCDOCI         ProviderType = "ArgoCDOCI"
@@ -144,6 +145,7 @@ var SupportedProviders = map[ProviderType]bool{
 	ProviderConfigHub:         true,
 	ProviderKubernetes:        true,
 	ProviderFluxOCIWriter:     true,
+	ProviderFluxOCI:           true,
 	ProviderFluxRenderer:      true,
 	ProviderArgoCDRenderer:    true,
 	ProviderArgoCDOCI:         true,
