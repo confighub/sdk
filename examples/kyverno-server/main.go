@@ -13,6 +13,7 @@ import (
 	"github.com/confighub/sdk/function/executor"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/worker"
+	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
 	"github.com/confighub/sdk/workerapi"
 )
 
@@ -20,8 +21,8 @@ func main() {
 	exec := executor.NewEmptyExecutor()
 	exec.RegisterToolchain(k8skit.NewK8sResourceProvider())
 	exec.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
-		FunctionSignature: GetVetKyvernoServerSignature(),
-		Function:          VetKyvernoServerFunction,
+		FunctionSignature: kyvernoserver.GetVetKyvernoServerSignature(),
+		Function:          kyvernoserver.VetKyvernoServerFunction,
 	})
 
 	connector, err := worker.NewConnector(worker.ConnectorOptions{

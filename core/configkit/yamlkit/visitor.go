@@ -455,6 +455,9 @@ func GetPathsAnyType(
 		attr := context.AttributeInfo
 		var currentDataType api.DataType
 		currentValue := currentDoc.Data()
+		if currentValue == nil {
+			return output, nil // skip if there's no value
+		}
 		switch v := any(currentValue).(type) {
 		case string:
 			currentDataType = api.DataTypeString
@@ -480,12 +483,14 @@ func GetPathsAnyType(
 		default:
 			// Non-scalar value (map, slice, etc.) - serialize as YAML
 			currentDataType = api.DataTypeYAML
-			currentValue = strings.TrimRight(currentDoc.String(), "\n")
+			currentValueString := strings.TrimRight(currentDoc.String(), "\n")
+			currentValue = currentValueString
 		}
 
 		// Apply type filtering based on dataType parameter
 		if dataType != api.DataTypeNone && dataType != currentDataType {
-			return output, fmt.Errorf("value %v at path %s is of type %s but expected %s", currentValue, string(context.Path), currentDataType, dataType)
+			slog.Debug(fmt.Sprintf("value %v at path %s in resource %s %s is of type %s but expected %s", currentValue, string(context.Path), string(context.ResourceType), string(context.ResourceName), currentDataType, dataType))
+			return output, nil
 		}
 
 		// Apply needed values filtering if requested

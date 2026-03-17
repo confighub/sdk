@@ -7,6 +7,7 @@ require (
 	github.com/confighub/sdk v0.0.0
 	github.com/confighub/sdk/bridge-impl v0.0.0
 	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/worker-function-impl v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo-contrib v0.17.4
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/spf13/cobra v1.10.1
@@ -245,6 +246,7 @@ replace (
 	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
 	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
 	github.com/confighub/sdk/function-impl => ../../function-impl
+	github.com/confighub/sdk/worker-function-impl => ../../worker-function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -43,6 +43,7 @@ Here the provider types are case-insensitive and they can be comma-separated, li
 
 var workerRunArgs struct {
 	workerProviderTypes string
+	workerFunctions     string
 	envs                []string
 	executable          string
 	daemon              bool
@@ -50,6 +51,7 @@ var workerRunArgs struct {
 
 func init() {
 	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
+	workerRunCmd.Flags().StringVarP(&workerRunArgs.workerFunctions, "functions", "f", "", "Comma-separated list of worker function names (e.g., vet-kyverno-server)")
 	workerRunCmd.Flags().StringSliceVarP(&workerRunArgs.envs, "env", "e", []string{}, "environment variables")
 	workerRunCmd.Flags().StringVar(&workerRunArgs.executable, "executable", "", "Path to worker executable (overrides CONFIGHUB_WORKER_EXECUTABLE env var)")
 	workerRunCmd.Flags().BoolVarP(&workerRunArgs.daemon, "daemon", "d", false, "Run worker in background (daemon mode)")
@@ -102,6 +104,7 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		"CONFIGHUB_WORKER_ID="+worker.BridgeWorkerID.String(),
 		"CONFIGHUB_WORKER_SECRET="+worker.Secret,
 		"CONFIGHUB_WORKER_PROVIDER_TYPES="+workerRunArgs.workerProviderTypes, // may be ""
+		"CONFIGHUB_WORKER_FUNCTIONS="+workerRunArgs.workerFunctions,          // may be ""
 	)
 	// Also append -e to envs
 	// TODO redesign this by adding a prefix for example REPO would become WORKER_TARGET_REPO

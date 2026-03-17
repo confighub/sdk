@@ -2799,7 +2799,7 @@ export type BulkDeleteBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2871,7 +2871,7 @@ export type ListAllBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2944,7 +2944,7 @@ export type BulkPatchBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5583,7 +5583,7 @@ export type ListBridgeWorkersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+    Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -11783,8 +11783,6 @@ export type ApiInfoRead = {
   /** OCI registry port for pulling configuration artifacts. */
   OCIPort?: string;
   RedirectURI?: string;
-  /** Service revision identifier for support cases. */
-  Revision?: string;
   /** Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds. */
   Version?: string;
   /** Port number for the worker to connect to the server. */

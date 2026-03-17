@@ -29,7 +29,6 @@ func infoCmdRun(cmd *cobra.Command, args []string) error {
 	detail.Append([]string{"Client ID:", apiInfo.ClientID})
 	detail.Append([]string{"Build:", apiInfo.Build})
 	detail.Append([]string{"BuiltAt:", apiInfo.BuiltAt})
-	detail.Append([]string{"Revision:", apiInfo.Revision})
 	detail.Render()
 	return nil
 }

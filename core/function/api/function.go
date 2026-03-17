@@ -473,6 +473,13 @@ type AttributeDetails struct {
 	Description       string               `json:",omitempty" description:"Description of the attribute"`
 }
 
+// Issue describes an issue found with a configuration attribute/path, such as a
+// validation failure, policy violation, recommendation, etc.
+type Issue struct {
+	Identifier string `description:"Identifier for the kind of issue found, such as a number, alphanumeric code, or policy/rule name. Use especially with validation functions that check multiple policies/rules."`
+	Message    string `description:"A more detailed and specific explanation of the issue found"`
+}
+
 type Score string
 
 const (
@@ -508,10 +515,11 @@ func ScoreMax(a, b Score) Score {
 // AttributeValue provides the value of an attribute in addition to information about the attribute.
 type AttributeValue struct {
 	AttributeInfo
-	Value   any    `description:"Value of the attribute at the specified Path"`
-	Comment string `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
-	Index   int    `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
-	Score   Score  `json:",omitempty" description:"Score of finding attributed to this Path"`
+	Value   any     `description:"Value of the attribute at the specified Path"`
+	Comment string  `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
+	Index   int     `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
+	Score   Score   `json:",omitempty" description:"Score of finding attributed to this Path"`
+	Issues  []Issue `json:",omitempty" description:"Issues found with the attribute"`
 }
 type AttributeValueList []AttributeValue
 
@@ -521,8 +529,9 @@ type ValidationResult struct {
 	Passed           bool               `description:"True if valid, false otherwise"`
 	Index            int                `description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
 	MaxScore         Score              `json:",omitempty" description:"Maximum score of all findings"`
-	Details          []string           `json:",omitempty" description:"Optional list of failure details"`
-	FailedAttributes AttributeValueList `json:",omitempty" description:"optional list of failed attributes; preferred over Details"`
+	Details          []string           `json:",omitempty" description:"Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths."`
+	Issues           []Issue            `json:",omitempty" description:"Issues found with the configuration unit that are not associated with specific attributes/paths. Use FailedAttributes where possible."`
+	FailedAttributes AttributeValueList `json:",omitempty" description:"optional list of failed attributes/paths and issues found for them. Preferred over Issues and Details."`
 }
 
 type ValidationResultList []ValidationResult

@@ -9,7 +9,7 @@
 #   - Authenticated with: cub auth login
 #
 # Usage:
-#   cd public/
+#   cd ../..
 #   bash examples/kyverno-server/demo.sh
 
 set -euo pipefail
@@ -112,39 +112,66 @@ echo ""
 
 # --- Create Kyverno policy via ConfigHub -------------------------------------
 
-echo "--- Creating Kyverno ClusterPolicy (require-labels) ---"
+echo "--- Creating Kyverno ValidatingPolicy (require-labels) ---"
 cub unit create --space "$SPACE" require-labels-policy - \
   --toolchain Kubernetes/YAML \
   --target "$K8S_TARGET" <<'POLICY'
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-labels
 spec:
-  validationFailureAction: Enforce
-  rules:
-    - name: check-team-label
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kyverno
-                - kyverno-worker
-                - confighub
-                - kube-system
-      validate:
-        message: "The label 'team' is required."
-        pattern:
-          metadata:
-            labels:
-              team: "?*"
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: [kyverno, kyverno-worker, confighub, kube-system]
+  validations:
+    - expression: >
+        has(object.metadata.labels) &&
+        'team' in object.metadata.labels &&
+        object.metadata.labels['team'] != ''
+      message: "The label 'team' is required."
 POLICY
 cub unit apply --space "$SPACE" require-labels-policy --wait
+echo ""
+
+echo "--- Creating Kyverno ValidatingPolicy (disallow-latest-tag) ---"
+cub unit create --space "$SPACE" disallow-latest-tag-policy - \
+  --toolchain Kubernetes/YAML \
+  --target "$K8S_TARGET" <<'POLICY'
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-latest-tag
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['apps']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: [kyverno, kyverno-worker, confighub, kube-system]
+  validations:
+    - expression: >
+        object.spec.template.spec.containers.all(c,
+          !c.image.endsWith(':latest')
+        )
+      message: "Using 'latest' tag is not allowed."
+POLICY
+cub unit apply --space "$SPACE" disallow-latest-tag-policy --wait
 echo ""
 
 # --- Install kyverno-server worker ------------------------------------------
@@ -164,8 +191,15 @@ cub worker install --space "$SPACE" \
 # Apply the worker unit to the cluster (creates namespace, deployment)
 cub unit apply --space "$SPACE" kyverno-worker-unit
 
-# Wait for the namespace to exist, then apply the secret
+# Grant the worker permission to discover Kyverno webhook configurations
 kubectl -n "$KYVERNO_WORKER_NAMESPACE" wait --for=create deployment/"$KYVERNO_WORKER" --timeout=120s
+kubectl create clusterrole kyverno-webhook-reader \
+  --verb=list --resource=validatingwebhookconfigurations.admissionregistration.k8s.io
+kubectl create clusterrolebinding kyverno-worker-webhook-reader \
+  --clusterrole=kyverno-webhook-reader \
+  --group="system:serviceaccounts:$KYVERNO_WORKER_NAMESPACE"
+
+# Apply the ConfigHub connection secret
 cub worker install --space "$SPACE" \
   --export-secret-only \
   -n "$KYVERNO_WORKER_NAMESPACE" \
@@ -194,7 +228,7 @@ spec:
 UNIT
 echo ""
 
-echo "--- Creating test unit: pod-without-labels (should fail) ---"
+echo "--- Creating test unit: pod-without-labels (should fail require-labels) ---"
 cub unit create --space "$SPACE" pod-without-labels - --toolchain Kubernetes/YAML <<'UNIT'
 apiVersion: v1
 kind: Pod
@@ -204,7 +238,30 @@ metadata:
 spec:
   containers:
     - name: nginx
-      image: nginx:latest
+      image: nginx:1.21
+UNIT
+echo ""
+
+echo "--- Creating test unit: deploy-latest-tag (should fail disallow-latest-tag) ---"
+cub unit create --space "$SPACE" deploy-latest-tag - --toolchain Kubernetes/YAML <<'UNIT'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-deploy
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
 UNIT
 echo ""
 
@@ -216,12 +273,16 @@ sleep 10
 
 # --- Run validation ----------------------------------------------------------
 
-echo "--- Running vet-kyverno-server on pod-with-labels ---"
+echo "--- Running vet-kyverno-server on pod-with-labels (should pass) ---"
 cub function do vet-kyverno-server --space "$SPACE" --unit pod-with-labels --worker "$SPACE/$KYVERNO_WORKER"
 echo ""
 
-echo "--- Running vet-kyverno-server on pod-without-labels ---"
+echo "--- Running vet-kyverno-server on pod-without-labels (should fail) ---"
 cub function do vet-kyverno-server --space "$SPACE" --unit pod-without-labels --worker "$SPACE/$KYVERNO_WORKER"
+echo ""
+
+echo "--- Running vet-kyverno-server on deploy-latest-tag (should fail) ---"
+cub function do vet-kyverno-server --space "$SPACE" --unit deploy-latest-tag --worker "$SPACE/$KYVERNO_WORKER"
 echo ""
 
 echo "=== Demo complete ==="

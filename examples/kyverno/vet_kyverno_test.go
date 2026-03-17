@@ -59,48 +59,44 @@ spec:
         image: nginx:latest
 `
 
-const requireLabelsPolicy = `apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+const requireLabelsPolicy = `apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-labels
 spec:
-  validationFailureAction: Enforce
-  rules:
-  - name: check-for-labels
-    match:
-      any:
-      - resources:
-          kinds:
-          - Deployment
-    validate:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['apps']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  validations:
+    - expression: >
+        has(object.metadata.labels) &&
+        'app' in object.metadata.labels &&
+        object.metadata.labels['app'] != ''
       message: "The label 'app' is required."
-      pattern:
-        metadata:
-          labels:
-            app: "?*"
 `
 
-const disallowLatestTagPolicy = `apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+const disallowLatestTagPolicy = `apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: disallow-latest-tag
 spec:
-  validationFailureAction: Enforce
-  rules:
-  - name: validate-image-tag
-    match:
-      any:
-      - resources:
-          kinds:
-          - Deployment
-    validate:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ['apps']
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  validations:
+    - expression: >
+        object.spec.template.spec.containers.all(c,
+          !c.image.endsWith(':latest')
+        )
       message: "Using 'latest' tag is not allowed."
-      pattern:
-        spec:
-          template:
-            spec:
-              containers:
-              - image: "!*:latest"
 `
 
 const multiDocResources = `apiVersion: apps/v1
@@ -300,30 +296,6 @@ func TestVetKyverno_FailedAttributes(t *testing.T) {
 	assert.Contains(t, attr.Details.Description, "require-labels")
 }
 
-func TestVetKyverno_PathExtraction(t *testing.T) {
-	requireKyvernoCLI(t)
-
-	parsedData, err := gaby.ParseAll([]byte(testDeploymentNoLabels))
-	require.NoError(t, err)
-
-	args := []api.FunctionArgument{
-		{Value: requireLabelsPolicy},
-	}
-
-	rp := k8skit.NewK8sResourceProvider()
-	_, output, err := vetKyverno(rp, parsedData, args)
-	require.NoError(t, err)
-
-	vr, ok := output.(api.ValidationResult)
-	require.True(t, ok)
-	assert.False(t, vr.Passed)
-	require.NotEmpty(t, vr.FailedAttributes)
-
-	// The require-labels policy should report a path like "metadata.labels"
-	path := string(vr.FailedAttributes[0].Path)
-	assert.NotEmpty(t, path, "expected a field path from kyverno output")
-}
-
 func TestVetKyverno_MissingBinary(t *testing.T) {
 	old := kyvernoBinary
 	kyvernoBinary = "nonexistent-kyverno-binary-12345"
@@ -342,50 +314,51 @@ func TestVetKyverno_MissingBinary(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to execute kyverno CLI")
 }
 
-// Unit tests for parsing (don't need the kyverno binary).
+// Unit tests for JSON parsing (don't need the kyverno binary).
 
-func TestParseKyvernoOutput(t *testing.T) {
-	output := `Applying 1 policy rule(s) to 1 resource(s)...
-policy require-labels -> resource default/Deployment/test failed:
-1 - check-for-labels validation error: The label 'app' is required. rule check-for-labels failed at path /metadata/labels/
+func TestParsePolicyReport_Failures(t *testing.T) {
+	jsonOutput := `{"kind":"ClusterReport","apiVersion":"openreports.io/v1alpha1","metadata":{"name":"merged"},"source":"","summary":{"pass":0,"fail":2,"warn":0,"error":0,"skip":0},"results":[{"source":"KyvernoValidatingPolicy","policy":"require-labels","timestamp":{"seconds":1773775408,"nanos":0},"result":"fail","scored":true,"resources":[{"kind":"Deployment","namespace":"default","name":"no-labels-deployment","apiVersion":"apps/v1"}],"message":"The label 'app' is required.","properties":{"process":"background scan"}},{"source":"KyvernoValidatingPolicy","policy":"disallow-latest-tag","timestamp":{"seconds":1773775408,"nanos":0},"result":"fail","scored":true,"resources":[{"kind":"Deployment","namespace":"default","name":"no-labels-deployment","apiVersion":"apps/v1"}],"message":"Using 'latest' tag is not allowed.","properties":{"process":"background scan"}}]}`
 
+	report, err := parsePolicyReport([]byte(jsonOutput))
+	require.NoError(t, err)
+	assert.Equal(t, 0, report.Summary.Pass)
+	assert.Equal(t, 2, report.Summary.Fail)
+	require.Len(t, report.Results, 2)
 
-pass: 0, fail: 1, warn: 0, error: 0, skip: 0
-`
-	failures := parseKyvernoOutput(output)
-	require.Len(t, failures, 1)
-	assert.Equal(t, "require-labels", failures[0].policyName)
-	assert.Equal(t, "check-for-labels", failures[0].ruleName)
-	assert.Equal(t, "/metadata/labels", failures[0].path)
-	assert.Equal(t, "default/Deployment/test", failures[0].resourceKey)
-	assert.Contains(t, failures[0].message, "The label 'app' is required")
+	assert.Equal(t, "require-labels", report.Results[0].Policy)
+	assert.Equal(t, "fail", report.Results[0].Result)
+	assert.Equal(t, "The label 'app' is required.", report.Results[0].Message)
+	require.Len(t, report.Results[0].Resources, 1)
+	assert.Equal(t, "Deployment", report.Results[0].Resources[0].Kind)
+	assert.Equal(t, "default", report.Results[0].Resources[0].Namespace)
+	assert.Equal(t, "no-labels-deployment", report.Results[0].Resources[0].Name)
+
+	assert.Equal(t, "disallow-latest-tag", report.Results[1].Policy)
+	assert.Equal(t, "Using 'latest' tag is not allowed.", report.Results[1].Message)
 }
 
-func TestParseKyvernoOutput_MultipleFailures(t *testing.T) {
-	output := `Applying 2 policy rule(s) to 2 resource(s)...
-policy require-labels -> resource default/Deployment/deploy-one failed:
-1 - check-for-labels validation error: The label 'app' is required. rule check-for-labels failed at path /metadata/labels/
+func TestParsePolicyReport_Passing(t *testing.T) {
+	jsonOutput := `{"kind":"ClusterReport","apiVersion":"openreports.io/v1alpha1","metadata":{"name":"merged"},"source":"","summary":{"pass":1,"fail":0,"warn":0,"error":0,"skip":0},"results":[{"source":"KyvernoValidatingPolicy","policy":"require-labels","result":"pass","resources":[{"kind":"Deployment","namespace":"default","name":"test-deployment","apiVersion":"apps/v1"}],"message":"success"}]}`
 
-policy require-labels -> resource default/Deployment/deploy-two failed:
-1 - check-for-labels validation error: The label 'app' is required. rule check-for-labels failed at path /metadata/labels/
-
-
-pass: 0, fail: 2, warn: 0, error: 0, skip: 0
-`
-	failures := parseKyvernoOutput(output)
-	require.Len(t, failures, 2)
-	assert.Equal(t, "default/Deployment/deploy-one", failures[0].resourceKey)
-	assert.Equal(t, "default/Deployment/deploy-two", failures[1].resourceKey)
+	report, err := parsePolicyReport([]byte(jsonOutput))
+	require.NoError(t, err)
+	assert.Equal(t, 1, report.Summary.Pass)
+	assert.Equal(t, 0, report.Summary.Fail)
 }
 
-func TestParseKyvernoOutput_NoPath(t *testing.T) {
-	output := `policy my-policy -> resource default/Pod/test failed:
-1 - my-rule validation error: some message without a path
+func TestParsePolicyReport_ClusterPolicy(t *testing.T) {
+	jsonOutput := `{"kind":"ClusterReport","apiVersion":"openreports.io/v1alpha1","metadata":{"name":"merged"},"source":"","summary":{"pass":0,"fail":1,"warn":0,"error":0,"skip":0},"results":[{"source":"kyverno","policy":"require-labels","rule":"check-for-labels","result":"fail","resources":[{"kind":"Deployment","namespace":"default","name":"no-labels-deployment","apiVersion":"apps/v1"}],"message":"validation error: The label 'app' is required. rule check-for-labels failed at path /metadata/labels/"}]}`
 
+	report, err := parsePolicyReport([]byte(jsonOutput))
+	require.NoError(t, err)
+	assert.Equal(t, 1, report.Summary.Fail)
+	require.Len(t, report.Results, 1)
+	assert.Equal(t, "require-labels", report.Results[0].Policy)
+	assert.Equal(t, "check-for-labels", report.Results[0].Rule)
+}
 
-pass: 0, fail: 1, warn: 0, error: 0, skip: 0
-`
-	failures := parseKyvernoOutput(output)
-	require.Len(t, failures, 1)
-	assert.Equal(t, "", failures[0].path)
+func TestParsePolicyReport_NoJSON(t *testing.T) {
+	_, err := parsePolicyReport([]byte("not json at all"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no JSON found")
 }

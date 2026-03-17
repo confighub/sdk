@@ -4,10 +4,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -31,7 +31,7 @@ func GetVetKyvernoSignature() api.FunctionSignature {
 			{
 				ParameterName: "policy",
 				Required:      true,
-				Description:   "A YAML document or document list containing Kyverno policy resources (ClusterPolicy, Policy, or ValidatingPolicy). Policies from https://kyverno.io/policies/ can be used directly.",
+				Description:   "A YAML document or document list containing Kyverno policy resources (ValidatingPolicy, ClusterPolicy, or Policy). Policies from https://kyverno.io/policies/ can be used directly.",
 				DataType:      api.DataTypeYAML,
 			},
 		},
@@ -45,7 +45,7 @@ func GetVetKyvernoSignature() api.FunctionSignature {
 		Validating:            true,
 		Hermetic:              false, // execs kyverno CLI
 		Idempotent:            true,
-		Description:           "Validates Kubernetes resources against Kyverno policies using the kyverno CLI. Supports ClusterPolicy and Policy resources with validate rules. See https://kyverno.io/policies/ for available policies.",
+		Description:           "Validates Kubernetes resources against Kyverno policies using the kyverno CLI. Supports ValidatingPolicy, ClusterPolicy, and Policy resources with validate rules. See https://kyverno.io/policies/ for available policies.",
 		FunctionType:          api.FunctionTypeCustom,
 		AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 	}
@@ -87,117 +87,126 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 	}
 	resourceFile.Close()
 
-	// Run kyverno apply.
+	// Run kyverno apply with JSON policy report output.
 	cmd := exec.Command(kyvernoBinary, "apply", policyFile.Name(),
 		"--resource", resourceFile.Name(),
-		"--detailed-results",
+		"--policy-report",
+		"--output-format=json",
 	)
 	output, err := cmd.CombinedOutput()
-	outputStr := string(output)
 
-	// Parse the output into validation results.
-	// Exit code 0 = all pass, non-zero = failures or errors.
-	if err == nil {
+	// Check if it's an execution error (binary not found, etc.)
+	// vs a validation failure (non-zero exit with parseable output).
+	if err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			return parsedData, nil, errors.Wrapf(err, "failed to execute kyverno CLI (is %q in PATH?)", kyvernoBinary)
+		}
+	}
+
+	// Parse the JSON policy report.
+	report, parseErr := parsePolicyReport(output)
+	if parseErr != nil {
+		return parsedData, nil, errors.Wrapf(parseErr, "failed to parse kyverno output: %s", string(output))
+	}
+
+	// If all passed, return early.
+	if report.Summary.Fail == 0 {
 		return parsedData, api.ValidationResultTrue, nil
-	}
-
-	// Check if it's an exit error (validation failure) vs execution error.
-	var exitErr *exec.ExitError
-	if !errors.As(err, &exitErr) {
-		return parsedData, nil, errors.Wrapf(err, "failed to execute kyverno CLI (is %q in PATH?)", kyvernoBinary)
-	}
-
-	// Parse failures from the output.
-	failures := parseKyvernoOutput(outputStr)
-	if len(failures) == 0 {
-		// Non-zero exit but couldn't parse failures — return the raw output.
-		return parsedData, nil, errors.Newf("kyverno validation failed: %s", outputStr)
 	}
 
 	// Build the validation result with failed attributes.
 	result := api.ValidationResultFalse
-
-	// Build a resource info map for path lookups.
 	resourceInfoMap := buildResourceInfoMap(parsedData, rp)
 
-	for _, f := range failures {
-		detail := fmt.Sprintf("policy %q rule %q failed: %s", f.policyName, f.ruleName, f.message)
+	for _, r := range report.Results {
+		if r.Result != "fail" {
+			continue
+		}
+
+		ruleName := r.Rule
+		if ruleName == "" {
+			ruleName = "validation"
+		}
+
+		detail := fmt.Sprintf("policy %q rule %q failed: %s", r.Policy, ruleName, r.Message)
 		result.Details = append(result.Details, detail)
 
-		path := ""
-		if f.path != "" {
-			path = gaby.JSONPointerToPath(f.path)
-		}
+		for _, res := range r.Resources {
+			ns := res.Namespace
+			if ns == "" {
+				ns = "default"
+			}
+			resourceKey := fmt.Sprintf("%s/%s/%s", ns, res.Kind, res.Name)
+			resourceInfo := lookupResourceInfo(resourceInfoMap, resourceKey)
 
-		resourceInfo := lookupResourceInfo(resourceInfoMap, f.resourceKey)
-		failedAttr := api.AttributeValue{
-			AttributeInfo: api.AttributeInfo{
-				AttributeIdentifier: api.AttributeIdentifier{
-					ResourceInfo: resourceInfo,
-					Path:         api.ResolvedPath(path),
-				},
-				AttributeMetadata: api.AttributeMetadata{
-					AttributeName: api.AttributeNameNone,
-					Details: &api.AttributeDetails{
-						Description: detail,
+			failedAttr := api.AttributeValue{
+				AttributeInfo: api.AttributeInfo{
+					AttributeIdentifier: api.AttributeIdentifier{
+						ResourceInfo: resourceInfo,
+					},
+					AttributeMetadata: api.AttributeMetadata{
+						AttributeName: api.AttributeNameNone,
 					},
 				},
-			},
+				Issues: []api.Issue{
+					{
+						Identifier: r.Policy + "/" + ruleName,
+						Message:    r.Message,
+					},
+				},
+			}
+			result.FailedAttributes = append(result.FailedAttributes, failedAttr)
 		}
-		result.FailedAttributes = append(result.FailedAttributes, failedAttr)
 	}
 
 	return parsedData, result, nil
 }
 
-// kyvernoFailure represents a parsed failure from kyverno CLI output.
-type kyvernoFailure struct {
-	policyName  string
-	ruleName    string
-	message     string
-	path        string
-	resourceKey string // "namespace/Kind/name"
+// policyReport represents the JSON output from kyverno apply --policy-report --output-format=json.
+type policyReport struct {
+	Summary policyReportSummary  `json:"summary"`
+	Results []policyReportResult `json:"results"`
 }
 
-// parseKyvernoOutput parses kyverno apply output into structured failures.
-// Output format:
-//
-//	policy <name> -> resource <ns>/<Kind>/<name> failed:
-//	1 - <ruleName> validation error: <message> rule <ruleName> failed at path <path>
-var (
-	policyLineRE  = regexp.MustCompile(`^policy (\S+) -> resource (\S+) failed:`)
-	ruleFailureRE = regexp.MustCompile(`^\d+ - (\S+) validation error: (.+)`)
-	pathRE        = regexp.MustCompile(`failed at path (/\S*)`)
-)
+type policyReportSummary struct {
+	Pass  int `json:"pass"`
+	Fail  int `json:"fail"`
+	Warn  int `json:"warn"`
+	Error int `json:"error"`
+	Skip  int `json:"skip"`
+}
 
-func parseKyvernoOutput(output string) []kyvernoFailure {
-	var failures []kyvernoFailure
-	var currentPolicy string
-	var currentResource string
+type policyReportResult struct {
+	Source    string                 `json:"source"`
+	Policy    string                 `json:"policy"`
+	Rule      string                 `json:"rule"`
+	Result    string                 `json:"result"`
+	Message   string                 `json:"message"`
+	Resources []policyReportResource `json:"resources"`
+}
 
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
+type policyReportResource struct {
+	Kind       string `json:"kind"`
+	Namespace  string `json:"namespace"`
+	Name       string `json:"name"`
+	APIVersion string `json:"apiVersion"`
+}
 
-		if m := policyLineRE.FindStringSubmatch(line); m != nil {
-			currentPolicy = m[1]
-			currentResource = m[2]
-			continue
-		}
-
-		if m := ruleFailureRE.FindStringSubmatch(line); m != nil && currentPolicy != "" {
-			f := kyvernoFailure{
-				policyName:  currentPolicy,
-				ruleName:    m[1],
-				message:     m[2],
-				resourceKey: currentResource,
-			}
-			if pm := pathRE.FindStringSubmatch(line); pm != nil {
-				f.path = strings.TrimRight(pm[1], "/")
-			}
-			failures = append(failures, f)
-		}
+// parsePolicyReport parses the JSON policy report from kyverno CLI output.
+func parsePolicyReport(output []byte) (*policyReport, error) {
+	// The kyverno CLI may print warnings to stderr mixed into combined output.
+	// Find the JSON object in the output.
+	jsonStart := strings.IndexByte(string(output), '{')
+	if jsonStart < 0 {
+		return nil, fmt.Errorf("no JSON found in output")
 	}
-	return failures
+
+	var report policyReport
+	if err := json.Unmarshal(output[jsonStart:], &report); err != nil {
+		return nil, err
+	}
+	return &report, nil
 }
 
 // buildResourceInfoMap creates a map from "namespace/Kind/name" to ResourceInfo

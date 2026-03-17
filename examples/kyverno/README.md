@@ -69,7 +69,7 @@ The worker connects to ConfigHub and registers the `vet-kyverno` function alongs
 
 ## Usage
 
-The `vet-kyverno` function takes a single parameter: a YAML document containing one or more Kyverno policies (ClusterPolicy or Policy resources).
+The `vet-kyverno` function takes a single parameter: a YAML document containing one or more Kyverno policies (ValidatingPolicy, ClusterPolicy, or Policy resources).
 
     cub function do vet-kyverno '<policy-yaml>' --where "Slug='my-unit'" --worker "my-space/my-worker"
 

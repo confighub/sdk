@@ -26,15 +26,19 @@ import (
 
 	"github.com/confighub/sdk/bridge-impl/argocd"
 	argocdrenderer "github.com/confighub/sdk/bridge-impl/argocd-renderer"
-	"github.com/confighub/sdk/bridge-impl/configmap"
 	"github.com/confighub/sdk/bridge-impl/confighub"
+	"github.com/confighub/sdk/bridge-impl/configmap"
 	"github.com/confighub/sdk/bridge-impl/flux"
 	fluxrenderer "github.com/confighub/sdk/bridge-impl/flux-renderer"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/bridge-impl/opentofu"
+	funcimpl "github.com/confighub/sdk/function-impl"
+	"github.com/confighub/sdk/function/executor"
+	"github.com/confighub/sdk/function/handler"
+	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
 	"github.com/confighub/sdk/worker/api"
 	"github.com/confighub/sdk/worker/lib"
-	funcimpl "github.com/confighub/sdk/function-impl"
+	"github.com/confighub/sdk/workerapi"
 )
 
 var rootCmd = &cobra.Command{
@@ -73,6 +77,8 @@ The other environment variables it expects are:
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
 - CONFIGHUB_WORKER_ID: The worker ID
 - CONFIGHUB_WORKER_SECRET: The worker secret
+- CONFIGHUB_WORKER_PROVIDER_TYPES: Comma-separated list of lower-cased provider types
+- CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server")
 - CONFIGHUB_WORKER_HTTP_SERVER_ENABLED: When set, enables a HTTP server with a prometheus exporter endpoint
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: The port to listen for a server, currently only exposes metrics
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
@@ -102,13 +108,59 @@ var rootArgs struct {
 	inCluster              bool
 	authMethod             string // "kubernetes", "cloud", "docker-config", "keychain"
 	kubernetesSecretPath   string
-	gracePeriodDelay int // Delay in seconds after SIGTERM before starting shutdown
+	gracePeriodDelay       int // Delay in seconds after SIGTERM before starting shutdown
 	// autoRefresh  bool
 	enableFluxOCI bool
 }
 
-// A single shared standard executor for all provider types.
-var standardExecutor = funcimpl.NewStandardExecutor()
+// availableWorkerFunctions maps function names to their registration details.
+var availableWorkerFunctions = map[string]struct {
+	toolchain    workerapi.ToolchainType
+	registration handler.FunctionRegistration
+}{
+	"vet-kyverno-server": {
+		toolchain: workerapi.ToolchainKubernetesYAML,
+		registration: handler.FunctionRegistration{
+			FunctionSignature: kyvernoserver.GetVetKyvernoServerSignature(),
+			Function:          kyvernoserver.VetKyvernoServerFunction,
+		},
+	},
+}
+
+// newFunctionExecutor returns a standard executor if CONFIGHUB_STANDARD_FUNCTIONS
+// is set to "1" or "true", otherwise an empty executor with no functions registered.
+// It then conditionally registers additional functions based on CONFIGHUB_WORKER_FUNCTIONS,
+// which is a comma-separated list of function names.
+func newFunctionExecutor() executor.FunctionExecutor {
+	var exec *executor.ConcreteFunctionExecutor
+	if v := os.Getenv("CONFIGHUB_STANDARD_FUNCTIONS"); v == "1" || v == "true" {
+		exec = funcimpl.NewStandardExecutor()
+	} else {
+		exec = executor.NewEmptyExecutor()
+	}
+
+	workerFunctions := os.Getenv("CONFIGHUB_WORKER_FUNCTIONS")
+	if workerFunctions != "" {
+		for _, name := range strings.Split(workerFunctions, ",") {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			wf, ok := availableWorkerFunctions[name]
+			if !ok {
+				log.FromContext(context.Background()).Error(fmt.Errorf("unknown function %q", name), "Skipping unknown worker function")
+				continue
+			}
+			if err := exec.RegisterFunction(wf.toolchain, wf.registration); err != nil {
+				log.FromContext(context.Background()).Error(err, "Failed to register worker function", "function", name)
+			} else {
+				log.FromContext(context.Background()).Info("Registered worker function", "function", name)
+			}
+		}
+	}
+
+	return exec
+}
 
 func init() {
 	url := defaultConfighubURL
@@ -399,7 +451,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		rootArgs.workerID,
 		rootArgs.workerSecret).
 		WithBridgeWorker(bridgeDispatcher).
-		WithFunctionExecutor(standardExecutor).
+		WithFunctionExecutor(newFunctionExecutor()).
 		WithMetricsMeter(metricsMeter)
 
 	// Start worker in a errgroup with the http server so we can handle signals
@@ -466,7 +518,6 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	log.FromContext(context.Background()).Info("Worker shutdown completed gracefully")
 	return nil
 }
-
 
 func main() {
 	logr := zap.New(zap.UseDevMode(true))

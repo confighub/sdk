@@ -158,9 +158,6 @@ type ApiInfo struct {
 	OCIPort     string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
 	RedirectURI string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
 
-	// Revision Service revision identifier for support cases.
-	Revision string `json:"Revision,omitempty" yaml:"Revision,omitempty"`
-
 	// Version Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds.
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
 
@@ -3524,7 +3521,7 @@ type BulkDeleteBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3600,7 +3597,7 @@ type ListAllBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3701,7 +3698,7 @@ type BulkPatchBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6289,7 +6286,7 @@ type ListBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, CreatedAt, DisplayName, Labels, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`

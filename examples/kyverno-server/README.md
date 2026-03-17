@@ -5,7 +5,7 @@ This example demonstrates a custom ConfigHub function that validates Kubernetes 
 ## How It Works
 
 1. For each Kubernetes resource in the configuration data, the function converts it to JSON and wraps it in a Kubernetes `AdmissionReview` request.
-2. The request is POSTed to the Kyverno webhook's `/validate` endpoint.
+2. The request is POSTed to the Kyverno kyverno-resource-validating-webhook-cfg webhook's endpoint.
 3. The Kyverno server evaluates the resource against all deployed policies and returns an `AdmissionResponse`.
 4. The function aggregates results across all resources into a `ValidationResult` with details and failed attributes.
 
@@ -21,11 +21,11 @@ Policies are not passed as parameters — they must be deployed in the Kyverno c
 
 The function uses environment variables to connect to the Kyverno server:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `KYVERNO_URL` | Yes | Base URL of the Kyverno webhook (e.g., `https://kyverno-svc.kyverno.svc:443`) |
-| `KYVERNO_CA_CERT_PATH` | No | Path to a CA certificate file for TLS verification (for Kyverno's self-signed cert) |
-| `KYVERNO_SKIP_TLS_VERIFY` | No | Set to `true` to skip TLS certificate verification (development only) |
+| Variable                  | Required | Description                                                                         |
+| ------------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `KYVERNO_URL`             | Yes      | Base URL of the Kyverno webhook (e.g., `https://kyverno-svc.kyverno.svc:443`)       |
+| `KYVERNO_CA_CERT_PATH`    | No       | Path to a CA certificate file for TLS verification (for Kyverno's self-signed cert) |
+| `KYVERNO_SKIP_TLS_VERIFY` | No       | Set to `true` to skip TLS certificate verification (development only)               |
 
 ## Quick Start
 
@@ -109,12 +109,12 @@ The `vet-kyverno-server` function takes no parameters — it validates resources
 
 ## Comparison with the CLI Example
 
-| | `kyverno` (CLI) | `kyverno-server` |
-|---|---|---|
-| Policy source | Passed as function parameter | Deployed in Kyverno cluster |
-| Kyverno dependency | CLI binary in PATH | Kyverno running in a cluster |
-| Performance | Process spawn per invocation | HTTP request per resource |
-| Policy management | Ad-hoc, per invocation | Centralized in cluster |
+|                    | `kyverno` (CLI)              | `kyverno-server`             |
+| ------------------ | ---------------------------- | ---------------------------- |
+| Policy source      | Passed as function parameter | Deployed in Kyverno cluster  |
+| Kyverno dependency | CLI binary in PATH           | Kyverno running in a cluster |
+| Performance        | Process spawn per invocation | HTTP request per resource    |
+| Policy management  | Ad-hoc, per invocation       | Centralized in cluster       |
 
 ## Running Tests
 

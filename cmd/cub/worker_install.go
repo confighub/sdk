@@ -55,6 +55,7 @@ See the worker guide (https://docs.confighub.com/guide/workers/) for more detail
 
 var workerInstallArgs struct {
 	workerProviderTypes string
+	workerFunctions     string
 	envs                []string
 	export              bool
 	includeSecret       bool
@@ -75,6 +76,7 @@ const defaultServiceAcccount = "confighub-worker"
 
 func init() {
 	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerProviderTypes, "provider-types", "t", "", "Comma-separated list of provider types")
+	workerInstallCmd.Flags().StringVarP(&workerInstallArgs.workerFunctions, "worker-functions", "f", "", "Comma-separated list of worker function names (e.g., vet-kyverno-server)")
 	workerInstallCmd.Flags().StringSliceVarP(&workerInstallArgs.envs, "env", "e", []string{}, "environment variables")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.export, "export", false, "export manifest to stdout instead of applying it")
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.includeSecret, "include-secret", false, "include Secret resource in manifest")
@@ -191,7 +193,7 @@ func getWorkerImage(image string) string {
 		// Pin to the same build as the server
 		apiInfo := GetApiInfo()
 		tag := apiInfo.Build
-		if strings.HasPrefix(tag, "local") || strings.HasPrefix(tag, "test") {
+		if strings.HasPrefix(tag, "local") || strings.HasPrefix(tag, "test") || strings.Contains(tag, "unknown") {
 			tag = "latest"
 		}
 		image = "ghcr.io/confighubai/confighub-worker:" + tag
@@ -249,6 +251,9 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	if workerInstallArgs.workerProviderTypes != "" {
 		envMap["CONFIGHUB_WORKER_PROVIDER_TYPES"] = workerInstallArgs.workerProviderTypes
+	}
+	if workerInstallArgs.workerFunctions != "" {
+		envMap["CONFIGHUB_WORKER_FUNCTIONS"] = workerInstallArgs.workerFunctions
 	}
 
 	// Add additional environment variables from command line arguments
