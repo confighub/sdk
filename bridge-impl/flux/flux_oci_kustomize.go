@@ -65,17 +65,17 @@ func (w *FluxOCIWorker) ID() api.BridgeWorkerID {
 
 // FluxOCIWorkerParams contains the configuration parameters for the Flux OCI bridge worker.
 type FluxOCIWorkerParams struct {
-	KubeContext      string `json:",omitempty"`
-	WaitTimeout      string `json:",omitempty"`
-	FluxNamespace    string `json:",omitempty"` // Namespace where Flux CRs will be created (default: "flux-system")
-	TargetNamespace  string `json:",omitempty"` // Target namespace for deployed resources (default: "default")
-	Interval         string `json:",omitempty"` // Flux reconcile interval (default: "10m")
-	OCIRepoURL       string `json:",omitempty"` // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
-	OCIHost          string `json:",omitempty"` // OCI registry host - optional, inferred from server URL if not set
-	OCIPath          string `json:",omitempty"` // Path within OCI artifact (default: ".")
-	TargetRevision   string `json:",omitempty"` // OCI tag (default: "latest")
-	Prune            bool   `json:",omitempty"` // Enable pruning of orphaned resources (default: true)
-	DisableRepoCreds bool   `json:",omitempty"` // Skip auto-generation of OCI credentials Secret (default: false)
+	KubeContext      string // Kubernetes context name to use (defaults to current context)
+	WaitTimeout      string
+	FluxNamespace    string // Namespace where Flux CRs will be created (default: "flux-system")
+	TargetNamespace  string // Target namespace for deployed resources (default: "default")
+	Interval         string // Flux reconcile interval (default: "10m")
+	OCIRepoURL       string // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
+	OCIHost          string // OCI registry host - optional, inferred from server URL if not set
+	OCIPath          string // Path within OCI artifact (default: ".")
+	TargetRevision   string // OCI tag (default: "latest")
+	Prune            bool   // Enable pruning of orphaned resources (default: true)
+	DisableRepoCreds bool   // Skip auto-generation of OCI credentials Secret (default: false)
 }
 
 // Default values for Flux OCI worker parameters
@@ -134,6 +134,11 @@ type fluxOCIArgs struct {
 	Insecure        bool   // When true, sets spec.insecure on OCIRepository for HTTP registries
 	SecretName      string // OCI credentials secret name (empty if disabled)
 	ConfigHubURL    string
+	// Helm-specific fields (set when unit is a Helm chart)
+	IsHelm           bool
+	HelmReleaseName  string
+	HelmChartName    string
+	HelmChartVersion string
 }
 
 func generateFluxOCIRepository(args *fluxOCIArgs) ([]byte, error) {
@@ -281,13 +286,42 @@ func generateFluxOCICreds(host, namespace, workerID, workerSecret string) ([]byt
 
 func parseFluxOCIParams(payload api.BridgeWorkerPayload) (FluxOCIWorkerParams, error) {
 	var params FluxOCIWorkerParams
-	// Set Prune=true before unmarshaling so it remains true unless explicitly overridden
+	// Set Prune=true as default; TargetOptions may override it.
 	params.Prune = true
 
-	if len(payload.TargetParams) > 0 {
-		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
-			return params, fmt.Errorf("failed to parse target params: %w", err)
-		}
+	// Read from TargetOptions (new-style string map).
+	if v, ok := payload.TargetOptions["FluxNamespace"]; ok {
+		params.FluxNamespace = v
+	}
+	if v, ok := payload.TargetOptions["TargetNamespace"]; ok {
+		params.TargetNamespace = v
+	}
+	if v, ok := payload.TargetOptions["Interval"]; ok {
+		params.Interval = v
+	}
+	if v, ok := payload.TargetOptions["OCIRepoURL"]; ok {
+		params.OCIRepoURL = v
+	}
+	if v, ok := payload.TargetOptions["OCIHost"]; ok {
+		params.OCIHost = v
+	}
+	if v, ok := payload.TargetOptions["OCIPath"]; ok {
+		params.OCIPath = v
+	}
+	if v, ok := payload.TargetOptions["TargetRevision"]; ok {
+		params.TargetRevision = v
+	}
+	if v, ok := payload.TargetOptions["Prune"]; ok {
+		params.Prune = v != "false"
+	}
+	if v, ok := payload.TargetOptions["DisableRepoCreds"]; ok {
+		params.DisableRepoCreds = v == "true"
+	}
+	if v, ok := payload.TargetOptions["KubeContext"]; ok {
+		params.KubeContext = v
+	}
+	if v, ok := payload.TargetOptions["WaitTimeout"]; ok {
+		params.WaitTimeout = v
 	}
 
 	// Apply defaults
@@ -314,11 +348,6 @@ func parseFluxOCIParams(payload api.BridgeWorkerPayload) (FluxOCIWorkerParams, e
 }
 
 func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload *api.BridgeWorkerPayload, skipRepoCreds bool) (FluxOCIWorkerParams, error) {
-	// Reject Helm charts early — Flux Helm support (HelmRelease+HelmRepository) is not yet implemented
-	if helmutils.IsHelmChart(payload.UnitLabels) {
-		return FluxOCIWorkerParams{}, errors.New("Helm charts are not yet supported by the Flux OCI bridge")
-	}
-
 	params, err := parseFluxOCIParams(*payload)
 	if err != nil {
 		return params, err
@@ -377,34 +406,66 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 		isHTTP = probeOCIProtocol(ociHost)
 	}
 
+	// Detect Helm units and extract Helm metadata
+	isHelm := helmutils.IsHelmChart(payload.UnitLabels)
+	var helmReleaseName, helmChartName, helmChartVersion string
+	if isHelm {
+		metadata := helmutils.ExtractHelmMetadata(payload.UnitLabels, payload.UnitSlug)
+		targetRevision = metadata.ChartVersion
+		helmReleaseName = metadata.ReleaseName
+		helmChartName = metadata.ChartName
+		helmChartVersion = metadata.ChartVersion
+	}
+
 	args := &fluxOCIArgs{
-		Name:            appName,
-		FluxNamespace:   params.FluxNamespace,
-		UnitSlug:        payload.UnitSlug,
-		UnitID:          payload.UnitID.String(),
-		SpaceID:         payload.SpaceID.String(),
-		RevisionNum:     fmt.Sprintf("%d", payload.RevisionNum),
-		OCIRepoURL:      ociRepoURL,
-		OCIPath:         params.OCIPath,
-		TargetRevision:  targetRevision,
-		TargetNamespace: params.TargetNamespace,
-		Interval:        params.Interval,
-		Prune:           params.Prune,
-		Insecure:        isHTTP,
-		ConfigHubURL:    configHubURLWithDefault(wctx.GetServerURL()),
+		Name:             appName,
+		FluxNamespace:    params.FluxNamespace,
+		UnitSlug:         payload.UnitSlug,
+		UnitID:           payload.UnitID.String(),
+		SpaceID:          payload.SpaceID.String(),
+		RevisionNum:      fmt.Sprintf("%d", payload.RevisionNum),
+		OCIRepoURL:       ociRepoURL,
+		OCIPath:          params.OCIPath,
+		TargetRevision:   targetRevision,
+		TargetNamespace:  params.TargetNamespace,
+		Interval:         params.Interval,
+		Prune:            params.Prune,
+		Insecure:         isHTTP,
+		ConfigHubURL:     configHubURLWithDefault(wctx.GetServerURL()),
+		IsHelm:           isHelm,
+		HelmReleaseName:  helmReleaseName,
+		HelmChartName:    helmChartName,
+		HelmChartVersion: helmChartVersion,
 	}
 
-	ociRepoYAML, err := generateFluxOCIRepository(args)
-	if err != nil {
-		return params, fmt.Errorf("failed to generate Flux OCIRepository: %w", err)
-	}
+	// Generate the primary CR pair: Helm path uses HelmRepository+HelmRelease,
+	// non-Helm path uses OCIRepository+Kustomization.
+	var primaryRepoYAML, secondaryCRYAML []byte
+	var primaryRepoGeneratorWithSecret func(*fluxOCIArgs) ([]byte, error)
 
-	kustomizationYAML, err := generateFluxKustomization(args)
-	if err != nil {
-		return params, fmt.Errorf("failed to generate Flux Kustomization: %w", err)
+	if isHelm {
+		primaryRepoYAML, err = generateFluxHelmRepository(args)
+		if err != nil {
+			return params, fmt.Errorf("failed to generate Flux HelmRepository: %w", err)
+		}
+		secondaryCRYAML, err = generateFluxHelmRelease(args)
+		if err != nil {
+			return params, fmt.Errorf("failed to generate Flux HelmRelease: %w", err)
+		}
+		primaryRepoGeneratorWithSecret = generateFluxHelmRepository
+		log.Log.Info("Generated Flux Helm CRs", "name", appName, "namespace", params.FluxNamespace, "ociRepoURL", ociRepoURL, "chartVersion", helmChartVersion)
+	} else {
+		primaryRepoYAML, err = generateFluxOCIRepository(args)
+		if err != nil {
+			return params, fmt.Errorf("failed to generate Flux OCIRepository: %w", err)
+		}
+		secondaryCRYAML, err = generateFluxKustomization(args)
+		if err != nil {
+			return params, fmt.Errorf("failed to generate Flux Kustomization: %w", err)
+		}
+		primaryRepoGeneratorWithSecret = generateFluxOCIRepository
+		log.Log.Info("Generated Flux CRs", "name", appName, "namespace", params.FluxNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision)
 	}
-
-	log.Log.Info("Generated Flux CRs", "name", appName, "namespace", params.FluxNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision)
 
 	// Generate OCI creds Secret if credentials are available and not disabled
 	if !skipRepoCreds && !params.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
@@ -412,33 +473,114 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 		if credsErr != nil {
 			log.Log.Error(credsErr, "Failed to generate OCI creds Secret, proceeding without it")
 		} else {
-			// Set SecretName on args only after successful creds generation, then re-generate
-			// OCIRepository with the secretRef included
+			// Set SecretName on args and re-generate the primary repo CR with the secretRef included
 			normalizedHost := k8skit.K8sNormalizeName(ociHost)
 			args.SecretName = fluxOCICredsSecretPrefix + normalizedHost
-			ociRepoYAML, err = generateFluxOCIRepository(args)
+			primaryRepoYAML, err = primaryRepoGeneratorWithSecret(args)
 			if err != nil {
-				return params, fmt.Errorf("failed to generate Flux OCIRepository with secretRef: %w", err)
+				return params, fmt.Errorf("failed to generate Flux primary repo CR with secretRef: %w", err)
 			}
 			log.Log.Info("Generated Flux OCI creds Secret", "host", ociHost)
-			// Combine as multi-doc YAML: Secret first, then OCIRepository, then Kustomization
+			// Combine as multi-doc YAML: Secret first, then primary repo CR, then secondary CR
 			payload.Data = append(credsYAML, []byte("---\n")...)
-			payload.Data = append(payload.Data, ociRepoYAML...)
+			payload.Data = append(payload.Data, primaryRepoYAML...)
 			payload.Data = append(payload.Data, []byte("---\n")...)
-			payload.Data = append(payload.Data, kustomizationYAML...)
+			payload.Data = append(payload.Data, secondaryCRYAML...)
 			return params, nil
 		}
 	}
 
-	// No creds: just OCIRepository + Kustomization
-	payload.Data = ociRepoYAML
+	// No creds: just primary repo CR + secondary CR
+	payload.Data = primaryRepoYAML
 	payload.Data = append(payload.Data, []byte("---\n")...)
-	payload.Data = append(payload.Data, kustomizationYAML...)
+	payload.Data = append(payload.Data, secondaryCRYAML...)
 	return params, nil
 }
 
 func (w *FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderFluxOCI)
+	info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderFluxOCI)
+	for i := range info.SupportedConfigTypes {
+		info.SupportedConfigTypes[i].Options = append(info.SupportedConfigTypes[i].Options,
+			api.BridgeOption{
+				Name:        "FluxNamespace",
+				Description: "Namespace where Flux CRs (OCIRepository, Kustomization, HelmRepository, HelmRelease) will be created. Defaults to \"flux-system\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "flux-system",
+			},
+			api.BridgeOption{
+				Name:        "TargetNamespace",
+				Description: "Target namespace for resources deployed by Flux. Defaults to \"default\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "default",
+			},
+			api.BridgeOption{
+				Name:        "Interval",
+				Description: "Flux reconcile interval (e.g. \"5m\", \"10m\"). Defaults to \"10m\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "10m",
+			},
+			api.BridgeOption{
+				Name:        "OCIRepoURL",
+				Description: "Full OCI registry URL (e.g. \"oci://ghcr.io/my-org/my-repo\"). If empty, auto-constructed from the unit's OCI host and space/unit slugs.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "oci://ghcr.io/my-org/my-repo",
+			},
+			api.BridgeOption{
+				Name:        "OCIHost",
+				Description: "OCI registry host (e.g. \"ghcr.io\"). Optional; inferred from server URL when neither OCIRepoURL nor OCIHost is set.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "ghcr.io",
+			},
+			api.BridgeOption{
+				Name:        "OCIPath",
+				Description: "Path within the OCI artifact where manifests reside. Only used for non-Helm (Kustomization) units. Defaults to \".\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     ".",
+			},
+			api.BridgeOption{
+				Name:        "TargetRevision",
+				Description: "OCI tag or digest to deploy. Defaults to \"latest\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "latest",
+			},
+			api.BridgeOption{
+				Name:        "Prune",
+				Description: "Enable pruning of orphaned Kubernetes resources managed by Flux. Defaults to true.",
+				Required:    false,
+				DataType:    funcApi.DataTypeBool,
+				Example:     "true",
+			},
+			api.BridgeOption{
+				Name:        "DisableRepoCreds",
+				Description: "When true, skip auto-generation of the OCI credentials Secret. Defaults to false.",
+				Required:    false,
+				DataType:    funcApi.DataTypeBool,
+				Example:     "false",
+			},
+			api.BridgeOption{
+				Name:        "KubeContext",
+				Description: "Kubernetes context name to use. Defaults to the current context.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "my-cluster",
+			},
+			api.BridgeOption{
+				Name:        "WaitTimeout",
+				Description: "Maximum duration to wait for Flux to reconcile (e.g. \"10m\", \"30m\"). Defaults to the worker large wait timeout.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "10m",
+			},
+		)
+	}
+	return info
 }
 
 // findFluxKustomizationObject returns the first Kustomization object from a list of parsed objects.
@@ -482,7 +624,7 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 		), err))
 	}
 
-	// Parse the Kustomization CR from the transformed payload
+	// Parse the generated CRs from the transformed payload
 	objects, err := kubernetes.ParseObjects(payload.Data)
 	if err != nil {
 		return backoff.Permanent(lib.SafeSendStatus(wctx, common.NewActionResult(
@@ -491,6 +633,13 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 			err.Error(),
 		), err))
 	}
+
+	// Branch on Helm vs Kustomization path
+	if hrObj := findFluxHelmReleaseObject(objects); hrObj != nil {
+		helmRepoObj := findFluxHelmRepositoryObject(objects)
+		return w.watchFluxHelmRelease(wctx, payload, params, hrObj, helmRepoObj)
+	}
+
 	ksObj := findFluxKustomizationObject(objects)
 	if ksObj == nil {
 		return backoff.Permanent(lib.SafeSendStatus(wctx, common.NewActionResult(
@@ -655,15 +804,22 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 		), err)
 	}
 
-	// Parse the expected Kustomization CR
+	// Parse the generated CRs
 	objects, err := kubernetes.ParseObjects(payload.Data)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultRefreshFailed,
-			fmt.Sprintf("failed to parse Kustomization CR: %v", err),
+			fmt.Sprintf("failed to parse Flux CRs: %v", err),
 		), err)
 	}
+
+	// Branch on Helm vs Kustomization path
+	if expectedHR := findFluxHelmReleaseObject(objects); expectedHR != nil {
+		expectedHelmRepo := findFluxHelmRepositoryObject(objects)
+		return w.refreshFluxHelmRelease(wctx, payload, params, expectedHR, expectedHelmRepo)
+	}
+
 	expectedKs := findFluxKustomizationObject(objects)
 	if expectedKs == nil {
 		noObjErr := errors.New("no Kustomization CR found in transformed payload")

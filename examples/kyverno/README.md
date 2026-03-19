@@ -1,6 +1,6 @@
 # Kyverno Policy Validation Example
 
-This example demonstrates a custom ConfigHub function that validates Kubernetes resources against [Kyverno](https://kyverno.io/) policies. It uses the `kyverno` CLI for offline validation, avoiding heavy build dependencies.
+This example demonstrates a custom ConfigHub function that validates Kubernetes resources against [Kyverno](https://kyverno.io/) policies and Kubernetes [ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) resources. It uses the `kyverno` CLI for offline validation, avoiding heavy build dependencies.
 
 ## Prerequisites
 
@@ -69,18 +69,26 @@ The worker connects to ConfigHub and registers the `vet-kyverno` function alongs
 
 ## Usage
 
-The `vet-kyverno` function takes a single parameter: a YAML document containing one or more Kyverno policies (ValidatingPolicy, ClusterPolicy, or Policy resources).
+The `vet-kyverno` function takes a single parameter: a YAML document containing one or more Kyverno policies (ValidatingPolicy, ClusterPolicy, or Policy resources) or Kubernetes [ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) resources.
 
     cub function do vet-kyverno '<policy-yaml>' --where "Slug='my-unit'" --worker "my-space/my-worker"
 
-Policies from https://kyverno.io/policies/ can be used directly.
+Policies from https://kyverno.io/policies/ can be used directly. Kubernetes native ValidatingAdmissionPolicy resources are also supported, allowing pre-deployment validation with the same CEL-based policies used for admission control.
 
 ## How It Works
 
 1. The function writes the policy YAML and resource YAML to temporary files.
-2. It executes `kyverno apply <policy> --resource <resources> --detailed-results`.
-3. It parses the CLI output to extract policy/rule failures and field paths.
-4. It returns a `ValidationResult` with details and failed attributes.
+2. It executes `kyverno apply <policy> --resource <resources> --policy-report --output-format=json`.
+3. It parses the JSON policy report to extract policy/rule failures and field paths (converted from JSON Pointer to dot notation).
+4. It returns a `ValidationResult` with details, failed attributes, and paths where available.
+
+## End-to-End Demo
+
+For a complete end-to-end demo using Kind, see [demo.sh](demo.sh). Run from the `public/` directory:
+
+    bash examples/kyverno/demo.sh
+
+The demo creates a Kind cluster, deploys a kyverno CLI worker, and validates test resources against both Kyverno ValidatingPolicy and Kubernetes ValidatingAdmissionPolicy.
 
 ## Running Tests
 

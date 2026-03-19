@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -31,7 +32,7 @@ func GetVetKyvernoSignature() api.FunctionSignature {
 			{
 				ParameterName: "policy",
 				Required:      true,
-				Description:   "A YAML document or document list containing Kyverno policy resources (ValidatingPolicy, ClusterPolicy, or Policy). Policies from https://kyverno.io/policies/ can be used directly.",
+				Description:   "A YAML document or document list containing Kyverno policy resources (ValidatingPolicy, ClusterPolicy, or Policy) or Kubernetes ValidatingAdmissionPolicy resources. Policies from https://kyverno.io/policies/ can be used directly.",
 				DataType:      api.DataTypeYAML,
 			},
 		},
@@ -45,7 +46,7 @@ func GetVetKyvernoSignature() api.FunctionSignature {
 		Validating:            true,
 		Hermetic:              false, // execs kyverno CLI
 		Idempotent:            true,
-		Description:           "Validates Kubernetes resources against Kyverno policies using the kyverno CLI. Supports ValidatingPolicy, ClusterPolicy, and Policy resources with validate rules. See https://kyverno.io/policies/ for available policies.",
+		Description:           "Validates Kubernetes resources against Kyverno policies using the kyverno CLI. Supports Kyverno ValidatingPolicy, ClusterPolicy, and Policy resources, as well as Kubernetes ValidatingAdmissionPolicy resources. See https://kyverno.io/policies/ for available policies.",
 		FunctionType:          api.FunctionTypeCustom,
 		AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 	}
@@ -78,13 +79,8 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 		return parsedData, nil, errors.Wrap(err, "failed to create temp resource file")
 	}
 	defer os.Remove(resourceFile.Name())
-	for i, doc := range parsedData {
-		if i > 0 {
-			resourceFile.WriteString("---\n")
-		}
-		resourceFile.Write(doc.Bytes())
-		resourceFile.WriteString("\n")
-	}
+	resourceFile.Write(parsedData.Bytes())
+	resourceFile.WriteString("\n")
 	resourceFile.Close()
 
 	// Run kyverno apply with JSON policy report output.
@@ -132,6 +128,8 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 		detail := fmt.Sprintf("policy %q rule %q failed: %s", r.Policy, ruleName, r.Message)
 		result.Details = append(result.Details, detail)
 
+		path := extractPathFromMessage(r.Message)
+
 		for _, res := range r.Resources {
 			ns := res.Namespace
 			if ns == "" {
@@ -155,6 +153,9 @@ func vetKyverno(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, a
 						Message:    r.Message,
 					},
 				},
+			}
+			if path != "" {
+				failedAttr.AttributeInfo.AttributeIdentifier.Path = api.ResolvedPath(path)
 			}
 			result.FailedAttributes = append(result.FailedAttributes, failedAttr)
 		}
@@ -210,20 +211,39 @@ func parsePolicyReport(output []byte) (*policyReport, error) {
 }
 
 // buildResourceInfoMap creates a map from "namespace/Kind/name" to ResourceInfo
-// by visiting all resources in the parsed data.
+// by visiting all resources in the parsed data. It derives the key from
+// ResourceInfo fields populated by VisitResources, similar to
+// ParseResourceMetadataFromResourceInfo in the k8s-admission-webhook package.
 func buildResourceInfoMap(parsedData gaby.Container, rp *k8skit.K8sResourceProviderType) map[string]api.ResourceInfo {
 	infoMap := make(map[string]api.ResourceInfo)
-	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
-		kind := doc.Path("kind").Data()
-		name := doc.Path("metadata.name").Data()
-		ns := doc.Path("metadata.namespace").Data()
-		nsStr := "default"
-		if s, ok := ns.(string); ok && s != "" {
-			nsStr = s
+	visitor := func(_ *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
+		// Extract kind from ResourceType (e.g., "apps/v1/Deployment" -> "Deployment").
+		rt := string(resourceInfo.ResourceType)
+		kind := rt
+		if idx := strings.LastIndex(rt, "/"); idx >= 0 {
+			kind = rt[idx+1:]
 		}
-		kindStr, _ := kind.(string)
-		nameStr, _ := name.(string)
-		key := fmt.Sprintf("%s/%s/%s", nsStr, kindStr, nameStr)
+		apiVersion := ""
+		if idx := strings.LastIndex(rt, "/"); idx >= 0 {
+			apiVersion = rt[:idx]
+		}
+
+		// Extract namespace and name from ResourceName (e.g., "default/my-deploy").
+		rn := string(resourceInfo.ResourceName)
+		var namespace, name string
+		if ns, n, ok := strings.Cut(rn, "/"); ok {
+			namespace = ns
+			name = n
+		} else {
+			name = rn
+		}
+
+		// Only apply default namespace for namespaced resources.
+		if namespace == "" && !k8skit.IsClusterScoped(apiVersion, kind) {
+			namespace = "default"
+		}
+
+		key := fmt.Sprintf("%s/%s/%s", namespace, kind, name)
 		infoMap[key] = *resourceInfo
 		return output, nil
 	}
@@ -237,4 +257,28 @@ func lookupResourceInfo(infoMap map[string]api.ResourceInfo, key string) api.Res
 		return info
 	}
 	return api.ResourceInfo{}
+}
+
+// failedAtPathRE matches "failed at path /spec/..." in kyverno messages.
+var failedAtPathRE = regexp.MustCompile(`failed at path (/\S+)`)
+
+// extractPathFromMessage extracts a JSON Pointer path from a Kyverno message
+// and converts it to dot notation. Returns empty string if no path found.
+func extractPathFromMessage(msg string) string {
+	m := failedAtPathRE.FindStringSubmatch(msg)
+	if m == nil {
+		return ""
+	}
+	return jsonPointerToDotNotation(m[1])
+}
+
+// jsonPointerToDotNotation converts a JSON Pointer path like
+// "/spec/template/spec/containers/0/image/" to dot notation
+// "spec.template.spec.containers.0.image".
+func jsonPointerToDotNotation(ptr string) string {
+	ptr = strings.Trim(ptr, "/")
+	if ptr == "" {
+		return ""
+	}
+	return strings.ReplaceAll(ptr, "/", ".")
 }

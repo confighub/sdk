@@ -36,6 +36,7 @@ import (
 	"github.com/confighub/sdk/function/executor"
 	"github.com/confighub/sdk/function/handler"
 	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
+	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 	"github.com/confighub/sdk/worker/api"
 	"github.com/confighub/sdk/worker/lib"
 	"github.com/confighub/sdk/workerapi"
@@ -78,7 +79,7 @@ The other environment variables it expects are:
 - CONFIGHUB_WORKER_ID: The worker ID
 - CONFIGHUB_WORKER_SECRET: The worker secret
 - CONFIGHUB_WORKER_PROVIDER_TYPES: Comma-separated list of lower-cased provider types
-- CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server")
+- CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server", "vet-opa-gatekeeper")
 - CONFIGHUB_WORKER_HTTP_SERVER_ENABLED: When set, enables a HTTP server with a prometheus exporter endpoint
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: The port to listen for a server, currently only exposes metrics
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
@@ -123,6 +124,15 @@ var availableWorkerFunctions = map[string]struct {
 		registration: handler.FunctionRegistration{
 			FunctionSignature: kyvernoserver.GetVetKyvernoServerSignature(),
 			Function:          kyvernoserver.VetKyvernoServerFunction,
+			FunctionInit:      kyvernoserver.InitKyvernoServer,
+		},
+	},
+	"vet-opa-gatekeeper": {
+		toolchain: workerapi.ToolchainKubernetesYAML,
+		registration: handler.FunctionRegistration{
+			FunctionSignature: opagatekeeper.GetVetOPAGatekeeperSignature(),
+			Function:          opagatekeeper.VetOPAGatekeeperFunction,
+			FunctionInit:      opagatekeeper.InitOPAGatekeeper,
 		},
 	},
 }

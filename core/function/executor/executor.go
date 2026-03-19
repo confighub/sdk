@@ -63,8 +63,15 @@ func (e *ConcreteFunctionExecutor) RegisterToolchain(provider handler.ToolchainP
 }
 
 // RegisterFunction registers a single function for a toolchain.
-// Returns an error if the toolchain is not initialized.
+// If the registration has a FunctionInit, it is called before registration.
+// Returns an error if the toolchain is not initialized or if FunctionInit fails.
 func (e *ConcreteFunctionExecutor) RegisterFunction(toolchain workerapi.ToolchainType, registration handler.FunctionRegistration) error {
+	if registration.FunctionInit != nil {
+		if err := registration.FunctionInit(); err != nil {
+			return fmt.Errorf("initialization failed for function %s: %w", registration.FunctionSignature.FunctionName, err)
+		}
+	}
+
 	if _, ok := e.signatureRegistry[toolchain]; !ok {
 		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
 	}

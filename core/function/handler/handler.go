@@ -636,7 +636,8 @@ type FunctionImplementation func(args FunctionImplementationArguments) (gaby.Con
 
 type FunctionRegistration struct {
 	api.FunctionSignature
-	Function FunctionImplementation `json:"-"` // implementation
+	Function     FunctionImplementation `json:"-"` // implementation
+	FunctionInit func() error           `json:"-"` // optional one-time initialization
 }
 
 // GetPathRegistry returns the path registry from the resource provider.

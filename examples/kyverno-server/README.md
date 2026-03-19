@@ -67,7 +67,29 @@ For a complete end-to-end demo using Kind, see [demo.sh](demo.sh).
 
 The worker connects to ConfigHub and registers the `vet-kyverno-server` function.
 
-### Accessing Kyverno from outside the cluster
+### Running out-of-cluster
+
+You can also run the worker outside the cluster using `kubectl port-forward` to access the Kyverno webhook:
+
+    # Port-forward the Kyverno webhook service
+    kubectl -n kyverno port-forward svc/kyverno-svc 8443:443 &
+
+    # Set up ConfigHub worker environment
+    eval "$(cub worker get-envs --space $SPACE my-kyverno-worker)"
+
+    # Set Kyverno environment
+    export KYVERNO_URL=https://localhost:8443
+    export KYVERNO_SKIP_TLS_VERIFY=true
+
+    # Run the worker
+    ./kyverno-server
+
+Or use `cub worker run`:
+
+    cub worker run --space $SPACE --executable ./kyverno-server \
+      -e "KYVERNO_URL=https://localhost:8443" \
+      -e "KYVERNO_SKIP_TLS_VERIFY=true" \
+      my-kyverno-worker
 
 ## Usage
 

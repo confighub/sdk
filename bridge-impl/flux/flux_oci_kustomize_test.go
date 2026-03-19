@@ -267,7 +267,7 @@ func TestParseFluxOCIParams_PruneDefaultTrue(t *testing.T) {
 
 func TestParseFluxOCIParams_PruneExplicitFalse(t *testing.T) {
 	payload := api.BridgeWorkerPayload{
-		TargetParams: json.RawMessage(`{"Prune": false}`),
+		TargetOptions: map[string]string{"Prune": "false"},
 	}
 	params, err := parseFluxOCIParams(payload)
 	require.NoError(t, err)
@@ -287,6 +287,39 @@ func TestParseFluxOCIParams_Defaults(t *testing.T) {
 	assert.Equal(t, kubernetes.LargeWaitTimeout.String(), params.WaitTimeout)
 	assert.True(t, params.Prune)
 }
+
+func TestParseFluxOCIParams_TargetOptions(t *testing.T) {
+	payload := api.BridgeWorkerPayload{
+		TargetOptions: map[string]string{
+			"FluxNamespace":    "my-flux",
+			"TargetNamespace":  "my-ns",
+			"Interval":         "5m",
+			"OCIRepoURL":       "oci://registry.example.com/charts",
+			"OCIHost":          "registry.example.com",
+			"OCIPath":          "manifests",
+			"TargetRevision":   "v1.0.0",
+			"Prune":            "false",
+			"DisableRepoCreds": "true",
+			"KubeContext":      "my-cluster",
+			"WaitTimeout":      "20m",
+		},
+	}
+	params, err := parseFluxOCIParams(payload)
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-flux", params.FluxNamespace)
+	assert.Equal(t, "my-ns", params.TargetNamespace)
+	assert.Equal(t, "5m", params.Interval)
+	assert.Equal(t, "oci://registry.example.com/charts", params.OCIRepoURL)
+	assert.Equal(t, "registry.example.com", params.OCIHost)
+	assert.Equal(t, "manifests", params.OCIPath)
+	assert.Equal(t, "v1.0.0", params.TargetRevision)
+	assert.False(t, params.Prune)
+	assert.True(t, params.DisableRepoCreds)
+	assert.Equal(t, "my-cluster", params.KubeContext)
+	assert.Equal(t, "20m", params.WaitTimeout)
+}
+
 
 func TestGenerateFluxOCICreds_Valid(t *testing.T) {
 	yamlBytes, err := generateFluxOCICreds("registry.example.com", "flux-system", "worker-id", "worker-secret")
@@ -333,15 +366,15 @@ func TestGenerateFluxOCICreds_SpecialChars(t *testing.T) {
 
 // --- transformToFluxOCI tests ---
 
-var testFluxOCITargetParams = []byte(`{
-	"KubeContext": "test-context",
-	"FluxNamespace": "flux-system",
+var testFluxOCITargetOptions = map[string]string{
+	"KubeContext":     "test-context",
+	"FluxNamespace":   "flux-system",
 	"TargetNamespace": "production",
-	"Interval": "5m",
-	"OCIRepoURL": "oci://ghcr.io/myorg/manifests",
-	"OCIPath": "apps/myapp",
-	"TargetRevision": "v1.0.0"
-}`)
+	"Interval":        "5m",
+	"OCIRepoURL":      "oci://ghcr.io/myorg/manifests",
+	"OCIPath":         "apps/myapp",
+	"TargetRevision":  "v1.0.0",
+}
 
 func TestTransformToFluxOCI_Success(t *testing.T) {
 	mockCtx := setupMockContext(t)
@@ -350,7 +383,7 @@ func TestTransformToFluxOCI_Success(t *testing.T) {
 	spaceID := uuid.New()
 	unitID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testFluxOCITargetParams,
+		TargetOptions: testFluxOCITargetOptions,
 		UnitSlug:     "my-app",
 		UnitID:       unitID,
 		SpaceSlug:    "test-space",
@@ -379,7 +412,7 @@ func TestTransformToFluxOCI_InferredOCIHost(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-deployment",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -402,7 +435,7 @@ func TestTransformToFluxOCI_MissingOCIConfig(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -422,7 +455,7 @@ func TestTransformToFluxOCI_WithCreds(t *testing.T) {
 	spaceID := uuid.New()
 	unitID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-app",
 		UnitID:       unitID,
 		SpaceSlug:    "test-space",
@@ -451,7 +484,7 @@ func TestTransformToFluxOCI_SkipRepoCreds(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -470,25 +503,44 @@ func TestTransformToFluxOCI_SkipRepoCreds(t *testing.T) {
 	assert.Contains(t, yamlStr, "kind: Kustomization")
 }
 
-func TestTransformToFluxOCI_HelmChartRejected(t *testing.T) {
+func TestTransformToFluxOCI_HelmChartGeneratesHelmCRs(t *testing.T) {
 	mockCtx := setupMockContext(t)
-	mockCtx.On("GetServerURL").Return("https://hub.confighub.com").Maybe()
+	mockCtx.On("GetServerURL").Return("https://hub.confighub.com")
 
+	spaceID := uuid.New()
+	unitID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testFluxOCITargetParams,
+		TargetOptions: testFluxOCITargetOptions,
 		UnitLabels: map[string]string{
 			helmutils.HelmReleaseLabel:         "my-release",
 			helmutils.HelmChartLabel:           "nginx",
 			helmutils.HelmChartVersionLabel:    "1.2.3",
 			helmutils.HelmChartAPIVersionLabel: "v2",
 		},
-		Data:         testConfigMapYAML,
+		UnitSlug:    "my-nginx",
+		UnitID:      unitID,
+		SpaceSlug:   "test-space",
+		SpaceID:     spaceID,
+		RevisionNum: 1,
+		Data:        testConfigMapYAML,
 	}
 
 	worker := NewFluxOCIWorker("", "")
 	_, err := worker.transformToFluxOCI(mockCtx, &payload, false)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Helm charts are not yet supported")
+	require.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+	// Should generate HelmRepository + HelmRelease, not OCIRepository + Kustomization
+	assert.Contains(t, yamlStr, "kind: HelmRepository")
+	assert.Contains(t, yamlStr, "kind: HelmRelease")
+	assert.NotContains(t, yamlStr, "kind: OCIRepository")
+	assert.NotContains(t, yamlStr, "kind: Kustomization")
+	// HelmRepository should be type: oci
+	assert.Contains(t, yamlStr, "type: oci")
+	// HelmRelease chart must use UnitSlug (not HelmChartName) since ConfigHub pushes to oci://host/unit/space/<unit-slug>
+	assert.Contains(t, yamlStr, "chart: my-nginx")
+	assert.Contains(t, yamlStr, "version: 1.2.3")
+	assert.Contains(t, yamlStr, "releaseName: my-release")
 }
 
 // --- generateFluxOCIRepository/generateFluxKustomization field value tests ---

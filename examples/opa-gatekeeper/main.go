@@ -1,8 +1,9 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-// This example shows how to validate Kubernetes resources against Kyverno policies
-// running in a cluster by sending AdmissionReview requests to the Kyverno webhook.
+// This example shows how to validate Kubernetes resources against OPA Gatekeeper
+// constraints running in a cluster by sending AdmissionReview requests to the
+// Gatekeeper webhook.
 package main
 
 import (
@@ -13,7 +14,7 @@ import (
 	"github.com/confighub/sdk/function/executor"
 	"github.com/confighub/sdk/function/handler"
 	"github.com/confighub/sdk/worker"
-	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
+	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 	"github.com/confighub/sdk/workerapi"
 )
 
@@ -21,9 +22,9 @@ func main() {
 	exec := executor.NewEmptyExecutor()
 	exec.RegisterToolchain(k8skit.NewK8sResourceProvider())
 	if err := exec.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
-		FunctionSignature: kyvernoserver.GetVetKyvernoServerSignature(),
-		Function:          kyvernoserver.VetKyvernoServerFunction,
-		FunctionInit:      kyvernoserver.InitKyvernoServer,
+		FunctionSignature: opagatekeeper.GetVetOPAGatekeeperSignature(),
+		Function:          opagatekeeper.VetOPAGatekeeperFunction,
+		FunctionInit:      opagatekeeper.InitOPAGatekeeper,
 	}); err != nil {
 		log.Fatalf("Failed to register function: %v", err)
 	}
