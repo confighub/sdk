@@ -81,7 +81,7 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 	toolchainTypeEnum := workerapi.ToolchainType(toolchainTypeString)
 
 	// Create function executor
-	functionExecutor := funcimpl.NewStandardExecutor()
+	functionExecutor := funcimpl.NewStandardExecutor(nil)
 
 	// Get registered functions to validate the function exists
 	registeredFunctions := functionExecutor.RegisteredFunctions()

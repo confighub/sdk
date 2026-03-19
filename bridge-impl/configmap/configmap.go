@@ -42,8 +42,16 @@ type ConfigMapBridgeWorker struct {
 
 func initFunctionExecutor() {
 	executorOnce.Do(func() {
-		// The standard worker doesn't create a FunctionExecutor. It uses a FunctionDispatcher instead.
-		functionExecutor = funcimpl.NewStandardExecutor()
+		// Just Kubernetes + AppConfig functions and resource providers
+		functionExecutor = funcimpl.NewStandardExecutor([]workerapi.ToolchainType{
+			workerapi.ToolchainKubernetesYAML,
+			workerapi.ToolchainAppConfigProperties,
+			workerapi.ToolchainAppConfigTOML,
+			workerapi.ToolchainAppConfigINI,
+			workerapi.ToolchainAppConfigYAML,
+			workerapi.ToolchainAppConfigJSON,
+			workerapi.ToolchainAppConfigEnv,
+		})
 	})
 }
 

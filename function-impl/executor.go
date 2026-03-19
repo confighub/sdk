@@ -33,6 +33,7 @@ import (
 	"github.com/confighub/sdk/function-impl/opentofu"
 	"github.com/confighub/sdk/function-impl/properties"
 	"github.com/confighub/sdk/function-impl/toml"
+	"github.com/confighub/sdk/workerapi"
 )
 
 // toolchainSetup pairs a provider with its function registration function.
@@ -41,17 +42,29 @@ type toolchainSetup struct {
 	registerFn func(handler.FunctionRegistry)
 }
 
-// NewStandardExecutor creates a new FunctionExecutor with the standard functions registered
-// for all toolchains.
-func NewStandardExecutor() *executor.ConcreteFunctionExecutor {
-	return NewStandardExecutorWithAttributes(nil)
+// NewStandardExecutor creates a new FunctionExecutor with the standard functions registered.
+// If toolchainTypes is non-nil, only toolchains in the list are registered.
+// If toolchainTypes is nil, all toolchains are registered.
+func NewStandardExecutor(toolchainTypes []workerapi.ToolchainType) *executor.ConcreteFunctionExecutor {
+	return NewStandardExecutorWithAttributes(toolchainTypes, nil)
 }
 
 // NewStandardExecutorWithAttributes creates a new FunctionExecutor with the standard functions
 // registered, plus any dynamic attributes. Attributes are registered directly on the
 // FunctionHandler before signatures are captured, avoiding the map-copy issue.
-func NewStandardExecutorWithAttributes(attributes []executor.AttributeRegistration) *executor.ConcreteFunctionExecutor {
+// If toolchainTypes is non-nil, only toolchains in the list are registered.
+// If toolchainTypes is nil, all toolchains are registered.
+func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType, attributes []executor.AttributeRegistration) *executor.ConcreteFunctionExecutor {
 	exec := executor.NewEmptyExecutor()
+
+	// Build a set for fast lookup when filtering is requested
+	var toolchainSet map[workerapi.ToolchainType]bool
+	if toolchainTypes != nil {
+		toolchainSet = make(map[workerapi.ToolchainType]bool, len(toolchainTypes))
+		for _, tt := range toolchainTypes {
+			toolchainSet[tt] = true
+		}
+	}
 
 	cubRP := cubkit.NewConfigHubResourceProvider()
 	k8sRP := k8skit.NewK8sResourceProvider()
@@ -76,9 +89,15 @@ func NewStandardExecutorWithAttributes(attributes []executor.AttributeRegistrati
 	}
 
 	for _, setup := range setups {
+		toolchain := setup.provider.GetToolchainType()
+
+		// Skip toolchains not in the requested list
+		if toolchainSet != nil && !toolchainSet[toolchain] {
+			continue
+		}
+
 		fh := exec.CreateAndRegisterHandler(setup.provider)
 		setup.registerFn(fh)
-		toolchain := setup.provider.GetToolchainType()
 
 		// Register dynamic attributes for this toolchain
 		for _, attr := range attributes {

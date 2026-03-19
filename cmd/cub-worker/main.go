@@ -114,6 +114,26 @@ var rootArgs struct {
 	enableFluxOCI bool
 }
 
+// providerToolchainTypes maps provider types to the toolchain types they require.
+var providerToolchainTypes = map[string][]workerapi.ToolchainType{
+	LowerProviderTypeConfigHub:         {workerapi.ToolchainConfigHubYAML},
+	LowerProviderTypeKubernetes:        {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeFluxRenderer:      {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeArgoCDRenderer:    {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeArgoCDOCI:         {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeFluxOCIWriter:     {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeFluxOCI:           {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeOpenTofuAWS:       {workerapi.ToolchainOpenTofuHCL},
+	LowerProviderTypeConfigMapRenderer: {
+		workerapi.ToolchainAppConfigProperties,
+		workerapi.ToolchainAppConfigYAML,
+		workerapi.ToolchainAppConfigTOML,
+		workerapi.ToolchainAppConfigINI,
+		workerapi.ToolchainAppConfigJSON,
+		workerapi.ToolchainAppConfigEnv,
+	},
+}
+
 // availableWorkerFunctions maps function names to their registration details.
 var availableWorkerFunctions = map[string]struct {
 	toolchain    workerapi.ToolchainType
@@ -137,35 +157,74 @@ var availableWorkerFunctions = map[string]struct {
 	},
 }
 
+// parsedWorkerFunction holds a validated worker function entry for deferred registration.
+type parsedWorkerFunction struct {
+	name         string
+	toolchain    workerapi.ToolchainType
+	registration handler.FunctionRegistration
+}
+
+// parseWorkerFunctions parses and validates the CONFIGHUB_WORKER_FUNCTIONS env var.
+func parseWorkerFunctions() []parsedWorkerFunction {
+	workerFunctions := os.Getenv("CONFIGHUB_WORKER_FUNCTIONS")
+	if workerFunctions == "" {
+		return nil
+	}
+	var parsed []parsedWorkerFunction
+	for _, name := range strings.Split(workerFunctions, ",") {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		wf, ok := availableWorkerFunctions[name]
+		if !ok {
+			log.FromContext(context.Background()).Error(fmt.Errorf("unknown function %q", name), "Skipping unknown worker function")
+			continue
+		}
+		parsed = append(parsed, parsedWorkerFunction{
+			name:         name,
+			toolchain:    wf.toolchain,
+			registration: wf.registration,
+		})
+	}
+	return parsed
+}
+
 // newFunctionExecutor returns a standard executor if CONFIGHUB_STANDARD_FUNCTIONS
 // is set to "1" or "true", otherwise an empty executor with no functions registered.
-// It then conditionally registers additional functions based on CONFIGHUB_WORKER_FUNCTIONS,
-// which is a comma-separated list of function names.
-func newFunctionExecutor() executor.FunctionExecutor {
+// When using the standard executor, only toolchain types needed by the given
+// providerTypes and workerFunctions are registered.
+// It then registers additional worker functions on the executor.
+func newFunctionExecutor(providerTypes []string, workerFunctions []parsedWorkerFunction) executor.FunctionExecutor {
 	var exec *executor.ConcreteFunctionExecutor
 	if v := os.Getenv("CONFIGHUB_STANDARD_FUNCTIONS"); v == "1" || v == "true" {
-		exec = funcimpl.NewStandardExecutor()
+		// Build the list of required toolchain types from provider types and worker functions
+		seen := map[workerapi.ToolchainType]bool{}
+		var toolchainTypes []workerapi.ToolchainType
+		for _, pt := range providerTypes {
+			for _, tt := range providerToolchainTypes[pt] {
+				if !seen[tt] {
+					toolchainTypes = append(toolchainTypes, tt)
+					seen[tt] = true
+				}
+			}
+		}
+		for _, wf := range workerFunctions {
+			if !seen[wf.toolchain] {
+				toolchainTypes = append(toolchainTypes, wf.toolchain)
+				seen[wf.toolchain] = true
+			}
+		}
+		exec = funcimpl.NewStandardExecutor(toolchainTypes)
 	} else {
 		exec = executor.NewEmptyExecutor()
 	}
 
-	workerFunctions := os.Getenv("CONFIGHUB_WORKER_FUNCTIONS")
-	if workerFunctions != "" {
-		for _, name := range strings.Split(workerFunctions, ",") {
-			name = strings.TrimSpace(name)
-			if name == "" {
-				continue
-			}
-			wf, ok := availableWorkerFunctions[name]
-			if !ok {
-				log.FromContext(context.Background()).Error(fmt.Errorf("unknown function %q", name), "Skipping unknown worker function")
-				continue
-			}
-			if err := exec.RegisterFunction(wf.toolchain, wf.registration); err != nil {
-				log.FromContext(context.Background()).Error(err, "Failed to register worker function", "function", name)
-			} else {
-				log.FromContext(context.Background()).Info("Registered worker function", "function", name)
-			}
+	for _, wf := range workerFunctions {
+		if err := exec.RegisterFunction(wf.toolchain, wf.registration); err != nil {
+			log.FromContext(context.Background()).Error(err, "Failed to register worker function", "function", wf.name)
+		} else {
+			log.FromContext(context.Background()).Info("Registered worker function", "function", wf.name)
 		}
 	}
 
@@ -333,6 +392,9 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	// Split the provider types string by comma
 	providerTypes := strings.Split(workerProviderTypesStr, ",")
 
+	// Parse and validate worker functions before creating the executor
+	workerFunctions := parseWorkerFunctions()
+
 	// Initialize appropriate workers based on the input
 	bridgeDispatcher := lib.NewBridgeDispatcher()
 
@@ -461,7 +523,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		rootArgs.workerID,
 		rootArgs.workerSecret).
 		WithBridgeWorker(bridgeDispatcher).
-		WithFunctionExecutor(newFunctionExecutor()).
+		WithFunctionExecutor(newFunctionExecutor(providerTypes, workerFunctions)).
 		WithMetricsMeter(metricsMeter)
 
 	// Start worker in a errgroup with the http server so we can handle signals
