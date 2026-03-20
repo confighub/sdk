@@ -10,7 +10,7 @@ import (
 
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/fluxcd/pkg/ssa"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

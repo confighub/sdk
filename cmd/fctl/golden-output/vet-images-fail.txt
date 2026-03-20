@@ -5,6 +5,7 @@ OUTPUT
   {
     "Passed": false,
     "Index": 0,
+    "FunctionName": "vet-images",
     "FailedAttributes": [
       {
         "ResourceName": "example/mydep",

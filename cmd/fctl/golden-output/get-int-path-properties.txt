@@ -11,6 +11,7 @@ OUTPUT
     "AttributeName": "none",
     "DataType": "int",
     "Value": 5432,
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-int-path"
   }
 ]

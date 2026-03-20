@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/cobra"
 )

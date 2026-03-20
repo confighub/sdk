@@ -5,7 +5,7 @@ package ini
 
 import (
 	"github.com/confighub/sdk/configkit/inikit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // RegisterFunctions registers all INI functions onto the provided FunctionHandler

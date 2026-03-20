@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // WorkerKey represents a unique identifier for a registered bridge worker

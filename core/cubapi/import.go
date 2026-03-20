@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 )
 

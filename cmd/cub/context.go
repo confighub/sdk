@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	cubbyname "github.com/confighub/sdk/cubbyname"
+	cubbyname "github.com/confighub/sdk/core/cubbyname"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

@@ -4,8 +4,8 @@
 package confighub
 
 import (
-	"github.com/confighub/sdk/configkit/cubkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/configkit/cubkit"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // RegisterFunctions registers all ConfigHub functions onto the provided FunctionHandler

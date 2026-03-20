@@ -24,6 +24,7 @@ OUTPUT
       ]
     },
     "Value": "example",
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-namespace"
   }
 ]

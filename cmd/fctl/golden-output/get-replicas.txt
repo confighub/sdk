@@ -25,6 +25,7 @@ OUTPUT
     },
     "Value": 3,
     "Comment": "# Line comment on replicas",
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-replicas"
   }
 ]

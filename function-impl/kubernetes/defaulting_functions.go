@@ -11,10 +11,10 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // defaultField describes a field path with its default value and data type.

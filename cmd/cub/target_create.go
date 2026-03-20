@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/cubapi"
-	funcapi "github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/cubapi"
+	funcapi "github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

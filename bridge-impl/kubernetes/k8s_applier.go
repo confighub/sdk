@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

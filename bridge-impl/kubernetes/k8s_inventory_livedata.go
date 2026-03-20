@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/cli-utils/pkg/inventory"
 	"sigs.k8s.io/cli-utils/pkg/object"

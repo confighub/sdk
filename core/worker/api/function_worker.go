@@ -4,8 +4,8 @@
 package api
 
 import (
-	funcApi "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/workerapi"
+	funcApi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // FunctionWorkerInfo is a data-only struct for wire serialization of function

@@ -9,12 +9,12 @@ import (
 	"context"
 	"fmt"
 
-	bwapi "github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/configkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	funcapi "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
-	"github.com/confighub/sdk/workerapi"
+	bwapi "github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/configkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	funcapi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // FunctionExecutor is the interface that function executors must implement to be

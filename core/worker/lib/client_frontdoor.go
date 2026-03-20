@@ -13,8 +13,8 @@ import (
 	"log/slog"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 // This enables use of the ConfigHub frontdoor (main) API by the worker.

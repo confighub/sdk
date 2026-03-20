@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -54,7 +54,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Enforced", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
 // Trigger-specific aliases
 var triggerAliases = map[string]string{
@@ -102,7 +102,7 @@ func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Enforced", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
@@ -127,7 +127,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			trigger.Event,
 			strconv.FormatBool(trigger.Validating),
 			strconv.FormatBool(trigger.Disabled),
-			strconv.FormatBool(trigger.Enforced),
+			strconv.FormatBool(trigger.Warn),
 			trigger.ToolchainType,
 			trigger.FunctionName,
 			fmt.Sprintf("%d", len(trigger.Arguments)),

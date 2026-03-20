@@ -6,7 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/confighub/sdk/cubapi"
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

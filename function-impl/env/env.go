@@ -5,7 +5,7 @@ package env
 
 import (
 	"github.com/confighub/sdk/configkit/envkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // RegisterFunctions registers all Env functions onto the provided FunctionHandler

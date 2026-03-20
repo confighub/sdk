@@ -13,7 +13,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	k8sschema "github.com/confighub/sdk/function-impl/third_party/kubernetes"
 	openapi_v2 "github.com/google/gnostic/openapiv2"
 	"log/slog"

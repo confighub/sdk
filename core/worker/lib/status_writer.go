@@ -6,7 +6,7 @@ package lib
 import (
 	"bytes"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 type StatusWriter struct {

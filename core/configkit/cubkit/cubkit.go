@@ -8,11 +8,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/constants"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/workerapi"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/constants"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/google/uuid"
 )
 

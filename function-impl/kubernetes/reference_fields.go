@@ -4,7 +4,7 @@
 package kubernetes
 
 import (
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // PathReference describes a field path that references another resource, and the

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 var testResourceProvider *k8skit.K8sResourceProviderType

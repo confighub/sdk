@@ -4,7 +4,7 @@
 package api
 
 import (
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 )
 

@@ -13,9 +13,9 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	admissionwebhook "github.com/confighub/sdk/worker-function-impl/k8s-admission-webhook"
 )
 

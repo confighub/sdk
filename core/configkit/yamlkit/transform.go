@@ -6,7 +6,7 @@ package yamlkit
 import (
 	"fmt"
 
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // TransformConfig applies a mutation function to configuration data, preserving

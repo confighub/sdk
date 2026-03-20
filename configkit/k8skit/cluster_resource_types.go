@@ -3,7 +3,7 @@
 
 package k8skit
 
-import "github.com/confighub/sdk/function/api"
+import "github.com/confighub/sdk/core/function/api"
 
 // kustomize keeps a list of namespaced resource types, which we may want to consider using:
 // https://github.com/kubernetes-sigs/kustomize/blob/65567a37331715052d98e9b538d6bdb5089da8cc/kyaml/openapi/openapi.go#L94

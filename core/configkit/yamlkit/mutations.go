@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/constants"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/constants"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 

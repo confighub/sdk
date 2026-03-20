@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -99,7 +99,7 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	view.Append([]string{"Event", trigger.Event})
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
-	view.Append([]string{"Enforced", strconv.FormatBool(trigger.Enforced)})
+	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
 
 	// Show Invocation slug instead of InvocationID when available
@@ -140,7 +140,7 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	view.Append([]string{"Event", trigger.Event})
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
-	view.Append([]string{"Enforced", strconv.FormatBool(trigger.Enforced)})
+	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
 
 	if trigger.InvocationID != nil && *trigger.InvocationID != uuid.Nil {

@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/confighub/sdk/cubapi"
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
 

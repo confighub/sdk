@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/confighub/sdk/function/client"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/function/client"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"

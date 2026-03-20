@@ -6,7 +6,7 @@ package lib
 import (
 	"context"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 type defaultFunctionWorkerContext struct {

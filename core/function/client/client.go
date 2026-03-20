@@ -5,8 +5,8 @@
 package client
 
 import (
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type TransportConfig struct {

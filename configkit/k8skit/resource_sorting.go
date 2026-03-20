@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // dependencyGraph represents a directed graph for resource dependencies

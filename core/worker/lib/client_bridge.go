@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 func (c *workerClient) processBridgeCommand(workerContext *defaultBridgeWorkerContext, op api.BridgeWorkerEventRequest) error {

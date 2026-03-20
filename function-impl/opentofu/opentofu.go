@@ -5,7 +5,7 @@ package opentofu
 
 import (
 	"github.com/confighub/sdk/configkit/hclkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // TODO: make extensible at the provider level

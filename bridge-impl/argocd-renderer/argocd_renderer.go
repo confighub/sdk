@@ -22,10 +22,10 @@ import (
 
 	"github.com/confighub/sdk/bridge-impl/common"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
-	funcapi "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
-	"github.com/confighub/sdk/workerapi"
+	funcapi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // ArgoCDRendererWorker renders ArgoCD Application resources to Kubernetes manifests

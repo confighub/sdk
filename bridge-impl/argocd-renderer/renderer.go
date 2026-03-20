@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	sigsyaml "sigs.k8s.io/yaml"
 
-	"github.com/confighub/sdk/configkit/yamlkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 )
 
 const (

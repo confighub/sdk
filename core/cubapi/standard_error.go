@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"strings"
 
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 type APIResponse interface {

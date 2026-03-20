@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 )

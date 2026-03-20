@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.

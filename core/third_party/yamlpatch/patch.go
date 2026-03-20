@@ -10,7 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // -----------------------------------------------------------------------------

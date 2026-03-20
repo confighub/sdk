@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/cubapi"
-	cubbyname "github.com/confighub/sdk/cubbyname"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	cubbyname "github.com/confighub/sdk/core/cubbyname"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

@@ -20,11 +20,11 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/labstack/echo/v4"
 
-	"github.com/confighub/sdk/configkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/configkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // ToolchainProvider combines the ConfigConverter and ResourceProvider interfaces.
@@ -268,7 +268,9 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	var resp api.FunctionInvocationResponse
 	resp.OrganizationID = functionInvocation.FunctionContext.OrganizationID
 	resp.SpaceID = functionInvocation.FunctionContext.SpaceID
+	resp.SpaceSlug = functionInvocation.FunctionContext.SpaceSlug
 	resp.UnitID = functionInvocation.FunctionContext.UnitID
+	resp.UnitSlug = functionInvocation.FunctionContext.UnitSlug
 	resp.RevisionID = functionInvocation.FunctionContext.RevisionID
 
 	// Convert from YAML back to the original format

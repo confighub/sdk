@@ -6,10 +6,10 @@ package handler
 import (
 	"github.com/cockroachdb/errors"
 
-	"github.com/confighub/sdk/configkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 func (fh *FunctionHandler) registerComputeMutations() {

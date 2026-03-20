@@ -8,8 +8,8 @@ import (
 	"errors"
 	"log"
 
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/function/executor"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/function/executor"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 )

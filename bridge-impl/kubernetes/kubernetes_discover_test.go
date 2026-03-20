@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

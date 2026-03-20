@@ -8,8 +8,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/handler"
 	funcimpl "github.com/confighub/sdk/function-impl"
 
 	"github.com/labstack/echo/v4"

@@ -33,6 +33,7 @@ OUTPUT
       ]
     },
     "Value": "nginx:latest",
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-image"
   }
 ]

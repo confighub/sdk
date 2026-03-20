@@ -12,8 +12,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // ResourceVisitorFunc defines the signature of functions invoked by the resource visitor function.

@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
 
@@ -182,6 +182,10 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		if len(unitDetails.Unit.ApplyGates) != 0 {
 			view.Append([]string{"Apply Gates", applyGatesToString(unitDetails.Unit.ApplyGates)})
+		}
+
+		if len(unitDetails.Unit.ApplyWarnings) != 0 {
+			view.Append([]string{"Apply Warnings", applyGatesToString(unitDetails.Unit.ApplyWarnings)})
 		}
 
 		if len(unitDetails.Unit.ApprovedBy) != 0 {

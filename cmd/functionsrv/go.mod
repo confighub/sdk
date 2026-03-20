@@ -28,7 +28,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk v0.0.0 // indirect
 	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000 // indirect
@@ -38,6 +37,7 @@ require (
 	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/core v0.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/elliotchance/orderedmap v1.8.0 // indirect
@@ -143,7 +143,6 @@ require (
 )
 
 replace (
-	github.com/confighub/sdk => ../../core
 	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
 	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
 	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
@@ -154,6 +153,7 @@ replace (
 	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
 	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
 	github.com/confighub/sdk/function-impl => ../../function-impl
 
 	// Fix CVE-2022-28948

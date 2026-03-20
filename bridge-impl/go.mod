@@ -5,9 +5,9 @@ go 1.25.0
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk v0.0.0
 	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
 	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
 	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
 	github.com/drone/envsubst/v2 v2.0.0-20210730161058-179042472c46
 	github.com/fluxcd/cli-utils v0.36.0-flux.12
@@ -228,7 +228,6 @@ require (
 )
 
 replace (
-	github.com/confighub/sdk => ../core
 	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
 	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
 	github.com/confighub/sdk/configkit/hclkit => ../configkit/hclkit
@@ -238,6 +237,7 @@ replace (
 	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
 	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
 	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 	github.com/confighub/sdk/function-impl => ../function-impl
 
 	// Fix CVE-2022-28948

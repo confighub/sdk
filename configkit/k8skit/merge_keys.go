@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // MergeKeyField describes a strategic merge patch key for an array field.

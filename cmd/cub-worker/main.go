@@ -33,13 +33,13 @@ import (
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/bridge-impl/opentofu"
 	funcimpl "github.com/confighub/sdk/function-impl"
-	"github.com/confighub/sdk/function/executor"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/executor"
+	"github.com/confighub/sdk/core/function/handler"
 	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
 	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 var rootCmd = &cobra.Command{

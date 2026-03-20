@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/fluxcd/pkg/ssa"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

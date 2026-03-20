@@ -5,7 +5,7 @@ package appyaml
 
 import (
 	"github.com/confighub/sdk/configkit/appyamlkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // RegisterFunctions registers all AppConfig YAML functions onto the provided FunctionHandler

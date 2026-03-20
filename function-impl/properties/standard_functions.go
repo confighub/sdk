@@ -5,9 +5,9 @@ package properties
 
 import (
 	"github.com/confighub/sdk/configkit/propkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/function-impl/generic"
 )
 

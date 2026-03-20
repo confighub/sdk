@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // Test fixture constants

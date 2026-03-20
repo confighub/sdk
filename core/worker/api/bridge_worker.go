@@ -6,7 +6,7 @@ package api
 import (
 	"context"
 
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type InfoOptions struct {

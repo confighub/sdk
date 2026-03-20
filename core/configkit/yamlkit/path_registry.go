@@ -6,7 +6,7 @@ package yamlkit
 import (
 	"log/slog"
 
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // FunctionInvocationsEqual reports whether two function invocations match.

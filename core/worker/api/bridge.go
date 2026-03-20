@@ -5,7 +5,7 @@
 // the best naming conventions for the SDK.
 package api
 
-import "github.com/confighub/sdk/workerapi"
+import "github.com/confighub/sdk/core/workerapi"
 
 // Core interface aliases
 type Bridge = BridgeWorker

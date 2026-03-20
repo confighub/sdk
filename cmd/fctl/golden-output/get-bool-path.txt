@@ -11,6 +11,7 @@ OUTPUT
     "AttributeName": "none",
     "DataType": "bool",
     "Value": false,
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-bool-path"
   }
 ]

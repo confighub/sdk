@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/function/executor"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/function/executor"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/v3/mem"
 	"go.opentelemetry.io/otel/attribute"

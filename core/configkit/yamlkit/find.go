@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 func newAttributeValue(path api.ResolvedPath, resourceInfo *api.ResourceInfo, value any) api.AttributeValue {

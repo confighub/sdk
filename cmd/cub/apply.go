@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

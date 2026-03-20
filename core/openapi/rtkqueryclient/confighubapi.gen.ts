@@ -532,6 +532,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            reverse: queryArg.reverse,
           },
         }),
         invalidatesTags: ['Link'],
@@ -1143,6 +1144,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/link/${queryArg.linkId}`,
           method: 'PATCH',
           body: queryArg.body,
+          params: {
+            reverse: queryArg.reverse,
+          },
         }),
         invalidatesTags: ['Link'],
       }),
@@ -2099,6 +2103,8 @@ export type BulkDeleteSpacesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2177,6 +2183,8 @@ export type BulkPatchSpacesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2280,6 +2288,8 @@ export type BulkCreateSpacesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2389,6 +2399,8 @@ export type BulkDeleteAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2461,6 +2473,8 @@ export type ListAllAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2544,6 +2558,8 @@ export type BulkPatchAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2643,6 +2659,8 @@ export type BulkCreateAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2714,6 +2732,8 @@ export type BulkCreateAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2793,6 +2813,8 @@ export type BulkDeleteBridgeWorkersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2865,6 +2887,8 @@ export type ListAllBridgeWorkersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -2938,6 +2962,8 @@ export type BulkPatchBridgeWorkersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3057,6 +3083,8 @@ export type ListQueuedOperationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3146,6 +3174,8 @@ export type BulkDeleteChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3218,6 +3248,8 @@ export type ListAllChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3301,6 +3333,8 @@ export type BulkPatchChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3396,6 +3430,8 @@ export type BulkCreateChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3471,6 +3507,8 @@ export type BulkCreateChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3546,6 +3584,8 @@ export type BulkDeleteFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3618,6 +3658,8 @@ export type ListAllFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3705,6 +3747,8 @@ export type BulkPatchFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3804,6 +3848,8 @@ export type BulkCreateFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3879,6 +3925,8 @@ export type BulkCreateFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -3975,13 +4023,15 @@ export type InvokeFunctionsOnOrgApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -4035,6 +4085,8 @@ export type BulkDeleteInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4107,6 +4159,8 @@ export type ListAllInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4190,6 +4244,8 @@ export type BulkPatchInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4290,6 +4346,8 @@ export type BulkCreateInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4365,6 +4423,8 @@ export type BulkCreateInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4445,6 +4505,8 @@ export type BulkDeleteLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4519,6 +4581,8 @@ export type SearchListLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4602,6 +4666,8 @@ export type BulkPatchLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4650,6 +4716,8 @@ export type BulkPatchLinksApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** Swap the FromUnit and ToUnit directions of the links */
+  reverse?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -4709,6 +4777,8 @@ export type BulkCreateLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4756,6 +4826,8 @@ export type BulkCreateLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -4803,13 +4875,15 @@ export type BulkCreateLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Where expression to select FromUnits for created links
     
@@ -4850,13 +4924,15 @@ export type BulkCreateLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Where expression to select ToUnits for created links
     
@@ -4936,6 +5012,8 @@ export type ListOrganizationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5062,6 +5140,8 @@ export type ListOrganizationMembersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5149,13 +5229,15 @@ export type ListAllRevisionsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -5232,6 +5314,8 @@ export type ListSpacesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5287,7 +5371,7 @@ export type ListSpacesApiArg = {
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Flag parameter for enabling summary */
+  /** Return summarized entity data */
   summary?: boolean;
 };
 export type CreateSpaceApiResponse =
@@ -5328,7 +5412,7 @@ export type GetSpaceApiArg = {
   select?: string;
   /** Unique identifier for a space_id */
   spaceId: string;
-  /** Flag parameter for enabling summary */
+  /** Return summarized entity data */
   summary?: boolean;
 };
 export type PatchSpaceApiResponse =
@@ -5402,6 +5486,8 @@ export type ListAttributesApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5577,6 +5663,8 @@ export type ListBridgeWorkersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5793,6 +5881,8 @@ export type ListChangeSetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -5955,6 +6045,8 @@ export type ListFiltersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6147,13 +6239,15 @@ export type InvokeFunctionsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -6204,6 +6298,8 @@ export type ListInvocationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6371,6 +6467,8 @@ export type ListLinksApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6483,6 +6581,8 @@ export type PatchLinkApiArg = {
   spaceId: string;
   /** Unique identifier for a link_id */
   linkId: string;
+  /** Swap the FromUnit and ToUnit directions of the link */
+  reverse?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -6555,6 +6655,8 @@ export type ListTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6716,6 +6818,8 @@ export type ListTargetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -6820,7 +6924,7 @@ export type PatchTargetApiArg = {
   spaceId: string;
   /** Unique identifier for a target_id */
   targetId: string;
-  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  /** Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
   refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -6865,7 +6969,7 @@ export type UpdateTargetApiArg = {
   spaceId: string;
   /** Unique identifier for a target_id */
   targetId: string;
-  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  /** Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
   refreshTriggers?: boolean;
   target: Target;
 };
@@ -6896,13 +7000,15 @@ export type ListTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6960,8 +7066,8 @@ changes occur. Each Trigger is associated with a specific Space and can be confi
 to execute on events.
 
 Triggers can be either validating (checking configuration validity without modifying it)
-or mutating (making changes to the configuration). They can also be enforced (cannot be
-overridden) or disabled. */ TriggerRead;
+or mutating (making changes to the configuration). They can be disabled, and validating
+triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates. */ TriggerRead;
 export type CreateTriggerApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7009,8 +7115,8 @@ changes occur. Each Trigger is associated with a specific Space and can be confi
 to execute on events.
 
 Triggers can be either validating (checking configuration validity without modifying it)
-or mutating (making changes to the configuration). They can also be enforced (cannot be
-overridden) or disabled. */ TriggerRead;
+or mutating (making changes to the configuration). They can be disabled, and validating
+triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates. */ TriggerRead;
 export type PatchTriggerApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7031,7 +7137,6 @@ export type PatchTriggerApiArg = {
     Disabled?: boolean | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    Enforced?: boolean | null;
     Event?: string | null;
     /** Function name */
     FunctionName?: string | null;
@@ -7045,6 +7150,7 @@ export type PatchTriggerApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    Warn?: boolean | null;
   };
 };
 export type UpdateTriggerApiResponse =
@@ -7055,8 +7161,8 @@ changes occur. Each Trigger is associated with a specific Space and can be confi
 to execute on events.
 
 Triggers can be either validating (checking configuration validity without modifying it)
-or mutating (making changes to the configuration). They can also be enforced (cannot be
-overridden) or disabled. */ TriggerRead;
+or mutating (making changes to the configuration). They can be disabled, and validating
+triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates. */ TriggerRead;
 export type UpdateTriggerApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7091,13 +7197,15 @@ export type ListUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -7230,9 +7338,9 @@ export type PatchUnitApiArg = {
   unitId: string;
   /** Unique identifier for a revision_id */
   revisionId?: string;
-  /** Flag parameter for enabling dry_run */
+  /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Flag parameter for enabling upgrade */
+  /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
@@ -7267,6 +7375,8 @@ export type PatchUnitApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7353,9 +7463,9 @@ export type UpdateUnitApiArg = {
   unitId: string;
   /** Unique identifier for a revision_id */
   revisionId?: string;
-  /** Flag parameter for enabling dry_run */
+  /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Flag parameter for enabling upgrade */
+  /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
@@ -7390,6 +7500,8 @@ export type UpdateUnitApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7535,6 +7647,8 @@ export type ListExtendedMutationsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7662,13 +7776,15 @@ export type ListExtendedRevisionsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list a tagged Revision use `Tags ? '<tag-id>'`.
     
@@ -7784,6 +7900,8 @@ export type ListUnitActionsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7866,6 +7984,8 @@ export type ListUnitEventsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -7948,6 +8068,8 @@ export type ListViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8111,6 +8233,8 @@ export type BulkDeleteTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8183,6 +8307,8 @@ export type ListAllTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8266,6 +8392,8 @@ export type BulkPatchTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8360,6 +8488,8 @@ export type BulkCreateTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8435,6 +8565,8 @@ export type BulkCreateTagsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8509,6 +8641,8 @@ export type BulkDeleteTargetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8581,6 +8715,8 @@ export type ListAllTargetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8664,6 +8800,8 @@ export type BulkPatchTargetsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -8710,7 +8848,7 @@ export type BulkPatchTargetsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
-  /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
+  /** Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
   refreshTriggers?: boolean;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -8775,13 +8913,15 @@ export type BulkDeleteTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8847,13 +8987,15 @@ export type ListAllTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8930,13 +9072,15 @@ export type BulkPatchTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8991,7 +9135,6 @@ export type BulkPatchTriggersApiArg = {
     Disabled?: boolean | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    Enforced?: boolean | null;
     Event?: string | null;
     /** Function name */
     FunctionName?: string | null;
@@ -9005,6 +9148,7 @@ export type BulkPatchTriggersApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    Warn?: boolean | null;
   };
 };
 export type BulkCreateTriggersApiResponse = /** status 200 OK */
@@ -9034,13 +9178,15 @@ export type BulkCreateTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9105,6 +9251,8 @@ export type BulkCreateTriggersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9146,7 +9294,6 @@ export type BulkCreateTriggersApiArg = {
     Disabled?: boolean | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    Enforced?: boolean | null;
     Event?: string | null;
     /** Function name */
     FunctionName?: string | null;
@@ -9160,6 +9307,7 @@ export type BulkCreateTriggersApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    Warn?: boolean | null;
   };
 };
 export type BulkDeleteUnitsApiResponse = /** status 200 OK */
@@ -9189,13 +9337,15 @@ export type BulkDeleteUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9263,13 +9413,15 @@ export type ListAllUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9352,13 +9504,15 @@ export type BulkPatchUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9400,9 +9554,9 @@ export type BulkPatchUnitsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
-  /** Flag parameter for enabling dry_run */
+  /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Flag parameter for enabling upgrade */
+  /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   restore?: string;
@@ -9437,6 +9591,8 @@ export type BulkPatchUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9530,13 +9686,15 @@ export type BulkCreateUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9607,6 +9765,8 @@ export type BulkCreateUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -9696,13 +9856,15 @@ export type BulkApplyUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9778,13 +9940,15 @@ export type BulkApproveUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9856,13 +10020,15 @@ export type BulkCancelUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -9932,13 +10098,15 @@ export type BulkDestroyUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10010,13 +10178,15 @@ export type BulkRefreshUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10090,13 +10260,15 @@ export type BulkTagUnitsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10165,6 +10337,8 @@ export type ListUsersApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10236,6 +10410,8 @@ export type BulkDeleteViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10308,6 +10484,8 @@ export type ListAllViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10391,6 +10569,8 @@ export type BulkPatchViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10490,6 +10670,8 @@ export type BulkCreateViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10565,6 +10747,8 @@ export type BulkCreateViewsApiArg = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10715,6 +10899,8 @@ export type Space = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10748,13 +10934,15 @@ export type Space = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -10822,6 +11010,8 @@ export type SpaceRead = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
@@ -10855,13 +11045,15 @@ export type SpaceRead = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -11741,10 +11933,14 @@ export type FunctionInvocationsResponse = {
   RevisionID?: string;
   /** ID of the Unit's Space */
   SpaceID?: string;
+  /** Slug of the Unit's Space */
+  SpaceSlug?: string;
   /** True if all functions executed successfully */
   Success?: boolean;
   /** ID of the Unit the configuration data is associated with */
   UnitID?: string;
+  /** Slug of the Unit */
+  UnitSlug?: string;
 };
 export type FunctionInvocationList = FunctionInvocation[] | null;
 export type FunctionInvocationsRequest = {
@@ -11954,13 +12150,73 @@ export type AttributeInfo = {
   /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
   ResourceType?: string;
 };
+export type Issue = {
+  /** Identifier for the kind of issue found, such as a number, alphanumeric code, or policy/rule name. Use especially with validation functions that check multiple policies/rules. */
+  Identifier?: string;
+  /** A more detailed and specific explanation of the issue found */
+  Message?: string;
+};
+export type AttributeValue = {
+  /** Name of the registered attribute */
+  AttributeName?: string;
+  /** Line comment on the attribute at the specified Path */
+  Comment?: string;
+  /** Data type if the attribute value. */
+  DataType?: string;
+  Details?: AttributeDetails;
+  /** Name of the function invocation corresponding to the output */
+  FunctionName?: string;
+  /** True if a path in the live state, false if a path in the configuration data */
+  InLiveState?: boolean;
+  /** Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output. */
+  Index?: number;
+  /** Issues found with the attribute */
+  Issues?: Issue[];
+  /** Path of the attribute */
+  Path?: string;
+  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  ResourceCategory?: string;
+  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
+  ResourceID?: string;
+  /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
+  ResourceName?: string;
+  /** Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name> */
+  ResourceNameWithoutScope?: string;
+  /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
+  ResourceType?: string;
+  /** Score of finding attributed to this Path */
+  Score?: string;
+  /** Value of the attribute at the specified Path */
+  Value?: any;
+};
+export type AttributeValueList = AttributeValue[];
+export type ValidationResult = {
+  /** Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths. */
+  Details?: string[];
+  FailedAttributes?: AttributeValueList;
+  /** Name of the function invocation corresponding to the result */
+  FunctionName?: string;
+  /** Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output. */
+  Index?: number;
+  /** Issues found with the configuration unit that are not associated with specific attributes/paths. Use FailedAttributes where possible. */
+  Issues?: Issue[];
+  /** Maximum score of all findings */
+  MaxScore?: string;
+  /** True if valid, false otherwise */
+  Passed?: boolean;
+};
+export type ValidationResultList = ValidationResult[];
 export type UnitRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
     [key: string]: string;
   };
-  /** A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the latest configuration data. */
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the latest configuration data. These block Apply operations. */
   ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the latest configuration data. These do not block Apply operations. */
+  ApplyWarnings?: {
     [key: string]: boolean;
   };
   /** The users that have approved the latest revision of the config data for the Unit. */
@@ -12042,6 +12298,10 @@ export type UnitRead = {
   UpstreamRevisionNum?: number;
   UpstreamSpaceID?: Uuid;
   UpstreamUnitID?: Uuid;
+  /** A map from gate/warning name to the list of validation results that caused the gate or warning. */
+  ValidationResults?: {
+    [key: string]: ValidationResultList;
+  };
   /** Map from "<trigger slug>/<attribute name>" to the first output Value with that attribute name of the function invocation specified by the Trigger. */
   Values?: {
     [key: string]: string;
@@ -12096,7 +12356,7 @@ export type Link = {
   ToSpaceID?: string;
   /** Unique identifier of the upstream (producer) Unit. */
   ToUnitID: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, and UpgradeUnit. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. */
   UpdateType?: string;
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
@@ -12149,7 +12409,7 @@ export type LinkRead = {
   ToSpaceID?: string;
   /** Unique identifier of the upstream (producer) Unit. */
   ToUnitID: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, and UpgradeUnit. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. */
   UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
@@ -12209,8 +12469,12 @@ export type OrganizationMember = {
   Username?: string;
 };
 export type Revision = {
-  /** A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. */
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
   ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
     [key: string]: boolean;
   };
   /** the users that have approved the latest version of the config data for the Unit. */
@@ -12251,8 +12515,12 @@ export type Revision = {
   Version?: number;
 };
 export type RevisionRead = {
-  /** A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. */
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
   ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
     [key: string]: boolean;
   };
   /** the users that have approved the latest version of the config data for the Unit. */
@@ -12377,9 +12645,6 @@ export type Trigger = {
   Disabled?: boolean;
   /** Friendly name for the entity. */
   DisplayName?: string;
-  /** Enforced indicates whether this trigger cannot be overridden.
-            Enforced triggers implement mandatory policies that cannot be bypassed. */
-  Enforced?: boolean;
   /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
   Event: string;
   /** Function name */
@@ -12402,6 +12667,8 @@ export type Trigger = {
   TriggerID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Warn indicates whether this trigger produces ApplyWarnings instead of ApplyGates when its validating function fails. ApplyWarnings are non-blocking. */
+  Warn?: boolean;
 };
 export type TriggerRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -12424,9 +12691,6 @@ export type TriggerRead = {
   Disabled?: boolean;
   /** Friendly name for the entity. */
   DisplayName?: string;
-  /** Enforced indicates whether this trigger cannot be overridden.
-            Enforced triggers implement mandatory policies that cannot be bypassed. */
-  Enforced?: boolean;
   /** The type of entity. */
   EntityType?: string;
   /** Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone */
@@ -12458,6 +12722,8 @@ export type TriggerRead = {
   Validating?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Warn indicates whether this trigger produces ApplyWarnings instead of ApplyGates when its validating function fails. ApplyWarnings are non-blocking. */
+  Warn?: boolean;
 };
 export type ExtendedSpace = {
   AttributeFilter?: Filter;
@@ -12635,13 +12901,15 @@ export type Target = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -12729,13 +12997,15 @@ export type TargetRead = {
     Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
     Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
     as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
     The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
     such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
     Conjunctions are supported using the `AND` operator.
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;

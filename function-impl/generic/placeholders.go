@@ -4,11 +4,11 @@
 package generic
 
 import (
-	"github.com/confighub/sdk/configkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 func registerGetPlaceholders(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {

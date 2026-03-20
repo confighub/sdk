@@ -4,7 +4,7 @@
 package configkit
 
 import (
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 type ConfigConverter interface {

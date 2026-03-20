@@ -3,7 +3,7 @@
 
 package common
 
-import "github.com/confighub/sdk/worker/api"
+import "github.com/confighub/sdk/core/worker/api"
 
 // SendErrorStatus sends an error status through the worker context
 func SendErrorStatus(wctx api.BridgeWorkerContext, message string) error {

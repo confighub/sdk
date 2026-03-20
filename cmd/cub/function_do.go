@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/cubapi"
-	"github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	"github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -707,27 +707,118 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// unitDisplayName returns the unit slug with ID in parentheses if available, otherwise just the UUID.
+func unitDisplayName(respMsg *goclientnew.FunctionInvocationsResponse) string {
+	if respMsg.UnitSlug != "" {
+		slug := respMsg.UnitSlug
+		if respMsg.SpaceSlug != "" {
+			slug = respMsg.SpaceSlug + "/" + slug
+		}
+		return fmt.Sprintf("%s (%s)", slug, respMsg.UnitID.String())
+	}
+	return respMsg.UnitID.String()
+}
+
+// functionDisplayName returns the function name if available, otherwise the index.
+func functionDisplayName(functionName string, index int) string {
+	if functionName != "" {
+		return functionName
+	}
+	return fmt.Sprintf("#%d", index)
+}
+
+// displayAttributeValue prints a single attribute value with labeled fields.
+func displayAttributeValue(av *api.AttributeValue) {
+	description := ""
+	if av.Details != nil && av.Details.Description != "" {
+		description = av.Details.Description
+	}
+	tprint("Value: %v  DataType: %s  Path: %s  Resource: %s  Type: %s",
+		av.Value, av.DataType, av.Path, av.ResourceName, av.ResourceType)
+	if av.Score != "" {
+		tprint("  Score: %s", av.Score)
+	}
+	if description != "" {
+		tprint("  Description: %s", description)
+	}
+	displayIssues(av.Issues)
+}
+
+// displayResourceInfo prints a single resource info entry.
+func displayResourceInfo(ri *api.ResourceInfo) {
+	tprint("Resource: %s  Type: %s", ri.ResourceName, ri.ResourceType)
+}
+
+// displayResource prints a single resource entry with its body.
+func displayResource(r *api.Resource) {
+	tprint("Resource: %s  Type: %s:", r.ResourceName, r.ResourceType)
+	tprintRaw(r.ResourceBody)
+}
+
+// displayResponseError prints a response error with details on separate indented lines.
+func displayResponseError(respErr *goclientnew.ResponseError) {
+	detail := detailView()
+	detail.Append([]string{strings.ToUpper("Error"), respErr.Message})
+	detail.Render()
+	for _, d := range respErr.Details {
+		tprint("  %s", d)
+	}
+}
+
+// displayIssues prints issues if present.
+func displayIssues(issues []api.Issue) {
+	for _, issue := range issues {
+		if issue.Identifier != "" {
+			tprint("  Issue [%s]: %s", issue.Identifier, issue.Message)
+		} else {
+			tprint("  Issue: %s", issue.Message)
+		}
+	}
+}
+
+// displayValidationResult prints a single validation result with its details.
+func displayValidationResult(vr *api.ValidationResult) {
+	funcDisplay := functionDisplayName(vr.FunctionName, vr.Index)
+	tprint("Passed: %v  Function: %s", vr.Passed, funcDisplay)
+	if vr.MaxScore != "" {
+		tprint("  MaxScore: %s", vr.MaxScore)
+	}
+	for _, detail := range vr.Details {
+		tprint("  %s", detail)
+	}
+	for _, issue := range vr.Issues {
+		if issue.Identifier != "" {
+			tprint("  Issue [%s]: %s", issue.Identifier, issue.Message)
+		} else {
+			tprint("  Issue: %s", issue.Message)
+		}
+	}
+	if len(vr.FailedAttributes) > 0 {
+		tprintRaw("  Attributes:")
+		for j := range vr.FailedAttributes {
+			tprint("  ")
+			displayAttributeValue(&vr.FailedAttributes[j])
+		}
+	}
+}
+
 func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationsResponse) {
-	for _, respMsg := range *respMsgs {
+	for i := range *respMsgs {
+		respMsg := &(*respMsgs)[i]
 		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly && !outputRaw {
 			statusVerb := "failed"
 			if respMsg.Success {
 				statusVerb = "succeeded"
 			}
+			unitDisplay := unitDisplayName(respMsg)
 			if respMsg.RevisionID != uuid.Nil {
-				tprint("Function(s) %s on revision %s of unit %s", statusVerb, respMsg.RevisionID.String(), respMsg.UnitID.String())
+				tprint("Function(s) %s on revision %s of unit %s", statusVerb, respMsg.RevisionID.String(), unitDisplay)
 			} else {
-				tprint("Function(s) %s on unit %s", statusVerb, respMsg.UnitID.String())
+				tprint("Function(s) %s on unit %s", statusVerb, unitDisplay)
 			}
-			detail := detailView()
 			if !respMsg.Success && respMsg.Error != nil {
-				messages := respMsg.Error.Message
-				if len(respMsg.Error.Details) > 0 {
-					messages += ": " + strings.Join(respMsg.Error.Details, "; ")
-				}
-				detail.Append([]string{strings.ToUpper("Error"), messages})
+				displayResponseError(respMsg.Error)
 			}
-			detail.Render()
 		}
 		if dataOnly || (!quiet && !outputOnly && !outputValuesOnly && !outputRaw) {
 			if dataOnly || len(respMsg.Mutators) > 0 {
@@ -797,7 +888,9 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 						displayJSON(payload)
 					} else {
 						for i := range payload {
-							tprint("%v %s %s %s %s", payload[i].Value, payload[i].DataType, payload[i].Path, payload[i].ResourceName, payload[i].ResourceType)
+							funcDisplay := functionDisplayName(payload[i].FunctionName, payload[i].Index)
+							tprint("Function: %s", funcDisplay)
+							displayAttributeValue(&payload[i])
 						}
 					}
 				case string(api.OutputTypeValidationResultList), string(api.OutputTypeValidationResult):
@@ -805,52 +898,21 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					err := json.Unmarshal(outputBytes, &payload)
 					if err != nil {
 						// Try parsing as a single result. Shouldn't happen now.
-						var payload api.ValidationResult
-						err := json.Unmarshal(outputBytes, &payload)
+						var single api.ValidationResult
+						err := json.Unmarshal(outputBytes, &single)
 						// If there's an error print the raw output
 						if err != nil {
 							tprintRaw(string(outputBytes))
 						} else if outputRaw {
-							displayJSON(payload)
+							displayJSON(single)
 						} else {
-							// TODO: Factor this out
-							details := ""
-							for j, detail := range payload.Details {
-								if j > 0 {
-									details += ","
-								}
-								details += " " + detail
-							}
-							tprint("%v%s", payload.Passed, details)
-							if len(payload.FailedAttributes) > 0 {
-								tprintRaw("Attributes:")
-							}
-							for j := range payload.FailedAttributes {
-								description := ""
-								if payload.FailedAttributes[j].Details != nil {
-									description = payload.FailedAttributes[j].Details.Description
-								}
-								tprint("%v %s %s %s %s %s", payload.FailedAttributes[j].Value, payload.FailedAttributes[j].DataType,
-									payload.FailedAttributes[j].Path, payload.FailedAttributes[j].ResourceName, payload.FailedAttributes[j].ResourceType, description)
-							}
+							displayValidationResult(&single)
 						}
 					} else if outputRaw {
 						displayJSON(payload)
 					} else {
 						for i := range payload {
-							details := ""
-							for j, detail := range payload[i].Details {
-								if j > 0 {
-									details += ","
-								}
-								details += " " + detail
-							}
-							tprint("%v %d%s", payload[i].Passed, payload[i].Index, details)
-							tprintRaw("Attributes:")
-							for j := range payload[i].FailedAttributes {
-								tprint("%v %s %s %s %s", payload[i].FailedAttributes[j].Value, payload[i].FailedAttributes[j].DataType,
-									payload[i].FailedAttributes[j].Path, payload[i].FailedAttributes[j].ResourceName, payload[i].FailedAttributes[j].ResourceType)
-							}
+							displayValidationResult(&payload[i])
 						}
 					}
 				case string(api.OutputTypeResourceInfoList):
@@ -863,7 +925,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 						displayJSON(payload)
 					} else {
 						for i := range payload {
-							tprint("%s %s", payload[i].ResourceName, payload[i].ResourceType)
+							displayResourceInfo(&payload[i])
 						}
 					}
 				case string(api.OutputTypeResourceList):
@@ -876,8 +938,7 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 						displayJSON(payload)
 					} else {
 						for i := range payload {
-							tprint("%s %s:", payload[i].ResourceName, payload[i].ResourceType)
-							tprintRaw(payload[i].ResourceBody)
+							displayResource(&payload[i])
 						}
 					}
 				default:

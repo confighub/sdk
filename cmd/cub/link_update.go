@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -63,6 +63,7 @@ Examples:
 
 var (
 	linkPatch       bool
+	linkReverse     bool
 	linkIdentifiers []string
 )
 
@@ -71,6 +72,7 @@ func init() {
 	enableWaitFlag(linkUpdateCmd)
 	addLinkFieldFlags(linkUpdateCmd)
 	linkUpdateCmd.Flags().BoolVar(&linkPatch, "patch", false, "use patch API for individual or bulk operations")
+	linkUpdateCmd.Flags().BoolVar(&linkReverse, "reverse", false, "swap FromUnit and ToUnit directions (requires --patch)")
 	enableWhereFlag(linkUpdateCmd)
 	enableFilterFlag(linkUpdateCmd)
 	linkUpdateCmd.Flags().StringSliceVar(&linkIdentifiers, "link", []string{}, "target specific links by slug or UUID for bulk patch (can be repeated or comma-separated)")
@@ -149,14 +151,23 @@ func checkLinkConflictingArgs(args []string) bool {
 		}
 
 	} else {
-		// Single create mode validation
-		if len(args) < 3 || len(args) > 4 {
+		// Single update mode validation
+		if linkPatch {
+			// Individual patch mode: only slug required
+			if len(args) != 1 {
+				failOnError(errors.New("individual patch requires exactly one argument: <slug>"))
+			}
+		} else if len(args) < 3 || len(args) > 4 {
 			failOnError(errors.New("single link update requires: <slug> <from unit> <to unit> [to space]"))
 		}
 
 		if filter != "" || where != "" || len(linkIdentifiers) > 0 {
 			failOnError(errors.New("--filter, --where, and --link flags can only be used in bulk mode (without positional arguments)"))
 		}
+	}
+
+	if linkReverse && !linkPatch {
+		failOnError(errors.New("--reverse requires --patch"))
 	}
 
 	if err := validateLinkFieldFlags(); err != nil {
@@ -186,8 +197,8 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		return err
 	}
 
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) {
-		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, or link field flags")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
+		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
 	}
 
 	var effectiveWhere string
@@ -219,6 +230,9 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	if linkReverse {
+		params.Reverse = &linkReverse
+	}
 
 	// Call the bulk patch API
 	res, err := cubClientNew.BulkPatchLinksWithBodyWithResponse(
@@ -236,8 +250,8 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 }
 
 func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) {
-		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, or link field flags")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
+		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
 	}
 
 	// Get the current link for space and link ID
@@ -259,10 +273,15 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	}
 
 	// Call the individual patch API
+	params := &goclientnew.PatchLinkParams{}
+	if linkReverse {
+		params.Reverse = &linkReverse
+	}
 	res, err := cubClientNew.PatchLinkWithBodyWithResponse(
 		ctx,
 		spaceID,
 		linkID,
+		params,
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -123,7 +123,7 @@ var triggerCreateArgs struct {
 func init() {
 	addStandardCreateFlags(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
-	triggerCreateCmd.Flags().BoolVar(&enforceTrigger, "enforce", false, "Enforce trigger")
+	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
 	triggerCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	enableWhereFlag(triggerCreateCmd)
 	enableFilterFlag(triggerCreateCmd)
@@ -236,8 +236,8 @@ func runSingleTriggerCreate(args []string) error {
 	if disableTrigger {
 		newBody.Disabled = true
 	}
-	if enforceTrigger {
-		newBody.Enforced = true
+	if warnTrigger {
+		newBody.Warn = true
 	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](

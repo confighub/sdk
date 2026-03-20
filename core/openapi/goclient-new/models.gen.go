@@ -285,6 +285,58 @@ type AttributeInfo struct {
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 }
 
+// AttributeValue defines model for AttributeValue.
+type AttributeValue struct {
+	// AttributeName Name of the registered attribute
+	AttributeName string `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
+
+	// Comment Line comment on the attribute at the specified Path
+	Comment string `json:"Comment,omitempty" yaml:"Comment,omitempty"`
+
+	// DataType Data type if the attribute value.
+	DataType string            `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+	Details  *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
+
+	// FunctionName Name of the function invocation corresponding to the output
+	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// InLiveState True if a path in the live state, false if a path in the configuration data
+	InLiveState bool `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
+
+	// Index Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output.
+	Index int `json:"Index,omitempty" yaml:"Index,omitempty"`
+
+	// Issues Issues found with the attribute
+	Issues []Issue `json:"Issues,omitempty" yaml:"Issues,omitempty"`
+
+	// Path Path of the attribute
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig
+	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
+
+	// ResourceID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
+	ResourceID string `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+
+	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameWithoutScope Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>
+	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
+
+	// ResourceType Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// Score Score of finding attributed to this Path
+	Score string `json:"Score,omitempty" yaml:"Score,omitempty"`
+
+	// Value Value of the attribute at the specified Path
+	Value interface{} `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
+// AttributeValueList defines model for AttributeValueList.
+type AttributeValueList = []AttributeValue
+
 // Binding defines model for Binding.
 type Binding struct {
 	AttributeName    string        `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
@@ -737,8 +789,8 @@ type ExtendedMutation struct {
 	// to execute on events.
 	//
 	// Triggers can be either validating (checking configuration validity without modifying it)
-	// or mutating (making changes to the configuration). They can also be enforced (cannot be
-	// overridden) or disabled.
+	// or mutating (making changes to the configuration). They can be disabled, and validating
+	// triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -897,8 +949,8 @@ type ExtendedTrigger struct {
 	// to execute on events.
 	//
 	// Triggers can be either validating (checking configuration validity without modifying it)
-	// or mutating (making changes to the configuration). They can also be enforced (cannot be
-	// overridden) or disabled.
+	// or mutating (making changes to the configuration). They can be disabled, and validating
+	// triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
 }
 
@@ -1156,11 +1208,17 @@ type FunctionInvocationsResponse struct {
 	// SpaceID ID of the Unit's Space
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Unit's Space
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// Success True if all functions executed successfully
 	Success bool `json:"Success,omitempty" yaml:"Success,omitempty"`
 
 	// UnitID ID of the Unit the configuration data is associated with
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UnitSlug Slug of the Unit
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
 // FunctionOutput defines model for FunctionOutput.
@@ -1346,6 +1404,15 @@ type InvocationCreateOrUpdateResponse struct {
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 }
 
+// Issue defines model for Issue.
+type Issue struct {
+	// Identifier Identifier for the kind of issue found, such as a number, alphanumeric code, or policy/rule name. Use especially with validation functions that check multiple policies/rules.
+	Identifier string `json:"Identifier,omitempty" yaml:"Identifier,omitempty"`
+
+	// Message A more detailed and specific explanation of the issue found
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+}
+
 // Link Link connects two config Units in a dependency / producer-consumer relationship.
 // A Link indicates that selected config data from the upstream To Unit (the producer)
 // should be propagated to the downstream From Unit (the consumer).
@@ -1401,7 +1468,7 @@ type Link struct {
 	// ToUnitID Unique identifier of the upstream (producer) Unit.
 	ToUnitID openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
 
-	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides and MergeUnits. If empty, then assumed to be NeedsProvides.
+	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, and UpgradeUnit. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync.
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -1801,8 +1868,11 @@ type ResponseError struct {
 
 // Revision Revision is a historial view of a Config Unit.
 type Revision struct {
-	// ApplyGates A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision.
+	// ApplyGates A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations.
 	ApplyGates map[string]bool `json:"ApplyGates,omitempty" yaml:"ApplyGates,omitempty"`
+
+	// ApplyWarnings A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations.
+	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
 	ApprovedBy  []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
@@ -1943,6 +2013,8 @@ type Space struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -1977,13 +2049,15 @@ type Space struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2177,13 +2251,15 @@ type Target struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2229,8 +2305,8 @@ type TargetType2 struct {
 // to execute on events.
 //
 // Triggers can be either validating (checking configuration validity without modifying it)
-// or mutating (making changes to the configuration). They can also be enforced (cannot be
-// overridden) or disabled.
+// or mutating (making changes to the configuration). They can be disabled, and validating
+// triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
 type Trigger struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -2254,10 +2330,6 @@ type Trigger struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-
-	// Enforced Enforced indicates whether this trigger cannot be overridden.
-	// 		Enforced triggers implement mandatory policies that cannot be bypassed.
-	Enforced bool `json:"Enforced,omitempty" yaml:"Enforced,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -2299,6 +2371,9 @@ type Trigger struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// Warn Warn indicates whether this trigger produces ApplyWarnings instead of ApplyGates when its validating function fails. ApplyWarnings are non-blocking.
+	Warn bool `json:"Warn,omitempty" yaml:"Warn,omitempty"`
 }
 
 // TriggerCreateOrUpdateResponse defines model for TriggerCreateOrUpdateResponse.
@@ -2312,8 +2387,8 @@ type TriggerCreateOrUpdateResponse struct {
 	// to execute on events.
 	//
 	// Triggers can be either validating (checking configuration validity without modifying it)
-	// or mutating (making changes to the configuration). They can also be enforced (cannot be
-	// overridden) or disabled.
+	// or mutating (making changes to the configuration). They can be disabled, and validating
+	// triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
 }
 
@@ -2336,8 +2411,11 @@ type Unit struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
-	// ApplyGates A map of "<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the latest configuration data.
+	// ApplyGates A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the latest configuration data. These block Apply operations.
 	ApplyGates map[string]bool `json:"ApplyGates,omitempty" yaml:"ApplyGates,omitempty"`
+
+	// ApplyWarnings A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the latest configuration data. These do not block Apply operations.
+	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
 	ApprovedBy     []UUID `json:"ApprovedBy" yaml:"ApprovedBy"`
@@ -2444,6 +2522,9 @@ type Unit struct {
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty" yaml:"UpstreamRevisionNum,omitempty"`
 	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 	UpstreamUnitID      *UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
+
+	// ValidationResults A map from gate/warning name to the list of validation results that caused the gate or warning.
+	ValidationResults map[string]ValidationResultList `json:"ValidationResults,omitempty" yaml:"ValidationResults,omitempty"`
 
 	// Values Map from "<trigger slug>/<attribute name>" to the first output Value with that attribute name of the function invocation specified by the Trigger.
 	Values map[string]string `json:"Values,omitempty" yaml:"Values,omitempty"`
@@ -2694,6 +2775,31 @@ type User struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
+// ValidationResult defines model for ValidationResult.
+type ValidationResult struct {
+	// Details Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths.
+	Details          []string            `json:"Details,omitempty" yaml:"Details,omitempty"`
+	FailedAttributes *AttributeValueList `json:"FailedAttributes,omitempty" yaml:"FailedAttributes,omitempty"`
+
+	// FunctionName Name of the function invocation corresponding to the result
+	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// Index Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output.
+	Index int `json:"Index,omitempty" yaml:"Index,omitempty"`
+
+	// Issues Issues found with the configuration unit that are not associated with specific attributes/paths. Use FailedAttributes where possible.
+	Issues []Issue `json:"Issues,omitempty" yaml:"Issues,omitempty"`
+
+	// MaxScore Maximum score of all findings
+	MaxScore string `json:"MaxScore,omitempty" yaml:"MaxScore,omitempty"`
+
+	// Passed True if valid, false otherwise
+	Passed bool `json:"Passed,omitempty" yaml:"Passed,omitempty"`
+}
+
+// ValidationResultList defines model for ValidationResultList.
+type ValidationResultList = []ValidationResult
+
 // View Defines an entity view.
 type View struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -2793,6 +2899,8 @@ type BulkDeleteSpacesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -2901,6 +3009,8 @@ type BulkPatchSpacesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3006,6 +3116,8 @@ type BulkCreateSpacesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3094,6 +3206,8 @@ type BulkDeleteAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3170,6 +3284,8 @@ type ListAllAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3282,6 +3398,8 @@ type BulkPatchAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3384,6 +3502,8 @@ type BulkCreateAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3460,6 +3580,8 @@ type BulkCreateAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3515,6 +3637,8 @@ type BulkDeleteBridgeWorkersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3591,6 +3715,8 @@ type ListAllBridgeWorkersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3692,6 +3818,8 @@ type BulkPatchBridgeWorkersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3768,6 +3896,8 @@ type ListQueuedOperationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3835,6 +3965,8 @@ type BulkDeleteChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -3911,6 +4043,8 @@ type ListAllChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4019,6 +4153,8 @@ type BulkPatchChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4117,6 +4253,8 @@ type BulkCreateChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4199,6 +4337,8 @@ type BulkCreateChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4254,6 +4394,8 @@ type BulkDeleteFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4330,6 +4472,8 @@ type ListAllFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4448,6 +4592,8 @@ type BulkPatchFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4550,6 +4696,8 @@ type BulkCreateFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4632,6 +4780,8 @@ type BulkCreateFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4705,13 +4855,15 @@ type InvokeFunctionsOnOrgParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -4763,6 +4915,8 @@ type BulkDeleteInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4839,6 +4993,8 @@ type ListAllInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -4954,6 +5110,8 @@ type BulkPatchInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5059,6 +5217,8 @@ type BulkCreateInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5141,6 +5301,8 @@ type BulkCreateInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5196,6 +5358,8 @@ type BulkDeleteLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5274,6 +5438,8 @@ type SearchListLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5392,6 +5558,8 @@ type BulkPatchLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5443,6 +5611,9 @@ type BulkPatchLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Reverse Swap the FromUnit and ToUnit directions of the links
+	Reverse *bool `form:"reverse,omitempty" json:"reverse,omitempty" yaml:"reverse,omitempty"`
 }
 
 // BulkCreateLinksApplicationMergePatchPlusJSONBody defines parameters for BulkCreateLinks.
@@ -5502,6 +5673,8 @@ type BulkCreateLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5551,6 +5724,8 @@ type BulkCreateLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5600,13 +5775,15 @@ type BulkCreateLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select FromUnits for created links
 	//
@@ -5649,13 +5826,15 @@ type BulkCreateLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Where expression to select ToUnits for created links
 	//
@@ -5704,6 +5883,8 @@ type ListOrganizationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5818,6 +5999,8 @@ type ListOrganizationMembersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -5885,13 +6068,15 @@ type ListAllRevisionsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -5973,6 +6158,8 @@ type ListSpacesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6033,7 +6220,7 @@ type ListSpacesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Summary Flag parameter for enabling summary
+	// Summary Return summarized entity data
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
 
@@ -6073,7 +6260,7 @@ type GetSpaceParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Summary Flag parameter for enabling summary
+	// Summary Return summarized entity data
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
 
@@ -6140,6 +6327,8 @@ type ListAttributesParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6280,6 +6469,8 @@ type ListBridgeWorkersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6419,6 +6610,8 @@ type ListChangeSetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6555,6 +6748,8 @@ type ListFiltersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6725,13 +6920,15 @@ type InvokeFunctionsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6783,6 +6980,8 @@ type ListInvocationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -6926,6 +7125,8 @@ type ListLinksParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7047,6 +7248,12 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
+// PatchLinkParams defines parameters for PatchLink.
+type PatchLinkParams struct {
+	// Reverse Swap the FromUnit and ToUnit directions of the link
+	Reverse *bool `form:"reverse,omitempty" json:"reverse,omitempty" yaml:"reverse,omitempty"`
+}
+
 // ListTagsParams defines parameters for ListTags.
 type ListTagsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -7072,6 +7279,8 @@ type ListTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7207,6 +7416,8 @@ type ListTargetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7330,13 +7541,13 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 
 // PatchTargetParams defines parameters for PatchTarget.
 type PatchTargetParams struct {
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
 // UpdateTargetParams defines parameters for UpdateTarget.
 type UpdateTargetParams struct {
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
@@ -7365,13 +7576,15 @@ type ListTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7469,7 +7682,6 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Enforced    *bool   `json:"Enforced" yaml:"Enforced"`
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
@@ -7484,7 +7696,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
 }
 
 // ListUnitsParams defines parameters for ListUnits.
@@ -7512,13 +7725,15 @@ type ListUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -7660,10 +7875,10 @@ type PatchUnitParams struct {
 	// RevisionId Unique identifier for a revision_id
 	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty" yaml:"revision_id,omitempty"`
 
-	// DryRun Flag parameter for enabling dry_run
+	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Upgrade Flag parameter for enabling upgrade
+	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
@@ -7704,6 +7919,8 @@ type PatchUnitParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7745,10 +7962,10 @@ type UpdateUnitParams struct {
 	// RevisionId Unique identifier for a revision_id
 	RevisionId *openapi_types.UUID `form:"revision_id,omitempty" json:"revision_id,omitempty" yaml:"revision_id,omitempty"`
 
-	// DryRun Flag parameter for enabling dry_run
+	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Upgrade Flag parameter for enabling upgrade
+	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
@@ -7789,6 +8006,8 @@ type UpdateUnitParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7880,6 +8099,8 @@ type ListExtendedMutationsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -7997,13 +8218,15 @@ type ListExtendedRevisionsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -8107,6 +8330,8 @@ type ListUnitActionsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8174,6 +8399,8 @@ type ListUnitEventsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8241,6 +8468,8 @@ type ListViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8381,6 +8610,8 @@ type BulkDeleteTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8457,6 +8688,8 @@ type ListAllTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8564,6 +8797,8 @@ type BulkPatchTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8661,6 +8896,8 @@ type BulkCreateTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8743,6 +8980,8 @@ type BulkCreateTagsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8798,6 +9037,8 @@ type BulkDeleteTargetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8874,6 +9115,8 @@ type ListAllTargetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -8992,6 +9235,8 @@ type BulkPatchTargetsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9042,7 +9287,7 @@ type BulkPatchTargetsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 }
 
@@ -9071,13 +9316,15 @@ type BulkDeleteTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9147,13 +9394,15 @@ type ListAllTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9223,7 +9472,6 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Enforced    *bool   `json:"Enforced" yaml:"Enforced"`
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
@@ -9238,7 +9486,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
 }
 
 // BulkPatchTriggersParams defines parameters for BulkPatchTriggers.
@@ -9266,13 +9515,15 @@ type BulkPatchTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9332,7 +9583,6 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Enforced    *bool   `json:"Enforced" yaml:"Enforced"`
 	Event       *string `json:"Event" yaml:"Event"`
 
 	// FunctionName Function name
@@ -9347,7 +9597,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version" yaml:"Version"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
 }
 
 // BulkCreateTriggersParams defines parameters for BulkCreateTriggers.
@@ -9375,13 +9626,15 @@ type BulkCreateTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Enforced, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9451,6 +9704,8 @@ type BulkCreateTriggersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9506,13 +9761,15 @@ type BulkDeleteUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9584,13 +9841,15 @@ type ListAllUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9718,13 +9977,15 @@ type BulkPatchUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9770,10 +10031,10 @@ type BulkPatchUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// DryRun Flag parameter for enabling dry_run
+	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Upgrade Flag parameter for enabling upgrade
+	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
 	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
@@ -9814,6 +10075,8 @@ type BulkPatchUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -9915,13 +10178,15 @@ type BulkCreateUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9999,6 +10264,8 @@ type BulkCreateUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10054,13 +10321,15 @@ type BulkApplyUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10141,13 +10410,15 @@ type BulkApproveUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10222,13 +10493,15 @@ type BulkCancelUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10300,13 +10573,15 @@ type BulkDestroyUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10381,13 +10656,15 @@ type BulkRefreshUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10465,13 +10742,15 @@ type BulkTagUnitsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: ApplyGates, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -10543,6 +10822,8 @@ type ListUsersParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10610,6 +10891,8 @@ type BulkDeleteViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10686,6 +10969,8 @@ type ListAllViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10798,6 +11083,8 @@ type BulkPatchViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10900,6 +11187,8 @@ type BulkCreateViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.
@@ -10982,6 +11271,8 @@ type BulkCreateViewsParams struct {
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
 	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
 	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
 	// Conjunctions are supported using the `AND` operator.

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
 

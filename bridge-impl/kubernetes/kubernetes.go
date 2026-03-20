@@ -23,14 +23,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-impl/common"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
-	"github.com/confighub/sdk/configkit/cubkit"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/confighub/sdk/third_party/gaby"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type KubernetesBridgeWorker struct {

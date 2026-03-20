@@ -4,10 +4,12 @@ OUTPUT
 [
   {
     "Passed": true,
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "cel-validate"
   },
   {
     "Passed": true,
-    "Index": 1
+    "Index": 1,
+    "FunctionName": "cel-validate"
   }
 ]

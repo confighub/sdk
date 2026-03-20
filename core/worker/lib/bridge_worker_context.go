@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 type defaultBridgeWorkerContext struct {

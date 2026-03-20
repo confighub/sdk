@@ -34,6 +34,7 @@ OUTPUT
 [
   {
     "Passed": true,
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "vet-jsonschema"
   }
 ]

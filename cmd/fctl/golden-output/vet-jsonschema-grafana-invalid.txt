@@ -34,6 +34,7 @@ OUTPUT
   {
     "Passed": false,
     "Index": 0,
+    "FunctionName": "vet-jsonschema",
     "Details": [
       "Resource GrafanaLDAP/LDAPConfig: servers.0: search_base_dns is required"
     ],

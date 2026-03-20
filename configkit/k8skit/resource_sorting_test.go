@@ -6,7 +6,7 @@ package k8skit
 import (
 	"testing"
 
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -41,6 +41,7 @@ OUTPUT
       ]
     },
     "Value": "false",
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-env-var"
   }
 ]

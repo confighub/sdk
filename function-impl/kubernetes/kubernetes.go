@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 func initFunctions(rp *k8skit.K8sResourceProviderType) {

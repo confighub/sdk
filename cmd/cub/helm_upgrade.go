@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 // helmUpgradeCmd upgrades a Helm chart (a convenience wrapper around `helm upgrade`).

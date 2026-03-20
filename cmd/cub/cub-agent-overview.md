@@ -55,12 +55,14 @@ The `--where` flag accepts expressions in a simple query language. The formal EB
 
 query_expression    ::= binary_expression ( whitespace 'AND' whitespace binary_expression )*
 
-binary_expression   ::= left_operand whitespace operator ( whitespace right_operand )?
+binary_expression   ::= left_operand whitespace operator ( whitespace right_operand )? ( whitespace truth_test )?
 
 left_operand        ::= length_expression | map_access | attribute_name
 right_operand       ::= in_list | attribute_name | literal
 
 (* Note: IS NULL and IS NOT NULL operators do not require a right_operand *)
+(* Truth-value tests are post-fix modifiers applied to the result of a comparison *)
+truth_test          ::= 'IS' whitespace 'TRUE' | 'IS' whitespace 'FALSE' | 'IS' whitespace 'NOT' whitespace 'TRUE' | 'IS' whitespace 'NOT' whitespace 'FALSE'
 
 length_expression   ::= 'LEN' '(' attribute_name ')'
 
@@ -69,6 +71,8 @@ labels_access       ::= 'Labels' '.' label_key
 apply_gates_access  ::= 'ApplyGates' '.' slug '/' function_name
 
 operator            ::= '<=' | '>=' | '<' | '>' | '=' | '!=' | '?' | 'LIKE' | 'ILIKE' | '~~' | '!~~' | '~' | '~*' | '!~' | '!~*' | 'IN' | 'NOT' whitespace 'IN' | 'IS' whitespace 'NULL' | 'IS' whitespace 'NOT' whitespace 'NULL'
+
+(* Note: truth_test modifiers above are separate from operators; they follow a complete binary_expression *)
 
 in_list             ::= '(' whitespace? literal ( whitespace? ',' whitespace? literal )* whitespace? ')'
 
@@ -161,6 +165,12 @@ The following constraints apply but are not expressible in pure EBNF:
 
 # Check if a map key exists (IS NOT NULL)
 --where "Labels.tier IS NOT NULL"
+
+# Truth-value test: match where value equals OR is NULL (useful for nullable columns)
+--where "MergeSourceID = '<uuid>' IS NOT FALSE"
+
+# Truth-value test: match where comparison is false
+--where "Slug = 'test' IS FALSE"
 
 # Complex conjunction
 --where "CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'"

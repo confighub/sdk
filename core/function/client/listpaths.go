@@ -13,8 +13,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 func GetRegisteredPaths(transportConfig *TransportConfig, toolchain workerapi.ToolchainType) (api.AttributeNameToResourceTypeToPathToVisitorInfoType, error) {

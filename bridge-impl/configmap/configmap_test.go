@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

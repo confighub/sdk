@@ -5,7 +5,7 @@ package toml
 
 import (
 	"github.com/confighub/sdk/configkit/tomlkit"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/function/handler"
 )
 
 // RegisterFunctions registers all TOML functions onto the provided FunctionHandler

@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 // processFunctionCommand handles commands specifically for the function worker.

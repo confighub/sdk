@@ -20,9 +20,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // ResourceTypeInfo holds information about a discovered resource type

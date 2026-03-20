@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"hash/crc32"
 
-	"github.com/confighub/sdk/configkit/cubkit"
+	"github.com/confighub/sdk/core/configkit/cubkit"
 )
 
 const MaxSlugLength = 128

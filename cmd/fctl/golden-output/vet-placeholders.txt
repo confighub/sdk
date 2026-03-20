@@ -5,6 +5,7 @@ OUTPUT
   {
     "Passed": false,
     "Index": 0,
+    "FunctionName": "vet-placeholders",
     "FailedAttributes": [
       {
         "ResourceName": "confighubplaceholder/confighubplaceholder",

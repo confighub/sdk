@@ -1,4 +1,4 @@
-module github.com/confighub/sdk
+module github.com/confighub/sdk/core
 
 go 1.25.0
 

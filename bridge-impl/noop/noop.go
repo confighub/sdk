@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
-	funcApi "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	funcApi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // NoopBridge is a server-hosted bridge that instantly succeeds all operations

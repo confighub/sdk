@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )

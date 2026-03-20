@@ -4,8 +4,8 @@
 package worker
 
 import (
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
 )
 
 // NewBridgeDispatcher creates a new worker.BridgeDispatcher (different from lib.BridgeDispatcher)

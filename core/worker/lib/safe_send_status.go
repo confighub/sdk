@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 // SafeSendStatus wraps the SendStatus call, logs errors, and returns a wrapped error if applicable.

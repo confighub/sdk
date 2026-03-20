@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/function-impl/generic"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {

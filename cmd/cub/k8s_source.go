@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/meta"

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )

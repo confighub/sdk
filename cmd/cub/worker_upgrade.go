@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/spf13/cobra"
 )
 

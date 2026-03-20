@@ -6,7 +6,7 @@ package api
 import (
 	"github.com/google/uuid"
 
-	funcApi "github.com/confighub/sdk/function/api"
+	funcApi "github.com/confighub/sdk/core/function/api"
 )
 
 // FunctionWorkerEventRequest encapsulates a request destined for the function worker plugin.

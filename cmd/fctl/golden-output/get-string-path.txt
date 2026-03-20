@@ -11,6 +11,7 @@ OUTPUT
     "AttributeName": "none",
     "DataType": "string",
     "Value": "ClusterFirst",
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "get-string-path"
   }
 ]

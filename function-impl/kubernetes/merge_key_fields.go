@@ -5,7 +5,7 @@ package kubernetes
 
 import (
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/function/api"
+	"github.com/confighub/sdk/core/function/api"
 )
 
 // MergeKeyField is an alias for k8skit.MergeKeyField for backward compatibility.

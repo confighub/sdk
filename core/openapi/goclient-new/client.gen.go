@@ -445,9 +445,9 @@ type ClientInterface interface {
 	GetLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *GetLinkParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchLinkWithBody request with any body
-	PatchLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateLinkWithBody request with any body
 	UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2292,8 +2292,8 @@ func (c *Client) GetLink(ctx context.Context, spaceId openapi_types.UUID, linkId
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchLinkRequestWithBody(c.Server, spaceId, linkId, contentType, body)
+func (c *Client) PatchLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchLinkRequestWithBody(c.Server, spaceId, linkId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2304,8 +2304,8 @@ func (c *Client) PatchLinkWithBody(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchLinkRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, linkId, body)
+func (c *Client) PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchLinkRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, linkId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7253,6 +7253,22 @@ func NewBulkPatchLinksRequestWithBody(server string, params *BulkPatchLinksParam
 
 		}
 
+		if params.Reverse != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "reverse", runtime.ParamLocationQuery, *params.Reverse); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11456,18 +11472,18 @@ func NewGetLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi
 }
 
 // NewPatchLinkRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchLink builder with application/merge-patch+json body
-func NewPatchLinkRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, body PatchLinkApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchLinkRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchLinkRequestWithBody(server, spaceId, linkId, "application/merge-patch+json", bodyReader)
+	return NewPatchLinkRequestWithBody(server, spaceId, linkId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchLinkRequestWithBody generates requests for PatchLink with any type of body
-func NewPatchLinkRequestWithBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchLinkRequestWithBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -11497,6 +11513,28 @@ func NewPatchLinkRequestWithBody(server string, spaceId openapi_types.UUID, link
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Reverse != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "reverse", runtime.ParamLocationQuery, *params.Reverse); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -19321,9 +19359,9 @@ type ClientWithResponsesInterface interface {
 	GetLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *GetLinkParams, reqEditors ...RequestEditorFn) (*GetLinkResponse, error)
 
 	// PatchLinkWithBodyWithResponse request with any body
-	PatchLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error)
+	PatchLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error)
 
-	PatchLinkWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error)
+	PatchLinkWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error)
 
 	// UpdateLinkWithBodyWithResponse request with any body
 	UpdateLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
@@ -25609,16 +25647,16 @@ func (c *ClientWithResponses) GetLinkWithResponse(ctx context.Context, spaceId o
 }
 
 // PatchLinkWithBodyWithResponse request with arbitrary body returning *PatchLinkResponse
-func (c *ClientWithResponses) PatchLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error) {
-	rsp, err := c.PatchLinkWithBody(ctx, spaceId, linkId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error) {
+	rsp, err := c.PatchLinkWithBody(ctx, spaceId, linkId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchLinkResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchLinkWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error) {
-	rsp, err := c.PatchLinkWithApplicationMergePatchPlusJSONBody(ctx, spaceId, linkId, body, reqEditors...)
+func (c *ClientWithResponses) PatchLinkWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error) {
+	rsp, err := c.PatchLinkWithApplicationMergePatchPlusJSONBody(ctx, spaceId, linkId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

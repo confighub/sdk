@@ -3,7 +3,7 @@
 
 package kubernetes
 
-import "github.com/confighub/sdk/function/api"
+import "github.com/confighub/sdk/core/function/api"
 
 // resourceTypeToImmutablePaths maps Kubernetes resource types to their fields
 // that are immutable after creation. Changing these fields requires deleting

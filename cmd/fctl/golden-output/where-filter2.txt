@@ -4,6 +4,7 @@ OUTPUT
 [
   {
     "Passed": false,
-    "Index": 0
+    "Index": 0,
+    "FunctionName": "where-filter"
   }
 ]

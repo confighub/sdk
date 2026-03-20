@@ -9,9 +9,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/confighub/sdk/configkit/cubkit"
-	funcapi "github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/configkit/cubkit"
+	funcapi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type BridgeWorkerInfo struct {

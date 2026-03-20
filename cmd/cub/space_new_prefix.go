@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	cubbyname "github.com/confighub/sdk/cubbyname"
+	cubbyname "github.com/confighub/sdk/core/cubbyname"
 	"github.com/spf13/cobra"
 )
 

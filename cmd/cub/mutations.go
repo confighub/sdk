@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )

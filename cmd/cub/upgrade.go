@@ -62,9 +62,9 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 	// Download URLs from GitHub Releases
 	var baseURL string
 	if upgradeVersion != "" {
-		baseURL = fmt.Sprintf("https://github.com/confighub/sdk/releases/download/%s", upgradeVersion)
+		baseURL = fmt.Sprintf("https://github.com/confighub/sdk/core/releases/download/%s", upgradeVersion)
 	} else {
-		baseURL = "https://github.com/confighub/sdk/releases/latest/download"
+		baseURL = "https://github.com/confighub/sdk/core/releases/latest/download"
 	}
 	cubURL := fmt.Sprintf("%s/cub-%s-%s", baseURL, osName, arch)
 	cubWorkerURL := fmt.Sprintf("%s/cub-worker-run-%s-%s", baseURL, osName, arch)

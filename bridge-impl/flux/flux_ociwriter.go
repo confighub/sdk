@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-impl/common"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type FluxOCIWriterWorker struct {

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/alitto/pond"
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 )
 

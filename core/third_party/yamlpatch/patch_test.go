@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // reformatYAML is analogous to reformatJSON, just a convenience if you want

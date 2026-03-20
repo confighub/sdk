@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	funcApi "github.com/confighub/sdk/function/api"
+	funcApi "github.com/confighub/sdk/core/function/api"
 	"github.com/google/uuid"
 )
 

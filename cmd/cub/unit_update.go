@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -899,6 +899,9 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	}
 	if len(unitDetails.ApplyGates) > 0 && !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
 		tprint("Unit %s (%s) has apply gates: %s", unitDetails.Slug, unitDetails.UnitID.String(), applyGatesToString(unitDetails.ApplyGates))
+	}
+	if len(unitDetails.ApplyWarnings) > 0 && !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
+		tprint("Unit %s (%s) has apply warnings: %s", unitDetails.Slug, unitDetails.UnitID.String(), applyGatesToString(unitDetails.ApplyWarnings))
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ OUTPUT
   {
     "Passed": false,
     "Index": 0,
+    "FunctionName": "vet-celexpr",
     "Details": [
       "resource example/mydep failed validation expression r.kind != \"Deployment\" || r.spec.replicas \u003e 5"
     ]

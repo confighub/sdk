@@ -9,7 +9,7 @@ import (
 
 	"github.com/confighub/sdk/bridge-impl/helmutils"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

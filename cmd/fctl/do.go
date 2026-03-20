@@ -16,9 +16,9 @@ import (
 	"github.com/spf13/cobra"
 
 	// TODO: the API mechanism will change when we decide/build the "real" webhook model.
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/client"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/client"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 const templateEvaluator = api.EvaluatorTemplate

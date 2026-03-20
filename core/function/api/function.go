@@ -13,8 +13,8 @@ import (
 	"hash/crc32"
 	"strings"
 
-	"github.com/confighub/sdk/third_party/yamlpatch"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/third_party/yamlpatch"
+	"github.com/confighub/sdk/core/workerapi"
 
 	jsonschema "github.com/swaggest/jsonschema-go"
 
@@ -385,7 +385,9 @@ func ParseAndValidateWhereResource(whereResource string) (*FunctionOptions, erro
 type FunctionIDs struct {
 	OrganizationID uuid.UUID `description:"ID of the Unit's Organization"`
 	SpaceID        uuid.UUID `description:"ID of the Unit's Space"`
+	SpaceSlug      string    `json:",omitempty" description:"Slug of the Unit's Space"`
 	UnitID         uuid.UUID `description:"ID of the Unit the configuration data is associated with"`
+	UnitSlug       string    `json:",omitempty" description:"Slug of the Unit"`
 	RevisionID     uuid.UUID `description:"ID of the Revision the configuration data is associated with"`
 }
 
@@ -515,11 +517,12 @@ func ScoreMax(a, b Score) Score {
 // AttributeValue provides the value of an attribute in addition to information about the attribute.
 type AttributeValue struct {
 	AttributeInfo
-	Value   any     `description:"Value of the attribute at the specified Path"`
-	Comment string  `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
-	Index   int     `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
-	Score   Score   `json:",omitempty" description:"Score of finding attributed to this Path"`
-	Issues  []Issue `json:",omitempty" description:"Issues found with the attribute"`
+	Value        any     `description:"Value of the attribute at the specified Path"`
+	Comment      string  `json:",omitempty" description:"Line comment on the attribute at the specified Path"`
+	Index        int     `description:"Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output."`
+	FunctionName string  `json:",omitempty" description:"Name of the function invocation corresponding to the output"`
+	Score        Score   `json:",omitempty" description:"Score of finding attributed to this Path"`
+	Issues       []Issue `json:",omitempty" description:"Issues found with the attribute"`
 }
 type AttributeValueList []AttributeValue
 
@@ -528,6 +531,7 @@ type AttributeValueList []AttributeValue
 type ValidationResult struct {
 	Passed           bool               `description:"True if valid, false otherwise"`
 	Index            int                `description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
+	FunctionName     string             `json:",omitempty" description:"Name of the function invocation corresponding to the result"`
 	MaxScore         Score              `json:",omitempty" description:"Maximum score of all findings"`
 	Details          []string           `json:",omitempty" description:"Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths."`
 	Issues           []Issue            `json:",omitempty" description:"Issues found with the configuration unit that are not associated with specific attributes/paths. Use FailedAttributes where possible."`
@@ -753,6 +757,7 @@ func CombineOutputs(
 				return outputs, messages
 			}
 			newResult.Index = functionInvocationIndex
+			newResult.FunctionName = functionName
 			previousResults = append(previousResults, newResult)
 			output = previousResults
 		} else {
@@ -763,6 +768,7 @@ func CombineOutputs(
 			}
 			for i := range newResult {
 				newResult[i].Index = functionInvocationIndex
+				newResult[i].FunctionName = functionName
 			}
 			previousResults = append(previousResults, newResult...)
 			output = previousResults
@@ -776,6 +782,7 @@ func CombineOutputs(
 		}
 		for i := range newResult {
 			newResult[i].Index = functionInvocationIndex
+			newResult[i].FunctionName = functionName
 		}
 		previousResults, previousExpectedType := output.(ValidationResultList)
 		if !previousExpectedType {
@@ -798,6 +805,7 @@ func CombineOutputs(
 		}
 		for i := range newOutput {
 			newOutput[i].Index = functionInvocationIndex
+			newOutput[i].FunctionName = functionName
 		}
 		previousOutput = append(previousOutput, newOutput...)
 		output = previousOutput

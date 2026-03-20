@@ -11,7 +11,7 @@ package impl
 
 import (
 	"github.com/confighub/sdk/configkit/appyamlkit"
-	"github.com/confighub/sdk/configkit/cubkit"
+	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/inikit"
@@ -19,10 +19,10 @@ import (
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/propkit"
 	"github.com/confighub/sdk/configkit/tomlkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/function/executor"
-	"github.com/confighub/sdk/function/handler"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/function/executor"
+	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/function-impl/appjson"
 	"github.com/confighub/sdk/function-impl/appyaml"
 	"github.com/confighub/sdk/function-impl/confighub"
@@ -33,7 +33,7 @@ import (
 	"github.com/confighub/sdk/function-impl/opentofu"
 	"github.com/confighub/sdk/function-impl/properties"
 	"github.com/confighub/sdk/function-impl/toml"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // toolchainSetup pairs a provider with its function registration function.

@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/confighub/sdk/worker/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

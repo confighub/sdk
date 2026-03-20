@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/confighub/sdk/function/client"
+	"github.com/confighub/sdk/core/function/client"
 	"github.com/spf13/cobra"
 )
 

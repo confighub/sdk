@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/stretchr/testify/assert"
 )
 

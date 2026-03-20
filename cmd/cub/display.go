@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yqkit"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/fatih/color"
 	"github.com/google/uuid"
 	"github.com/itchyny/gojq"

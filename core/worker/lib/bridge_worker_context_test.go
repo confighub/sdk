@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )

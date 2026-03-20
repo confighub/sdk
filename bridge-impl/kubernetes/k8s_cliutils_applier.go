@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
-	funcApi "github.com/confighub/sdk/function/api"
+	funcApi "github.com/confighub/sdk/core/function/api"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

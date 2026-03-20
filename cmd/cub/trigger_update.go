@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/cubapi"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -44,8 +44,8 @@ Examples:
   # Update worker for all triggers of a certain type using JSON patch
   echo '{"BridgeWorkerID": "worker-uuid"}' | cub trigger update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
 
-  # Mark triggers as enforced
-  cub trigger update --patch --where "Event = 'Mutation'" --enforce
+  # Mark triggers as warn mode
+  cub trigger update --patch --where "Event = 'Mutation'" --warn
 
   # Update specific triggers by slug
   cub trigger update --patch --trigger my-trigger,another-trigger --disable
@@ -59,8 +59,8 @@ Examples:
 var (
 	disableTrigger     bool
 	enableTrigger      bool
-	enforceTrigger     bool
-	unenforceTrigger   bool
+	warnTrigger     bool
+	unwarnTrigger   bool
 	workerSlug         string
 	triggerPatch       bool
 	triggerIdentifiers []string
@@ -71,8 +71,8 @@ func init() {
 	addStandardUpdateFlags(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
-	triggerUpdateCmd.Flags().BoolVar(&enforceTrigger, "enforce", false, "Enforce trigger")
-	triggerUpdateCmd.Flags().BoolVar(&unenforceTrigger, "unenforce", false, "Unenforce trigger (use with --patch for bulk)")
+	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
+	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ApplyGates (default, use with --patch for bulk)")
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
@@ -119,8 +119,8 @@ func checkTriggerConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("--disable and --enable flags are mutually exclusive"))
 	}
 
-	if enforceTrigger && unenforceTrigger {
-		failOnError(fmt.Errorf("--enforce and --unenforce flags are mutually exclusive"))
+	if warnTrigger && unwarnTrigger {
+		failOnError(fmt.Errorf("--warn and --unwarn flags are mutually exclusive"))
 	}
 
 	if triggerPatch && flagReplace {
@@ -202,11 +202,11 @@ func runBulkTriggerUpdate() error {
 			patchMap["Disabled"] = false
 		}
 
-		// Add enforce/unenforce flags
-		if enforceTrigger {
-			patchMap["Enforced"] = true
-		} else if unenforceTrigger {
-			patchMap["Enforced"] = false
+		// Add warn/unwarn flags
+		if warnTrigger {
+			patchMap["Warn"] = true
+		} else if unwarnTrigger {
+			patchMap["Warn"] = false
 		}
 
 		// Add worker if specified
@@ -318,10 +318,10 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Build patch data using BuildPatchData with trigger enhancer
 		triggerEnhancer := func(patchData map[string]interface{}) {
 			// Add trigger-specific fields
-			if enforceTrigger {
-				patchData["Enforced"] = true
-			} else if unenforceTrigger {
-				patchData["Enforced"] = false
+			if warnTrigger {
+				patchData["Warn"] = true
+			} else if unwarnTrigger {
+				patchData["Warn"] = false
 			}
 
 			if disableTrigger {
@@ -403,10 +403,10 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	} else if enableTrigger {
 		currentTrigger.Trigger.Disabled = false
 	}
-	if enforceTrigger {
-		currentTrigger.Trigger.Enforced = true
-	} else if unenforceTrigger {
-		currentTrigger.Trigger.Enforced = false
+	if warnTrigger {
+		currentTrigger.Trigger.Warn = true
+	} else if unwarnTrigger {
+		currentTrigger.Trigger.Warn = false
 	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](

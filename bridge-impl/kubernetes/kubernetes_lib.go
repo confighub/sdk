@@ -20,9 +20,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/confighub/sdk/worker/api"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
-	funcapi "github.com/confighub/sdk/function/api"
+	funcapi "github.com/confighub/sdk/core/function/api"
 )
 
 // LargeWaitTimeout is effectively infinite (~10 years) - disabled per #3220

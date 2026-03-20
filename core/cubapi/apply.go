@@ -10,11 +10,11 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/configkit/cubkit"
-	"github.com/confighub/sdk/configkit/yamlkit"
-	"github.com/confighub/sdk/function/api"
-	goclientnew "github.com/confighub/sdk/openapi/goclient-new"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/configkit/cubkit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/google/uuid"
 	"sigs.k8s.io/yaml"
@@ -667,7 +667,7 @@ func updateEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 
 	case EntityTypeLink:
 		link := existingEntity.(*goclientnew.Link)
-		resp, err := client.PatchLinkWithBodyWithResponse(ctx, spaceUUID, link.LinkID, "application/merge-patch+json", bytes.NewReader(patchData))
+		resp, err := client.PatchLinkWithBodyWithResponse(ctx, spaceUUID, link.LinkID, &goclientnew.PatchLinkParams{}, "application/merge-patch+json", bytes.NewReader(patchData))
 		if IsAPIError(err, resp) {
 			return nil, "", InterpretErrorGeneric(err, resp)
 		}

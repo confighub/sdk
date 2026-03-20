@@ -10,8 +10,8 @@ import (
 
 	"log/slog"
 
-	"github.com/confighub/sdk/function/api"
-	"github.com/confighub/sdk/third_party/gaby"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // YamlSafePathGetDoc returns a document node at a fully resolved path and whether it was found.

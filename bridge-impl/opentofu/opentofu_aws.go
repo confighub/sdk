@@ -16,9 +16,9 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/confighub/sdk/bridge-impl/common"
-	"github.com/confighub/sdk/worker/api"
-	"github.com/confighub/sdk/worker/lib"
-	"github.com/confighub/sdk/workerapi"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 type OpenTofuAWSWorker struct{}
