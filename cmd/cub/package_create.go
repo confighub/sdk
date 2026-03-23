@@ -604,7 +604,7 @@ func pruneView(view *goclientnew.View) {
 	view.ViewID = uuid.Nil
 	view.OrganizationID = uuid.Nil
 	view.SpaceID = uuid.Nil
-	view.FilterID = uuid.Nil
+	view.FilterID = nil
 	view.CursorID = 0
 	view.CreatedAt = time.Time{}
 	view.UpdatedAt = time.Time{}

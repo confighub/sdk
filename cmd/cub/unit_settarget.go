@@ -44,6 +44,7 @@ func init() {
 	addStandardDisplayFlags(unitSetTargetCmd)
 	enableWhereFlag(unitSetTargetCmd)
 	enableFilterFlag(unitSetTargetCmd)
+	enableWaitFlag(unitSetTargetCmd)
 	unitSetTargetCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	unitCmd.AddCommand(unitSetTargetCmd)
 }
@@ -117,6 +118,9 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 
 	unitDetails := unitRes.JSON200
 	displayUpdateResults(unitDetails, EntityTypeUnit, unitSlug, unitDetails.UnitID.String(), displayUnitDetails)
+	if wait {
+		return awaitTriggersRemoval(unitDetails)
+	}
 	return nil
 }
 
@@ -189,7 +193,20 @@ func runBulkUnitSetTarget(targetSlug string) error {
 		return fmt.Errorf("unexpected response from bulk patch API")
 	}
 
-	return handleBulkSetTargetResponse(responses, statusCode, targetSlug)
+	err = handleBulkSetTargetResponse(responses, statusCode, targetSlug)
+	if err != nil {
+		return err
+	}
+	if wait && responses != nil {
+		for _, resp := range *responses {
+			if resp.Unit != nil {
+				if awaitErr := awaitTriggersRemoval(resp.Unit); awaitErr != nil {
+					return awaitErr
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func handleBulkSetTargetResponse(responses *[]goclientnew.UnitCreateOrUpdateResponse, statusCode int, targetSlug string) error {

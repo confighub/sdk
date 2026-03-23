@@ -214,17 +214,10 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 	}
 	// TODO: allow any provider type that a bridge implements by looking at SupportedConfigTypes
 
-	// if providerType != string(api.ProviderKubernetes) &&
-	// 	providerType != string(api.ProviderOpenTofuAWS) &&
-	// 	providerType != string(api.ProviderFluxOCIWriter) &&
-	// 	providerType != string(api.ProviderConfigMapRenderer) {
-	// 	// NOTE: FluxOCI deliberately not mentioned
-	// 	return errors.New("provider must be one of: Kubernetes, OpenTofu/AWS, ConfigMapRenderer")
-	// }
 	if providerType == string(api.ProviderOpenTofuAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
 		return errors.New("provider OpenTofu/AWS requires toolchain OpenTofu/HCL")
 	}
-	if (providerType == string(api.ProviderKubernetes) || providerType == string(api.ProviderFluxOCIWriter)) &&
+	if providerType == string(api.ProviderKubernetes) &&
 		toolchainType != string(workerapi.ToolchainKubernetesYAML) {
 		return fmt.Errorf("provider %s requires toolchain Kubernetes/YAML", providerType)
 	}

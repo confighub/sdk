@@ -5,7 +5,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -135,6 +137,11 @@ func init() {
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.triggerSlugs, "trigger", []string{}, "target specific triggers by slug or UUID for bulk create (can be repeated or comma-separated)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
+	triggerCreateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
+	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit", "", "filter expression to restrict which Units this trigger applies to")
+	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
+	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
+	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
 
 	triggerCmd.AddCommand(triggerCreateCmd)
 }
@@ -251,6 +258,36 @@ func runSingleTriggerCreate(args []string) error {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		newBody.BridgeWorkerID = &workerID
+	}
+
+	if triggerDescription != "" {
+		newBody.Description = triggerDescription
+	}
+	if triggerWhereUnit != "" {
+		newBody.WhereUnit = triggerWhereUnit
+	}
+	if triggerUnitFilter != "" {
+		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
+			triggerUnitFilter,
+			EntityTypeFilter,
+			apiGetFilterFromSlugInSpace,
+			func(f *goclientnew.Filter) string { return f.FilterID.String() },
+		)
+		if err != nil {
+			return err
+		}
+		filterID := goclientnew.UUID(filterUUID)
+		newBody.UnitFilterID = &filterID
+	}
+	if triggerWhereResource != "" {
+		newBody.WhereResource = triggerWhereResource
+	}
+	if triggerFailOpenAfter != "" {
+		duration, err := time.ParseDuration(triggerFailOpenAfter)
+		if err != nil {
+			return fmt.Errorf("invalid --fail-open-after duration: %w", err)
+		}
+		newBody.FailOpenAfter = int(duration)
 	}
 
 	// TODO: update with overriden string type TriggerEvent

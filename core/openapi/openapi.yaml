@@ -54,7 +54,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -233,7 +233,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -469,7 +469,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -1375,7 +1375,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning attributes
 
@@ -3198,7 +3198,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning changesets
 
@@ -3381,7 +3381,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 
           The whole string must be query-encoded.
         in: query
@@ -3544,7 +3544,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 
           The whole string must be query-encoded.
         in: query
@@ -3715,7 +3715,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 
           The whole string must be query-encoded.
         in: query
@@ -3940,7 +3940,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 
           The whole string must be query-encoded.
         in: query
@@ -4051,7 +4051,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning filters
 
@@ -4404,6 +4404,38 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -4528,7 +4560,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -4691,7 +4723,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -4849,7 +4881,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5073,7 +5105,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5186,7 +5218,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning invocations
 
@@ -5969,7 +6001,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for created links
 
@@ -6028,7 +6060,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select ToSpaces for created links
 
@@ -7383,7 +7415,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -10072,7 +10104,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+          Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 
           The whole string must be query-encoded.
         in: query
@@ -10880,6 +10912,38 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -10997,7 +11061,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -12888,7 +12952,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13571,7 +13635,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -13622,7 +13686,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -13869,7 +13933,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -13997,6 +14061,10 @@ paths:
                     block deletion
                   nullable: true
                   type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
                 Disabled:
                   description: ""
                   nullable: true
@@ -14009,6 +14077,10 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                FailOpenAfter:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FunctionName:
                   description: Function name
                   nullable: true
@@ -14035,6 +14107,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -14044,6 +14121,14 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -14341,6 +14426,38 @@ paths:
           types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
         required: false
         schema:
           type: string
@@ -15390,7 +15507,7 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/ApproveResponse'
           description: OK
         "400":
           content:
@@ -17091,7 +17208,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 
           The whole string must be query-encoded.
         in: query
@@ -17525,6 +17642,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Of:
+                  description: ""
+                  nullable: true
+                  type: string
                 OrderBy:
                   description: ""
                   nullable: true
@@ -18343,7 +18464,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning tags
 
@@ -18522,7 +18643,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -18685,7 +18806,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -18842,7 +18963,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19108,7 +19229,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19159,7 +19280,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -19271,7 +19392,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19322,7 +19443,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -19428,7 +19549,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19479,7 +19600,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -19522,6 +19643,10 @@ paths:
                     block deletion
                   nullable: true
                   type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
                 Disabled:
                   description: ""
                   nullable: true
@@ -19534,6 +19659,10 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                FailOpenAfter:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FunctionName:
                   description: Function name
                   nullable: true
@@ -19560,6 +19689,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -19569,6 +19703,14 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -19669,7 +19811,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19720,7 +19862,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+          Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -19766,7 +19908,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning triggers
 
@@ -19835,6 +19977,10 @@ paths:
                     block deletion
                   nullable: true
                   type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
                 Disabled:
                   description: ""
                   nullable: true
@@ -19847,6 +19993,10 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                FailOpenAfter:
+                  description: ""
+                  nullable: true
+                  type: integer
                 FunctionName:
                   description: Function name
                   nullable: true
@@ -19873,6 +20023,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -19882,6 +20037,14 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                WhereResource:
+                  description: ""
+                  nullable: true
+                  type: string
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -20261,6 +20424,38 @@ paths:
           types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
         required: false
         schema:
           type: string
@@ -20864,7 +21059,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning units
 
@@ -22328,7 +22523,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 
           The whole string must be query-encoded.
         in: query
@@ -22491,7 +22686,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 
           The whole string must be query-encoded.
         in: query
@@ -22648,7 +22843,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 
           The whole string must be query-encoded.
         in: query
@@ -22759,6 +22954,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Of:
+                  description: ""
+                  nullable: true
+                  type: string
                 OrderBy:
                   description: ""
                   nullable: true
@@ -22876,7 +23075,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+          Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 
           The whole string must be query-encoded.
         in: query
@@ -22988,7 +23187,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning views
 
@@ -23074,6 +23273,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Of:
+                  description: ""
+                  nullable: true
+                  type: string
                 OrderBy:
                   description: ""
                   nullable: true
@@ -23160,6 +23363,11 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
+        BridgeState:
+          description: Additional state used by the Bridge
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         Data:
           description: Updated configuration Data of the Unit (for refresh and import)
           format: base64
@@ -23325,6 +23533,8 @@ components:
         Message:
           type: string
           x-go-type-skip-optional-pointer: true
+        Unit:
+          $ref: '#/components/schemas/Unit'
       type: object
     Attribute:
       description: |-
@@ -23539,6 +23749,15 @@ components:
           description: Type of a resource in the system under management represented
             in the configuration data; Kubernetes resources are represented in the
             form <apiVersion>/<kind> (aka group-version-kind)
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttributeSelector:
+      properties:
+        Path:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereResource:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -24028,14 +24247,39 @@ components:
       type: object
     Column:
       properties:
+        ColumnSource:
+          $ref: '#/components/schemas/ColumnSource'
+        ColumnType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        GroupBy:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Name:
-          description: Name of the column in PascalCase without spaces or dashes,
-            if built-in, entity attribute (e.g., Labels.Environment), or extended
-            attribute (e.g., UpstreamUnit.HeadRevisionNum)
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrderByDirection:
           type: string
           x-go-type-skip-optional-pointer: true
       required:
       - Name
+      type: object
+    ColumnSource:
+      properties:
+        DataExpression:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataPath:
+          $ref: '#/components/schemas/AttributeSelector'
+        MetadataAttribute:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        MetadataExpression:
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     DeleteResponse:
       description: Response for successful delete operation
@@ -24359,6 +24603,8 @@ components:
           $ref: '#/components/schemas/Space'
         Trigger:
           $ref: '#/components/schemas/Trigger'
+        UnitFilter:
+          $ref: '#/components/schemas/Filter'
       type: object
     ExtendedUnit:
       description: Unit with capability to extend additional related entities.
@@ -24407,6 +24653,13 @@ components:
           $ref: '#/components/schemas/Space'
         UpstreamUnit:
           $ref: '#/components/schemas/Unit'
+        View:
+          $ref: '#/components/schemas/View'
+        ViewColumns:
+          items:
+            $ref: '#/components/schemas/ViewColumn'
+          type: array
+          x-go-type-skip-optional-pointer: true
       type: object
     ExtendedView:
       properties:
@@ -24645,6 +24898,9 @@ components:
           items:
             $ref: '#/components/schemas/UUID'
           type: array
+          x-go-type-skip-optional-pointer: true
+        UpdateApplyGates:
+          type: boolean
           x-go-type-skip-optional-pointer: true
         WhereResource:
           description: WhereResource restricts which resources functions operate on
@@ -25572,6 +25828,10 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
+        BridgeState:
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -26111,6 +26371,10 @@ components:
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
           $ref: '#/components/schemas/UUID'
+        TriggerHash:
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         TriggerIDs:
           description: List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID
             criteria. (readonly)
@@ -26205,7 +26469,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -26510,6 +26774,10 @@ components:
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
           $ref: '#/components/schemas/UUID'
+        TriggerHash:
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         TriggerIDs:
           description: List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID
             criteria. (readonly)
@@ -26566,7 +26834,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -26676,6 +26944,12 @@ components:
             deletion.
           type: object
           x-go-type-skip-optional-pointer: true
+        Description:
+          description: A longer description which explains what the trigger checks
+            and how to fix validation failures. Shown as a pop-up when hovering over
+            an ApplyGate in the UI.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Disabled:
           description: "Disabled indicates whether this trigger is currently disabled.\n\t\tWhen
             disabled, the trigger will not be executed even when matching events occur."
@@ -26696,8 +26970,20 @@ components:
             Valid values are Mutation and PostClone
           type: string
           x-go-type-skip-optional-pointer: true
+        FailOpenAfter:
+          description: Duration after which a disconnected BridgeWorker's triggers
+            are treated as fail-open. Can only be set when BridgeWorkerID is set.
+          nullable: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
         FunctionName:
           description: Function name
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Hash:
+          description: SHA256 hash of the trigger's specification fields, used to
+            detect changes.
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         InvocationID:
@@ -26745,6 +27031,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        UnitFilterID:
+          $ref: '#/components/schemas/UUID'
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -26777,6 +27065,16 @@ components:
             are non-blocking.
           example: "false"
           type: boolean
+          x-go-type-skip-optional-pointer: true
+        WhereResource:
+          description: Restricts which resources within a Unit's configuration data
+            the Trigger's function operates on, using ConfigHub metadata path expressions.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereUnit:
+          description: A filter expression to restrict which Units this Trigger applies
+            to.
+          type: string
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
@@ -26844,6 +27142,12 @@ components:
           nullable: true
           readOnly: true
           type: array
+          x-go-type-skip-optional-pointer: true
+        BridgeState:
+          description: Additional state used by the Bridge; content is ProviderType-specific.
+          format: base64
+          readOnly: true
+          type: string
           x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           $ref: '#/components/schemas/UUID'
@@ -27117,6 +27421,10 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
+        BridgeState:
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -27636,11 +27944,7 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         FilterID:
-          description: FilterID identifies a filter. (required)
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
+          $ref: '#/components/schemas/UUID'
         GroupBy:
           description: Column to group by (optional).
           type: string
@@ -27654,6 +27958,12 @@ components:
           description: An optional map of Label key/value pairs to specify identifying
             attributes of entities for the purpose of grouping and filtering them.
           type: object
+          x-go-type-skip-optional-pointer: true
+        Of:
+          description: Entity type to view (e.g., Unit, Space). At least one of FilterID
+            or Of must be specified. If both are specified, Of must match Filter.From.
+            (optional)
+          type: string
           x-go-type-skip-optional-pointer: true
         OrderBy:
           description: Column to sort by. (optional)
@@ -27705,7 +28015,15 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
-      - FilterID
+      type: object
+    ViewColumn:
+      properties:
+        Name:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Value:
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     ViewCreateOrUpdateResponse:
       properties:

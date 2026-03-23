@@ -119,6 +119,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	} else {
 		view.Append([]string{"Triggers", ""})
 	}
+	view.Append([]string{"Trigger Hash", extendedSpace.Space.TriggerHash})
 
 	// TODO: TriggerCountByEventType, TargetCountByToolchainType
 	view.Append([]string{"# Units", fmt.Sprintf("%d", extendedSpace.TotalUnitCount)})

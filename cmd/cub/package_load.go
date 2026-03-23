@@ -272,7 +272,7 @@ func packageLoadCmdRun(cmd *cobra.Command, args []string) error {
 			// Use it directly as the key
 			filterKey := view.FilterSlug
 			if filter, ok := createdFilters[filterKey]; ok {
-				viewDetails.FilterID = filter.FilterID
+				viewDetails.FilterID = &filter.FilterID
 			} else {
 				tprint("Warning: Filter %s not found for view %s", filterKey, view.Slug)
 			}
@@ -781,7 +781,7 @@ func loadRemotePackage(sourceURL string, prefix string) error {
 			// Use it directly as the key
 			filterKey := view.FilterSlug
 			if filter, ok := createdFilters[filterKey]; ok {
-				viewDetails.FilterID = filter.FilterID
+				viewDetails.FilterID = &filter.FilterID
 			} else {
 				tprint("Warning: Filter %s not found for view %s", filterKey, view.Slug)
 			}

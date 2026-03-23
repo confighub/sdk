@@ -146,9 +146,10 @@ type ActionResult struct {
 	// QueuedOperationID links this result back to the original operation request.
 	QueuedOperationID uuid.UUID `description:"UUID of the operation corresponding to the action request"`
 	ActionResultBaseMeta
-	Data      []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
-	LiveData  []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit (for inventory and drift detection)"`
-	LiveState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit (for status determination)"`
+	Data        []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
+	LiveData    []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit (for inventory and drift detection)"`
+	LiveState   []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit (for status determination)"`
+	BridgeState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Additional state used by the Bridge"`
 	// ResourceStatuses contains per-resource sync and readiness status.
 	// Key format: "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
 	ResourceStatuses ResourceStatusMap `json:",omitempty" description:"Per-resource sync and readiness status"`
@@ -184,6 +185,9 @@ func ValidateActionResultData(ar *ActionResult) error {
 	}
 	if len(ar.LiveState) > MaxConfigDataLength {
 		return errors.Errorf("LiveState length %d exceeds max length %d", len(ar.LiveState), MaxConfigDataLength)
+	}
+	if len(ar.BridgeState) > MaxConfigDataLength {
+		return errors.Errorf("BridgeState length %d exceeds max length %d", len(ar.BridgeState), MaxConfigDataLength)
 	}
 	return nil
 }

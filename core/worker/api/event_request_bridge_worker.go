@@ -36,6 +36,7 @@ type BridgeWorkerPayload struct {
 	Data            []byte            `swaggertype:"string" format:"byte" description:"Configuration data of the Unit on which the action was performed"`
 	LiveData        []byte            `swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit"`
 	LiveState       []byte            `swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit"`
+	BridgeState     []byte            `swaggertype:"string" format:"byte" description:"Additional state used by the Bridge"`
 	TargetOptions   map[string]string `json:",omitempty" description:"Options from the matching ConfigType of the Target for the Unit's ToolchainType"`
 	TargetParams    []byte            `swaggertype:"string" format:"byte" description:"Parameters of the Target attached to the Unit on which the action was performed"`
 	ExtraParams     []byte            `swaggertype:"string" format:"byte" description:"Additional parameters associated with the action sent to the worker"`

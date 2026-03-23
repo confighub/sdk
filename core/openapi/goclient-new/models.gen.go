@@ -98,6 +98,9 @@ const (
 type ActionResult struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
+	// BridgeState Additional state used by the Bridge
+	BridgeState string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
+
 	// Data Updated configuration Data of the Unit (for refresh and import)
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
@@ -169,6 +172,20 @@ type ApiInfo struct {
 type ApproveResponse struct {
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Message string         `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
+	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
+	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
+	// the underlying configuration / deployment tool. The resources must belong to a single
+	// infrastructure provider and the actuation mechanism must be able to resolve references and
+	// ordering dependencies among the resources within the document. For example, if one resource
+	// needs to be fully provisioned to provide input to another resource, then the actuation code is
+	// responsible for handling this. Revisions store historical copies of the configuration data.
+	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
+	// new variants of a configuration.
+	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
 // Attribute Defines a dynamic configuration attribute that registers getter and setter functions
@@ -283,6 +300,12 @@ type AttributeInfo struct {
 
 	// ResourceType Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+}
+
+// AttributeSelector defines model for AttributeSelector.
+type AttributeSelector struct {
+	Path          string `json:"Path,omitempty" yaml:"Path,omitempty"`
+	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
 
 // AttributeValue defines model for AttributeValue.
@@ -555,8 +578,20 @@ type ChangeSetCreateOrUpdateResponse struct {
 
 // Column defines model for Column.
 type Column struct {
-	// Name Name of the column in PascalCase without spaces or dashes, if built-in, entity attribute (e.g., Labels.Environment), or extended attribute (e.g., UpstreamUnit.HeadRevisionNum)
-	Name string `json:"Name" yaml:"Name"`
+	ColumnSource     *ColumnSource `json:"ColumnSource,omitempty" yaml:"ColumnSource,omitempty"`
+	ColumnType       string        `json:"ColumnType,omitempty" yaml:"ColumnType,omitempty"`
+	DataType         string        `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+	GroupBy          bool          `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
+	Name             string        `json:"Name" yaml:"Name"`
+	OrderByDirection string        `json:"OrderByDirection,omitempty" yaml:"OrderByDirection,omitempty"`
+}
+
+// ColumnSource defines model for ColumnSource.
+type ColumnSource struct {
+	DataExpression     string             `json:"DataExpression,omitempty" yaml:"DataExpression,omitempty"`
+	DataPath           *AttributeSelector `json:"DataPath,omitempty" yaml:"DataPath,omitempty"`
+	MetadataAttribute  string             `json:"MetadataAttribute,omitempty" yaml:"MetadataAttribute,omitempty"`
+	MetadataExpression string             `json:"MetadataExpression,omitempty" yaml:"MetadataExpression,omitempty"`
 }
 
 // DeleteResponse Response for successful delete operation
@@ -952,6 +987,9 @@ type ExtendedTrigger struct {
 	// or mutating (making changes to the configuration). They can be disabled, and validating
 	// triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
+
+	// UnitFilter Defines an entity filter.
+	UnitFilter *Filter `json:"UnitFilter,omitempty" yaml:"UnitFilter,omitempty"`
 }
 
 // ExtendedUnit Unit with capability to extend additional related entities.
@@ -1038,6 +1076,10 @@ type ExtendedUnit struct {
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
 	UpstreamUnit *Unit `json:"UpstreamUnit,omitempty" yaml:"UpstreamUnit,omitempty"`
+
+	// View Defines an entity view.
+	View        *View        `json:"View,omitempty" yaml:"View,omitempty"`
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedView defines model for ExtendedView.
@@ -1180,7 +1222,8 @@ type FunctionInvocationsRequest struct {
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
 	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
-	Triggers []UUID `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
+	Triggers         []UUID `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
+	UpdateApplyGates bool   `json:"UpdateApplyGates,omitempty" yaml:"UpdateApplyGates,omitempty"`
 
 	// WhereResource WhereResource restricts which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory).
 	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
@@ -1696,7 +1739,8 @@ type Permissions map[string]Subjects
 // worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
 // to each UnitAction.
 type QueuedOperation struct {
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Action      *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+	BridgeState string      `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -1980,6 +2024,7 @@ type Space struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID         openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	TriggerFilterID *UUID              `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	TriggerHash     string             `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
 
 	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
@@ -2057,7 +2102,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2218,6 +2263,7 @@ type Target struct {
 	// ToolchainType ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env".
 	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
 	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	TriggerHash     string `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
 
 	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
@@ -2259,7 +2305,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2324,6 +2370,9 @@ type Trigger struct {
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
+	// Description A longer description which explains what the trigger checks and how to fix validation failures. Shown as a pop-up when hovering over an ApplyGate in the UI.
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
 	// Disabled Disabled indicates whether this trigger is currently disabled.
 	// 		When disabled, the trigger will not be executed even when matching events occur.
 	Disabled bool `json:"Disabled,omitempty" yaml:"Disabled,omitempty"`
@@ -2337,8 +2386,14 @@ type Trigger struct {
 	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone
 	Event string `json:"Event" yaml:"Event"`
 
+	// FailOpenAfter Duration after which a disconnected BridgeWorker's triggers are treated as fail-open. Can only be set when BridgeWorkerID is set.
+	FailOpenAfter int `json:"FailOpenAfter" yaml:"FailOpenAfter"`
+
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
+	Hash         string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 	InvocationID *UUID  `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -2358,7 +2413,8 @@ type Trigger struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// TriggerID TriggerID uniquely identifies a trigger within the system.
-	TriggerID openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+	TriggerID    openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+	UnitFilterID *UUID              `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
@@ -2374,6 +2430,12 @@ type Trigger struct {
 
 	// Warn Warn indicates whether this trigger produces ApplyWarnings instead of ApplyGates when its validating function fails. ApplyWarnings are non-blocking.
 	Warn bool `json:"Warn,omitempty" yaml:"Warn,omitempty"`
+
+	// WhereResource Restricts which resources within a Unit's configuration data the Trigger's function operates on, using ConfigHub metadata path expressions.
+	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
+
+	// WhereUnit A filter expression to restrict which Units this Trigger applies to.
+	WhereUnit string `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
 }
 
 // TriggerCreateOrUpdateResponse defines model for TriggerCreateOrUpdateResponse.
@@ -2418,7 +2480,10 @@ type Unit struct {
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
-	ApprovedBy     []UUID `json:"ApprovedBy" yaml:"ApprovedBy"`
+	ApprovedBy []UUID `json:"ApprovedBy" yaml:"ApprovedBy"`
+
+	// BridgeState Additional state used by the Bridge; content is ProviderType-specific.
+	BridgeState    string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
 	BridgeWorkerID *UUID  `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 	ChangeSetID    *UUID  `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
@@ -2539,7 +2604,8 @@ type Unit struct {
 // worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
 // to each UnitAction.
 type UnitAction struct {
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Action      *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+	BridgeState string      `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -2822,15 +2888,16 @@ type View struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-
-	// FilterID FilterID identifies a filter. (required)
-	FilterID openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
+	FilterID   *UUID  `json:"FilterID,omitempty" yaml:"FilterID,omitempty"`
 
 	// GroupBy Column to group by (optional).
 	GroupBy string `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// Of Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional)
+	Of string `json:"Of,omitempty" yaml:"Of,omitempty"`
 
 	// OrderBy Column to sort by. (optional)
 	OrderBy string `json:"OrderBy,omitempty" yaml:"OrderBy,omitempty"`
@@ -2855,6 +2922,12 @@ type View struct {
 
 	// ViewID ViewID uniquely identifies a view within the system.
 	ViewID openapi_types.UUID `json:"ViewID,omitempty" yaml:"ViewID,omitempty"`
+}
+
+// ViewColumn defines model for ViewColumn.
+type ViewColumn struct {
+	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
 // ViewCreateOrUpdateResponse defines model for ViewCreateOrUpdateResponse.
@@ -2907,7 +2980,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3017,7 +3090,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3124,7 +3197,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3588,7 +3661,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -4345,7 +4418,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -4402,7 +4475,7 @@ type BulkDeleteFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4480,7 +4553,7 @@ type ListAllFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4600,7 +4673,7 @@ type BulkPatchFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4704,7 +4777,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4788,7 +4861,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -4888,6 +4961,18 @@ type InvokeFunctionsOnOrgParams struct {
 
 	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // BulkDeleteInvocationsParams defines parameters for BulkDeleteInvocations.
@@ -4923,7 +5008,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5001,7 +5086,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5118,7 +5203,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5225,7 +5310,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5309,7 +5394,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -5681,7 +5766,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for created links
 	//
@@ -5732,7 +5817,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select ToSpaces for created links
 	//
@@ -6166,7 +6251,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6756,7 +6841,7 @@ type ListFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6953,6 +7038,18 @@ type InvokeFunctionsParams struct {
 
 	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // ListInvocationsParams defines parameters for ListInvocations.
@@ -6988,7 +7085,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7424,7 +7521,7 @@ type ListTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7584,7 +7681,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7623,7 +7720,7 @@ type ListTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7651,7 +7748,7 @@ type GetTriggerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7678,11 +7775,13 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
 	Disabled    *bool             `json:"Disabled" yaml:"Disabled"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Event       *string `json:"Event" yaml:"Event"`
+	DisplayName   *string `json:"DisplayName" yaml:"DisplayName"`
+	Event         *string `json:"Event" yaml:"Event"`
+	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
 	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
@@ -7692,12 +7791,15 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug          *string `json:"Slug" yaml:"Slug"`
-	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	ToolchainType *string             `json:"ToolchainType" yaml:"ToolchainType"`
+	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int  `json:"Version" yaml:"Version"`
-	Warn    *bool `json:"Warn" yaml:"Warn"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
+	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
 
 // ListUnitsParams defines parameters for ListUnits.
@@ -7794,6 +7896,18 @@ type ListUnitsParams struct {
 
 	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // CreateUnitParams defines parameters for CreateUnit.
@@ -8476,7 +8590,7 @@ type ListViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8575,6 +8689,7 @@ type PatchViewApplicationMergePatchPlusJSONBody struct {
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
+	Of               *string             `json:"Of" yaml:"Of"`
 	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
 	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
 
@@ -8988,7 +9103,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -9045,7 +9160,7 @@ type BulkDeleteTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9123,7 +9238,7 @@ type ListAllTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9243,7 +9358,7 @@ type BulkPatchTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9324,7 +9439,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9363,7 +9478,7 @@ type BulkDeleteTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9402,7 +9517,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9441,7 +9556,7 @@ type ListAllTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9468,11 +9583,13 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
 	Disabled    *bool             `json:"Disabled" yaml:"Disabled"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Event       *string `json:"Event" yaml:"Event"`
+	DisplayName   *string `json:"DisplayName" yaml:"DisplayName"`
+	Event         *string `json:"Event" yaml:"Event"`
+	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
 	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
@@ -9482,12 +9599,15 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug          *string `json:"Slug" yaml:"Slug"`
-	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	ToolchainType *string             `json:"ToolchainType" yaml:"ToolchainType"`
+	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int  `json:"Version" yaml:"Version"`
-	Warn    *bool `json:"Warn" yaml:"Warn"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
+	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
 
 // BulkPatchTriggersParams defines parameters for BulkPatchTriggers.
@@ -9523,7 +9643,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9562,7 +9682,7 @@ type BulkPatchTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9579,11 +9699,13 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
 	Disabled    *bool             `json:"Disabled" yaml:"Disabled"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-	Event       *string `json:"Event" yaml:"Event"`
+	DisplayName   *string `json:"DisplayName" yaml:"DisplayName"`
+	Event         *string `json:"Event" yaml:"Event"`
+	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
 	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
@@ -9593,12 +9715,15 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug          *string `json:"Slug" yaml:"Slug"`
-	ToolchainType *string `json:"ToolchainType" yaml:"ToolchainType"`
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	ToolchainType *string             `json:"ToolchainType" yaml:"ToolchainType"`
+	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int  `json:"Version" yaml:"Version"`
-	Warn    *bool `json:"Warn" yaml:"Warn"`
+	Version       *int    `json:"Version" yaml:"Version"`
+	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
+	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
 
 // BulkCreateTriggersParams defines parameters for BulkCreateTriggers.
@@ -9634,7 +9759,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Disabled, DisplayName, Event, FunctionName, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UpdatedAt, Validating, Warn.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9673,7 +9798,7 @@ type BulkCreateTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID.
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9712,7 +9837,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -9910,6 +10035,18 @@ type ListAllUnitsParams struct {
 
 	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
 	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // BulkPatchUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchUnits.
@@ -10272,7 +10409,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -10899,7 +11036,7 @@ type BulkDeleteViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10977,7 +11114,7 @@ type ListAllViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11048,6 +11185,7 @@ type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
+	Of               *string             `json:"Of" yaml:"Of"`
 	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
 	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
 
@@ -11091,7 +11229,7 @@ type BulkPatchViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11152,6 +11290,7 @@ type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
+	Of               *string             `json:"Of" yaml:"Of"`
 	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
 	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
 
@@ -11195,7 +11334,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11279,7 +11418,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning views
 	//

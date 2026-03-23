@@ -188,12 +188,12 @@ func unitTreeCmdRun(cmd *cobra.Command, args []string) error {
 
 	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, selectFields, filterID)
+		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, "", "", false, selectFields, filterID, "")
 		if err != nil {
 			return err
 		}
 	} else {
-		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, resourceType, whereData, selectFields, filterID)
+		extendedUnits, err = apiListExtendedUnits(selectedSpaceID, where, resourceType, whereData, "", "", false, selectFields, filterID, "")
 		if err != nil {
 			return err
 		}

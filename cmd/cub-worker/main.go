@@ -106,12 +106,8 @@ var rootArgs struct {
 	workerID               string
 	workerSecret           string
 	workerProviderTypesStr string
-	inCluster              bool
-	authMethod             string // "kubernetes", "cloud", "docker-config", "keychain"
-	kubernetesSecretPath   string
 	gracePeriodDelay       int // Delay in seconds after SIGTERM before starting shutdown
 	// autoRefresh  bool
-	enableFluxOCI bool
 }
 
 // providerToolchainTypes maps provider types to the toolchain types they require.
@@ -121,7 +117,6 @@ var providerToolchainTypes = map[string][]workerapi.ToolchainType{
 	LowerProviderTypeFluxRenderer:      {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeArgoCDRenderer:    {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeArgoCDOCI:         {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeFluxOCIWriter:     {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeFluxOCI:           {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeOpenTofuAWS:       {workerapi.ToolchainOpenTofuHCL},
 	LowerProviderTypeConfigMapRenderer: {
@@ -260,19 +255,6 @@ func init() {
 		workerPort = p
 	}
 
-	// FIXME: We should not be using any env vars that are not prefixed with CONFIGHUB_
-
-	authMethod := "keychain"
-	if am := os.Getenv("AUTH_METHOD"); am != "" {
-		authMethod = am
-	}
-
-	kubernetesSecretPath := os.Getenv("KUBERNETES_SECRET_PATH")
-
-	inCluster := false
-	if os.Getenv("IN_CLUSTER") == "true" {
-		inCluster = true
-	}
 
 	gracePeriodDelay := 10 // default 10 seconds
 	if gpd := os.Getenv("GRACE_PERIOD_DELAY"); gpd != "" {
@@ -281,13 +263,6 @@ func init() {
 		}
 	}
 
-	// FluxOCI is currently disabled by default
-	if os.Getenv("CONFIGHUB_ENABLE_FLUXOCI") != "" {
-		rootArgs.enableFluxOCI = true
-	}
-	if rootArgs.enableFluxOCI {
-		availableBridgeWorkers[LowerProviderTypeFluxOCIWriter] = fluxOCIWorker
-	}
 
 	workerProviderTypesStr := ""
 	for wt := range availableBridgeWorkers {
@@ -310,11 +285,6 @@ func init() {
 	// TODO not implemented yet
 	// rootCmd.Flags().BoolVarP(&rootArgs.autoRefresh, "auto-refresh", "r", false, "Enable auto-refresh")
 
-	if rootArgs.enableFluxOCI {
-		rootCmd.PersistentFlags().BoolVar(&rootArgs.inCluster, "in-cluster", inCluster, "Enable in-cluster deployment for FluxOCIWorker (use Kubernetes secrets or cloud provider credentials) (IN_CLUSTER)")
-		rootCmd.PersistentFlags().StringVar(&rootArgs.authMethod, "auth-method", authMethod, "Authentication method for FluxOCIWorker (kubernetes, cloud, docker-config, keychain) (AUTH_METHOD)")
-		rootCmd.PersistentFlags().StringVar(&rootArgs.kubernetesSecretPath, "kubernetes-secret-path", kubernetesSecretPath, "Path to the Kubernetes secret mounted as a volume. For use with k8s auth-method and FluxOCIWorker (KUBERNETES_SECRET_PATH)")
-	}
 
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
@@ -323,7 +293,6 @@ func init() {
 const (
 	LowerProviderTypeConfigHub         = "confighub"
 	LowerProviderTypeKubernetes        = "kubernetes"
-	LowerProviderTypeFluxOCIWriter     = "fluxociwriter"
 	LowerProviderTypeFluxOCI           = "fluxoci"
 	LowerProviderTypeFluxRenderer      = "fluxrenderer"
 	LowerProviderTypeOpenTofuAWS       = "opentofu/aws"
@@ -332,22 +301,18 @@ const (
 	LowerProviderTypeArgoCDOCI         = "argocdoci"
 )
 
-// NOTE: The FluxOCIWriter provider type is disabled by default for now and may be deprecated in the future.
-
 // Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
 
 var availableBridgeWorkers = map[string]api.BridgeWorker{
 	LowerProviderTypeConfigHub:    confighub.NewConfigHubBridgeWorker(),
 	LowerProviderTypeKubernetes:   kubernetes.NewKubernetesBridgeWorker(),
 	LowerProviderTypeFluxRenderer: fluxrenderer.NewFluxRendererWorker(),
-	// LowerProviderTypeFluxOCIWriter:       fluxOCIWorker,
 	LowerProviderTypeOpenTofuAWS:       opentofu.NewOpenTofuAWSWorker(),
 	LowerProviderTypeConfigMapRenderer: configmap.NewConfigMapBridgeWorker(),
 	LowerProviderTypeArgoCDRenderer:    argocdrenderer.NewArgoCDRendererWorker(),
 	// ArgoCDOCI worker is initialized in rootRunE with credentials (like ConfigHub worker)
 	LowerProviderTypeArgoCDOCI: nil, // placeholder, initialized in rootRunE
 }
-var fluxOCIWorker = flux.NewFluxOCIWriterWorker()
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
 	// ignore required flag marking for version command
@@ -373,10 +338,6 @@ func newHTTPServer() *echo.Echo {
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	if rootArgs.enableFluxOCI {
-		availableBridgeWorkers[LowerProviderTypeFluxOCIWriter] = fluxOCIWorker
-	}
-
 	workerProviderTypesStr := strings.ToLower(rootArgs.workerProviderTypesStr)
 	if len(args) > 0 {
 		// Override provider types
@@ -442,35 +403,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		// Currently disabled by default
-		// Special case for FluxOCIWriter - initialize it
-		if rootArgs.enableFluxOCI && lowerProviderType == LowerProviderTypeFluxOCIWriter {
-			if fluxWorker, ok := directBridgeWorker.(*flux.FluxOCIWriterWorker); ok {
-				err := flux.NewFluxOCIWorkerConfig(fluxWorker,
-					rootArgs.inCluster,
-					rootArgs.authMethod,
-					rootArgs.kubernetesSecretPath,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to initialize FluxOCIWorker: %w", err)
-				}
-				// Use fresh instance for dispatcher registration
-				for _, toolchainType := range toolchainTypes {
-					bridgeDispatcher.RegisterWorker(toolchainType, providerType, fluxWorker)
-					log.FromContext(context.Background()).Info("Registered bridge worker",
-						"toolchainType", toolchainType,
-						"providerType", providerType)
-				}
-			}
-
-		} else {
-			// Register other bridges directly
-			for _, toolchainType := range toolchainTypes {
-				bridgeDispatcher.RegisterWorker(toolchainType, providerType, directBridgeWorker)
-				log.FromContext(context.Background()).Info("Registered bridge worker",
-					"toolchainType", toolchainType,
-					"providerType", providerType)
-			}
+		// Register bridges directly
+		for _, toolchainType := range toolchainTypes {
+			bridgeDispatcher.RegisterWorker(toolchainType, providerType, directBridgeWorker)
+			log.FromContext(context.Background()).Info("Registered bridge worker",
+				"toolchainType", toolchainType,
+				"providerType", providerType)
 		}
 	}
 

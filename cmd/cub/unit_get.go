@@ -362,7 +362,7 @@ func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam 
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	units, err := apiSearchUnits(where, "", "", selectParam, "")
+	units, err := apiSearchUnits(where, "", "", "", "", false, selectParam, "", "")
 	if err != nil {
 		return nil, err
 	}

@@ -61,6 +61,8 @@ func init() {
 	enableFilterFlag(unitApproveCmd)
 	unitApproveCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk approve (can be repeated or comma-separated)")
 	unitApproveCmd.Flags().StringVar(&approveRevision, "revision", "", "Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
+	enableWaitFlag(unitApproveCmd)
+	addStandardDisplayFlags(unitApproveCmd)
 	unitCmd.AddCommand(unitApproveCmd)
 }
 
@@ -262,10 +264,24 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, approveRes)
 	}
 
-	if revisionParam != nil {
-		fmt.Printf("Unit %s (%s) revision %s has been approved\n", args[0], configUnit.UnitID.String(), *revisionParam)
-	} else {
+	if !quiet {
 		fmt.Printf("Unit %s (%s) has been approved\n", args[0], configUnit.UnitID.String())
+	}
+
+	// Wait for triggers to complete if --wait is specified
+	if wait {
+		var approvedUnit *goclientnew.Unit
+		if approveRes.JSON200 != nil && approveRes.JSON200.Unit != nil {
+			approvedUnit = approveRes.JSON200.Unit
+		} else {
+			// Fallback: re-fetch the unit
+			approvedUnit, err = apiGetUnitInSpace(configUnit.UnitID.String(), selectedSpaceID, "*")
+			if err != nil {
+				return err
+			}
+		}
+		tprint("Awaiting triggers...")
+		return awaitTriggersRemoval(approvedUnit)
 	}
 	return nil
 }

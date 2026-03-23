@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -57,14 +58,19 @@ Examples:
 }
 
 var (
-	disableTrigger     bool
-	enableTrigger      bool
-	warnTrigger     bool
-	unwarnTrigger   bool
-	workerSlug         string
-	triggerPatch       bool
-	triggerIdentifiers []string
-	invocationSlug     string
+	disableTrigger       bool
+	enableTrigger        bool
+	warnTrigger          bool
+	unwarnTrigger        bool
+	workerSlug           string
+	triggerPatch         bool
+	triggerIdentifiers   []string
+	invocationSlug       string
+	triggerDescription   string
+	triggerWhereUnit     string
+	triggerUnitFilter    string
+	triggerWhereResource string
+	triggerFailOpenAfter string
 )
 
 func init() {
@@ -79,6 +85,11 @@ func init() {
 	enableFilterFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().StringSliceVar(&triggerIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	triggerUpdateCmd.Flags().StringVar(&invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
+	triggerUpdateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
+	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit", "", "filter expression to restrict which Units this trigger applies to")
+	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
+	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
+	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
 	triggerCmd.AddCommand(triggerUpdateCmd)
 }
 
@@ -221,6 +232,23 @@ func runBulkTriggerUpdate() error {
 			patchMap["FunctionName"] = ""
 			patchMap["Arguments"] = nil
 		}
+
+		// Add new trigger fields if specified
+		if triggerDescription != "" {
+			patchMap["Description"] = triggerDescription
+		}
+		if triggerWhereUnit != "" {
+			patchMap["WhereUnit"] = triggerWhereUnit
+		}
+		if triggerWhereResource != "" {
+			patchMap["WhereResource"] = triggerWhereResource
+		}
+		if triggerFailOpenAfter != "" {
+			duration, err := time.ParseDuration(triggerFailOpenAfter)
+			if err == nil {
+				patchMap["FailOpenAfter"] = int(duration)
+			}
+		}
 	}
 
 	// Build patch data using consolidated function
@@ -351,6 +379,23 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 					patchData["Arguments"] = newArgs
 				}
 			}
+
+			// Add new trigger fields if specified
+			if triggerDescription != "" {
+				patchData["Description"] = triggerDescription
+			}
+			if triggerWhereUnit != "" {
+				patchData["WhereUnit"] = triggerWhereUnit
+			}
+			if triggerWhereResource != "" {
+				patchData["WhereResource"] = triggerWhereResource
+			}
+			if triggerFailOpenAfter != "" {
+				duration, err := time.ParseDuration(triggerFailOpenAfter)
+				if err == nil {
+					patchData["FailOpenAfter"] = int(duration)
+				}
+			}
 		}
 
 		patchData, err := BuildPatchData(triggerEnhancer)
@@ -443,6 +488,35 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		invokeArgs := args[4:]
 		newArgs := parseFunctionArguments(invokeArgs)
 		currentTrigger.Trigger.Arguments = newArgs
+	}
+	if triggerDescription != "" {
+		currentTrigger.Trigger.Description = triggerDescription
+	}
+	if triggerWhereUnit != "" {
+		currentTrigger.Trigger.WhereUnit = triggerWhereUnit
+	}
+	if triggerUnitFilter != "" {
+		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
+			triggerUnitFilter,
+			EntityTypeFilter,
+			apiGetFilterFromSlugInSpace,
+			func(f *goclientnew.Filter) string { return f.FilterID.String() },
+		)
+		if err != nil {
+			return err
+		}
+		filterID := goclientnew.UUID(filterUUID)
+		currentTrigger.Trigger.UnitFilterID = &filterID
+	}
+	if triggerWhereResource != "" {
+		currentTrigger.Trigger.WhereResource = triggerWhereResource
+	}
+	if triggerFailOpenAfter != "" {
+		duration, err := time.ParseDuration(triggerFailOpenAfter)
+		if err != nil {
+			return fmt.Errorf("invalid --fail-open-after duration: %w", err)
+		}
+		currentTrigger.Trigger.FailOpenAfter = int(duration)
 	}
 	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, *currentTrigger.Trigger)
 	if cubapi.IsAPIError(err, triggerRes) {

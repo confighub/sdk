@@ -46,14 +46,17 @@ var workerUpgradeArgs struct {
 	filename  string
 	unitSlug  string
 	reference string
+	dryRun    bool
 }
 
 func init() {
 	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.filename, "filename", "", "local file containing worker configuration")
 	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.unitSlug, "unit", "", "unit slug containing worker configuration")
 	workerUpgradeCmd.Flags().StringVar(&workerUpgradeArgs.reference, "reference", "", "target image reference (e.g., :v1.0); overrides server version")
+	workerUpgradeCmd.Flags().BoolVar(&workerUpgradeArgs.dryRun, "dry-run", false, "preview changes without applying them")
 	addSpaceFlags(workerUpgradeCmd)
 	enableWaitFlag(workerUpgradeCmd)
+	enableDisplayMutationsFlag(workerUpgradeCmd)
 
 	workerCmd.AddCommand(workerUpgradeCmd)
 }
@@ -70,8 +73,7 @@ func workerUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 	if workerUpgradeArgs.reference != "" {
 		targetImageReference = workerUpgradeArgs.reference
 	} else {
-		apiInfo := GetApiInfo()
-		targetImageReference = ":" + apiInfo.Build
+		targetImageReference = getWorkerReference()
 	}
 
 	if workerUpgradeArgs.filename != "" {
@@ -144,8 +146,9 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	// Invoke get-image-reference on the unit
 	invokeGetArgs := &invokeArgs{
-		Where: whereClause,
-		Body:  getCurrentReq,
+		Where:  whereClause,
+		Body:   getCurrentReq,
+		DryRun: workerUpgradeArgs.dryRun,
 	}
 
 	getCurrentResp, err := invokeFunctionsOnUnits(invokeGetArgs)
@@ -184,6 +187,12 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 		return nil
 	}
 
+	// Save prior HeadMutationNums if displaying mutations
+	var priorHeadMutationNums map[string]priorUnitInfo
+	if displayMutations {
+		priorHeadMutationNums = savePriorUnitInfoFromWhere(whereClause, "")
+	}
+
 	// Set the new image reference using set-image-reference function
 	setImageArgs := []string{"set-image-reference", "worker", targetImageReference}
 	setImageReq, err := initializeFunctionInvocationsRequest(setImageArgs)
@@ -193,8 +202,9 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	// Invoke set-image-reference on the unit
 	invokeSetArgs := &invokeArgs{
-		Where: whereClause,
-		Body:  setImageReq,
+		Where:  whereClause,
+		Body:   setImageReq,
+		DryRun: workerUpgradeArgs.dryRun,
 	}
 
 	setImageResp, err := invokeFunctionsOnUnits(invokeSetArgs)
@@ -216,6 +226,16 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 		return fmt.Errorf("set-image-reference failed: %s", errorMsg)
 	}
 
+	if workerUpgradeArgs.dryRun {
+		if displayMutations {
+			displayMutationsFromFunctionResponse(setImageResp, true, priorHeadMutationNums, "set-image-reference")
+		} else {
+			dataOnly = true
+			outputFunctionInvocationResponse(setImageResp)
+		}
+		return nil
+	}
+
 	// Wait for triggers if requested
 	if wait {
 		unitDetails, err := apiGetUnitInSpace(firstSetResp.UnitID.String(), firstSetResp.SpaceID.String(), "*")
@@ -226,6 +246,10 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if displayMutations {
+		displayMutationsFromFunctionResponse(setImageResp, false, priorHeadMutationNums, "set-image-reference")
 	}
 
 	fmt.Printf("Successfully upgraded worker image from %s to %s in unit %s\n", currentImageReference, targetImageReference, unitSlug)

@@ -15,7 +15,7 @@ import (
 )
 
 var viewCreateCmd = &cobra.Command{
-	Use:         "create [<slug> <filter> [--column <column>...] [--group-by <column>] [--order-by <column>] [--order-by-direction <ASC|DESC>]]",
+	Use:         "create [<slug> [<filter>] [--of <entity-type>] [--column <column>...] [--group-by <column>] [--order-by <column>] [--order-by-direction <ASC|DESC>]]",
 	Short:       "Create a new view or bulk create views",
 	Long:        getViewCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -90,6 +90,7 @@ var viewCreateArgs struct {
 	filterSpace      string
 	variantLabels    []string
 	namePattern      string
+	of               string // Entity type for views without a filter (e.g., "Unit")
 }
 
 func init() {
@@ -98,6 +99,7 @@ func init() {
 	enableFilterFlag(viewCreateCmd)
 
 	// Single create specific flags
+	viewCreateCmd.Flags().StringVar(&viewCreateArgs.of, "of", "", "entity type to view (e.g., Unit, Space). At least one of <filter> arg or --of must be specified.")
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.columns, "column", []string{}, "column names to display in the view (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.groupBy, "group-by", "", "column name to group by")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.orderBy, "order-by", "", "column name to sort by")
@@ -145,9 +147,16 @@ func checkViewCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--name-pattern requires --variant-labels to be set")
 		}
 	} else {
-		// Single create mode validation
-		if len(args) != 2 {
-			return false, errors.New("single view creation requires: <slug> <filter>")
+		// Single create mode validation: <slug> [<filter>]
+		if len(args) < 1 || len(args) > 2 {
+			return false, errors.New("single view creation requires: <slug> [<filter>]")
+		}
+
+		// At least one of filter arg or --of must be specified
+		hasFilter := len(args) == 2
+		hasOf := viewCreateArgs.of != ""
+		if !hasFilter && !hasOf {
+			return false, errors.New("at least one of <filter> argument or --of flag must be specified")
 		}
 
 		if filter != "" || where != "" ||
@@ -229,17 +238,24 @@ func runSingleViewCreate(args []string) error {
 		newBody.DisplayName = args[0]
 	}
 
-	// Set filter reference (required)
-	filterSlug := args[1]
-	filterIDString, err := parseFilterFlag(filterSlug)
-	if err != nil {
-		return err
+	// Set filter reference (optional if --of is specified)
+	if len(args) >= 2 {
+		filterSlug := args[1]
+		filterIDString, err := parseFilterFlag(filterSlug)
+		if err != nil {
+			return err
+		}
+		filterID, err := uuid.Parse(filterIDString)
+		if err != nil {
+			return err
+		}
+		newBody.FilterID = (*goclientnew.UUID)(&filterID)
 	}
-	filterID, err := uuid.Parse(filterIDString)
-	if err != nil {
-		return err
+
+	// Set Of if provided
+	if viewCreateArgs.of != "" {
+		newBody.Of = viewCreateArgs.of
 	}
-	newBody.FilterID = filterID
 
 	// Set columns if provided
 	if len(viewCreateArgs.columns) > 0 {

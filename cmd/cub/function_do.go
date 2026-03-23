@@ -155,6 +155,7 @@ var unitIdentifiers []string
 var dryRun bool
 var functionTriggerIdentifiers []string
 var functionInvocationIdentifiers []string
+var updateApplyGates bool
 var revisionIdentifier string
 var functionChangesetSlug string
 
@@ -173,6 +174,7 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
+	functionDoCmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
 	enableWhereFlag(functionDoCmd)
 	enableFilterFlag(functionDoCmd)
 	addStandardDisplayFlags(functionDoCmd)
@@ -191,6 +193,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.NumFilters = 0
 	req.StopOnError = false
 	req.ChangeDescription = changeDescription
+	req.UpdateApplyGates = updateApplyGates
 	req.WhereResource = whereResource
 	if liveStateType != "" {
 		req.OnLiveState = true

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -101,6 +102,9 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
+	if trigger.Description != "" {
+		view.Append([]string{"Description", trigger.Description})
+	}
 
 	// Show Invocation slug instead of InvocationID when available
 	if extendedTrigger.Invocation != nil {
@@ -117,6 +121,20 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 			}
 			view.Append([]string{argLabel, formatFunctionArgumentValue(trigger.Arguments[i].Value)})
 		}
+	}
+	if trigger.WhereUnit != "" {
+		view.Append([]string{"Where Unit", trigger.WhereUnit})
+	}
+	if extendedTrigger.UnitFilter != nil {
+		view.Append([]string{"Unit Filter", extendedTrigger.UnitFilter.Slug})
+	} else if trigger.UnitFilterID != nil && *trigger.UnitFilterID != uuid.Nil {
+		view.Append([]string{"Unit Filter ID", trigger.UnitFilterID.String()})
+	}
+	if trigger.WhereResource != "" {
+		view.Append([]string{"Where Resource", trigger.WhereResource})
+	}
+	if trigger.FailOpenAfter != 0 {
+		view.Append([]string{"Fail Open After", time.Duration(trigger.FailOpenAfter).String()})
 	}
 	view.Render()
 }
@@ -142,6 +160,9 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
+	if trigger.Description != "" {
+		view.Append([]string{"Description", trigger.Description})
+	}
 
 	if trigger.InvocationID != nil && *trigger.InvocationID != uuid.Nil {
 		view.Append([]string{"Invocation ID", trigger.InvocationID.String()})
@@ -156,12 +177,24 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 			view.Append([]string{argLabel, formatFunctionArgumentValue(trigger.Arguments[i].Value)})
 		}
 	}
+	if trigger.WhereUnit != "" {
+		view.Append([]string{"Where Unit", trigger.WhereUnit})
+	}
+	if trigger.UnitFilterID != nil && *trigger.UnitFilterID != uuid.Nil {
+		view.Append([]string{"Unit Filter ID", trigger.UnitFilterID.String()})
+	}
+	if trigger.WhereResource != "" {
+		view.Append([]string{"Where Resource", trigger.WhereResource})
+	}
+	if trigger.FailOpenAfter != 0 {
+		view.Append([]string{"Fail Open After", time.Duration(trigger.FailOpenAfter).String()})
+	}
 	view.Render()
 }
 
 func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
 	newParams := &goclientnew.GetTriggerParams{}
-	include := "SpaceID,BridgeWorkerID,InvocationID"
+	include := "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

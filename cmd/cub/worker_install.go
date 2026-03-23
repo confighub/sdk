@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -188,15 +189,22 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// getWorkerReference returns a container image tag (e.g. ":v0.1.12") derived
+// from the server's API info. It prefers the Version field when it looks like a
+// semver tag and Build is a commit hash; otherwise it falls back to "latest".
+func getWorkerReference() string {
+	apiInfo := GetApiInfo()
+	// Use the version tag if it matches a semver pattern and the build looks like a commit hash
+	if regexp.MustCompile(`^v\d+\.\d+\.\d+`).MatchString(apiInfo.Version) &&
+		regexp.MustCompile(`^[0-9a-f]{7,}$`).MatchString(apiInfo.Build) {
+		return ":" + apiInfo.Version
+	}
+	return ":latest"
+}
+
 func getWorkerImage(image string) string {
 	if image == "" {
-		// Pin to the same build as the server
-		apiInfo := GetApiInfo()
-		tag := apiInfo.Build
-		if strings.HasPrefix(tag, "local") || strings.HasPrefix(tag, "test") || strings.Contains(tag, "unknown") {
-			tag = "latest"
-		}
-		image = "ghcr.io/confighubai/confighub-worker:" + tag
+		image = "ghcr.io/confighubai/confighub-worker" + getWorkerReference()
 	}
 	return image
 }

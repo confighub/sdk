@@ -357,7 +357,8 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		currentView.FilterID = filter.FilterID
+		fid := goclientnew.UUID(filter.FilterID)
+		currentView.FilterID = &fid
 	}
 
 	if len(viewUpdateArgs.columns) > 0 {

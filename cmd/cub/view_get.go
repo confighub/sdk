@@ -59,6 +59,38 @@ func formatColumnsForDetails(columns []goclientnew.Column) string {
 	return strings.Join(columnNames, ", ")
 }
 
+func formatColumnDetail(col goclientnew.Column) string {
+	parts := []string{col.Name}
+	if col.ColumnType != "" {
+		parts = append(parts, fmt.Sprintf("type=%s", col.ColumnType))
+	}
+	if col.DataType != "" {
+		parts = append(parts, fmt.Sprintf("dataType=%s", col.DataType))
+	}
+	if col.ColumnSource != nil {
+		if col.ColumnSource.MetadataAttribute != "" {
+			parts = append(parts, fmt.Sprintf("source=%s", col.ColumnSource.MetadataAttribute))
+		} else if col.ColumnSource.MetadataExpression != "" {
+			parts = append(parts, fmt.Sprintf("expr=%s", col.ColumnSource.MetadataExpression))
+		} else if col.ColumnSource.DataPath != nil {
+			src := string(col.ColumnSource.DataPath.Path)
+			if col.ColumnSource.DataPath.WhereResource != "" {
+				src += " where " + col.ColumnSource.DataPath.WhereResource
+			}
+			parts = append(parts, fmt.Sprintf("path=%s", src))
+		} else if col.ColumnSource.DataExpression != "" {
+			parts = append(parts, fmt.Sprintf("expr=%s", col.ColumnSource.DataExpression))
+		}
+	}
+	if col.GroupBy {
+		parts = append(parts, "groupBy")
+	}
+	if col.OrderByDirection != "" {
+		parts = append(parts, fmt.Sprintf("orderBy=%s", col.OrderByDirection))
+	}
+	return strings.Join(parts, " ")
+}
+
 func displayViewDetails(viewDetails *goclientnew.View) {
 	// Create an ExtendedView wrapper with just the View set
 	extendedView := &goclientnew.ExtendedView{
@@ -91,13 +123,31 @@ func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
 	// Show Filter slug when available
 	if extendedView.Filter != nil {
 		view.Append([]string{"Filter", extendedView.Filter.Slug})
-	} else {
+	} else if viewDetails.FilterID != nil {
 		view.Append([]string{"Filter ID", viewDetails.FilterID.String()})
 	}
 
+	if viewDetails.Of != "" {
+		view.Append([]string{"Of", viewDetails.Of})
+	}
+
 	if len(viewDetails.Columns) > 0 {
-		view.Append([]string{"Columns", formatColumnsForDetails(viewDetails.Columns)})
-		view.Append([]string{"Column Count", fmt.Sprintf("%d", len(viewDetails.Columns))})
+		// Check if any columns have enhanced fields
+		hasEnhanced := false
+		for _, col := range viewDetails.Columns {
+			if col.ColumnType != "" || col.ColumnSource != nil {
+				hasEnhanced = true
+				break
+			}
+		}
+		if hasEnhanced {
+			for i, col := range viewDetails.Columns {
+				label := fmt.Sprintf("Column %d", i+1)
+				view.Append([]string{label, formatColumnDetail(col)})
+			}
+		} else {
+			view.Append([]string{"Columns", formatColumnsForDetails(viewDetails.Columns)})
+		}
 	}
 
 	if viewDetails.GroupBy != "" {

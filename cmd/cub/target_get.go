@@ -145,6 +145,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	} else {
 		view.Append([]string{"Triggers", ""})
 	}
+	view.Append([]string{"Trigger Hash", targetDetails.TriggerHash})
 
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()

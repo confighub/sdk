@@ -35,7 +35,7 @@ const (
 	whitespaceRegexpString                 = "^[ \t][ \t]*"
 	relationalOperatorRegexpString         = "^(<=|>=|<|>|=|\\!=|LIKE|ILIKE|~~|!~~|~\\*|!~\\*|~|!~|IN|NOT IN)"
 	logicalOperatorRegexpString            = "^AND"
-	booleanLiteralRegexpString             = "^(true|false)"
+	booleanLiteralRegexpString             = "^(true|TRUE|false|FALSE)"
 	integerLiteralRegexpString             = "^[0-9][0-9]{0,9}"
 	safeStringCharsRegexpString            = `[^'"\\]*`
 	stringLiteralRegexpString              = `^'` + safeStringCharsRegexpString + `'`
@@ -458,7 +458,7 @@ func ParseInClauseValues(literal string) []string {
 func convertLiteralToValue(literal string, dataType DataType) (any, error) {
 	switch dataType {
 	case DataTypeBool:
-		return literal == "true", nil
+		return parseBoolLiteral(literal), nil
 	case DataTypeInt:
 		// Return as string since ImportOptions expects interface{}
 		// The worker will parse it as needed
@@ -856,8 +856,15 @@ func evaluateIntExpression(operator string, leftValue int, rightValue int) bool 
 	return false
 }
 
+var boolLiterals = map[string]bool{
+	"true":  true,
+	"TRUE":  true,
+	"false": false,
+	"FALSE": false,
+}
+
 func parseBoolLiteral(literal string) bool {
-	return literal == "true"
+	return boolLiterals[literal]
 }
 
 // evaluateBoolExpression evaluates boolean relational expressions

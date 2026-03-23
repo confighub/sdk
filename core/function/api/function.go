@@ -43,6 +43,14 @@ func HashConfigDataSHA256(data []byte) DataHash {
 	return DataHash(hex.EncodeToString(hash[:]))
 }
 
+// EmptyDataHash is the SHA256 hash of an empty byte slice.
+var EmptyDataHash = HashConfigDataSHA256(nil)
+
+// IsEmptyDataHash returns true if the given hash represents empty configuration data.
+func IsEmptyDataHash(hash DataHash) bool {
+	return hash == "" || hash == EmptyDataHash
+}
+
 // ConfigDataHasChanged returns true if the given data differs from the previous data
 // identified by the hashes in the FunctionContext. It prefers PreviousDataHash (SHA256)
 // when available, falling back to PreviousContentHash (CRC32) for legacy units.
@@ -199,6 +207,12 @@ type ResolvedPath string
 //
 //   - .*. represents a wildcard for an array or map without recording any values for getter or setter parameters.
 type UnresolvedPath string
+
+// AttributeSelector identifies a value to extract from configuration data.
+type AttributeSelector struct {
+	WhereResource string         `json:",omitempty"` // where expression to select resource(s)
+	Path          UnresolvedPath `json:",omitempty" swaggertype:"string"` // path expression
+}
 
 // Valid function names. By convention we use kabob-case to match cub's convention.
 const FunctionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
