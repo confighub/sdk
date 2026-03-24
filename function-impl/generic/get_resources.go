@@ -54,10 +54,7 @@ func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider
 		bodyFormat = strings.ToLower(args[0].Value.(string))
 	}
 
-	var whereExpressions []*api.VisitorRelationalExpression
-	if options != nil {
-		whereExpressions = options.WhereResourceExpressions
-	}
+	whereExpressions := api.GetWhereResourceExpressions(options)
 
 	list := make(api.ResourceList, 0, len(parsedData))
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,

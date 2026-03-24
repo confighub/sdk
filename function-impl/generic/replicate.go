@@ -52,12 +52,12 @@ func registerReplicate(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnReplicate(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnReplicate(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	matchResourceType := api.ResourceType(args[0].Value.(string))
 	matchResourceName := api.ResourceName(args[1].Value.(string))
 	replicas := args[2].Value.(int)
@@ -69,45 +69,54 @@ func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, functionConte
 		matchResourceCategory = resourceProvider.DefaultResourceCategory()
 	}
 
-	for i, doc := range parsedData {
-		resourceCategory, err := resourceProvider.ResourceCategoryGetter(doc)
-		if err != nil {
-			return parsedData, nil, err
-		}
-		resourceType, err := resourceProvider.ResourceTypeGetter(doc)
-		if err != nil {
-			return parsedData, nil, err
-		}
-		resourceName, err := resourceProvider.ResourceNameGetter(doc)
-		if err != nil {
-			return parsedData, nil, err
-		}
-		resourceName = resourceProvider.RemoveScopeFromResourceName(resourceName)
-		// fmt.Printf("%s %s %s\n", string(resourceCategory), string(resourceType), string(resourceName))
-		if resourceCategory != matchResourceCategory ||
-			resourceType != matchResourceType ||
-			resourceName != matchResourceName {
-			continue
-		}
-		// Replicate this resource by insertion
-		newParsedData := make(gaby.Container, len(parsedData)+replicas-1)
-		for j := 0; j < i; j++ {
-			newParsedData[j] = parsedData[j]
-		}
-		for j := 0; j < replicas; j++ {
-			replicatedResource := parsedData[i].Bytes()
-			parsedReplicatedResource, err := gaby.ParseYAML(replicatedResource)
-			if err != nil {
-				return parsedData, nil, err
-			}
-			// TODO: This uniquifies the resource name, but not other attributes in the resource, if required.
-			err = resourceProvider.SetResourceName(parsedReplicatedResource, fmt.Sprintf("%s%d", string(resourceName), j))
-			newParsedData[i+j] = parsedReplicatedResource
-		}
-		for j := i + 1; j < len(parsedData); j++ {
-			newParsedData[j+replicas-1] = parsedData[j]
-		}
-		return newParsedData, nil, nil
+	type replicateMatch struct {
+		index        int
+		resourceName api.ResourceName
 	}
-	return parsedData, nil, nil
+
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		if output != nil {
+			return output, nil // Already found a match
+		}
+		if resourceInfo.ResourceCategory != matchResourceCategory ||
+			resourceInfo.ResourceType != matchResourceType ||
+			resourceInfo.ResourceNameWithoutScope != matchResourceName {
+			return output, nil
+		}
+		return &replicateMatch{
+			index:        index,
+			resourceName: resourceInfo.ResourceNameWithoutScope,
+		}, nil
+	})
+	if err != nil {
+		return parsedData, nil, err
+	}
+	if output == nil {
+		return parsedData, nil, nil
+	}
+	match := output.(*replicateMatch)
+
+	// Replicate this resource by insertion
+	i := match.index
+	newParsedData := make(gaby.Container, len(parsedData)+replicas-1)
+	for j := 0; j < i; j++ {
+		newParsedData[j] = parsedData[j]
+	}
+	for j := 0; j < replicas; j++ {
+		replicatedResource := parsedData[i].Bytes()
+		parsedReplicatedResource, err := gaby.ParseYAML(replicatedResource)
+		if err != nil {
+			return parsedData, nil, err
+		}
+		// TODO: This uniquifies the resource name, but not other attributes in the resource, if required.
+		_ = resourceProvider.SetResourceName(parsedReplicatedResource, fmt.Sprintf("%s%d", string(match.resourceName), j))
+		// Delete the resource ID so the replicated resource gets a new unique ID.
+		_ = resourceProvider.DeleteResourceID(parsedReplicatedResource)
+		newParsedData[i+j] = parsedReplicatedResource
+	}
+	for j := i + 1; j < len(parsedData); j++ {
+		newParsedData[j+replicas-1] = parsedData[j]
+	}
+	return newParsedData, nil, nil
 }

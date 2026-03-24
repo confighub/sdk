@@ -1,0 +1,106 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+# HTTP → HTTPS redirect
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: redirect-http
+  namespace: confighub
+  annotations:
+spec:
+  entryPoints:
+  - web
+  routes:
+  - match: Host(`test1.testwebsite.prod.confighub.net`)
+    kind: Rule
+    priority: 1
+    middlewares:
+    - name: redirect-to-https
+    services:
+    - name: confighub-api
+      port: 9090
+---
+# HTTPS — API + bridgeworker routing
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: confighub-api-https
+  namespace: confighub
+  annotations:
+    external-dns.alpha.kubernetes.io/target: use2.prod.confighub.net
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: (Host(`test1.testwebsite.prod.confighub.net`)) && PathRegexp(`^/api/bridge_worker/[^/]+/(stream|action_result|me)`)
+    priority: 100
+    kind: Rule
+    services:
+    - name: confighub-bridgeworker
+      port: 9091
+      scheme: h2c
+  - match: (Host(`test1.testwebsite.prod.confighub.net`)) && !PathPrefix(`/internal`)
+    priority: 50
+    kind: Rule
+    services:
+    - name: confighub-api
+      port: 9090
+  tls:
+    secretName: hub-prod-tls
+---
+# Direct bridgeworker access on port 9443
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: confighub-bridgeworker
+  namespace: confighub
+  annotations:
+spec:
+  entryPoints:
+  - workersecure
+  routes:
+  - match: (Host(`test1.testwebsite.prod.confighub.net`)) && !PathPrefix(`/internal`)
+    kind: Rule
+    services:
+    - name: confighub-bridgeworker
+      port: 9091
+      scheme: h2c
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: website-http
+  namespace: website-test
+  annotations:
+    confighub.com/ResourceID: e3c3bb8d-7ab4-4730-83d1-dba023d63b79
+spec:
+  entryPoints:
+  - web
+  routes:
+  - match: Host(`test1.testwebsite.prod.confighub.net`)
+    kind: Rule
+    middlewares:
+    - name: confighub-website-redirect-to-https
+    services:
+    - name: website
+      port: 8000
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: website-https
+  namespace: website-test
+  annotations:
+    confighub.com/ResourceID: 9c96b833-8f1f-45b7-a9b8-ca81e597976a
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`test1.testwebsite.prod.confighub.net`)
+    kind: Rule
+    services:
+    - name: website
+      port: 8000
+  tls:
+    secretName: confighub-com-tls

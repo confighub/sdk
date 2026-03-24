@@ -51,6 +51,7 @@ func initFunctionExecutor() {
 			workerapi.ToolchainAppConfigYAML,
 			workerapi.ToolchainAppConfigJSON,
 			workerapi.ToolchainAppConfigEnv,
+			workerapi.ToolchainAppConfigText,
 		})
 	})
 }
@@ -166,6 +167,7 @@ func (w *ConfigMapBridgeWorker) ID() api.BridgeWorkerID {
 			workerapi.ToolchainAppConfigINI,
 			workerapi.ToolchainAppConfigJSON,
 			workerapi.ToolchainAppConfigEnv,
+			workerapi.ToolchainAppConfigText,
 			workerapi.ToolchainAppConfigYAML,
 		},
 	}
@@ -246,6 +248,9 @@ func getFileExtensionForToolchain(toolchain workerapi.ToolchainType) string {
 	configFormat := strings.ToLower(strings.TrimPrefix(string(toolchain), "AppConfig/"))
 	if configFormat == "" {
 		return ".config"
+	}
+	if configFormat == "text" {
+		return ".txt"
 	}
 	return "." + configFormat
 }

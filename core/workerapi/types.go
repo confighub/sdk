@@ -16,6 +16,7 @@ const (
 	ToolchainAppConfigINI        ToolchainType = "AppConfig/INI"
 	ToolchainAppConfigJSON       ToolchainType = "AppConfig/JSON"
 	ToolchainAppConfigEnv        ToolchainType = "AppConfig/Env"
+	ToolchainAppConfigText       ToolchainType = "AppConfig/Text"
 )
 
 const MaxToolchainTypeLength = 128

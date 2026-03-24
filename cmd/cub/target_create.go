@@ -227,8 +227,9 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 		toolchainType != string(workerapi.ToolchainAppConfigTOML) &&
 		toolchainType != string(workerapi.ToolchainAppConfigINI) &&
 		toolchainType != string(workerapi.ToolchainAppConfigJSON) &&
-		toolchainType != string(workerapi.ToolchainAppConfigEnv) {
-		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, or AppConfig/Env")
+		toolchainType != string(workerapi.ToolchainAppConfigEnv) &&
+		toolchainType != string(workerapi.ToolchainAppConfigText) {
+		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, or AppConfig/Text")
 	}
 	return nil
 }

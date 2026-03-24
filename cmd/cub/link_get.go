@@ -112,6 +112,12 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.DownstreamLastMergedRevisionNum != 0 {
 		view.Append([]string{"Downstream Last Merged Rev", fmt.Sprintf("%d", linkDetails.DownstreamLastMergedRevisionNum)})
 	}
+	if linkDetails.UpstreamSpaceID != nil {
+		view.Append([]string{"Upstream Space ID", linkDetails.UpstreamSpaceID.String()})
+	}
+	if linkDetails.UpstreamLinkID != nil {
+		view.Append([]string{"Upstream Link ID", linkDetails.UpstreamLinkID.String()})
+	}
 	if linkDetails.Bindings != nil && len(*linkDetails.Bindings) > 0 {
 		view.Append([]string{"Bindings", fmt.Sprintf("%d bindings", len(*linkDetails.Bindings))})
 	}

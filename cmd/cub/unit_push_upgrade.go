@@ -102,10 +102,6 @@ func unitBulkUpgradeCmdRun(cmd *cobra.Command, args []string) error {
 		Upgrade: &upgrade, // Set upgrade to true
 	}
 
-	// Set include parameter to expand UpstreamUnitID
-	include := "UpstreamUnitID"
-	params.Include = &include
-
 	// Use "null" as the patch body since we're only upgrading
 	patchData := []byte("null")
 

@@ -49,7 +49,7 @@ func TestK8sVetCEL_BoolPass(t *testing.T) {
 		`object.spec.replicas == 3`,
 	})
 
-	_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -65,7 +65,7 @@ func TestK8sVetCEL_BoolFail(t *testing.T) {
 		`object.spec.replicas > 10`,
 	})
 
-	_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -82,7 +82,7 @@ func TestK8sVetCEL_QuantityLibrary(t *testing.T) {
 			`object.kind != 'Deployment' || object.spec.template.spec.containers.all(c, quantity(c.resources.limits.memory).isGreaterThan(quantity('32Mi')))`,
 		})
 
-		_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+		_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -95,7 +95,7 @@ func TestK8sVetCEL_QuantityLibrary(t *testing.T) {
 			`object.kind != 'Deployment' || object.spec.template.spec.containers.all(c, quantity(c.resources.limits.memory).isGreaterThan(quantity('256Mi')))`,
 		})
 
-		_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+		_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -112,7 +112,7 @@ func TestK8sVetCEL_MapResultWithDetails(t *testing.T) {
 		`object.spec.replicas > 5 ? {"passed": true} : {"passed": false, "details": [object.metadata.name + " has only " + string(object.spec.replicas) + " replicas"]}`,
 	})
 
-	_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -131,7 +131,7 @@ func TestK8sVetCEL_WithParams(t *testing.T) {
 		"maxReplicas=10",
 	})
 
-	_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -147,7 +147,7 @@ func TestK8sGetCEL_ExtractReplicas(t *testing.T) {
 		`[{"ResourceName": object.metadata.namespace + "/" + object.metadata.name, "ResourceType": object.apiVersion + "/" + object.kind, "Path": "spec.replicas", "Value": object.spec.replicas}]`,
 	})
 
-	_, output, err := generic.GenericFnGetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnGetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -167,7 +167,7 @@ func TestK8sGetCEL_ExtractImages(t *testing.T) {
 		`object.kind == "Deployment" ? object.spec.template.spec.containers.map(c, {"ResourceName": object.metadata.namespace + "/" + object.metadata.name, "ResourceType": object.apiVersion + "/" + object.kind, "Path": "spec.template.spec.containers." + c.name + ".image", "Value": c.image}) : []`,
 	})
 
-	_, output, err := generic.GenericFnGetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnGetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -218,7 +218,7 @@ func TestK8sVetCEL_UseObjectAlias(t *testing.T) {
 		`r.spec.replicas == object.spec.replicas`,
 	})
 
-	_, output, err := generic.GenericFnVetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	_, output, err := generic.GenericFnVetCEL(testResourceProvider, nil, docs, args, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)

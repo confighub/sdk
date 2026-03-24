@@ -33,6 +33,7 @@ func YamlSafePathGetDoc(
 		}
 	}
 	subdoc := doc.Path(resolvedPathString)
+	// subdoc.Data() could be nil
 	return subdoc, true, nil
 }
 

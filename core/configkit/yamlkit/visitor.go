@@ -140,7 +140,7 @@ func VisitPaths[T api.Scalar](
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		if currentDoc == nil {
+		if currentDoc == nil || currentDoc.Data() == nil {
 			// Handle nil currentDoc in upsert mode by providing default values
 			var defaultValue T
 			switch any(defaultValue).(type) {
@@ -154,7 +154,7 @@ func VisitPaths[T api.Scalar](
 				// Use false since there's not a better option
 				return visitor(doc, output, context, any(false).(T))
 			default:
-				return output, fmt.Errorf("unsupported type %T for upsert with nil currentDoc at path %s", defaultValue, string(context.Path))
+				return output, fmt.Errorf("unsupported type %T for upsert or no/null value at path %s", defaultValue, string(context.Path))
 			}
 		}
 		currentValue, ok := currentDoc.Data().(T)
@@ -183,6 +183,7 @@ func VisitPathsAnyType(
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		// currentDoc.Data() could be nil
 		return visitor(doc, output, context, currentDoc.Data())
 	}
 	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, whereExpressions)
@@ -245,12 +246,12 @@ func VisitPathsDoc(
 					slog.Debug("path resolved with excess keys", "unresolvedPath", string(unresolvedPathInfo.Path), "resolvedPath", string(unresolvedPath))
 				}
 			}
-			unresolvedPathSegments := strings.Split(string(unresolvedPath), "#")
+			unresolvedPathSegments := strings.Split(string(unresolvedPath), EmbeddedAccessorSeparator)
 			embeddedPath := ""
 			if len(unresolvedPathSegments) > 1 {
-				embeddedPath = strings.Join(unresolvedPathSegments[1:], "#")
+				embeddedPath = strings.Join(unresolvedPathSegments[1:], EmbeddedAccessorSeparator)
 			}
-			pathConstraint := strings.Split(string(unresolvedPathInfo.ResolvedPath), "#")
+			pathConstraint := strings.Split(string(unresolvedPathInfo.ResolvedPath), EmbeddedAccessorSeparator)
 			// If there's an embedded accessor (#), upsert should be passed as false to ResolveAssociativePaths
 			resolveUpsert := upsert && embeddedPath == ""
 			resolvedPaths, err := ResolveAssociativePaths(doc, api.UnresolvedPath(unresolvedPathSegments[0]), api.ResolvedPath(pathConstraint[0]), resolveUpsert)
@@ -261,7 +262,7 @@ func VisitPathsDoc(
 			for _, resolvedPath := range resolvedPaths {
 				// log.Infof("resolved path %s args %v in resource %s of type %s", resolvedPath.Path, resolvedPath.PathArguments, string(resourceName), string(resourceType))
 				currentDoc, found, err := YamlSafePathGetDoc(doc, resolvedPath.Path, true)
-				if err != nil || (!found && !upsert) {
+				if err != nil || ((!found || currentDoc == nil) && !upsert) {
 					// Don't report the error. Not found is expected.
 					continue // Skip if not found or an error, unless in upsert mode
 				}
@@ -290,6 +291,7 @@ func VisitPathsDoc(
 						break
 					}
 				}
+				// currentDoc.Data() could be nil
 				newOutput, err := visitor(doc, output, context, currentDoc)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
@@ -363,6 +365,7 @@ func UpdatePathsFunctionDoc(
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		// currentDoc.Data() could be nil
 		originalDoc := currentDoc
 		newDoc := updater(currentDoc, context)
 		var err error
@@ -474,7 +477,7 @@ func GetPathsAnyType(
 				}
 				// If the data isn't a string or the pattern wasn't matched, embeddedValue should be empty
 				currentValue = embeddedStringValue
-				attr.Path = api.ResolvedPath(string(attr.Path) + "#" + context.EmbeddedPath)
+				attr.Path = api.ResolvedPath(string(attr.Path) + EmbeddedAccessorSeparator + context.EmbeddedPath)
 			}
 		case int:
 			currentDataType = api.DataTypeInt
@@ -692,6 +695,10 @@ const VisitorSetterInvocationFunctionName = "$visitor"
 
 // isPlaceholderValue returns true if the value is a placeholder that should be replaced with a default.
 func isPlaceholderValue(value any) bool {
+	// Treat no value as a placeholder value
+	if value == nil {
+		return true
+	}
 	switch v := value.(type) {
 	case string:
 		return strings.Contains(v, PlaceHolderBlockApplyString)
@@ -764,6 +771,7 @@ func VetPathsSetterArgument(
 		if currentDoc != nil {
 			currentValue = currentDoc.Data()
 		}
+		// currentValue could be nil
 		if currentValue != expectedValue {
 			failedAttributes, ok := output.(api.AttributeValueList)
 			if !ok {
@@ -800,6 +808,7 @@ func DeletePaths(
 	whereExpressions []*api.VisitorRelationalExpression,
 ) error {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		// currentDoc.Data() could be nil, but we don't use the value
 		err := doc.DeleteP(string(context.Path))
 		return nil, err
 	}

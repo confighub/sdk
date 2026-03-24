@@ -48,6 +48,7 @@ type MutationInfo struct {
 	Index        int64        `description:"Function index or sequence number corresponding to the change"`
 	Predicate    bool         `description:"Used to decide how to use the mututation"`
 	Value        string       `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
+	Patch        string       `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
 }
 
 type MutationMapEntry struct {

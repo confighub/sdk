@@ -140,6 +140,10 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deplo
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deployment" "spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot" true > ${DIR}/set-bool-path-upsert-assoc.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deployment" "spec.template.spec.containers.0.securityContext.|runAsNonRoot" true > ${DIR}/set-bool-path-upsert-existence.txt
 
+# Test starlark
+${FCTL} do test-data/ingress-route.yaml "MyDeployment" set-starlark 'for route in r["spec"]["routes"]:                         
+      route["match"] = re.sub(params["pattern"], "Host(`" + params["hostname"] + "`)", route["match"])' hostname=test1.testwebsite.prod.confighub.net 'pattern=Host\(`[^`]*`\)( *\|\| *Host\(`[^`]*`\))*' > ${DIR}/starlark-regexp.txt
+
 # These maps are unordered, so this is problematic
 # ${FCTL} listpaths  > ${DIR}/listpaths.txt
 

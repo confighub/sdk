@@ -16,21 +16,15 @@ import (
 )
 
 var linkCreateArgs struct {
-	destSpaces    []string
-	whereSpace    string
-	whereFrom     string
-	whereTo       string
-	whereToSpace  string
-	filterSpace   string
-	filterFrom    string
-	filterTo      string
-	filterToSpace string
+	reverse            bool
+	fromDownstreamWhere string
+	toDownstreamWhere   string
 }
 
 var linkCreateCmd = &cobra.Command{
 	Use:   "create [<link slug> <from unit slug> <to unit slug> [<to space slug>]]",
-	Short: "Create a new link or bulk create links",
-	Long: getCommandHelp(`Create a new link between two units or bulk create multiple links based on filters.
+	Short: "Create a new link or bulk create (copy) links",
+	Long: getCommandHelp(`Create a new link between two units or bulk create links by copying existing links.
 
 SINGLE LINK CREATION:
 
@@ -41,10 +35,11 @@ A link can be created:
   1. Between units in the same space
   2. Between units across different spaces (by specifying the target space)
 
-BULK LINK CREATION:
+BULK LINK CREATION (COPY):
 
-When no positional arguments are provided, bulk create mode is activated. This mode creates
-links between units matching the filters specified.
+When no positional arguments are provided with --where or --filter plus at least --reverse or
+--from-downstream-where, bulk create mode is activated. This mode copies existing links and
+retargets their From and/or To units using downstream UpgradeUnit links.
 
 Single Link Examples:
 `+"```"+`
@@ -58,22 +53,19 @@ Single Link Examples:
   cub link create --space my-space --json clone-to-ns my-clone my-ns --wait
 `+"```"+`
 
-Bulk Create Examples:
+Bulk Create (Copy) Examples:
 `+"```"+`
-  # Create links between all deployments and a namespace in a space
-  cub link create --where-space "Slug = 'my-space'" --where-from "Labels.type = 'deployment'" --where-to "Slug = 'my-ns'"
+  # Copy outgoing links from prod-v1 units to their downstream copies in prod-v2
+  cub link create --where "Space.Slug = 'prod-v1' AND ToSpaceID != SpaceID AND UpdateType != 'UpgradeUnit'" \
+    --from-downstream-where "UpdateType = 'UpgradeUnit' AND Space.Slug = 'prod-v2'"
 
-  # Create links using filter entities to select spaces and units
-  cub link create --filter-space deployment-spaces --filter-from frontend-units --filter-to backend-units
+  # Also retarget the To units to their downstream copies
+  cub link create --where "Space.Slug = 'prod-v1' AND ToSpaceID != SpaceID" \
+    --from-downstream-where "UpdateType = 'UpgradeUnit' AND Space.Slug = 'prod-v2'" \
+    --to-downstream-where "UpdateType = 'UpgradeUnit' AND Space.Slug = 'prod-v2'"
 
-  # Combine where and filter expressions for complex selections
-  cub link create --where-space "Labels.env = 'prod'" --filter-from prod-deployments --where-to "Slug LIKE 'ns-%'"
-
-  # Create links between units across different spaces
-  cub link create --dest-space dev-space,staging-space --where-from "Labels.app = 'frontend'" --where-to "Labels.app = 'backend'" --where-to-space "Slug = 'services-space'"
-
-  # Create links with custom labels via JSON patch
-  echo '{"Labels": {"relationship": "dependency"}}' | cub link create --where-space "Slug LIKE 'app-%'" --where-from "Labels.tier = 'web'" --where-to "Labels.tier = 'db'" --from-stdin
+  # Reverse cross-space UpgradeUnit links (create the link in the To unit's space)
+  cub link create --where "Space.Slug = 'prod-v2' AND UpdateType = 'UpgradeUnit'" --reverse
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(4),
@@ -87,53 +79,41 @@ func init() {
 	addLinkFieldFlags(linkCreateCmd)
 
 	// Bulk create specific flags
-	linkCreateCmd.Flags().StringSliceVar(&linkCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereSpace, "where-space", "", "where expression to select spaces for bulk create")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereFrom, "where-from", "", "where expression to select from units within each space")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereTo, "where-to", "", "where expression to select to units within each space")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereToSpace, "where-to-space", "", "where expression to select to spaces for bulk create (optional)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select spaces for bulk create (slug or UUID)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterFrom, "filter-from", "", "filter entity containing WHERE expression to select from units (slug or UUID)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterTo, "filter-to", "", "filter entity containing WHERE expression to select to units (slug or UUID)")
-	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterToSpace, "filter-to-space", "", "filter entity containing WHERE expression to select to spaces (slug or UUID)")
+	enableWhereFlag(linkCreateCmd)
+	enableFilterFlag(linkCreateCmd)
+	linkCreateCmd.Flags().BoolVar(&linkCreateArgs.reverse, "reverse", false, "swap FromUnit and ToUnit directions of copied links (for cross-space link reversal)")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.fromDownstreamWhere, "from-downstream-where", "", "where expression to find downstream UpgradeUnit links from each source link's FromUnit; creates one copy per match")
+	linkCreateCmd.Flags().StringVar(&linkCreateArgs.toDownstreamWhere, "to-downstream-where", "", "where expression to find downstream UpgradeUnit link from each source link's ToUnit; exactly one match required")
 
 	linkCmd.AddCommand(linkCreateCmd)
 }
 
 func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	isBulkCreateMode := len(args) == 0
+	hasBulkFlags := where != "" || filter != "" || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != ""
+	isBulkCreateMode := len(args) == 0 && hasBulkFlags
 
 	if isBulkCreateMode {
-		// Validate bulk create requirements - require at least one from, to, and space selection
-		if linkCreateArgs.whereFrom == "" && linkCreateArgs.filterFrom == "" {
-			return false, errors.New("bulk create mode requires --where-from and/or --filter-from flags")
+		// Validate bulk create requirements
+		if where == "" && filter == "" {
+			return false, errors.New("bulk create mode requires --where and/or --filter to select source links")
 		}
 
-		if linkCreateArgs.whereTo == "" && linkCreateArgs.filterTo == "" {
-			return false, errors.New("bulk create mode requires --where-to and/or --filter-to flags")
+		if !linkCreateArgs.reverse && linkCreateArgs.fromDownstreamWhere == "" {
+			return false, errors.New("bulk create mode requires either --reverse or --from-downstream-where")
 		}
-
-		if linkCreateArgs.whereSpace == "" && linkCreateArgs.filterSpace == "" && len(linkCreateArgs.destSpaces) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --where-space, --filter-space, or --dest-space flags")
-		}
-
-		if linkCreateArgs.whereSpace != "" && len(linkCreateArgs.destSpaces) > 0 {
-			return false, errors.New("--where-space and --dest-space flags are mutually exclusive")
-		}
-
-	} else {
+	} else if len(args) > 0 {
 		// Single create mode validation
 		if len(args) < 3 || len(args) > 4 {
 			return false, errors.New("single link creation requires: <slug> <from unit> <to unit> [to space]")
 		}
 
-		if linkCreateArgs.whereFrom != "" || linkCreateArgs.whereTo != "" || linkCreateArgs.whereSpace != "" ||
-			linkCreateArgs.whereToSpace != "" || len(linkCreateArgs.destSpaces) > 0 ||
-			linkCreateArgs.filterFrom != "" || linkCreateArgs.filterTo != "" || linkCreateArgs.filterSpace != "" ||
-			linkCreateArgs.filterToSpace != "" {
-			return false, errors.New("bulk create flags (--where-from, --where-to, --where-space, --where-to-space, --dest-space, --filter-from, --filter-to, --filter-space, --filter-to-space) can only be used without positional arguments")
+		if linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != "" {
+			return false, errors.New("bulk create flags (--reverse, --from-downstream-where, --to-downstream-where) can only be used without positional arguments")
 		}
+	} else {
+		// No args and no bulk flags
+		return false, errors.New("provide positional arguments for single create, or --where/--filter with --reverse/--from-downstream-where for bulk create")
 	}
 
 	if err := validateLinkFieldFlags(); err != nil {
@@ -283,60 +263,28 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 		params.AllowExists = &allowExistsStr
 	}
 
-	// Set where parameters if specified
-	if linkCreateArgs.whereFrom != "" {
-		params.WhereFrom = &linkCreateArgs.whereFrom
+	// Set where/filter parameters for selecting source links
+	if where != "" {
+		params.Where = &where
 	}
-	if linkCreateArgs.whereTo != "" {
-		params.WhereTo = &linkCreateArgs.whereTo
-	}
-	if linkCreateArgs.whereToSpace != "" {
-		params.WhereToSpace = &linkCreateArgs.whereToSpace
+	if filter != "" {
+		filterID, parseErr := parseFilterFlag(filter)
+		if parseErr != nil {
+			return errors.Wrapf(parseErr, "error parsing filter")
+		}
+		params.Filter = &filterID
 	}
 
-	// Set where_space parameter - either from direct where-space flag or converted from dest-space
-	var whereSpaceExpr string
-	if linkCreateArgs.whereSpace != "" {
-		whereSpaceExpr = linkCreateArgs.whereSpace
-	} else if len(linkCreateArgs.destSpaces) > 0 {
-		// Convert dest-space identifiers to a where expression
-		whereSpaceExpr, err = buildWhereClauseForSpaces(linkCreateArgs.destSpaces)
-		if err != nil {
-			return errors.Wrapf(err, "error converting destination spaces to where expression")
-		}
+	// Set retargeting parameters
+	if linkCreateArgs.reverse {
+		reverseVal := true
+		params.Reverse = &reverseVal
 	}
-	if whereSpaceExpr != "" {
-		params.WhereSpace = &whereSpaceExpr
+	if linkCreateArgs.fromDownstreamWhere != "" {
+		params.FromDownstreamWhere = &linkCreateArgs.fromDownstreamWhere
 	}
-
-	// Parse and set filter parameters if specified
-	if linkCreateArgs.filterSpace != "" {
-		filterSpaceID, err := parseFilterFlag(linkCreateArgs.filterSpace)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing filter-space")
-		}
-		params.FilterSpace = &filterSpaceID
-	}
-	if linkCreateArgs.filterFrom != "" {
-		filterFromID, err := parseFilterFlag(linkCreateArgs.filterFrom)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing filter-from")
-		}
-		params.FilterFrom = &filterFromID
-	}
-	if linkCreateArgs.filterTo != "" {
-		filterToID, err := parseFilterFlag(linkCreateArgs.filterTo)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing filter-to")
-		}
-		params.FilterTo = &filterToID
-	}
-	if linkCreateArgs.filterToSpace != "" {
-		filterToSpaceID, err := parseFilterFlag(linkCreateArgs.filterToSpace)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing filter-to-space")
-		}
-		params.FilterToSpace = &filterToSpaceID
+	if linkCreateArgs.toDownstreamWhere != "" {
+		params.ToDownstreamWhere = &linkCreateArgs.toDownstreamWhere
 	}
 
 	// Call the bulk create API
@@ -350,7 +298,7 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 		return err
 	}
 
-	// Handle the response using the existing handler from link_update.go
+	// Handle the response
 	return handleBulkLinkUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create",
-		fmt.Sprintf("where_from: %s, where_to: %s", linkCreateArgs.whereFrom, linkCreateArgs.whereTo))
+		fmt.Sprintf("where: %s, reverse: %v, from_downstream_where: %s", where, linkCreateArgs.reverse, linkCreateArgs.fromDownstreamWhere))
 }

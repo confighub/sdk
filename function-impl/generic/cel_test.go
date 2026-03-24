@@ -21,7 +21,7 @@ func TestVetCEL_BoolPass(t *testing.T) {
 		`r.spec.replicas == 3`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -37,7 +37,7 @@ func TestVetCEL_BoolFail(t *testing.T) {
 		`r.spec.replicas == 5`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -53,7 +53,7 @@ func TestVetCEL_MapResult(t *testing.T) {
 		`r.spec.replicas > 5 ? {"passed": true} : {"passed": false, "details": [r.metadata.name + " has too few replicas"]}`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -73,7 +73,7 @@ func TestVetCEL_WithParams(t *testing.T) {
 			"replicas=3",
 		})
 
-		_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+		_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -87,7 +87,7 @@ func TestVetCEL_WithParams(t *testing.T) {
 			"replicas=5",
 		})
 
-		_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+		_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -104,7 +104,7 @@ func TestVetCEL_CompileError(t *testing.T) {
 		`r.spec.replicas ===`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err) // compile errors are returned as failed validation, not errors
 
 	vr, ok := output.(api.ValidationResult)
@@ -121,7 +121,7 @@ func TestGetCEL_ExtractReplicas(t *testing.T) {
 		`[{"ResourceName": r.metadata.namespace + "/" + r.metadata.name, "ResourceType": r.apiVersion + "/" + r.kind, "Path": "spec.replicas", "Value": r.spec.replicas}]`,
 	})
 
-	_, output, err := GenericFnGetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnGetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -141,7 +141,7 @@ func TestGetCEL_ConditionalExtract(t *testing.T) {
 		`r.kind == "Service" ? [{"ResourceName": r.metadata.name, "Path": "spec.type", "Value": r.spec.type}] : []`,
 	})
 
-	_, output, err := GenericFnGetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnGetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -252,7 +252,7 @@ func TestVetCEL_SkipsNonMatchingResources(t *testing.T) {
 		`r.kind != "Deployment" || r.spec.replicas >= 1`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)

@@ -9,16 +9,17 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"log/slog"
+
+	"github.com/cockroachdb/errors"
 	"github.com/swaggest/jsonschema-go"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
-	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
 )
@@ -202,7 +203,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 		},
 	}
 	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
-		" the replicas for workload controllers", attributeNameReplicas, rp, true, false, false)
+		" the replicas for workload controllers", attributeNameReplicas, rp, true, true, false)
 	resourceTypes = yamlkit.ResourceTypesForPathMap(resourceTypeToContainersPaths)
 	fh.RegisterFunction("set-env", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -1097,11 +1098,11 @@ func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedD
 
 func makeK8sFnSetEnv(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetEnv(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetEnv(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	// The argument value types should be verified before this function is called
 	containerName := args[0].Value.(string)
@@ -1130,22 +1131,17 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, 
 		return parsedData, nil, errors.WithStack(errors.New("no valid key-value pairs"))
 	}
 
-	var err error
-	for _, doc := range parsedData {
-		var resourceType api.ResourceType
-		resourceType, err = rp.ResourceTypeGetter(doc)
-		if err != nil {
-			continue // Skip malformed resources
-		}
-		containersPaths, ok := resourceTypeToContainersPaths[resourceType]
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		containersPaths, ok := resourceTypeToContainersPaths[resourceInfo.ResourceType]
 		if !ok {
-			continue // Skip resource kinds we don't handle
+			return output, nil // Skip resource kinds we don't handle
 		}
 
+		var visitorErrs []error
 		for _, containersPath := range containersPaths {
-			var resolvedContainersPaths []yamlkit.ResolvedPathInfo
 			unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
-			resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
+			resolvedContainersPaths, err := yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
 			if err != nil {
 				continue // skip problematic path
 			}
@@ -1156,37 +1152,32 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, 
 					thisPairs[k] = v
 				}
 
-				var container *gaby.YamlDoc
-				var found bool
-				container, found, err = yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
+				container, found, err := yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
 				if !found || err != nil {
 					continue
 				}
 				envs := container.Path("env")
 				if envs == nil {
-					var ary *gaby.YamlDoc
 					// Create the environment array if it doesn't exist
-					ary, err = container.Array("env")
+					ary, err := container.Array("env")
 					if err != nil {
-						multiErrs = append(multiErrs, errors.Wrap(err, "error creating environment array"))
+						visitorErrs = append(visitorErrs, errors.Wrap(err, "error creating environment array"))
 						continue
 					}
 					envs = ary
 				}
 				for _, entry := range envs.Children() {
-					var name string
 					// Overwrite the value of the environment variable if it exists
 					if entry.Exists("name") {
-						name, ok = entry.Path("name").Data().(string)
+						name, ok := entry.Path("name").Data().(string)
 						if !ok {
 							continue // skip malformed element
 						}
-						var val string
 						// An empty string indicates the variable should be removed, which is handled below
-						if val, ok = thisPairs[name]; ok && val != "" {
+						if val, ok := thisPairs[name]; ok && val != "" {
 							_, err = entry.SetP(val, "value")
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Newf("error setting environment variable %s: %v", name, err))
+								visitorErrs = append(visitorErrs, errors.Newf("error setting environment variable %s: %v", name, err))
 							}
 							// Remove the key from the thisPairs map
 							delete(thisPairs, name)
@@ -1196,15 +1187,13 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, 
 				// For the remaining pairs, remove or add them to the environment array
 				// If the user specifies an empty string for a value, we should remove the environment variable
 				// Iterate in the same order as the original args for determinism
-				var v string
 				for _, k := range keys {
-					v, found = thisPairs[k]
+					v, found := thisPairs[k]
 					if !found {
 						continue
 					}
 					if v == "" {
-						var pairPaths []yamlkit.ResolvedPathInfo
-						pairPaths, err = yamlkit.ResolveAssociativePaths(envs, api.UnresolvedPath("?name="+k), "", false)
+						pairPaths, err := yamlkit.ResolveAssociativePaths(envs, api.UnresolvedPath("?name="+k), "", false)
 						if err != nil || len(pairPaths) == 0 {
 							// Not found shouldn't be an error
 							continue
@@ -1214,23 +1203,27 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, 
 						}
 						pairPath := pairPaths[0]
 						if err := envs.DeleteP(string(pairPath.Path)); err != nil {
-							multiErrs = append(multiErrs, errors.Wrapf(err, "error deleting environment variable %s", k))
+							visitorErrs = append(visitorErrs, errors.Wrapf(err, "error deleting environment variable %s", k))
 							continue
 						}
 					} else {
-
 						// TODO: is there a way to make this an ordered pair?
 						val := map[string]interface{}{"name": k, "value": v}
 						if err = envs.ArrayAppend(val); err != nil {
-							multiErrs = append(multiErrs, errors.Wrapf(err, "error appending environment variable %s", k))
+							visitorErrs = append(visitorErrs, errors.Wrapf(err, "error appending environment variable %s", k))
 							continue
 						}
 					}
 				}
 			}
 		}
-	}
+		return output, visitorErrs
+	})
 
+	if err != nil {
+		// Combine argument parsing errors with visitor errors
+		multiErrs = append(multiErrs, err)
+	}
 	if len(multiErrs) != 0 {
 		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
 	}
@@ -1436,12 +1429,11 @@ func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData g
 
 func makeK8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetPodDefaults(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetPodDefaults(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	multiErrs := []error{}
+func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	var err error
 
 	// Parse parameters with default values of false
@@ -1468,45 +1460,43 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 	}
 
 	namespaceResourceType := api.ResourceType("v1/Namespace")
-	for _, doc := range parsedData {
-		var resourceType api.ResourceType
-		resourceType, err = rp.ResourceTypeGetter(doc)
-		if err != nil {
-			continue // Skip malformed resources
-		}
-		if resourceType == namespaceResourceType && podSecurity {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		if resourceInfo.ResourceType == namespaceResourceType && podSecurity {
 			// The dots don't need to be escaped when using Set rather than SetP
-			_, err = doc.Set("baseline", "metadata", "labels", "pod-security.kubernetes.io/enforce")
+			var visitorErrs []error
+			_, err := doc.Set("baseline", "metadata", "labels", "pod-security.kubernetes.io/enforce")
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 			}
 			_, err = doc.Set("latest", "metadata", "labels", "pod-security.kubernetes.io/enforce-version")
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 			}
 			_, err = doc.Set("restricted", "metadata", "labels", "pod-security.kubernetes.io/warn")
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 			}
 			_, err = doc.Set("latest", "metadata", "labels", "pod-security.kubernetes.io/warn-version")
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 			}
-			continue
+			return output, visitorErrs
 		}
-		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceType]
+		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
-			continue // Skip resource kinds we don't handle
+			return output, nil // Skip resource kinds we don't handle
 		}
-		slog.Info("traversing resource", "resourceType", string(resourceType))
+		slog.Info("traversing resource", "resourceType", string(resourceInfo.ResourceType))
 
+		var visitorErrs []error
 		for _, podSpecPath := range podSpecPaths {
 			// For some of these attributes, we don't care whether or how they were set.
 			// We have a "best practice" default we want to use. For others, we have a
 			// minimum expected set of values.
 			podSpecDoc, hasPodSpec, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(podSpecPath), true)
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 				continue
 			}
 			if !hasPodSpec {
@@ -1521,7 +1511,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 			if automountServiceAccountToken {
 				_, err = podSpecDoc.Set(false, "automountServiceAccountToken")
 				if err != nil {
-					multiErrs = append(multiErrs, err)
+					visitorErrs = append(visitorErrs, err)
 				}
 			}
 
@@ -1529,7 +1519,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 			// if !podSpecDoc.Exists("terminationGracePeriodSeconds") {
 			// 	_, err = podSpecDoc.Set(60, "terminationGracePeriodSeconds")
 			// 	if err != nil {
-			// 		multiErrs = append(multiErrs, err)
+			// 		visitorErrs = append(visitorErrs, err)
 			// 	}
 			// }
 
@@ -1537,37 +1527,37 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 				// Pod-level security contexft
 				_, err = podSpecDoc.Set("RuntimeDefault", "securityContext", "seccompProfile", "type")
 				if err != nil {
-					multiErrs = append(multiErrs, err)
+					visitorErrs = append(visitorErrs, err)
 				}
 				_, err = podSpecDoc.Set(true, "securityContext", "runAsNonRoot")
 				if err != nil {
-					multiErrs = append(multiErrs, err)
+					visitorErrs = append(visitorErrs, err)
 				}
 				// These are arbitrary and can be changed, but I see these used fairly often, perhaps because it's
 				// the example in the docs: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 				if !podSpecDoc.Exists("securityContext", "runAsUser") {
 					_, err = podSpecDoc.Set(1000, "securityContext", "runAsUser")
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 					}
 				}
 				if !podSpecDoc.Exists("securityContext", "runAsGroup") {
 					_, err = podSpecDoc.Set(3000, "securityContext", "runAsGroup")
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 					}
 				}
 				if !podSpecDoc.Exists("securityContext", "fsGroup") {
 					_, err = podSpecDoc.Set(2000, "securityContext", "fsGroup")
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 					}
 				}
 
 				for _, containerPath := range containersPaths {
 					containersDoc, hasContainers, err := yamlkit.YamlSafePathGetDoc(podSpecDoc, api.ResolvedPath(containerPath), true)
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 						continue
 					}
 					if !hasContainers {
@@ -1578,22 +1568,22 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 						// Container-level security context
 						_, err = containerDoc.Set(true, "securityContext", "readOnlyRootFilesystem")
 						if err != nil {
-							multiErrs = append(multiErrs, err)
+							visitorErrs = append(visitorErrs, err)
 						}
 						_, err = containerDoc.Set(false, "securityContext", "allowPrivilegeEscalation")
 						if err != nil {
-							multiErrs = append(multiErrs, err)
+							visitorErrs = append(visitorErrs, err)
 						}
 						_, err = containerDoc.Set(false, "securityContext", "privileged")
 						if err != nil {
-							multiErrs = append(multiErrs, err)
+							visitorErrs = append(visitorErrs, err)
 						}
 
 						// Set capabilities.drop to ALL if not already present
 						if !containerDoc.ExistsP("securityContext.capabilities.drop") {
 							_, err = containerDoc.Set([]interface{}{"ALL"}, "securityContext", "capabilities", "drop")
 							if err != nil {
-								multiErrs = append(multiErrs, err)
+								visitorErrs = append(visitorErrs, err)
 							}
 						}
 
@@ -1602,7 +1592,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 						// if !containerDoc.Exists("imagePullPolicy") {
 						// 	_, err = containerDoc.Set("Always", "imagePullPolicy")
 						// 	if err != nil {
-						// 		multiErrs = append(multiErrs, err)
+						// 		visitorErrs = append(visitorErrs, err)
 						// 	}
 						// }
 					}
@@ -1613,7 +1603,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 				for _, containerPath := range containersPaths {
 					containersDoc, hasContainers, err := yamlkit.YamlSafePathGetDoc(podSpecDoc, api.ResolvedPath(containerPath), true)
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 						continue
 					}
 					if !hasContainers {
@@ -1626,13 +1616,13 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 						if !containerDoc.Exists("resources") {
 							resourcesDoc, err = containerDoc.Object("resources")
 							if err != nil {
-								multiErrs = append(multiErrs, err)
+								visitorErrs = append(visitorErrs, err)
 								continue
 							}
 						} else {
 							resourcesDoc, _, err = yamlkit.YamlSafePathGetDoc(containerDoc, api.ResolvedPath("resources"), false)
 							if err != nil {
-								multiErrs = append(multiErrs, err)
+								visitorErrs = append(visitorErrs, err)
 								continue
 							}
 						}
@@ -1648,12 +1638,12 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 							cpu, memory, cpuLimit, memoryLimit,
 							cpuQuantity, memoryQuantity, cpuLimitQuantity, memoryLimitQuantity, factor)
 						if err != nil {
-							multiErrs = append(multiErrs, err)
+							visitorErrs = append(visitorErrs, err)
 							continue
 						}
 						_, err = containerDoc.SetDocP(newDoc, "resources")
 						if err != nil {
-							multiErrs = append(multiErrs, err)
+							visitorErrs = append(visitorErrs, err)
 						}
 					}
 				}
@@ -1667,7 +1657,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 					}
 					containersDoc, hasContainers, err := yamlkit.YamlSafePathGetDoc(podSpecDoc, api.ResolvedPath(containerPath), true)
 					if err != nil {
-						multiErrs = append(multiErrs, err)
+						visitorErrs = append(visitorErrs, err)
 						continue
 					}
 					if !hasContainers {
@@ -1675,27 +1665,27 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Con
 					}
 					for _, containerDoc := range containersDoc.Children() {
 						errs := setContainerProbeDefaults(containerDoc)
-						multiErrs = append(multiErrs, errs...)
+						visitorErrs = append(visitorErrs, errs...)
 					}
 				}
 			}
 		}
-	}
+		return output, visitorErrs
+	})
 
-	if len(multiErrs) != 0 {
-		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+	if err != nil {
+		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
 }
 
 func makeK8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetContainerVolumeMountPath(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetContainerVolumeMountPath(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	multiErrs := []error{}
+func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Parse arguments
 	containerName := args[0].Value.(string)
 	volumeName := args[1].Value.(string)
@@ -1705,22 +1695,18 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 		volumeSource = args[3].Value.(string)
 	}
 
-	var err error
-	for _, doc := range parsedData {
-		var resourceType api.ResourceType
-		resourceType, err = rp.ResourceTypeGetter(doc)
-		if err != nil {
-			continue // Skip malformed resources
-		}
-		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceType]
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
-			continue // Skip resource kinds we don't handle
+			return output, nil // Skip resource kinds we don't handle
 		}
 
+		var visitorErrs []error
 		for _, podSpecPath := range podSpecPaths {
 			podSpecDoc, hasPodSpec, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(podSpecPath), true)
 			if err != nil {
-				multiErrs = append(multiErrs, err)
+				visitorErrs = append(visitorErrs, err)
 				continue
 			}
 			if !hasPodSpec {
@@ -1728,31 +1714,27 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 			}
 
 			// Find the container
-			containersPaths, ok := resourceTypeToContainersPaths[resourceType]
+			containersPaths, ok := resourceTypeToContainersPaths[resourceInfo.ResourceType]
 			if !ok {
 				continue
 			}
 
 			containerFound := false
 			for _, containersPath := range containersPaths {
-				var resolvedContainersPaths []yamlkit.ResolvedPathInfo
 				unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
-				resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
+				resolvedContainersPaths, err := yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
 				if err != nil {
 					continue // skip problematic path
 				}
 				for _, containerPath := range resolvedContainersPaths {
 					containerFound = true
-					var container *gaby.YamlDoc
-					var found bool
-					container, found, err = yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
+					container, found, err := yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
 					if !found || err != nil {
 						continue
 					}
 
 					// Check if volumeMount already exists using ResolveAssociativePaths
-					var volumeMountPaths []yamlkit.ResolvedPathInfo
-					volumeMountPaths, err = yamlkit.ResolveAssociativePaths(container, api.UnresolvedPath("volumeMounts.?name="+volumeName), "", false)
+					volumeMountPaths, err := yamlkit.ResolveAssociativePaths(container, api.UnresolvedPath("volumeMounts.?name="+volumeName), "", false)
 
 					if err == nil && len(volumeMountPaths) > 0 {
 						// Volume mount exists, update the mountPath
@@ -1760,7 +1742,7 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 						if found && err == nil {
 							_, err = volumeMount.Set(volumePath, "mountPath")
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Wrapf(err, "error setting mountPath for volume %s", volumeName))
+								visitorErrs = append(visitorErrs, errors.Wrapf(err, "error setting mountPath for volume %s", volumeName))
 							}
 						}
 					} else {
@@ -1768,10 +1750,9 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 						// Ensure volumeMounts array exists
 						volumeMounts := container.Path("volumeMounts")
 						if volumeMounts == nil {
-							var ary *gaby.YamlDoc
-							ary, err = container.Array("volumeMounts")
+							ary, err := container.Array("volumeMounts")
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Wrap(err, "error creating volumeMounts array"))
+								visitorErrs = append(visitorErrs, errors.Wrap(err, "error creating volumeMounts array"))
 								continue
 							}
 							volumeMounts = ary
@@ -1782,7 +1763,7 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 						volumeMount.Set("name", volumeName)
 						volumeMount.Set("mountPath", volumePath)
 						if err = volumeMounts.ArrayAppend(volumeMount); err != nil {
-							multiErrs = append(multiErrs, errors.Wrapf(err, "error appending volumeMount %s", volumeName))
+							visitorErrs = append(visitorErrs, errors.Wrapf(err, "error appending volumeMount %s", volumeName))
 							continue
 						}
 					}
@@ -1790,14 +1771,13 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 			}
 
 			if !containerFound {
-				multiErrs = append(multiErrs, errors.Newf("container %s not found", containerName))
+				visitorErrs = append(visitorErrs, errors.Newf("container %s not found", containerName))
 				continue
 			}
 
 			// Now handle the volume in the pod spec
 			// Check if volume already exists using ResolveAssociativePaths
-			var volumePaths []yamlkit.ResolvedPathInfo
-			volumePaths, err = yamlkit.ResolveAssociativePaths(podSpecDoc, api.UnresolvedPath("volumes.?name="+volumeName), "", false)
+			volumePaths, err := yamlkit.ResolveAssociativePaths(podSpecDoc, api.UnresolvedPath("volumes.?name="+volumeName), "", false)
 
 			if err == nil && len(volumePaths) > 0 {
 				// Volume exists
@@ -1832,7 +1812,7 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 								_, err = volume.Set("confighubplaceholder", "persistentVolumeClaim", "claimName")
 							}
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Wrapf(err, "error setting volume source for volume %s", volumeName))
+								visitorErrs = append(visitorErrs, errors.Wrapf(err, "error setting volume source for volume %s", volumeName))
 							}
 						}
 						// If hasCorrectType is true, we don't modify the volume at all to preserve existing attributes
@@ -1841,17 +1821,16 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 			} else {
 				// Volume doesn't exist
 				if volumeSource == "" {
-					multiErrs = append(multiErrs, errors.Newf("volume %s does not exist and volume-source was not specified", volumeName))
+					visitorErrs = append(visitorErrs, errors.Newf("volume %s does not exist and volume-source was not specified", volumeName))
 					continue
 				}
 
 				// Ensure volumes array exists
 				volumes := podSpecDoc.Path("volumes")
 				if volumes == nil {
-					var ary *gaby.YamlDoc
-					ary, err = podSpecDoc.Array("volumes")
+					ary, err := podSpecDoc.Array("volumes")
 					if err != nil {
-						multiErrs = append(multiErrs, errors.Wrap(err, "error creating volumes array"))
+						visitorErrs = append(visitorErrs, errors.Wrap(err, "error creating volumes array"))
 						continue
 					}
 					volumes = ary
@@ -1879,27 +1858,27 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, parsed
 				}
 
 				if err = volumes.ArrayAppend(volume); err != nil {
-					multiErrs = append(multiErrs, errors.Wrapf(err, "error appending volume %s", volumeName))
+					visitorErrs = append(visitorErrs, errors.Wrapf(err, "error appending volume %s", volumeName))
 					continue
 				}
 			}
 		}
-	}
+		return output, visitorErrs
+	})
 
-	if len(multiErrs) != 0 {
-		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+	if err != nil {
+		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
 }
 
 func makeK8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetContainerPort(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetContainerPort(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	multiErrs := []error{}
+func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Parse arguments
 	containerName := args[0].Value.(string)
 	portName := args[1].Value.(string)
@@ -1911,30 +1890,22 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, parsedData gaby.C
 		protocol = "TCP" // Default protocol
 	}
 
-	var err error
-
-	for _, doc := range parsedData {
-		var resourceType api.ResourceType
-		resourceType, err = rp.ResourceTypeGetter(doc)
-		if err != nil {
-			continue // Skip malformed resources
-		}
-		containersPaths, ok := resourceTypeToContainersPaths[resourceType]
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		containersPaths, ok := resourceTypeToContainersPaths[resourceInfo.ResourceType]
 		if !ok {
-			continue // Skip resource kinds we don't handle
+			return output, nil // Skip resource kinds we don't handle
 		}
 
+		var visitorErrs []error
 		for _, containersPath := range containersPaths {
-			var resolvedContainersPaths []yamlkit.ResolvedPathInfo
 			unresolvedPath := api.UnresolvedPath(containersPath + ".?name=" + containerName)
-			resolvedContainersPaths, err = yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
+			resolvedContainersPaths, err := yamlkit.ResolveAssociativePaths(doc, unresolvedPath, "", false)
 			if err != nil {
 				continue // skip problematic path
 			}
 			for _, containerPath := range resolvedContainersPaths {
-				var container *gaby.YamlDoc
-				var found bool
-				container, found, err = yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
+				container, found, err := yamlkit.YamlSafePathGetDoc(doc, containerPath.Path, true)
 				if !found || err != nil {
 					continue
 				}
@@ -1942,11 +1913,10 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, parsedData gaby.C
 				// Check if ports array exists
 				ports := container.Path("ports")
 				if ports == nil {
-					var ary *gaby.YamlDoc
 					// Create the ports array if it doesn't exist
-					ary, err = container.Array("ports")
+					ary, err := container.Array("ports")
 					if err != nil {
-						multiErrs = append(multiErrs, errors.Wrap(err, "error creating ports array"))
+						visitorErrs = append(visitorErrs, errors.Wrap(err, "error creating ports array"))
 						continue
 					}
 					ports = ary
@@ -1979,11 +1949,11 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, parsedData gaby.C
 							// Update the name and protocol for this port
 							_, err = portEntry.Set(portName, "name")
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Newf("error setting name for port %d: %v", portNumber, err))
+								visitorErrs = append(visitorErrs, errors.Newf("error setting name for port %d: %v", portNumber, err))
 							}
 							_, err = portEntry.Set(protocol, "protocol")
 							if err != nil {
-								multiErrs = append(multiErrs, errors.Newf("error setting protocol for port %d: %v", portNumber, err))
+								visitorErrs = append(visitorErrs, errors.Newf("error setting protocol for port %d: %v", portNumber, err))
 							}
 							break
 						}
@@ -1997,16 +1967,17 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, parsedData gaby.C
 					port.Set("containerPort", portNumber)
 					port.Set("protocol", protocol)
 					if err = ports.ArrayAppend(port); err != nil {
-						multiErrs = append(multiErrs, errors.Wrapf(err, "error appending port %s", portName))
+						visitorErrs = append(visitorErrs, errors.Wrapf(err, "error appending port %s", portName))
 						continue
 					}
 				}
 			}
 		}
-	}
+		return output, visitorErrs
+	})
 
-	if len(multiErrs) != 0 {
-		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+	if err != nil {
+		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
 }

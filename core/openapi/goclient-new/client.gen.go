@@ -7379,9 +7379,9 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.WhereSpace != nil {
+		if params.Where != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_space", runtime.ParamLocationQuery, *params.WhereSpace); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7395,9 +7395,9 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 
 		}
 
-		if params.FilterSpace != nil {
+		if params.Filter != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_space", runtime.ParamLocationQuery, *params.FilterSpace); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7411,9 +7411,9 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 
 		}
 
-		if params.WhereToSpace != nil {
+		if params.Reverse != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_to_space", runtime.ParamLocationQuery, *params.WhereToSpace); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "reverse", runtime.ParamLocationQuery, *params.Reverse); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7427,9 +7427,9 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 
 		}
 
-		if params.FilterToSpace != nil {
+		if params.FromDownstreamWhere != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_to_space", runtime.ParamLocationQuery, *params.FilterToSpace); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_downstream_where", runtime.ParamLocationQuery, *params.FromDownstreamWhere); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7443,57 +7443,9 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 
 		}
 
-		if params.WhereFrom != nil {
+		if params.ToDownstreamWhere != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_from", runtime.ParamLocationQuery, *params.WhereFrom); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.FilterFrom != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_from", runtime.ParamLocationQuery, *params.FilterFrom); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.WhereTo != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_to", runtime.ParamLocationQuery, *params.WhereTo); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.FilterTo != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_to", runtime.ParamLocationQuery, *params.FilterTo); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "to_downstream_where", runtime.ParamLocationQuery, *params.ToDownstreamWhere); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -17858,6 +17810,22 @@ func NewBulkCreateUnitsRequestWithBody(server string, params *BulkCreateUnitsPar
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeOutgoingLinksWhere != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_outgoing_links_where", runtime.ParamLocationQuery, *params.IncludeOutgoingLinksWhere); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

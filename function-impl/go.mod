@@ -4,16 +4,17 @@ go 1.25.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.13
-	github.com/confighub/sdk/configkit/envkit v0.1.13
-	github.com/confighub/sdk/configkit/hclkit v0.1.13
-	github.com/confighub/sdk/configkit/inikit v0.1.13
-	github.com/confighub/sdk/configkit/jsonkit v0.1.13
-	github.com/confighub/sdk/configkit/k8skit v0.1.13
-	github.com/confighub/sdk/configkit/propkit v0.1.13
-	github.com/confighub/sdk/configkit/tomlkit v0.1.13
-	github.com/confighub/sdk/configkit/yqkit v0.1.13
-	github.com/confighub/sdk/core v0.1.13
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
 	github.com/google/cel-go v0.24.1
 	github.com/google/gnostic v0.7.0
 	github.com/labstack/echo/v4 v4.13.3
@@ -95,6 +96,7 @@ require (
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
+	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/swaggest/refl v1.4.0 // indirect
@@ -136,6 +138,17 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
+	github.com/confighub/sdk/configkit/hclkit => ../configkit/hclkit
+	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -46,12 +46,12 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnVetJSONSchema(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnVetJSONSchema(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	schemaMapJSON, ok := args[0].Value.(string)
 	if !ok {
 		return parsedData, api.ValidationResultFalse, errors.New("schema-map must be a string")
@@ -69,7 +69,8 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, _ *api.Fu
 	passed := true
 
 	// Use VisitResources to iterate over each document
-	_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		var errs []error
 
 		// Get the resource type

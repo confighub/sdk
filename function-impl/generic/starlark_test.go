@@ -98,7 +98,7 @@ func TestGetStarlark_GetReplicas(t *testing.T) {
   }]`,
 	})
 
-	_, output, err := genericFnGetStarlark(testResourceProvider, docs, args)
+	_, output, err := genericFnGetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -172,7 +172,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("passes when replicas matches param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=3"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -185,7 +185,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("fails when replicas does not match param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=5"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)

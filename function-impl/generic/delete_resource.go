@@ -40,16 +40,17 @@ func registerDeleteResource(fh handler.FunctionRegistry, converter configkit.Con
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnDeleteResource(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnDeleteResource(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	targetResourceType := api.ResourceType(args[0].Value.(string))
 	targetResourceName := api.ResourceName(args[1].Value.(string))
 
 	// Use VisitResources to find the existing resource and track its position
+	whereExpressions := api.GetWhereResourceExpressions(options)
 	foundIndex := -1
 	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		if resourceInfo.ResourceType == targetResourceType &&
@@ -59,7 +60,7 @@ func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, function
 		return output, []error{}
 	}
 
-	_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, visitor)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 	if err != nil {
 		return parsedData, nil, fmt.Errorf("failed to search for resource to delete: %v", err)
 	}

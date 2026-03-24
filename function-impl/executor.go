@@ -18,6 +18,7 @@ import (
 	"github.com/confighub/sdk/configkit/jsonkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/configkit/propkit"
+	"github.com/confighub/sdk/configkit/textkit"
 	"github.com/confighub/sdk/configkit/tomlkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -32,6 +33,7 @@ import (
 	"github.com/confighub/sdk/function-impl/kubernetes"
 	"github.com/confighub/sdk/function-impl/opentofu"
 	"github.com/confighub/sdk/function-impl/properties"
+	"github.com/confighub/sdk/function-impl/text"
 	"github.com/confighub/sdk/function-impl/toml"
 	"github.com/confighub/sdk/core/workerapi"
 )
@@ -75,6 +77,7 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 	iniRP := inikit.NewINIResourceProvider()
 	jsonRP := jsonkit.NewJSONResourceProvider()
 	envRP := envkit.NewEnvResourceProvider()
+	textRP := textkit.NewTextResourceProvider()
 
 	setups := []toolchainSetup{
 		{cubRP, func(fh handler.FunctionRegistry) { confighub.RegisterFunctions(cubRP, fh) }},
@@ -86,6 +89,7 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 		{iniRP, func(fh handler.FunctionRegistry) { ini.RegisterFunctions(iniRP, fh) }},
 		{jsonRP, func(fh handler.FunctionRegistry) { appjson.RegisterFunctions(jsonRP, fh) }},
 		{envRP, func(fh handler.FunctionRegistry) { env.RegisterFunctions(envRP, fh) }},
+		{textRP, func(fh handler.FunctionRegistry) { text.RegisterFunctions(textRP, fh) }},
 	}
 
 	for _, setup := range setups {

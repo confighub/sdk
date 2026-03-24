@@ -32,7 +32,7 @@ var (
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides or MergeUnits)")
+	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, or UpgradeUnit)")
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates")
 	cmd.Flags().BoolVar(&linkUseLiveState, "use-live-state", false, "use LiveState of upstream unit instead of Data")
@@ -49,8 +49,8 @@ func validateLinkFieldFlags() error {
 	if linkUseLiveState && linkNoUseLiveState {
 		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
 	}
-	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" {
-		return fmt.Errorf("--update-type must be NeedsProvides or MergeUnits, got %q", linkUpdateType)
+	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" {
+		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, or UpgradeUnit, got %q", linkUpdateType)
 	}
 	return nil
 }

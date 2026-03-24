@@ -33,20 +33,21 @@ func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.Confi
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnVetMergeKeys(resourceProvider, fArgs.ParsedData)
+			return GenericFnVetMergeKeys(resourceProvider, fArgs.Options, fArgs.ParsedData)
 		},
 	})
 }
 
 // GenericFnVetMergeKeys checks for duplicate merge keys across all resources.
-func GenericFnVetMergeKeys(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container) (gaby.Container, any, error) {
+func GenericFnVetMergeKeys(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	var failedAttributes api.AttributeValueList
 
+	whereExpressions := api.GetWhereResourceExpressions(options)
 	visitor := func(doc *gaby.YamlDoc, _ any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		findDuplicateMergeKeys(doc, "", resourceInfo, resourceProvider, &failedAttributes)
 		return nil, nil
 	}
-	yamlkit.VisitResources(parsedData, nil, resourceProvider, visitor)
+	yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 
 	result := api.ValidationResult{
 		Passed:           len(failedAttributes) == 0,

@@ -47,6 +47,7 @@ func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict) starlark.S
 		"r":      rDict,
 		"object": rDict,
 		"json":   starlarkjson.Module,
+		"re":     starlarkReModule,
 	}
 	if params != nil {
 		predeclared["params"] = params
@@ -57,9 +58,10 @@ func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict) starlark.S
 }
 
 var starlarkFileOpts = syntax.FileOptions{
-	Set:            true,
-	GlobalReassign: true,
-	Recursion:      true,
+	Set:             true,
+	GlobalReassign:  true,
+	TopLevelControl: true,
+	Recursion:       true,
 }
 
 // runStarlarkForResource executes a Starlark program with a single resource as input.
@@ -249,7 +251,7 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that mutates a resource. The variable 'r' (alias 'object') is a dict representing the current resource. Modify r in place. The program is executed once per resource. The 'json' module and 'params' dict are also available.",
+					Description:   "Starlark program that mutates a resource. The variable 'r' (alias 'object') is a dict representing the current resource. Modify r in place. The program is executed once per resource. The 'json', 're' modules and 'params' dict are also available.",
 					DataType:      api.DataTypeString,
 				},
 				{
@@ -263,7 +265,7 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			Mutating:              true,
 			Hermetic:              true,
 			Idempotent:            false,
-			Description:           "Mutates configuration resources using a Starlark program executed per resource. Comments are preserved.",
+			Description:           "Mutates configuration resources using a Starlark program executed per resource. Comments are preserved. The 're' module provides regex support (search, match, sub, findall).",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -332,7 +334,7 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json' module and 'params' dict are available.",
+					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules and 'params' dict are available.",
 					DataType:      api.DataTypeString,
 					Example: `def validate(r):
   if r.get("kind") == "Deployment":
@@ -365,12 +367,12 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnVetStarlark(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -398,7 +400,8 @@ func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData 
 	// Call validate(r) for each resource, accumulating results
 	overallResult := api.ValidationResult{Passed: true}
 
-	_, err = yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		rDict, err := docToStarlarkDict(doc)
 		if err != nil {
 			return output, []error{err}
@@ -505,7 +508,7 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that extracts values from resources. Must define an 'extract(r)' function that takes a resource dict and returns a list of dicts, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The function is called once per resource. The 'json' module and 'params' dict are available.",
+					Description:   "Starlark program that extracts values from resources. Must define an 'extract(r)' function that takes a resource dict and returns a list of dicts, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The function is called once per resource. The 'json', 're' modules and 'params' dict are available.",
 					DataType:      api.DataTypeString,
 					Example: `def extract(r):
   values = []
@@ -541,12 +544,12 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetStarlark(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnGetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -570,7 +573,8 @@ func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData 
 	}
 
 	// Call extract(r) for each resource, accumulating results
-	output, err := yamlkit.VisitResources(parsedData, api.AttributeValueList{}, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
 
 		rDict, err := docToStarlarkDict(doc)

@@ -71,7 +71,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnVetCEL(rp, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
+			return generic.GenericFnVetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
 	})
 
@@ -109,7 +109,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnGetCEL(rp, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
+			return generic.GenericFnGetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
 	})
 

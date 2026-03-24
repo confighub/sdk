@@ -124,6 +124,11 @@ func (rp *ConfigHubResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id str
 	return err
 }
 
+func (rp *ConfigHubResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	return doc.DeleteP(resourceIDPath)
+}
+
 func (*ConfigHubResourceProviderType) TypeDescription() string {
 	return "EntityType"
 }

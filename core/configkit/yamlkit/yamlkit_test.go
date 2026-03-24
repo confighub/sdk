@@ -10,6 +10,7 @@ import (
 
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // testResourceProvider is a minimal ResourceProvider for testing purposes only.
@@ -25,6 +26,43 @@ func (testResourceProvider) ResourceNameGetter(doc *gaby.YamlDoc) (api.ResourceN
 	namespace, _, _ := YamlSafePathGetValue[string](doc, api.ResolvedPath("metadata.namespace"), true)
 	name, _, _ := YamlSafePathGetValue[string](doc, api.ResolvedPath("metadata.name"), false)
 	return api.ResourceName(namespace + "/" + name), nil
+}
+
+func (testResourceProvider) DefaultResourceCategory() api.ResourceCategory {
+	return api.ResourceCategoryResource
+}
+func (testResourceProvider) ResourceCategoryGetter(_ *gaby.YamlDoc) (api.ResourceCategory, error) {
+	return api.ResourceCategoryResource, nil
+}
+func (testResourceProvider) ResourceIDGetter(_ *gaby.YamlDoc) (string, error) { return "", nil }
+func (testResourceProvider) RemoveScopeFromResourceName(name api.ResourceName) api.ResourceName {
+	return name
+}
+func (testResourceProvider) ScopelessResourceNamePath() api.ResolvedPath {
+	return "metadata.name"
+}
+func (testResourceProvider) SetResourceName(doc *gaby.YamlDoc, name string) error {
+	_, err := doc.SetP(name, "metadata.name")
+	return err
+}
+func (testResourceProvider) SetResourceID(_ *gaby.YamlDoc, _ string) error   { return nil }
+func (testResourceProvider) DeleteResourceID(_ *gaby.YamlDoc) error           { return nil }
+func (testResourceProvider) ResourceTypesAreSimilar(a, b api.ResourceType) bool { return a == b }
+func (testResourceProvider) TypeDescription() string                          { return "Kind" }
+func (testResourceProvider) NormalizeName(name string) string                 { return name }
+func (testResourceProvider) NameSeparator() string                            { return "/" }
+func (testResourceProvider) ContextPath(field string) string                  { return "metadata." + field }
+func (testResourceProvider) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
+}
+func (testResourceProvider) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return make(api.AttributeNameToAttributeDescriptor)
+}
+func (testResourceProvider) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
+	return "", false
+}
+func (testResourceProvider) GetToolchainType() workerapi.ToolchainType {
+	return workerapi.ToolchainKubernetesYAML
 }
 
 var testProvider = testResourceProvider{}

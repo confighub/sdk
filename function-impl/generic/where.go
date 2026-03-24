@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"strings"
 
+	"log/slog"
+
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"log/slog"
 )
 
 func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, customComparators []api.CustomStringComparator) (map[api.ResourceTypeAndName]bool, error) {
@@ -31,6 +32,8 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 		if err != nil {
 			return output, err
 		}
+
+		// currentDoc.Data() could be nil, but that could be tested in the query
 
 		if !found {
 			// Property not present - handle special case for != operator
@@ -98,27 +101,28 @@ func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnResourceWhereMatch(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnResourceWhereMatch(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, functionContext, parsedData, args)
+func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	return GenericFnResourceWhereMatchWithComparators(resourceProvider, nil, options, functionContext, parsedData, args)
 }
 
 // findMatchingResourcesWithComparators evaluates a where expression against resources and returns
 // a map of matching resources keyed by ResourceTypeAndName. It also handles the special case of
 // blank whereExpr where it filters by resourceType only.
-func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, resourceType string, whereExpr string) (map[api.ResourceTypeAndName]bool, error) {
+func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, resourceType string, whereExpr string) (map[api.ResourceTypeAndName]bool, error) {
 	// Allow empty resourceType
 	if resourceType == "" {
 		resourceType = "*"
 	}
+	whereExpressions := api.GetWhereResourceExpressions(options)
 	// Allow blank whereExpr: filter by resourceType only
 	if strings.TrimSpace(whereExpr) == "" {
 		matchingResources := map[api.ResourceTypeAndName]bool{}
-		_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			if resourceType == "*" || resourceInfo.ResourceType == api.ResourceType(resourceType) {
 				matchingResources[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
 			}
@@ -173,7 +177,7 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 		} else if strings.HasPrefix(expression.Path, "ConfigHub.") {
 			// Handle ConfigHub.* paths that reference ResourceInfo fields
 			matchingResourcesForExpression := map[api.ResourceTypeAndName]bool{}
-			_, err := yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+			_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 				// Skip resources that don't match the resource type filter
 				if resourceType != "*" && resourceInfo.ResourceType != api.ResourceType(resourceType) {
 					return output, nil
@@ -271,11 +275,11 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 	return matchingResources, nil
 }
 
-func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	whereExpr := args[1].Value.(string)
 
-	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, functionContext, parsedData, resourceType, whereExpr)
+	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, options, functionContext, parsedData, resourceType, whereExpr)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
@@ -313,27 +317,28 @@ func registerSelectWhereResource(fh handler.FunctionRegistry, converter configki
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSelectWhereResource(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSelectWhereResource(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnSelectWhereResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	return GenericFnSelectWhereResourceWithComparators(resourceProvider, nil, functionContext, parsedData, args)
+func genericFnSelectWhereResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	return GenericFnSelectWhereResourceWithComparators(resourceProvider, nil, options, functionContext, parsedData, args)
 }
 
-func GenericFnSelectWhereResourceWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnSelectWhereResourceWithComparators(resourceProvider yamlkit.ResourceProvider, customComparators []api.CustomStringComparator, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	whereExpr := args[1].Value.(string)
 
-	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, functionContext, parsedData, resourceType, whereExpr)
+	matchingResources, err := findMatchingResourcesWithComparators(resourceProvider, customComparators, options, functionContext, parsedData, resourceType, whereExpr)
 	if err != nil {
 		return parsedData, nil, err
 	}
 
 	// Build a list of indices to remove (in reverse order to avoid index shifting)
 	indicesToRemove := []int{}
-	_, err = yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		key := api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)
 		if !matchingResources[key] {
 			indicesToRemove = append(indicesToRemove, index)

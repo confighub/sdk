@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -85,7 +84,7 @@ func registerVetCELExpr(fh handler.FunctionRegistry, converter configkit.ConfigC
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnCELValidate(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnCELValidate(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
@@ -120,7 +119,7 @@ func registerCELValidate(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnCELValidate(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnCELValidate(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
@@ -179,14 +178,14 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnVetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnVetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
 // GenericFnVetCEL implements vet-cel validation. Extra CEL env options can be passed
 // by toolchain-specific overrides (e.g., Kubernetes admission policy libraries).
-func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
@@ -213,7 +212,8 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 
 	overallResult := api.ValidationResult{Passed: true}
 
-	_, err = yamlkit.VisitResources(parsedData, nil, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		var dataMap map[string]any
 		if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
 			return output, []error{err}
@@ -352,14 +352,14 @@ func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnGetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnGetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
 // GenericFnGetCEL implements get-cel extraction. Extra CEL env options can be passed
 // by toolchain-specific overrides.
-func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
@@ -382,7 +382,8 @@ func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 		return parsedData, nil, fmt.Errorf("failed to create program: %v", err)
 	}
 
-	output, err := yamlkit.VisitResources(parsedData, api.AttributeValueList{}, resourceProvider, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
 
 		var dataMap map[string]any
@@ -582,7 +583,7 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 	return newParsedData, nil, nil
 }
 
-func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	validationExpr := args[0].Value.(string)
 
 	env, err := cel.NewEnv(
@@ -606,27 +607,26 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 		return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to create program for expression %s: %v", validationExpr, err)
 	}
 
-	multiErrors := []error{}
-	details := []string{}
-	passed := true
-	for _, doc := range parsedData {
+	type celValidateResult struct {
+		passed  bool
+		details []string
+	}
+
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, &celValidateResult{passed: true}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		result := output.(*celValidateResult)
 		var dataMap map[string]any
 		if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
-			return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to unmarshal data for config %s: %v", functionContext.UnitSlug, err)
+			return output, []error{fmt.Errorf("failed to unmarshal data for config %s: %v", functionContext.UnitSlug, err)}
 		}
 
 		obj := map[string]any{
 			"r": dataMap,
 		}
 
-		resourceName, err := resourceProvider.ResourceNameGetter(doc)
-		if err != nil {
-			multiErrors = append(multiErrors, errors.Wrap(err, "could not extract resource name"))
-			resourceName = "unknown"
-		}
 		val, _, err := program.Eval(obj)
 		if err != nil {
-			passed = false
+			result.passed = false
 			// Treat evaluation errors as expected and just fail the check, rather than parsing or expression errors.
 			// There are many such error strings that the evaluator can return, so don't check them all.
 			// Example prefixes:
@@ -634,21 +634,23 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, functionCon
 			// "index out of bounds:"
 			// "no such attribute(s):"
 			errorString := err.Error()
-			details = append(details, "validation expression "+validationExpr+" could not be evaluated on resource "+string(resourceName)+": "+errorString)
-			continue
+			result.details = append(result.details, "validation expression "+validationExpr+" could not be evaluated on resource "+string(resourceInfo.ResourceName)+": "+errorString)
+			return result, nil
 		}
 		if val != types.True {
-			passed = false
-			details = append(details, "resource "+string(resourceName)+" failed validation expression "+validationExpr)
+			result.passed = false
+			result.details = append(result.details, "resource "+string(resourceInfo.ResourceName)+" failed validation expression "+validationExpr)
 		}
-	}
+		return result, nil
+	})
 
-	if passed {
+	result := output.(*celValidateResult)
+	if result.passed && err == nil {
 		return parsedData, api.ValidationResultTrue, nil
 	}
 
 	failedResult := api.ValidationResultFalse
-	failedResult.Details = details
-	return parsedData, failedResult, errors.Join(multiErrors...)
+	failedResult.Details = result.details
+	return parsedData, failedResult, err
 }
 

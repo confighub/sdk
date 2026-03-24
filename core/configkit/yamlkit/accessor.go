@@ -44,6 +44,8 @@ type EmbeddedAccessor interface {
 	Extract(currentFieldValue, path string) (any, error)
 }
 
+const EmbeddedAccessorSeparator = "#"
+
 // RegexpAccessor is an EmbeddedAccessor that uses regular expressions to extract
 // and insert subparts of a structured string value.
 type RegexpAccessor struct {
@@ -64,6 +66,15 @@ func newEmbeddedAccessor(embeddedAccessorType api.EmbeddedAccessorType, config s
 	switch embeddedAccessorType {
 	case api.EmbeddedAccessorRegexp:
 		a, err := newRegexpAccessor(config)
+		return a, err
+	case api.EmbeddedAccessorLine:
+		a, err := newLineAccessor(config)
+		return a, err
+	case api.EmbeddedAccessorJSON:
+		a, err := newJSONAccessor(config)
+		return a, err
+	case api.EmbeddedAccessorYAML:
+		a, err := newYAMLAccessor(config)
 		return a, err
 	default:
 		return nil, UnsupportedAccessorType

@@ -5417,7 +5417,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5582,7 +5582,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -5739,7 +5739,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5965,13 +5965,14 @@ paths:
       tags:
       - Link
     post:
-      description: Clone multiple links selected by query parameters with optional
-        name prefixes and destination spaces
+      description: Copy existing links with retargeted From and/or To units. Select
+        source links via where/filter, then retarget using reverse, from_downstream_where,
+        or to_downstream_where parameters.
       operationId: BulkCreateLinks
       parameters:
       - description: |-
           The specified string is an expression for the purpose of filtering
-          the list of Spaces returned. The expression syntax was inspired by SQL.
+          the list of Links returned. The expression syntax was inspired by SQL.
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
@@ -6001,22 +6002,22 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
-          Where expression to select destination spaces for created links
+          Where expression to select source links to copy
 
           The whole string must be query-encoded.
         in: query
-        name: where_space
+        name: where
         required: false
         schema:
           type: string
       - description: |-
-          UUID of a Filter entity to apply to the Space list.
+          UUID of a Filter entity to apply to the Link list.
 
           The Filter must be in the same Organization as the user credentials.
 
-          The Filter's From field must match the entity type being filtered (Space).
+          The Filter's From field must match the entity type being filtered (Link).
 
           For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
 
@@ -6024,13 +6025,62 @@ paths:
 
           If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
         in: query
-        name: filter_space
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: Swap the FromUnit and ToUnit directions of the copied links (for
+          cross-space link reversal)
+        in: query
+        name: reverse
+        required: false
+        schema:
+          type: boolean
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Links returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+
+          Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
+
+          The whole string must be query-encoded.
+        in: query
+        name: from_downstream_where
         required: false
         schema:
           type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
-          the list of Spaces returned. The expression syntax was inspired by SQL.
+          the list of Links returned. The expression syntax was inspired by SQL.
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
@@ -6060,148 +6110,13 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
-          Where expression to select ToSpaces for created links
-
-          The whole string must be query-encoded.
-        in: query
-        name: where_to_space
-        required: false
-        schema:
-          type: string
-      - description: |-
-          UUID of a Filter entity to apply to the Space list.
-
-          The Filter must be in the same Organization as the user credentials.
-
-          The Filter's From field must match the entity type being filtered (Space).
-
-          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-
-          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-
-          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-        in: query
-        name: filter_to_space
-        required: false
-        schema:
-          type: string
-      - description: |-
-          The specified string is an expression for the purpose of filtering
-          the list of Units returned. The expression syntax was inspired by SQL.
-          It supports conjunctions using `AND` of relational expressions of the form *attribute*
-          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-          as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
-          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-          UUIDs and boolean attributes support equality and inequality only.
-          UUID and time literals must be quoted as string literals.
-          String literals are quoted with single quotes, such as `'string'`.
-          Time literals use the same form as when serialized as JSON,
-          such as: `CreatedAt > '2025-02-18T23:16:34'`.
-          Integer and boolean literals are also supported for attributes of those types.
-          Arrays support the `?` operator to to match any element of the array,
-          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-          Conjunctions are supported using the `AND` operator.
-          An example conjunction is:
-          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-
-          Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-
-          Where expression to select FromUnits for created links
+          Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
           The whole string must be query-encoded.
         in: query
-        name: where_from
-        required: false
-        schema:
-          type: string
-      - description: |-
-          UUID of a Filter entity to apply to the Unit list.
-
-          The Filter must be in the same Organization as the user credentials.
-
-          The Filter's From field must match the entity type being filtered (Unit).
-
-          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-
-          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-
-          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-        in: query
-        name: filter_from
-        required: false
-        schema:
-          type: string
-      - description: |-
-          The specified string is an expression for the purpose of filtering
-          the list of Units returned. The expression syntax was inspired by SQL.
-          It supports conjunctions using `AND` of relational expressions of the form *attribute*
-          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-          as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
-          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-          UUIDs and boolean attributes support equality and inequality only.
-          UUID and time literals must be quoted as string literals.
-          String literals are quoted with single quotes, such as `'string'`.
-          Time literals use the same form as when serialized as JSON,
-          such as: `CreatedAt > '2025-02-18T23:16:34'`.
-          Integer and boolean literals are also supported for attributes of those types.
-          Arrays support the `?` operator to to match any element of the array,
-          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-          Conjunctions are supported using the `AND` operator.
-          An example conjunction is:
-          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-
-          Supported attributes for filtering on Unit: ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-
-          Where expression to select ToUnits for created links
-
-          The whole string must be query-encoded.
-        in: query
-        name: where_to
-        required: false
-        schema:
-          type: string
-      - description: |-
-          UUID of a Filter entity to apply to the Unit list.
-
-          The Filter must be in the same Organization as the user credentials.
-
-          The Filter's From field must match the entity type being filtered (Unit).
-
-          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-
-          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-
-          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-        in: query
-        name: filter_to
+        name: to_downstream_where
         required: false
         schema:
           type: string
@@ -6367,7 +6282,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk create (clone) multiple links
+      summary: Bulk create (copy) multiple links
       tags:
       - Link
   /me:
@@ -11680,7 +11595,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UseLiveState.
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -13105,9 +13020,10 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
-            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
-            that handles the actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
+            (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated
+            with a specific BridgeWorker that handles the actual deployment actions
+            (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -13456,9 +13372,10 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
-            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
-            that handles the actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
+            (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated
+            with a specific BridgeWorker that handles the actual deployment actions
+            (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -13543,9 +13460,10 @@ paths:
           description: Target represents a deployment target in ConfigHub. It defines
             where configuration should be applied, including the toolchain type (e.g.,
             Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
-            OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
-            that handles the actual deployment actions (e.g. Apply, Destroy).
+            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
+            (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated
+            with a specific BridgeWorker that handles the actual deployment actions
+            (e.g. Apply, Destroy).
         "400":
           content:
             application/json:
@@ -15044,7 +14962,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -20831,7 +20749,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -21093,6 +21011,48 @@ paths:
         required: false
         schema:
           type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Links returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Link: AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+
+          Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include_outgoing_links_where
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/merge-patch+json:
@@ -21175,7 +21135,7 @@ paths:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL",
                     "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-                    "AppConfig/JSON", "AppConfig/Env", "ConfigHub/YAML".
+                    "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
                   nullable: true
                   type: string
                 Version:
@@ -25442,6 +25402,12 @@ components:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
+        UpstreamLinkID:
+          $ref: '#/components/schemas/UUID'
+        UpstreamOrganizationID:
+          $ref: '#/components/schemas/UUID'
+        UpstreamSpaceID:
+          $ref: '#/components/schemas/UUID'
         UseLiveState:
           description: Take data from the LiveState of the upstream Unit rather than
             from Data.
@@ -25609,6 +25575,13 @@ components:
           x-go-type-skip-optional-pointer: true
         MutationType:
           $ref: '#/components/schemas/MutationType'
+        Patch:
+          description: Line-level patch for multi-line string updates, in unified
+            diff format. When present on an Update, PatchMutations applies this to
+            the target value instead of replacing with Value. Falls back to Value
+            if the patch cannot be applied cleanly.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Predicate:
           description: Used to decide how to use the mututation
           type: boolean
@@ -26641,9 +26614,10 @@ components:
       description: Target represents a deployment target in ConfigHub. It defines
         where configuration should be applied, including the toolchain type (e.g.,
         Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-        AppConfig/INI, AppConfig/JSON, AppConfig/Env) and provider (e.g., Kubernetes,
-        OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker
-        that handles the actual deployment actions (e.g. Apply, Destroy).
+        AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
+        (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with
+        a specific BridgeWorker that handles the actual deployment actions (e.g. Apply,
+        Destroy).
       properties:
         Annotations:
           additionalProperties:
@@ -26769,7 +26743,7 @@ components:
           description: ToolchainType specifies the type of the first/default toolchain
             supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
             "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML",
-            "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env".
+            "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text".
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
@@ -27351,7 +27325,7 @@ components:
           description: ToolchainType specifies the type of toolchain for this unit.
             Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties",
             "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON",
-            "AppConfig/Env", "ConfigHub/YAML".
+            "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
           type: string
           x-go-type-skip-optional-pointer: true
         UnitID:

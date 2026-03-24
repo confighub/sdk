@@ -24,6 +24,7 @@ type ResourceProvider interface {
 	ScopelessResourceNamePath() api.ResolvedPath
 	SetResourceName(doc *gaby.YamlDoc, name string) error
 	SetResourceID(doc *gaby.YamlDoc, id string) error
+	DeleteResourceID(doc *gaby.YamlDoc) error
 	ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool
 	TypeDescription() string
 	NormalizeName(name string) string

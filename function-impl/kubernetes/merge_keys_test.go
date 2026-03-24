@@ -70,7 +70,7 @@ func TestVetMergeKeys_DuplicateEnvVars(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(deploymentDuplicateEnvFixture))
 	require.NoError(t, err)
 
-	_, output, err := generic.GenericFnVetMergeKeys(testResourceProvider, docs)
+	_, output, err := generic.GenericFnVetMergeKeys(testResourceProvider, nil, docs)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -85,7 +85,7 @@ func TestVetMergeKeys_NoDuplicateEnvVars(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(deploymentNoDuplicateEnvFixture))
 	require.NoError(t, err)
 
-	_, output, err := generic.GenericFnVetMergeKeys(testResourceProvider, docs)
+	_, output, err := generic.GenericFnVetMergeKeys(testResourceProvider, nil, docs)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)

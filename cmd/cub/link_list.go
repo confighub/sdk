@@ -51,7 +51,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UseLiveState"}
+var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UseLiveState", "Link.UpstreamLinkID"}
 
 // Link-specific aliases
 var linkAliases = map[string]string{
@@ -99,7 +99,7 @@ func getLinkSlug(extendedLink *goclientnew.ExtendedLink) string {
 func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Use-Live-State"})
+		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Use-Live-State", "Upstream-Link-ID"})
 	}
 	for _, extendedLink := range extendedLinks {
 		link := extendedLink.Link
@@ -129,6 +129,10 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 		if link.UseLiveState {
 			useLiveState = "true"
 		}
+		upstreamLinkID := ""
+		if link.UpstreamLinkID != nil {
+			upstreamLinkID = link.UpstreamLinkID.String()
+		}
 		table.Append([]string{
 			link.Slug,
 			space,
@@ -138,6 +142,7 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 			link.UpdateType,
 			autoUpdate,
 			useLiveState,
+			upstreamLinkID,
 		})
 	}
 	table.Render()

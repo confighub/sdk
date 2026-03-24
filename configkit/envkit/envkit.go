@@ -115,6 +115,11 @@ func (rp *EnvResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) e
 	return err
 }
 
+func (rp *EnvResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	return doc.DeleteP(resourceIDPath)
+}
+
 func (*EnvResourceProviderType) TypeDescription() string {
 	return "Schema"
 }

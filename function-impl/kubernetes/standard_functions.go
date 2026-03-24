@@ -11,7 +11,6 @@ import (
 	"log/slog"
 
 	"github.com/cockroachdb/errors"
-	"github.com/cockroachdb/errors/join"
 	"github.com/yannh/kubeconform/pkg/resource"
 	"github.com/yannh/kubeconform/pkg/validator"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
@@ -611,27 +610,27 @@ func evaluateResourceQuantityComparison(expr *api.RelationalExpression, value st
 
 func makeK8sFnResourceWhereMatch(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnResourceWhereMatch(rp, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnResourceWhereMatch(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnResourceWhereMatch(rp *k8skit.K8sResourceProviderType, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnResourceWhereMatch(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Create custom comparator for Kubernetes resource quantities
 	customComparators := []api.CustomStringComparator{
 		NewResourceQuantityComparison(),
 	}
 
 	// Use the extensible generic function with the Kubernetes-specific resource quantity comparator
-	return generic.GenericFnResourceWhereMatchWithComparators(rp, customComparators, functionContext, parsedData, args)
+	return generic.GenericFnResourceWhereMatchWithComparators(rp, customComparators, options, functionContext, parsedData, args)
 }
 
 func makeK8sFnVetSchemas(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnVetSchemas(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnVetSchemas(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// See https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go
 	schemaLocations := []string{
 		"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json",
@@ -642,11 +641,15 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, parsedData gaby.Contain
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to initialize kubeconform validator")
 	}
-	var multiErrs []error
-	details := []string{}
-	failedPaths := api.AttributeValueList{}
-	passed := true
-	for _, doc := range parsedData {
+	type kubeconformResult struct {
+		passed      bool
+		details     []string
+		failedPaths api.AttributeValueList
+	}
+
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, &kubeconformResult{passed: true}, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		kr := output.(*kubeconformResult)
 		res := resource.Resource{Bytes: doc.Bytes()}
 		result := v.ValidateResource(res)
 		switch result.Status {
@@ -655,14 +658,9 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, parsedData gaby.Contain
 		case validator.Valid:
 			// Passed
 		case validator.Invalid:
-			passed = false
-			resourceInfo, err := yamlkit.GetResourceInfo(doc, rp)
-			if err != nil {
-				resourceInfo = &api.ResourceInfo{}
-				details = append(details, err.Error())
-			}
+			kr.passed = false
 			for _, validationError := range result.ValidationErrors {
-				details = append(details, validationError.Msg)
+				kr.details = append(kr.details, validationError.Msg)
 				// This path will be the parent of a bogus path. Try to parse the field out of the message.
 				path := gaby.JSONPointerToPath(validationError.Path)
 				if strings.HasPrefix(validationError.Msg, "additionalProperties '") {
@@ -684,21 +682,35 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, parsedData gaby.Contain
 					// Is Value relevant? Should the message go in the Value? For now, set the Value so that it's not null.
 					Value: "",
 				}
-				failedPaths = append(failedPaths, failedPath)
+				kr.failedPaths = append(kr.failedPaths, failedPath)
 			}
 		case validator.Error:
-			passed = false
-			multiErrs = append(multiErrs, result.Err)
+			kr.passed = false
+			return kr, []error{result.Err}
 		}
+		return kr, nil
+	})
+
+	if err != nil {
+		// VisitResources collects errors from both GetResourceInfo failures and validator errors
+		kr, _ := output.(*kubeconformResult)
+		if kr != nil && !kr.passed {
+			failureResult := api.ValidationResultFalse
+			failureResult.Details = kr.details
+			failureResult.FailedAttributes = kr.failedPaths
+			return parsedData, failureResult, err
+		}
+		return parsedData, api.ValidationResultFalse, err
 	}
 
-	if passed {
+	kr := output.(*kubeconformResult)
+	if kr.passed {
 		return parsedData, api.ValidationResultTrue, nil
 	}
 
 	failureResult := api.ValidationResultFalse
-	failureResult.Details = details
-	failureResult.FailedAttributes = failedPaths
+	failureResult.Details = kr.details
+	failureResult.FailedAttributes = kr.failedPaths
 
-	return parsedData, failureResult, join.Join(multiErrs...)
+	return parsedData, failureResult, nil
 }

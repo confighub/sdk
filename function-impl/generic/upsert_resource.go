@@ -48,12 +48,12 @@ func registerUpsertResource(fh handler.FunctionRegistry, converter configkit.Con
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnUpsertResource(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnUpsertResource(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Unmarshal the first argument into api.ResourceList
 	resourceListString := args[0].Value.(string)
 	var resourceList api.ResourceList
@@ -90,6 +90,7 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, function
 	}
 
 	// Use VisitResources to find the existing resource and track its position
+	whereExpressions := api.GetWhereResourceExpressions(options)
 	foundIndex := -1
 	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		if resourceInfo.ResourceType == targetResourceType &&
@@ -99,7 +100,7 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, function
 		return output, []error{}
 	}
 
-	_, err = yamlkit.VisitResources(parsedData, nil, resourceProvider, visitor)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 	if err != nil {
 		return parsedData, nil, fmt.Errorf("failed to search for existing resource: %v", err)
 	}

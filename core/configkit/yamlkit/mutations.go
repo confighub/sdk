@@ -515,13 +515,28 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 		} else {
 			// modifiedDoc must be a value. Compare the contents.
 			if modifiedDoc.String() != previousDoc.String() {
-				pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
+				mutation := api.MutationInfo{
 					MutationType: api.MutationTypeUpdate,
 					Index:        functionIndex,
 					Predicate:    true,
 					Value:        modifiedDoc.String(), // new data
 				}
-				// log.Infof("different values: '%s' vs '%s'", previousDoc.String(), modifiedDoc.String())
+				// For string values that may contain structured data or multiple
+				// lines, compute a patch so that PatchMutations can apply the
+				// change to a modified target (three-way merge) rather than
+				// wholesale replacement. Tries JSON and YAML structural diff
+				// first (for embedded structured data), then falls back to
+				// line-level text diff for multi-line strings.
+				// Use Data() to get the actual string values (with real newlines),
+				// not String() which returns the YAML serialization (escaped newlines).
+				if prevStr, ok := previousDoc.Data().(string); ok {
+					if modStr, ok := modifiedDoc.Data().(string); ok {
+						if IsPatchableString(prevStr) || IsPatchableString(modStr) {
+							mutation.Patch = ComputeScalarPatch(prevStr, modStr)
+						}
+					}
+				}
+				pathMutationMap[api.ResolvedPath(path)] = mutation
 			}
 		}
 	}
@@ -997,6 +1012,33 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 				isScalarValue := ynode.Kind == yaml.ScalarNode
 
 				if isScalarValue {
+					// For multi-line string updates with a line-level patch, apply the
+					// patch to the target's current value (three-way merge) rather than
+					// replacing it wholesale. This correctly handles the case where the
+					// target has been independently modified.
+					if patchMutation.Patch != "" {
+						currentField := doc.Path(string(patchPath))
+						if currentField != nil {
+							if currentStr, ok := currentField.Data().(string); ok {
+								patched, ok := ApplyScalarPatch(currentStr, patchMutation.Patch)
+								if ok {
+									// Set the patched string directly as a scalar value
+									// rather than parsing it as YAML, which would lose
+									// multi-line string formatting.
+									_, setErr := doc.SetP(patched, string(patchPath))
+									if setErr != nil {
+										slog.Info("error setting patched value at path",
+											"path", string(patchPath), "error", setErr)
+									}
+									continue
+								}
+								slog.Info("scalar patch failed, falling back to full value",
+									"path", string(patchPath))
+								// Fall through to use valueDoc (the full Value) as wholesale replacement.
+							}
+						}
+					}
+
 					// For scalar values, we need to preserve the comment manually
 					// Get the current field to check if it has a comment
 					currentField := doc.Path(string(patchPath))

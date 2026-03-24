@@ -270,6 +270,11 @@ func (*K8sResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) erro
 	return err
 }
 
+func (*K8sResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
+	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
+	return doc.DeleteP(resourceIDPath)
+}
+
 func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
 	if resourceTypeA == resourceTypeB {
 		return true

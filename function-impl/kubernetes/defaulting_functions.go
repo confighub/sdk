@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -299,25 +298,19 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 
 func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetContainerProbeDefaults(rp, fArgs.ParsedData)
+		return k8sFnSetContainerProbeDefaults(rp, fArgs.Options, fArgs.ParsedData)
 	}
 }
 
-func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
-	multiErrs := []error{}
-	var err error
-
-	for _, doc := range parsedData {
-		var resourceType api.ResourceType
-		resourceType, err = rp.ResourceTypeGetter(doc)
-		if err != nil {
-			continue
-		}
-		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceType]
+func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
-			continue
+			return output, nil
 		}
 
+		var multiErrs []error
 		for _, podSpecPath := range podSpecPaths {
 			podSpecDoc, hasPodSpec, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(podSpecPath), true)
 			if err != nil {
@@ -347,10 +340,10 @@ func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, parsedDa
 				}
 			}
 		}
-	}
-
-	if len(multiErrs) != 0 {
-		return parsedData, nil, errors.WithStack(errors.Join(multiErrs...))
+		return output, multiErrs
+	})
+	if err != nil {
+		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
 }

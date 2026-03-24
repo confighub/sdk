@@ -434,7 +434,7 @@ spec:
 	args := []string{"test-container", "NEW_VAR=new_value", "EXISTING_VAR="}
 
 	// Call the function
-	output, _, err := k8sFnSetEnv(testResourceProvider,configYaml, stringArgsToFunctionArgs(args))
+	output, _, err := k8sFnSetEnv(testResourceProvider, nil, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	// Expected output
@@ -508,12 +508,12 @@ spec:
 	}
 
 	// call the function
-	output, _, err := k8sFnSetEnv(testResourceProvider,configYaml, stringArgsToFunctionArgs(args))
+	output, _, err := k8sFnSetEnv(testResourceProvider, nil, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	// call the function again
 	configYaml = output
-	output, _, err = k8sFnSetEnv(testResourceProvider,configYaml, stringArgsToFunctionArgs(args))
+	output, _, err = k8sFnSetEnv(testResourceProvider, nil, configYaml, stringArgsToFunctionArgs(args))
 	assert.NoError(t, err)
 
 	expectedYaml := `apiVersion: apps/v1

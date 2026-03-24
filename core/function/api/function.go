@@ -74,6 +74,7 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 	workerapi.ToolchainAppConfigINI:        "/ini",
 	workerapi.ToolchainAppConfigJSON:       "/json",
 	workerapi.ToolchainAppConfigEnv:        "/env",
+	workerapi.ToolchainAppConfigText:       "/text",
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",
 }
 
@@ -133,6 +134,7 @@ const (
 	DataTypeTOML       = DataType("TOML")
 	DataTypeINI        = DataType("INI")
 	DataTypeEnv        = DataType("Env")
+	DataTypeText       = DataType("Text")
 	DataTypeHCL        = DataType("HCL")
 	DataTypeCEL        = DataType("CEL")
 )
@@ -210,7 +212,7 @@ type UnresolvedPath string
 
 // AttributeSelector identifies a value to extract from configuration data.
 type AttributeSelector struct {
-	WhereResource string         `json:",omitempty"` // where expression to select resource(s)
+	WhereResource string         `json:",omitempty"`                      // where expression to select resource(s)
 	Path          UnresolvedPath `json:",omitempty" swaggertype:"string"` // path expression
 }
 
@@ -271,8 +273,9 @@ type EmbeddedAccessorType string
 
 const (
 	EmbeddedAccessorRegexp = "Regexp"
-	// EmbeddedAccessorJSON = "JSON"
-	// EmbeddedAccessorYAML = "YAML"
+	EmbeddedAccessorLine   = "Line"
+	EmbeddedAccessorJSON   = "JSON"
+	EmbeddedAccessorYAML   = "YAML"
 )
 
 // FunctionType represents the function's implementation pattern, if a common pattern.
@@ -364,6 +367,13 @@ type FunctionInvocationRequest struct {
 // FunctionOptions contains options that affect how functions operate on resources.
 type FunctionOptions struct {
 	WhereResourceExpressions []*VisitorRelationalExpression
+}
+
+func GetWhereResourceExpressions(options *FunctionOptions) []*VisitorRelationalExpression {
+	if options == nil {
+		return nil
+	}
+	return options.WhereResourceExpressions
 }
 
 // ValidWhereResourcePaths lists the supported ConfigHub metadata paths for WhereResource filtering.

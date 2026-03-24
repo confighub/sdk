@@ -156,6 +156,11 @@ func (rp *HclResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) e
 	return err
 }
 
+func (rp *HclResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
+	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
+	return doc.DeleteP(resourceIDPath)
+}
+
 const nameSeparatorString = "_"
 
 func (*HclResourceProviderType) NormalizeName(name string) string {

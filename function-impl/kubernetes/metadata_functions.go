@@ -298,44 +298,33 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 
 func makeK8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnEnsureNamespaces(rp, fArgs.ParsedData)
+		return k8sFnEnsureNamespaces(rp, fArgs.Options, fArgs.ParsedData)
 	}
 }
 
-func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
+func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	// TODO: verbose logging
-	for _, doc := range parsedData {
-		resourceName, err := rp.ResourceNameGetter(doc)
-		if err != nil {
-			// log.Errorf("%v", err)
-			return parsedData, nil, err
-		}
-		nameSegments := strings.Split(string(resourceName), "/")
+	whereExpressions := api.GetWhereResourceExpressions(options)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		nameSegments := strings.Split(string(resourceInfo.ResourceName), "/")
 		if len(nameSegments) != 2 {
-			err = fmt.Errorf("improperly formatted resource name %s", string(resourceName))
-			// log.Errorf("%v", err)
-			return parsedData, nil, err
+			return output, []error{fmt.Errorf("improperly formatted resource name %s", string(resourceInfo.ResourceName))}
 		}
-		// log.Infof("checking namespace in resource %s", string(resourceName))
 		if nameSegments[0] == "" {
 			// No namespace. Check whether it should have one.
-			resourceType, err := rp.ResourceTypeGetter(doc)
-			if err != nil {
-				// Malformed resource.
-				// log.Errorf("%v", err)
-				return parsedData, nil, err
-			}
 			// TODO: Handle CRDs.
-			_, isClusterScoped := k8skit.K8sClusterScopedResourceTypes[resourceType]
+			_, isClusterScoped := k8skit.K8sClusterScopedResourceTypes[resourceInfo.ResourceType]
 			if !isClusterScoped {
-				// log.Infof("setting namespace in resource %s of type %s", string(resourceName), string(resourceType))
-				_, err = doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
+				_, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
 				if err != nil {
-					// log.Errorf("%v", err)
-					return parsedData, nil, err
+					return output, []error{err}
 				}
 			}
 		}
+		return output, nil
+	})
+	if err != nil {
+		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
 }
