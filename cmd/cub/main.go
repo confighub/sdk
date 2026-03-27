@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -81,6 +82,66 @@ func main() {
 
 	rootCmd.PersistentPreRunE = globalPreRun
 
-	err = rootCmd.Execute()
-	failOnError(err)
+	// Include plugin names in shell tab-completion.
+	rootCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var completions []string
+		for _, p := range discoverPlugins() {
+			if len(p.Warnings) == 0 {
+				if strings.HasPrefix(p.Name, toComplete) {
+					completions = append(completions, p.Name)
+				}
+			}
+		}
+		return completions, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	cmd, err := rootCmd.ExecuteC()
+	if err != nil {
+		// If the error is "unknown command" at the root level, try plugin resolution.
+		if cmd == rootCmd && isUnknownCommandError(err) {
+			// Apply context override manually since PersistentPreRunE may not have run.
+			if globalContextFlag != "" {
+				if overrideErr := contextManager.OverrideCurrentContext(globalContextFlag); overrideErr != nil {
+					failOnError(overrideErr)
+				}
+			}
+			pluginArgs := extractPluginArgs(os.Args[1:])
+			if pluginErr := handlePluginCommand(pluginArgs); pluginErr != nil {
+				// Plugin resolution failed too — show the original Cobra error.
+				failOnError(err)
+			}
+			return
+		}
+		failOnError(err)
+	}
+}
+
+// isUnknownCommandError checks whether a Cobra error is an "unknown command" error.
+func isUnknownCommandError(err error) bool {
+	return strings.Contains(err.Error(), "unknown command")
+}
+
+// extractPluginArgs returns the arguments intended for plugin resolution by
+// stripping known persistent flags (--context, --debug) from os.Args.
+func extractPluginArgs(args []string) []string {
+	var result []string
+	skip := false
+	for _, arg := range args {
+		if skip {
+			skip = false
+			continue
+		}
+		if arg == "--debug" {
+			continue
+		}
+		if arg == "--context" {
+			skip = true // skip next arg (the value)
+			continue
+		}
+		if strings.HasPrefix(arg, "--context=") {
+			continue
+		}
+		result = append(result, arg)
+	}
+	return result
 }

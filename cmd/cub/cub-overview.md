@@ -332,6 +332,38 @@ Get all resource types in all units within a space
 cub function do --space $SPACE --quiet --output-jq '.[].ResourceType' get-resources
 ```
 
+## Plugins
+
+The `cub` CLI supports third-party plugins. Plugins are standalone executables placed in `~/.confighub/plugins/` and are invoked as regular subcommands.
+
+### Plugin formats
+
+1. **Single executable**: `~/.confighub/plugins/<name>` — a single file (binary, shell script, etc.)
+2. **Directory plugin**: `~/.confighub/plugins/<name>/main` — a directory containing a `main` entry point plus any supporting files
+
+### Plugin resolution
+
+`cub <name> [args...]` looks up the plugin by exact name in the plugin directory. All remaining arguments and flags are passed through to the plugin.
+
+### Environment variables
+
+Plugins receive context via environment variables:
+
+- `CUB_PLUGIN=1` — signals the process was launched as a plugin
+- `CUB_CONFIG` — config directory path (`~/.confighub`)
+- `CUB_CONTEXT` — active context name
+- `CUB_SERVER` — server URL from active context
+- `CUB_TOKEN` — access token (if authenticated)
+- `CUB_SPACE` — default space slug (if set)
+
+### Managing plugins
+
+List installed plugins:
+
+```
+cub plugin list
+```
+
 ## Command help
 
 Use `--help` with any of the subcommands for more details.
