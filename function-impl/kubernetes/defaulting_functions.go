@@ -55,7 +55,7 @@ func registerDefaultPaths(rp *k8skit.K8sResourceProviderType, attributeName api.
 	for _, resourceType := range sortedResourceTypes(paths) {
 		yamlkit.RegisterPathsByAttributeName(
 			rp, attributeName, resourceType,
-			paths[resourceType], nil, nil, false,
+			paths[resourceType], nil,
 		)
 	}
 }
@@ -69,7 +69,7 @@ func makePodSpecDefaultPaths(
 	setter *api.FunctionInvocation,
 ) api.ResourceTypeToPathToVisitorInfoType {
 	result := api.ResourceTypeToPathToVisitorInfoType{}
-	for resourceType, podSpecPaths := range resourceTypeToPodSpecPaths {
+	for resourceType, podSpecPaths := range k8skit.ResourceTypeToPodSpecPaths {
 		pathMap := api.PathToVisitorInfoType{}
 		for _, podSpecPath := range podSpecPaths {
 			fullPath := api.UnresolvedPath(podSpecPath + "." + relativePath)
@@ -99,7 +99,7 @@ func makeContainerDefaultPaths(
 	setter *api.FunctionInvocation,
 ) api.ResourceTypeToPathToVisitorInfoType {
 	result := api.ResourceTypeToPathToVisitorInfoType{}
-	for resourceType, containerPaths := range resourceTypeToContainersPaths {
+	for resourceType, containerPaths := range k8skit.ResourceTypeToContainersPaths {
 		pathMap := api.PathToVisitorInfoType{}
 		for _, containerPath := range containerPaths {
 			fullPath := api.UnresolvedPath(containerPath + ".*." + relativePath)
@@ -147,7 +147,7 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 	}
 	yamlkit.RegisterPathsByAttributeName(
 		rp, attributeNamePodSecurityDefaults, namespaceResourceType,
-		namespaceLabelPaths, nil, nil, false,
+		namespaceLabelPaths, nil,
 	)
 
 	// Automount service account token
@@ -281,7 +281,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 	})
 
 	// set-container-probe-defaults
-	resourceTypes := yamlkit.ResourceTypesForPathMap(resourceTypeToPodSpecPaths)
+	resourceTypes := yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
 	fh.RegisterFunction("set-container-probe-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-container-probe-defaults",
@@ -305,7 +305,7 @@ func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) hand
 func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	whereExpressions := api.GetWhereResourceExpressions(options)
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		podSpecPaths, ok := resourceTypeToPodSpecPaths[resourceInfo.ResourceType]
+		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
 			return output, nil
 		}
@@ -321,7 +321,7 @@ func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options 
 				continue
 			}
 
-			for _, containerPath := range containersPaths {
+			for _, containerPath := range k8skit.ContainersPaths {
 				// Skip initContainers and ephemeralContainers
 				if strings.HasSuffix(containerPath, "initContainers") || strings.HasSuffix(containerPath, "ephemeralContainers") {
 					continue

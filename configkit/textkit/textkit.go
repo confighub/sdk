@@ -11,6 +11,7 @@ package textkit
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
@@ -21,28 +22,22 @@ import (
 )
 
 type TextResourceProviderType struct {
-	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
-	attributeRegistry api.AttributeNameToAttributeDescriptor
+	yamlkit.ResourceProviderRegistry
 }
 
 // NewTextResourceProvider creates a new TextResourceProviderType with its own path registry.
 func NewTextResourceProvider() *TextResourceProviderType {
 	return &TextResourceProviderType{
-		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
-		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
 	}
-}
-
-func (rp *TextResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return rp.pathRegistry
-}
-
-func (rp *TextResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
-	return rp.attributeRegistry
 }
 
 func (*TextResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
 	return "", false
+}
+
+func (*TextResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
+	return false
 }
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
@@ -58,8 +53,8 @@ func (*TextResourceProviderType) ResourceCategoryGetter(doc *gaby.YamlDoc) (api.
 const (
 	ResourceTypeNoSchema = api.ResourceType("NoSchema")
 	ResourceNameNoName   = api.ResourceName("NoName")
-	ConfigSchemaPath     = api.ResolvedPath("configHub.configSchema")
-	ConfigNamePath       = api.ResolvedPath("configHub.configName")
+	ConfigSchemaPath     = api.ResolvedPath(contextPathPrefix + "configSchema")
+	ConfigNamePath       = api.ResolvedPath(contextPathPrefix + "configName")
 )
 
 // ResourceTypeGetter extracts the property configHub.configSchema, and returns NoSchema if not present.
@@ -95,6 +90,7 @@ func (*TextResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string)
 	return err
 }
 
+// Deprecated: Use ResourceMergeIDGetter instead.
 func (rp *TextResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
@@ -104,15 +100,52 @@ func (rp *TextResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string,
 	return id, nil
 }
 
+// Deprecated: Use SetResourceMergeID instead.
 func (rp *TextResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	_, err := doc.SetP(id, resourceIDPath)
 	return err
 }
 
+// Deprecated: Use DeleteResourceMergeID instead.
 func (rp *TextResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	return doc.DeleteP(resourceIDPath)
+}
+
+func (rp *TextResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error) {
+	resourceNameStableCorePath := rp.ContextPath(constants.ResourceNameStableCoreKeySuffix)
+	name, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceNameStableCorePath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return api.ResourceName(name), nil
+}
+
+func (rp *TextResourceProviderType) ResourceMergeIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceMergeIDPath), true)
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return id, nil
+	}
+	// Fall back to legacy ResourceID path for backward compatibility.
+	return rp.ResourceIDGetter(doc)
+}
+
+func (rp *TextResourceProviderType) SetResourceMergeID(doc *gaby.YamlDoc, id string) error {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	_, err := doc.SetP(id, resourceMergeIDPath)
+	return err
+}
+
+func (rp *TextResourceProviderType) DeleteResourceMergeID(doc *gaby.YamlDoc) error {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	_ = doc.DeleteP(resourceMergeIDPath)
+	// Also delete legacy ResourceID path.
+	return rp.DeleteResourceID(doc)
 }
 
 func (*TextResourceProviderType) TypeDescription() string {
@@ -129,9 +162,7 @@ func (*TextResourceProviderType) NameSeparator() string {
 	return nameSeparatorString
 }
 
-const (
-	contextPathPrefix = "configHub."
-)
+const contextPathPrefix = "frontMatter.configHub."
 
 func (*TextResourceProviderType) ContextPath(contextField string) string {
 	return contextPathPrefix + yamlkit.LowerFirst(contextField)
@@ -160,13 +191,48 @@ func (*TextResourceProviderType) GetToolchainType() workerapi.ToolchainType {
 }
 
 // TextDocument represents the YAML structure for a text file.
+// FrontMatter holds metadata (including ConfigHub metadata under a "configHub"
+// key) that is encoded as standard YAML frontmatter (delimited by "---") in
+// the native text format.
 type TextDocument struct {
-	ConfigHub map[string]any `yaml:"configHub,omitempty"`
-	Text      string         `yaml:"text"`
+	FrontMatter map[string]any `yaml:"frontMatter,omitempty"`
+	Text        string         `yaml:"text"`
+}
+
+// frontMatterSeparator is the standard YAML frontmatter delimiter.
+const frontMatterSeparator = "---\n"
+
+// parseFrontMatter detects and parses YAML frontmatter from text data.
+// Frontmatter must start with "---\n" on the first line and end with "---\n".
+// Returns the parsed frontmatter map, the remaining body text, and whether
+// frontmatter was found.
+func parseFrontMatter(text string) (map[string]any, string, bool) {
+	if !strings.HasPrefix(text, frontMatterSeparator) {
+		return nil, text, false
+	}
+
+	// Find the closing separator (skip the opening "---\n")
+	rest := text[len(frontMatterSeparator):]
+	endIdx := strings.Index(rest, frontMatterSeparator)
+	if endIdx < 0 {
+		return nil, text, false
+	}
+
+	fmData := rest[:endIdx]
+	body := rest[endIdx+len(frontMatterSeparator):]
+
+	var fm map[string]any
+	if err := yaml.Unmarshal([]byte(fmData), &fm); err != nil {
+		return nil, text, false
+	}
+
+	return fm, body, true
 }
 
 // NativeToYAML converts plain text data to YAML format.
 // The text content is stored as a single multi-line string under a "text" key.
+// If the text has YAML frontmatter (delimited by "---"), it is parsed and
+// stored under the "configHub" key in the YAML representation.
 func (*TextResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return []byte{}, nil
@@ -174,6 +240,12 @@ func (*TextResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 
 	doc := TextDocument{
 		Text: string(data),
+	}
+
+	// Autodetect and parse YAML frontmatter
+	if fm, body, ok := parseFrontMatter(string(data)); ok {
+		doc.FrontMatter = fm
+		doc.Text = body
 	}
 
 	var buf bytes.Buffer
@@ -190,7 +262,9 @@ func (*TextResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 }
 
 // YAMLToNative converts YAML data back to plain text format.
-// It extracts the "text" string value. The configHub metadata subtree is ignored.
+// It extracts the "text" string value. If ConfigHub metadata (FrontMatter)
+// is present, it is encoded as standard YAML frontmatter (delimited by "---")
+// prepended to the text content.
 func (*TextResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
@@ -199,6 +273,22 @@ func (*TextResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	var doc TextDocument
 	if err := yaml.Unmarshal(yamlData, &doc); err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
+	}
+
+	if len(doc.FrontMatter) > 0 {
+		var buf bytes.Buffer
+		buf.WriteString(frontMatterSeparator)
+		encoder := yaml.NewEncoder(&buf)
+		encoder.SetIndent(2)
+		if err := encoder.Encode(doc.FrontMatter); err != nil {
+			return nil, fmt.Errorf("error encoding frontmatter: %w", err)
+		}
+		if err := encoder.Close(); err != nil {
+			return nil, fmt.Errorf("error closing frontmatter encoder: %w", err)
+		}
+		buf.WriteString(frontMatterSeparator)
+		buf.WriteString(doc.Text)
+		return buf.Bytes(), nil
 	}
 
 	return []byte(doc.Text), nil

@@ -36,9 +36,7 @@ func initStandardFunctions(rp *hclkit.HclResourceProviderType) {
 			api.AttributeNameDefaultName,
 			resourceType,
 			pathInfos,
-			nil,
-			setterFunctionInvocation,
-			false,
+			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
 		)
 	}
 
@@ -51,8 +49,6 @@ func initStandardFunctions(rp *hclkit.HclResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
-			nil,
-			false,
 		)
 	}
 

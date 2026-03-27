@@ -672,3 +672,65 @@ spec:
 		assert.Len(t, result.FailedAttributes, 2)
 	})
 }
+
+func TestK8sFnSetContainerFlag(t *testing.T) {
+	yamlFixture := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: my-app
+        image: my-app:latest
+        args:
+        - "--port=8080"
+        - "--host=localhost"
+        - "--debug"
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
+		FunctionContext: &fakeContext,
+		ParsedData:     docs,
+		Arguments:      stringArgsToFunctionArgs([]string{"my-app", "port", "9090"}),
+	})
+	assert.NoError(t, err)
+	assert.Contains(t, newYaml.String(), "--port=9090")
+	assert.Contains(t, newYaml.String(), "--host=localhost") // unchanged
+}
+
+func TestK8sFnSetContainerFlag_DottedName(t *testing.T) {
+	yamlFixture := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+spec:
+  template:
+    spec:
+      containers:
+      - name: traefik
+        image: traefik:v2.10
+        args:
+        - "--entryPoints.web.address=:8000/tcp"
+        - "--entryPoints.websecure.address=:8443/tcp"
+        - "--log.level=INFO"
+        - "--providers.kubernetescrd"
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
+		FunctionContext: &fakeContext,
+		ParsedData:     docs,
+		Arguments:      stringArgsToFunctionArgs([]string{"traefik", "entryPoints.web.address", ":9000/tcp"}),
+	})
+	assert.NoError(t, err)
+	assert.Contains(t, newYaml.String(), "--entryPoints.web.address=:9000/tcp")
+	assert.Contains(t, newYaml.String(), "--entryPoints.websecure.address=:8443/tcp") // unchanged
+	assert.Contains(t, newYaml.String(), "--log.level=INFO")                          // unchanged
+}

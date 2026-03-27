@@ -26,14 +26,14 @@ const (
 	pathMapSegmentBoundtoParameterRegexpString = "(?:@" + pathMapSegmentRegexpString + "\\:" + parameterNameRegexpString + ")"
 	pathIndexSegmentRegexpString               = "(?:[0-9][0-9]{0,9})"
 	pathWildcardSegmentRegexpString            = "\\*(?:(?:\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?)|(?:@\\:" + parameterNameRegexpString + "))?"
-	pathAssociativeMatchRegexpString           = "\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?=[^.][^.]*"
+	pathAssociativeMatchRegexpString           = "\\?" + pathMapSegmentRegexpString + "(?:\\:" + parameterNameRegexpString + ")?=[^.#][^.#]*"
 	pathSegmentRegexpString                    = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + "|" + pathWildcardSegmentRegexpString + "|" + pathAssociativeMatchRegexpString + ")"
 
 	// Path segment without patterns (for right side of split)
 	pathSegmentWithoutPatternsRegexpString = "(?:" + pathMapSegmentRegexpString + "|" + pathMapSegmentBoundtoParameterRegexpString + "|" + pathIndexSegmentRegexpString + ")"
 	PathRegexpString                       = "^" + pathSegmentRegexpString + "(?:\\." + pathSegmentRegexpString + ")*(?:\\.\\|" + pathSegmentWithoutPatternsRegexpString + "(?:\\." + pathSegmentWithoutPatternsRegexpString + ")*)?(?:#" + pathMapSegmentRegexpString + ")?"
 	whitespaceRegexpString                 = "^[ \t][ \t]*"
-	relationalOperatorRegexpString         = "^(<=|>=|<|>|=|\\!=|LIKE|ILIKE|~~|!~~|~\\*|!~\\*|~|!~|IN|NOT IN)"
+	relationalOperatorRegexpString         = "^(<=|>=|<|>|=|\\!=|NOT LIKE|LIKE|ILIKE|~~|!~~|~\\*|!~\\*|~|!~|IN|NOT IN)"
 	logicalOperatorRegexpString            = "^AND"
 	booleanLiteralRegexpString             = "^(true|TRUE|false|FALSE)"
 	integerLiteralRegexpString             = "^[0-9][0-9]{0,9}"
@@ -806,13 +806,17 @@ func evaluateStringExpression(operator string, leftValue string, rightValue stri
 		return leftValue >= rightValue, nil
 	case "LIKE":
 		return evaluateLikeExpression(leftValue, rightValue, false)
+	case "NOT LIKE":
+		// SQL NOT LIKE operator
+		result, err := evaluateLikeExpression(leftValue, rightValue, false)
+		return !result, err
 	case "ILIKE":
 		return evaluateLikeExpression(leftValue, rightValue, true)
 	case "~~":
 		// PostgreSQL LIKE operator (same as LIKE)
 		return evaluateLikeExpression(leftValue, rightValue, false)
 	case "!~~":
-		// PostgreSQL NOT LIKE operator
+		// PostgreSQL NOT LIKE operator (same as NOT LIKE)
 		result, err := evaluateLikeExpression(leftValue, rightValue, false)
 		return !result, err
 	case "~":

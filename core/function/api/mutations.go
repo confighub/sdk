@@ -179,23 +179,23 @@ func IsUUID(s string) bool {
 // by ResourceID, ResourceTypeAndName, and AliasesWithoutScopes. It is used by AddMutations,
 // SubtractMutations, PatchMutations, and FindMutationIndex to match resources consistently.
 type ResourceMutationIndex struct {
-	NameMap       map[ResourceTypeAndName]int
-	AliasNameMap  map[ResourceTypeAndName]int // from AliasesWithoutScopes of indexed mutations
-	ResourceIDMap map[string]int
+	NameMap            map[ResourceTypeAndName]int
+	AliasNameMap       map[ResourceTypeAndName]int // from AliasesWithoutScopes of indexed mutations
+	ResourceMergeIDMap map[string]int
 }
 
 // NewResourceMutationIndex builds an index from a ResourceMutationList.
 // For duplicate keys, the last entry wins.
 func NewResourceMutationIndex(mutations ResourceMutationList) *ResourceMutationIndex {
 	idx := &ResourceMutationIndex{
-		NameMap:       make(map[ResourceTypeAndName]int, len(mutations)),
-		AliasNameMap:  make(map[ResourceTypeAndName]int, len(mutations)),
-		ResourceIDMap: make(map[string]int, len(mutations)),
+		NameMap:            make(map[ResourceTypeAndName]int, len(mutations)),
+		AliasNameMap:       make(map[ResourceTypeAndName]int, len(mutations)),
+		ResourceMergeIDMap: make(map[string]int, len(mutations)),
 	}
 	for i := range mutations {
 		resourceInfo := mutations[i].Resource
-		if IsUUID(resourceInfo.ResourceID) {
-			idx.ResourceIDMap[resourceInfo.ResourceID] = i
+		if IsUUID(resourceInfo.ResourceMergeID) {
+			idx.ResourceMergeIDMap[resourceInfo.ResourceMergeID] = i
 		}
 		if resourceInfo.ResourceNameWithoutScope == "" {
 			_, resourceNameWithoutScope, _ := strings.Cut(string(resourceInfo.ResourceName), "/")
@@ -218,7 +218,7 @@ func NewResourceMutationIndex(mutations ResourceMutationList) *ResourceMutationI
 }
 
 // Find looks up a resource in the index using multiple strategies:
-//  1. ResourceID match
+//  1. ResourceMergeID match
 //  2. ResourceTypeAndName match
 //  3. callerAliases against indexed mutation names
 //  4. Indexed mutation aliases against the caller's name
@@ -227,9 +227,9 @@ func (idx *ResourceMutationIndex) Find(resource ResourceInfo, callerAliases map[
 		_, resourceNameWithoutScope, _ := strings.Cut(string(resource.ResourceName), "/")
 		resource.ResourceNameWithoutScope = ResourceName(resourceNameWithoutScope)
 	}
-	// 1. ResourceID
-	if IsUUID(resource.ResourceID) {
-		if i, ok := idx.ResourceIDMap[resource.ResourceID]; ok {
+	// 1. ResourceMergeID
+	if IsUUID(resource.ResourceMergeID) {
+		if i, ok := idx.ResourceMergeIDMap[resource.ResourceMergeID]; ok {
 			return i, true
 		}
 	}

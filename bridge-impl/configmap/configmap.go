@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,13 +24,14 @@ import (
 	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
-	funcimpl "github.com/confighub/sdk/function-impl"
+	"github.com/confighub/sdk/core/constants"
 	functionapi "github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
+	funcimpl "github.com/confighub/sdk/function-impl"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -83,11 +85,15 @@ metadata:
     confighub.com/UnitSlug: {{.UnitSlug}}
     confighub.com/SpaceID: {{.SpaceID}}
     confighub.com/RevisionNum: "{{.RevisionNum}}"
-    confighub.com/ResourceID: {{.ResourceID}}
-    confighub.com/ResourcePrefix: {{.ResourcePrefix}}
+    confighub.com/ResourceNameStableCore: {{.StableCore}}
+    confighub.com/ResourceMergeID: {{.ResourceMergeID}}
+    confighub.com/ConfigMapFormat: {{.ConfigMapFormat}}
+    confighub.com/Hash: "{{.Hash}}"
     confighub.com/MutationOptions: MatchByIDOnly
     confighub.com/RenderRevision: Latest
+{{- if .Immutable}}
 immutable: true
+{{- end}}
 data:
 `
 
@@ -98,14 +104,17 @@ const configMapFileDataTemplate = `  {{.DataName}}: |
 const configMapKeyValueDataTemplate = `{{.ConfigData}}`
 
 type configMapMetadataArgs struct {
-	Name           string
-	Namespace      string
-	UnitID         string
-	UnitSlug       string
-	SpaceID        string
-	RevisionNum    string
-	ResourceID     string
-	ResourcePrefix string
+	Name            string
+	Namespace       string
+	UnitID          string
+	UnitSlug        string
+	SpaceID         string
+	RevisionNum     string
+	StableCore      string
+	ResourceMergeID string
+	ConfigMapFormat string
+	Hash            string
+	Immutable       bool
 }
 
 type configMapDataArgs struct {
@@ -200,7 +209,7 @@ func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 		// so we keep multiple versions to avoid breaking running workloads.
 		newConfigType.Options = append(newConfigType.Options, api.BridgeOption{
 			Name:        "RevisionHistoryLimit",
-			Description: "Maximum number of immutable ConfigMap versions to retain in LiveState. Old versions are kept so that Pods referencing them during rolling updates are not disrupted. Defaults to 10 (matching the Kubernetes Deployment default).",
+			Description: "Maximum number of immutable ConfigMap versions to retain in LiveState. Old versions are kept so that Pods referencing them during rolling updates are not disrupted. Defaults to 10 (matching the Kubernetes Deployment default). Set to 0 to enable mutable ConfigMap mode, where the ConfigMap is updated in place with a stable name.",
 			Required:    false,
 			DataType:    functionapi.DataTypeInt,
 			Example:     "10",
@@ -235,7 +244,6 @@ func contextPrefix(executor *executor.ConcreteFunctionExecutor, toolchain worker
 
 // const configSchemaField = "configSchema"
 const configNameField = "configName"
-const namespaceContextField = "kubernetes.namespace"
 
 func truncateString(s string, n int) string {
 	if len(s) <= n {
@@ -259,10 +267,10 @@ func getFileExtensionForToolchain(toolchain workerapi.ToolchainType) string {
 const defaultRevisionHistoryLimit = 10
 
 // getRevisionHistoryLimit returns the configured RevisionHistoryLimit from bridge options,
-// or the default value if not set or invalid.
+// or the default value if not set or invalid. A value of 0 enables mutable ConfigMap mode.
 func getRevisionHistoryLimit(payload api.BridgeWorkerPayload) int {
 	if v, ok := payload.TargetOptions["RevisionHistoryLimit"]; ok {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
 			return n
 		}
 	}
@@ -320,11 +328,10 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) error {
 	// Get the context path prefix from the ResourceProvider for this toolchain
 	prefix := contextPrefix(functionExecutor, payload.ToolchainType)
 
-	// Extract the namespace using get-string-path function
-	namespace := getConfigHubMetadataField(ctx, payload.ToolchainType, prefix, namespaceContextField, payload.Data)
-	if namespace == "" {
-		namespace = "default"
-	}
+	// The namespace is resolved at the ConfigMap unit level via links, not
+	// from the AppConfig data. Always use a placeholder that will be replaced
+	// when the rendered ConfigMap unit is linked to a namespace unit.
+	namespace := yamlkit.PlaceHolderBlockApplyString
 
 	// The filename is referenced directly by the workload and needs to be
 	// expected by the workload and only unique within a container, so use
@@ -363,18 +370,36 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) error {
 	// by the workload, and references are replaced automatically by Needs/Provides, so use
 	// the UnitSlug.
 	namePrefix := k8skit.K8sNormalizeName(payload.UnitSlug)
-	metadata := &configMapMetadataArgs{
-		Name:           namePrefix + "-" + nameSuffix,
-		Namespace:      namespace,
-		UnitID:         payload.UnitID.String(),
-		UnitSlug:       payload.UnitSlug,
-		SpaceID:        payload.SpaceID.String(),
-		RevisionNum:    fmt.Sprintf("%d", payload.RevisionNum),
-		ResourceID:     uuid.New().String(),
-		ResourcePrefix: namePrefix, // specify a predictable name for Needs/Provides matching
+	configMapFormat := constants.ConfigMapFormatFile
+	if isAsKeyValue(*payload) && payload.ToolchainType == workerapi.ToolchainAppConfigEnv {
+		configMapFormat = constants.ConfigMapFormatKeyValue
 	}
 
-	if isAsKeyValue(*payload) && payload.ToolchainType == workerapi.ToolchainAppConfigEnv {
+	// RevisionHistoryLimit of 0 enables mutable ConfigMap mode: the ConfigMap name
+	// is just the namePrefix (no hash suffix), and the ConfigMap is not immutable.
+	// This is the simpler pattern where ConfigMaps are updated in place and workloads
+	// are triggered to restart by other means (e.g., annotation changes).
+	mutable := getRevisionHistoryLimit(*payload) == 0
+	name := namePrefix + "-" + nameSuffix
+	if mutable {
+		name = namePrefix
+	}
+
+	metadata := &configMapMetadataArgs{
+		Name:            name,
+		Namespace:       namespace,
+		UnitID:          payload.UnitID.String(),
+		UnitSlug:        payload.UnitSlug,
+		SpaceID:         payload.SpaceID.String(),
+		RevisionNum:     fmt.Sprintf("%d", payload.RevisionNum),
+		StableCore:      namePrefix,
+		ResourceMergeID: uuid.New().String(),
+		ConfigMapFormat: configMapFormat,
+		Hash:            nameSuffix,
+		Immutable:       !mutable,
+	}
+
+	if configMapFormat == constants.ConfigMapFormatKeyValue {
 		configMap, err := generateKeyValueConfigMap(metadata, []byte(configData))
 		if err != nil {
 			return err
@@ -382,7 +407,12 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) error {
 		payload.Data = configMap
 	} else {
 		fileExtension := getFileExtensionForToolchain(payload.ToolchainType)
-		dataName := configName + fileExtension
+		dataName := configName
+		// Append the canonical extension only if the configName doesn't
+		// already have a file extension.
+		if filepath.Ext(configName) == "" {
+			dataName += fileExtension
+		}
 		payload.Data = generateFileConfigMap(metadata, dataName, configData)
 	}
 	return nil
@@ -397,11 +427,18 @@ func (w *ConfigMapBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 		), err)
 	}
 
-	// Build a multi-version LiveState that retains up to RevisionHistoryLimit ConfigMap
-	// versions. During rolling updates, Pods may still reference old ConfigMap versions
-	// by name, so we keep previous versions in LiveState to prevent them from being
-	// pruned by downstream appliers (e.g., ArgoCD, Flux) while still in use.
-	liveState := mergeConfigMapLiveState(payload.Data, payload.LiveState, getRevisionHistoryLimit(payload))
+	revisionHistoryLimit := getRevisionHistoryLimit(payload)
+	var liveState []byte
+	if revisionHistoryLimit == 0 {
+		// Mutable mode: only one ConfigMap, no multi-version merge needed.
+		liveState = payload.Data
+	} else {
+		// Build a multi-version LiveState that retains up to RevisionHistoryLimit ConfigMap
+		// versions. During rolling updates, Pods may still reference old ConfigMap versions
+		// by name, so we keep previous versions in LiveState to prevent them from being
+		// pruned by downstream appliers (e.g., ArgoCD, Flux) while still in use.
+		liveState = mergeConfigMapLiveState(payload.Data, payload.LiveState, revisionHistoryLimit)
+	}
 
 	status := common.NewActionResult(
 		api.ActionStatusCompleted,
@@ -434,8 +471,8 @@ func mergeConfigMapLiveState(newConfigMap, existingLiveState []byte, revisionHis
 	// Get the name of the new ConfigMap to deduplicate.
 	newName := getConfigMapName(newDoc[0])
 
-	// Path to the RenderRevision annotation (dots in "confighub.com" must be escaped).
-	renderRevisionPath := "metadata.annotations." + yamlkit.EscapeDotsInPathSegment("confighub.com/RenderRevision")
+	// Path to the RenderRevision annotation.
+	renderRevisionPath := k8skit.K8sContextPath(constants.RenderRevisionKeySuffix)
 
 	// Build the merged list: new ConfigMap first, then existing ones (excluding duplicates).
 	var merged gaby.Container
@@ -451,6 +488,9 @@ func mergeConfigMapLiveState(newConfigMap, existingLiveState []byte, revisionHis
 		// Remove the RenderRevision annotation from older ConfigMaps so that
 		// only the newest version is matched by --where-resource filters.
 		_ = doc.DeleteP(renderRevisionPath)
+		// Mark old ConfigMaps so get-provided skips them automatically.
+		ignoreProvidedPath := k8skit.K8sContextPath(constants.VisitorOptionsKeySuffix)
+		_, _ = doc.SetP(constants.VisitorOptionIgnoreProvided, ignoreProvidedPath)
 		merged = append(merged, doc)
 	}
 

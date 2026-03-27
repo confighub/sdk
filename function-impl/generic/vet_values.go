@@ -87,7 +87,7 @@ func GenericVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeName)
-	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{"*"}, resourceProvider, api.DataTypeNone, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{"*"}, resourceProvider, api.DataTypeNone, false, false, nil)
 	if err != nil {
 		return api.ValidationResult{}, errors.Wrap(err, "failed to get values for attribute")
 	}

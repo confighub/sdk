@@ -21,7 +21,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "example",
     "Index": 0,
@@ -46,7 +47,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "somens",
     "Index": 0,
@@ -71,7 +73,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "somens",
     "Index": 0,

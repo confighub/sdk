@@ -21,7 +21,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "confighubplaceholder",
     "Index": 0,
@@ -46,7 +47,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "confighubplaceholder",
     "Index": 0,

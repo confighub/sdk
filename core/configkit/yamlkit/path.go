@@ -141,11 +141,14 @@ func parseParameterInfo(segment string) (string, string, string, error) {
 // ResolveAssociativePaths resolves an associative path with associative lookups (?) and wildcards (*, *?, *@)
 // into specific resolved paths and discovered path parameters.
 // See the documentation for api.UnresolvedPath for more details.
+// If accessor is non-nil, it is used as a fallback for associative lookups on scalar array elements
+// where the element has no map fields (e.g., pflags like "--key=value").
 func ResolveAssociativePaths(
 	doc *gaby.YamlDoc,
 	unresolvedPath api.UnresolvedPath,
 	resolvedPath api.ResolvedPath,
 	upsert bool,
+	accessor EmbeddedAccessor,
 ) ([]ResolvedPathInfo, error) {
 
 	path := string(unresolvedPath)
@@ -237,6 +240,12 @@ func ResolveAssociativePaths(
 						fieldValueNode := child.S(parameterKey)
 						if fieldValueNode != nil {
 							newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
+						} else if accessor != nil {
+							if scalarValue, ok := child.Data().(string); ok {
+								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
+									newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: extracted})
+								}
+							}
 						}
 					} else if parameterName != "" {
 						newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: key})
@@ -262,6 +271,12 @@ func ResolveAssociativePaths(
 						fieldValueNode := child.S(parameterKey)
 						if fieldValueNode != nil {
 							newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
+						} else if accessor != nil {
+							if scalarValue, ok := child.Data().(string); ok {
+								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
+									newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: extracted})
+								}
+							}
 						}
 					}
 					workList = append(workList, newPos)
@@ -320,13 +335,23 @@ func ResolveAssociativePaths(
 					continue
 				}
 				fieldValueNode := child.S(parameterKey)
+				var fieldValue any
+				if fieldValueNode != nil {
+					fieldValue = fieldValueNode.Data()
+				} else if accessor != nil {
+					if scalarValue, ok := child.Data().(string); ok {
+						if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
+							fieldValue = extracted
+						}
+					}
+				}
 				if (indexString == directIndexString) ||
-					(fieldValueNode != nil && (fieldValueNode.Data() == value || constraintSegment != "")) {
+					(fieldValue != nil && (fieldValue == value || constraintSegment != "")) {
 					// Found the matching element. Just update the head of the queue.
 					workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, indexString)
 					workList[0].ParentNode = child
 					workList[0].CurrentSegmentIndex++
-					workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
+					workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValue})
 					found = true
 					break
 				}
@@ -342,6 +367,12 @@ func ResolveAssociativePaths(
 					fieldValueNode := child.S(parameterKey)
 					if fieldValueNode != nil {
 						workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
+					} else if accessor != nil {
+						if scalarValue, ok := child.Data().(string); ok {
+							if extracted, extractErr := accessor.Extract(scalarValue, parameterKey); extractErr == nil {
+								workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: extracted})
+							}
+						}
 					}
 					found = true
 				}
@@ -436,51 +467,35 @@ func IsNumber(s string) bool {
 	return true
 }
 
-// TODO: Fix and use this or remove it. If used, it needs to be local to a path registry / resource provider.
-// It's also not threadsafe, though registerPathWildcards should only be called at initialization time.
-
-// var resourceTypeToPathPrefixToIsWildcarded = make(ResourceTypeToPathPrefixSetType)
-
-// func prefixIsWildcarded(resourceType api.ResourceType, prefix string) bool {
-// 	_, present := resourceTypeToPathPrefixToIsWildcarded[resourceType]
-// 	if !present {
-// 		return false
-// 	}
-// 	_, present = resourceTypeToPathPrefixToIsWildcarded[resourceType][prefix]
-// 	return present
-// }
-
-func normalizePath(resourceType api.ResourceType, path api.UnresolvedPath, preserveBinding bool) api.UnresolvedPath {
+// normalizePath converts path array indices, associative lookups, and freeform map keys
+// to wildcards to normalize lookups of matching paths.
+// Numerical path segments are assumed to be array indices.
+// If resourceProvider is non-nil, map key paths (e.g., labels, annotations) are also
+// normalized so that their children become wildcards.
+func normalizePath(resourceProvider ResourceProvider, resourceType api.ResourceType, path api.UnresolvedPath) api.UnresolvedPath {
 	segments := gaby.DotPathToSlice(string(path))
 	prefix := ""
+	prevWasMapKey := false
 	for i, segment := range segments {
-		// Associative lookups and array indices are treated as wildcards, but maps can be also
-		if strings.ContainsAny(segment, "?*@%") || IsNumber(segment) /*|| prefixIsWildcarded(resourceType, prefix)*/ {
-			if preserveBinding && strings.ContainsAny(segment, "?@") && strings.ContainsAny(segment, ":") {
-				switch {
-				case strings.HasPrefix(segment, "*?"):
-					// just keep it as is
-				case strings.HasPrefix(segment, "*@:"):
-					// just keep it as is
-				case strings.HasPrefix(segment, "?"):
-					// convert to wildcard
-					kvParts := strings.SplitN(segment, "=", 2)
-					// Keep the part before the equal sign
-					segments[i] = "*" + kvParts[0]
-				case strings.HasPrefix(segment, "@"):
-					parameterName, found := strings.CutPrefix(segments[i], ":")
-					// Should be found due to the check above, but...
-					if found {
-						segments[i] = "*@:" + parameterName
-					} else {
-						segments[i] = "*"
-					}
-
-				default:
-					segments[i] = "*"
-				}
+		if strings.ContainsAny(segment, "?*@%") || IsNumber(segment) {
+			segments[i] = "*"
+		} else if prevWasMapKey {
+			// Previous segment was a wildcard for a map parent — this child is a dynamic key
+			segments[i] = "*"
+		}
+		// Check if this path (prefix + current segment + ".*") is a map key path.
+		// If so, the NEXT segment should also be wildcarded.
+		prevWasMapKey = false
+		if resourceProvider != nil && segments[i] == "*" {
+			// Build the path up to and including this wildcard
+			var checkPath string
+			if prefix != "" {
+				checkPath = prefix + "." + segments[i]
 			} else {
-				segments[i] = "*"
+				checkPath = segments[i]
+			}
+			if resourceProvider.IsMapKeyPath(resourceType, checkPath) {
+				prevWasMapKey = true
 			}
 		}
 		if prefix != "" {
@@ -490,23 +505,3 @@ func normalizePath(resourceType api.ResourceType, path api.UnresolvedPath, prese
 	}
 	return api.UnresolvedPath(prefix)
 }
-
-// func registerPathWildcards(resourceType api.ResourceType, path api.UnresolvedPath) {
-// 	segments := gaby.DotPathToSlice(string(path))
-// 	prefix := ""
-// 	for i, segment := range segments {
-// 		// Record all wildcards
-// 		if strings.ContainsAny(segment, "*") {
-// 			segments[i] = "*"
-// 			_, present := resourceTypeToPathPrefixToIsWildcarded[resourceType]
-// 			if !present {
-// 				resourceTypeToPathPrefixToIsWildcarded[resourceType] = make(map[string]struct{})
-// 			}
-// 			resourceTypeToPathPrefixToIsWildcarded[resourceType][prefix] = struct{}{}
-// 		}
-// 		if prefix != "" {
-// 			prefix += "."
-// 		}
-// 		prefix += segments[i]
-// 	}
-// }

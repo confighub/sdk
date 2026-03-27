@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package kubernetes
+package k8skit
 
 import "github.com/confighub/sdk/core/function/api"
 

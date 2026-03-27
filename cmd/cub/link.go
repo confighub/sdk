@@ -49,8 +49,8 @@ func validateLinkFieldFlags() error {
 	if linkUseLiveState && linkNoUseLiveState {
 		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
 	}
-	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" {
-		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, or UpgradeUnit, got %q", linkUpdateType)
+	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" {
+		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, or Insert, got %q", linkUpdateType)
 	}
 	return nil
 }

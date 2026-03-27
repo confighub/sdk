@@ -267,6 +267,21 @@ type AttributeDetails struct {
 	Description      string              `json:"Description,omitempty" yaml:"Description,omitempty"`
 	GetterInvocation *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
 
+	// IsNeeded Whether this attribute is a needed value
+	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
+
+	// IsProvided Whether this attribute is a provided value
+	IsProvided bool `json:"IsProvided,omitempty" yaml:"IsProvided,omitempty"`
+
+	// NeededPreferred Preferred properties for matching; more matches produce a stronger match preference
+	NeededPreferred map[string]string `json:"NeededPreferred,omitempty" yaml:"NeededPreferred,omitempty"`
+
+	// NeededRequired Required properties that a provided value must have in order to match
+	NeededRequired map[string]string `json:"NeededRequired,omitempty" yaml:"NeededRequired,omitempty"`
+
+	// ProvidedProperties Key/value properties describing what this provided value offers, for matching
+	ProvidedProperties map[string]string `json:"ProvidedProperties,omitempty" yaml:"ProvidedProperties,omitempty"`
+
 	// SetterInvocations Function invocation used to set the attribute (except for the value), if any
 	SetterInvocations []FunctionInvocation `json:"SetterInvocations,omitempty" yaml:"SetterInvocations,omitempty"`
 }
@@ -289,11 +304,14 @@ type AttributeInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
 
-	// ResourceID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceID string `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
+	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
 
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameStableCore Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip
+	ResourceNameStableCore string `json:"ResourceNameStableCore,omitempty" yaml:"ResourceNameStableCore,omitempty"`
 
 	// ResourceNameWithoutScope Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>
 	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
@@ -338,11 +356,14 @@ type AttributeValue struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
 
-	// ResourceID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceID string `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
+	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
 
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameStableCore Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip
+	ResourceNameStableCore string `json:"ResourceNameStableCore,omitempty" yaml:"ResourceNameStableCore,omitempty"`
 
 	// ResourceNameWithoutScope Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>
 	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
@@ -1579,8 +1600,8 @@ type Mutation struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// ProvidedPath ProvidedPath is the path of the provided value used to satisfy a needed value if the change was made due to resolving a link.
-	ProvidedPath     string        `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
-	ProvidedResource *ResourceInfo `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
+	ProvidedPath     string             `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
+	ProvidedResource *ResourceInfoType2 `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
 
 	// RestoredRevisionNum Sequence number of the restored revision, if the change was due to a restore operation.
 	RestoredRevisionNum int64 `json:"RestoredRevisionNum,omitempty" yaml:"RestoredRevisionNum,omitempty"`
@@ -1720,12 +1741,6 @@ type PathVisitorInfo struct {
 	// EmbeddedAccessorType Embedded accessor to use, if any
 	EmbeddedAccessorType string `json:"EmbeddedAccessorType,omitempty" yaml:"EmbeddedAccessorType,omitempty"`
 
-	// IsNeeded Whether this path is a needed value
-	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
-
-	// IsProvided Whether this path is a provided value
-	IsProvided bool `json:"IsProvided,omitempty" yaml:"IsProvided,omitempty"`
-
 	// Path Unresolved path pattern
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
@@ -1816,11 +1831,14 @@ type ResourceInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
 
-	// ResourceID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceID string `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
+	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
 
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameStableCore Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip
+	ResourceNameStableCore string `json:"ResourceNameStableCore,omitempty" yaml:"ResourceNameStableCore,omitempty"`
 
 	// ResourceNameWithoutScope Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>
 	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
@@ -1831,6 +1849,24 @@ type ResourceInfo struct {
 
 // ResourceInfoList defines model for ResourceInfoList.
 type ResourceInfoList = []ResourceInfo
+
+// ResourceInfoType2 defines model for ResourceInfoType2.
+type ResourceInfoType2 struct {
+	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig
+	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
+
+	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
+	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
+
+	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameStableCore Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip
+	ResourceNameStableCore string `json:"ResourceNameStableCore,omitempty" yaml:"ResourceNameStableCore,omitempty"`
+
+	// ResourceType Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+}
 
 // ResourceMutation defines model for ResourceMutation.
 type ResourceMutation struct {
@@ -1891,10 +1927,25 @@ type ResourceStatusSummary struct {
 
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
 type ResourceTypePathsEntry struct {
-	GetterInvocation *FunctionInvocation    `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
-	Paths            *PathToVisitorInfoType `json:"Paths,omitempty" yaml:"Paths,omitempty"`
-	ResourceType     string                 `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
-	SetterInvocation *FunctionInvocation    `json:"SetterInvocation,omitempty" yaml:"SetterInvocation,omitempty"`
+	GetterInvocation *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
+
+	// IsNeeded Whether this attribute is a needed value
+	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
+
+	// IsProvided Whether this attribute is a provided value
+	IsProvided bool `json:"IsProvided,omitempty" yaml:"IsProvided,omitempty"`
+
+	// NeededPreferred Preferred properties for matching; more matches produce a stronger match preference
+	NeededPreferred map[string]string `json:"NeededPreferred,omitempty" yaml:"NeededPreferred,omitempty"`
+
+	// NeededRequired Required properties that a provided value must have in order to match
+	NeededRequired map[string]string      `json:"NeededRequired,omitempty" yaml:"NeededRequired,omitempty"`
+	Paths          *PathToVisitorInfoType `json:"Paths,omitempty" yaml:"Paths,omitempty"`
+
+	// ProvidedProperties Key/value properties describing what this provided value offers, for matching
+	ProvidedProperties map[string]string   `json:"ProvidedProperties,omitempty" yaml:"ProvidedProperties,omitempty"`
+	ResourceType       string              `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+	SetterInvocation   *FunctionInvocation `json:"SetterInvocation,omitempty" yaml:"SetterInvocation,omitempty"`
 }
 
 // ResponseError defines model for ResponseError.
@@ -2046,9 +2097,9 @@ type Space struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2082,9 +2133,9 @@ type Space struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2285,9 +2336,9 @@ type Target struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2960,9 +3011,9 @@ type BulkDeleteSpacesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3070,9 +3121,9 @@ type BulkPatchSpacesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3177,9 +3228,9 @@ type BulkCreateSpacesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3267,9 +3318,9 @@ type BulkDeleteAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3345,9 +3396,9 @@ type ListAllAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3459,9 +3510,9 @@ type BulkPatchAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3563,9 +3614,9 @@ type BulkCreateAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3641,9 +3692,9 @@ type BulkCreateAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3698,9 +3749,9 @@ type BulkDeleteBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3776,9 +3827,9 @@ type ListAllBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3879,9 +3930,9 @@ type BulkPatchBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3957,9 +4008,9 @@ type ListQueuedOperationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4026,9 +4077,9 @@ type BulkDeleteChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4104,9 +4155,9 @@ type ListAllChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4214,9 +4265,9 @@ type BulkPatchChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4314,9 +4365,9 @@ type BulkCreateChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4398,9 +4449,9 @@ type BulkCreateChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4455,9 +4506,9 @@ type BulkDeleteFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4533,9 +4584,9 @@ type ListAllFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4653,9 +4704,9 @@ type BulkPatchFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4757,9 +4808,9 @@ type BulkCreateFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4841,9 +4892,9 @@ type BulkCreateFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4916,9 +4967,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4988,9 +5039,9 @@ type BulkDeleteInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5066,9 +5117,9 @@ type ListAllInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5183,9 +5234,9 @@ type BulkPatchInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5290,9 +5341,9 @@ type BulkCreateInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5374,9 +5425,9 @@ type BulkCreateInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5431,9 +5482,9 @@ type BulkDeleteLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5511,9 +5562,9 @@ type SearchListLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5631,9 +5682,9 @@ type BulkPatchLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5746,9 +5797,9 @@ type BulkCreateLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5800,9 +5851,9 @@ type BulkCreateLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5838,9 +5889,9 @@ type BulkCreateLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5882,9 +5933,9 @@ type ListOrganizationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5998,9 +6049,9 @@ type ListOrganizationMembersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6067,9 +6118,9 @@ type ListAllRevisionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6157,9 +6208,9 @@ type ListSpacesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6326,9 +6377,9 @@ type ListAttributesParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6468,9 +6519,9 @@ type ListBridgeWorkersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6609,9 +6660,9 @@ type ListChangeSetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6747,9 +6798,9 @@ type ListFiltersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6919,9 +6970,9 @@ type InvokeFunctionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6991,9 +7042,9 @@ type ListInvocationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7136,9 +7187,9 @@ type ListLinksParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7290,9 +7341,9 @@ type ListTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7427,9 +7478,9 @@ type ListTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7587,9 +7638,9 @@ type ListTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7741,9 +7792,9 @@ type ListUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7947,9 +7998,9 @@ type PatchUnitParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8034,9 +8085,9 @@ type UpdateUnitParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8127,9 +8178,9 @@ type ListExtendedMutationsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8246,9 +8297,9 @@ type ListExtendedRevisionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8358,9 +8409,9 @@ type ListUnitActionsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8427,9 +8478,9 @@ type ListUnitEventsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8496,9 +8547,9 @@ type ListViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8639,9 +8690,9 @@ type BulkDeleteTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8717,9 +8768,9 @@ type ListAllTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8826,9 +8877,9 @@ type BulkPatchTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8925,9 +8976,9 @@ type BulkCreateTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9009,9 +9060,9 @@ type BulkCreateTagsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9066,9 +9117,9 @@ type BulkDeleteTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9144,9 +9195,9 @@ type ListAllTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9264,9 +9315,9 @@ type BulkPatchTargetsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9345,9 +9396,9 @@ type BulkDeleteTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9423,9 +9474,9 @@ type ListAllTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9549,9 +9600,9 @@ type BulkPatchTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9665,9 +9716,9 @@ type BulkCreateTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9743,9 +9794,9 @@ type BulkCreateTriggersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9800,9 +9851,9 @@ type BulkDeleteUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9880,9 +9931,9 @@ type ListAllUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10028,9 +10079,9 @@ type BulkPatchUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10126,9 +10177,9 @@ type BulkPatchUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10229,9 +10280,9 @@ type BulkCreateUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10315,9 +10366,9 @@ type BulkCreateUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10369,9 +10420,9 @@ type BulkCreateUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10410,9 +10461,9 @@ type BulkApplyUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10499,9 +10550,9 @@ type BulkApproveUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10582,9 +10633,9 @@ type BulkCancelUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10662,9 +10713,9 @@ type BulkDestroyUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10745,9 +10796,9 @@ type BulkRefreshUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10831,9 +10882,9 @@ type BulkTagUnitsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10911,9 +10962,9 @@ type ListUsersParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10980,9 +11031,9 @@ type BulkDeleteViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -11058,9 +11109,9 @@ type ListAllViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -11173,9 +11224,9 @@ type BulkPatchViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -11278,9 +11329,9 @@ type BulkCreateViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -11362,9 +11413,9 @@ type BulkCreateViewsParams struct {
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
 	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
 	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
 	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
 	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
 	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.

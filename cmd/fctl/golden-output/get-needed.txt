@@ -21,7 +21,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "confighubplaceholder",
     "Index": 0,
@@ -46,7 +47,11 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "NeededRequired": {
+        "ConfigMapFormat": "KeyValue"
+      },
+      "IsNeeded": true
     },
     "Value": "confighubplaceholder",
     "Index": 0,
@@ -71,7 +76,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "confighubplaceholder",
     "Index": 0,

@@ -57,7 +57,7 @@ func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 	if len(attributePaths) == 0 {
 		return parsedData, nil, errors.New("attribute " + attributeName + " not registered")
 	}
-	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false, false, nil)
 	return parsedData, values, err
 }
 
@@ -179,6 +179,6 @@ func registerGetDetails(fh handler.FunctionRegistry, converter configkit.ConfigC
 
 func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
 	detailPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDetail)
-	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, nil)
 	return parsedData, values, err
 }

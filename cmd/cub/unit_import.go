@@ -59,7 +59,7 @@ func init() {
 	// enableQuietFlagForOperation(unitImportCmd)
 	unitImportCmd.Flags().StringVar(&unitImportArgs.targetSlug, "target", "", "target slug to import into")
 	unitImportCmd.Flags().BoolVar(&unitImportArgs.dryRun, "dry-run", false, "Preview imported results")
-	unitImportCmd.Flags().StringVar(&unitImportArgs.whereResource, "where-resource", "", "Resource filter expression using SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.")
+	unitImportCmd.Flags().StringVar(&unitImportArgs.whereResource, "where-resource", "", "Resource filter expression using SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, NOT LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.")
 
 	unitCmd.AddCommand(unitImportCmd)
 }

@@ -4,7 +4,7 @@ This package contains per-resource-type metadata used by ConfigHub's Kubernetes 
 
 ## Files to update
 
-### `immutable_fields.go`
+### `public/configkit/k8skit/immutable_fields.go`
 
 Maps resource types to field paths that cannot be changed after creation (require delete + recreate). Sources of truth for immutability:
 
@@ -12,7 +12,7 @@ Maps resource types to field paths that cannot be changed after creation (requir
 - **ACK CRDs**: `is_immutable: true` in `generator.yaml`, or `x-kubernetes-validations` rules with `self == oldSelf`
 - **Other CRDs**: look for "immutable", "cannot be updated", or "cannot be changed" in CRD field descriptions, and for immutability checks in controller reconciliation code
 
-### `merge_key_fields.go`
+### `public/configkit/k8skit/merge_keys.go`
 
 Maps resource types to strategic merge patch keys for array fields. These determine how list items are matched during merges (e.g., containers matched by `name`). Sources:
 
@@ -46,7 +46,7 @@ eks.services.k8s.aws/v1alpha1/Cluster     # CRD
 
 1. Read the CRD YAML files and controller source code
 2. Check `scope:` for cluster-scoped types and add to `cluster_resource_types.go`
-3. Search for immutability markers and add to `immutable_fields.go`
-4. Check for strategic merge keys and add to `merge_key_fields.go`
+3. Search for immutability markers and add to `public/configkit/k8skit/immutable_fields.go`
+4. Check for strategic merge keys and add to `public/configkit/k8skit/merge_keys.go`
 5. Identify cross-resource reference fields and add to `reference_fields.go`
 6. Run `make build-funcexec && make test-public` to verify

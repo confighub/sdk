@@ -76,7 +76,7 @@ for route in r["spec"]["routes"]:
 		"pattern=" + hostPattern,
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -103,7 +103,7 @@ for route in r["spec"]["routes"]:
 		"pattern=" + hostPattern,
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -123,7 +123,7 @@ if m:
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	assert.Contains(t, newDocs.String(), "image-tag: \"1.21\"")
 }
@@ -140,7 +140,7 @@ if m:
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "api-group: apps")
@@ -162,7 +162,7 @@ r["metadata"]["annotations"] = {"hosts": ",".join(hosts)}
 		"pattern=Host\\(" + bt + "([^" + bt + "]*)" + bt + "\\)",
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "hosts: hub.prod.confighub.net,hub.confighub.com")
@@ -180,7 +180,7 @@ for k in list(labels.keys()):
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	assert.Contains(t, newDocs.String(), "app: myapp")
 }
@@ -196,7 +196,7 @@ if m:
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	assert.NotContains(t, newDocs.String(), "found: \"yes\"")
 }
@@ -220,7 +220,7 @@ if m:
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "full-match: nginx:1.21")
@@ -242,7 +242,7 @@ r["metadata"]["annotations"] = annotations
 `
 	args := stringArgsToFunctionArgs([]string{program})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "app: nginx")
@@ -256,7 +256,7 @@ func TestReInvalidPattern(t *testing.T) {
 	program := `re.search("[invalid", "test")`
 	args := stringArgsToFunctionArgs([]string{program})
 
-	_, _, err = genericFnSetStarlark(testResourceProvider, docs, args)
+	_, _, err = genericFnSetStarlark(testResourceProvider, nil, docs, args)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "re.search")
 }

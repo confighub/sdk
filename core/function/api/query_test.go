@@ -30,6 +30,52 @@ func TestStandardParsingOperators(t *testing.T) {
 	}
 }
 
+// TestNotLikeOperator tests the NOT LIKE operator for config data where filters
+func TestNotLikeOperator(t *testing.T) {
+	// Test parsing
+	expressions, err := ParseAndValidateWhereFilter("name NOT LIKE 'test%'")
+	require.NoError(t, err)
+	require.Len(t, expressions, 1)
+	assert.Equal(t, "NOT LIKE", expressions[0].Operator)
+	assert.Equal(t, "'test%'", expressions[0].Literal)
+
+	// Test in conjunction
+	expressions, err = ParseAndValidateWhereFilter("name NOT LIKE 'admin%' AND kind = 'Pod'")
+	require.NoError(t, err)
+	require.Len(t, expressions, 2)
+	assert.Equal(t, "NOT LIKE", expressions[0].Operator)
+	assert.Equal(t, "=", expressions[1].Operator)
+
+	// Test evaluation - NOT LIKE should negate LIKE
+	testCases := []struct {
+		name     string
+		value    string
+		pattern  string
+		expected bool
+	}{
+		{"no match returns true", "hello", "'test%'", true},
+		{"match returns false", "test-app", "'test%'", false},
+		{"underscore wildcard no match", "ab", "'a_c'", true},
+		{"underscore wildcard match", "abc", "'a_c'", false},
+		{"exact no match", "world", "'hello'", true},
+		{"exact match", "hello", "'hello'", false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			expr := &RelationalExpression{
+				Path:     "name",
+				Operator: "NOT LIKE",
+				Literal:  tc.pattern,
+				DataType: DataTypeString,
+			}
+			result, err := EvaluateExpression(expr, tc.value, nil, nil)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
 // TestImportParsingOperators validates import-specific operator support
 func TestImportParsingOperators(t *testing.T) {
 	tests := []struct {

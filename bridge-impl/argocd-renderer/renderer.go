@@ -20,8 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	sigsyaml "sigs.k8s.io/yaml"
-
-	"github.com/confighub/sdk/core/configkit/yamlkit"
 )
 
 const (
@@ -255,10 +253,13 @@ func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte
 			obj.SetAnnotations(annotations)
 		}
 
-		// Set placeholder namespace on namespaced resources
-		if isNamespaced, err := k8sClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
-			obj.SetNamespace(yamlkit.PlaceHolderBlockApplyString)
-		}
+		// Commented out: we do not expect the ArgoCD renderer to generate resources
+		// with confighub placeholders in the namespace field.
+		// if obj.GetNamespace() == "" {
+		// 	if isNamespaced, err := k8sClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
+		// 		obj.SetNamespace(yamlkit.PlaceHolderBlockApplyString)
+		// 	}
+		// }
 
 		// Marshal back to JSON, then convert to YAML
 		jsonBytes, err := obj.MarshalJSON()

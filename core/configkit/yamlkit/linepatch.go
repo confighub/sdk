@@ -40,10 +40,9 @@ func ComputeScalarPatch(previous, modified string) string {
 	if patch := computeStructuralPatch(previous, modified, PatchFormatJSON); patch != "" {
 		return patch
 	}
-	// Try YAML
-	if patch := computeStructuralPatch(previous, modified, PatchFormatYAML); patch != "" {
-		return patch
-	}
+	// YAML autodetection is disabled because YAML frontmatter in text
+	// documents (AppConfig/Text) would be misidentified as structured
+	// YAML content, causing incorrect structural patches.
 	// Fall back to line-level text diff
 	return ComputeLinePatch(previous, modified)
 }

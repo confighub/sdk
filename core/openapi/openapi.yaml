@@ -28,9 +28,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -207,9 +207,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -443,9 +443,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -700,9 +700,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -863,9 +863,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1021,9 +1021,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1251,9 +1251,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1349,9 +1349,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1554,9 +1554,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1717,9 +1717,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -1828,9 +1828,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2193,9 +2193,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2530,9 +2530,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2693,9 +2693,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -2851,9 +2851,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3059,9 +3059,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3172,9 +3172,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3355,9 +3355,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3518,9 +3518,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3689,9 +3689,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -3914,9 +3914,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4025,9 +4025,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4316,9 +4316,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4534,9 +4534,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4697,9 +4697,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -4855,9 +4855,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5079,9 +5079,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5192,9 +5192,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5391,9 +5391,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5556,9 +5556,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5713,9 +5713,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -5976,9 +5976,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6042,9 +6042,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6084,9 +6084,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6346,9 +6346,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -6801,9 +6801,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7144,9 +7144,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7304,9 +7304,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -7938,9 +7938,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -8575,9 +8575,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9390,9 +9390,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -9993,9 +9993,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10739,9 +10739,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -10950,9 +10950,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -11569,9 +11569,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -12239,9 +12239,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -12841,9 +12841,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -13527,9 +13527,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -14211,9 +14211,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -14805,9 +14805,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -15137,9 +15137,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -15946,9 +15946,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -16315,9 +16315,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -16660,9 +16660,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -16883,9 +16883,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -17100,9 +17100,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -17720,9 +17720,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -17883,9 +17883,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18040,9 +18040,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18244,9 +18244,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18356,9 +18356,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18535,9 +18535,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18698,9 +18698,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -18855,9 +18855,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -19121,9 +19121,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -19284,9 +19284,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -19441,9 +19441,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -19703,9 +19703,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -19800,9 +19800,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20037,9 +20037,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20209,9 +20209,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20435,9 +20435,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20592,9 +20592,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20837,9 +20837,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -20951,9 +20951,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21017,9 +21017,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21224,9 +21224,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21413,9 +21413,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21582,9 +21582,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21749,9 +21749,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -21923,9 +21923,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -22103,9 +22103,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -22268,9 +22268,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -22457,9 +22457,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -22620,9 +22620,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -22777,9 +22777,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -23009,9 +23009,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -23121,9 +23121,9 @@ paths:
           It supports conjunctions using `AND` of relational expressions of the form *attribute*
           *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
           as in the JSON encoding.
-          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
           String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-          `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
           String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
           `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
           Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -23648,6 +23648,35 @@ components:
           x-go-type-skip-optional-pointer: true
         GetterInvocation:
           $ref: '#/components/schemas/FunctionInvocation'
+        IsNeeded:
+          description: Whether this attribute is a needed value
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        IsProvided:
+          description: Whether this attribute is a provided value
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        NeededPreferred:
+          additionalProperties:
+            type: string
+          description: Preferred properties for matching; more matches produce a stronger
+            match preference
+          type: object
+          x-go-type-skip-optional-pointer: true
+        NeededRequired:
+          additionalProperties:
+            type: string
+          description: Required properties that a provided value must have in order
+            to match
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ProvidedProperties:
+          additionalProperties:
+            type: string
+          description: Key/value properties describing what this provided value offers,
+            for matching
+          type: object
+          x-go-type-skip-optional-pointer: true
         SetterInvocations:
           description: Function invocation used to set the attribute (except for the
             value), if any
@@ -23683,7 +23712,7 @@ components:
             application configuration files are of category AppConfig
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceID:
+        ResourceMergeID:
           description: Stable identifier (UUID) for a resource stored with the resource
             data that is intended to remain consistent across resource name and scope
             changes and across variants, used to match resources between config data
@@ -23696,6 +23725,12 @@ components:
             form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily
             use '/' as a separator between any scope(s) and name or other client-chosen
             ID
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameStableCore:
+          description: Name of a resource in the system under management represented
+            in the configuration data with generated prefixes and suffixes stripped;
+            empty if nothing to strip
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceNameWithoutScope:
@@ -23768,7 +23803,7 @@ components:
             application configuration files are of category AppConfig
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceID:
+        ResourceMergeID:
           description: Stable identifier (UUID) for a resource stored with the resource
             data that is intended to remain consistent across resource name and scope
             changes and across variants, used to match resources between config data
@@ -23781,6 +23816,12 @@ components:
             form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily
             use '/' as a separator between any scope(s) and name or other client-chosen
             ID
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameStableCore:
+          description: Name of a resource in the system under management represented
+            in the configuration data with generated prefixes and suffixes stripped;
+            empty if nothing to strip
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceNameWithoutScope:
@@ -25507,7 +25548,7 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ProvidedResource:
-          $ref: '#/components/schemas/ResourceInfo'
+          $ref: '#/components/schemas/ResourceInfoType2'
         RestoredRevisionNum:
           description: Sequence number of the restored revision, if the change was
             due to a restore operation.
@@ -25763,14 +25804,6 @@ components:
           description: Embedded accessor to use, if any
           type: string
           x-go-type-skip-optional-pointer: true
-        IsNeeded:
-          description: Whether this path is a needed value
-          type: boolean
-          x-go-type-skip-optional-pointer: true
-        IsProvided:
-          description: Whether this path is a provided value
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         Path:
           description: Unresolved path pattern
           type: string
@@ -25949,7 +25982,7 @@ components:
             application configuration files are of category AppConfig
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceID:
+        ResourceMergeID:
           description: Stable identifier (UUID) for a resource stored with the resource
             data that is intended to remain consistent across resource name and scope
             changes and across variants, used to match resources between config data
@@ -25962,6 +25995,12 @@ components:
             form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily
             use '/' as a separator between any scope(s) and name or other client-chosen
             ID
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameStableCore:
+          description: Name of a resource in the system under management represented
+            in the configuration data with generated prefixes and suffixes stripped;
+            empty if nothing to strip
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceNameWithoutScope:
@@ -25982,6 +26021,42 @@ components:
       items:
         $ref: '#/components/schemas/ResourceInfo'
       type: array
+    ResourceInfoType2:
+      properties:
+        ResourceCategory:
+          description: Category of configuration element represented in the configuration
+            data; Kubernetes and OpenTofu resources are of category Resource, and
+            application configuration files are of category AppConfig
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceMergeID:
+          description: Stable identifier (UUID) for a resource stored with the resource
+            data that is intended to remain consistent across resource name and scope
+            changes and across variants, used to match resources between config data
+            documents when computing and patching mutations
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: Name of a resource in the system under management represented
+            in the configuration data; Kubernetes resources are represented in the
+            form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily
+            use '/' as a separator between any scope(s) and name or other client-chosen
+            ID
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameStableCore:
+          description: Name of a resource in the system under management represented
+            in the configuration data with generated prefixes and suffixes stripped;
+            empty if nothing to strip
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: Type of a resource in the system under management represented
+            in the configuration data; Kubernetes resources are represented in the
+            form <apiVersion>/<kind> (aka group-version-kind)
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     ResourceMutation:
       properties:
         Aliases:
@@ -26074,8 +26149,37 @@ components:
       properties:
         GetterInvocation:
           $ref: '#/components/schemas/FunctionInvocation'
+        IsNeeded:
+          description: Whether this attribute is a needed value
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        IsProvided:
+          description: Whether this attribute is a provided value
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        NeededPreferred:
+          additionalProperties:
+            type: string
+          description: Preferred properties for matching; more matches produce a stronger
+            match preference
+          type: object
+          x-go-type-skip-optional-pointer: true
+        NeededRequired:
+          additionalProperties:
+            type: string
+          description: Required properties that a provided value must have in order
+            to match
+          type: object
+          x-go-type-skip-optional-pointer: true
         Paths:
           $ref: '#/components/schemas/PathToVisitorInfoType'
+        ProvidedProperties:
+          additionalProperties:
+            type: string
+          description: Key/value properties describing what this provided value offers,
+            for matching
+          type: object
+          x-go-type-skip-optional-pointer: true
         ResourceType:
           type: string
           x-go-type-skip-optional-pointer: true
@@ -26378,9 +26482,9 @@ components:
             It supports conjunctions using `AND` of relational expressions of the form *attribute*
             *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
             as in the JSON encoding.
-            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
             String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-            `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+            `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
             String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
             `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
             Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -26416,9 +26520,9 @@ components:
             It supports conjunctions using `AND` of relational expressions of the form *attribute*
             *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
             as in the JSON encoding.
-            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
             String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-            `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+            `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
             String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
             `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
             Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
@@ -26782,9 +26886,9 @@ components:
             It supports conjunctions using `AND` of relational expressions of the form *attribute*
             *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
             as in the JSON encoding.
-            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+            Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
             String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-            `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE.
+            `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
             String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
             `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
             Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.

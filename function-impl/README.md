@@ -186,7 +186,6 @@ The paths are registered before the function executor server is started, like th
 			pathInfos,
 			replicasGetterFunctionInvocation,
 			replicasSetterFunctionInvocation,
-			false,
 		)
 	}
 ```

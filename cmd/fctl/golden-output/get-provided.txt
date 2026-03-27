@@ -19,7 +19,8 @@ OUTPUT
             "Value": "v1/Namespace"
           }
         ]
-      }
+      },
+      "IsProvided": true
     },
     "Value": "foobar",
     "Index": 0,

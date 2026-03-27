@@ -170,6 +170,7 @@ type ResourceTypePathsEntry struct {
 	Paths            funcapi.PathToVisitorInfoType
 	GetterInvocation *funcapi.FunctionInvocation
 	SetterInvocation *funcapi.FunctionInvocation
+	funcapi.AttributeNeedsProvidesDetails
 }
 
 // AttributeRegistration contains the information needed to register a dynamic attribute.

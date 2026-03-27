@@ -14,7 +14,9 @@ import (
 )
 
 // testResourceProvider is a minimal ResourceProvider for testing purposes only.
-type testResourceProvider struct{}
+type testResourceProvider struct {
+	registry ResourceProviderRegistry
+}
 
 func (testResourceProvider) ResourceTypeGetter(doc *gaby.YamlDoc) (api.ResourceType, error) {
 	apiVersion, _, _ := YamlSafePathGetValue[string](doc, api.ResolvedPath("apiVersion"), false)
@@ -34,7 +36,9 @@ func (testResourceProvider) DefaultResourceCategory() api.ResourceCategory {
 func (testResourceProvider) ResourceCategoryGetter(_ *gaby.YamlDoc) (api.ResourceCategory, error) {
 	return api.ResourceCategoryResource, nil
 }
-func (testResourceProvider) ResourceIDGetter(_ *gaby.YamlDoc) (string, error) { return "", nil }
+func (testResourceProvider) ResourceMergeIDGetter(_ *gaby.YamlDoc) (string, error)            { return "", nil }
+func (testResourceProvider) ResourceNameStableCoreGetter(_ *gaby.YamlDoc) (api.ResourceName, error) { return "", nil }
+func (testResourceProvider) ResourceIDGetter(_ *gaby.YamlDoc) (string, error)     { return "", nil }
 func (testResourceProvider) RemoveScopeFromResourceName(name api.ResourceName) api.ResourceName {
 	return name
 }
@@ -45,27 +49,39 @@ func (testResourceProvider) SetResourceName(doc *gaby.YamlDoc, name string) erro
 	_, err := doc.SetP(name, "metadata.name")
 	return err
 }
-func (testResourceProvider) SetResourceID(_ *gaby.YamlDoc, _ string) error   { return nil }
-func (testResourceProvider) DeleteResourceID(_ *gaby.YamlDoc) error           { return nil }
+func (testResourceProvider) SetResourceMergeID(_ *gaby.YamlDoc, _ string) error { return nil }
+func (testResourceProvider) SetResourceID(_ *gaby.YamlDoc, _ string) error      { return nil }
+func (testResourceProvider) DeleteResourceMergeID(_ *gaby.YamlDoc) error                { return nil }
+func (testResourceProvider) DeleteResourceID(_ *gaby.YamlDoc) error             { return nil }
 func (testResourceProvider) ResourceTypesAreSimilar(a, b api.ResourceType) bool { return a == b }
 func (testResourceProvider) TypeDescription() string                          { return "Kind" }
 func (testResourceProvider) NormalizeName(name string) string                 { return name }
 func (testResourceProvider) NameSeparator() string                            { return "/" }
 func (testResourceProvider) ContextPath(field string) string                  { return "metadata." + field }
-func (testResourceProvider) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return make(api.AttributeNameToResourceTypeToPathToVisitorInfoType)
+func (t testResourceProvider) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
+	return t.registry.PathRegistry
 }
-func (testResourceProvider) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
-	return make(api.AttributeNameToAttributeDescriptor)
+func (t testResourceProvider) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
+	return t.registry.AttributeRegistry
+}
+func (t *testResourceProvider) GetRegistry() *ResourceProviderRegistry {
+	return &t.registry
 }
 func (testResourceProvider) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
 	return "", false
 }
+
+func (testResourceProvider) IsMapKeyPath(_ api.ResourceType, _ string) bool {
+	return false
+}
+
 func (testResourceProvider) GetToolchainType() workerapi.ToolchainType {
 	return workerapi.ToolchainKubernetesYAML
 }
 
-var testProvider = testResourceProvider{}
+var testProvider = &testResourceProvider{
+	registry: NewResourceProviderRegistry(),
+}
 
 func TestResolveAssociation(t *testing.T) {
 	// YAML fixture
@@ -92,7 +108,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=example-container.env.?name=EXAMPLE_ENV.value"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=example-container.env.?name=EXAMPLE_ENV.value"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.env.0.value"), results[0].Path)
@@ -115,7 +131,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=container-two.image"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=container-two.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[0].Path)
@@ -134,7 +150,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.ports.?name=http.port"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.ports.?name=http.port"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -151,7 +167,7 @@ items:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("items.?name=duplicate-item.value"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("items.?name=duplicate-item.value"), "", false, nil)
 	assert.NoError(t, err)
 	// Expecting the first occurrence
 	assert.Equal(t, len(results), 1)
@@ -168,7 +184,7 @@ data: {}
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("data.?key=nonexistent"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("data.?key=nonexistent"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, results)
 }
@@ -191,7 +207,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 	c := docs[0].Path("spec.template.spec.containers")
-	results, err := ResolveAssociativePaths(c, api.UnresolvedPath("?name=container-two.image"), "", false)
+	results, err := ResolveAssociativePaths(c, api.UnresolvedPath("?name=container-two.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("1.image"), results[0].Path)
@@ -220,7 +236,7 @@ subjects:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*.namespace"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*.namespace"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 2)
 	assert.Equal(t, api.ResolvedPath("subjects.0.namespace"), results[0].Path)
@@ -244,7 +260,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:containerName=container-two.image"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:containerName=container-two.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[0].Path)
@@ -272,7 +288,7 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*?name:containerName.image"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*?name:containerName.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, len(results), 2)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
@@ -308,20 +324,20 @@ spec:
 	assert.NoError(t, err)
 
 	// Test 1: Upsert with wildcard should resolve paths even when target doesn't exist
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.securityContext.runAsNonRoot"), results[1].Path)
 
 	// Test 2: Upsert with associative match should resolve path even when target doesn't exist  
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot"), "", true)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
 
 	// Test 3: Non-upsert mode should not resolve non-existent paths
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", false)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(results))
 }
@@ -347,19 +363,19 @@ spec:
 	assert.NoError(t, err)
 
 	// Test 1: "|" syntax should resolve when preceding path exists, even if current segment doesn't exist
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|newField"), "", true)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|newField"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.newField"), results[0].Path)
 
 	// Test 2: "|" syntax should also work when current segment exists
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|securityContext"), "", true)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.0.|securityContext"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext"), results[0].Path)
 
 	// Test 3: "|" syntax should not resolve when preceding path doesn't exist
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.nonexistent.0.|field"), "", true)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.nonexistent.0.|field"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(results))
 }
@@ -381,7 +397,7 @@ spec:
 	assert.NoError(t, err)
 
 	// Test: Upsert should handle paths that have both search expressions and resolved segments
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.*.securityContext.runAsNonRoot"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
@@ -415,7 +431,7 @@ spec:
 	assert.NotNil(t, annotationsNode, "annotations should exist initially")
 
 	// Test 1: @ parameter segment should be resolved and upserted
-	results1, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", true)
+	results1, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results1), "Should resolve one path even when annotations doesn't exist")
 	assert.Equal(t, api.ResolvedPath("metadata.annotations.confighub~1com/test"), results1[0].Path)
@@ -424,14 +440,14 @@ spec:
 	assert.Equal(t, "confighub.com/test", results1[0].PathArguments[0].Value)
 
 	// Test 2: @ parameter segment without parameter name should still work
-	results2, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/simple"), "", true)
+	results2, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/simple"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results2))
 	assert.Equal(t, api.ResolvedPath("metadata.annotations.confighub~1com/simple"), results2[0].Path)
 	assert.Equal(t, 0, len(results2[0].PathArguments))
 
 	// Test 3: @ parameter segment in non-upsert mode should not work when path doesn't exist
-	results3, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", false)
+	results3, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("metadata.annotations.@confighub~1com/test:annotation-key"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(results3))
 
@@ -467,7 +483,7 @@ spec:
 	assert.NoError(t, err)
 	
 	// Test wildcard rewriting: ?name:container-name=* should be transformed to *?name:container-name
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:container-name=*.image"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:container-name=*.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(results))
 	
@@ -508,27 +524,27 @@ spec:
 	assert.NoError(t, err)
 
 	// Test 1: ?key=value;@index resolves by key match
-	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=sidecar;@1.image"), "", false)
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=sidecar;@1.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[0].Path)
 
 	// Test 2: ?key=value;@index where key matches a different index than the fallback
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx;@1.image"), "", false)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx;@1.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	// Should match by key (index 0), not by fallback index (1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
 
 	// Test 3: ?key=value;@index where key doesn't match but index does (fallback)
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=missing;@0.image"), "", false)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=missing;@0.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	// Falls back to positional index 0
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
 
 	// Test 4: ?key=value;@index where neither matches
-	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=missing;@5.image"), "", false)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=missing;@5.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(results))
 
@@ -552,10 +568,61 @@ spec:
 	docs2, err := gaby.ParseAll([]byte(yamlFixtureWithEnv))
 	assert.NoError(t, err)
 
-	results, err = ResolveAssociativePaths(docs2[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx;@0.env.?name=BAZ;@1.value"), "", false)
+	results, err = ResolveAssociativePaths(docs2[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx;@0.env.?name=BAZ;@1.value"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.env.1.value"), results[0].Path)
+}
+
+func TestResolveAssociativePaths_WithAccessor(t *testing.T) {
+	yamlFixture := `args:
+  - "--port=8080"
+  - "--debug"
+  - "--host=localhost"
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	accessor, err := newRegexpAccessor(`^--(?P<flag>[a-zA-Z0-9][-a-zA-Z0-9]*)=(?P<value>.+)$`)
+	assert.NoError(t, err)
+
+	// Match by flag name
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("args.?flag=port"), "", false, accessor)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("args.0"), results[0].Path)
+
+	// Match by flag name with parameter binding
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("args.?flag:container-flag=host"), "", false, accessor)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("args.2"), results[0].Path)
+	assert.Equal(t, 1, len(results[0].PathArguments))
+	assert.Equal(t, "container-flag", results[0].PathArguments[0].ParameterName)
+	assert.Equal(t, "host", results[0].PathArguments[0].Value)
+
+	// Non-matching element (--debug has no =value)
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("args.?flag=debug"), "", false, accessor)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+
+	// Non-existent flag
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("args.?flag=nonexistent"), "", false, accessor)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+
+	// Wildcard with accessor - iterates all elements, but only extracts flag for matching ones
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("args.*?flag:container-flag"), "", false, accessor)
+	assert.NoError(t, err)
+	// All 3 array elements are visited, but only 2 have extractable flag arguments
+	assert.Equal(t, 3, len(results))
+	flagArgs := 0
+	for _, r := range results {
+		if len(r.PathArguments) > 0 {
+			flagArgs++
+		}
+	}
+	assert.Equal(t, 2, flagArgs)
 }
 
 func TestResolveAssociativeSegments(t *testing.T) {

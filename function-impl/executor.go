@@ -135,9 +135,11 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 					attr.AttributeName,
 					entry.ResourceType,
 					entry.Paths,
-					getterInvocation,
-					setterInvocation,
-					false,
+					&yamlkit.AttributeRegistrationDetails{
+						GetterInvocation:              getterInvocation,
+						SetterInvocation:              setterInvocation,
+						AttributeNeedsProvidesDetails: entry.AttributeNeedsProvidesDetails,
+					},
 				)
 			}
 

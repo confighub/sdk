@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 // FunctionInvocationsEqual reports whether two function invocations match.
@@ -39,6 +40,27 @@ func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunc
 			details1.Description != details2.Description) {
 		return false
 	}
+	// Compare IsNeeded/IsProvided flags
+	isNeeded1 := details1 != nil && details1.IsNeeded
+	isNeeded2 := details2 != nil && details2.IsNeeded
+	if isNeeded1 != isNeeded2 {
+		return false
+	}
+	isProvided1 := details1 != nil && details1.IsProvided
+	isProvided2 := details2 != nil && details2.IsProvided
+	if isProvided1 != isProvided2 {
+		return false
+	}
+	// Compare property maps
+	if !stringMapsEqual(details1.ProvidedProperties, details2.ProvidedProperties) {
+		return false
+	}
+	if !stringMapsEqual(details1.NeededRequired, details2.NeededRequired) {
+		return false
+	}
+	if !stringMapsEqual(details1.NeededPreferred, details2.NeededPreferred) {
+		return false
+	}
 	if !compareFunctions {
 		return true
 	}
@@ -48,8 +70,20 @@ func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunc
 	if len(details1.SetterInvocations) != len(details2.SetterInvocations) {
 		return false
 	}
-	for i, _ := range details1.SetterInvocations {
+	for i := range details1.SetterInvocations {
 		if !FunctionInvocationsEqual(&details1.SetterInvocations[i], &details2.SetterInvocations[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func stringMapsEqual(m1, m2 map[string]string) bool {
+	if len(m1) != len(m2) {
+		return false
+	}
+	for k, v := range m1 {
+		if m2[k] != v {
 			return false
 		}
 	}
@@ -102,19 +136,67 @@ func setFunctionInvocationsInVisitorPathInfo(
 	}
 }
 
+// setNeedsProvidesDetailsInVisitorPathInfo merges AttributeNeedsProvidesDetails from
+// registration details into a PathVisitorInfo's Details.
+func setNeedsProvidesDetailsInVisitorPathInfo(pathInfo *api.PathVisitorInfo, npd api.AttributeNeedsProvidesDetails) {
+	if pathInfo.Details == nil {
+		pathInfo.Details = &api.AttributeDetails{}
+	}
+	for k, v := range npd.ProvidedProperties {
+		if pathInfo.Details.ProvidedProperties == nil {
+			pathInfo.Details.ProvidedProperties = make(map[string]string)
+		}
+		pathInfo.Details.ProvidedProperties[k] = v
+	}
+	for k, v := range npd.NeededRequired {
+		if pathInfo.Details.NeededRequired == nil {
+			pathInfo.Details.NeededRequired = make(map[string]string)
+		}
+		if existing, ok := pathInfo.Details.NeededRequired[k]; ok && existing != v {
+			// Multiple different values for the same required key means
+			// the field can reference multiple types — mark as empty to
+			// prevent subsequent registrations from re-adding a value.
+			pathInfo.Details.NeededRequired[k] = ""
+		} else if existing == "" {
+			// Already marked as multi-value — don't overwrite
+		} else {
+			pathInfo.Details.NeededRequired[k] = v
+		}
+	}
+	for k, v := range npd.NeededPreferred {
+		if pathInfo.Details.NeededPreferred == nil {
+			pathInfo.Details.NeededPreferred = make(map[string]string)
+		}
+		pathInfo.Details.NeededPreferred[k] = v
+	}
+}
+
 func registerPaths(
 	registry api.ResourceTypeToPathToVisitorInfoType,
 	resourceType api.ResourceType,
 	pathInfos api.PathToVisitorInfoType,
-	getterFunctionInvocation *api.FunctionInvocation,
-	setterFunctionInvocation *api.FunctionInvocation,
+	details *AttributeRegistrationDetails,
 ) {
+	var getterFunctionInvocation *api.FunctionInvocation
+	var setterFunctionInvocation *api.FunctionInvocation
+	var enricher AttributeEnricher
+	if details != nil {
+		getterFunctionInvocation = details.GetterInvocation
+		setterFunctionInvocation = details.SetterInvocation
+		enricher = details.Enricher
+	}
 	_, ok := registry[resourceType]
 	if !ok {
 		registry[resourceType] = make(api.PathToVisitorInfoType)
 		for path, pathInfo := range pathInfos {
 			registry[resourceType][path] = pathInfo
 			setFunctionInvocationsInVisitorPathInfo(pathInfo, getterFunctionInvocation, setterFunctionInvocation)
+			if details != nil {
+				setNeedsProvidesDetailsInVisitorPathInfo(pathInfo, details.AttributeNeedsProvidesDetails)
+			}
+			if enricher != nil {
+				pathInfo.Enricher = enricher
+			}
 		}
 		return
 	}
@@ -132,7 +214,28 @@ func registerPaths(
 			registry[resourceType][path] = newPathInfo
 		}
 		setFunctionInvocationsInVisitorPathInfo(newPathInfo, getterFunctionInvocation, setterFunctionInvocation)
+		if details != nil {
+			setNeedsProvidesDetailsInVisitorPathInfo(newPathInfo, details.AttributeNeedsProvidesDetails)
+		}
+		if enricher != nil {
+			newPathInfo.Enricher = enricher
+		}
 	}
+}
+
+// AttributeEnricher is a function that enriches an AttributeValue with properties
+// after it is extracted by a visitor. It receives the resource doc for context and
+// a flag indicating whether the value is a provided value. It populates
+// ProvidedProperties, NeededRequired, and/or NeededPreferred on the attribute's Details.
+type AttributeEnricher func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error
+
+// AttributeRegistrationDetails specifies getter/setter invocations and an optional
+// Enricher function for use when registering paths via RegisterPathsByAttributeName.
+type AttributeRegistrationDetails struct {
+	GetterInvocation *api.FunctionInvocation
+	SetterInvocation *api.FunctionInvocation
+	api.AttributeNeedsProvidesDetails
+	Enricher AttributeEnricher
 }
 
 // RegisterPathsByAttributeName registers the specified path visitor specifications under the
@@ -149,10 +252,15 @@ func RegisterPathsByAttributeName(
 	attributeName api.AttributeName,
 	resourceType api.ResourceType,
 	pathInfos api.PathToVisitorInfoType,
-	getterFunctionInvocation *api.FunctionInvocation,
-	setterFunctionInvocation *api.FunctionInvocation,
-	normalizePaths bool,
+	details *AttributeRegistrationDetails,
 ) {
+	var getterFunctionInvocation *api.FunctionInvocation
+	var setterFunctionInvocation *api.FunctionInvocation
+	if details != nil {
+		getterFunctionInvocation = details.GetterInvocation
+		setterFunctionInvocation = details.SetterInvocation
+	}
+
 	pathRegistry := resourceProvider.GetPathRegistry()
 	_, present := pathRegistry[attributeName]
 	if !present {
@@ -163,14 +271,16 @@ func RegisterPathsByAttributeName(
 	if _, exists := attributeRegistry[attributeName]; !exists {
 		attributeRegistry[attributeName] = &api.AttributeDescriptor{
 			AttributeName: attributeName,
-			AttributeDetails: api.AttributeDetails{
-				GetterInvocation: getterFunctionInvocation,
-				SetterInvocations: func() []api.FunctionInvocation {
-					if setterFunctionInvocation != nil {
-						return []api.FunctionInvocation{*setterFunctionInvocation}
-					}
-					return nil
-				}(),
+			AttributeVisitorDetails: api.AttributeVisitorDetails{
+				AttributeDetails: api.AttributeDetails{
+					GetterInvocation: getterFunctionInvocation,
+					SetterInvocations: func() []api.FunctionInvocation {
+						if setterFunctionInvocation != nil {
+							return []api.FunctionInvocation{*setterFunctionInvocation}
+						}
+						return nil
+					}(),
+				},
 			},
 		}
 	} else {
@@ -192,25 +302,18 @@ func RegisterPathsByAttributeName(
 		}
 	}
 
-	newPathInfos := pathInfos
-
-	// FIXME: Fix or remove normalizePaths
-	if normalizePaths {
-		newPathInfos = make(api.PathToVisitorInfoType)
-		for path, pathInfo := range pathInfos {
-			fullyNormalizedPath := normalizePath(resourceType, path, false)
-			normalizedPathWithBindings := normalizePath(resourceType, path, true)
-			newPathInfo := *pathInfo // deep copy so the path isn't clobbered
-			newPathInfo.Path = normalizedPathWithBindings
-			newPathInfos[fullyNormalizedPath] = &newPathInfo
-		}
+	// Always normalize paths so that registered paths and lookup paths use the same form.
+	newPathInfos := make(api.PathToVisitorInfoType)
+	for path, pathInfo := range pathInfos {
+		normalizedPath := normalizePath(resourceProvider, resourceType, path)
+		newPathInfo := *pathInfo // deep copy
+		newPathInfos[normalizedPath] = &newPathInfo
 	}
 	registerPaths(
 		pathRegistry[attributeName],
 		resourceType,
 		newPathInfos,
-		getterFunctionInvocation,
-		setterFunctionInvocation,
+		details,
 	)
 }
 
@@ -304,29 +407,48 @@ func GetVisitorMapForPath(resourceProvider ResourceProvider, rt api.ResourceType
 // GetPathVisitorInfo returns the path visitor specification for the specified path within the
 // specified resource type to pass to a visitor function. It searches all attribute names in the
 // path registry for the normalized path.
+// GetPathVisitorInfo returns the PathVisitorInfo for the specified path. It searches all
+// attribute names in the path registry, checking the specific resource type across all
+// attributes first, then falling back to ResourceTypeAny. This ensures a specific resource
+// type match always takes priority. The first match provides the base Details (getter/setter
+// invocations). IsNeeded/IsProvided flags and Enricher are collected from all matches.
+// Getter/setter invocations are NOT merged across attribute names because they carry
+// resource-type-specific arguments.
 func GetPathVisitorInfo(resourceProvider ResourceProvider, resourceType api.ResourceType, path api.UnresolvedPath) *api.PathVisitorInfo {
-	normalizedPath := normalizePath(resourceType, path, false)
-	// log.Infof("looked up info for resourceType %s path %s\n", resourceType, normalizedPath)
+	normalizedPath := normalizePath(resourceProvider, resourceType, path)
 
+	var result *api.PathVisitorInfo
 	pathRegistry := resourceProvider.GetPathRegistry()
-	for _, resourceTypeToPathToVisitorInfo := range pathRegistry {
-		_, present := resourceTypeToPathToVisitorInfo[resourceType]
-		if present {
-			visitorInfo, found := resourceTypeToPathToVisitorInfo[resourceType][normalizedPath]
-			if found {
-				return visitorInfo
+
+	// Outer loop: check specific resource type first, then wildcard
+	for _, rt := range []api.ResourceType{resourceType, api.ResourceTypeAny} {
+		for _, resourceTypeToPathToVisitorInfo := range pathRegistry {
+			pathMap, present := resourceTypeToPathToVisitorInfo[rt]
+			if !present {
+				continue
 			}
-		}
-		// Try wildcard
-		_, present = resourceTypeToPathToVisitorInfo[api.ResourceTypeAny]
-		if present {
-			visitorInfo, found := resourceTypeToPathToVisitorInfo[api.ResourceTypeAny][normalizedPath]
-			if found {
-				return visitorInfo
+			visitorInfo, found := pathMap[normalizedPath]
+			if !found {
+				continue
+			}
+			if result == nil {
+				resultCopy := *visitorInfo
+				if resultCopy.Details != nil {
+					detailsCopy := *resultCopy.Details
+					result = &resultCopy
+					result.Details = &detailsCopy
+				} else {
+					result = &resultCopy
+				}
+			} else {
+				mergeDetails(result, visitorInfo)
+				if result.Enricher == nil && visitorInfo.Enricher != nil {
+					result.Enricher = visitorInfo.Enricher
+				}
 			}
 		}
 	}
-	return nil
+	return result
 }
 
 // RegisterNeededPaths marks the specified paths as needed and registers them under their own
@@ -339,14 +461,17 @@ func RegisterNeededPaths(
 	resourceProvider ResourceProvider,
 	resourceType api.ResourceType,
 	pathInfos api.PathToVisitorInfoType,
-	setterFunctionInvocation *api.FunctionInvocation,
+	details *AttributeRegistrationDetails,
 ) {
 	attributeName := api.AttributeNameNone
 	for _, pathInfo := range pathInfos {
-		pathInfo.IsNeeded = true
+		if pathInfo.Details == nil {
+			pathInfo.Details = &api.AttributeDetails{}
+		}
+		pathInfo.Details.IsNeeded = true
 		attributeName = pathInfo.AttributeName
 	}
-	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, nil, setterFunctionInvocation, false)
+	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, details)
 }
 
 // RegisterProvidedPaths marks the specified paths as provided and registers them under their own
@@ -360,14 +485,17 @@ func RegisterProvidedPaths(
 	resourceProvider ResourceProvider,
 	resourceType api.ResourceType,
 	pathInfos api.PathToVisitorInfoType,
-	getterFunctionInvocation *api.FunctionInvocation,
+	details *AttributeRegistrationDetails,
 ) {
 	attributeName := api.AttributeNameNone
 	for _, pathInfo := range pathInfos {
-		pathInfo.IsProvided = true
+		if pathInfo.Details == nil {
+			pathInfo.Details = &api.AttributeDetails{}
+		}
+		pathInfo.Details.IsProvided = true
 		attributeName = pathInfo.AttributeName
 	}
-	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, getterFunctionInvocation, nil, false)
+	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, details)
 }
 
 // GetRegisteredNeededPaths returns a combined registry of all paths marked as IsNeeded
@@ -388,13 +516,19 @@ func getRegisteredPathsByFlag(resourceProvider ResourceProvider, needed, provide
 	for _, resourceTypeToPathToVisitorInfo := range pathRegistry {
 		for rt, pathToVisitorInfo := range resourceTypeToPathToVisitorInfo {
 			for path, info := range pathToVisitorInfo {
-				if (needed && info.IsNeeded) || (provided && info.IsProvided) {
+				if info.Details != nil && ((needed && info.Details.IsNeeded) || (provided && info.Details.IsProvided)) {
 					if _, ok := combined[rt]; !ok {
 						combined[rt] = make(api.PathToVisitorInfoType)
 					}
 					existing, exists := combined[rt][path]
 					if !exists {
-						combined[rt][path] = info
+						// Copy to avoid modifying the registry's PathVisitorInfo
+						infoCopy := *info
+						if info.Details != nil {
+							detailsCopy := *info.Details
+							infoCopy.Details = &detailsCopy
+						}
+						combined[rt][path] = &infoCopy
 					} else if existing != info {
 						// The same path may appear under multiple attribute names with
 						// different subsets of setter/getter invocations. Merge them.
@@ -407,7 +541,7 @@ func getRegisteredPathsByFlag(resourceProvider ResourceProvider, needed, provide
 	return combined
 }
 
-// mergeDetails merges getter and setter invocations from src into dst's Details.
+// mergeDetails merges getter/setter invocations, properties, and flags from src into dst's Details.
 func mergeDetails(dst, src *api.PathVisitorInfo) {
 	if src.Details == nil {
 		return
@@ -430,4 +564,32 @@ func mergeDetails(dst, src *api.PathVisitorInfo) {
 			dst.Details.SetterInvocations = append(dst.Details.SetterInvocations, setter)
 		}
 	}
+	// Merge property maps (don't overwrite existing entries)
+	for k, v := range src.Details.ProvidedProperties {
+		if dst.Details.ProvidedProperties == nil {
+			dst.Details.ProvidedProperties = make(map[string]string)
+		}
+		if _, exists := dst.Details.ProvidedProperties[k]; !exists {
+			dst.Details.ProvidedProperties[k] = v
+		}
+	}
+	for k, v := range src.Details.NeededRequired {
+		if dst.Details.NeededRequired == nil {
+			dst.Details.NeededRequired = make(map[string]string)
+		}
+		if _, exists := dst.Details.NeededRequired[k]; !exists {
+			dst.Details.NeededRequired[k] = v
+		}
+	}
+	for k, v := range src.Details.NeededPreferred {
+		if dst.Details.NeededPreferred == nil {
+			dst.Details.NeededPreferred = make(map[string]string)
+		}
+		if _, exists := dst.Details.NeededPreferred[k]; !exists {
+			dst.Details.NeededPreferred[k] = v
+		}
+	}
+	// Merge flags using OR
+	dst.Details.IsNeeded = dst.Details.IsNeeded || src.Details.IsNeeded
+	dst.Details.IsProvided = dst.Details.IsProvided || src.Details.IsProvided
 }

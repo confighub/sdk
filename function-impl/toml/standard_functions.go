@@ -17,9 +17,6 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *tomlkit.TOMLReso
 	generic.RegisterStandardFunctions(fh, rp, rp)
 }
 
-// This is also defined in the bridge.
-const NamespaceProperty = "configHub.kubernetes.namespace"
-
 func initStandardFunctions(rp *tomlkit.TOMLResourceProviderType) {
 	// In general we don't recommend changing names of configs since names are used for identifying
 	// configs across mutations, but it is necessary for "container" resources.
@@ -41,9 +38,7 @@ func initStandardFunctions(rp *tomlkit.TOMLResourceProviderType) {
 			api.AttributeNameDefaultName,
 			resourceType,
 			pathInfos,
-			nil,
-			setterFunctionInvocation,
-			false,
+			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
 		)
 	}
 
@@ -56,25 +51,6 @@ func initStandardFunctions(rp *tomlkit.TOMLResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
-			nil,
-			false,
 		)
 	}
-
-	path := api.UnresolvedPath(NamespaceProperty)
-	pathInfos := api.PathToVisitorInfoType{
-		path: {
-			Path:          path,
-			AttributeName: api.AttributeNameResourceName,
-			DataType:      api.DataTypeString,
-		},
-	}
-	// Function to set the value. The parameters are expected to match the corresponding
-	// get function's parameters plus its result.
-	setterFunctionInvocation = &api.FunctionInvocation{
-		FunctionName: "set-references-of-type",
-		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: "v1/Namespace"}},
-	}
-	yamlkit.RegisterNeededPaths(rp, api.ResourceTypeAny, pathInfos, setterFunctionInvocation)
-
 }

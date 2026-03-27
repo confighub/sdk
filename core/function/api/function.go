@@ -78,6 +78,21 @@ var SupportedToolchains = map[workerapi.ToolchainType]string{
 	workerapi.ToolchainOpenTofuHCL:         "/opentofu",
 }
 
+// ToolchainTypeToDataType maps each supported ToolchainType to the DataType
+// of its serialization format.
+var ToolchainTypeToDataType = map[workerapi.ToolchainType]DataType{
+	workerapi.ToolchainConfigHubYAML:       DataTypeYAML,
+	workerapi.ToolchainKubernetesYAML:      DataTypeYAML,
+	workerapi.ToolchainAppConfigProperties: DataTypeProperties,
+	workerapi.ToolchainAppConfigYAML:       DataTypeYAML,
+	workerapi.ToolchainAppConfigTOML:       DataTypeTOML,
+	workerapi.ToolchainAppConfigINI:        DataTypeINI,
+	workerapi.ToolchainAppConfigJSON:       DataTypeJSON,
+	workerapi.ToolchainAppConfigEnv:        DataTypeEnv,
+	workerapi.ToolchainAppConfigText:       DataTypeText,
+	workerapi.ToolchainOpenTofuHCL:         DataTypeHCL,
+}
+
 func IsSupportedToolchain(toolchain workerapi.ToolchainType) bool {
 	_, supported := SupportedToolchains[toolchain]
 	return supported
@@ -178,6 +193,8 @@ const (
 )
 
 const MaxResourceTypeLength = 128
+const MaxResourceCategoryLength = MaxResourceTypeLength
+const MaxResourceNameLength = 256
 
 // ResourceCategoryType is a tuple containing the ResourceCategory and ResourceType.
 type ResourceCategoryType struct {
@@ -229,6 +246,8 @@ const MaxFunctionParameterNameLength = 128
 const MaxFunctionDescriptionLength = 1024
 const MaxAttributeNameLength = 128
 const MaxDataTypeLength = 32
+const MaxExpressionLength = 1024
+const MaxOriginalValueLength = 64 * 1024 // 64KB
 
 // AttributeName represents the category name of an attribute used for getter and setter functions, and for
 // matching Provided values to Needed values. There are some well known attribute names that are used across
@@ -248,13 +267,22 @@ const (
 	AttributeNameResourceName            = AttributeName("resource-name")
 	AttributeNameContainerName           = AttributeName("container-name")
 	AttributeNameContainerImage          = AttributeName("container-image")
-	AttributeNameContainerImages         = AttributeName("container-images") // TODO: dedupe with container-image
 	AttributeNameContainerRepositoryURI  = AttributeName("container-repository-uri")
 	AttributeNameContainerImageReference = AttributeName("container-image-reference")
+	AttributeNameContainerFlag           = AttributeName("container-flag")
 	AttributeNameHostname                = AttributeName("hostname")
 	AttributeNameDomain                  = AttributeName("domain")
 	AttributeNameSubdomain               = AttributeName("subdomain")
 )
+
+// AttributeVisitorDetails extends AttributeDetails with registration-time metadata
+// used by visitor functions.
+type AttributeVisitorDetails struct {
+	AttributeDetails
+	// TODO: expression fields are reserved for future use.
+	// ExtractProvidedPropertiesExpression string `json:",omitempty" description:"Expression to extract ProvidedProperties from resource context; CEL expressions are prefixed with 'cel:'"`
+	// ExtractNeededCriteriaExpression     string `json:",omitempty" description:"Expression to extract NeededRequired and NeededPreferred from resource context; CEL expressions are prefixed with 'cel:'"`
+}
 
 // AttributeDescriptor contains details about an attribute that is valid for all paths
 // of the attribute. In the case of an attribute group, it contains the list of attributes
@@ -262,7 +290,7 @@ const (
 type AttributeDescriptor struct {
 	AttributeName  AttributeName
 	AttributeGroup []AttributeName // List of attributes to expand to, if non-empty
-	AttributeDetails
+	AttributeVisitorDetails
 }
 
 type AttributeNameToAttributeDescriptor map[AttributeName]*AttributeDescriptor
@@ -377,11 +405,14 @@ func GetWhereResourceExpressions(options *FunctionOptions) []*VisitorRelationalE
 }
 
 // ValidWhereResourcePaths lists the supported ConfigHub metadata paths for WhereResource filtering.
+// Keep consistent with MatchesWhereResourceExpressions.
 var ValidWhereResourcePaths = map[string]bool{
 	"ConfigHub.ResourceName":             true,
 	"ConfigHub.ResourceNameWithoutScope": true,
 	"ConfigHub.ResourceType":             true,
 	"ConfigHub.ResourceCategory":         true,
+	"ConfigHub.ResourceMergeID":          true,
+	"ConfigHub.ResourceNameStableCore":   true,
 }
 
 // ParseAndValidateWhereResource parses and validates a WhereResource filter string.
@@ -442,15 +473,23 @@ const MaxFunctionOutputLength = 64 * 1024 * 1024 // 64MB
 const MaxFunctionNumberOfErrors = 1024
 const MaxFunctionErrorMessageLength = 1024
 
-// ResourceInfo contains the ResourceName, ResourceNameWithoutScope, ResourceType, ResourceCategory, and ResourceID for a configuration Element within a configuration Unit.
+// ResourceInfo contains the ResourceName, ResourceNameWithoutScope, ResourceType, ResourceCategory, and ResourceMergeID for a configuration Element within a configuration Unit.
 type ResourceInfo struct {
 	ResourceName             ResourceName     `swaggertype:"string" description:"Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID"`
 	ResourceNameWithoutScope ResourceName     `swaggertype:"string" description:"Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>"`
+	ResourceNameStableCore   ResourceName     `json:",omitempty" swaggertype:"string" description:"Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip"`
 	ResourceType             ResourceType     `swaggertype:"string" description:"Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)"`
 	ResourceCategory         ResourceCategory `json:",omitempty" swaggertype:"string" description:"Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig"`
-	ResourceID               string           `json:",omitempty" swaggertype:"string" description:"Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations"`
+	ResourceMergeID          string           `json:",omitempty" swaggertype:"string" description:"Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations"`
 }
 type ResourceInfoList []ResourceInfo
+
+func EffectiveResourceName(ri *ResourceInfo) ResourceName {
+	if ri.ResourceNameStableCore != "" {
+		return ri.ResourceNameStableCore
+	}
+	return ri.ResourceName
+}
 
 // Resource contains the ResourceName, ResourceType, ResourceCategory, and Body for a configuration Element within a configuration Unit.
 type Resource struct {
@@ -491,12 +530,22 @@ type AttributeInfo struct {
 	AttributeMetadata
 }
 
+// Attribute details used for needs/provides matching.
+type AttributeNeedsProvidesDetails struct {
+	ProvidedProperties map[string]string `json:",omitempty" description:"Key/value properties describing what this provided value offers, for matching"`
+	NeededRequired     map[string]string `json:",omitempty" description:"Required properties that a provided value must have in order to match"`
+	NeededPreferred    map[string]string `json:",omitempty" description:"Preferred properties for matching; more matches produce a stronger match preference"`
+	IsNeeded           bool              `json:",omitempty" description:"Whether this attribute is a needed value"`
+	IsProvided         bool              `json:",omitempty" description:"Whether this attribute is a provided value"`
+}
+
 // AttributeDetails provides the getter and (potentially multiple) setter functions for the
 // resource attribute, and other information.
 type AttributeDetails struct {
 	GetterInvocation  *FunctionInvocation  `json:",omitempty" description:"Function invocation used to get the attribute, if any"`                        // used for matching
 	SetterInvocations []FunctionInvocation `json:",omitempty" description:"Function invocation used to set the attribute (except for the value), if any"` // used for matching
 	Description       string               `json:",omitempty" description:"Description of the attribute"`
+	AttributeNeedsProvidesDetails
 }
 
 // Issue describes an issue found with a configuration attribute/path, such as a
@@ -647,11 +696,10 @@ type PathVisitorInfo struct {
 	AttributeName          AttributeName             `swaggertype:"string" description:"AttributeName for the path"`
 	DataType               DataType                  `swaggertype:"string" description:"DataType of the attribute at the path"`
 	Details                *AttributeDetails         `json:",omitempty" description:"Additional attribute details"`
-	IsNeeded               bool                      `json:",omitempty" description:"Whether this path is a needed value"`
-	IsProvided             bool                      `json:",omitempty" description:"Whether this path is a provided value"`
 	TypeExceptions         map[ResourceType]struct{} `json:",omitempty" description:"Resource types to skip"`
 	EmbeddedAccessorType   EmbeddedAccessorType      `json:",omitempty" swaggertype:"string" description:"Embedded accessor to use, if any"`
 	EmbeddedAccessorConfig string                    `json:",omitempty" description:"Configuration of the embedded accessor, if any"`
+	Enricher               any                       `json:"-" description:"AttributeEnricher function pointer for populating properties; not serialized"`
 }
 
 // PathToVisitorInfoType associates attribute metadata with a resource path.

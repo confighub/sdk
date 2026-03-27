@@ -25,15 +25,13 @@ import (
 // location of the problem in the configuration data.
 
 type INIResourceProviderType struct {
-	pathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
-	attributeRegistry api.AttributeNameToAttributeDescriptor
+	yamlkit.ResourceProviderRegistry
 }
 
 // NewINIResourceProvider creates a new INIResourceProviderType with its own path registry.
 func NewINIResourceProvider() *INIResourceProviderType {
 	return &INIResourceProviderType{
-		pathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
-		attributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
 	}
 }
 
@@ -41,12 +39,8 @@ func (*INIResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (s
 	return "", false
 }
 
-func (rp *INIResourceProviderType) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
-	return rp.pathRegistry
-}
-
-func (rp *INIResourceProviderType) GetAttributeRegistry() api.AttributeNameToAttributeDescriptor {
-	return rp.attributeRegistry
+func (*INIResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
+	return false
 }
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
@@ -104,6 +98,16 @@ func (*INIResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string) 
 	return err
 }
 
+func (rp *INIResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error) {
+	resourceNameStableCorePath := rp.ContextPath(constants.ResourceNameStableCoreKeySuffix)
+	name, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceNameStableCorePath), true)
+	if err != nil || !found {
+		return "", err
+	}
+	return api.ResourceName(name), nil
+}
+
+// Deprecated: Use ResourceMergeIDGetter instead.
 func (rp *INIResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
@@ -113,15 +117,43 @@ func (rp *INIResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, 
 	return id, nil
 }
 
+// Deprecated: Use SetResourceMergeID instead.
 func (rp *INIResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	_, err := doc.SetP(id, resourceIDPath)
 	return err
 }
 
+// Deprecated: Use DeleteResourceMergeID instead.
 func (rp *INIResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
 	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
 	return doc.DeleteP(resourceIDPath)
+}
+
+func (rp *INIResourceProviderType) ResourceMergeIDGetter(doc *gaby.YamlDoc) (string, error) {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceMergeIDPath), true)
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return id, nil
+	}
+	// Fall back to legacy ResourceID path for backward compatibility.
+	return rp.ResourceIDGetter(doc)
+}
+
+func (rp *INIResourceProviderType) SetResourceMergeID(doc *gaby.YamlDoc, id string) error {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	_, err := doc.SetP(id, resourceMergeIDPath)
+	return err
+}
+
+func (rp *INIResourceProviderType) DeleteResourceMergeID(doc *gaby.YamlDoc) error {
+	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
+	_ = doc.DeleteP(resourceMergeIDPath)
+	// Also delete legacy ResourceID path.
+	return rp.DeleteResourceID(doc)
 }
 
 func (*INIResourceProviderType) TypeDescription() string {

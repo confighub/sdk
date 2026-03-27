@@ -21,7 +21,8 @@ OUTPUT
             }
           ]
         }
-      ]
+      ],
+      "IsNeeded": true
     },
     "Value": "example",
     "Index": 0,

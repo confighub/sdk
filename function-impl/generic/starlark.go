@@ -270,12 +270,12 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetStarlark(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
 	})
 }
 
-func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -286,26 +286,42 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, parsedData 
 	// Get original serialized data for comment preservation
 	originalData := []byte(parsedData.String())
 
+	whereExpressions := api.GetWhereResourceExpressions(options)
+
 	// Use TransformConfig for comment-preserving mutation
 	patched, changed, err := yamlkit.TransformConfig(originalData, resourceProvider, func(strippedParsed gaby.Container) ([]byte, error) {
-		// Execute the Starlark program once per resource
-		var modifiedResources []any
-		for i, doc := range strippedParsed {
+		// Execute the Starlark program once per matching resource
+		modifiedResources := make([]any, len(strippedParsed))
+		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			var dataMap map[string]any
 			if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
 			}
 
 			_, rVal, err := runStarlarkForResource("set-starlark", program, dataMap, params)
 			if err != nil {
-				return nil, err
+				return output, []error{err}
 			}
 
 			goVal, err := starlarkToGo(rVal)
 			if err != nil {
-				return nil, fmt.Errorf("failed to convert starlark result for resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to convert starlark result for resource %d: %w", index, err)}
 			}
-			modifiedResources = append(modifiedResources, goVal)
+			modifiedResources[index] = goVal
+			return output, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		// Fill in unmodified resources (those that didn't match the filter)
+		for i, doc := range strippedParsed {
+			if modifiedResources[i] == nil {
+				var dataMap map[string]any
+				if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal resource %d: %w", i, err)
+				}
+				modifiedResources[i] = dataMap
+			}
 		}
 		return marshalResourceList(modifiedResources)
 	})

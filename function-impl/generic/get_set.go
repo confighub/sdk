@@ -55,7 +55,7 @@ func GenericFnGetPath(resourceProvider yamlkit.ResourceProvider, _ *api.Function
 	unresolvedPath := args[0].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceTypeAny, api.UnresolvedPath(unresolvedPath))
-	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, api.DataTypeNone, false, whereExpressions)
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
 	return parsedData, values, err
 }
 
@@ -748,7 +748,7 @@ func genericFnGetVisitorAnyType(signature *api.FunctionSignature, _ *api.Functio
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, api.DataTypeNone, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, api.DataTypeNone, false, false, nil)
 	return parsedData, values, err
 }
 

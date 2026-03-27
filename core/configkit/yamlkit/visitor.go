@@ -5,6 +5,7 @@ package yamlkit
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
@@ -48,6 +50,7 @@ func VisitResources(parsedData gaby.Container, output any, resourceProvider Reso
 // For paths with the "ConfigHub." prefix, values are resolved from ResourceInfo metadata.
 // For other paths, values are resolved from the resource's YAML document using YamlSafePathGetValueAnyType.
 // Returns false if any expression doesn't match.
+// Keep consistent with ValidWhereResourcePaths.
 func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, expressions []*api.VisitorRelationalExpression) (bool, error) {
 	for _, expr := range expressions {
 		var leftValue any
@@ -61,6 +64,10 @@ func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.Resour
 				leftValue = string(resourceInfo.ResourceType)
 			case "ConfigHub.ResourceCategory":
 				leftValue = string(resourceInfo.ResourceCategory)
+			case "ConfigHub.ResourceNameStableCore":
+				leftValue = string(resourceInfo.ResourceNameStableCore)
+			case "ConfigHub.ResourceMergeID":
+				leftValue = resourceInfo.ResourceMergeID
 			default:
 				return false, fmt.Errorf("unsupported ConfigHub path: %s", expr.Path)
 			}
@@ -111,6 +118,7 @@ type VisitorContext struct {
 	Arguments         []api.FunctionArgument
 	EmbeddedPath      string
 	Accessor          EmbeddedAccessor
+	PathVisitorInfo   *api.PathVisitorInfo
 }
 
 func attributeValueCompareFunction(attributeValue []api.AttributeValue) func(int, int) bool {
@@ -252,9 +260,20 @@ func VisitPathsDoc(
 				embeddedPath = strings.Join(unresolvedPathSegments[1:], EmbeddedAccessorSeparator)
 			}
 			pathConstraint := strings.Split(string(unresolvedPathInfo.ResolvedPath), EmbeddedAccessorSeparator)
+			// Create accessor early so it can be used for scalar-array associative lookups
+			var accessor EmbeddedAccessor
+			if unresolvedPathInfo.EmbeddedAccessorType != "" {
+				var accErr error
+				accessor, accErr = GetEmbeddedAccessor(unresolvedPathInfo.EmbeddedAccessorType,
+					unresolvedPathInfo.EmbeddedAccessorConfig)
+				if accErr != nil {
+					multiErrs = append(multiErrs, accErr)
+					continue
+				}
+			}
 			// If there's an embedded accessor (#), upsert should be passed as false to ResolveAssociativePaths
 			resolveUpsert := upsert && embeddedPath == ""
-			resolvedPaths, err := ResolveAssociativePaths(doc, api.UnresolvedPath(unresolvedPathSegments[0]), api.ResolvedPath(pathConstraint[0]), resolveUpsert)
+			resolvedPaths, err := ResolveAssociativePaths(doc, api.UnresolvedPath(unresolvedPathSegments[0]), api.ResolvedPath(pathConstraint[0]), resolveUpsert, accessor)
 			if err != nil {
 				// Don't report the error. Not found is expected.
 				continue // Skip if an error
@@ -279,17 +298,10 @@ func VisitPathsDoc(
 							Details:       unresolvedPathInfo.Details,
 						},
 					},
-					Arguments:    resolvedPath.PathArguments,
-					EmbeddedPath: embeddedPath,
-				}
-				if unresolvedPathInfo.EmbeddedAccessorType != "" {
-					context.Accessor, err = GetEmbeddedAccessor(unresolvedPathInfo.EmbeddedAccessorType,
-						unresolvedPathInfo.EmbeddedAccessorConfig)
-					if err != nil {
-						multiErrs = append(multiErrs, err)
-						// The same error will occur for all resolved paths
-						break
-					}
+					Arguments:       resolvedPath.PathArguments,
+					EmbeddedPath:    embeddedPath,
+					Accessor:        accessor,
+					PathVisitorInfo: unresolvedPathInfo,
 				}
 				// currentDoc.Data() could be nil
 				newOutput, err := visitor(doc, output, context, currentDoc)
@@ -438,7 +450,7 @@ func GetPaths[T api.Scalar](
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
 
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, false, false, whereExpressions)
 }
 
 // GetPathsAnyType traverses the specified path patterns of the specified resource types and returns
@@ -451,16 +463,32 @@ func GetPathsAnyType(
 	resourceProvider ResourceProvider,
 	dataType api.DataType,
 	neededValuesOnly bool,
+	providedValuesOnly bool,
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (api.AttributeValueList, error) {
 
-	visitor := func(_ *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+	visitor := func(resourceDoc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		attr := context.AttributeInfo
 		var currentDataType api.DataType
 		currentValue := currentDoc.Data()
-		if currentValue == nil {
-			return output, nil // skip if there's no value
+		if currentValue == nil || resourceDoc == nil {
+			return output, nil // skip if there's no value or no resource
 		}
+
+		// Filter resources with IgnoreNeeded/IgnoreProvided options
+		if neededValuesOnly {
+			ignorePath := slices.Contains(GetVisitorOptions(resourceDoc, resourceProvider), constants.VisitorOptionIgnoreNeeded)
+			if ignorePath {
+				return output, nil
+			}
+		}
+		if providedValuesOnly {
+			ignorePath := slices.Contains(GetVisitorOptions(resourceDoc, resourceProvider), constants.VisitorOptionIgnoreProvided)
+			if ignorePath {
+				return output, nil
+			}
+		}
+
 		switch v := any(currentValue).(type) {
 		case string:
 			currentDataType = api.DataTypeString
@@ -518,12 +546,28 @@ func GetPathsAnyType(
 		visitorValues, ok := output.([]api.AttributeValue)
 		if !ok {
 			slog.Debug("couldn't convert output to []api.AttributeValue{}")
-			return output, fmt.Errorf("internal error") // TODO: define an error type
+			return output, errors.New("could not convert visitor output to AttributeValueList")
 		}
 		var attributeValue api.AttributeValue
 		comment := currentDoc.GetComments()
 		attributeValue = api.AttributeValue{AttributeInfo: attr, Value: currentValue, Comment: comment}
 		attributeValue.Details = appendGetterAndSetterArguments(attributeValue.Details, context.Arguments)
+
+		// Invoke the Enricher function if registered for this path
+		if context.PathVisitorInfo != nil {
+			if enricher, ok := context.PathVisitorInfo.Enricher.(AttributeEnricher); ok && enricher != nil {
+				_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
+			}
+		}
+
+		// For needed values, auto-extract merge keys from the resolved path as preferred properties.
+		// Resolved paths use numeric indices (e.g., spec.template.spec.volumes.1.configMap.name).
+		// We walk the path, find numeric segments, look up the merge key for that array via
+		// MergeKeyForPath, and read the merge key value from the resource document.
+		if neededValuesOnly && resourceDoc != nil {
+			EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
+		}
+
 		visitorValues = append(visitorValues, attributeValue)
 		return visitorValues, nil
 	}
@@ -568,7 +612,7 @@ func GetNeededPaths[T api.Scalar](
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
 
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, true, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, true, false, whereExpressions)
 }
 
 // GetStringPaths traverses the specified path patterns of the specified resource types and returns
@@ -582,7 +626,7 @@ func GetStringPaths(
 	resourceProvider ResourceProvider,
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (api.AttributeValueList, error) {
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, false, false, whereExpressions)
 }
 
 // GetNeededStringPaths traverses the specified path patterns of the specified resource types and returns
@@ -597,7 +641,7 @@ func GetNeededStringPaths(
 	resourceProvider ResourceProvider,
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (api.AttributeValueList, error) {
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, true, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, true, false, whereExpressions)
 }
 
 // UpdateStringPathsFunction traverses the specified path patterns of the specified resource types.
@@ -678,14 +722,14 @@ func GetRegisteredNeededStringPaths(
 }
 
 // GetRegisteredProvidedStringPaths retrieves Provided values by scanning all attributes
-// for paths marked as IsProvided.
+// for paths marked as IsProvided. Resources with IgnoreProvided annotation are skipped.
 func GetRegisteredProvidedStringPaths(
 	parsedData gaby.Container,
 	resourceProvider ResourceProvider,
 	whereExpressions []*api.VisitorRelationalExpression,
 ) (api.AttributeValueList, error) {
 	resourceTypeToProvidedPaths := GetRegisteredProvidedPaths(resourceProvider)
-	return GetStringPaths(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider, api.DataTypeString, false, true, whereExpressions)
 }
 
 // VisitorSetterInvocationFunctionName is a special function name used to indicate that the

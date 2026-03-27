@@ -231,13 +231,15 @@ func TestComputeScalarPatch_JSON(t *testing.T) {
 }
 
 func TestComputeScalarPatch_YAML(t *testing.T) {
+	// YAML autodetection is disabled (frontmatter in text documents would be
+	// misidentified), so YAML content gets a line-level text patch instead of
+	// a structural one.
 	previous := "name: alice\nage: 30\ncity: NYC\n"
 	modified := "name: alice\nage: 31\ncity: NYC\n"
 
 	patch := ComputeScalarPatch(previous, modified)
 	require.NotEmpty(t, patch)
-	assert.True(t, strings.HasPrefix(patch, "{"), "expected structural YAML patch, got: %s", patch)
-	assert.Contains(t, patch, `"format":"yaml"`)
+	assert.True(t, strings.HasPrefix(patch, "@@ "), "expected line-level text patch, got: %s", patch)
 }
 
 func TestComputeScalarPatch_PlainText(t *testing.T) {
@@ -275,6 +277,8 @@ func TestApplyScalarPatch_JSONThreeWayMerge(t *testing.T) {
 }
 
 func TestApplyScalarPatch_YAMLThreeWayMerge(t *testing.T) {
+	// YAML autodetection is disabled, so this uses line-level patching.
+	// Line-level three-way merge still works when changes are on different lines.
 	base := "name: alice\nage: 30\ncity: NYC\n"
 	// Upstream changes age
 	upstream := "name: alice\nage: 31\ncity: NYC\n"
@@ -288,14 +292,8 @@ func TestApplyScalarPatch_YAMLThreeWayMerge(t *testing.T) {
 	assert.True(t, ok)
 
 	// Both changes should be present
-	ya := &YAMLAccessor{}
-	age, err := ya.Extract(result, "age")
-	require.NoError(t, err)
-	assert.Equal(t, 31, age)
-
-	city, err := ya.Extract(result, "city")
-	require.NoError(t, err)
-	assert.Equal(t, "LA", city)
+	assert.Contains(t, result, "age: 31")
+	assert.Contains(t, result, "city: LA")
 }
 
 func TestApplyScalarPatch_JSONFieldAddition(t *testing.T) {

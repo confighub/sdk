@@ -119,6 +119,18 @@ func registerGetPaths(fh handler.FunctionRegistry, converter configkit.ConfigCon
 	})
 }
 
+// enrichMergeKeysFromPath extracts merge keys from a resolved path (with numeric indices)
+// and adds them as NeededPreferred properties on the attribute's Details. For example,
+// path "spec.template.spec.volumes.1.configMap.name" with merge key "name"="config" at
+// volumes[1] yields NeededPreferred["Name"] = "config".
+func enrichMergeKeysFromPath(parsedData gaby.Container, resourceProvider yamlkit.ResourceProvider, attr *api.AttributeValue) {
+	doc, _ := yamlkit.FindResourceDoc(parsedData, resourceProvider, &attr.ResourceInfo)
+	if doc == nil {
+		return
+	}
+	yamlkit.EnrichMergeKeysFromDoc(doc, resourceProvider, attr)
+}
+
 func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	attributeInfoJSON := args[0].Value.(string)
 	var attributeInfoList []api.AttributeInfo
@@ -126,6 +138,7 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 		return parsedData, nil, err
 	}
 
+	// Get all requested paths even if not in the path registry
 	var allValues api.AttributeValueList
 	for _, info := range attributeInfoList {
 		resourceType := info.ResourceType
@@ -133,11 +146,13 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			resourceType = api.ResourceTypeAny
 		}
 		resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, resourceType, api.UnresolvedPath(info.Path))
-		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, whereExpressions)
+		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, false, whereExpressions)
 		if err != nil {
 			return parsedData, nil, err
 		}
 		// Preserve the original AttributeInfo metadata on each returned value
+		isNeeded := info.Details != nil && info.Details.IsNeeded
+		isProvided := info.Details != nil && info.Details.IsProvided
 		for i := range values {
 			if values[i].AttributeName == api.AttributeNameNone || values[i].AttributeName == "" {
 				values[i].AttributeName = info.AttributeName
@@ -152,6 +167,20 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			// don't match the needed/provided context.
 			if info.Details != nil {
 				values[i].Details = info.Details
+			}
+			// For needed paths, extract merge keys as NeededPreferred properties.
+			if isNeeded {
+				enrichMergeKeysFromPath(parsedData, resourceProvider, &values[i])
+			}
+			// Invoke the Enricher from the PathVisitorInfo if the path is registered.
+			visitorInfo := yamlkit.GetPathVisitorInfo(resourceProvider, info.ResourceType, api.UnresolvedPath(info.Path))
+			if visitorInfo != nil {
+				if enricher, ok := visitorInfo.Enricher.(yamlkit.AttributeEnricher); ok && enricher != nil {
+					doc, _ := yamlkit.FindResourceDoc(parsedData, resourceProvider, &values[i].ResourceInfo)
+					if doc != nil {
+						_ = enricher(doc, &values[i], isProvided)
+					}
+				}
 			}
 		}
 		allValues = append(allValues, values...)

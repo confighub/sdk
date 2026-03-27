@@ -19,10 +19,11 @@ import (
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
-	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 	kustomizeexcerpts "github.com/confighub/sdk/function-impl/third_party/kustomize"
 )
 
@@ -83,7 +84,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				{
 					ParameterName: "where-expression",
 					Required:      true,
-					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. Kubernetes resource quantities, such as '500m' and '128Mi', may be compared.",
+					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. Kubernetes resource quantities, such as '500m' and '128Mi', may be compared.",
 					DataType:      api.DataTypeString,
 					Example:       "spec.template.spec.|securityContext.runAsNonRoot != true AND spec.template.spec.containers.*.|securityContext.runAsNonRoot != true",
 				},
@@ -212,6 +213,7 @@ var segmentIsArray = map[string]struct{}{
 
 const attributeNameAppLabel = api.AttributeName("app-label")
 const attributeNameDefaultNames = api.AttributeName("default-name")
+const attributeNameConfigMapHash = api.AttributeName("configmap-hash")
 
 var resourceTypeToLabelPrefixPaths = map[api.ResourceType][]string{
 	api.ResourceType("apps/v1/Deployment"):  {"metadata.labels.", "spec.selector.matchLabels.", "spec.template.metadata.labels."},
@@ -220,6 +222,115 @@ var resourceTypeToLabelPrefixPaths = map[api.ResourceType][]string{
 	api.ResourceType("apps/v1/StatefulSet"): {"metadata.labels.", "spec.selector.matchLabels.", "spec.template.metadata.labels."},
 	api.ResourceType("v1/Pod"):              {"metadata.labels."},
 	// Do not set labels and selectors for Jobs and CronJobs
+}
+
+// configMapEnricher populates ProvidedProperties and NeededRequired/NeededPreferred
+// for ConfigMap needs/provides matching. For provided ConfigMaps (metadata.name), it extracts
+// ResourceNameStableCore, ConfigMapFormat, Namespace, and data keys. For needed ConfigMap
+// references, it extracts Namespace and envFrom format requirements.
+func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+	// Only enrich ConfigMap resources (provided) or references to ConfigMaps (needed).
+	// GetPathVisitorInfo merges across all attribute names, so this enricher may be
+	// invoked for non-ConfigMap resources (e.g., Namespace metadata.name).
+	if isProvided && attr.ResourceType != "v1/ConfigMap" {
+		return nil
+	}
+	if attr.Details == nil {
+		attr.Details = &api.AttributeDetails{}
+	}
+	if isProvided {
+		if attr.Details.ProvidedProperties == nil {
+			attr.Details.ProvidedProperties = make(map[string]string)
+		}
+		// Provided Properties should be in the form expected by Needed Requirements and Preferences.
+
+		// Extract ResourceNameStableCore to match with Name keys
+		stableCorePath := k8skit.K8sContextPath(constants.ResourceNameStableCoreKeySuffix)
+		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(stableCorePath), true); found && v != "" {
+			attr.Details.ProvidedProperties["Name"] = v
+		}
+		// Extract ConfigMapFormat
+		formatPath := k8skit.K8sContextPath(constants.ConfigMapFormatKeySuffix)
+		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(formatPath), true); found && v != "" {
+			attr.Details.ProvidedProperties["ConfigMapFormat"] = v
+		}
+		// Extract Namespace
+		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
+			attr.Details.ProvidedProperties["Namespace"] = v
+		}
+		// Extract data keys for subPath matching
+		dataDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, "data", true)
+		if found && dataDoc != nil {
+			if dataMap, ok := dataDoc.Data().(map[string]any); ok {
+				for key := range dataMap {
+					// Add the keys for subPath matching
+					attr.Details.ProvidedProperties["SubPath-"+key] = "true"
+				}
+			}
+		}
+	} else {
+		// Needed ConfigMap references
+		if attr.Details.NeededRequired == nil {
+			attr.Details.NeededRequired = make(map[string]string)
+		}
+		// Extract Namespace (only require matching when non-placeholder)
+		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
+			attr.Details.NeededRequired["Namespace"] = v
+		}
+		// Detect envFrom references — these require key/value format
+		if strings.Contains(string(attr.Path), "envFrom") || strings.Contains(string(attr.Path), "configMapRef") {
+			attr.Details.NeededRequired["ConfigMapFormat"] = constants.ConfigMapFormatKeyValue
+		}
+		// For volume ConfigMap references, look up volumeMount subPaths that reference
+		// this volume name. The volume name comes from merge key extraction (NeededPreferred["Name"]).
+		if doc != nil && strings.Contains(string(attr.Path), "volumes") {
+			volumeName := ""
+			if attr.Details.NeededPreferred != nil {
+				volumeName = attr.Details.NeededPreferred["Name"]
+			}
+			if volumeName != "" {
+				containersPaths, ok := k8skit.ResourceTypeToContainersPaths[attr.ResourceType]
+				if ok {
+					for _, containersPath := range containersPaths {
+						// Iterate over all containers in this path
+						containersDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(containersPath), true)
+						if !found || containersDoc == nil {
+							continue
+						}
+						containers, ok := containersDoc.Data().([]any)
+						if !ok {
+							continue
+						}
+						for ci := range containers {
+							// Check each volumeMount in this container
+							vmPath := fmt.Sprintf("%s.%d.volumeMounts", containersPath, ci)
+							vmDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(vmPath), true)
+							if !found || vmDoc == nil {
+								continue
+							}
+							mounts, ok := vmDoc.Data().([]any)
+							if !ok {
+								continue
+							}
+							for mi := range mounts {
+								mountNamePath := api.ResolvedPath(fmt.Sprintf("%s.%d.name", vmPath, mi))
+								mountName, found, _ := yamlkit.YamlSafePathGetValue[string](doc, mountNamePath, true)
+								if !found || mountName != volumeName {
+									continue
+								}
+								subPathPath := api.ResolvedPath(fmt.Sprintf("%s.%d.subPath", vmPath, mi))
+								subPath, found, _ := yamlkit.YamlSafePathGetValue[string](doc, subPathPath, true)
+								if found && subPath != "" {
+									attr.Details.NeededRequired["SubPath-"+subPath] = "true"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
@@ -244,7 +355,18 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 				FunctionName: "get-resources-of-type",
 				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: nbrgvk}},
 			}
-			yamlkit.RegisterProvidedPaths(rp, nbrgvk, pathInfos, getterFunctionInvocation)
+			// Attach the ConfigMap enricher for ConfigMap resource types.
+			var enricher yamlkit.AttributeEnricher
+			if nbrgvk == "v1/ConfigMap" {
+				enricher = configMapEnricher
+			}
+			yamlkit.RegisterProvidedPaths(rp, nbrgvk, pathInfos, &yamlkit.AttributeRegistrationDetails{
+				GetterInvocation: getterFunctionInvocation,
+				Enricher:         enricher,
+				AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
+					ProvidedProperties: map[string]string{"ResourceType": string(nbrgvk)},
+				},
+			})
 			for _, field := range nbr.Referrers {
 				gvk := gvkString(field.Gvk)
 				// This is kind of hacky in lieu of actual schemas. Kustomize always searches arrays.
@@ -271,15 +393,25 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 					FunctionName: "set-references-of-type",
 					Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: nbrgvk}},
 				}
-				yamlkit.RegisterNeededPaths(rp, gvk, pathInfos, setterFunctionInvocation)
+				// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
+				var neededEnricher yamlkit.AttributeEnricher
+				if nbrgvk == "v1/ConfigMap" {
+					neededEnricher = configMapEnricher
+				}
+				neededDetails := &yamlkit.AttributeRegistrationDetails{
+					SetterInvocation: setterFunctionInvocation,
+					Enricher:         neededEnricher,
+					AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
+						NeededRequired: map[string]string{"ResourceType": string(nbrgvk)},
+					},
+				}
+				yamlkit.RegisterNeededPaths(rp, gvk, pathInfos, neededDetails)
 				yamlkit.RegisterPathsByAttributeName(
 					rp,
 					attributeName,
 					gvk,
 					pathInfos,
-					nil,
-					setterFunctionInvocation,
-					false,
+					neededDetails,
 				)
 			}
 		}
@@ -322,9 +454,7 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			api.AttributeNameDefaultName,
 			resourceType,
 			pathInfos,
-			nil,
-			setterFunctionInvocation,
-			false,
+			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
 		)
 	}
 
@@ -500,9 +630,61 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
-			nil,
-			false,
 		)
+	}
+
+	// Register the confighub.com/Hash annotation as a provided value on ConfigMaps
+	// and as a needed value on workload podSpec template annotations. This enables
+	// propagation of a content hash from mutable ConfigMaps to workload Deployments,
+	// which triggers rolling updates when the ConfigMap content changes.
+	// TODO: When a workload references multiple ConfigMaps, we need a way to combine
+	// their hash values into a single annotation value.
+	hashAnnotationKey := yamlkit.EscapeDotsInPathSegment(k8skit.ContextKeyPrefix + constants.HashKeySuffix)
+	hashAnnotationPath := api.UnresolvedPath(k8skit.K8sContextPath(constants.HashKeySuffix))
+	hashProvidedPathInfos := api.PathToVisitorInfoType{
+		hashAnnotationPath: {
+			Path:          hashAnnotationPath,
+			AttributeName: attributeNameConfigMapHash,
+			DataType:      api.DataTypeString,
+		},
+	}
+	yamlkit.RegisterProvidedPaths(rp, api.ResourceType("v1/ConfigMap"), hashProvidedPathInfos, &yamlkit.AttributeRegistrationDetails{
+		GetterInvocation: &api.FunctionInvocation{
+			FunctionName: "get-annotation",
+			Arguments:    []api.FunctionArgument{{ParameterName: "annotation-key", Value: k8skit.ContextKeyPrefix + constants.HashKeySuffix}},
+		},
+	})
+
+	// Register the needed hash annotation on workload podSpec template metadata.
+	for resourceType, podSpecPaths := range k8skit.ResourceTypeToPodSpecPaths {
+		for _, podSpecPath := range podSpecPaths {
+			// Derive the template metadata annotations path from the podSpec path
+			// (e.g., "spec.template.spec" -> "spec.template.metadata.annotations.<key>").
+			templatePath := strings.TrimSuffix(podSpecPath, ".spec")
+			if templatePath == podSpecPath {
+				// v1/Pod: podSpec is just "spec", template annotations go on metadata directly
+				templatePath = ""
+			}
+			var neededPath string
+			if templatePath == "" {
+				neededPath = "metadata.annotations." + hashAnnotationKey
+			} else {
+				neededPath = templatePath + ".metadata.annotations." + hashAnnotationKey
+			}
+			neededPathInfos := api.PathToVisitorInfoType{
+				api.UnresolvedPath(neededPath): {
+					Path:          api.UnresolvedPath(neededPath),
+					AttributeName: attributeNameConfigMapHash,
+					DataType:      api.DataTypeString,
+				},
+			}
+			yamlkit.RegisterNeededPaths(rp, resourceType, neededPathInfos, &yamlkit.AttributeRegistrationDetails{
+				SetterInvocation: &api.FunctionInvocation{
+					FunctionName: "set-annotation",
+					Arguments:    []api.FunctionArgument{{ParameterName: "annotation-key", Value: k8skit.ContextKeyPrefix + constants.HashKeySuffix}},
+				},
+			})
+		}
 	}
 }
 
