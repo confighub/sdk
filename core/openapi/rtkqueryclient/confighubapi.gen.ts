@@ -11131,6 +11131,12 @@ export type FunctionInvocation = {
   FunctionName?: string;
 };
 export type AttributeDetails = {
+  /** ID of the Link that bound this needed path to a provided value */
+  BoundLinkID?: string;
+  /** ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison */
+  BoundProvidedProperties?: {
+    [key: string]: string;
+  };
   /** Description of the attribute */
   Description?: string;
   GetterInvocation?: FunctionInvocation;
@@ -11176,6 +11182,12 @@ export type PathToVisitorInfoType = {
   [key: string]: PathVisitorInfo;
 };
 export type ResourceTypePathsEntry = {
+  /** ID of the Link that bound this needed path to a provided value */
+  BoundLinkID?: string;
+  /** ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison */
+  BoundProvidedProperties?: {
+    [key: string]: string;
+  };
   GetterInvocation?: FunctionInvocation;
   /** Whether this attribute is a needed value */
   IsNeeded?: boolean;
@@ -11272,6 +11284,8 @@ export type AttributeRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** ToolchainType specifies the type of toolchain this attribute works with. */
   ToolchainType: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
@@ -11526,6 +11540,8 @@ export type BridgeWorkerRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   UserID?: Uuid;
@@ -11742,6 +11758,8 @@ export type ChangeSetRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** StartTagID is the identifier of the set of revisions that begin the ChangeSet. */
   StartTagID?: string;
   /** State represents the current state of the ChangeSet. */
@@ -11806,6 +11824,8 @@ export type TagRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** TagID uniquely identifies a tag within the system. */
   TagID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
@@ -11908,6 +11928,8 @@ export type FilterRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12121,6 +12143,8 @@ export type InvocationRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** ToolchainType specifies the type of toolchain this invocation works with.
             This determines which configuration formats the invocation can process. */
   ToolchainType: string;
@@ -12196,29 +12220,6 @@ export type Unit = {
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
-export type AttributeInfo = {
-  /** Name of the registered attribute */
-  AttributeName?: string;
-  /** Data type if the attribute value. */
-  DataType?: string;
-  Details?: AttributeDetails;
-  /** True if a path in the live state, false if a path in the configuration data */
-  InLiveState?: boolean;
-  /** Path of the attribute */
-  Path?: string;
-  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
-  ResourceCategory?: string;
-  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
-  ResourceMergeID?: string;
-  /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
-  ResourceName?: string;
-  /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
-  ResourceNameStableCore?: string;
-  /** Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name> */
-  ResourceNameWithoutScope?: string;
-  /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
-  ResourceType?: string;
-};
 export type Issue = {
   /** Identifier for the kind of issue found, such as a number, alphanumeric code, or policy/rule name. Use especially with validation functions that check multiple policies/rules. */
   Identifier?: string;
@@ -12259,6 +12260,29 @@ export type AttributeValue = {
   Score?: string;
   /** Value of the attribute at the specified Path */
   Value?: any;
+};
+export type AttributeInfo = {
+  /** Name of the registered attribute */
+  AttributeName?: string;
+  /** Data type if the attribute value. */
+  DataType?: string;
+  Details?: AttributeDetails;
+  /** True if a path in the live state, false if a path in the configuration data */
+  InLiveState?: boolean;
+  /** Path of the attribute */
+  Path?: string;
+  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  ResourceCategory?: string;
+  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
+  ResourceMergeID?: string;
+  /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
+  ResourceName?: string;
+  /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
+  ResourceNameStableCore?: string;
+  /** Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name> */
+  ResourceNameWithoutScope?: string;
+  /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
+  ResourceType?: string;
 };
 export type AttributeValueList = AttributeValue[];
 export type ValidationResult = {
@@ -12346,7 +12370,7 @@ export type UnitRead = {
   LiveState?: string;
   MutationSources?: ResourceMutationList;
   /** Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates. */
-  NeededPaths?: AttributeInfo[];
+  NeededPaths?: AttributeValue[];
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Sequence number the previous Revision applied. 0 if no live revision. */
@@ -12359,6 +12383,8 @@ export type UnitRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   TargetID?: Uuid;
   /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
   ToolchainType: string;
@@ -12390,7 +12416,6 @@ export type Binding = {
   InLiveState?: boolean;
   NeededPath?: string;
   NeededResource?: ResourceInfo;
-  OriginalValue?: any;
   ProvidedPath?: string;
   ProvidedResource?: ResourceInfo;
 };
@@ -12481,6 +12506,8 @@ export type LinkRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** Unique identifier of the Space of the upstream Unit. */
   ToSpaceID?: string;
   /** Unique identifier of the upstream (producer) Unit. */
@@ -12632,6 +12659,8 @@ export type RevisionRead = {
   Source?: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
   Tags?: {
     [key: string]: string;
@@ -12802,6 +12831,8 @@ export type TriggerRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** ToolchainType specifies the type of toolchain this trigger works with.
             This determines which configuration formats the trigger can process. */
   ToolchainType: string;
@@ -13062,6 +13093,8 @@ export type TargetRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
   /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
@@ -13226,6 +13259,8 @@ export type MutationRead = {
   RevisionNum?: number;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** User-defined category for the Mutation. The prefix 'ConfigHub' is reserved. */
   Subgroup?: string;
   TriggerID?: Uuid;
@@ -13281,6 +13316,8 @@ export type UnitEventRead = {
   RevisionNum?: number;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   StartedAt?: string;
   Status?: ActionStatusType;
   TerminatedAt?: string | null;
@@ -13413,6 +13450,8 @@ export type ViewRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */

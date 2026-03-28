@@ -247,7 +247,6 @@ const MaxFunctionDescriptionLength = 1024
 const MaxAttributeNameLength = 128
 const MaxDataTypeLength = 32
 const MaxExpressionLength = 1024
-const MaxOriginalValueLength = 64 * 1024 // 64KB
 
 // AttributeName represents the category name of an attribute used for getter and setter functions, and for
 // matching Provided values to Needed values. There are some well known attribute names that are used across
@@ -532,11 +531,13 @@ type AttributeInfo struct {
 
 // Attribute details used for needs/provides matching.
 type AttributeNeedsProvidesDetails struct {
-	ProvidedProperties map[string]string `json:",omitempty" description:"Key/value properties describing what this provided value offers, for matching"`
-	NeededRequired     map[string]string `json:",omitempty" description:"Required properties that a provided value must have in order to match"`
-	NeededPreferred    map[string]string `json:",omitempty" description:"Preferred properties for matching; more matches produce a stronger match preference"`
-	IsNeeded           bool              `json:",omitempty" description:"Whether this attribute is a needed value"`
-	IsProvided         bool              `json:",omitempty" description:"Whether this attribute is a provided value"`
+	ProvidedProperties      map[string]string `json:",omitempty" description:"Key/value properties describing what this provided value offers, for matching"`
+	NeededRequired          map[string]string `json:",omitempty" description:"Required properties that a provided value must have in order to match"`
+	NeededPreferred         map[string]string `json:",omitempty" description:"Preferred properties for matching; more matches produce a stronger match preference"`
+	BoundLinkID             uuid.UUID         `json:",omitempty,omitzero" description:"ID of the Link that bound this needed path to a provided value"`
+	BoundProvidedProperties map[string]string `json:",omitempty" description:"ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison"`
+	IsNeeded                bool              `json:",omitempty" description:"Whether this attribute is a needed value"`
+	IsProvided              bool              `json:",omitempty" description:"Whether this attribute is a provided value"`
 }
 
 // AttributeDetails provides the getter and (potentially multiple) setter functions for the
@@ -546,6 +547,78 @@ type AttributeDetails struct {
 	SetterInvocations []FunctionInvocation `json:",omitempty" description:"Function invocation used to set the attribute (except for the value), if any"` // used for matching
 	Description       string               `json:",omitempty" description:"Description of the attribute"`
 	AttributeNeedsProvidesDetails
+}
+
+// DeepCopyStringMap returns a deep copy of a map[string]string, or nil if the input is nil.
+func DeepCopyStringMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[string]string, len(m))
+	for k, v := range m {
+		result[k] = v
+	}
+	return result
+}
+
+// DeepCopyFunctionArguments returns a deep copy of a slice of FunctionArgument.
+func DeepCopyFunctionArguments(args []FunctionArgument) []FunctionArgument {
+	if args == nil {
+		return nil
+	}
+	result := make([]FunctionArgument, len(args))
+	copy(result, args)
+	return result
+}
+
+// DeepCopyFunctionInvocation returns a deep copy of a FunctionInvocation.
+func DeepCopyFunctionInvocation(fi FunctionInvocation) FunctionInvocation {
+	return FunctionInvocation{
+		FunctionName: fi.FunctionName,
+		Arguments:    DeepCopyFunctionArguments(fi.Arguments),
+	}
+}
+
+// DeepCopyAttributeNeedsProvidesDetails returns a deep copy of AttributeNeedsProvidesDetails.
+func DeepCopyAttributeNeedsProvidesDetails(d AttributeNeedsProvidesDetails) AttributeNeedsProvidesDetails {
+	return AttributeNeedsProvidesDetails{
+		ProvidedProperties:      DeepCopyStringMap(d.ProvidedProperties),
+		NeededRequired:          DeepCopyStringMap(d.NeededRequired),
+		NeededPreferred:         DeepCopyStringMap(d.NeededPreferred),
+		BoundLinkID:             d.BoundLinkID,
+		BoundProvidedProperties: DeepCopyStringMap(d.BoundProvidedProperties),
+		IsNeeded:                d.IsNeeded,
+		IsProvided:              d.IsProvided,
+	}
+}
+
+// DeepCopyAttributeDetails returns a deep copy of an AttributeDetails, or nil if the input is nil.
+func DeepCopyAttributeDetails(d *AttributeDetails) *AttributeDetails {
+	if d == nil {
+		return nil
+	}
+	result := &AttributeDetails{
+		Description:                   d.Description,
+		AttributeNeedsProvidesDetails: DeepCopyAttributeNeedsProvidesDetails(d.AttributeNeedsProvidesDetails),
+	}
+	if d.GetterInvocation != nil {
+		gi := DeepCopyFunctionInvocation(*d.GetterInvocation)
+		result.GetterInvocation = &gi
+	}
+	if d.SetterInvocations != nil {
+		result.SetterInvocations = make([]FunctionInvocation, len(d.SetterInvocations))
+		for i, si := range d.SetterInvocations {
+			result.SetterInvocations[i] = DeepCopyFunctionInvocation(si)
+		}
+	}
+	return result
+}
+
+// DeepCopyAttributeInfo returns a deep copy of an AttributeInfo, including its Details.
+func DeepCopyAttributeInfo(ai AttributeInfo) AttributeInfo {
+	result := ai
+	result.Details = DeepCopyAttributeDetails(ai.Details)
+	return result
 }
 
 // Issue describes an issue found with a configuration attribute/path, such as a

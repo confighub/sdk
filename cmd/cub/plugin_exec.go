@@ -28,11 +28,18 @@ func findPlugin(args []string) (path string, remainingArgs []string, err error) 
 		}
 	}
 
-	// Check for directory plugin with "main" entry point
-	mainPath := filepath.Join(dir, name, "main")
-	if info, err := os.Stat(mainPath); err == nil && !info.IsDir() {
-		if isExecutable(info) {
-			return mainPath, args[1:], nil
+	// Check for directory plugin with entry point from manifest or "main"
+	dirPath := filepath.Join(dir, name)
+	if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
+		ep, epErr := resolveEntrypoint(dirPath)
+		if epErr != nil {
+			return "", nil, epErr
+		}
+		epPath := filepath.Join(dirPath, ep)
+		if epInfo, err := os.Stat(epPath); err == nil && !epInfo.IsDir() {
+			if isExecutable(epInfo) {
+				return epPath, args[1:], nil
+			}
 		}
 	}
 

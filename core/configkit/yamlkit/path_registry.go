@@ -157,7 +157,7 @@ func setNeedsProvidesDetailsInVisitorPathInfo(pathInfo *api.PathVisitorInfo, npd
 			// the field can reference multiple types — mark as empty to
 			// prevent subsequent registrations from re-adding a value.
 			pathInfo.Details.NeededRequired[k] = ""
-		} else if existing == "" {
+		} else if ok && existing == "" {
 			// Already marked as multi-value — don't overwrite
 		} else {
 			pathInfo.Details.NeededRequired[k] = v
@@ -227,7 +227,7 @@ func registerPaths(
 // after it is extracted by a visitor. It receives the resource doc for context and
 // a flag indicating whether the value is a provided value. It populates
 // ProvidedProperties, NeededRequired, and/or NeededPreferred on the attribute's Details.
-type AttributeEnricher func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error
+type AttributeEnricher func(doc *gaby.YamlDoc, attrInfo *api.AttributeValue, isProvided bool) error
 
 // AttributeRegistrationDetails specifies getter/setter invocations and an optional
 // Enricher function for use when registering paths via RegisterPathsByAttributeName.
@@ -253,7 +253,24 @@ func RegisterPathsByAttributeName(
 	resourceType api.ResourceType,
 	pathInfos api.PathToVisitorInfoType,
 	details *AttributeRegistrationDetails,
+	isNeeded bool,
+	isProvided bool,
 ) {
+	// Set IsNeeded/IsProvided on each pathInfo's Details
+	if isNeeded || isProvided {
+		for _, pathInfo := range pathInfos {
+			if pathInfo.Details == nil {
+				pathInfo.Details = &api.AttributeDetails{}
+			}
+			if isNeeded {
+				pathInfo.Details.IsNeeded = true
+			}
+			if isProvided {
+				pathInfo.Details.IsProvided = true
+			}
+		}
+	}
+
 	var getterFunctionInvocation *api.FunctionInvocation
 	var setterFunctionInvocation *api.FunctionInvocation
 	if details != nil {
@@ -451,52 +468,6 @@ func GetPathVisitorInfo(resourceProvider ResourceProvider, resourceType api.Reso
 	return result
 }
 
-// RegisterNeededPaths marks the specified paths as needed and registers them under their own
-// attribute name. These are paths of attributes that generally need to be set based on values
-// extracted from other resources or configuration Objects, as opposed to values that would be
-// set by default in a configuration object sample, set automatically based on default conventions,
-// set by other registered mutation functions, set by other automated processes, or set imperatively
-// via functions, UI, other tool, or just by editing the configuration data manually.
-func RegisterNeededPaths(
-	resourceProvider ResourceProvider,
-	resourceType api.ResourceType,
-	pathInfos api.PathToVisitorInfoType,
-	details *AttributeRegistrationDetails,
-) {
-	attributeName := api.AttributeNameNone
-	for _, pathInfo := range pathInfos {
-		if pathInfo.Details == nil {
-			pathInfo.Details = &api.AttributeDetails{}
-		}
-		pathInfo.Details.IsNeeded = true
-		attributeName = pathInfo.AttributeName
-	}
-	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, details)
-}
-
-// RegisterProvidedPaths marks the specified paths as provided and registers them under their own
-// attribute name. These are paths of attributes that may provide values that could satisfy needed
-// values within or across configuration Objects. Provided values are matched with Needed values
-// when they have attribute names in common and matching getter (for the Provided value) and setter
-// (for the Needed value) function invocation argument values, as disambiguators. The getter and
-// setter function names do not need to match, since the provided attributes are expected to be of
-// a different kind (different attribute name), from a different resource type.
-func RegisterProvidedPaths(
-	resourceProvider ResourceProvider,
-	resourceType api.ResourceType,
-	pathInfos api.PathToVisitorInfoType,
-	details *AttributeRegistrationDetails,
-) {
-	attributeName := api.AttributeNameNone
-	for _, pathInfo := range pathInfos {
-		if pathInfo.Details == nil {
-			pathInfo.Details = &api.AttributeDetails{}
-		}
-		pathInfo.Details.IsProvided = true
-		attributeName = pathInfo.AttributeName
-	}
-	RegisterPathsByAttributeName(resourceProvider, attributeName, resourceType, pathInfos, details)
-}
 
 // GetRegisteredNeededPaths returns a combined registry of all paths marked as IsNeeded
 // across all attributes in the path registry.

@@ -7,6 +7,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,9 +24,10 @@ import (
 var githubAPIBaseURL = "https://api.github.com"
 
 var pluginInstallArgs struct {
-	name     string
-	force    bool
-	platform string
+	name       string
+	force      bool
+	platform   string
+	sourceRepo bool
 }
 
 var pluginInstallCmd = &cobra.Command{
@@ -36,7 +38,12 @@ var pluginInstallCmd = &cobra.Command{
   https://example.com/plugin           Download as single binary
   https://github.com/org/repo          Install from latest GitHub release
   org/repo                             Shorthand for GitHub
-  org/repo@v1.2.0                      Pinned GitHub release tag`),
+  org/repo@v1.2.0                      Pinned GitHub release tag
+
+For repositories without releases, the repo source is downloaded automatically.
+Use --source-repo to force this behavior even when releases exist:
+  cub plugin install org/repo --source-repo
+  cub plugin install org/repo@branch --source-repo`),
 	Args: cobra.ExactArgs(1),
 	RunE: pluginInstallCmdRun,
 }
@@ -45,6 +52,7 @@ func init() {
 	pluginInstallCmd.Flags().StringVar(&pluginInstallArgs.name, "name", "", "Override the plugin name")
 	pluginInstallCmd.Flags().BoolVar(&pluginInstallArgs.force, "force", false, "Overwrite an existing plugin")
 	pluginInstallCmd.Flags().StringVar(&pluginInstallArgs.platform, "platform", "", "Target platform (e.g. linux/amd64)")
+	pluginInstallCmd.Flags().BoolVar(&pluginInstallArgs.sourceRepo, "source-repo", false, "Force install from repository source even if releases exist")
 	pluginCmd.AddCommand(pluginInstallCmd)
 }
 
@@ -189,6 +197,9 @@ type ghAsset struct {
 	BrowserDownloadURL string `json:"browser_download_url"`
 }
 
+// errNoReleases is returned when a GitHub repo has no releases.
+var errNoReleases = fmt.Errorf("no releases found")
+
 // resolveGitHubRelease fetches release metadata from the GitHub API.
 func resolveGitHubRelease(src *githubSource) (*ghRelease, error) {
 	var url string
@@ -220,7 +231,7 @@ func resolveGitHubRelease(src *githubSource) (*ghRelease, error) {
 		if src.tag != "" {
 			return nil, fmt.Errorf("release %q not found for %s/%s", src.tag, src.owner, src.repo)
 		}
-		return nil, fmt.Errorf("no releases found for %s/%s", src.owner, src.repo)
+		return nil, fmt.Errorf("%s/%s: %w", src.owner, src.repo, errNoReleases)
 	}
 	if resp.StatusCode == http.StatusForbidden {
 		return nil, fmt.Errorf("GitHub API rate limit exceeded; set GITHUB_TOKEN to authenticate")
@@ -234,6 +245,87 @@ func resolveGitHubRelease(src *githubSource) (*ghRelease, error) {
 		return nil, fmt.Errorf("failed to parse GitHub release: %w", err)
 	}
 	return &release, nil
+}
+
+// repoTarballURL returns the GitHub API URL for downloading a repo tarball.
+// If ref is empty, the default branch is used.
+func repoTarballURL(src *githubSource) string {
+	ref := src.tag
+	if ref == "" {
+		ref = "HEAD"
+	}
+	return fmt.Sprintf("%s/repos/%s/%s/tarball/%s", githubAPIBaseURL, src.owner, src.repo, ref)
+}
+
+// downloadRepoTarball downloads a repo tarball from the GitHub API.
+func downloadRepoTarball(src *githubSource, destPath string) error {
+	url := repoTarballURL(src)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "cub-cli")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		if src.tag == "" {
+			return fmt.Errorf("repository %s/%s not found", src.owner, src.repo)
+		}
+		return fmt.Errorf("repository %s/%s not found or ref %q does not exist", src.owner, src.repo, src.tag)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GitHub API returned %s", resp.Status)
+	}
+
+	// GitHub returns a tarball; extract it with single-dir stripping
+	dir := filepath.Dir(destPath)
+	tmpDir, err := os.MkdirTemp(dir, ".plugin-extract-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	if err := extractTarGz(resp.Body, tmpDir); err != nil {
+		return fmt.Errorf("extraction failed: %w", err)
+	}
+
+	// GitHub tarballs always have a single top-level directory
+	extractedDir := tmpDir
+	entries, err := os.ReadDir(tmpDir)
+	if err != nil {
+		return err
+	}
+	if len(entries) == 1 && entries[0].IsDir() {
+		extractedDir = filepath.Join(tmpDir, entries[0].Name())
+	}
+
+	if err := os.Rename(extractedDir, destPath); err != nil {
+		return fmt.Errorf("failed to install plugin: %w", err)
+	}
+
+	// Ensure entry point is executable if present
+	ep, epErr := resolveEntrypoint(destPath)
+	if epErr != nil {
+		return epErr
+	}
+	epPath := filepath.Join(destPath, ep)
+	if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
+		if err := os.Chmod(epPath, 0755); err != nil {
+			return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
+		}
+	}
+
+	return nil
 }
 
 // matchAsset selects the best asset for the target platform.
@@ -398,10 +490,16 @@ func downloadAndExtractTarGz(url, destPath string) error {
 		return fmt.Errorf("failed to install plugin: %w", err)
 	}
 
-	// Ensure main entry point is executable if present
-	mainPath := filepath.Join(destPath, "main")
-	if info, statErr := os.Stat(mainPath); statErr == nil && !info.IsDir() {
-		os.Chmod(mainPath, 0755)
+	// Ensure entry point is executable if present
+	ep, epErr := resolveEntrypoint(destPath)
+	if epErr != nil {
+		return epErr
+	}
+	epPath := filepath.Join(destPath, ep)
+	if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
+		if err := os.Chmod(epPath, 0755); err != nil {
+			return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
+		}
 	}
 
 	return nil
@@ -481,13 +579,57 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// 2. Resolve platform
+	// 2. Determine plugin name
+	name := pluginInstallArgs.name
+	if name == "" {
+		name = derivePluginName(src)
+	}
+	if name == "" {
+		return fmt.Errorf("cannot determine plugin name; use --name to specify one")
+	}
+
+	// 3. Ensure plugin directory exists
+	dir := pluginDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create plugin directory: %w", err)
+	}
+
+	// 4. Check for existing plugin
+	destPath := filepath.Join(dir, name)
+	if _, err := os.Stat(destPath); err == nil {
+		if !pluginInstallArgs.force {
+			return fmt.Errorf("plugin %q already exists; use --force to overwrite", name)
+		}
+		if err := os.RemoveAll(destPath); err != nil {
+			return fmt.Errorf("failed to remove existing plugin: %w", err)
+		}
+	}
+
+	// 5. Handle --source-repo: download repo tarball directly
+	if pluginInstallArgs.sourceRepo {
+		ghSrc, ok := src.(*githubSource)
+		if !ok {
+			return fmt.Errorf("--source-repo can only be used with GitHub sources (org/repo)")
+		}
+		ref := ghSrc.tag
+		if ref == "" {
+			ref = "default branch"
+		}
+		tprint("Downloading %s/%s (%s)...", ghSrc.owner, ghSrc.repo, ref)
+		if err := downloadRepoTarball(ghSrc, destPath); err != nil {
+			return err
+		}
+		tprint("Installed plugin %q to %s", name, destPath)
+		return nil
+	}
+
+	// 6. Resolve platform for release asset matching
 	targetOS, targetArch, err := resolvePlatform(pluginInstallArgs.platform)
 	if err != nil {
 		return err
 	}
 
-	// 3. Determine download URL and whether it's a tar.gz
+	// 7. Determine download URL and whether it's a tar.gz
 	var downloadURL string
 	var isTarGz bool
 
@@ -498,6 +640,14 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 	case *githubSource:
 		release, err := resolveGitHubRelease(s)
 		if err != nil {
+			if errors.Is(err, errNoReleases) {
+				tprint("No releases found for %s/%s, installing from repository source...", s.owner, s.repo)
+				if err := downloadRepoTarball(s, destPath); err != nil {
+					return err
+				}
+				tprint("Installed plugin %q to %s", name, destPath)
+				return nil
+			}
 			return err
 		}
 		asset, err := matchAsset(release.Assets, targetOS, targetArch)
@@ -510,33 +660,7 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Found release %s, asset %s", release.TagName, asset.Name)
 	}
 
-	// 4. Determine plugin name
-	name := pluginInstallArgs.name
-	if name == "" {
-		name = derivePluginName(src)
-	}
-	if name == "" {
-		return fmt.Errorf("cannot determine plugin name; use --name to specify one")
-	}
-
-	// 5. Ensure plugin directory exists
-	dir := pluginDir()
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create plugin directory: %w", err)
-	}
-
-	// 6. Check for existing plugin
-	destPath := filepath.Join(dir, name)
-	if _, err := os.Stat(destPath); err == nil {
-		if !pluginInstallArgs.force {
-			return fmt.Errorf("plugin %q already exists; use --force to overwrite", name)
-		}
-		if err := os.RemoveAll(destPath); err != nil {
-			return fmt.Errorf("failed to remove existing plugin: %w", err)
-		}
-	}
-
-	// 7. Download and install
+	// 8. Download and install
 	tprint("Downloading %s...", downloadURL)
 	if isTarGz {
 		if err := downloadAndExtractTarGz(downloadURL, destPath); err != nil {

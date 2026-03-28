@@ -42,6 +42,7 @@ func initStandardFunctions(rp *textkit.TextResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -61,5 +62,6 @@ func initStandardFunctions(rp *textkit.TextResourceProviderType) {
 		api.ResourceTypeAny,
 		api.PathToVisitorInfoType{textLinePath: textLinePathInfo},
 		nil,
+		false, false,
 	)
 }

@@ -39,6 +39,7 @@ func initStandardFunctions(rp *envkit.EnvResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -51,6 +52,7 @@ func initStandardFunctions(rp *envkit.EnvResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
 }

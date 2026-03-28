@@ -56,6 +56,7 @@ func registerDefaultPaths(rp *k8skit.K8sResourceProviderType, attributeName api.
 		yamlkit.RegisterPathsByAttributeName(
 			rp, attributeName, resourceType,
 			paths[resourceType], nil,
+			false, false,
 		)
 	}
 }
@@ -148,6 +149,7 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 	yamlkit.RegisterPathsByAttributeName(
 		rp, attributeNamePodSecurityDefaults, namespaceResourceType,
 		namespaceLabelPaths, nil,
+		false, false,
 	)
 
 	// Automount service account token

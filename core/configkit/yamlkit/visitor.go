@@ -401,27 +401,19 @@ func appendFunctionInvocationArguments(sharedFunctionInvocation *api.FunctionInv
 	return &functionInvocation
 }
 
-func appendGetterAndSetterArguments(details *api.AttributeDetails, arguments []api.FunctionArgument) *api.AttributeDetails {
-	if details == nil {
-		return nil
-	}
-	if len(arguments) == 0 {
-		return details
+func appendGetterAndSetterArguments(details *api.AttributeDetails, arguments []api.FunctionArgument) {
+	if details == nil || len(arguments) == 0 {
+		return
 	}
 	if details.GetterInvocation == nil && len(details.SetterInvocations) == 0 {
-		return details
+		return
 	}
-	newDetails := *details
 	if details.GetterInvocation != nil {
-		newDetails.GetterInvocation = appendFunctionInvocationArguments(details.GetterInvocation, arguments)
+		details.GetterInvocation = appendFunctionInvocationArguments(details.GetterInvocation, arguments)
 	}
-	if len(details.SetterInvocations) != 0 {
-		newDetails.SetterInvocations = make([]api.FunctionInvocation, len(details.SetterInvocations))
-		for i, _ := range details.SetterInvocations {
-			newDetails.SetterInvocations[i] = *appendFunctionInvocationArguments(&details.SetterInvocations[i], arguments)
-		}
+	for i := range details.SetterInvocations {
+		details.SetterInvocations[i] = *appendFunctionInvocationArguments(&details.SetterInvocations[i], arguments)
 	}
-	return &newDetails
 }
 
 // TODO: Refactor the layer on top of the base visitors
@@ -550,22 +542,28 @@ func GetPathsAnyType(
 		}
 		var attributeValue api.AttributeValue
 		comment := currentDoc.GetComments()
-		attributeValue = api.AttributeValue{AttributeInfo: attr, Value: currentValue, Comment: comment}
-		attributeValue.Details = appendGetterAndSetterArguments(attributeValue.Details, context.Arguments)
+
+		// Deep copy the AttributeInfo so that maps, slices, and pointers in Details
+		// are not shared across AttributeValues from different visitor invocations.
+		deepCopiedAttr := api.DeepCopyAttributeInfo(attr)
+		attributeValue = api.AttributeValue{AttributeInfo: deepCopiedAttr, Value: currentValue, Comment: comment}
+
+		// Append getter and setter arguments to the deep-copied details
+		appendGetterAndSetterArguments(deepCopiedAttr.Details, context.Arguments)
+
+		// For needed values, auto-extract merge keys from the resolved path as preferred properties.
+		// Resolved paths use numeric indices (e.g., spec.template.spec.volumes.1.configMap.name).
+		// We walk the path, find numeric segments, look up the merge key for that array via
+		// MergeKeyForPath, and read the merge key value from the resource document.
+		// if neededValuesOnly && resourceDoc != nil {
+		// 	EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
+		// }
 
 		// Invoke the Enricher function if registered for this path
 		if context.PathVisitorInfo != nil {
 			if enricher, ok := context.PathVisitorInfo.Enricher.(AttributeEnricher); ok && enricher != nil {
 				_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
 			}
-		}
-
-		// For needed values, auto-extract merge keys from the resolved path as preferred properties.
-		// Resolved paths use numeric indices (e.g., spec.template.spec.volumes.1.configMap.name).
-		// We walk the path, find numeric segments, look up the merge key for that array via
-		// MergeKeyForPath, and read the merge key value from the resource document.
-		if neededValuesOnly && resourceDoc != nil {
-			EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
 		}
 
 		visitorValues = append(visitorValues, attributeValue)

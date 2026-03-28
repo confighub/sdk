@@ -280,51 +280,58 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 		// Detect envFrom references — these require key/value format
 		if strings.Contains(string(attr.Path), "envFrom") || strings.Contains(string(attr.Path), "configMapRef") {
 			attr.Details.NeededRequired["ConfigMapFormat"] = constants.ConfigMapFormatKeyValue
+			return nil
 		}
 		// For volume ConfigMap references, look up volumeMount subPaths that reference
-		// this volume name. The volume name comes from merge key extraction (NeededPreferred["Name"]).
-		if doc != nil && strings.Contains(string(attr.Path), "volumes") {
-			volumeName := ""
-			if attr.Details.NeededPreferred != nil {
-				volumeName = attr.Details.NeededPreferred["Name"]
+		// this volume name.
+		if doc == nil || !strings.Contains(string(attr.Path), "volumes") {
+			return nil
+		}
+		attr.Details.NeededRequired["ConfigMapFormat"] = constants.ConfigMapFormatFile
+		volumeNamePath := api.ResolvedPath(strings.TrimRight(string(attr.Path), "configMap.name") + ".name")
+		volumeNameDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, volumeNamePath, true)
+		if !found {
+			return nil
+		}
+		volumeNameData := volumeNameDoc.Data()
+		if volumeNameData == nil {
+			return nil
+		}
+		volumeName, ok := volumeNameData.(string)
+		if !ok {
+			return nil
+		}
+		if attr.Details.NeededPreferred == nil {
+			attr.Details.NeededPreferred = make(map[string]string)
+		}
+		attr.Details.NeededPreferred["Name"] = volumeName
+		containersPaths, ok := k8skit.ResourceTypeToContainersPaths[attr.ResourceType]
+		if !ok {
+			return nil
+		}
+		for _, containersPath := range containersPaths {
+			// Iterate over all containers in this path
+			containersDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(containersPath), true)
+			if !found || containersDoc == nil {
+				continue
 			}
-			if volumeName != "" {
-				containersPaths, ok := k8skit.ResourceTypeToContainersPaths[attr.ResourceType]
-				if ok {
-					for _, containersPath := range containersPaths {
-						// Iterate over all containers in this path
-						containersDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(containersPath), true)
-						if !found || containersDoc == nil {
-							continue
-						}
-						containers, ok := containersDoc.Data().([]any)
-						if !ok {
-							continue
-						}
-						for ci := range containers {
-							// Check each volumeMount in this container
-							vmPath := fmt.Sprintf("%s.%d.volumeMounts", containersPath, ci)
-							vmDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(vmPath), true)
-							if !found || vmDoc == nil {
-								continue
-							}
-							mounts, ok := vmDoc.Data().([]any)
-							if !ok {
-								continue
-							}
-							for mi := range mounts {
-								mountNamePath := api.ResolvedPath(fmt.Sprintf("%s.%d.name", vmPath, mi))
-								mountName, found, _ := yamlkit.YamlSafePathGetValue[string](doc, mountNamePath, true)
-								if !found || mountName != volumeName {
-									continue
-								}
-								subPathPath := api.ResolvedPath(fmt.Sprintf("%s.%d.subPath", vmPath, mi))
-								subPath, found, _ := yamlkit.YamlSafePathGetValue[string](doc, subPathPath, true)
-								if found && subPath != "" {
-									attr.Details.NeededRequired["SubPath-"+subPath] = "true"
-								}
-							}
-						}
+			containers := containersDoc.Children()
+			for ci := range containers {
+				// Check each volumeMount in this container
+				vmPath := fmt.Sprintf("%s.%d.volumeMounts", containersPath, ci)
+				vmDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(vmPath), true)
+				if !found || vmDoc == nil {
+					continue
+				}
+				mounts := vmDoc.Children()
+				for _, mount := range mounts {
+					mountName, found, _ := yamlkit.YamlSafePathGetValue[string](mount, "name", true)
+					if !found || mountName != volumeName {
+						continue
+					}
+					subPath, found, _ := yamlkit.YamlSafePathGetValue[string](mount, "subPath", true)
+					if found && subPath != "" {
+						attr.Details.NeededRequired["SubPath-"+subPath] = "true"
 					}
 				}
 			}
@@ -360,13 +367,13 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			if nbrgvk == "v1/ConfigMap" {
 				enricher = configMapEnricher
 			}
-			yamlkit.RegisterProvidedPaths(rp, nbrgvk, pathInfos, &yamlkit.AttributeRegistrationDetails{
+			yamlkit.RegisterPathsByAttributeName(rp, attributeName, nbrgvk, pathInfos, &yamlkit.AttributeRegistrationDetails{
 				GetterInvocation: getterFunctionInvocation,
 				Enricher:         enricher,
 				AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
 					ProvidedProperties: map[string]string{"ResourceType": string(nbrgvk)},
 				},
-			})
+			}, false, true)
 			for _, field := range nbr.Referrers {
 				gvk := gvkString(field.Gvk)
 				// This is kind of hacky in lieu of actual schemas. Kustomize always searches arrays.
@@ -405,13 +412,13 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 						NeededRequired: map[string]string{"ResourceType": string(nbrgvk)},
 					},
 				}
-				yamlkit.RegisterNeededPaths(rp, gvk, pathInfos, neededDetails)
 				yamlkit.RegisterPathsByAttributeName(
 					rp,
 					attributeName,
 					gvk,
 					pathInfos,
 					neededDetails,
+					true, false,
 				)
 			}
 		}
@@ -455,6 +462,7 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -630,6 +638,7 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
 
@@ -648,12 +657,12 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			DataType:      api.DataTypeString,
 		},
 	}
-	yamlkit.RegisterProvidedPaths(rp, api.ResourceType("v1/ConfigMap"), hashProvidedPathInfos, &yamlkit.AttributeRegistrationDetails{
+	yamlkit.RegisterPathsByAttributeName(rp, attributeNameConfigMapHash, api.ResourceType("v1/ConfigMap"), hashProvidedPathInfos, &yamlkit.AttributeRegistrationDetails{
 		GetterInvocation: &api.FunctionInvocation{
 			FunctionName: "get-annotation",
 			Arguments:    []api.FunctionArgument{{ParameterName: "annotation-key", Value: k8skit.ContextKeyPrefix + constants.HashKeySuffix}},
 		},
-	})
+	}, false, true)
 
 	// Register the needed hash annotation on workload podSpec template metadata.
 	for resourceType, podSpecPaths := range k8skit.ResourceTypeToPodSpecPaths {
@@ -678,12 +687,12 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 					DataType:      api.DataTypeString,
 				},
 			}
-			yamlkit.RegisterNeededPaths(rp, resourceType, neededPathInfos, &yamlkit.AttributeRegistrationDetails{
+			yamlkit.RegisterPathsByAttributeName(rp, attributeNameConfigMapHash, resourceType, neededPathInfos, &yamlkit.AttributeRegistrationDetails{
 				SetterInvocation: &api.FunctionInvocation{
 					FunctionName: "set-annotation",
 					Arguments:    []api.FunctionArgument{{ParameterName: "annotation-key", Value: k8skit.ContextKeyPrefix + constants.HashKeySuffix}},
 				},
-			})
+			}, true, false)
 		}
 	}
 }

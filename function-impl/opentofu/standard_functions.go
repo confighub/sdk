@@ -37,6 +37,7 @@ func initStandardFunctions(rp *hclkit.HclResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -49,23 +50,7 @@ func initStandardFunctions(rp *hclkit.HclResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
-
-	// TODO:
-	// path := api.UnresolvedPath()
-	// pathInfos := api.PathToVisitorInfoType{
-	// 	path: {
-	// 		Path:          path,
-	// 		AttributeName: api.AttributeNameResourceName,
-	// 		DataType:      api.DataTypeString,
-	// 	},
-	// }
-	// // Function to set the value. The parameters are expected to match the corresponding
-	// // get function's parameters plus its result.
-	// setterFunctionInvocation = &api.FunctionInvocation{
-	// 	FunctionName: "set-references-of-type",
-	// 	Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: ""}},
-	// }
-	// yamlkit.RegisterNeededPaths(rp, api.ResourceTypeAny, pathInfos, setterFunctionInvocation)
 }

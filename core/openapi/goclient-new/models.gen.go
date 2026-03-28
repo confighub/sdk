@@ -241,6 +241,9 @@ type Attribute struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// ToolchainType ToolchainType specifies the type of toolchain this attribute works with.
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
@@ -263,6 +266,12 @@ type AttributeCreateOrUpdateResponse struct {
 
 // AttributeDetails defines model for AttributeDetails.
 type AttributeDetails struct {
+	// BoundLinkID ID of the Link that bound this needed path to a provided value
+	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty" yaml:"BoundLinkID,omitempty"`
+
+	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
+	BoundProvidedProperties map[string]string `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
+
 	// Description Description of the attribute
 	Description      string              `json:"Description,omitempty" yaml:"Description,omitempty"`
 	GetterInvocation *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
@@ -390,7 +399,6 @@ type Binding struct {
 	InLiveState      bool          `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
 	NeededPath       string        `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
 	NeededResource   *ResourceInfo `json:"NeededResource,omitempty" yaml:"NeededResource,omitempty"`
-	OriginalValue    interface{}   `json:"OriginalValue,omitempty" yaml:"OriginalValue,omitempty"`
 	ProvidedPath     string        `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
 	ProvidedResource *ResourceInfo `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
 }
@@ -480,6 +488,9 @@ type BridgeWorker struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
@@ -576,6 +587,9 @@ type ChangeSet struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// StartTagID StartTagID is the identifier of the set of revisions that begin the ChangeSet.
 	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
@@ -1165,6 +1179,9 @@ type Filter struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
@@ -1449,6 +1466,9 @@ type Invocation struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// ToolchainType ToolchainType specifies the type of toolchain this invocation works with.
 	// 		This determines which configuration formats the invocation can process.
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -1525,6 +1545,9 @@ type Link struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// ToSpaceID Unique identifier of the Space of the upstream Unit.
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
@@ -1614,6 +1637,9 @@ type Mutation struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. The prefix 'ConfigHub' is reserved.
 	Subgroup  string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
@@ -1927,7 +1953,12 @@ type ResourceStatusSummary struct {
 
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
 type ResourceTypePathsEntry struct {
-	GetterInvocation *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
+	// BoundLinkID ID of the Link that bound this needed path to a provided value
+	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty" yaml:"BoundLinkID,omitempty"`
+
+	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
+	BoundProvidedProperties map[string]string   `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
+	GetterInvocation        *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
 
 	// IsNeeded Whether this attribute is a needed value
 	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
@@ -2018,6 +2049,9 @@ type Revision struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// Tags A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now.
 	Tags map[string]string `json:"Tags,omitempty" yaml:"Tags,omitempty"`
@@ -2238,6 +2272,9 @@ type Tag struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// TagID TagID uniquely identifies a tag within the system.
 	TagID openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 
@@ -2313,6 +2350,9 @@ type Target struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// TargetID Unique identifier for a Target.
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
@@ -2465,6 +2505,9 @@ type Trigger struct {
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
 	// ToolchainType ToolchainType specifies the type of toolchain this trigger works with.
 	// 		This determines which configuration formats the trigger can process.
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -2609,7 +2652,7 @@ type Unit struct {
 	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
-	NeededPaths []AttributeInfo `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
+	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2627,8 +2670,11 @@ type Unit struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID  openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	TargetID *UUID              `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	TargetID  *UUID  `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
@@ -2789,7 +2835,10 @@ type UnitEvent struct {
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug    string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	StartedAt    time.Time          `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
 	Status       *ActionStatusType  `json:"Status,omitempty" yaml:"Status,omitempty"`
 	TerminatedAt time.Time          `json:"TerminatedAt" yaml:"TerminatedAt"`
@@ -2970,6 +3019,9 @@ type View struct {
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`

@@ -165,8 +165,9 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			// getter/setter invocations with proper arguments. The visitor may
 			// produce different Details from generic path registrations that
 			// don't match the needed/provided context.
+			// Deep copy so that enrichers below don't mutate the shared input Details.
 			if info.Details != nil {
-				values[i].Details = info.Details
+				values[i].Details = api.DeepCopyAttributeDetails(info.Details)
 			}
 			// For needed paths, extract merge keys as NeededPreferred properties.
 			if isNeeded {

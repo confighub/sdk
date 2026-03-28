@@ -119,7 +119,7 @@ func TestDiscoverDirectoryPluginMissingMain(t *testing.T) {
 	}
 	found := false
 	for _, w := range p.Warnings {
-		if w == "directory plugin missing executable 'main'" {
+		if w == `directory plugin missing executable "main"` {
 			found = true
 		}
 	}
@@ -946,6 +946,336 @@ func TestPluginUninstallNotInstalled(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "is not installed") {
 		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+// --- cub-plugin.yaml manifest tests ---
+
+func TestDiscoverManifestEntrypoint(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	// Directory plugin with cub-plugin.yaml specifying a custom entrypoint
+	dirPath := filepath.Join(pluginsDir, "vmcluster")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(dirPath, "vmctl"), "#!/bin/sh\necho vmctl")
+	if err := os.WriteFile(filepath.Join(dirPath, "cub-plugin.yaml"), []byte("entrypoint: vmctl\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	plugins := discoverPlugins()
+	if len(plugins) != 1 {
+		t.Fatalf("expected 1 plugin, got %d", len(plugins))
+	}
+	p := plugins[0]
+	if p.Name != "vmcluster" {
+		t.Errorf("expected name 'vmcluster', got %q", p.Name)
+	}
+	if p.Path != filepath.Join(dirPath, "vmctl") {
+		t.Errorf("expected path to vmctl, got %s", p.Path)
+	}
+	if len(p.Warnings) != 0 {
+		t.Errorf("expected no warnings, got %v", p.Warnings)
+	}
+}
+
+func TestDiscoverManifestEntrypointMissing(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	dirPath := filepath.Join(pluginsDir, "myplugin")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	// Manifest points to "run.sh" but file doesn't exist
+	if err := os.WriteFile(filepath.Join(dirPath, "cub-plugin.yaml"), []byte("entrypoint: run.sh\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	plugins := discoverPlugins()
+	if len(plugins) != 1 {
+		t.Fatalf("expected 1 plugin, got %d", len(plugins))
+	}
+	found := false
+	for _, w := range plugins[0].Warnings {
+		if strings.Contains(w, `"run.sh"`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected warning about missing 'run.sh', got %v", plugins[0].Warnings)
+	}
+}
+
+func TestDiscoverManifestFallbackToMain(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	// Directory plugin with no manifest — should fall back to "main"
+	dirPath := filepath.Join(pluginsDir, "classic")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(dirPath, "main"), "#!/bin/sh\necho classic")
+
+	plugins := discoverPlugins()
+	if len(plugins) != 1 {
+		t.Fatalf("expected 1 plugin, got %d", len(plugins))
+	}
+	if plugins[0].Path != filepath.Join(dirPath, "main") {
+		t.Errorf("expected path to main, got %s", plugins[0].Path)
+	}
+	if len(plugins[0].Warnings) != 0 {
+		t.Errorf("expected no warnings, got %v", plugins[0].Warnings)
+	}
+}
+
+func TestFindPluginManifestEntrypoint(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	dirPath := filepath.Join(pluginsDir, "vmcluster")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(dirPath, "vmctl"), "#!/bin/sh\necho vmctl")
+	if err := os.WriteFile(filepath.Join(dirPath, "cub-plugin.yaml"), []byte("entrypoint: vmctl\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	path, remaining, err := findPlugin([]string{"vmcluster", "status"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != filepath.Join(dirPath, "vmctl") {
+		t.Errorf("expected vmctl path, got %s", path)
+	}
+	if len(remaining) != 1 || remaining[0] != "status" {
+		t.Errorf("expected remaining [status], got %v", remaining)
+	}
+}
+
+func TestDiscoverManifestMalformedYAML(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	dirPath := filepath.Join(pluginsDir, "badyaml")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	// Write invalid YAML
+	if err := os.WriteFile(filepath.Join(dirPath, "cub-plugin.yaml"), []byte(":\n  :\n  - [broken"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	plugins := discoverPlugins()
+	if len(plugins) != 1 {
+		t.Fatalf("expected 1 plugin, got %d", len(plugins))
+	}
+	found := false
+	for _, w := range plugins[0].Warnings {
+		if strings.Contains(w, "invalid cub-plugin.yaml") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected warning about invalid cub-plugin.yaml, got %v", plugins[0].Warnings)
+	}
+}
+
+func TestFindPluginManifestMalformedYAML(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	dirPath := filepath.Join(pluginsDir, "badyaml")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dirPath, "cub-plugin.yaml"), []byte(":\n  :\n  - [broken"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, _, err := findPlugin([]string{"badyaml"})
+	if err == nil {
+		t.Fatal("expected error for malformed manifest")
+	}
+	if !strings.Contains(err.Error(), "invalid cub-plugin.yaml") {
+		t.Errorf("expected 'invalid cub-plugin.yaml' error, got: %v", err)
+	}
+}
+
+// --- --source-repo install tests ---
+
+func TestPluginInstallSourceRepo(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	// Create a tarball mimicking a GitHub repo download (single top-level dir)
+	archive := createTestTarGz(t, map[string]string{
+		"cub-vmcluster-abc123/":                "",
+		"cub-vmcluster-abc123/vmctl":           "#!/bin/sh\necho vmctl",
+		"cub-vmcluster-abc123/cub-plugin.yaml": "entrypoint: vmctl\n",
+		"cub-vmcluster-abc123/README.md":        "# vmcluster",
+	})
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/tarball/") {
+			w.Write(archive)
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	src := &githubSource{
+		owner:      "jesperfj",
+		repo:       "cub-vmcluster",
+		pluginName: "vmcluster",
+	}
+
+	destPath := filepath.Join(pluginsDir, "vmcluster")
+	err := downloadRepoTarball(src, destPath)
+	if err != nil {
+		t.Fatalf("downloadRepoTarball failed: %v", err)
+	}
+
+	// Verify directory was extracted with top-level dir stripped
+	vmctlPath := filepath.Join(destPath, "vmctl")
+	info, err := os.Stat(vmctlPath)
+	if err != nil {
+		t.Fatalf("vmctl not found: %v", err)
+	}
+	if info.Mode()&0111 == 0 {
+		t.Error("expected vmctl to be executable")
+	}
+
+	// Verify manifest is present
+	manifestPath := filepath.Join(destPath, "cub-plugin.yaml")
+	if _, err := os.Stat(manifestPath); err != nil {
+		t.Fatalf("cub-plugin.yaml not found: %v", err)
+	}
+
+	// Verify the entrypoint resolves through the manifest
+	ep, err := resolveEntrypoint(destPath)
+	if err != nil {
+		t.Fatalf("resolveEntrypoint failed: %v", err)
+	}
+	if ep != "vmctl" {
+		t.Errorf("expected entrypoint 'vmctl', got %q", ep)
+	}
+}
+
+func TestPluginInstallSourceRepoWithRef(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	archive := createTestTarGz(t, map[string]string{
+		"repo-dev/":     "",
+		"repo-dev/main": "#!/bin/sh\necho dev",
+	})
+
+	var requestedPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedPath = r.URL.Path
+		w.Write(archive)
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	src := &githubSource{
+		owner:      "org",
+		repo:       "cub-myplugin",
+		tag:        "dev",
+		pluginName: "myplugin",
+	}
+
+	destPath := filepath.Join(pluginsDir, "myplugin")
+	err := downloadRepoTarball(src, destPath)
+	if err != nil {
+		t.Fatalf("downloadRepoTarball failed: %v", err)
+	}
+
+	// Verify the ref was included in the API URL
+	if !strings.HasSuffix(requestedPath, "/tarball/dev") {
+		t.Errorf("expected tarball URL with ref 'dev', got path %q", requestedPath)
+	}
+}
+
+func TestPluginInstallAutoFallbackToRepo(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	archive := createTestTarGz(t, map[string]string{
+		"cub-myplugin-abc123/":                "",
+		"cub-myplugin-abc123/main":            "#!/bin/sh\necho hello",
+		"cub-myplugin-abc123/cub-plugin.yaml": "entrypoint: main\n",
+	})
+
+	// Mock server: 404 on releases, serve tarball on /tarball/
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.Contains(r.URL.Path, "/releases/"):
+			http.NotFound(w, r)
+		case strings.Contains(r.URL.Path, "/tarball/"):
+			w.Write(archive)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	// Exercise the full pluginInstallCmdRun path
+	pluginInstallArgs = struct {
+		name       string
+		force      bool
+		platform   string
+		sourceRepo bool
+	}{name: "", force: false, platform: "", sourceRepo: false}
+
+	err := pluginInstallCmdRun(nil, []string{"testorg/cub-myplugin"})
+	if err != nil {
+		t.Fatalf("pluginInstallCmdRun failed: %v", err)
+	}
+
+	// Verify the plugin was installed via the fallback path
+	mainPath := filepath.Join(pluginsDir, "myplugin", "main")
+	if _, err := os.Stat(mainPath); err != nil {
+		t.Fatalf("main not found after fallback install: %v", err)
+	}
+}
+
+func TestPluginInstallPinnedTagNoFallback(t *testing.T) {
+	// Mock server: 404 on a specific release tag
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	src := &githubSource{
+		owner:      "testorg",
+		repo:       "cub-myplugin",
+		tag:        "v1.0.0",
+		pluginName: "myplugin",
+	}
+
+	_, err := resolveGitHubRelease(src)
+	if err == nil {
+		t.Fatal("expected error for pinned tag 404")
+	}
+	// Should be a specific "release not found" error, NOT the generic "no releases found"
+	if strings.Contains(err.Error(), "no releases found") {
+		t.Fatalf("pinned tag should not trigger fallback error, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "v1.0.0") {
+		t.Fatalf("expected error mentioning the tag, got: %v", err)
 	}
 }
 

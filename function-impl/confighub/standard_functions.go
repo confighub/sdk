@@ -39,6 +39,7 @@ func initStandardFunctions(rp *cubkit.ConfigHubResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -51,9 +52,7 @@ func initStandardFunctions(rp *cubkit.ConfigHubResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
-
-	// TODO
-	// yamlkit.RegisterNeededPaths(rp, api.ResourceTypeAny, pathInfos, setterFunctionInvocation)
 }

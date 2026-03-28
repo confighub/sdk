@@ -26170,6 +26170,12 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "ToolchainType": {
             "type": "string",
             "description": "ToolchainType specifies the type of toolchain this attribute works with.",
@@ -26208,6 +26214,21 @@
       "AttributeDetails": {
         "type": "object",
         "properties": {
+          "BoundLinkID": {
+            "type": "string",
+            "description": "ID of the Link that bound this needed path to a provided value",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "BoundProvidedProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Description": {
             "type": "string",
             "description": "Description of the attribute",
@@ -26457,9 +26478,6 @@
           "NeededResource": {
             "$ref": "#/components/schemas/ResourceInfo"
           },
-          "OriginalValue": {
-            "x-go-type-skip-optional-pointer": true
-          },
           "ProvidedPath": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
@@ -26633,6 +26651,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {
@@ -26835,6 +26859,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "StartTagID": {
@@ -27604,6 +27634,12 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "UpdatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was last updated in \"2023-01-01T12:00:00Z\" format.",
@@ -28180,6 +28216,12 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "ToolchainType": {
             "required": [
               "true"
@@ -28342,6 +28384,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "ToSpaceID": {
@@ -28522,6 +28570,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "Subgroup": {
@@ -29160,6 +29214,21 @@
       "ResourceTypePathsEntry": {
         "type": "object",
         "properties": {
+          "BoundLinkID": {
+            "type": "string",
+            "description": "ID of the Link that bound this needed path to a provided value",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "BoundProvidedProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
+            "x-go-type-skip-optional-pointer": true
+          },
           "GetterInvocation": {
             "$ref": "#/components/schemas/FunctionInvocation"
           },
@@ -29357,6 +29426,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "Tags": {
@@ -29711,6 +29786,12 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "TagID": {
             "type": "string",
             "description": "TagID uniquely identifies a tag within the system.",
@@ -29875,6 +29956,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {
@@ -30117,6 +30204,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "ToolchainType": {
@@ -30406,7 +30499,7 @@
           "NeededPaths": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AttributeInfo"
+              "$ref": "#/components/schemas/AttributeValue"
             },
             "description": "Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.",
             "readOnly": true,
@@ -30452,6 +30545,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {
@@ -30767,6 +30866,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "StartedAt": {
@@ -31191,6 +31296,12 @@
             "description": "Unique identifier for a space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {

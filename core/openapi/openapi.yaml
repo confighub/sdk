@@ -23607,6 +23607,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         ToolchainType:
           description: ToolchainType specifies the type of toolchain this attribute
             works with.
@@ -23642,6 +23647,19 @@ components:
       type: object
     AttributeDetails:
       properties:
+        BoundLinkID:
+          description: ID of the Link that bound this needed path to a provided value
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        BoundProvidedProperties:
+          additionalProperties:
+            type: string
+          description: ProvidedProperties of the provided path that was bound to this
+            needed path, for cross-link score comparison
+          type: object
+          x-go-type-skip-optional-pointer: true
         Description:
           description: Description of the attribute
           type: string
@@ -23871,8 +23889,6 @@ components:
           x-go-type-skip-optional-pointer: true
         NeededResource:
           $ref: '#/components/schemas/ResourceInfo'
-        OriginalValue:
-          x-go-type-skip-optional-pointer: true
         ProvidedPath:
           type: string
           x-go-type-skip-optional-pointer: true
@@ -24029,6 +24045,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -24206,6 +24227,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         StartTagID:
@@ -24769,6 +24795,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -25257,6 +25288,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         ToolchainType:
           description: "ToolchainType specifies the type of toolchain this invocation
             works with.\n\t\tThis determines which configuration formats the invocation
@@ -25405,6 +25441,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         ToSpaceID:
@@ -25570,6 +25611,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         Subgroup:
@@ -26147,6 +26193,19 @@ components:
       type: object
     ResourceTypePathsEntry:
       properties:
+        BoundLinkID:
+          description: ID of the Link that bound this needed path to a provided value
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        BoundProvidedProperties:
+          additionalProperties:
+            type: string
+          description: ProvidedProperties of the provided path that was bound to this
+            needed path, for cross-link score comparison
+          type: object
+          x-go-type-skip-optional-pointer: true
         GetterInvocation:
           $ref: '#/components/schemas/FunctionInvocation'
         IsNeeded:
@@ -26314,6 +26373,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         Tags:
@@ -26683,6 +26747,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         TagID:
           description: TagID uniquely identifies a tag within the system.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -26835,6 +26904,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         TargetID:
@@ -27092,6 +27166,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         ToolchainType:
@@ -27380,7 +27459,7 @@ components:
           description: Attribute paths that this Unit needs from upstream Units via
             NeedsProvides Links. Computed from get-needed and stored on data updates.
           items:
-            $ref: '#/components/schemas/AttributeInfo'
+            $ref: '#/components/schemas/AttributeValue'
           readOnly: true
           type: array
           x-go-type-skip-optional-pointer: true
@@ -27421,6 +27500,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         TargetID:
@@ -27719,6 +27803,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         StartedAt:
@@ -28068,6 +28157,11 @@ components:
           description: Unique identifier for a space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:

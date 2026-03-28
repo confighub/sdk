@@ -39,6 +39,7 @@ func initStandardFunctions(rp *inikit.INIResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			false, false,
 		)
 	}
 
@@ -51,6 +52,7 @@ func initStandardFunctions(rp *inikit.INIResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
 }

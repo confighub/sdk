@@ -128,7 +128,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		FunctionName: "get-resources-of-type",
 		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(namespaceResourceType)}},
 	}
-	yamlkit.RegisterProvidedPaths(rp, namespaceResourceType, pathInfos, &yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation})
+	yamlkit.RegisterPathsByAttributeName(rp, api.AttributeNameResourceName, namespaceResourceType, pathInfos, &yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation}, false, true)
 
 	// These paths are not included in kustomize's namereference list.
 	var resourceTypeToNamespacePath = api.ResourceTypeToPathToVisitorInfoType{
@@ -188,13 +188,13 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(namespaceResourceType)}},
 	}
 	for resourceType, pathInfos := range resourceTypeToNamespacePath {
-		yamlkit.RegisterNeededPaths(rp, resourceType, pathInfos, &yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation})
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
 			AttributeNameNamespaceNameReference,
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			true, false,
 		)
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
@@ -202,6 +202,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			true, false,
 		)
 	}
 
@@ -230,6 +231,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		api.ResourceTypeAny,
 		pathInfos,
 		&yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation, SetterInvocation: setterFunctionInvocation},
+		false, false,
 	)
 
 	attributePath = api.UnresolvedPath("metadata.labels.@%s:label-key")
@@ -257,6 +259,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		api.ResourceTypeAny,
 		pathInfos,
 		&yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation, SetterInvocation: setterFunctionInvocation},
+		false, false,
 	)
 
 	// Register cross-resource reference fields from CRDs.
@@ -274,13 +277,13 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 				FunctionName: "set-references-of-type",
 				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(ref.Target)}},
 			}
-			yamlkit.RegisterNeededPaths(rp, resourceType, refPathInfos, &yamlkit.AttributeRegistrationDetails{SetterInvocation: refSetterFunctionInvocation})
 			yamlkit.RegisterPathsByAttributeName(
 				rp,
 				api.AttributeNameResourceName,
 				resourceType,
 				refPathInfos,
 				&yamlkit.AttributeRegistrationDetails{SetterInvocation: refSetterFunctionInvocation},
+				true, false,
 			)
 		}
 	}

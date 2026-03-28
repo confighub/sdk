@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // Plugin represents a discovered plugin.
@@ -68,22 +69,29 @@ func scanPlugins() []*Plugin {
 		fullPath := filepath.Join(dir, name)
 
 		if entry.IsDir() {
-			// Directory plugin: look for executable "main" inside
-			mainPath := filepath.Join(fullPath, "main")
-			info, err := os.Stat(mainPath)
+			// Directory plugin: resolve entry point from manifest or fall back to "main"
+			ep, epErr := resolveEntrypoint(fullPath)
+			if epErr != nil {
+				p.Path = fullPath
+				p.Warnings = append(p.Warnings, epErr.Error())
+				plugins = append(plugins, p)
+				continue
+			}
+			epPath := filepath.Join(fullPath, ep)
+			info, err := os.Stat(epPath)
 			if err != nil {
 				p.Path = fullPath
-				p.Warnings = append(p.Warnings, "directory plugin missing executable 'main'")
+				p.Warnings = append(p.Warnings, fmt.Sprintf("directory plugin missing executable %q", ep))
 				plugins = append(plugins, p)
 				continue
 			}
 			if !isExecutable(info) {
-				p.Path = mainPath
-				p.Warnings = append(p.Warnings, "'main' is not executable")
+				p.Path = epPath
+				p.Warnings = append(p.Warnings, fmt.Sprintf("%q is not executable", ep))
 				plugins = append(plugins, p)
 				continue
 			}
-			p.Path = mainPath
+			p.Path = epPath
 		} else {
 			// Single file plugin: check executability
 			info, err := entry.Info()
@@ -115,6 +123,44 @@ func scanPlugins() []*Plugin {
 
 func isExecutable(info os.FileInfo) bool {
 	return info.Mode()&0111 != 0
+}
+
+const pluginManifestFile = "cub-plugin.yaml"
+
+// pluginManifest represents the contents of a cub-plugin.yaml file.
+type pluginManifest struct {
+	Entrypoint string `yaml:"entrypoint"`
+}
+
+// readPluginManifest reads and parses a cub-plugin.yaml from a directory.
+// Returns nil if the file does not exist.
+func readPluginManifest(dir string) (*pluginManifest, error) {
+	data, err := os.ReadFile(filepath.Join(dir, pluginManifestFile))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var m pluginManifest
+	if err := yaml.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("invalid %s: %w", pluginManifestFile, err)
+	}
+	return &m, nil
+}
+
+// resolveEntrypoint determines the entry point for a directory plugin.
+// It checks cub-plugin.yaml first, then falls back to "main".
+// Returns an error if the manifest exists but is malformed.
+func resolveEntrypoint(dir string) (string, error) {
+	m, err := readPluginManifest(dir)
+	if err != nil {
+		return "", err
+	}
+	if m != nil && m.Entrypoint != "" {
+		return m.Entrypoint, nil
+	}
+	return "main", nil
 }
 
 // getBuiltinCommandNames returns a set of all top-level command names and aliases on rootCmd.

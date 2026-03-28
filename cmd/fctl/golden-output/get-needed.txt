@@ -49,7 +49,8 @@ OUTPUT
         }
       ],
       "NeededRequired": {
-        "ConfigMapFormat": "KeyValue"
+        "ConfigMapFormat": "KeyValue",
+        "ResourceType": "v1/ConfigMap"
       },
       "IsNeeded": true
     },
@@ -77,6 +78,9 @@ OUTPUT
           ]
         }
       ],
+      "NeededRequired": {
+        "ResourceType": "v1/ServiceAccount"
+      },
       "IsNeeded": true
     },
     "Value": "confighubplaceholder",

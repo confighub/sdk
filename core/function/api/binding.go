@@ -29,9 +29,6 @@ type Binding struct {
 	// NeededPath is the resolved path within the needed resource.
 	NeededPath ResolvedPath `json:",omitempty" swaggertype:"string"`
 
-	// OriginalValue is the value at the needed path when the binding was first created.
-	OriginalValue any `json:",omitempty"`
-
 	// Expression is reserved for future use (e.g., CEL transformation expressions).
 	Expression string `json:",omitempty"`
 

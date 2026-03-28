@@ -719,6 +719,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: containerNameGetterFunctionInvocation},
+				false, false,
 			)
 
 			imageGetterFunctionInvocation := &api.FunctionInvocation{
@@ -745,6 +746,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: imageGetterFunctionInvocation, SetterInvocation: imageSetterFunctionInvocation},
+				false, false,
 			)
 
 			repoURIGetterFunctionInvocation := &api.FunctionInvocation{
@@ -773,6 +775,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: repoURIGetterFunctionInvocation, SetterInvocation: repoURISetterFunctionInvocation},
+				false, false,
 			)
 
 			// All repo URIs (for get-details)
@@ -792,6 +795,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				nil,
+				false, false,
 			)
 
 			imageRefGetterFunctionInvocation := &api.FunctionInvocation{
@@ -820,6 +824,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: imageRefGetterFunctionInvocation, SetterInvocation: imageRefSetterFunctionInvocation},
+				false, false,
 			)
 
 			// All image references (for get-details)
@@ -839,6 +844,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				nil,
+				false, false,
 			)
 
 			envVarGetterFunctionInvocation := &api.FunctionInvocation{
@@ -865,6 +871,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: envVarGetterFunctionInvocation, SetterInvocation: envVarSetterFunctionInvocation},
+				false, false,
 			)
 
 			// Specific container resources
@@ -882,6 +889,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				nil, // don't register getters and setters for now
+				false, false,
 			)
 
 			pflagGetterFunctionInvocation := &api.FunctionInvocation{
@@ -910,6 +918,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: pflagGetterFunctionInvocation, SetterInvocation: pflagSetterFunctionInvocation},
+				false, false,
 			)
 
 			// All container flags (for get-details)
@@ -929,6 +938,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				nil,
+				false, false,
 			)
 
 		}
@@ -959,6 +969,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			&yamlkit.AttributeRegistrationDetails{GetterInvocation: replicasGetterFunctionInvocation, SetterInvocation: replicasSetterFunctionInvocation},
+			false, false,
 		)
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
@@ -966,6 +977,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 			resourceType,
 			pathInfos,
 			nil,
+			false, false,
 		)
 	}
 
@@ -1019,6 +1031,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: hostnameGetterFunctionInvocation, SetterInvocation: hostnameSetterFunctionInvocation},
+				false, false,
 			)
 			// This is already added to details in standard_functions.go
 
@@ -1040,6 +1053,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: subdomainGetterFunctionInvocation, SetterInvocation: subdomainSetterFunctionInvocation},
+				false, false,
 			)
 
 			pathInfos = api.PathToVisitorInfoType{
@@ -1058,8 +1072,8 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 				resourceType,
 				pathInfos,
 				&yamlkit.AttributeRegistrationDetails{GetterInvocation: domainGetterFunctionInvocation, SetterInvocation: domainSetterFunctionInvocation},
+				true, false,
 			)
-			yamlkit.RegisterNeededPaths(rp, resourceType, pathInfos, &yamlkit.AttributeRegistrationDetails{SetterInvocation: domainSetterFunctionInvocation})
 		}
 	}
 }

@@ -140,6 +140,7 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 						SetterInvocation:              setterInvocation,
 						AttributeNeedsProvidesDetails: entry.AttributeNeedsProvidesDetails,
 					},
+					false, false,
 				)
 			}
 
