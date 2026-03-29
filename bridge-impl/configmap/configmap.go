@@ -20,7 +20,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/confighub/sdk/bridge-impl/common"
-	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -38,9 +37,7 @@ import (
 var executorOnce sync.Once
 var functionExecutor *executor.ConcreteFunctionExecutor
 
-type ConfigMapBridgeWorker struct {
-	kubernetes.KubernetesBridgeWorker
-}
+type ConfigMapBridgeWorker struct{}
 
 func initFunctionExecutor() {
 	executorOnce.Do(func() {
@@ -60,8 +57,6 @@ func initFunctionExecutor() {
 
 func NewConfigMapBridgeWorker() *ConfigMapBridgeWorker {
 	initFunctionExecutor()
-	// FIXME: Note that this doesn't call NewKubernetesBridgeWorker(), because ConfigMapBridgeWorker
-	// inlines KubernetesBridgeWorker rather than storing a pointer.
 	return &ConfigMapBridgeWorker{}
 }
 

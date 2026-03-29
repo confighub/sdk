@@ -158,6 +158,8 @@ var functionInvocationIdentifiers []string
 var updateApplyGates bool
 var revisionIdentifier string
 var functionChangesetSlug string
+var functionToolchainType string
+var functionLiveStateType string
 
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
@@ -183,8 +185,8 @@ func init() {
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
-	functionDoCmd.Flags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionDoCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
+	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
+	functionDoCmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	functionCmd.AddCommand(functionDoCmd)
 }
 
@@ -195,11 +197,11 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.ChangeDescription = changeDescription
 	req.UpdateApplyGates = updateApplyGates
 	req.WhereResource = whereResource
-	if liveStateType != "" {
+	if functionLiveStateType != "" {
 		req.OnLiveState = true
-		req.ToolchainType = liveStateType
+		req.ToolchainType = functionLiveStateType
 	} else {
-		req.ToolchainType = toolchainType
+		req.ToolchainType = functionToolchainType
 	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](

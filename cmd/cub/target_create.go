@@ -41,15 +41,15 @@ var targetCreateArgs struct {
 
 var fromTarget string
 var fromTargetSpace string
-var providerType string
-var toolchainType string
-var liveStateType string
+var providerTypes []string
+var toolchainTypes []string
+var liveStateTypes []string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
-	targetCreateCmd.Flags().StringVarP(&providerType, "provider", "p", "", "The type of provider for the target.\nDefault is Kubernetes.\n\t(e.g., Kubernetes)")
-	targetCreateCmd.Flags().StringVarP(&toolchainType, "toolchain", "t", "", "The type of toolchain for the target.\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
-	targetCreateCmd.Flags().StringVar(&liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
+	targetCreateCmd.Flags().StringSliceVarP(&providerTypes, "provider", "p", []string{}, "The type of provider for the target (can be repeated for multiple ConfigTypes).\nDefault is Kubernetes.\n\t(e.g., Kubernetes)")
+	targetCreateCmd.Flags().StringSliceVarP(&toolchainTypes, "toolchain", "t", []string{}, "The type of toolchain for the target (can be repeated for multiple ConfigTypes).\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
+	targetCreateCmd.Flags().StringSliceVar(&liveStateTypes, "livestate-type", []string{}, "The toolchain type for live state of the target's provider type (can be repeated for multiple ConfigTypes).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
@@ -103,25 +103,62 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	// set toolchainType and providerType if not copying from another target or stdin
 	hasDefaults := fromTarget != "" || fromTargetSpace != "" || flagPopulateModelFromStdin || flagFilename != ""
 
-	// If set, flags override other data
-	if toolchainType != "" {
-		newTarget.ToolchainType = toolchainType
+	// If set, flags override other data. First element sets the top-level fields,
+	// additional elements populate ConfigTypes.
+	if len(toolchainTypes) > 0 {
+		newTarget.ToolchainType = toolchainTypes[0]
 	} else if !hasDefaults {
 		newTarget.ToolchainType = "Kubernetes/YAML"
 	}
-	if providerType != "" {
-		newTarget.ProviderType = providerType
+	if len(providerTypes) > 0 {
+		newTarget.ProviderType = providerTypes[0]
 	} else if !hasDefaults {
 		newTarget.ProviderType = "Kubernetes"
 	}
-	if liveStateType != "" {
-		newTarget.LiveStateType = liveStateType
+	if len(liveStateTypes) > 0 {
+		newTarget.LiveStateType = liveStateTypes[0]
 	}
 	// no default
 
 	err := validateToolchainAndProvider(newTarget.ToolchainType, newTarget.ProviderType, newTarget.LiveStateType)
 	if err != nil {
 		return err
+	}
+
+	// Parse option sets (one per ConfigType position)
+	optionSets, err := parseOptionSets(option)
+	if err != nil {
+		return err
+	}
+	if len(optionSets) > 0 {
+		newTarget.Options = optionSets[0]
+	}
+
+	// Build additional ConfigTypes from slices beyond the first element
+	maxLen := max(len(toolchainTypes), len(providerTypes), len(liveStateTypes), len(optionSets))
+	if maxLen > 1 {
+		for i := 1; i < maxLen; i++ {
+			ct := goclientnew.TargetConfigType{}
+			if i < len(toolchainTypes) {
+				ct.ToolchainType = toolchainTypes[i]
+			}
+			if i < len(providerTypes) {
+				ct.ProviderType = providerTypes[i]
+			}
+			if i < len(liveStateTypes) {
+				ct.LiveStateType = liveStateTypes[i]
+			}
+			if i < len(optionSets) {
+				ct.Options = optionSets[i]
+			}
+			if ct.ToolchainType != "" && ct.ProviderType != "" {
+				err = validateToolchainAndProvider(ct.ToolchainType, ct.ProviderType, ct.LiveStateType)
+				if err != nil {
+					return err
+				}
+			}
+			newTarget.ConfigTypes = append(newTarget.ConfigTypes, ct)
+		}
 	}
 
 	err = setAnnotations(&newTarget.Annotations)
@@ -133,10 +170,6 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	err = setDeleteGates(&newTarget.DeleteGates)
-	if err != nil {
-		return err
-	}
-	err = setOptions(&newTarget.Options)
 	if err != nil {
 		return err
 	}

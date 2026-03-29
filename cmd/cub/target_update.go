@@ -250,7 +250,7 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 					}
 				}
 			}
-			_ = patchKeyValues(optionMap, option)
+			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["Options"] = optionMap
 		}
 		// Add LiveStateType if provided
@@ -345,7 +345,7 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 					}
 				}
 			}
-			_ = patchKeyValues(optionMap, option)
+			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["Options"] = optionMap
 		}
 		// Add LiveStateType if provided

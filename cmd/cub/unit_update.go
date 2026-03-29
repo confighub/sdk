@@ -207,6 +207,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
+	enableOptionFlag(unitUpdateCmd)
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -383,6 +384,19 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				failOnError(err)
 			}
+			// Handle TargetOptions
+			if len(option) > 0 {
+				optionMap := make(map[string]interface{})
+				if existing, ok := patchMap["TargetOptions"]; ok {
+					if m, ok := existing.(map[string]interface{}); ok {
+						for k, v := range m {
+							optionMap[k] = v
+						}
+					}
+				}
+				_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
+				patchMap["TargetOptions"] = optionMap
+			}
 			if changeDescription != "" {
 				patchMap["LastChangeDescription"] = changeDescription
 			}
@@ -440,6 +454,10 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		err = setDestroyGatesField(&currentUnit.DestroyGates)
+		if err != nil {
+			return err
+		}
+		err = setOptions(&currentUnit.TargetOptions)
 		if err != nil {
 			return err
 		}
@@ -661,6 +679,19 @@ func runBulkUnitUpdate() error {
 		err := setDestroyGatesInPatch(patchMap)
 		if err != nil {
 			failOnError(err)
+		}
+		// Handle TargetOptions
+		if len(option) > 0 {
+			optionMap := make(map[string]interface{})
+			if existing, ok := patchMap["TargetOptions"]; ok {
+				if m, ok := existing.(map[string]interface{}); ok {
+					for k, v := range m {
+						optionMap[k] = v
+					}
+				}
+			}
+			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
+			patchMap["TargetOptions"] = optionMap
 		}
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription

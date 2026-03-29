@@ -129,16 +129,55 @@ func setDeleteGates(deleteGateMap *map[string]bool) error {
 }
 
 func enableOptionFlag(cmd *cobra.Command) {
-	cmd.Flags().StringSliceVar(&option, "option", []string{}, "bridge options in key=value format; can separate by commas and/or use multiple instances of the flag")
+	cmd.Flags().StringArrayVar(&option, "option", []string{}, "bridge options in key=value format; use semicolons to separate multiple options within one flag value (e.g., --option 'key1=val1;key2=val2'); each --option flag instance corresponds to a ConfigType by position")
 }
 
+// setOptions parses a single --option value (semicolon-separated key=value pairs) into a map.
 func setOptions(optionMap *map[string]string) error {
-	err := setKeyValues(option, optionMap)
+	kvs := splitOptionsBySemicolon(option)
+	err := setKeyValues(kvs, optionMap)
 	if err != nil {
 		return fmt.Errorf("invalid option: %w", err)
 	}
-
 	return nil
+}
+
+// splitOptionsBySemicolon flattens all option flag values by splitting on semicolons.
+func splitOptionsBySemicolon(options []string) []string {
+	var result []string
+	for _, o := range options {
+		parts := strings.Split(o, ";")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				result = append(result, p)
+			}
+		}
+	}
+	return result
+}
+
+// parseOptionSets parses multiple --option flag values into separate option maps,
+// one per ConfigType (by position). Each --option value contains semicolon-separated key=value pairs.
+func parseOptionSets(options []string) ([]map[string]string, error) {
+	var sets []map[string]string
+	for _, o := range options {
+		optMap := map[string]string{}
+		parts := strings.Split(o, ";")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			keyValue := strings.SplitN(p, "=", 2)
+			if len(keyValue) != 2 {
+				return nil, fmt.Errorf("expected key=value: %s", p)
+			}
+			optMap[keyValue[0]] = keyValue[1]
+		}
+		sets = append(sets, optMap)
+	}
+	return sets, nil
 }
 
 func enableFromStdinFlag(cmd *cobra.Command) {

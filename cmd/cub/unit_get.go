@@ -151,6 +151,9 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		if unitDetails.Target != nil {
 			view.Append([]string{"Target", unitDetails.Target.Slug})
 		}
+		if len(unitDetails.Unit.TargetOptions) > 0 {
+			view.Append([]string{"Target Options", mapToString(unitDetails.Unit.TargetOptions)})
+		}
 
 		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
 		if unitDetails.ChangeSet != nil {

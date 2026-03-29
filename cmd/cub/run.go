@@ -51,8 +51,8 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
-	runCmd.PersistentFlags().StringVar(&toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	runCmd.PersistentFlags().StringVar(&liveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
+	runCmd.PersistentFlags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
+	runCmd.PersistentFlags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	runCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
 	runCmd.PersistentFlags().BoolVar(&displayMutations, "display-mutations", false, "display resource mutations")
 

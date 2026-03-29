@@ -161,6 +161,7 @@ func init() {
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
+	enableOptionFlag(unitCreateCmd)
 
 	// Bulk create specific flags
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -344,6 +345,10 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	err = setOptions(&newUnit.TargetOptions)
+	if err != nil {
+		return err
+	}
 	if unitCreateArgs.targetSlug != "" {
 		if unitCreateArgs.targetSlug == "-" {
 			newUnit.TargetID = &uuid.Nil
@@ -410,6 +415,12 @@ func createBulkCreatePatch() ([]byte, error) {
 		err := setDestroyGatesInPatch(patchMap)
 		if err != nil {
 			failOnError(err)
+		}
+		// Handle TargetOptions
+		if len(option) > 0 {
+			optionMap := make(map[string]interface{})
+			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
+			patchMap["TargetOptions"] = optionMap
 		}
 		// Add target if specified
 		if unitCreateArgs.targetSlug != "" {
