@@ -152,6 +152,14 @@ func reconstructRemainingDocuments(documents []*gaby.YamlDoc) []byte {
 	return []byte(gaby.Container(documents).String())
 }
 
+// MarshalInventoryConfigMap serializes an InventoryConfigMap to YAML bytes.
+func MarshalInventoryConfigMap(inventoryCM *InventoryConfigMap) ([]byte, error) {
+	if inventoryCM == nil || !inventoryCM.IsValid() {
+		return nil, nil
+	}
+	return yaml.Marshal(inventoryCM.Unstructured.Object)
+}
+
 // CombineInventoryWithResources combines the inventory ConfigMap with resource YAML
 // The inventory ConfigMap is placed as the first document
 func CombineInventoryWithResources(inventoryCM *InventoryConfigMap, resources []byte) ([]byte, error) {

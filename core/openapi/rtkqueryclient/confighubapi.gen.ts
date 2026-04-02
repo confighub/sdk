@@ -11470,8 +11470,10 @@ export type FunctionWorkerInfo = {
 export type WorkerInfo = {
   BridgeWorkerInfo?: BridgeWorkerInfo;
   FunctionWorkerInfo?: FunctionWorkerInfo;
-  /** If true, this is the server-hosted worker. Only one per organization. */
+  /** If true, this is a server-hosted worker. */
   IsServerWorker?: boolean;
+  /** If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true. */
+  UseUserIdentity?: boolean;
 };
 export type BridgeWorker = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -11701,6 +11703,10 @@ export type QueuedOperation = {
   UserAgent?: string;
   /** UserID of the user the action was performed by. */
   UserID?: string;
+  /** Whether the user who requested the action is a bot user. */
+  UserIsBot?: boolean;
+  /** Organization-level role of the user who requested the action. */
+  UserRole?: string;
   /** An entity-specific sequence number used for optimistic concurrency control.
     The value read must be sent in calls to Update. */
   Version?: number;
@@ -12020,6 +12026,8 @@ export type FunctionInvocationsResponse = {
   /** The resulting configuration data, potentially mutated */
   ConfigData?: string;
   Error?: ResponseError;
+  /** Functions produced new mutations (of type other than None) */
+  HasNewMutations?: boolean;
   Mutations?: ResourceMutationList;
   /** List of function invocation indices that resulted in mutations */
   Mutators?: number[] | null;
@@ -13661,6 +13669,10 @@ export type UnitAction = {
   UserAgent?: string;
   /** UserID of the user the action was performed by. */
   UserID?: string;
+  /** Whether the user who requested the action is a bot user. */
+  UserIsBot?: boolean;
+  /** Organization-level role of the user who requested the action. */
+  UserRole?: string;
   /** An entity-specific sequence number used for optimistic concurrency control.
     The value read must be sent in calls to Update. */
   Version?: number;

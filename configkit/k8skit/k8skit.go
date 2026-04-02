@@ -43,6 +43,11 @@ const (
 	SchedulerAlphaPrefix = "scheduler.alpha.kubernetes.io/"
 	// Batch annotations
 	BatchPrefix = "batch.kubernetes.io/"
+	// ArgoCD annotations (tracking-id, refresh, hydrate, etc.)
+	// ArgoCD adds tracking-id to every resource it manages at sync time.
+	// These are not part of the user's intended config and must be stripped
+	// from LiveData to avoid false drift during Refresh.
+	ArgoCDPrefix = "argocd.argoproj.io/"
 
 	// Specific annotation keys that should be removed
 	// Kubectl specific annotations
@@ -65,6 +70,10 @@ const (
 	ControllerUIDPrefix      = "controller-uid"
 	PodTemplateHashPrefix    = "pod-template-hash"
 	StatefulSetPodNamePrefix = "statefulset.kubernetes.io/pod-name"
+	// Flux Kustomize controller labels added at reconcile time.
+	// These track which Kustomization owns each resource and are not part of
+	// the user's intended config — must be stripped from LiveData to avoid false drift.
+	FluxKustomizePrefix = "kustomize.toolkit.fluxcd.io/"
 )
 
 var K8sInternalAnnotationPrefixes = []string{
@@ -78,6 +87,7 @@ var K8sInternalAnnotationPrefixes = []string{
 	ControlPlaneAlphaPrefix,
 	SchedulerAlphaPrefix,
 	BatchPrefix,
+	ArgoCDPrefix,
 }
 
 var K8sInternalAnnotationKeys = []string{
@@ -97,6 +107,7 @@ var K8sInternalLabelPrefixes = []string{
 	ControllerUIDPrefix,
 	PodTemplateHashPrefix,
 	StatefulSetPodNamePrefix,
+	FluxKustomizePrefix,
 }
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -375,16 +386,35 @@ func (*K8sResourceProviderType) ContextPath(contextField string) string {
 	return K8sContextPath(contextField)
 }
 
-// The conversions are no-ops since Kubernetes/YAML is already YAML.
-
+// NativeToYAML converts native YAML comments (HeadComment, LineComment, FootComment)
+// into $comment$ map keys so they have a uniform representation across all formats.
 func (*K8sResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
-	// TODO: deep copy?
-	return data, nil
+	if len(data) == 0 {
+		return data, nil
+	}
+	docs, err := gaby.ParseAll(data)
+	if err != nil {
+		return data, nil
+	}
+	for _, doc := range docs {
+		doc.ExtractCommentsToKeys()
+	}
+	return docs.Bytes(), nil
 }
 
+// YAMLToNative converts $comment$ map keys back into native YAML comments.
 func (*K8sResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	// TODO: deep copy?
-	return yamlData, nil
+	if len(yamlData) == 0 {
+		return yamlData, nil
+	}
+	docs, err := gaby.ParseAll(yamlData)
+	if err != nil {
+		return yamlData, nil
+	}
+	for _, doc := range docs {
+		doc.InjectCommentsFromKeys()
+	}
+	return docs.Bytes(), nil
 }
 
 func (*K8sResourceProviderType) DataType() api.DataType {

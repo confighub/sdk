@@ -207,7 +207,11 @@ func registerPaths(
 		oldPathInfo, present := registry[resourceType][path]
 		if present {
 			if !VisitorInfoEqual(oldPathInfo, newPathInfo, false) {
-				slog.Error("info mismatch for path", "path", newPathInfo.Path, "new", newPathInfo, "old", oldPathInfo)
+				slog.Error("info mismatch for path",
+					"path", newPathInfo.Path, "resourceType", resourceType,
+					"newPathInfo", newPathInfo, "oldPathInfo", oldPathInfo,
+					"newDetails", newPathInfo.Details, "oldDetails", oldPathInfo.Details,
+				)
 			}
 			newPathInfo = oldPathInfo
 		} else {
@@ -467,7 +471,6 @@ func GetPathVisitorInfo(resourceProvider ResourceProvider, resourceType api.Reso
 	}
 	return result
 }
-
 
 // GetRegisteredNeededPaths returns a combined registry of all paths marked as IsNeeded
 // across all attributes in the path registry.

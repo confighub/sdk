@@ -4,6 +4,8 @@
 package generic
 
 import (
+	"log/slog"
+
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -14,7 +16,7 @@ import (
 )
 
 func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("yq", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("yq", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "yq",
 			Parameters: []api.FunctionParameter{
@@ -43,11 +45,13 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnYQ(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, false)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("yq-i", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("yq-i", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "yq-i",
 			Parameters: []api.FunctionParameter{
@@ -70,7 +74,9 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnYQ(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, mutating bool) (gaby.Container, any, error) {

@@ -24980,6 +24980,10 @@ components:
           x-go-type-skip-optional-pointer: true
         Error:
           $ref: '#/components/schemas/ResponseError'
+        HasNewMutations:
+          description: Functions produced new mutations (of type other than None)
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Mutations:
           $ref: '#/components/schemas/ResourceMutationList'
         Mutators:
@@ -26040,6 +26044,14 @@ components:
           description: UserID of the user the action was performed by.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserIsBot:
+          description: Whether the user who requested the action is a bot user.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        UserRole:
+          description: Organization-level role of the user who requested the action.
           type: string
           x-go-type-skip-optional-pointer: true
         Version:
@@ -27753,6 +27765,14 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        UserIsBot:
+          description: Whether the user who requested the action is a bot user.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        UserRole:
+          description: Organization-level role of the user who requested the action.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Version:
           description: |-
             An entity-specific sequence number used for optimistic concurrency control.
@@ -28249,7 +28269,13 @@ components:
         FunctionWorkerInfo:
           $ref: '#/components/schemas/FunctionWorkerInfo'
         IsServerWorker:
-          description: If true, this is the server-hosted worker. Only one per organization.
+          description: If true, this is a server-hosted worker.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        UseUserIdentity:
+          description: If true, the server worker operates using the requesting user's
+            identity rather than the worker's bot identity. Requires IsServerWorker
+            to be true.
           type: boolean
           x-go-type-skip-optional-pointer: true
       type: object

@@ -4,6 +4,8 @@
 package generic
 
 import (
+	"log/slog"
+
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -12,7 +14,7 @@ import (
 )
 
 func registerDeletePath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("delete-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("delete-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "delete-path",
 			Parameters: []api.FunctionParameter{
@@ -41,7 +43,9 @@ func registerDeletePath(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnDeletePath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

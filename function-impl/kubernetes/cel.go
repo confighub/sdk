@@ -4,14 +4,16 @@
 package kubernetes
 
 import (
+	"log/slog"
+
 	"github.com/google/cel-go/cel"
 	"github.com/swaggest/jsonschema-go"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
-	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 	k8scel "k8s.io/apiserver/pkg/cel/library"
 )
 
@@ -37,7 +39,11 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 	k8sOpts := k8sCELEnvOpts()
 
 	// Override vet-cel with K8s CEL libraries
-	fh.RegisterFunction("vet-cel", &handler.FunctionRegistration{
+	err := fh.RegisterFunction("vet-cel", nil)
+	if err != nil {
+		slog.Error("failed to unregister function", "error", err)
+	}
+	if err = fh.RegisterFunction("vet-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-cel",
 			Parameters: []api.FunctionParameter{
@@ -73,10 +79,16 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return generic.GenericFnVetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// Override get-cel with K8s CEL libraries
-	fh.RegisterFunction("get-cel", &handler.FunctionRegistration{
+	err = fh.RegisterFunction("get-cel", nil)
+	if err != nil {
+		slog.Error("failed to unregister function", "error", err)
+	}
+	if err := fh.RegisterFunction("get-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-cel",
 			Parameters: []api.FunctionParameter{
@@ -111,10 +123,16 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return generic.GenericFnGetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// Override set-cel with K8s CEL libraries
-	fh.RegisterFunction("set-cel", &handler.FunctionRegistration{
+	err = fh.RegisterFunction("set-cel", nil)
+	if err != nil {
+		slog.Error("failed to unregister function", "error", err)
+	}
+	if err := fh.RegisterFunction("set-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-cel",
 			Parameters: []api.FunctionParameter{
@@ -143,5 +161,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return generic.GenericFnSetCEL(rp, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }

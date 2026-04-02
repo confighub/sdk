@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit"
@@ -14,7 +15,7 @@ import (
 )
 
 func registerGetResources(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-resources", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-resources", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-resources",
 			Parameters: []api.FunctionParameter{
@@ -44,7 +45,9 @@ func registerGetResources(fh handler.FunctionRegistry, converter configkit.Confi
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetResources(converter, resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -95,7 +98,7 @@ func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider
 }
 
 func registerGetResourcesOfType(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-resources-of-type", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-resources-of-type", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-resources-of-type",
 			Parameters: []api.FunctionParameter{
@@ -123,7 +126,9 @@ func registerGetResourcesOfType(fh handler.FunctionRegistry, converter configkit
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetResourcesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

@@ -5,6 +5,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -31,46 +32,12 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	generic.RegisterStandardFunctions(fh, rp, rp)
 
 	api.InitTypeSchemas()
-	// Override some functions with extended implementations
-	fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
-		FunctionSignature: api.FunctionSignature{
-			FunctionName: "get-placeholders",
-			OutputInfo: &api.FunctionOutput{
-				ResultName:  "path",
-				Description: "Resource paths containing placeholder values",
-				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &api.AttributeValueListSchema,
-			},
-			Mutating:              false,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
-			Description:           "Returns a list of attributes containing the placeholder string 'confighubplaceholder' or number 999999999",
-			FunctionType:          api.FunctionTypeCustom,
-			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
-		},
-		Function: makeK8sFnGetPlaceholders(rp),
-	})
-	fh.RegisterFunction("no-placeholders", &handler.FunctionRegistration{
-		FunctionSignature: api.FunctionSignature{
-			FunctionName: "no-placeholders",
-			OutputInfo: &api.FunctionOutput{
-				ResultName:  "passed",
-				Description: "True if no placeholders remain, false otherwise",
-				OutputType:  api.OutputTypeValidationResult,
-				Schema:      &api.ValidationResultListSchema,
-			},
-			Mutating:              false,
-			Validating:            true,
-			Hermetic:              true,
-			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999",
-			FunctionType:          api.FunctionTypeCustom,
-			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
-		},
-		Function: makeK8sFnNoPlaceholders(rp),
-	})
-	fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
+
+	// Override where-filter with an extended implementation
+	if err := fh.RegisterFunction("where-filter", nil); err != nil { // clear generic function first
+		slog.Error("failed to register function", "error", err)
+	}
+	if err := fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "where-filter",
 			Parameters: []api.FunctionParameter{
@@ -104,11 +71,25 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: makeK8sFnResourceWhereMatch(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
-	fh.RegisterFunction("vet-schemas", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-schemas", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-schemas",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "kubernetes-version",
+					Required:      false,
+					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/",
+					DataType:      api.DataTypeString,
+					Example:       "1.30.0",
+					ValueConstraints: api.ValueConstraints{
+						Regexp: `^(master|\d+\.\d+\.\d+)$`,
+					},
+				},
+			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
@@ -124,11 +105,25 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: makeK8sFnVetSchemas(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	// TODO: Deprecated in favor of vet-schemas. Remove this.
-	fh.RegisterFunction("validate", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("validate", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "validate",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "kubernetes-version",
+					Required:      false,
+					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/",
+					DataType:      api.DataTypeString,
+					Example:       "1.30.0",
+					ValueConstraints: api.ValueConstraints{
+						Regexp: `^(master|\d+\.\d+\.\d+)$`,
+					},
+				},
+			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if schema passes validation, false otherwise",
@@ -144,7 +139,9 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: makeK8sFnVetSchemas(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 var noncoreDefaultGroup = map[string]string{
@@ -713,33 +710,6 @@ func addDescriptionToPathInfos(resourceType api.ResourceType, pathInfos api.Path
 	}
 }
 
-func makeK8sFnGetPlaceholders(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
-	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnGetPlaceholders(rp, fArgs.ParsedData)
-	}
-}
-
-func k8sFnGetPlaceholders(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyString)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyInt)...)
-	return parsedData, paths, nil
-}
-
-func makeK8sFnNoPlaceholders(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
-	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnNoPlaceholders(rp, fArgs.ParsedData)
-	}
-}
-
-func k8sFnNoPlaceholders(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyString)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, rp, yamlkit.PlaceHolderBlockApplyInt)...)
-	result := api.ValidationResult{
-		Passed: len(paths) == 0,
-	}
-	return parsedData, result, nil
-}
-
 // Kubernetes-specific resource quantity handling
 
 func evaluateResourceQuantityRelationalExpression(expr *api.RelationalExpression, pathQuantity quantity.Quantity) bool {
@@ -827,31 +797,38 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json",
 		"https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json",
 	}
-	// TODO: Cache once an emptyDir is added
-	v, err := validator.New(schemaLocations, validator.Opts{Strict: true, IgnoreMissingSchemas: true})
+	cacheDir := "/tmp/kubeconform-cache"
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		slog.Warn("failed to create kubeconform cache directory", "error", err)
+		cacheDir = ""
+	}
+	opts := validator.Opts{Strict: true, IgnoreMissingSchemas: true, Cache: cacheDir}
+	if len(args) > 0 {
+		kubeVersion, ok := args[0].Value.(string)
+		if ok && kubeVersion != "" {
+			opts.KubernetesVersion = kubeVersion
+		}
+	}
+	v, err := validator.New(schemaLocations, opts)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to initialize kubeconform validator")
 	}
-	type kubeconformResult struct {
-		passed      bool
-		details     []string
-		failedPaths api.AttributeValueList
-	}
 
 	whereExpressions := api.GetWhereResourceExpressions(options)
-	output, err := yamlkit.VisitResourcesFiltered(parsedData, &kubeconformResult{passed: true}, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		kr := output.(*kubeconformResult)
-		res := resource.Resource{Bytes: doc.Bytes()}
-		result := v.ValidateResource(res)
-		switch result.Status {
+	result := api.ValidationResult{Passed: true}
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, &result, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		vr := output.(*api.ValidationResult)
+		res := resource.Resource{Bytes: doc.BytesWithoutCommentKeys()}
+		valResult := v.ValidateResource(res)
+		switch valResult.Status {
 		case validator.Skipped, validator.Empty:
 			// N/A
 		case validator.Valid:
 			// Passed
 		case validator.Invalid:
-			kr.passed = false
-			for _, validationError := range result.ValidationErrors {
-				kr.details = append(kr.details, validationError.Msg)
+			vr.Passed = false
+			for _, validationError := range valResult.ValidationErrors {
+				vr.Details = append(vr.Details, validationError.Msg)
 				// This path will be the parent of a bogus path. Try to parse the field out of the message.
 				path := gaby.JSONPointerToPath(validationError.Path)
 				if strings.HasPrefix(validationError.Msg, "additionalProperties '") {
@@ -867,41 +844,31 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 							Path:         api.ResolvedPath(path),
 						},
 						AttributeMetadata: api.AttributeMetadata{
-							AttributeName: api.AttributeNameNone, // TODO: look up possibly known attribute?
+							AttributeName: api.AttributeNameNone,
 						},
 					},
-					// Is Value relevant? Should the message go in the Value? For now, set the Value so that it's not null.
+					// The Value is not relevant for schema validation, but users may find it useful.
+					// TODO: Add the Value if it's a scalar (string, int, bool). Otherwise empty is fine for now.
 					Value: "",
 				}
-				kr.failedPaths = append(kr.failedPaths, failedPath)
+				vr.FailedAttributes = append(vr.FailedAttributes, failedPath)
 			}
 		case validator.Error:
-			kr.passed = false
-			return kr, []error{result.Err}
+			vr.Passed = false
+			return vr, []error{valResult.Err}
 		}
-		return kr, nil
+		return vr, nil
 	})
 
 	if err != nil {
 		// VisitResources collects errors from both GetResourceInfo failures and validator errors
-		kr, _ := output.(*kubeconformResult)
-		if kr != nil && !kr.passed {
-			failureResult := api.ValidationResultFalse
-			failureResult.Details = kr.details
-			failureResult.FailedAttributes = kr.failedPaths
-			return parsedData, failureResult, err
+		vr, _ := output.(*api.ValidationResult)
+		if vr != nil && !vr.Passed {
+			return parsedData, *vr, err
 		}
 		return parsedData, api.ValidationResultFalse, err
 	}
 
-	kr := output.(*kubeconformResult)
-	if kr.passed {
-		return parsedData, api.ValidationResultTrue, nil
-	}
-
-	failureResult := api.ValidationResultFalse
-	failureResult.Details = kr.details
-	failureResult.FailedAttributes = kr.failedPaths
-
-	return parsedData, failureResult, nil
+	vr := output.(*api.ValidationResult)
+	return parsedData, *vr, nil
 }

@@ -289,7 +289,7 @@ type FunctionOutput struct {
 }
 ```
 
-Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighubai/public/blob/main/plugin/functions/pkg/api/function.go), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and the function executor handler knows it should convert them prior to invoking the functions.
+Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighub/sdk/tree/main/core/function/api), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and the function executor handler knows it should convert them prior to invoking the functions.
 
 ```
 const (
@@ -458,11 +458,73 @@ The following configuration formats are supported, identified by their Toolchain
 - OpenTofu/HCL (`ToolchainOpenTofuHCL`)
 - ConfigHub/YAML — internal ConfigHub YAML format (`ToolchainConfigHubYAML`)
 
-Non-YAML formats are converted to and from YAML documents using the `configkit.ConfigConverter` interface so that the `yamlkit` and `gaby` libraries may be used to traverse and manipulate the configuration data, and so that a set of common / standard functions may be implemented in a generic way for all configuration formats. These functions are here:
+### NativeToYAML / YAMLToNative conversion
+
+All configuration formats implement the `configkit.ConfigConverter` interface:
+
+```go
+type ConfigConverter interface {
+    NativeToYAML(data []byte) ([]byte, error)
+    YAMLToNative(yamlData []byte) ([]byte, error)
+    DataType() api.DataType
+}
+```
+
+`NativeToYAML` converts from the native format to YAML so that the `yamlkit` and `gaby` libraries can traverse and manipulate the configuration data, and so that a set of common / standard functions can be implemented generically for all formats. `YAMLToNative` converts back. These functions are here:
 
 https://github.com/confighub/sdk/tree/main/function/internal/handlers/generic
 
-They are registered with a converter and a `ResourceProvider`, which may be implemented using the same receiver type, as done for Kubernetes:
+For non-YAML formats (TOML, INI, Properties, Env, JSON, HCL), `NativeToYAML` parses the native format and produces YAML. For YAML-native formats (AppConfig/YAML, ConfigHub/YAML, Kubernetes/YAML), the data is already YAML, but `NativeToYAML` / `YAMLToNative` still perform comment conversion (see below).
+
+### Comment preservation
+
+Comments from native configuration formats are preserved across the conversion round-trip using special `$comment$` map keys. This allows comments to survive conversion through formats like JSON that don't natively support comments, and provides a uniform representation across all formats.
+
+#### Comment key syntax
+
+Comments are stored as sibling map entries alongside the data key they are associated with. The key format is `$comment$TYPE:TARGET` where:
+
+- `TYPE` is `head` (comment lines above), `line` (inline comment on same line), or `foot` (comment lines below)
+- `TARGET` is the name of the data key the comment is attached to (empty string for the containing object/document itself)
+
+For example, given this TOML:
+
+```toml
+# Database settings
+[database]
+host = "localhost"  # primary host
+port = 5432
+```
+
+The YAML intermediate representation contains:
+
+```yaml
+$comment$head$database: Database settings
+database:
+  $comment$line$host: primary host
+  host: localhost
+  port: 5432
+```
+
+The `$comment$` prefix is defined in `yamlkit.CommentKeyPrefix`. Utility functions for building, parsing, and manipulating comment keys are in `public/core/configkit/yamlkit/comments.go`.
+
+#### How each format handles comments
+
+**Non-YAML formats** (TOML, INI, Properties, Env): `NativeToYAML` extracts comments from the raw source (using format-specific parsers), strips them from parsed values where necessary (e.g., inline comments in Env and Properties files), and merges them into the data structure as `$comment$` keys. `YAMLToNative` extracts the `$comment$` keys from the data, encodes the clean data in the native format, and then post-processes the output to re-insert comments at the correct positions with matching indentation. The format-specific comment logic lives in `comments.go` files within each configkit package (e.g., `public/configkit/tomlkit/comments.go`).
+
+**YAML-native formats** (AppConfig/YAML, ConfigHub/YAML, Kubernetes/YAML): Native YAML stores comments on `yaml.Node` objects as `HeadComment`, `LineComment`, and `FootComment` fields (via the kyaml library). `NativeToYAML` calls `gaby.YamlDoc.ExtractCommentsToKeys()` to convert these node-level comments into `$comment$` sibling keys. `YAMLToNative` calls `gaby.YamlDoc.InjectCommentsFromKeys()` to convert `$comment$` keys back into native YAML node comments. This ensures that internally, all formats use `$comment$` keys uniformly.
+
+#### Impact on functions
+
+Functions that read comments use `gaby.YamlDoc.GetCommentKeys(path)` to look up `$comment$` sibling keys for a given data path. Functions that write comments use `gaby.YamlDoc.SetCommentKey(path, type, text)`. `delete-path` automatically deletes associated `$comment$` keys when deleting a data path (via `gaby.YamlDoc.DeleteCommentKeysForPath`).
+
+Schema validation functions (`vet-jsonschema`, `vet-schemas`) strip `$comment$` keys before validation using `gaby.YamlDoc.MarshalJSONWithoutCommentKeys()` or `gaby.YamlDoc.BytesWithoutCommentKeys()`, so that comment keys don't cause spurious validation failures.
+
+The `$comment$` key syntax is allowed in the path regex (`pathMapSegmentRegexpString` in `public/core/function/api/query.go`), which permits `$` as a start character and `:` as a continuation character.
+
+### ResourceProvider and registration
+
+Converters are registered with a `ResourceProvider`, which may be implemented using the same receiver type, as done for Kubernetes:
 
 ```
 	generic.RegisterStandardFunctions(fh, k8skit.K8sResourceProvider, k8skit.K8sResourceProvider)

@@ -5,6 +5,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -16,7 +17,7 @@ import (
 )
 
 func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
-	fh.RegisterFunction("ensure-namespaces", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("ensure-namespaces", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "ensure-namespaces",
 			Mutating:              true,
@@ -28,7 +29,9 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny}, // technically only namespace-scoped resources
 		},
 		Function: makeK8sFnEnsureNamespaces(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	// NOTE: set-namespace does not set the name of Namespace resources
 	// TODO: use OpenAPI schemas to determine namespaced vs cluster scope
 	// TODO: skip local config units
@@ -52,7 +55,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	generic.RegisterPathSetterAndGetter(fh, "namespace", namespaceParameters,
 		" the namespace attributes in resource", AttributeNameNamespaceNameReference, rp, true, false, false)
 	api.InitTypeSchemas()
-	fh.RegisterFunction("get-needed-namespaces", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-needed-namespaces", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-needed-namespaces",
 			OutputInfo: &api.FunctionOutput{
@@ -71,7 +74,9 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny}, // technically only namespace-scoped resources
 		},
 		Function: makeK8sFnNeededNamespaces(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	annotationParameters := []api.FunctionParameter{
 		{
 			ParameterName: "annotation-key",

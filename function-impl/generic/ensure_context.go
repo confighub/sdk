@@ -4,7 +4,7 @@
 package generic
 
 import (
-	"fmt"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -16,7 +16,7 @@ import (
 
 // Deprecated: This functionality should be implemented in bridges going forward.
 func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "ensure-context",
 			Parameters: []api.FunctionParameter{
@@ -38,9 +38,12 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnEnsureContext(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
+// TODO: This functionality should move into bridges.
 func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	addContext := args[0].Value.(bool)
 
@@ -48,24 +51,6 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 	if resourceProvider.ContextPath(constants.UnitSlugKeySuffix) == "" {
 		// Not supported, so just return
 		return parsedData, nil, nil
-	}
-
-	revisionNum := functionContext.RevisionNum
-
-	// Currently changing the revision numbers in the config causes a lot of "revision spam"
-	// https://github.com/confighubai/confighub/issues/2006
-	// Also, what I would really want is setting the revision number in the pod template, but
-	// only if the pod template otherwise changed, such as in the case of an image reference change,
-	// so that the app could report what revision it was at.
-	// https://github.com/confighubai/confighub/issues/1892
-	// Do to the problem and lack of desired benefit, I'm disabling it for now.
-	addRevisionNum := false
-
-	if addContext {
-		// If the data has changed, the revision will be incremented.
-		if api.ConfigDataHasChanged(functionContext, parsedData.Bytes()) {
-			revisionNum++
-		}
 	}
 
 	for _, doc := range parsedData {
@@ -77,12 +62,6 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 			_, err = doc.SetP(functionContext.SpaceID.String(), resourceProvider.ContextPath(constants.SpaceIDKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
-			}
-			if addRevisionNum {
-				_, err = doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
-				if err != nil {
-					return parsedData, nil, err
-				}
 			}
 		} else {
 			err := doc.DeleteP(resourceProvider.ContextPath(constants.UnitSlugKeySuffix))
@@ -97,18 +76,6 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 			err = doc.DeleteP(resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
 			if err != nil {
 				return parsedData, nil, err
-			}
-		}
-	}
-	if addRevisionNum && addContext && revisionNum == functionContext.RevisionNum {
-		// We may need to update the revision number if this function changed the data.
-		if api.ConfigDataHasChanged(functionContext, []byte(parsedData.String())) {
-			revisionNum++
-			for _, doc := range parsedData {
-				_, err := doc.SetP(fmt.Sprintf("%d", revisionNum), resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
-				if err != nil {
-					return parsedData, nil, err
-				}
 			}
 		}
 	}

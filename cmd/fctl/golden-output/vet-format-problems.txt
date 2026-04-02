@@ -1,0 +1,155 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lint-test
+  namespace: example
+  labels:
+    app: lint-test
+    app: duplicate-label
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lint-test
+  template:
+    metadata:
+      labels:
+        app: lint-test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ENABLE_FEATURE
+          value: yes
+        - name: VERBOSE
+          value: on
+        - name: COUNTRY
+          value: "no"
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: Y
+      - name: sidecar
+        image: busybox:latest
+        command: ["/bin/sh"]
+        securityContext:
+          fsGroup: 0755
+      emptyField:
+OUTPUT
+------
+[
+  {
+    "Passed": false,
+    "Index": 0,
+    "FunctionName": "vet-format",
+    "FailedAttributes": [
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "metadata.labels.app",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-duplicate-keys",
+            "Message": "duplicate key \"app\""
+          }
+        ]
+      },
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.0.env.0.value",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-truthy",
+            "Message": "value \"yes\" is ambiguous; YAML 1.1 interprets it as a boolean; quote it to be safe"
+          }
+        ]
+      },
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.0.env.1.value",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-truthy",
+            "Message": "value \"on\" is ambiguous; YAML 1.1 interprets it as a boolean; quote it to be safe"
+          }
+        ]
+      },
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.0.securityContext.readOnlyRootFilesystem",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-truthy",
+            "Message": "value \"Y\" is ambiguous; YAML 1.1 interprets it as a boolean; quote it to be safe"
+          }
+        ]
+      },
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.1.securityContext.fsGroup",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-octal-values",
+            "Message": "value \"0755\" uses old-style octal notation; use 0o755 prefix for clarity or quote it if a string was intended"
+          }
+        ]
+      },
+      {
+        "ResourceName": "example/lint-test",
+        "ResourceNameWithoutScope": "lint-test",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.emptyField",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": null,
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "no-empty-values",
+            "Message": "empty value for key \"emptyField\"; use an explicit value or \"null\""
+          }
+        ]
+      }
+    ]
+  }
+]

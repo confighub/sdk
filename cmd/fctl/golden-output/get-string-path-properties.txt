@@ -11,6 +11,7 @@ OUTPUT
     "AttributeName": "none",
     "DataType": "string",
     "Value": "localhost",
+    "Comment": "One comment",
     "Index": 0,
     "FunctionName": "get-string-path"
   }

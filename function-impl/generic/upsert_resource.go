@@ -6,6 +6,7 @@ package generic
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -15,7 +16,7 @@ import (
 )
 
 func registerUpsertResource(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("upsert-resource", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("upsert-resource", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "upsert-resource",
 			Parameters: []api.FunctionParameter{
@@ -50,7 +51,9 @@ func registerUpsertResource(fh handler.FunctionRegistry, converter configkit.Con
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnUpsertResource(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

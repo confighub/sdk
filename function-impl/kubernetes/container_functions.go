@@ -159,7 +159,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	setContainerFlagHandler = fh.GetHandlerImplementation("set-container-flag") // for testing
 
 	resourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImage, rp)
-	fh.RegisterFunction("set-image-reference-by-uri", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-image-reference-by-uri", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-image-reference-by-uri",
 			Parameters: []api.FunctionParameter{
@@ -190,9 +190,11 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetImageReferenceByURI(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	setImageReferenceByUriHandler = fh.GetHandlerImplementation("set-image-reference-by-uri") // for testing
-	fh.RegisterFunction("set-image-registry-by-registry", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-image-registry-by-registry", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-image-registry-by-registry",
 			Parameters: []api.FunctionParameter{
@@ -223,7 +225,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetImageRegistryByRegistry(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	minValue := 0
 	replicasParameters := []api.FunctionParameter{
 		{
@@ -238,7 +242,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
 		" the replicas for workload controllers", attributeNameReplicas, rp, true, true, false)
 	resourceTypes = yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToContainersPaths)
-	fh.RegisterFunction("set-env", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-env", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-env",
 			Parameters: []api.FunctionParameter{
@@ -269,7 +273,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetEnv(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	envVarParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "container-name",
@@ -304,7 +310,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	// Integer or decimal
 	// Binary SI (base 1024) or Decimal SI (base 1000) or Exponent or no suffix
 	resourceQuantityRegexpString := "^[+-]?([0-9]*(\\.[0-9]+)?)(([KMGTPE]i?)|[mk]|([eE][-+]?[0-9]+))?$"
-	fh.RegisterFunction("set-container-resources", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-container-resources", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-container-resources",
 			Parameters: []api.FunctionParameter{
@@ -355,9 +361,11 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetContainerResources(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	resourceTypes = yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
-	fh.RegisterFunction("set-pod-defaults", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-pod-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-pod-defaults",
 			Parameters: []api.FunctionParameter{
@@ -406,7 +414,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetPodDefaults(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	hostnameParameters := []api.FunctionParameter{
 		{
 			ParameterName:    "hostname",
@@ -477,7 +487,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			ValueConstraints: api.ValueConstraints{EnumValues: []string{"emptyDir", "configMap", "secret", "persistentVolumeClaim"}},
 		},
 	}
-	fh.RegisterFunction("set-container-volume-mount-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-container-volume-mount-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-container-volume-mount-path",
 			Parameters:            volumeMountParameters,
@@ -490,7 +500,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths),
 		},
 		Function: makeK8sFnSetContainerVolumeMountPath(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	minPortNumber := 1
 	maxPortNumber := 65535
 	containerPortParameters := []api.FunctionParameter{
@@ -527,7 +539,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			ValueConstraints: api.ValueConstraints{EnumValues: []string{"TCP", "UDP", "SCTP"}},
 		},
 	}
-	fh.RegisterFunction("set-container-port", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-container-port", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-container-port",
 			Parameters:            containerPortParameters,
@@ -540,7 +552,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToContainersPaths),
 		},
 		Function: makeK8sFnSetContainerPort(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	reflector := jsonschema.Reflector{}
 	validationResultSchema, err := reflector.Reflect(api.ValidationResult{})
 	if err != nil {
@@ -551,7 +565,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 		slog.Error("couldn't get schema for api.ValueFilter")
 	}
 	imageResourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImage, rp)
-	fh.RegisterFunction("vet-images", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-images", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-images",
 			Parameters: []api.FunctionParameter{
@@ -578,7 +592,9 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			AffectedResourceTypes: imageResourceTypes,
 		},
 		Function: makeK8sFnVetImages(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // User data errors should not be logged here. They will be logged by the caller.

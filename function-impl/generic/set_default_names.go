@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -15,7 +16,7 @@ import (
 )
 
 func registerSetDefaultNames(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-default-names", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-default-names", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-default-names",
 			Parameters: []api.FunctionParameter{
@@ -38,7 +39,9 @@ func registerSetDefaultNames(fh handler.FunctionRegistry, converter configkit.Co
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSetDefaultNames(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // TODO: Remove if not still useful

@@ -54,91 +54,96 @@ func (e *mockForbiddenError) Status() metav1.Status {
 
 // Test data for ArgoCD OCI worker
 var (
-	testArgoCDOCITargetParams = []byte(`{
-		"KubeContext": "test-context",
-		"ArgoCDNamespace": "argocd",
-		"DestinationServer": "https://kubernetes.default.svc",
+	testArgoCDOCITargetOptions = map[string]string{
+		"KubeContext":          "test-context",
+		"ArgoCDNamespace":      "argocd",
+		"DestinationServer":    "https://kubernetes.default.svc",
 		"DestinationNamespace": "production",
-		"Project": "my-project",
-		"SyncPolicy": "automated",
-		"PruneEnabled": true,
-		"SelfHealEnabled": true,
-		"OCIRepoURL": "oci://ghcr.io/myorg/manifests",
-		"OCIPath": "apps/myapp",
-		"TargetRevision": "v1.0.0"
-	}`)
+		"Project":              "my-project",
+		"SyncPolicy":           "automated",
+		"PruneEnabled":         "true",
+		"SelfHealEnabled":      "true",
+		"OCIRepoURL":           "oci://ghcr.io/myorg/manifests",
+		"OCIPath":              "apps/myapp",
+		"TargetRevision":       "v1.0.0",
+	}
 
-	testArgoCDOCIMinimalParams = []byte(`{
+	testArgoCDOCIMinimalOptions = map[string]string{
 		"KubeContext": "test-context",
-		"OCIRepoURL": "oci://ghcr.io/myorg/manifests"
-	}`)
+		"OCIRepoURL":  "oci://ghcr.io/myorg/manifests",
+	}
 )
 
 func TestParseArgoCDOCIParams_FullParams(t *testing.T) {
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 	}
 
-	params, err := parseArgoCDOCIParams(payload)
+	options, err := parseArgoCDOCIOptions(payload)
 	assert.NoError(t, err)
-	assert.Equal(t, "test-context", params.KubeContext)
-	assert.Equal(t, "argocd", params.ArgoCDNamespace)
-	assert.Equal(t, "https://kubernetes.default.svc", params.DestinationServer)
-	assert.Equal(t, "production", params.DestinationNamespace)
-	assert.Equal(t, "my-project", params.Project)
-	assert.Equal(t, "automated", params.SyncPolicy)
-	assert.True(t, params.PruneEnabled)
-	assert.True(t, params.SelfHealEnabled)
-	assert.Equal(t, "oci://ghcr.io/myorg/manifests", params.OCIRepoURL)
-	assert.Equal(t, "apps/myapp", params.OCIPath)
-	assert.Equal(t, "v1.0.0", params.TargetRevision)
+	assert.Equal(t, "test-context", options.KubeContext)
+	assert.Equal(t, "argocd", options.ArgoCDNamespace)
+	assert.Equal(t, "https://kubernetes.default.svc", options.DestinationServer)
+	assert.Equal(t, "production", options.DestinationNamespace)
+	assert.Equal(t, "my-project", options.Project)
+	assert.Equal(t, "automated", options.SyncPolicy)
+	assert.True(t, options.PruneEnabled)
+	assert.True(t, options.SelfHealEnabled)
+	assert.Equal(t, "oci://ghcr.io/myorg/manifests", options.OCIRepoURL)
+	assert.Equal(t, "apps/myapp", options.OCIPath)
+	assert.Equal(t, "v1.0.0", options.TargetRevision)
 }
 
 func TestParseArgoCDOCIParams_WithDefaults(t *testing.T) {
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCIMinimalParams,
+		TargetOptions: testArgoCDOCIMinimalOptions,
 	}
 
-	params, err := parseArgoCDOCIParams(payload)
+	options, err := parseArgoCDOCIOptions(payload)
 	assert.NoError(t, err)
-	assert.Equal(t, "test-context", params.KubeContext)
-	assert.Equal(t, defaultArgoCDNamespace, params.ArgoCDNamespace)
-	assert.Equal(t, defaultDestinationServer, params.DestinationServer)
-	assert.Equal(t, defaultDestinationNamespace, params.DestinationNamespace)
-	assert.Equal(t, defaultProject, params.Project)
-	assert.Equal(t, defaultSyncPolicy, params.SyncPolicy)
-	assert.False(t, params.PruneEnabled)
-	assert.False(t, params.SelfHealEnabled)
-	assert.Equal(t, "oci://ghcr.io/myorg/manifests", params.OCIRepoURL)
-	assert.Equal(t, defaultOCIPath, params.OCIPath)
-	assert.Equal(t, defaultTargetRevision, params.TargetRevision)
+	assert.Equal(t, "test-context", options.KubeContext)
+	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
+	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
+	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
+	assert.Equal(t, defaultProject, options.Project)
+	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
+	assert.False(t, options.PruneEnabled)
+	assert.False(t, options.SelfHealEnabled)
+	assert.Equal(t, "oci://ghcr.io/myorg/manifests", options.OCIRepoURL)
+	assert.Equal(t, defaultOCIPath, options.OCIPath)
+	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
 func TestParseArgoCDOCIParams_EmptyParams(t *testing.T) {
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{}`),
+		TargetOptions: map[string]string{},
 	}
 
-	params, err := parseArgoCDOCIParams(payload)
+	options, err := parseArgoCDOCIOptions(payload)
 	assert.NoError(t, err)
 	// All defaults should be applied
-	assert.Equal(t, defaultArgoCDNamespace, params.ArgoCDNamespace)
-	assert.Equal(t, defaultDestinationServer, params.DestinationServer)
-	assert.Equal(t, defaultDestinationNamespace, params.DestinationNamespace)
-	assert.Equal(t, defaultProject, params.Project)
-	assert.Equal(t, defaultSyncPolicy, params.SyncPolicy)
-	assert.Equal(t, defaultOCIPath, params.OCIPath)
-	assert.Equal(t, defaultTargetRevision, params.TargetRevision)
+	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
+	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
+	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
+	assert.Equal(t, defaultProject, options.Project)
+	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
+	assert.Equal(t, defaultOCIPath, options.OCIPath)
+	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
-func TestParseArgoCDOCIParams_InvalidJSON(t *testing.T) {
-	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`invalid-json`),
-	}
+func TestParseArgoCDOCIParams_EmptyOptions(t *testing.T) {
+	payload := api.BridgeWorkerPayload{}
 
-	_, err := parseArgoCDOCIParams(payload)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse target params")
+	options, err := parseArgoCDOCIOptions(payload)
+	assert.NoError(t, err)
+	// All defaults should be applied
+	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
+	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
+	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
+	assert.Equal(t, defaultProject, options.Project)
+	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
+	assert.Equal(t, defaultOCIPath, options.OCIPath)
+	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
 func TestGenerateArgoCDApplication_Success(t *testing.T) {
@@ -277,7 +282,7 @@ func TestTransformToArgoCDOCIApplication_Success(t *testing.T) {
 	spaceID := uuid.New()
 	unitID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		UnitID:       unitID,
 		SpaceSlug:    "test-space",
@@ -306,7 +311,7 @@ func TestTransformToArgoCDOCIApplication_MissingOCIConfig(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -325,7 +330,7 @@ func TestTransformToArgoCDOCIApplication_InferredOCIHost(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-deployment",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -351,7 +356,7 @@ func TestTransformToArgoCDOCIApplication_AutoConstructOCIURL(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"OCIHost": "oci.hub.confighub.com"}`),
+		TargetOptions: map[string]string{"OCIHost": "oci.hub.confighub.com"},
 		UnitSlug:     "my-deployment",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -371,34 +376,34 @@ func TestTransformToArgoCDOCIApplication_AutoConstructOCIURL(t *testing.T) {
 	assert.Contains(t, yamlStr, "targetRevision: latest")
 }
 
-func TestTransformToArgoCDOCIApplication_InvalidParams(t *testing.T) {
+func TestTransformToArgoCDOCIApplication_DefaultParams(t *testing.T) {
 	mockCtx := kubernetes.SetupMockContext(t)
-	mockCtx.On("GetServerURL").Return("")
+	mockCtx.On("GetServerURL").Return("http://localhost:9090")
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`invalid-json`),
-		UnitSlug:     "my-app",
-		SpaceID:      spaceID,
-		RevisionNum:  1,
-		Data:         testConfigMapYAML,
+		TargetOptions: map[string]string{},
+		UnitSlug:      "my-app",
+		SpaceSlug:     "production",
+		SpaceID:       spaceID,
+		RevisionNum:   1,
+		Data:          testConfigMapYAML,
 	}
 
 	worker := &ArgoCDOCIWorker{}
 	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse target params")
+	assert.NoError(t, err)
 }
 
 func TestArgoCDOCIWorker_Info(t *testing.T) {
 	worker := &ArgoCDOCIWorker{}
-	opts := api.InfoOptions{
+	options := api.InfoOptions{
 		WorkerSlug: "test-worker",
 	}
 
 	// Note: This will fail without a Kubernetes context, but we're testing that
 	// the method returns the correct provider type
-	info := worker.Info(opts)
+	info := worker.Info(options)
 
 	// The Info method should return BridgeWorkerInfo with ArgoCD OCI configuration
 	// In a real test environment with a kubeconfig, this would contain targets
@@ -412,7 +417,7 @@ func TestArgoCDOCIWorker_Apply_TransformError(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -476,7 +481,7 @@ func TestArgoCDOCIWorker_Apply_Success(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -495,7 +500,7 @@ func TestArgoCDOCIWorker_Import_NotSupported(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 	}
 
 	err := worker.Import(mockCtx, payload)
@@ -511,7 +516,7 @@ func TestArgoCDOCIWorker_Destroy_TransformError(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -528,7 +533,7 @@ func TestArgoCDOCIWorker_WatchForApply_TransformError(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -545,7 +550,7 @@ func TestArgoCDOCIWorker_WatchForDestroy_TransformError(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -607,7 +612,7 @@ func TestArgoCDOCIWorker_Refresh_NoDrift(t *testing.T) {
 		}
 	}).Once()
 
-	// Mock downstream resource Get - return matching ConfigMap (same content as original)
+	// Mock managed resource Get - return matching ConfigMap (same content as original)
 	mockClient.On("Get",
 		mock.Anything,
 		mock.MatchedBy(func(key client.ObjectKey) bool {
@@ -631,7 +636,7 @@ func TestArgoCDOCIWorker_Refresh_NoDrift(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -643,7 +648,7 @@ func TestArgoCDOCIWorker_Refresh_NoDrift(t *testing.T) {
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
 
-	// Verify result — Synced + matching downstream = no drift, result.Data stays nil
+	// Verify result — Synced + matching managed resources = no drift, result.Data stays nil
 	assert.NotNil(t, capturedResult)
 	assert.Contains(t, capturedResult.Message, "no drift")
 	assert.NotEmpty(t, capturedResult.LiveData)
@@ -704,7 +709,7 @@ func TestArgoCDOCIWorker_Refresh_Drifted(t *testing.T) {
 		}
 	}).Once()
 
-	// Mock downstream resource Get - return not found (skips diff-patch)
+	// Mock managed resource Get - return not found (skips diff-patch)
 	mockClient.On("Get",
 		mock.Anything,
 		mock.MatchedBy(func(key client.ObjectKey) bool {
@@ -719,7 +724,7 @@ func TestArgoCDOCIWorker_Refresh_Drifted(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -731,13 +736,13 @@ func TestArgoCDOCIWorker_Refresh_Drifted(t *testing.T) {
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
 
-	// Verify result — OutOfSync means drift, but downstream NotFound means no Data
+	// Verify result — OutOfSync means drift; managed resources NotFound means LiveState/LiveData/Data stay nil
 	assert.NotNil(t, capturedResult)
 	assert.Contains(t, capturedResult.Message, "drift detected")
-	assert.NotEmpty(t, capturedResult.LiveData)
-	assert.NotEmpty(t, capturedResult.LiveState)
+	assert.Empty(t, capturedResult.LiveData, "LiveData should be nil when managed resources are not found")
+	assert.Empty(t, capturedResult.LiveState, "LiveState should be nil when managed resources are not found")
 	assert.NotNil(t, capturedResult.ResourceStatuses)
-	assert.Nil(t, capturedResult.Data, "result.Data should be nil when downstream resources are not found")
+	assert.Nil(t, capturedResult.Data, "result.Data should be nil when managed resources are not found")
 }
 
 func TestArgoCDOCIWorker_Refresh_NotFound(t *testing.T) {
@@ -775,7 +780,7 @@ func TestArgoCDOCIWorker_Refresh_NotFound(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -795,7 +800,7 @@ func TestArgoCDOCIWorker_Refresh_TransformError(t *testing.T) {
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -829,7 +834,7 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 		capturedLiveData = status.LiveData
 	}).Once()
 
-	// Mock K8s client Get for Application CR — no .status.resources[], so no downstream fetch
+	// Mock K8s client Get for Application CR — with managed ConfigMap in .status.resources[]
 	mockClient.On("Get",
 		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
 		mock.MatchedBy(func(key client.ObjectKey) bool {
@@ -846,6 +851,33 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 		obj.Object["status"] = map[string]interface{}{
 			"health": map[string]interface{}{"status": argoCDHealthStatusHealthy},
 			"sync":   map[string]interface{}{"status": argoCDSyncStatusSynced},
+			"resources": []interface{}{
+				map[string]interface{}{
+					"group": "", "version": "v1", "kind": "ConfigMap",
+					"name": "test-configmap", "namespace": "default",
+					"status": argoCDSyncStatusSynced,
+					"health": map[string]interface{}{"status": argoCDHealthStatusHealthy},
+				},
+			},
+		}
+	}).Once()
+
+	// Mock managed resource Get - return matching ConfigMap
+	mockClient.On("Get",
+		mock.Anything,
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace != "argocd"
+		}),
+		mock.Anything,
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		obj := args.Get(2).(*unstructured.Unstructured)
+		obj.SetAPIVersion("v1")
+		obj.SetKind("ConfigMap")
+		obj.SetName("test-configmap")
+		obj.SetNamespace("default")
+		obj.Object["data"] = map[string]interface{}{
+			"key": "value",
 		}
 	}).Once()
 
@@ -854,7 +886,7 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -866,19 +898,15 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
 
-	// Verify LiveData contains an inventory ConfigMap
+	// Verify LiveData contains managed resources (ConfigMap), not the Application CR
 	assert.NotEmpty(t, capturedLiveData, "LiveData should not be empty")
 	liveDataStr := string(capturedLiveData)
-	assert.Contains(t, liveDataStr, "kind: ConfigMap", "LiveData should contain an inventory ConfigMap")
-	assert.Contains(t, liveDataStr, "cli-utils.sigs.k8s.io/inventory-id", "LiveData should contain inventory ID label")
-	// The inventory ConfigMap should appear before the Application CR
-	cmIdx := strings.Index(liveDataStr, "kind: ConfigMap")
-	appIdx := strings.Index(liveDataStr, "kind: Application")
-	assert.True(t, cmIdx < appIdx, "Inventory ConfigMap should appear before Application CR in LiveData")
+	assert.Contains(t, liveDataStr, "kind: ConfigMap", "LiveData should contain managed ConfigMap")
+	assert.NotContains(t, liveDataStr, "kind: Application", "LiveData should not contain Application CR")
 }
 
-func TestArgoCDOCIWorkerParams_JSONMarshaling(t *testing.T) {
-	params := ArgoCDOCIWorkerParams{
+func TestArgoCDOCIBridgeOptions_JSONMarshaling(t *testing.T) {
+	options := ArgoCDOCIBridgeOptions{
 		KubeContext:          "test-context",
 		ArgoCDNamespace:      "argocd",
 		DestinationServer:    "https://kubernetes.default.svc",
@@ -893,23 +921,23 @@ func TestArgoCDOCIWorkerParams_JSONMarshaling(t *testing.T) {
 	}
 
 	// Test marshaling
-	jsonBytes, err := json.Marshal(params)
+	jsonBytes, err := json.Marshal(options)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, jsonBytes)
 
 	// Test unmarshaling
-	var unmarshaled ArgoCDOCIWorkerParams
+	var unmarshaled ArgoCDOCIBridgeOptions
 	err = json.Unmarshal(jsonBytes, &unmarshaled)
 	assert.NoError(t, err)
-	assert.Equal(t, params, unmarshaled)
+	assert.Equal(t, options, unmarshaled)
 }
 
-func TestArgoCDOCIWorkerParams_OmitEmpty(t *testing.T) {
-	params := ArgoCDOCIWorkerParams{
+func TestArgoCDOCIBridgeOptions_OmitEmpty(t *testing.T) {
+	options := ArgoCDOCIBridgeOptions{
 		OCIRepoURL: "oci://ghcr.io/myorg/manifests",
 	}
 
-	jsonBytes, err := json.Marshal(params)
+	jsonBytes, err := json.Marshal(options)
 	assert.NoError(t, err)
 
 	jsonStr := string(jsonBytes)
@@ -1168,10 +1196,10 @@ func TestExtractResourceObjects(t *testing.T) {
 	})
 }
 
-func TestArgoCDOCIWorker_Refresh_DriftedWithDownstreamData(t *testing.T) {
+func TestArgoCDOCIWorker_Refresh_DriftedWithManagedResourceData(t *testing.T) {
 	// When ArgoCD reports OutOfSync and .status.resources[] entries exist,
-	// downstream Get returns live objects → diff-patch detects content drift.
-	// Use a ConfigMap as downstream so diff-patch can compare against originalData.
+	// managed resource Get returns live objects → diff-patch detects content drift.
+	// Use a ConfigMap as managed resource so diff-patch can compare against originalData.
 	mockCtx := kubernetes.SetupMockContext(t)
 	mockCtx.On("GetServerURL").Return("").Maybe()
 	mockClient := new(kubernetes.MockK8sClient)
@@ -1221,7 +1249,7 @@ func TestArgoCDOCIWorker_Refresh_DriftedWithDownstreamData(t *testing.T) {
 		}
 	}).Once()
 
-	// Mock downstream resource Get — return modified ConfigMap
+	// Mock managed resource Get — return modified ConfigMap
 	mockClient.On("Get",
 		mock.Anything,
 		mock.MatchedBy(func(key client.ObjectKey) bool {
@@ -1245,7 +1273,7 @@ func TestArgoCDOCIWorker_Refresh_DriftedWithDownstreamData(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -1326,13 +1354,37 @@ func TestArgoCDOCIWorker_WatchForApply_Success(t *testing.T) {
 		}
 	}).Once()
 
+	// Mock K8s client Get - return a live managed Deployment
+	mockClient.On("Get",
+		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace == "default" && key.Name == "my-deploy"
+		}),
+		mock.MatchedBy(func(obj client.Object) bool { return true }),
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		obj := args.Get(2).(*unstructured.Unstructured)
+		obj.SetAPIVersion("apps/v1")
+		obj.SetKind("Deployment")
+		obj.SetName("my-deploy")
+		obj.SetNamespace("default")
+		obj.Object["spec"] = map[string]interface{}{
+			"replicas": int64(1),
+		}
+		obj.Object["status"] = map[string]interface{}{
+			"readyReplicas":     int64(1),
+			"availableReplicas": int64(1),
+		}
+	}).Once()
+
 	worker := &ArgoCDOCIWorker{}
 	worker.SetApplierType(kubernetes.CLIUtilsSSA)
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
+		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
 		Data:         testConfigMapYAML,
@@ -1342,15 +1394,11 @@ func TestArgoCDOCIWorker_WatchForApply_Success(t *testing.T) {
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 3)
 
-	// Verify LiveData contains an inventory ConfigMap as the first YAML document
+	// Verify LiveData contains managed resources (Deployment), not the Application CR
 	assert.NotEmpty(t, capturedLiveData, "LiveData should not be empty")
 	liveDataStr := string(capturedLiveData)
-	assert.Contains(t, liveDataStr, "kind: ConfigMap", "LiveData should contain an inventory ConfigMap")
-	assert.Contains(t, liveDataStr, "cli-utils.sigs.k8s.io/inventory-id", "LiveData should contain inventory ID label")
-	// The inventory ConfigMap should appear before the Application CR
-	cmIdx := strings.Index(liveDataStr, "kind: ConfigMap")
-	appIdx := strings.Index(liveDataStr, "kind: Application")
-	assert.True(t, cmIdx < appIdx, "Inventory ConfigMap should appear before Application CR in LiveData")
+	assert.Contains(t, liveDataStr, "kind: Deployment", "LiveData should contain managed Deployment")
+	assert.NotContains(t, liveDataStr, "kind: Application", "LiveData should not contain Application CR")
 }
 
 func TestArgoCDOCIWorker_WatchForApply_OperationFailed(t *testing.T) {
@@ -1402,7 +1450,7 @@ func TestArgoCDOCIWorker_WatchForApply_OperationFailed(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -1462,7 +1510,7 @@ func TestArgoCDOCIWorker_Refresh_UnknownStatus(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -1504,7 +1552,7 @@ func TestArgoCDOCIWorker_WatchForApply_ContextCanceled(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -1550,7 +1598,9 @@ func TestArgoCDOCIWorker_WatchForApply_CompletionSendStatusError(t *testing.T) {
 	// Mock K8s client Get - return a synced+healthy Application
 	mockClient.On("Get",
 		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		mock.MatchedBy(func(key client.ObjectKey) bool { return true }),
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace == "argocd"
+		}),
 		mock.MatchedBy(func(obj client.Object) bool { return true }),
 		mock.Anything,
 	).Return(nil).Run(func(args mock.Arguments) {
@@ -1576,11 +1626,29 @@ func TestArgoCDOCIWorker_WatchForApply_CompletionSendStatusError(t *testing.T) {
 		}
 	}).Once()
 
+	// Mock K8s client Get - return a live managed Deployment
+	mockClient.On("Get",
+		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace == "default" && key.Name == "my-deploy"
+		}),
+		mock.MatchedBy(func(obj client.Object) bool { return true }),
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		obj := args.Get(2).(*unstructured.Unstructured)
+		obj.SetAPIVersion("apps/v1")
+		obj.SetKind("Deployment")
+		obj.SetName("my-deploy")
+		obj.SetNamespace("default")
+		obj.Object["spec"] = map[string]interface{}{"replicas": int64(1)}
+		obj.Object["status"] = map[string]interface{}{"readyReplicas": int64(1)}
+	}).Once()
+
 	worker := NewArgoCDOCIWorker("", "")
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -1620,7 +1688,9 @@ func TestArgoCDOCIWorker_WatchForApply_ContextCanceledDuringCompletion(t *testin
 	// Mock K8s client Get - return a synced+healthy Application
 	mockClient.On("Get",
 		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		mock.MatchedBy(func(key client.ObjectKey) bool { return true }),
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace == "argocd"
+		}),
 		mock.MatchedBy(func(obj client.Object) bool { return true }),
 		mock.Anything,
 	).Return(nil).Run(func(args mock.Arguments) {
@@ -1646,11 +1716,29 @@ func TestArgoCDOCIWorker_WatchForApply_ContextCanceledDuringCompletion(t *testin
 		}
 	}).Once()
 
+	// Mock K8s client Get - return a live managed Deployment
+	mockClient.On("Get",
+		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
+		mock.MatchedBy(func(key client.ObjectKey) bool {
+			return key.Namespace == "default" && key.Name == "my-deploy"
+		}),
+		mock.MatchedBy(func(obj client.Object) bool { return true }),
+		mock.Anything,
+	).Return(nil).Run(func(args mock.Arguments) {
+		obj := args.Get(2).(*unstructured.Unstructured)
+		obj.SetAPIVersion("apps/v1")
+		obj.SetKind("Deployment")
+		obj.SetName("my-deploy")
+		obj.SetNamespace("default")
+		obj.Object["spec"] = map[string]interface{}{"replicas": int64(1)}
+		obj.Object["status"] = map[string]interface{}{"readyReplicas": int64(1)}
+	}).Maybe()
+
 	worker := NewArgoCDOCIWorker("", "")
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceID:      spaceID,
 		RevisionNum:  1,
@@ -1710,7 +1798,7 @@ func TestTransformToArgoCDOCIApplication_WithCredentials_MultiDoc(t *testing.T) 
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": false}`),
+		TargetOptions: map[string]string{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": "false"},
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -1747,7 +1835,7 @@ func TestTransformToArgoCDOCIApplication_DisableRepoCreds(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": true}`),
+		TargetOptions: map[string]string{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": "true"},
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -1775,7 +1863,7 @@ func TestTransformToArgoCDOCIApplication_NoCredentials_NoSecret(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"OCIHost": "127.0.0.1:1"}`),
+		TargetOptions: map[string]string{"OCIHost": "127.0.0.1:1"},
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -1848,7 +1936,7 @@ func TestGenerateArgoCDApplication_NameNormalization(t *testing.T) {
 	// Test that names with invalid characters are normalized
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "MY_APP.Test",
 		SpaceSlug:    "My-Space",
 		SpaceID:      spaceID,
@@ -1886,7 +1974,7 @@ func TestArgoCDOCIWorker_WatchForApply_TransformError_IsPermanent(t *testing.T) 
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -1905,7 +1993,7 @@ func TestArgoCDOCIWorker_WatchForDestroy_TransformError_IsPermanent(t *testing.T
 
 	worker := &ArgoCDOCIWorker{}
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		Data:         testConfigMapYAML,
 	}
 
@@ -1918,7 +2006,7 @@ func TestArgoCDOCIWorker_WatchForDestroy_TransformError_IsPermanent(t *testing.T
 }
 
 func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
-	// When ArgoCD reports Synced but downstream resource differs from original,
+	// When ArgoCD reports Synced but managed resource differs from original,
 	// content drift should be detected via diff-patch. result.Data should contain
 	// patched content with the modified value.
 	mockCtx := kubernetes.SetupMockContext(t)
@@ -1972,7 +2060,7 @@ func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
 		}
 	}).Once()
 
-	// Mock downstream resource Get — returns modified ConfigMap (content drift)
+	// Mock managed resource Get — returns modified ConfigMap (content drift)
 	mockClient.On("Get",
 		mock.Anything,
 		mock.MatchedBy(func(key client.ObjectKey) bool {
@@ -1996,7 +2084,7 @@ func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -2017,8 +2105,8 @@ func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
 	assert.Contains(t, string(capturedResult.Data), "modified-value", "patched data should contain the modified value")
 }
 
-func TestArgoCDOCIWorker_Refresh_DownstreamResourceNotFound(t *testing.T) {
-	// When Application has no .status.resources[], no downstream fetch occurs.
+func TestArgoCDOCIWorker_Refresh_ManagedResourceNotFound(t *testing.T) {
+	// When Application has no .status.resources[], no managed resource fetch occurs.
 	// Only ArgoCD sync status determines drift.
 	mockCtx := kubernetes.SetupMockContext(t)
 	mockCtx.On("GetServerURL").Return("").Maybe()
@@ -2068,7 +2156,7 @@ func TestArgoCDOCIWorker_Refresh_DownstreamResourceNotFound(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,
@@ -2080,7 +2168,7 @@ func TestArgoCDOCIWorker_Refresh_DownstreamResourceNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	mockCtx.AssertNumberOfCalls(t, "SendStatus", 2)
 
-	// Verify no drift when sync is Synced and no downstream resources
+	// Verify no drift when sync is Synced and no managed resources
 	assert.NotNil(t, capturedResult)
 	assert.Contains(t, capturedResult.Message, "no drift")
 	assert.Nil(t, capturedResult.Data, "result.Data should be nil when no drift")
@@ -2276,7 +2364,7 @@ func TestTransformToArgoCDOCIApplication_HelmUnit(t *testing.T) {
 	spaceID := uuid.New()
 	unitID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-release",
 		UnitID:       unitID,
 		SpaceSlug:    "production",
@@ -2314,7 +2402,7 @@ func TestTransformToArgoCDOCIApplication_HelmUnit_InferredOCI(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"KubeContext": "test-context"}`),
+		TargetOptions: map[string]string{"KubeContext": "test-context"},
 		UnitSlug:     "my-release",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -2347,7 +2435,7 @@ func TestTransformToArgoCDOCIApplication_NonHelmUnit_PreservesPath(t *testing.T)
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -2374,7 +2462,7 @@ func TestTransformToArgoCDOCIApplication_PartialHelmLabels_NotHelm(t *testing.T)
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: testArgoCDOCITargetParams,
+		TargetOptions: testArgoCDOCITargetOptions,
 		UnitSlug:     "my-app",
 		SpaceSlug:    "production",
 		SpaceID:      spaceID,
@@ -2405,7 +2493,7 @@ func TestTransformToArgoCDOCIApplication_SkipRepoCreds(t *testing.T) {
 
 	spaceID := uuid.New()
 	payload := api.BridgeWorkerPayload{
-		TargetParams: []byte(`{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": false}`),
+		TargetOptions: map[string]string{"OCIHost": "127.0.0.1:1", "DisableRepoCreds": "false"},
 		UnitSlug:     "my-app",
 		SpaceSlug:    "test-space",
 		SpaceID:      spaceID,

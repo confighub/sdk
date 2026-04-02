@@ -26,6 +26,7 @@ import (
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
+	"github.com/fluxcd/cli-utils/pkg/object"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -63,8 +64,8 @@ func (w *FluxOCIWorker) ID() api.BridgeWorkerID {
 	}
 }
 
-// FluxOCIWorkerParams contains the configuration parameters for the Flux OCI bridge worker.
-type FluxOCIWorkerParams struct {
+// FluxOCIBridgeOptions contains the configuration parameters for the Flux OCI bridge worker.
+type FluxOCIBridgeOptions struct {
 	KubeContext      string // Kubernetes context name to use (defaults to current context)
 	WaitTimeout      string
 	FluxNamespace    string // Namespace where Flux CRs will be created (default: "flux-system")
@@ -284,91 +285,94 @@ func generateFluxOCICreds(host, namespace, workerID, workerSecret string) ([]byt
 	return out, nil
 }
 
-func parseFluxOCIParams(payload api.BridgeWorkerPayload) (FluxOCIWorkerParams, error) {
-	var params FluxOCIWorkerParams
+func parseFluxOCIOptions(payload api.BridgeWorkerPayload) (FluxOCIBridgeOptions, error) {
+	var options FluxOCIBridgeOptions
 	// Set Prune=true as default; TargetOptions may override it.
-	params.Prune = true
+	options.Prune = true
 
-	// Read from TargetOptions (new-style string map).
 	if v, ok := payload.TargetOptions["FluxNamespace"]; ok {
-		params.FluxNamespace = v
+		options.FluxNamespace = v
 	}
 	if v, ok := payload.TargetOptions["TargetNamespace"]; ok {
-		params.TargetNamespace = v
+		options.TargetNamespace = v
 	}
 	if v, ok := payload.TargetOptions["Interval"]; ok {
-		params.Interval = v
+		options.Interval = v
 	}
 	if v, ok := payload.TargetOptions["OCIRepoURL"]; ok {
-		params.OCIRepoURL = v
+		options.OCIRepoURL = v
 	}
 	if v, ok := payload.TargetOptions["OCIHost"]; ok {
-		params.OCIHost = v
+		options.OCIHost = v
 	}
 	if v, ok := payload.TargetOptions["OCIPath"]; ok {
-		params.OCIPath = v
+		options.OCIPath = v
 	}
 	if v, ok := payload.TargetOptions["TargetRevision"]; ok {
-		params.TargetRevision = v
+		options.TargetRevision = v
 	}
+	// TargetOptions values are always strings; bool fields need explicit conversion.
 	if v, ok := payload.TargetOptions["Prune"]; ok {
-		params.Prune = v != "false"
+		options.Prune = v != "false"
 	}
 	if v, ok := payload.TargetOptions["DisableRepoCreds"]; ok {
-		params.DisableRepoCreds = v == "true"
+		options.DisableRepoCreds = v == "true"
 	}
+	// FIXME: KubeContext should be derived from BridgeHandle, not passed as an option.
+	// BridgeHandle identifies the credentials/coordinates of the bridge to use;
+	// each target has one BridgeHandle but can have multiple option tuples.
 	if v, ok := payload.TargetOptions["KubeContext"]; ok {
-		params.KubeContext = v
+		options.KubeContext = v
 	}
 	if v, ok := payload.TargetOptions["WaitTimeout"]; ok {
-		params.WaitTimeout = v
+		options.WaitTimeout = v
 	}
 
 	// Apply defaults
-	if params.FluxNamespace == "" {
-		params.FluxNamespace = defaultFluxNamespace
+	if options.FluxNamespace == "" {
+		options.FluxNamespace = defaultFluxNamespace
 	}
-	if params.TargetNamespace == "" {
-		params.TargetNamespace = defaultDestinationNamespace
+	if options.TargetNamespace == "" {
+		options.TargetNamespace = defaultDestinationNamespace
 	}
-	if params.Interval == "" {
-		params.Interval = defaultFluxInterval
+	if options.Interval == "" {
+		options.Interval = defaultFluxInterval
 	}
-	if params.OCIPath == "" {
-		params.OCIPath = defaultFluxOCIPath
+	if options.OCIPath == "" {
+		options.OCIPath = defaultFluxOCIPath
 	}
-	if params.TargetRevision == "" {
-		params.TargetRevision = defaultFluxTargetRevision
+	if options.TargetRevision == "" {
+		options.TargetRevision = defaultFluxTargetRevision
 	}
-	if params.WaitTimeout == "" {
-		params.WaitTimeout = kubernetes.LargeWaitTimeout.String()
+	if options.WaitTimeout == "" {
+		options.WaitTimeout = kubernetes.LargeWaitTimeout.String()
 	}
 
-	return params, nil
+	return options, nil
 }
 
-func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload *api.BridgeWorkerPayload, skipRepoCreds bool) (FluxOCIWorkerParams, error) {
-	params, err := parseFluxOCIParams(*payload)
+func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload *api.BridgeWorkerPayload, skipRepoCreds bool) (FluxOCIBridgeOptions, error) {
+	options, err := parseFluxOCIOptions(*payload)
 	if err != nil {
-		return params, err
+		return options, err
 	}
 
 	// Determine OCI URL and target revision
-	ociRepoURL := params.OCIRepoURL
-	targetRevision := params.TargetRevision
+	ociRepoURL := options.OCIRepoURL
+	targetRevision := options.TargetRevision
 
 	// Track the OCI host for creds generation
 	var ociHost string
 
 	if ociRepoURL == "" {
 		// Auto-construct OCI URL from unit information
-		if params.OCIHost != "" {
-			ociHost = params.OCIHost
+		if options.OCIHost != "" {
+			ociHost = options.OCIHost
 		} else {
 			// Infer OCI host from server URL (e.g., "https://hub.confighub.com" → "oci.hub.confighub.com")
 			serverURL := wctx.GetServerURL()
 			if serverURL == "" {
-				return params, errors.New("cannot infer OCI host: server URL is empty and neither OCIRepoURL nor OCIHost is configured")
+				return options, errors.New("cannot infer OCI host: server URL is empty and neither OCIRepoURL nor OCIHost is configured")
 			}
 			builder := ociutils.NewOCIURLBuilderFromAPIHost(serverURL)
 			ociHost = builder.Host
@@ -384,7 +388,7 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 		// Split URL and reference: oci://host/unit/space/unit:ref -> repoURL without tag, targetRevision=ref
 		parsed, parseErr := ociutils.ParseOCIURL(rawURL)
 		if parseErr != nil {
-			return params, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
+			return options, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
 		}
 		// Reconstruct URL without the reference for Flux OCIRepository
 		ociRepoURL = fmt.Sprintf("%s%s/%s/%s/%s", ociURLScheme, parsed.Host, parsed.ResourceType, parsed.SpaceSlug, parsed.ResourceSlug)
@@ -419,17 +423,17 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 
 	args := &fluxOCIArgs{
 		Name:             appName,
-		FluxNamespace:    params.FluxNamespace,
+		FluxNamespace:    options.FluxNamespace,
 		UnitSlug:         payload.UnitSlug,
 		UnitID:           payload.UnitID.String(),
 		SpaceID:          payload.SpaceID.String(),
 		RevisionNum:      fmt.Sprintf("%d", payload.RevisionNum),
 		OCIRepoURL:       ociRepoURL,
-		OCIPath:          params.OCIPath,
+		OCIPath:          options.OCIPath,
 		TargetRevision:   targetRevision,
-		TargetNamespace:  params.TargetNamespace,
-		Interval:         params.Interval,
-		Prune:            params.Prune,
+		TargetNamespace:  options.TargetNamespace,
+		Interval:         options.Interval,
+		Prune:            options.Prune,
 		Insecure:         isHTTP,
 		ConfigHubURL:     configHubURLWithDefault(wctx.GetServerURL()),
 		IsHelm:           isHelm,
@@ -446,30 +450,30 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 	if isHelm {
 		primaryRepoYAML, err = generateFluxHelmRepository(args)
 		if err != nil {
-			return params, fmt.Errorf("failed to generate Flux HelmRepository: %w", err)
+			return options, fmt.Errorf("failed to generate Flux HelmRepository: %w", err)
 		}
 		secondaryCRYAML, err = generateFluxHelmRelease(args)
 		if err != nil {
-			return params, fmt.Errorf("failed to generate Flux HelmRelease: %w", err)
+			return options, fmt.Errorf("failed to generate Flux HelmRelease: %w", err)
 		}
 		primaryRepoGeneratorWithSecret = generateFluxHelmRepository
-		log.Log.Info("Generated Flux Helm CRs", "name", appName, "namespace", params.FluxNamespace, "ociRepoURL", ociRepoURL, "chartVersion", helmChartVersion)
+		log.Log.Info("Generated Flux Helm CRs", "name", appName, "namespace", options.FluxNamespace, "ociRepoURL", ociRepoURL, "chartVersion", helmChartVersion)
 	} else {
 		primaryRepoYAML, err = generateFluxOCIRepository(args)
 		if err != nil {
-			return params, fmt.Errorf("failed to generate Flux OCIRepository: %w", err)
+			return options, fmt.Errorf("failed to generate Flux OCIRepository: %w", err)
 		}
 		secondaryCRYAML, err = generateFluxKustomization(args)
 		if err != nil {
-			return params, fmt.Errorf("failed to generate Flux Kustomization: %w", err)
+			return options, fmt.Errorf("failed to generate Flux Kustomization: %w", err)
 		}
 		primaryRepoGeneratorWithSecret = generateFluxOCIRepository
-		log.Log.Info("Generated Flux CRs", "name", appName, "namespace", params.FluxNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision)
+		log.Log.Info("Generated Flux CRs", "name", appName, "namespace", options.FluxNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision)
 	}
 
 	// Generate OCI creds Secret if credentials are available and not disabled
-	if !skipRepoCreds && !params.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
-		credsYAML, credsErr := generateFluxOCICreds(ociHost, params.FluxNamespace, w.workerID, w.workerSecret)
+	if !skipRepoCreds && !options.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
+		credsYAML, credsErr := generateFluxOCICreds(ociHost, options.FluxNamespace, w.workerID, w.workerSecret)
 		if credsErr != nil {
 			log.Log.Error(credsErr, "Failed to generate OCI creds Secret, proceeding without it")
 		} else {
@@ -478,7 +482,7 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 			args.SecretName = fluxOCICredsSecretPrefix + normalizedHost
 			primaryRepoYAML, err = primaryRepoGeneratorWithSecret(args)
 			if err != nil {
-				return params, fmt.Errorf("failed to generate Flux primary repo CR with secretRef: %w", err)
+				return options, fmt.Errorf("failed to generate Flux primary repo CR with secretRef: %w", err)
 			}
 			log.Log.Info("Generated Flux OCI creds Secret", "host", ociHost)
 			// Combine as multi-doc YAML: Secret first, then primary repo CR, then secondary CR
@@ -486,7 +490,7 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 			payload.Data = append(payload.Data, primaryRepoYAML...)
 			payload.Data = append(payload.Data, []byte("---\n")...)
 			payload.Data = append(payload.Data, secondaryCRYAML...)
-			return params, nil
+			return options, nil
 		}
 	}
 
@@ -494,11 +498,11 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 	payload.Data = primaryRepoYAML
 	payload.Data = append(payload.Data, []byte("---\n")...)
 	payload.Data = append(payload.Data, secondaryCRYAML...)
-	return params, nil
+	return options, nil
 }
 
-func (w *FluxOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderFluxOCI)
+func (w *FluxOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
+	info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(options, workerapi.ToolchainKubernetesYAML, api.ProviderFluxOCI)
 	for i := range info.SupportedConfigTypes {
 		info.SupportedConfigTypes[i].Options = append(info.SupportedConfigTypes[i].Options,
 			api.BridgeOption{
@@ -615,7 +619,10 @@ func (w *FluxOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWo
 }
 
 func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	params, err := w.transformToFluxOCI(wctx, &payload, false)
+	// Save original data before transform overwrites payload.Data
+	originalData := payload.Data
+
+	options, err := w.transformToFluxOCI(wctx, &payload, false)
 	if err != nil {
 		return backoff.Permanent(lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -637,7 +644,7 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 	// Branch on Helm vs Kustomization path
 	if hrObj := findFluxHelmReleaseObject(objects); hrObj != nil {
 		helmRepoObj := findFluxHelmRepositoryObject(objects)
-		return w.watchFluxHelmRelease(wctx, payload, params, hrObj, helmRepoObj)
+		return w.watchFluxHelmRelease(wctx, payload, options, hrObj, helmRepoObj, originalData)
 	}
 
 	ksObj := findFluxKustomizationObject(objects)
@@ -648,16 +655,14 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 			"no Kustomization CR found in transformed payload",
 		), errors.New("no Kustomization CR found in transformed payload")))
 	}
-	ociRepoObj := findFluxOCIRepositoryObject(objects)
-
 	ksName := ksObj.GetName()
 	ksNamespace := ksObj.GetNamespace()
 	if ksNamespace == "" {
-		ksNamespace = params.FluxNamespace
+		ksNamespace = options.FluxNamespace
 	}
 
 	// Create a Kubernetes client to poll the Kustomization CR
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -676,8 +681,8 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 
 	// Parse timeout
 	var timeout time.Duration
-	if params.WaitTimeout != "" {
-		if t, parseErr := time.ParseDuration(params.WaitTimeout); parseErr == nil {
+	if options.WaitTimeout != "" {
+		if t, parseErr := time.ParseDuration(options.WaitTimeout); parseErr == nil {
 			timeout = t
 		}
 	}
@@ -746,15 +751,9 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 		}
 
 		if isReady {
-			allLiveCRs := collectFluxLiveCRs(ctx, k8sClient, liveKs, ociRepoObj, params.FluxNamespace)
-
-			liveStateYAML, liveDataData, yamlErr := w.buildFluxLiveStateAndData(wctx.Context(), payload, allLiveCRs)
-			if yamlErr != nil {
-				return lib.SafeSendStatus(wctx, common.NewActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultApplyWaitFailed,
-					fmt.Sprintf("failed to build Flux live state: %v", yamlErr),
-				), yamlErr)
+			liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(ctx, k8sClient, liveKs, originalData)
+			if liveErr != nil {
+				log.Log.Error(liveErr, "Failed to fetch managed resources")
 			}
 
 			// Check if operation was cancelled/overridden while waiting
@@ -772,7 +771,12 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 			)
 			status.ResourceStatuses = resourceStatuses
 			status.LiveState = []byte(liveStateYAML)
-			status.LiveData = liveDataData
+			status.LiveData = []byte(liveDataYAML)
+
+			// BridgeState = inventory ConfigMap tracking the Flux Kustomization and OCIRepository CRs
+			appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+			status.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 			_ = wctx.SendStatus(status)
 			return nil
 		}
@@ -795,7 +799,7 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 	}
 
 	// Transform payload to Flux CRs (same as Apply)
-	params, err := w.transformToFluxOCI(wctx, &payload, false)
+	options, err := w.transformToFluxOCI(wctx, &payload, false)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -817,7 +821,7 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 	// Branch on Helm vs Kustomization path
 	if expectedHR := findFluxHelmReleaseObject(objects); expectedHR != nil {
 		expectedHelmRepo := findFluxHelmRepositoryObject(objects)
-		return w.refreshFluxHelmRelease(wctx, payload, params, expectedHR, expectedHelmRepo)
+		return w.refreshFluxHelmRelease(wctx, payload, options, expectedHR, expectedHelmRepo, originalData, refreshParams)
 	}
 
 	expectedKs := findFluxKustomizationObject(objects)
@@ -829,10 +833,8 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 			noObjErr.Error(),
 		), noObjErr)
 	}
-	expectedOCIRepo := findFluxOCIRepositoryObject(objects)
-
 	// Create Kubernetes client
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -843,7 +845,7 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 
 	ksNamespace := expectedKs.GetNamespace()
 	if ksNamespace == "" {
-		ksNamespace = params.FluxNamespace
+		ksNamespace = options.FluxNamespace
 	}
 	ksName := expectedKs.GetName()
 
@@ -886,56 +888,45 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 		"message", condMsg,
 	)
 
-	allLiveCRs := collectFluxLiveCRs(wctx.Context(), k8sClient, liveKs, expectedOCIRepo, params.FluxNamespace)
-
-	liveStateYAML, liveDataBytes, yamlErr := w.buildFluxLiveStateAndData(wctx.Context(), payload, allLiveCRs)
-	if yamlErr != nil {
-		return lib.SafeSendStatus(wctx, common.NewActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			fmt.Sprintf("failed to build Flux live state: %v", yamlErr),
-		), yamlErr)
-	}
-
-	// --- Downstream resource discovery from Flux Kustomization .status.inventory ---
+	// --- Managed resource discovery from Flux Kustomization .status.inventory ---
 	syncDrifted := !isReady
 	contentDrifted := false
 	var patchedData []byte
 
-	downstreamObjects := extractFluxInventoryObjects(liveKs)
-	if len(downstreamObjects) > 0 {
-		liveDownstream, liveErr := kubernetes.GetLiveObjects(wctx.Context(), k8sClient, downstreamObjects, false, true)
-		if liveErr != nil {
-			log.Log.Error(liveErr, "Failed to fetch downstream resources")
-		} else if len(liveDownstream) > 0 {
-			cleanedDownstream := kubernetes.ExtraCleanupObjects(liveDownstream)
-			downstreamYAML, downstreamYAMLErr := kubernetes.ObjectsToYAML(cleanedDownstream)
-			if downstreamYAMLErr != nil {
-				log.Log.Error(downstreamYAMLErr, "Failed to convert downstream resources to YAML")
-			} else {
-				// Diff-patch: compare base vs live downstream vs original to detect content drift
-				var baseData []byte
-				if refreshParams != nil && len(refreshParams.BaseRevisionData) > 0 {
-					baseData = refreshParams.BaseRevisionData
-				} else {
-					baseData = originalData
-				}
+	liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(wctx.Context(), k8sClient, liveKs, originalData)
+	if liveErr != nil {
+		log.Log.Error(liveErr, "Failed to fetch managed resources")
+	}
 
-				baseDataWithoutComments, stripErr := yamlkit.StripComments(baseData)
-				if stripErr != nil {
-					log.Log.Error(stripErr, "Failed to strip comments from baseData, continuing without stripping")
-					baseDataWithoutComments = baseData
-				}
+	if liveDataYAML != "" {
+		// Content drift detection via diff-patch.
+		//
+		// "Base data" is the last-known-good revision — the YAML that was last
+		// successfully applied to the cluster. We compare it against LiveData
+		// (what's actually running now) to detect whether someone changed the
+		// cluster state outside of ConfigHub. If BaseRevisionData is not
+		// available (e.g. first refresh after import), we fall back to the
+		// current revision's rendered data (originalData).
+		var baseData []byte
+		if refreshParams != nil && len(refreshParams.BaseRevisionData) > 0 {
+			baseData = refreshParams.BaseRevisionData
+		} else {
+			baseData = originalData
+		}
 
-				patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(baseDataWithoutComments, []byte(downstreamYAML), originalData, w.GetResourceProvider(), false)
-				if diffErr != nil {
-					log.Log.Error(diffErr, "Failed to diff-patch downstream resources")
-				} else {
-					contentDrifted = drifted
-					if drifted {
-						patchedData = patched
-					}
-				}
+		cleanedBaseData, cleanErr := kubernetes.CleanBaseDataForDrift(baseData)
+		if cleanErr != nil {
+			log.Log.Error(cleanErr, "Failed to clean base data for drift comparison")
+			cleanedBaseData = baseData
+		}
+
+		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false)
+		if diffErr != nil {
+			log.Log.Error(diffErr, "Failed to diff-patch managed resources")
+		} else {
+			contentDrifted = drifted
+			if drifted {
+				patchedData = patched
 			}
 		}
 	}
@@ -953,12 +944,17 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 	}
 
 	result := common.NewActionResult(api.ActionStatusCompleted, resultType, message)
-	result.LiveData = liveDataBytes
+	result.LiveData = []byte(liveDataYAML)
 	result.LiveState = []byte(liveStateYAML)
 	result.ResourceStatuses = resourceStatuses
 	if contentDrifted && len(patchedData) > 0 {
 		result.Data = patchedData
 	}
+
+	// BridgeState = inventory ConfigMap tracking the Flux Kustomization and OCIRepository CRs
+	appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+	result.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 	return wctx.SendStatus(result)
 }
 
@@ -994,24 +990,6 @@ func (w *FluxOCIWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload ap
 	// Filter out Secret objects — OCI creds are shared infrastructure and should not be deleted per-unit
 	payload.Data = filterOutSecrets(payload.Data)
 	return w.KubernetesBridgeWorker.WatchForDestroy(wctx, payload)
-}
-
-// buildFluxLiveStateAndData converts live CRs into LiveState YAML (with status) and
-// LiveData bytes (cleaned, with optional inventory). Returns liveStateYAML, liveDataBytes, error.
-func (w *FluxOCIWorker) buildFluxLiveStateAndData(ctx context.Context, payload api.BridgeWorkerPayload, allLiveCRs []*unstructured.Unstructured) (string, []byte, error) {
-	liveStateYAML, err := kubernetes.ObjectsToYAML(allLiveCRs)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to convert Flux CRs to YAML for LiveState: %w", err)
-	}
-
-	cleanedCRs := kubernetes.CleanupObjects(allLiveCRs)
-	liveDataYAML, err := kubernetes.ObjectsToYAML(cleanedCRs)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to convert cleaned Flux CRs to YAML for LiveData: %w", err)
-	}
-
-	liveDataBytes := w.BuildLiveData(ctx, payload, cleanedCRs, liveDataYAML)
-	return liveStateYAML, liveDataBytes, nil
 }
 
 // collectFluxLiveCRs fetches the live OCIRepository (if expected) and returns it together
@@ -1070,9 +1048,9 @@ func getFluxCondition(obj *unstructured.Unstructured) (bool, bool, string) {
 	return false, false, ""
 }
 
-// extractFluxInventoryObjects extracts downstream resource objects from Flux Kustomization .status.inventory.entries[].
-// Each returned object has GVK, namespace, and name set — suitable for passing to getLiveObjects.
-// The inventory entry id format is: <namespace>_<name>_<group>_<version>_<kind>
+// extractFluxInventoryObjects extracts managed resource objects from Flux Kustomization .status.inventory.entries[].
+// Each returned object has GVK, namespace, and name set — suitable for passing to GetLiveObjects.
+// Uses fluxcd/cli-utils ParseObjMetadata to parse the inventory entry ID format.
 func extractFluxInventoryObjects(ks *unstructured.Unstructured) []*unstructured.Unstructured {
 	entries, found, err := unstructured.NestedSlice(ks.Object, "status", "inventory", "entries")
 	if err != nil || !found || len(entries) == 0 {
@@ -1089,33 +1067,83 @@ func extractFluxInventoryObjects(ks *unstructured.Unstructured) []*unstructured.
 		if id == "" {
 			continue
 		}
-
-		// Parse id: <namespace>_<name>_<group>_<version>_<kind>
-		parts := strings.SplitN(id, "_", 5)
-		if len(parts) != 5 {
+		version, _ := entry["v"].(string)
+		if version == "" {
 			continue
 		}
-		namespace := parts[0]
-		name := parts[1]
-		group := parts[2]
-		version := parts[3]
-		kind := parts[4]
 
-		if kind == "" || name == "" || version == "" {
+		objMeta, err := object.ParseObjMetadata(id)
+		if err != nil {
+			log.Log.Error(err, "Failed to parse Flux inventory entry", "id", id)
 			continue
 		}
 
 		obj := &unstructured.Unstructured{}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   group,
+			Group:   objMeta.GroupKind.Group,
 			Version: version,
-			Kind:    kind,
+			Kind:    objMeta.GroupKind.Kind,
 		})
-		obj.SetName(name)
-		obj.SetNamespace(namespace)
+		obj.SetName(objMeta.Name)
+		obj.SetNamespace(objMeta.Namespace)
 		result = append(result, obj)
 	}
 	return result
+}
+
+// computeManagedResourceState fetches managed resources from a Flux CR's inventory
+// and returns LiveState (full objects) and LiveData (cleaned, spec-only).
+// LiveData is always derived from LiveState as its single source of truth.
+// originalData is the unit's original data (before transform); it is used to determine
+// which resources had an explicit namespace set — resources without a namespace in the
+// original data have their namespace cleared in LiveData to avoid false drift.
+func computeManagedResourceState(ctx context.Context, k8sClient kubernetes.KubernetesClient, fluxCR *unstructured.Unstructured, originalData []byte) (liveStateYAML, liveDataYAML string, err error) {
+	managedObjs := extractFluxInventoryObjects(fluxCR)
+	if len(managedObjs) == 0 {
+		return "", "", nil
+	}
+
+	liveManagedResources, liveErr := kubernetes.GetLiveObjects(ctx, k8sClient, managedObjs, false, true)
+	if liveErr != nil {
+		return "", "", liveErr
+	}
+	if len(liveManagedResources) == 0 {
+		return "", "", nil
+	}
+
+	// LiveState = full managed resources (with status, metadata, etc.)
+	liveStateYAML, liveStateErr := kubernetes.ObjectsToYAML(liveManagedResources)
+	if liveStateErr != nil {
+		log.Log.Error(liveStateErr, "Failed to serialize LiveState objects to YAML")
+	}
+
+	// LiveData = cleaned version of the same objects (spec-only, no internal annotations)
+	cleanedManagedResources := kubernetes.ExtraCleanupObjects(liveManagedResources)
+
+	// Namespace removal rule for LiveData:
+	//
+	// Flux applies the targetNamespace from the Kustomization CR at reconcile time,
+	// but the unit's original data (rendered manifests) may not include a namespace.
+	// If we keep the namespace in LiveData, it would appear as a diff against the
+	// original data, causing false drift on every Refresh.
+	//
+	// Rule: remove the namespace from a LiveData resource ONLY IF the original data
+	// did not explicitly set a namespace on that resource. If the user explicitly set
+	// a namespace in the unit data, we preserve it in LiveData so that any divergence
+	// from the intended namespace IS detected as drift.
+	originalNamespaces := kubernetes.BuildOriginalNamespaceMap(originalData)
+	for _, obj := range cleanedManagedResources {
+		if _, hasNS := originalNamespaces[kubernetes.OriginalNamespaceKey(obj)]; !hasNS {
+			obj.SetNamespace("")
+		}
+	}
+
+	liveDataYAML, liveDataErr := kubernetes.ObjectsToYAML(cleanedManagedResources)
+	if liveDataErr != nil {
+		log.Log.Error(liveDataErr, "Failed to serialize LiveData objects to YAML")
+	}
+
+	return liveStateYAML, liveDataYAML, nil
 }
 
 // buildFluxResourceStatusMap builds a ResourceStatusMap from Flux Kustomization status.

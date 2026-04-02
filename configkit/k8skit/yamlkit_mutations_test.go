@@ -174,7 +174,7 @@ spec:
 			require.NoError(t, err)
 
 			// Combine mutations
-			combined := yamlkit.AddMutations(firstMutations, secondMutations)
+			combined, _ := yamlkit.AddMutations(firstMutations, secondMutations)
 
 			tt.validateResult(t, combined)
 		})
@@ -1551,6 +1551,154 @@ metadata:
 		require.NoError(t, err)
 		require.True(t, found)
 		assert.Equal(t, "v1", version, "Target's version should be preserved")
+	})
+
+	t.Run("Unmatched Add applies path mutations to new resource", func(t *testing.T) {
+		// When a patch has an Add at the resource level (no matching doc in parsedData)
+		// and also has path mutations, the path mutations should be applied to the
+		// newly created document.
+		config := ""
+		mutations := api.ResourceMutationList{{
+			Resource: api.ResourceInfo{
+				ResourceType:             "apps/v1/Deployment",
+				ResourceName:             "test-ns/mydep",
+				ResourceNameWithoutScope: "mydep",
+				ResourceCategory:         "Kubernetes",
+			},
+			ResourceMutationInfo: api.MutationInfo{
+				MutationType: api.MutationTypeAdd,
+				Index:        1,
+				Value: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+  namespace: confighubplaceholder
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mydep
+  template:
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        resources: {}
+`,
+			},
+			PathMutationMap: api.MutationMap{
+				"metadata.namespace": {
+					MutationType: api.MutationTypeUpdate,
+					Index:        2,
+					Value:        "test-ns\n",
+				},
+				"spec.replicas": {
+					MutationType: api.MutationTypeUpdate,
+					Index:        3,
+					Value:        "2\n",
+				},
+				"spec.template.spec.containers.?name=nginx;@0.image": {
+					MutationType: api.MutationTypeUpdate,
+					Index:        4,
+					Value:        "nginx:1.25\n",
+				},
+				"spec.template.spec.containers.?name=nginx;@0.resources": {
+					MutationType: api.MutationTypeUpdate,
+					Index:        5,
+					Value:        "{requests: {cpu: 128m, memory: 128Mi}}\n",
+				},
+			},
+		}}
+
+		parsed, err := gaby.ParseAll([]byte(config))
+		require.NoError(t, err)
+
+		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider())
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+
+		// Namespace should be updated by path mutation
+		ns, found, err := yamlkit.YamlSafePathGetValue[string](result[0], "metadata.namespace", false)
+		require.NoError(t, err)
+		require.True(t, found)
+		assert.Equal(t, "test-ns", ns, "Path mutation should update namespace")
+
+		// Replicas should be updated by path mutation
+		replicas, found, err := yamlkit.YamlSafePathGetValue[int](result[0], "spec.replicas", false)
+		require.NoError(t, err)
+		require.True(t, found)
+		assert.Equal(t, 2, replicas, "Path mutation should update replicas")
+
+		// Image should be updated by path mutation
+		image, found, err := yamlkit.YamlSafePathGetValue[string](result[0], "spec.template.spec.containers.0.image", false)
+		require.NoError(t, err)
+		require.True(t, found)
+		assert.Equal(t, "nginx:1.25", image, "Path mutation should update image")
+
+		// Resources should be updated by path mutation
+		cpu, found, err := yamlkit.YamlSafePathGetValue[string](result[0], "spec.template.spec.containers.0.resources.requests.cpu", false)
+		require.NoError(t, err)
+		require.True(t, found)
+		assert.Equal(t, "128m", cpu, "Path mutation should set resources.requests.cpu")
+	})
+
+	t.Run("Unmatched Add with delete of nonexistent path does not error", func(t *testing.T) {
+		// When a patch has an Add at the resource level with path mutations that
+		// include a Delete for a path that doesn't exist in the base Value (e.g.,
+		// a parent Update removed it), the Delete should be silently skipped.
+		config := ""
+		mutations := api.ResourceMutationList{{
+			Resource: api.ResourceInfo{
+				ResourceType:             "apps/v1/Deployment",
+				ResourceName:             "test-ns/mydep",
+				ResourceNameWithoutScope: "mydep",
+				ResourceCategory:         "Kubernetes",
+			},
+			ResourceMutationInfo: api.MutationInfo{
+				MutationType: api.MutationTypeAdd,
+				Index:        1,
+				Value: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+spec:
+  template:
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        resources: {}
+`,
+			},
+			PathMutationMap: api.MutationMap{
+				"spec.template.spec.containers.?name=nginx;@0.resources": {
+					MutationType: api.MutationTypeUpdate,
+					Index:        2,
+					Value:        "{requests: {cpu: 128m, memory: 128Mi}}\n",
+				},
+				"spec.template.spec.containers.?name=nginx;@0.resources.limits": {
+					MutationType: api.MutationTypeDelete,
+					Index:        3,
+					Value:        "{cpu: 1500m, memory: 1Gi}\n",
+				},
+			},
+		}}
+
+		parsed, err := gaby.ParseAll([]byte(config))
+		require.NoError(t, err)
+
+		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider())
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+
+		// Resources should have requests from the Update, and no limits
+		cpu, found, err := yamlkit.YamlSafePathGetValue[string](result[0], "spec.template.spec.containers.0.resources.requests.cpu", false)
+		require.NoError(t, err)
+		require.True(t, found)
+		assert.Equal(t, "128m", cpu)
+
+		assert.False(t, result[0].ExistsP("spec.template.spec.containers.0.resources.limits"),
+			"limits should not exist since it was never present and Delete was skipped")
 	})
 
 	t.Run("Case 2 - subtract path is prefix removes mutation", func(t *testing.T) {

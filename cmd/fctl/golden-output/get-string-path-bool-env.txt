@@ -1,0 +1,17 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "DATABASE_SSL_ENABLED",
+    "AttributeName": "none",
+    "DataType": "string",
+    "Value": "true",
+    "Index": 0,
+    "FunctionName": "get-string-path"
+  }
+]

@@ -1,6 +1,9 @@
 SUCCESS    true    
 CONFIGDATA
 ---------
+# Document header comment
+---
+# Regular head comment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,6 +13,7 @@ metadata:
     confighub.com/key: something
   name: mydep
   namespace: example
+  # Foot comment
 spec:
   replicas: 3 # Line comment on replicas
   paused: false
@@ -17,6 +21,7 @@ spec:
     matchLabels:
       app: mydep
   strategy: {}
+  # Line head comment
   template:
     metadata:
       labels:
@@ -24,6 +29,7 @@ spec:
     spec:
       dnsPolicy: ClusterFirst
       containers:
+      # Array comment
       - image: nginx:latest
         name: nginx
         ports:
@@ -32,9 +38,10 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /etc/config
+      # Internal array comment
       - image: otel/opentelemetry-collector:latest-amd64
         name: otel-sidecar
-        ports:
+        ports: # Middle line comment
         - containerPort: 4318
       volumes:
       - name: config-volume

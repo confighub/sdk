@@ -16,7 +16,7 @@ import (
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/go-ini/ini"
-	"gopkg.in/yaml.v3"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -221,89 +221,107 @@ func parseINIValue(value string) interface{} {
 	return value
 }
 
-// setNestedValue sets a value in a nested map structure using a dot-separated path.
-// For example, path "database.ssl" with key "enabled" and value false creates:
-// map[database:map[ssl:map[enabled:false]]]
-func setNestedValue(result map[string]interface{}, path string, key string, value interface{}) {
-	if path == "" {
-		result[key] = value
-		return
-	}
-
-	parts := strings.Split(path, ".")
-	current := result
-
-	// Navigate/create the nested structure
-	for _, part := range parts {
-		if _, exists := current[part]; !exists {
-			current[part] = make(map[string]interface{})
-		}
-		// Move deeper into the structure
-		if nextMap, ok := current[part].(map[string]interface{}); ok {
-			current = nextMap
-		} else {
-			// If it's not a map, we can't navigate further - this shouldn't happen in normal cases
-			return
-		}
-	}
-
-	// Set the final value
-	current[key] = value
-}
 
 // NativeToYAML converts INI data to YAML format using native libraries.
+// Comments from the INI source are preserved as $comment$ map keys in the output.
+// Key order from the INI source is preserved by building a gaby YamlDoc directly.
 func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return []byte{}, nil
 	}
 
-	// Parse INI data
+	// Parse INI data (go-ini preserves section and key order)
 	cfg, err := ini.Load(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing INI: %w", err)
 	}
 
-	// Convert INI sections to nested map structure
-	result := make(map[string]interface{})
+	// Extract comments from raw INI source
+	comments := extractINIComments(data)
+
+	// Build a gaby YamlDoc directly, preserving source key order.
+	doc := gaby.New()
 
 	for _, section := range cfg.Sections() {
 		sectionName := section.Name()
 
+		if sectionName != ini.DefaultSection {
+			// Add section head comment if present
+			parts := strings.Split(sectionName, ".")
+			targetKey := parts[len(parts)-1]
+			parentPath := strings.Join(parts[:len(parts)-1], ".")
+			sectionHeadKey := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
+			if text, ok := comments[flatCommentPath(parentPath, sectionHeadKey)]; ok {
+				doc.Set(text, appendPath(parentPath, sectionHeadKey)...)
+				delete(comments, flatCommentPath(parentPath, sectionHeadKey))
+			}
+		}
+
 		for _, key := range section.Keys() {
-			// Parse the value to get the appropriate type
 			value := parseINIValue(key.Value())
 
+			var dataPath []string
+			var commentParentPath string
 			if sectionName == ini.DefaultSection {
-				// For default section, add keys directly to root
-				result[key.Name()] = value
+				dataPath = []string{key.Name()}
+				commentParentPath = ""
 			} else {
-				// For named sections, parse the dotted path and create nested structure
-				setNestedValue(result, sectionName, key.Name(), value)
+				dataPath = append(strings.Split(sectionName, "."), key.Name())
+				commentParentPath = sectionName
+			}
+
+			// Add head comment for this key
+			headKey := yamlkit.CommentKey(yamlkit.CommentHead, key.Name())
+			flatHead := flatCommentPath(commentParentPath, headKey)
+			if text, ok := comments[flatHead]; ok {
+				doc.Set(text, appendPath(commentParentPath, headKey)...)
+				delete(comments, flatHead)
+			}
+
+			// Add the data value
+			doc.Set(value, dataPath...)
+
+			// Add line comment for this key
+			lineKey := yamlkit.CommentKey(yamlkit.CommentLine, key.Name())
+			flatLine := flatCommentPath(commentParentPath, lineKey)
+			if text, ok := comments[flatLine]; ok {
+				doc.Set(text, appendPath(commentParentPath, lineKey)...)
+				delete(comments, flatLine)
 			}
 		}
 	}
 
-	// Convert to YAML
-	var output bytes.Buffer
-	encoder := yaml.NewEncoder(&output)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(result); err != nil {
-		return nil, fmt.Errorf("error converting INI to YAML: %w", err)
-	}
-	if err := encoder.Close(); err != nil {
-		return nil, fmt.Errorf("error finalizing YAML encoding: %w", err)
+	// Add any remaining comments (e.g., trailing foot comments)
+	for path, text := range comments {
+		doc.Set(text, strings.Split(path, ".")...)
 	}
 
-	return output.Bytes(), nil
+	return doc.Bytes(), nil
 }
 
-// addINISection recursively adds keys and nested sections to the INI config.
-// It builds section names like "parent.child.grandchild" for nested maps.
-func addINISection(cfg *ini.File, sectionName string, data map[string]interface{}) error {
+// flatCommentPath builds a dot-separated comment path from a parent path and comment key.
+func flatCommentPath(parentPath, commentKey string) string {
+	if parentPath != "" {
+		return parentPath + "." + commentKey
+	}
+	return commentKey
+}
+
+// appendPath splits a parent path and appends a key, returning the path hierarchy.
+func appendPath(parentPath, key string) []string {
+	if parentPath != "" {
+		return append(strings.Split(parentPath, "."), key)
+	}
+	return []string{key}
+}
+
+// addINISectionOrdered recursively adds keys and nested sections to the INI config,
+// preserving the key order from the ordered map.
+func addINISectionOrdered(cfg *ini.File, sectionName string, data *orderedmap.OrderedMap[string, interface{}]) error {
 	// First, check if this section has any direct (non-map) keys
 	hasDirectKeys := false
-	for _, value := range data {
-		if _, isMap := value.(map[string]interface{}); !isMap {
+	for pair := data.Oldest(); pair != nil; pair = pair.Next() {
+		if _, isMap := pair.Value.(*orderedmap.OrderedMap[string, interface{}]); !isMap {
 			hasDirectKeys = true
 			break
 		}
@@ -319,13 +337,14 @@ func addINISection(cfg *ini.File, sectionName string, data map[string]interface{
 		}
 	}
 
-	// Process all keys
-	for key, value := range data {
-		switch v := value.(type) {
-		case map[string]interface{}:
+	// Process keys in order
+	for pair := data.Oldest(); pair != nil; pair = pair.Next() {
+		key := pair.Key
+		switch v := pair.Value.(type) {
+		case *orderedmap.OrderedMap[string, interface{}]:
 			// This is a nested section - recurse with dotted section name
 			nestedSectionName := sectionName + "." + key
-			if err := addINISection(cfg, nestedSectionName, v); err != nil {
+			if err := addINISectionOrdered(cfg, nestedSectionName, v); err != nil {
 				return err
 			}
 		default:
@@ -345,31 +364,41 @@ func addINISection(cfg *ini.File, sectionName string, data map[string]interface{
 }
 
 // YAMLToNative converts YAML data to INI format using native libraries.
+// If the YAML contains $comment$ map keys, they are converted back to INI comments.
+// Key order from the YAML source is preserved.
 func (*INIResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
 
-	// Parse YAML into a generic map
-	var data map[string]interface{}
-	if err := yaml.Unmarshal(yamlData, &data); err != nil {
+	// Parse YAML with gaby to preserve key order
+	doc, err := gaby.ParseYAML(yamlData)
+	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
+	}
+
+	// Extract comment keys from ordered data
+	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
+	cleanMap, ok := cleanData.(*orderedmap.OrderedMap[string, interface{}])
+	if !ok {
+		return nil, fmt.Errorf("unexpected data type after extracting comments: %T", cleanData)
 	}
 
 	// Create INI file
 	cfg := ini.Empty()
 
-	// Convert map to INI sections
-	for key, value := range data {
-		switch v := value.(type) {
-		case map[string]interface{}:
+	// Convert ordered map to INI sections, preserving key order
+	for pair := cleanMap.Oldest(); pair != nil; pair = pair.Next() {
+		key := pair.Key
+		switch v := pair.Value.(type) {
+		case *orderedmap.OrderedMap[string, interface{}]:
 			// This is a section - process it recursively
-			if err := addINISection(cfg, key, v); err != nil {
+			if err := addINISectionOrdered(cfg, key, v); err != nil {
 				return nil, err
 			}
 		default:
 			// This is a root-level key
-			_, err := cfg.Section(ini.DefaultSection).NewKey(key, fmt.Sprintf("%v", v))
+			_, err := cfg.Section(ini.DefaultSection).NewKey(key, fmt.Sprintf("%v", pair.Value))
 			if err != nil {
 				return nil, fmt.Errorf("error creating root key %s: %w", key, err)
 			}
@@ -382,5 +411,8 @@ func (*INIResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 		return nil, fmt.Errorf("error converting YAML to INI: %w", err)
 	}
 
-	return output.Bytes(), nil
+	// Re-inject comments into INI output
+	result := injectINIComments(output.Bytes(), comments)
+
+	return result, nil
 }

@@ -6,6 +6,7 @@ package generic
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 
 	"github.com/cockroachdb/errors"
@@ -18,7 +19,7 @@ import (
 )
 
 func registerGetAttribute(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-attribute", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-attribute", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-attribute",
 			Parameters: []api.FunctionParameter{
@@ -48,7 +49,9 @@ func registerGetAttribute(fh handler.FunctionRegistry, converter configkit.Confi
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetAttribute(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -62,7 +65,7 @@ func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 }
 
 func registerSetAttributes(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-attributes", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-attributes", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-attributes",
 			Parameters: []api.FunctionParameter{
@@ -85,7 +88,9 @@ func registerSetAttributes(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSetAttributes(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -153,7 +158,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 }
 
 func registerGetDetails(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-details", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-details", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-details",
 			OutputInfo: &api.FunctionOutput{
@@ -174,7 +179,9 @@ func registerGetDetails(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetDetails(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {

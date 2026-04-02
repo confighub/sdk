@@ -1,0 +1,18 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "DATABASE_HOST",
+    "AttributeName": "none",
+    "DataType": "string",
+    "Value": "localhost",
+    "Comment": "One comment",
+    "Index": 0,
+    "FunctionName": "get-string-path"
+  }
+]

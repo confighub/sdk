@@ -17,7 +17,7 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"gopkg.in/yaml.v3"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -242,12 +242,17 @@ func ParseEnvEntries(data []byte) ([]EnvEntry, error) {
 // dots, since shells such as bash do not support dots in environment variable
 // names. Keys under the configHub metadata prefix (e.g., configHub.configName)
 // are allowed to contain dots because they are removed before rendering.
+// Key order from the source file is preserved.
 func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return []byte{}, nil
 	}
 
-	result := make(map[string]interface{})
+	// Extract comments from raw env data
+	comments := extractEnvComments(data)
+
+	// Build a gaby YamlDoc directly, preserving source key order.
+	doc := gaby.New()
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	lineNum := 0
@@ -272,6 +277,10 @@ func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 		// Strip surrounding quotes from value
 		value = stripQuotes(value)
 
+		// Strip inline comments from unquoted values
+		cleanValue, _ := yamlkit.SplitInlineComment(value)
+		value = cleanValue
+
 		if key == "" {
 			continue
 		}
@@ -281,54 +290,81 @@ func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 			return nil, fmt.Errorf("error parsing line %d: key %q contains dots, which are not valid in environment variable names; only keys under the %q prefix may use dots", lineNum, key, strings.TrimSuffix(contextPathPrefx, "."))
 		}
 
-		// configHub keys use dot notation for nesting; other keys are flat.
-		setNestedValue(result, key, convertValue(value))
+		parts := strings.Split(key, ".")
+		targetKey := parts[len(parts)-1]
+		parentPath := strings.Join(parts[:len(parts)-1], ".")
+
+		// Add head comment
+		headCK := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
+		flatHead := flatCommentPath(parentPath, headCK)
+		if text, ok := comments[flatHead]; ok {
+			doc.Set(text, splitPath(flatHead)...)
+			delete(comments, flatHead)
+		}
+
+		// Env values are always strings — shells don't have typed variables.
+		doc.Set(value, parts...)
+
+		// Add line comment
+		lineCK := yamlkit.CommentKey(yamlkit.CommentLine, targetKey)
+		flatLine := flatCommentPath(parentPath, lineCK)
+		if text, ok := comments[flatLine]; ok {
+			doc.Set(text, splitPath(flatLine)...)
+			delete(comments, flatLine)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("error reading env data: %w", err)
 	}
 
-	var buf bytes.Buffer
-	encoder := yaml.NewEncoder(&buf)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(result); err != nil {
-		return nil, fmt.Errorf("error encoding YAML: %w", err)
-	}
-	if err := encoder.Close(); err != nil {
-		return nil, fmt.Errorf("error closing YAML encoder: %w", err)
+	// Add any remaining comments (e.g., trailing foot comments)
+	for path, text := range comments {
+		doc.Set(text, splitPath(path)...)
 	}
 
-	return buf.Bytes(), nil
+	return doc.Bytes(), nil
+}
+
+func flatCommentPath(parentPath, commentKey string) string {
+	if parentPath != "" {
+		return parentPath + "." + commentKey
+	}
+	return commentKey
+}
+
+func splitPath(dotPath string) []string {
+	return strings.Split(dotPath, ".")
 }
 
 // YAMLToNative converts YAML data to env file format (KEY=value lines).
+// If the YAML contains $comment$ map keys, they are converted back to # comments.
+// Key order from the YAML source is preserved.
 func (*EnvResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
 
-	var data interface{}
-	if err := yaml.Unmarshal(yamlData, &data); err != nil {
+	// Parse YAML with gaby to preserve key order
+	doc, err := gaby.ParseYAML(yamlData)
+	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
+	// Extract comment keys from ordered data
+	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
+
+	// Flatten to ordered key=value pairs
+	var keys []string
 	props := make(map[string]string)
-	flattenMap(data, "", props)
+	flattenOrdered(cleanData, "", &keys, props)
 
 	// Validate that non-configHub keys don't contain dots (env vars can't have dots).
-	for key := range props {
+	for _, key := range keys {
 		if strings.Contains(key, ".") && !strings.HasPrefix(key, contextPathPrefx) {
 			return nil, fmt.Errorf("key %q contains dots, which are not valid in environment variable names; only keys under the %q prefix may use dots", key, strings.TrimSuffix(contextPathPrefx, "."))
 		}
 	}
-
-	// Sort keys for consistent output
-	keys := make([]string, 0, len(props))
-	for key := range props {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
 
 	var buf bytes.Buffer
 	writer := bufio.NewWriter(&buf)
@@ -345,7 +381,10 @@ func (*EnvResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 		return nil, fmt.Errorf("error flushing buffer: %w", err)
 	}
 
-	return buf.Bytes(), nil
+	// Re-inject comments into env output
+	result := injectEnvComments(buf.Bytes(), comments)
+
+	return result, nil
 }
 
 // stripQuotes removes surrounding single or double quotes from a value.
@@ -358,61 +397,25 @@ func stripQuotes(s string) string {
 	return s
 }
 
-// setNestedValue sets a value in a nested map structure based on dot notation.
-func setNestedValue(m map[string]interface{}, key string, value interface{}) {
-	parts := strings.Split(key, ".")
-	current := m
-
-	for _, part := range parts[:len(parts)-1] {
-		if existing, exists := current[part]; exists {
-			if nestedMap, ok := existing.(map[string]interface{}); ok {
-				current = nestedMap
-			} else {
-				newMap := make(map[string]interface{})
-				newMap[""] = existing
-				current[part] = newMap
-				current = newMap
-			}
-		} else {
-			newMap := make(map[string]interface{})
-			current[part] = newMap
-			current = newMap
-		}
-	}
-
-	current[parts[len(parts)-1]] = value
-}
-
-// convertValue attempts to convert string values to appropriate types.
-func convertValue(value string) interface{} {
-	if value == "true" || value == "false" {
-		return value == "true"
-	}
-	if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return intVal
-	}
-	return value
-}
-
-// flattenMap recursively flattens nested structures into dot-notation keys.
-func flattenMap(data interface{}, prefix string, result map[string]string) {
+// flattenOrdered recursively flattens nested structures into dot-notation keys,
+// preserving order from ordered maps. Keys are appended to the keys slice in order.
+func flattenOrdered(data interface{}, prefix string, keys *[]string, result map[string]string) {
 	switch v := data.(type) {
+	case *orderedmap.OrderedMap[string, interface{}]:
+		for pair := v.Oldest(); pair != nil; pair = pair.Next() {
+			newKey := pair.Key
+			if prefix != "" {
+				newKey = prefix + "." + pair.Key
+			}
+			flattenOrdered(pair.Value, newKey, keys, result)
+		}
 	case map[string]interface{}:
 		for key, value := range v {
 			newKey := key
 			if prefix != "" {
 				newKey = prefix + "." + key
 			}
-			flattenMap(value, newKey, result)
-		}
-	case map[interface{}]interface{}:
-		for key, value := range v {
-			keyStr := fmt.Sprintf("%v", key)
-			newKey := keyStr
-			if prefix != "" {
-				newKey = prefix + "." + keyStr
-			}
-			flattenMap(value, newKey, result)
+			flattenOrdered(value, newKey, keys, result)
 		}
 	case []interface{}:
 		for i, item := range v {
@@ -420,9 +423,10 @@ func flattenMap(data interface{}, prefix string, result map[string]string) {
 			if prefix != "" {
 				newKey = prefix + "." + newKey
 			}
-			flattenMap(item, newKey, result)
+			flattenOrdered(item, newKey, keys, result)
 		}
 	default:
+		*keys = append(*keys, prefix)
 		result[prefix] = fmt.Sprintf("%v", v)
 	}
 }

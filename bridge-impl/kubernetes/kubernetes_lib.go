@@ -8,20 +8,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcapi "github.com/confighub/sdk/core/function/api"
 )
 
@@ -61,7 +65,9 @@ func EnsureConfigHubContext(obj *unstructured.Unstructured, unitSlug, spaceID st
 	obj.SetAnnotations(annotations)
 }
 
-// ParseTargetParams extracts and parses target parameters
+// ParseTargetParams extracts and parses target parameters.
+// KubeContext is resolved from BridgeHandle first (the new model), falling back
+// to the deprecated KubeContext field in TargetParams JSON for backward compatibility.
 func ParseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams, string, error) {
 	var params KubernetesWorkerParams
 	if len(payload.TargetParams) > 0 {
@@ -74,7 +80,84 @@ func ParseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams,
 	// The Bridge should not have its own timeout-based failure
 	params.WaitTimeout = LargeWaitTimeout.String()
 
-	return params, params.KubeContext, nil
+	// Prefer BridgeHandle over deprecated params.KubeContext.
+	// BridgeHandle is the canonical source for connection identity;
+	// params.KubeContext is kept only for backward compatibility with old targets.
+	kubeContext := payload.BridgeHandle
+	if kubeContext == "" {
+		kubeContext = params.KubeContext
+	}
+
+	// Normalize: "cluster" is the BridgeHandle for in-cluster targets, but
+	// KubernetesConfigFactory expects "" to trigger in-cluster config detection.
+	// Old targets had KubeContext="" for in-cluster; new targets have BridgeHandle="cluster".
+	if kubeContext == "cluster" {
+		kubeContext = ""
+	}
+
+	return params, kubeContext, nil
+}
+
+// ResolveNamespace determines the namespace for resources that lack an explicit namespace.
+// Precedence:
+//  1. TargetOptions["Namespace"] — explicit user override via BridgeOptions
+//  2. Pod namespace (in-cluster) or kubeconfig context.namespace (out-of-cluster)
+//  3. "default" — hardcoded fallback
+func ResolveNamespace(payload api.BridgeWorkerPayload) string {
+	// 1. Explicit override from BridgeOptions
+	if v, ok := payload.TargetOptions["Namespace"]; ok && v != "" {
+		return v
+	}
+
+	// 2. Resolve from context — use BridgeHandle (not the normalized kubeContext)
+	// because resolveContextNamespace needs "cluster" to trigger in-cluster detection.
+	// Fall back to TargetParams KubeContext for old targets.
+	handle := payload.BridgeHandle
+	if handle == "" {
+		var params KubernetesWorkerParams
+		if len(payload.TargetParams) > 0 {
+			json.Unmarshal(payload.TargetParams, &params)
+		}
+		handle = params.KubeContext
+	}
+	ns := resolveContextNamespace(handle)
+	if ns != "" {
+		return ns
+	}
+
+	// 3. Fallback
+	return "default"
+}
+
+// resolveContextNamespace reads the namespace from a kubeconfig context.
+// For in-cluster pods, reads the pod's namespace from the service account mount.
+// Returns empty string if no namespace can be determined.
+func resolveContextNamespace(kubeContext string) string {
+	// In-cluster: read the pod's own namespace from the service account mount.
+	// This is the namespace the pod is running in, which is often the intended
+	// deployment target in multi-tenant setups.
+	if kubeContext == "" || kubeContext == "cluster" {
+		if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
+			return strings.TrimSpace(string(ns))
+		}
+		return ""
+	}
+
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{
+		CurrentContext: kubeContext,
+	}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	ns, _, err := kubeConfig.Namespace()
+	if err != nil {
+		return ""
+	}
+	// clientcmd.Namespace() returns "default" when no namespace is configured;
+	// return empty so the caller's fallback logic handles it uniformly.
+	if ns == "default" {
+		return ""
+	}
+	return ns
 }
 
 // ParseObjects parses YAML objects from payload data
@@ -684,8 +767,9 @@ func ExtraCleanupObjects(objects []*unstructured.Unstructured) []*unstructured.U
 		// Must be called before Cleanup() removes the managedFields metadata.
 		RemoveUnmanagedFields(obj)
 		Cleanup(obj)
-		removeInternalAnnotations(obj)
+		RemoveInternalAnnotations(obj)
 		removeInternalLabels(obj)
+		NormalizeResourceQuantities(obj)
 
 		gvk := obj.GroupVersionKind()
 		if IsService(&gvk) {
@@ -706,8 +790,8 @@ func ExtraCleanupObjects(objects []*unstructured.Unstructured) []*unstructured.U
 	return objects
 }
 
-// removeInternalAnnotations removes known autogenerated and cluster-internal annotations
-func removeInternalAnnotations(obj *unstructured.Unstructured) {
+// RemoveInternalAnnotations removes known autogenerated and cluster-internal annotations
+func RemoveInternalAnnotations(obj *unstructured.Unstructured) {
 	annotations := obj.GetAnnotations()
 	for k := range annotations {
 		// Remove known annotation prefixes
@@ -731,7 +815,11 @@ func removeInternalAnnotations(obj *unstructured.Unstructured) {
 			}
 		}
 	}
-	obj.SetAnnotations(annotations)
+	if len(annotations) == 0 {
+		unstructured.RemoveNestedField(obj.Object, "metadata", "annotations")
+	} else {
+		obj.SetAnnotations(annotations)
+	}
 }
 
 // removeInternalLabels removes known autogenerated and cluster-internal labels
@@ -746,7 +834,116 @@ func removeInternalLabels(obj *unstructured.Unstructured) {
 			}
 		}
 	}
-	obj.SetLabels(labels)
+	if len(labels) == 0 {
+		// Remove the labels field entirely to avoid "labels: {}" in YAML output,
+		// which would cause false drift against original data with no labels.
+		unstructured.RemoveNestedField(obj.Object, "metadata", "labels")
+	} else {
+		obj.SetLabels(labels)
+	}
+}
+
+// NormalizeResourceQuantities walks the object tree and normalizes Kubernetes
+// resource quantity values (CPU, memory, storage, etc.) to their canonical form.
+//
+// Why this is needed:
+// The Kubernetes API server normalizes resource quantities when storing objects.
+// For example, "2000m" (millicores) becomes "2" (cores), and "0.5" becomes "500m".
+// The user's manifest may specify "cpu: 2000m" but the live object returns "cpu: 2".
+// These are semantically equal but textually different, causing false drift when
+// comparing the original data against LiveData during Refresh.
+//
+// This function must be applied symmetrically to BOTH LiveData (via ExtraCleanupObjects)
+// AND base data (via cleanBaseDataForDrift) so that both sides use the same canonical
+// representation before the diff comparison.
+//
+// Scope: normalizes string values under "limits" or "requests" maps that are children
+// of a "resources" key, covering containers, init containers, PVCs, and any other
+// Kubernetes resource specification pattern.
+func NormalizeResourceQuantities(obj *unstructured.Unstructured) {
+	normalizeQuantitiesRecursive(obj.Object, "")
+}
+
+func normalizeQuantitiesRecursive(val interface{}, parentKey string) {
+	switch v := val.(type) {
+	case map[string]interface{}:
+		for key, child := range v {
+			if (key == "limits" || key == "requests") && parentKey == "resources" {
+				// Normalize all values in resources.limits / resources.requests
+				// using Kubernetes' resource.Quantity parser, which produces the
+				// same canonical string the API server would store.
+				if resMap, ok := child.(map[string]interface{}); ok {
+					for rk, rv := range resMap {
+						if strVal, ok := rv.(string); ok {
+							if q, err := resource.ParseQuantity(strVal); err == nil {
+								resMap[rk] = q.String()
+							}
+						}
+					}
+				}
+			} else {
+				normalizeQuantitiesRecursive(child, key)
+			}
+		}
+	case []interface{}:
+		for _, item := range v {
+			normalizeQuantitiesRecursive(item, parentKey)
+		}
+	}
+}
+
+// BuildOriginalNamespaceMap parses the original unit data and returns a map of
+// "Group/Kind/Name" -> namespace for resources that have an explicit namespace set.
+// Used by OCI bridges to determine which resources should retain their namespace
+// in LiveData — resources not in this map have their namespace cleared.
+func BuildOriginalNamespaceMap(data []byte) map[string]string {
+	nsMap := make(map[string]string)
+	if len(data) == 0 {
+		return nsMap
+	}
+	objects, err := ParseObjects(data)
+	if err != nil {
+		return nsMap
+	}
+	for _, obj := range objects {
+		if ns := obj.GetNamespace(); ns != "" {
+			key := obj.GroupVersionKind().Group + "/" + obj.GetKind() + "/" + obj.GetName()
+			nsMap[key] = ns
+		}
+	}
+	return nsMap
+}
+
+// OriginalNamespaceKey returns the map key used by BuildOriginalNamespaceMap.
+func OriginalNamespaceKey(obj *unstructured.Unstructured) string {
+	return obj.GroupVersionKind().Group + "/" + obj.GetKind() + "/" + obj.GetName()
+}
+
+// CleanBaseDataForDrift prepares "base data" (the last-applied revision YAML)
+// for drift comparison by stripping comments, internal annotations, and
+// normalizing resource quantities — the same cleanup rules applied to LiveData.
+// This ensures textual differences that are not real drift (e.g. comments,
+// controller-injected annotations, "2000m" vs "2") do not trigger false positives.
+func CleanBaseDataForDrift(baseData []byte) ([]byte, error) {
+	stripped, err := yamlkit.StripComments(baseData)
+	if err != nil {
+		log.Log.Error(err, "Failed to strip comments from baseData, continuing without stripping")
+		stripped = baseData
+	}
+
+	objects, parseErr := ParseObjects(stripped)
+	if parseErr != nil || len(objects) == 0 {
+		return stripped, parseErr
+	}
+	for _, obj := range objects {
+		RemoveInternalAnnotations(obj)
+		NormalizeResourceQuantities(obj)
+	}
+	cleaned, marshalErr := ObjectsToYAML(objects)
+	if marshalErr != nil {
+		return stripped, marshalErr
+	}
+	return []byte(cleaned), nil
 }
 
 // TODO: move to k8skit

@@ -4,6 +4,8 @@
 package generic
 
 import (
+	"log/slog"
+
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -12,7 +14,7 @@ import (
 )
 
 func registerGetReferencesOfType(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-references-of-type", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-references-of-type", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-references-of-type",
 			Parameters: []api.FunctionParameter{
@@ -40,11 +42,13 @@ func registerGetReferencesOfType(fh handler.FunctionRegistry, converter configki
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-references-of-type", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-references-of-type", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-references-of-type",
 			Parameters: []api.FunctionParameter{
@@ -72,7 +76,9 @@ func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configki
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {

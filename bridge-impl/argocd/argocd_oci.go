@@ -66,8 +66,8 @@ func (w *ArgoCDOCIWorker) ID() api.BridgeWorkerID {
 	}
 }
 
-// ArgoCDOCIWorkerParams contains the configuration parameters for the ArgoCD OCI bridge worker.
-type ArgoCDOCIWorkerParams struct {
+// ArgoCDOCIBridgeOptions contains the configuration parameters for the ArgoCD OCI bridge worker.
+type ArgoCDOCIBridgeOptions struct {
 	KubeContext          string `json:",omitempty"`
 	ArgoCDNamespace      string `json:",omitempty"` // Namespace where ArgoCD Application will be created (default: "argocd")
 	DestinationServer    string `json:",omitempty"` // Target cluster API server URL (default: "https://kubernetes.default.svc")
@@ -218,7 +218,7 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 			source["helm"] = helmSection
 		}
 	} else {
-		// OCIPath is a user-configurable parameter (default ".") from ArgoCDOCIWorkerParams,
+		// OCIPath is a user-configurable parameter (default ".") from ArgoCDOCIBridgeOptions,
 		// specifying the path within the OCI artifact where manifests reside.
 		// Not applicable for Helm charts since ArgoCD consumes the entire chart tar.gz.
 		source["path"] = args.OCIPath
@@ -281,38 +281,77 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 	return out, nil
 }
 
-func parseArgoCDOCIParams(payload api.BridgeWorkerPayload) (ArgoCDOCIWorkerParams, error) {
-	var params ArgoCDOCIWorkerParams
-	if len(payload.TargetParams) > 0 {
-		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
-			return params, fmt.Errorf("failed to parse target params: %w", err)
-		}
+func parseArgoCDOCIOptions(payload api.BridgeWorkerPayload) (ArgoCDOCIBridgeOptions, error) {
+	var options ArgoCDOCIBridgeOptions
+
+	// FIXME: KubeContext should be derived from BridgeHandle, not passed as an option.
+	// BridgeHandle identifies the credentials/coordinates of the bridge to use;
+	// each target has one BridgeHandle but can have multiple option tuples.
+	if v, ok := payload.TargetOptions["KubeContext"]; ok {
+		options.KubeContext = v
+	}
+	if v, ok := payload.TargetOptions["ArgoCDNamespace"]; ok {
+		options.ArgoCDNamespace = v
+	}
+	if v, ok := payload.TargetOptions["DestinationServer"]; ok {
+		options.DestinationServer = v
+	}
+	if v, ok := payload.TargetOptions["DestinationNamespace"]; ok {
+		options.DestinationNamespace = v
+	}
+	if v, ok := payload.TargetOptions["Project"]; ok {
+		options.Project = v
+	}
+	if v, ok := payload.TargetOptions["SyncPolicy"]; ok {
+		options.SyncPolicy = v
+	}
+	if v, ok := payload.TargetOptions["OCIRepoURL"]; ok {
+		options.OCIRepoURL = v
+	}
+	if v, ok := payload.TargetOptions["OCIHost"]; ok {
+		options.OCIHost = v
+	}
+	if v, ok := payload.TargetOptions["OCIPath"]; ok {
+		options.OCIPath = v
+	}
+	if v, ok := payload.TargetOptions["TargetRevision"]; ok {
+		options.TargetRevision = v
+	}
+	// TargetOptions values are always strings; bool fields need explicit conversion.
+	if v, ok := payload.TargetOptions["PruneEnabled"]; ok {
+		options.PruneEnabled = v == "true"
+	}
+	if v, ok := payload.TargetOptions["SelfHealEnabled"]; ok {
+		options.SelfHealEnabled = v == "true"
+	}
+	if v, ok := payload.TargetOptions["DisableRepoCreds"]; ok {
+		options.DisableRepoCreds = v == "true"
 	}
 
 	// Apply defaults
-	if params.ArgoCDNamespace == "" {
-		params.ArgoCDNamespace = defaultArgoCDNamespace
+	if options.ArgoCDNamespace == "" {
+		options.ArgoCDNamespace = defaultArgoCDNamespace
 	}
-	if params.DestinationServer == "" {
-		params.DestinationServer = defaultDestinationServer
+	if options.DestinationServer == "" {
+		options.DestinationServer = defaultDestinationServer
 	}
-	if params.DestinationNamespace == "" {
-		params.DestinationNamespace = defaultDestinationNamespace
+	if options.DestinationNamespace == "" {
+		options.DestinationNamespace = defaultDestinationNamespace
 	}
-	if params.Project == "" {
-		params.Project = defaultProject
+	if options.Project == "" {
+		options.Project = defaultProject
 	}
-	if params.SyncPolicy == "" {
-		params.SyncPolicy = defaultSyncPolicy
+	if options.SyncPolicy == "" {
+		options.SyncPolicy = defaultSyncPolicy
 	}
-	if params.OCIPath == "" {
-		params.OCIPath = defaultOCIPath
+	if options.OCIPath == "" {
+		options.OCIPath = defaultOCIPath
 	}
-	if params.TargetRevision == "" {
-		params.TargetRevision = defaultTargetRevision
+	if options.TargetRevision == "" {
+		options.TargetRevision = defaultTargetRevision
 	}
 
-	return params, nil
+	return options, nil
 }
 
 // probeOCIProtocol checks whether the OCI host supports HTTPS.
@@ -374,28 +413,28 @@ func generateArgoCDRepoCreds(host, namespace, workerID, workerSecret string, isH
 	return out, nil
 }
 
-func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerContext, payload *api.BridgeWorkerPayload, skipRepoCreds bool) (ArgoCDOCIWorkerParams, error) {
-	params, err := parseArgoCDOCIParams(*payload)
+func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerContext, payload *api.BridgeWorkerPayload, skipRepoCreds bool) (ArgoCDOCIBridgeOptions, error) {
+	options, err := parseArgoCDOCIOptions(*payload)
 	if err != nil {
-		return params, err
+		return options, err
 	}
 
 	// Determine OCI URL and target revision
-	ociRepoURL := params.OCIRepoURL
-	targetRevision := params.TargetRevision
+	ociRepoURL := options.OCIRepoURL
+	targetRevision := options.TargetRevision
 
 	// Track the OCI host for repo-creds generation
 	var ociHost string
 
 	if ociRepoURL == "" {
 		// Auto-construct OCI URL from unit information
-		if params.OCIHost != "" {
-			ociHost = params.OCIHost
+		if options.OCIHost != "" {
+			ociHost = options.OCIHost
 		} else {
 			// Infer OCI host from server URL (e.g., "https://hub.confighub.com" → "oci.hub.confighub.com")
 			serverURL := wctx.GetServerURL()
 			if serverURL == "" {
-				return params, errors.New("cannot infer OCI host: server URL is empty and neither OCIRepoURL nor OCIHost is configured")
+				return options, errors.New("cannot infer OCI host: server URL is empty and neither OCIRepoURL nor OCIHost is configured")
 			}
 			builder := ociutils.NewOCIURLBuilderFromAPIHost(serverURL)
 			ociHost = builder.Host
@@ -413,7 +452,7 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 		// So we need to split: oci://host/unit/space/unit:ref -> repoURL=oci://host/unit/space/unit, targetRevision=ref
 		parsed, parseErr := ociutils.ParseOCIURL(ociRepoURL)
 		if parseErr != nil {
-			return params, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
+			return options, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
 		}
 		// Reconstruct URL without the reference for ArgoCD
 		ociRepoURL = fmt.Sprintf("%s%s/%s/%s/%s", ociURLScheme, parsed.Host, parsed.ResourceType, parsed.SpaceSlug, parsed.ResourceSlug)
@@ -445,20 +484,20 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 
 	args := &argoCDApplicationArgs{
 		Name:                 appName,
-		ArgoCDNamespace:      params.ArgoCDNamespace,
+		ArgoCDNamespace:      options.ArgoCDNamespace,
 		UnitSlug:             payload.UnitSlug,
 		UnitID:               payload.UnitID.String(),
 		SpaceID:              payload.SpaceID.String(),
 		RevisionNum:          fmt.Sprintf("%d", payload.RevisionNum),
-		Project:              params.Project,
+		Project:              options.Project,
 		OCIRepoURL:           ociRepoURL,
-		OCIPath:              params.OCIPath,
+		OCIPath:              options.OCIPath,
 		TargetRevision:       targetRevision,
-		DestinationServer:    params.DestinationServer,
-		DestinationNamespace: params.DestinationNamespace,
-		SyncPolicy:           params.SyncPolicy,
-		PruneEnabled:         params.PruneEnabled,
-		SelfHealEnabled:      params.SelfHealEnabled,
+		DestinationServer:    options.DestinationServer,
+		DestinationNamespace: options.DestinationNamespace,
+		SyncPolicy:           options.SyncPolicy,
+		PruneEnabled:         options.PruneEnabled,
+		SelfHealEnabled:      options.SelfHealEnabled,
 		ConfigHubURL:         wctx.GetServerURL(),
 		IsHelm:               isHelm,
 		HelmReleaseName:      helmReleaseName,
@@ -467,15 +506,15 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 
 	applicationYAML, err := generateArgoCDApplication(args)
 	if err != nil {
-		return params, fmt.Errorf("failed to generate ArgoCD Application: %w", err)
+		return options, fmt.Errorf("failed to generate ArgoCD Application: %w", err)
 	}
 
-	log.Log.Info("Generated ArgoCD Application", "name", appName, "namespace", params.ArgoCDNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision, "isHelm", isHelm)
+	log.Log.Info("Generated ArgoCD Application", "name", appName, "namespace", options.ArgoCDNamespace, "ociRepoURL", ociRepoURL, "targetRevision", targetRevision, "isHelm", isHelm)
 
 	// Generate repo-creds Secret if credentials are available and not disabled
-	if !skipRepoCreds && !params.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
+	if !skipRepoCreds && !options.DisableRepoCreds && w.workerID != "" && w.workerSecret != "" && ociHost != "" {
 		isHTTP := probeOCIProtocol(ociHost)
-		repoCredsYAML, repoErr := generateArgoCDRepoCreds(ociHost, params.ArgoCDNamespace, w.workerID, w.workerSecret, isHTTP)
+		repoCredsYAML, repoErr := generateArgoCDRepoCreds(ociHost, options.ArgoCDNamespace, w.workerID, w.workerSecret, isHTTP)
 		if repoErr != nil {
 			log.Log.Error(repoErr, "Failed to generate repo-creds Secret, proceeding without it")
 		} else {
@@ -483,16 +522,112 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 			// Combine as multi-doc YAML: Secret first, then Application
 			payload.Data = append(repoCredsYAML, []byte("---\n")...)
 			payload.Data = append(payload.Data, applicationYAML...)
-			return params, nil
+			return options, nil
 		}
 	}
 
 	payload.Data = applicationYAML
-	return params, nil
+	return options, nil
 }
 
-func (w *ArgoCDOCIWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
-	return w.KubernetesBridgeWorker.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderArgoCDOCI)
+func (w *ArgoCDOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
+	info := w.KubernetesBridgeWorker.InfoForToolchainAndProvider(options, workerapi.ToolchainKubernetesYAML, api.ProviderArgoCDOCI)
+	for i := range info.SupportedConfigTypes {
+		info.SupportedConfigTypes[i].Options = append(info.SupportedConfigTypes[i].Options,
+			api.BridgeOption{
+				Name:        "ArgoCDNamespace",
+				Description: "Namespace where ArgoCD Application CRs will be created. Defaults to \"argocd\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "argocd",
+			},
+			api.BridgeOption{
+				Name:        "DestinationServer",
+				Description: "Target cluster API server URL. Defaults to \"https://kubernetes.default.svc\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "https://kubernetes.default.svc",
+			},
+			api.BridgeOption{
+				Name:        "DestinationNamespace",
+				Description: "Target namespace for deployed resources. Defaults to \"default\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "default",
+			},
+			api.BridgeOption{
+				Name:        "Project",
+				Description: "ArgoCD project name. Defaults to \"default\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "default",
+			},
+			api.BridgeOption{
+				Name:        "SyncPolicy",
+				Description: "ArgoCD sync policy: \"automated\" or \"manual\". Defaults to \"manual\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "manual",
+			},
+			api.BridgeOption{
+				Name:        "PruneEnabled",
+				Description: "Enable pruning of orphaned resources during sync. Defaults to false.",
+				Required:    false,
+				DataType:    funcApi.DataTypeBool,
+				Example:     "false",
+			},
+			api.BridgeOption{
+				Name:        "SelfHealEnabled",
+				Description: "Enable self-healing (auto-sync on drift). Defaults to false.",
+				Required:    false,
+				DataType:    funcApi.DataTypeBool,
+				Example:     "false",
+			},
+			api.BridgeOption{
+				Name:        "OCIRepoURL",
+				Description: "Full OCI registry URL (e.g. \"oci://ghcr.io/my-org/my-repo\"). If empty, auto-constructed from the unit's OCI host and space/unit slugs.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "oci://ghcr.io/my-org/my-repo",
+			},
+			api.BridgeOption{
+				Name:        "OCIHost",
+				Description: "OCI registry host (e.g. \"ghcr.io\"). Optional; inferred from server URL when neither OCIRepoURL nor OCIHost is set.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "ghcr.io",
+			},
+			api.BridgeOption{
+				Name:        "OCIPath",
+				Description: "Path within the OCI artifact where manifests reside. Defaults to \".\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     ".",
+			},
+			api.BridgeOption{
+				Name:        "TargetRevision",
+				Description: "OCI tag or digest to deploy. Defaults to \"latest\".",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "latest",
+			},
+			api.BridgeOption{
+				Name:        "DisableRepoCreds",
+				Description: "When true, skip auto-generation of the ArgoCD repo-creds Secret. Defaults to false.",
+				Required:    false,
+				DataType:    funcApi.DataTypeBool,
+				Example:     "false",
+			},
+			api.BridgeOption{
+				Name:        "KubeContext",
+				Description: "Kubernetes context name to use. Defaults to the current context.",
+				Required:    false,
+				DataType:    funcApi.DataTypeString,
+				Example:     "my-cluster",
+			},
+		)
+	}
+	return info
 }
 
 // findApplicationObject returns the first Application object from a list of parsed objects.
@@ -517,7 +652,10 @@ func (w *ArgoCDOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.Bridge
 }
 
 func (w *ArgoCDOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	params, err := w.transformToArgoCDOCIApplication(wctx, &payload, false)
+	// Save original data before transform overwrites payload.Data
+	originalData := payload.Data
+
+	options, err := w.transformToArgoCDOCIApplication(wctx, &payload, false)
 	if err != nil {
 		return backoff.Permanent(lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -547,11 +685,11 @@ func (w *ArgoCDOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload ap
 	appName := appObj.GetName()
 	appNamespace := appObj.GetNamespace()
 	if appNamespace == "" {
-		appNamespace = params.ArgoCDNamespace
+		appNamespace = options.ArgoCDNamespace
 	}
 
 	// Create a Kubernetes client to poll the Application CR
-k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -644,28 +782,11 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 		// declaring success on stale Synced+Healthy state from a previous revision.
 		if overallSync == argoCDSyncStatusSynced && overallHealth == argoCDHealthStatusHealthy &&
 			(operationPhase == argoCDOperationPhaseSucceeded || operationPhase == "") {
-			// Convert the live Application CR to YAML for LiveState
-			liveStateYAML, yamlErr := kubernetes.ObjectsToYAML([]*unstructured.Unstructured{liveApp})
-			if yamlErr != nil {
-				return lib.SafeSendStatus(wctx, common.NewActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultApplyWaitFailed,
-					fmt.Sprintf("failed to convert Application to YAML for LiveState: %v", yamlErr),
-				), yamlErr)
-			}
 
-			// Cleaned version for LiveData
-			cleanedObjects := kubernetes.CleanupObjects([]*unstructured.Unstructured{liveApp})
-			liveDataYAML, yamlErr := kubernetes.ObjectsToYAML(cleanedObjects)
-			if yamlErr != nil {
-				return lib.SafeSendStatus(wctx, common.NewActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultApplyWaitFailed,
-					fmt.Sprintf("failed to convert cleaned Application to YAML for LiveData: %v", yamlErr),
-				), yamlErr)
+			liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(ctx, k8sClient, liveApp, originalData)
+			if liveErr != nil {
+				log.Log.Error(liveErr, "Failed to fetch managed resources")
 			}
-
-			liveDataData := w.BuildLiveData(wctx.Context(), payload, cleanedObjects, liveDataYAML)
 
 			// Check if operation was cancelled/overridden while waiting
 			select {
@@ -673,7 +794,6 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 				log.Log.Info("ArgoCD apply operation was cancelled/overridden, skipping completion status")
 				return nil
 			default:
-				// Continue to send completed status
 			}
 
 			status := common.NewActionResult(
@@ -683,7 +803,12 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 			)
 			status.ResourceStatuses = resourceStatuses
 			status.LiveState = []byte(liveStateYAML)
-			status.LiveData = liveDataData
+			status.LiveData = []byte(liveDataYAML)
+
+			// BridgeState = inventory ConfigMap tracking the ArgoCD Application and repo-creds Secret
+			appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+			status.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 			// Intentionally ignore: the operation succeeded on the cluster;
 			// if the status channel closed, the worker framework handles it.
 			_ = wctx.SendStatus(status)
@@ -708,7 +833,7 @@ func (w *ArgoCDOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Brid
 	}
 
 	// Transform payload to Application CR (same as Apply)
-	params, err := w.transformToArgoCDOCIApplication(wctx, &payload, false)
+	options, err := w.transformToArgoCDOCIApplication(wctx, &payload, false)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -737,7 +862,7 @@ func (w *ArgoCDOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Brid
 	}
 
 	// Create Kubernetes client
-k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -748,7 +873,7 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 
 	appNamespace := expectedApp.GetNamespace()
 	if appNamespace == "" {
-		appNamespace = params.ArgoCDNamespace
+		appNamespace = options.ArgoCDNamespace
 	}
 	appName := expectedApp.GetName()
 
@@ -792,68 +917,45 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 		"health", overallHealth,
 	)
 
-	// LiveState = full Application CR with status
-	liveStateYAML, yamlErr := kubernetes.ObjectsToYAML([]*unstructured.Unstructured{liveApp})
-	if yamlErr != nil {
-		return lib.SafeSendStatus(wctx, common.NewActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			fmt.Sprintf("failed to convert Application to YAML for LiveState: %v", yamlErr),
-		), yamlErr)
-	}
-
-	// LiveData = cleaned Application CR + inventory
-	cleanedApp := kubernetes.CleanupObjects([]*unstructured.Unstructured{liveApp})
-	liveDataYAML, yamlErr := kubernetes.ObjectsToYAML(cleanedApp)
-	if yamlErr != nil {
-		return lib.SafeSendStatus(wctx, common.NewActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			fmt.Sprintf("failed to convert cleaned Application to YAML for LiveData: %v", yamlErr),
-		), yamlErr)
-	}
-
-	liveDataBytes := w.BuildLiveData(wctx.Context(), payload, cleanedApp, liveDataYAML)
-
-	// --- Downstream resource discovery from ArgoCD .status.resources[] ---
+	// --- Managed resource discovery from ArgoCD .status.resources[] ---
 	syncDrifted := (overallSync != argoCDSyncStatusSynced)
 	contentDrifted := false
 	var patchedData []byte
 
-	downstreamObjects := extractResourceObjects(liveApp)
-	if len(downstreamObjects) > 0 {
-		liveDownstream, liveErr := kubernetes.GetLiveObjects(wctx.Context(), k8sClient, downstreamObjects, false, true)
-		if liveErr != nil {
-			log.Log.Error(liveErr, "Failed to fetch downstream resources")
-		} else if len(liveDownstream) > 0 {
-			cleanedDownstream := kubernetes.ExtraCleanupObjects(liveDownstream)
-			downstreamYAML, downstreamYAMLErr := kubernetes.ObjectsToYAML(cleanedDownstream)
-			if downstreamYAMLErr != nil {
-				log.Log.Error(downstreamYAMLErr, "Failed to convert downstream resources to YAML")
-			} else {
-				// Diff-patch: compare base vs live downstream vs original to detect content drift
-				var baseData []byte
-				if refreshParams != nil && len(refreshParams.BaseRevisionData) > 0 {
-					baseData = refreshParams.BaseRevisionData
-				} else {
-					baseData = originalData
-				}
+	liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(wctx.Context(), k8sClient, liveApp, originalData)
+	if liveErr != nil {
+		log.Log.Error(liveErr, "Failed to fetch managed resources")
+	}
 
-				baseDataWithoutComments, stripErr := yamlkit.StripComments(baseData)
-				if stripErr != nil {
-					log.Log.Error(stripErr, "Failed to strip comments from baseData, continuing without stripping")
-					baseDataWithoutComments = baseData
-				}
+	if liveDataYAML != "" {
+		// Content drift detection via diff-patch.
+		//
+		// "Base data" is the last-known-good revision — the YAML that was last
+		// successfully applied to the cluster. We compare it against LiveData
+		// (what's actually running now) to detect whether someone changed the
+		// cluster state outside of ConfigHub. If BaseRevisionData is not
+		// available (e.g. first refresh after import), we fall back to the
+		// current revision's rendered data (originalData).
+		var baseData []byte
+		if refreshParams != nil && len(refreshParams.BaseRevisionData) > 0 {
+			baseData = refreshParams.BaseRevisionData
+		} else {
+			baseData = originalData
+		}
 
-			patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(baseDataWithoutComments, []byte(downstreamYAML), originalData, w.GetResourceProvider(), false)
-				if diffErr != nil {
-					log.Log.Error(diffErr, "Failed to diff-patch downstream resources")
-				} else {
-					contentDrifted = drifted
-					if drifted {
-						patchedData = patched
-					}
-				}
+		cleanedBaseData, cleanErr := kubernetes.CleanBaseDataForDrift(baseData)
+		if cleanErr != nil {
+			log.Log.Error(cleanErr, "Failed to clean base data for drift comparison")
+			cleanedBaseData = baseData
+		}
+
+		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false)
+		if diffErr != nil {
+			log.Log.Error(diffErr, "Failed to diff-patch managed resources")
+		} else {
+			contentDrifted = drifted
+			if drifted {
+				patchedData = patched
 			}
 		}
 	}
@@ -873,12 +975,17 @@ k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
 	}
 
 	result := common.NewActionResult(api.ActionStatusCompleted, resultType, message)
-	result.LiveData = liveDataBytes
+	result.LiveData = []byte(liveDataYAML)
 	result.LiveState = []byte(liveStateYAML)
 	result.ResourceStatuses = resourceStatuses
 	if contentDrifted && len(patchedData) > 0 {
 		result.Data = patchedData
 	}
+
+	// BridgeState = inventory ConfigMap tracking the ArgoCD Application and repo-creds Secret
+	appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+	result.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 	return wctx.SendStatus(result)
 }
 
@@ -997,7 +1104,7 @@ func mapArgoCDHealthStatus(healthStatus string) api.ResourceReadinessType {
 	}
 }
 
-// extractResourceObjects extracts downstream resource objects from ArgoCD Application .status.resources[].
+// extractResourceObjects extracts managed resource objects from ArgoCD Application .status.resources[].
 // Each returned object has GVK, namespace, and name set — suitable for passing to getLiveObjects.
 func extractResourceObjects(app *unstructured.Unstructured) []*unstructured.Unstructured {
 	resources, found, err := unstructured.NestedSlice(app.Object, "status", "resources")
@@ -1076,4 +1183,60 @@ func buildArgoCDResourceStatusMap(app *unstructured.Unstructured) api.ResourceSt
 	}
 
 	return statusMap
+}
+
+// computeManagedResourceState fetches managed resources from an ArgoCD Application's
+// .status.resources[] and returns LiveState (full objects) and LiveData (cleaned, spec-only).
+// LiveData is always derived from LiveState as its single source of truth.
+// originalData is the unit's original data (before transform); it is used to determine
+// which resources had an explicit namespace set — resources without a namespace in the
+// original data have their namespace cleared in LiveData to avoid false drift.
+func computeManagedResourceState(ctx context.Context, k8sClient kubernetes.KubernetesClient, app *unstructured.Unstructured, originalData []byte) (liveStateYAML, liveDataYAML string, err error) {
+	managedObjs := extractResourceObjects(app)
+	if len(managedObjs) == 0 {
+		return "", "", nil
+	}
+
+	liveManagedResources, liveErr := kubernetes.GetLiveObjects(ctx, k8sClient, managedObjs, false, true)
+	if liveErr != nil {
+		return "", "", liveErr
+	}
+	if len(liveManagedResources) == 0 {
+		return "", "", nil
+	}
+
+	// LiveState = full managed resources (with status, metadata, etc.)
+	liveStateYAML, liveStateErr := kubernetes.ObjectsToYAML(liveManagedResources)
+	if liveStateErr != nil {
+		log.Log.Error(liveStateErr, "Failed to serialize LiveState objects to YAML")
+	}
+
+	// LiveData = cleaned version of the same objects (spec-only, no internal annotations)
+	cleanedManagedResources := kubernetes.ExtraCleanupObjects(liveManagedResources)
+
+	// Namespace removal rule for LiveData:
+	//
+	// ArgoCD's manifest rendering API returns resources WITHOUT a namespace — the
+	// namespace is only applied at sync time from the Application's spec.destination.namespace.
+	// This means the unit's original data (rendered manifests) typically has no namespace,
+	// but the live cluster resources do. If we keep the namespace in LiveData, it would
+	// appear as a diff against the original data, causing false drift on every Refresh.
+	//
+	// Rule: remove the namespace from a LiveData resource ONLY IF the original data
+	// did not explicitly set a namespace on that resource. If the user (or a function
+	// like set-namespace) explicitly set a namespace in the unit data, we preserve it
+	// in LiveData so that any divergence from the intended namespace IS detected as drift.
+	originalNamespaces := kubernetes.BuildOriginalNamespaceMap(originalData)
+	for _, obj := range cleanedManagedResources {
+		if _, hasNS := originalNamespaces[kubernetes.OriginalNamespaceKey(obj)]; !hasNS {
+			obj.SetNamespace("")
+		}
+	}
+
+	liveDataYAML, liveDataErr := kubernetes.ObjectsToYAML(cleanedManagedResources)
+	if liveDataErr != nil {
+		log.Log.Error(liveDataErr, "Failed to serialize LiveData objects to YAML")
+	}
+
+	return liveStateYAML, liveDataYAML, nil
 }

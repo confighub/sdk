@@ -1,0 +1,40 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+{
+  "app": {
+    "features": [
+      "authentication",
+      "logging"
+    ],
+    "name": "MyApplication",
+    "version": "1.0.0"
+  },
+  "configHub": {
+    "configName": "MyApplicationConfig",
+    "configSchema": "SimpleApp"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "ssl": {
+      "enabled": true
+    }
+  }
+}
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "database.port",
+    "AttributeName": "none",
+    "DataType": "int",
+    "Value": 5432,
+    "Index": 0,
+    "FunctionName": "get-int-path"
+  }
+]

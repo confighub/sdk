@@ -1270,9 +1270,12 @@ type FunctionInvocationsRequest struct {
 // FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
 type FunctionInvocationsResponse struct {
 	// ConfigData The resulting configuration data, potentially mutated
-	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
-	Error      *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Mutations  *ResourceMutationList `json:"Mutations" yaml:"Mutations"`
+	ConfigData string         `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+	Error      *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// HasNewMutations Functions produced new mutations (of type other than None)
+	HasNewMutations bool                  `json:"HasNewMutations,omitempty" yaml:"HasNewMutations,omitempty"`
+	Mutations       *ResourceMutationList `json:"Mutations" yaml:"Mutations"`
 
 	// Mutators List of function invocation indices that resulted in mutations
 	Mutators []int `json:"Mutators" yaml:"Mutators"`
@@ -1843,6 +1846,12 @@ type QueuedOperation struct {
 
 	// UserID UserID of the user the action was performed by.
 	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// UserIsBot Whether the user who requested the action is a bot user.
+	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
+
+	// UserRole Organization-level role of the user who requested the action.
+	UserRole string `json:"UserRole,omitempty" yaml:"UserRole,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
@@ -2768,6 +2777,12 @@ type UnitAction struct {
 	// UserID UserID of the user the action was performed by.
 	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 
+	// UserIsBot Whether the user who requested the action is a bot user.
+	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
+
+	// UserRole Organization-level role of the user who requested the action.
+	UserRole string `json:"UserRole,omitempty" yaml:"UserRole,omitempty"`
+
 	// Version An entity-specific sequence number used for optimistic concurrency control.
 	// The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -3055,8 +3070,11 @@ type WorkerInfo struct {
 	BridgeWorkerInfo   *BridgeWorkerInfo   `json:"BridgeWorkerInfo,omitempty" yaml:"BridgeWorkerInfo,omitempty"`
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
 
-	// IsServerWorker If true, this is the server-hosted worker. Only one per organization.
+	// IsServerWorker If true, this is a server-hosted worker.
 	IsServerWorker bool `json:"IsServerWorker,omitempty" yaml:"IsServerWorker,omitempty"`
+
+	// UseUserIdentity If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true.
+	UseUserIdentity bool `json:"UseUserIdentity,omitempty" yaml:"UseUserIdentity,omitempty"`
 }
 
 // BulkDeleteSpacesParams defines parameters for BulkDeleteSpaces.

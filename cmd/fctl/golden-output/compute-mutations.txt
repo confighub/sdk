@@ -16,6 +16,30 @@ OUTPUT
       "Value": ""
     },
     "PathMutationMap": {
+      "$comment$head$": {
+        "MutationType": "Delete",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "'# Document header comment'\n"
+      },
+      "$comment$head$apiVersion": {
+        "MutationType": "Delete",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "Regular head comment\n"
+      },
+      "spec.$comment$head$template": {
+        "MutationType": "Delete",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "Line head comment\n"
+      },
+      "spec.$comment$line$replicas": {
+        "MutationType": "Delete",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "Line comment on replicas\n"
+      },
       "spec.replicas": {
         "MutationType": "Update",
         "Index": 0,
@@ -27,6 +51,12 @@ OUTPUT
         "Index": 0,
         "Predicate": true,
         "Value": "requests:\n  cpu: 100m\n  memory: 128Mi\nlimits:\n  cpu: 250m\n  memory: 256Mi\n"
+      },
+      "spec.template.spec.containers.?name=otel-sidecar;@1.$comment$line$ports": {
+        "MutationType": "Delete",
+        "Index": 0,
+        "Predicate": true,
+        "Value": "Middle line comment\n"
       }
     },
     "Aliases": {

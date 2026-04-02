@@ -60,4 +60,5 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerSetCEL(fh, converter, resourceProvider)
 	registerVetMergeKeys(fh, converter, resourceProvider)
 	registerVetValues(fh, converter, resourceProvider)
+	registerVetFormat(fh, converter, resourceProvider)
 }

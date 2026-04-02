@@ -648,6 +648,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		maxMatchScore := 1.0
 		numDocLines := strings.Count(modifiedParsedData.String(), "\n")
 		var pathMutationMap api.MutationMap
+		var previousResourceMergeID string
 		minMutationLength := math.MaxInt
 		aliases := map[api.ResourceName]struct{}{}
 		aliasesWithoutScopes := map[api.ResourceName]struct{}{}
@@ -660,7 +661,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			previousResourceCategory := previousResourceInfo.ResourceCategory
 			previousResourceType := previousResourceInfo.ResourceType
 			previousResourceName := previousResourceInfo.ResourceName
-			previousResourceMergeID := previousResourceInfo.ResourceMergeID
+			previousResourceMergeID = previousResourceInfo.ResourceMergeID
 			if previousResourceCategory != modifiedResourceCategory {
 				continue
 			}
@@ -778,6 +779,14 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		// Matched resource - record Update or None mutation
 		// A match for the resource was found. It possibly was changed.
 
+		// ComputeMutations is used in several ways, as described above.
+		// However, it's generally better to try to use the most accurate
+		// ResourceMergeID available.
+		resourceMergeID := modifiedResourceMergeID
+		if IsEmptyOrPlaceHolder(resourceMergeID) {
+			resourceMergeID = previousResourceMergeID
+		}
+
 		// Alias Tracking - add new aliases for the modified resource name
 		aliases[modifiedResourceName] = struct{}{}
 		aliasesWithoutScopes[modifiedResourceNameOnly] = struct{}{}
@@ -787,7 +796,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				ResourceName:             modifiedResourceName,
 				ResourceNameWithoutScope: modifiedResourceNameOnly,
 				ResourceCategory:         modifiedResourceCategory,
-				ResourceMergeID:          modifiedResourceMergeID,
+				ResourceMergeID:          resourceMergeID,
 			},
 			ResourceMutationInfo: api.MutationInfo{
 				MutationType: api.MutationTypeUpdate, // assume changed
@@ -956,10 +965,13 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 	// Unmatched Add/Replace mutations need to be appended as new documents.
 	matchedPatchIndices := make(map[int]bool)
 
+	var errs []error
+
 	for docIndex, doc := range parsedData {
 		docResourceInfo, err := GetResourceInfo(doc, resourceProvider)
 		if err != nil {
-			return parsedData, err
+			errs = append(errs, err)
+			continue
 		}
 
 		// Find predicate for this document
@@ -990,7 +1002,8 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			valueString := resourcePatchMutation.Value
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
-				slog.Info("error parsing value for resource", "resource", string(api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)), "error", err)
+				errs = append(errs, fmt.Errorf("error parsing value for resource %s: %w",
+					api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo), err))
 			}
 			parsedData[docIndex] = valueDoc
 			// Some paths also could have been modified
@@ -1007,112 +1020,8 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			// Update at the resource level means some paths were modified.
 		}
 
-		// Sort paths so parents are processed before children.
-		patches := api.SortedMutationMapEntries(mutationsPatch[mutationPatchIndex].PathMutationMap)
-
-		for i := range patches {
-			patchPath := api.ResolvedPath(ResolveAssociativeSegments(doc, string(patches[i].Path)))
-			patchMutation := patches[i].MutationInfo
-			// Check for patches that conflict with the predicate.
-			// TODO: Break down the patch.
-			if hasPredicate {
-				// Walk up path ancestors to find if any predicate filters this path.
-				_, predicateMutation, hasFilter := api.FindAncestorPath(
-					mutationsPredicates[mutationPredicateIndex].PathMutationMap, patchPath)
-				if hasFilter && !predicateMutation.Predicate {
-					slog.Debug("path filtered", "path", string(patchPath))
-					continue
-				}
-			}
-			// TODO: what should we do about errors?
-			switch patchMutation.MutationType {
-			case api.MutationTypeAdd, api.MutationTypeReplace:
-				valueString := patchMutation.Value
-				valueDoc, err := gaby.ParseYAML([]byte(valueString))
-				if err != nil {
-					slog.Info("error parsing value at path", "path", string(patchPath), "error", err)
-				}
-				// Note: This doesn't preserve indentation nor field ordering.
-				_, err = doc.SetDocP(valueDoc, string(patchPath))
-				if err != nil {
-					slog.Info("error setting value at path", "path", string(patchPath), "error", err)
-				}
-			case api.MutationTypeUpdate:
-				// For updates, try to preserve comments when possible
-				valueString := patchMutation.Value
-				valueDoc, err := gaby.ParseYAML([]byte(valueString))
-				if err != nil {
-					slog.Info("error parsing value at path", "path", string(patchPath), "error", err)
-					continue
-				}
-
-				// Check if the value is a complex object (map or list) vs a scalar
-				ynode := valueDoc.YNode()
-				isScalarValue := ynode.Kind == yaml.ScalarNode
-
-				if isScalarValue {
-					// For multi-line string updates with a line-level patch, apply the
-					// patch to the target's current value (three-way merge) rather than
-					// replacing it wholesale. This correctly handles the case where the
-					// target has been independently modified.
-					if patchMutation.Patch != "" {
-						currentField := doc.Path(string(patchPath))
-						if currentField != nil {
-							if currentStr, ok := currentField.Data().(string); ok {
-								patched, ok := ApplyScalarPatch(currentStr, patchMutation.Patch)
-								if ok {
-									// Set the patched string directly as a scalar value
-									// rather than parsing it as YAML, which would lose
-									// multi-line string formatting.
-									_, setErr := doc.SetP(patched, string(patchPath))
-									if setErr != nil {
-										slog.Info("error setting patched value at path",
-											"path", string(patchPath), "error", setErr)
-									}
-									continue
-								}
-								slog.Info("scalar patch failed, falling back to full value",
-									"path", string(patchPath))
-								// Fall through to use valueDoc (the full Value) as wholesale replacement.
-							}
-						}
-					}
-
-					// For scalar values, we need to preserve the comment manually
-					// Get the current field to check if it has a comment
-					currentField := doc.Path(string(patchPath))
-					var existingComment string
-					if currentField != nil {
-						existingComment = currentField.GetComments()
-					}
-
-					// Set the new value
-					_, err = doc.SetDocP(valueDoc, string(patchPath))
-					if err != nil {
-						slog.Info("error setting value at path", "path", string(patchPath), "error", err)
-					} else if existingComment != "" {
-						// Restore the comment after setting the value
-						updatedField := doc.Path(string(patchPath))
-						if updatedField != nil {
-							updatedField.SetComment(existingComment)
-						}
-					}
-				} else {
-					// For complex objects (maps/lists), use merge to preserve nested comments
-					err = doc.MergeDocP(valueDoc, string(patchPath))
-					if err != nil {
-						slog.Info("error merging value at path", "path", string(patchPath), "error", err)
-					}
-				}
-			case api.MutationTypeDelete:
-				err := doc.DeleteP(string(patchPath))
-				if err != nil {
-					slog.Info("error deleting path", "path", string(patchPath), "error", err)
-				}
-			case api.MutationTypeNone:
-				// Shouldn't happen for paths, but also shouldn't be anything to do
-			}
-		}
+		errs = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
+			hasPredicate, mutationsPredicates, mutationPredicateIndex, errs)
 	}
 
 	// Append new documents for Add/Replace mutations that didn't match any existing document.
@@ -1126,15 +1035,134 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			valueString := resourcePatchMutation.Value
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
-				slog.Info("error parsing value for unmatched resource",
-					"resource", api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource), "error", err)
+				errs = append(errs, fmt.Errorf("error parsing value for unmatched resource %s: %w",
+					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource), err))
 				continue
 			}
+			errs = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
+				false, nil, 0, errs)
 			parsedData = append(parsedData, valueDoc)
 		}
 	}
 
-	return parsedData, nil
+	return parsedData, errors.Join(errs...)
+}
+
+// applyPathMutations applies path-level mutations from a PathMutationMap to a document.
+// If hasPredicate is true, paths are filtered against the predicate's PathMutationMap.
+func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
+	hasPredicate bool, mutationsPredicates api.ResourceMutationList, mutationPredicateIndex int,
+	errs []error) []error {
+
+	// Sort paths so parents are processed before children.
+	patches := api.SortedMutationMapEntries(pathMutationMap)
+
+	for i := range patches {
+		patchPath := api.ResolvedPath(ResolveAssociativeSegments(doc, string(patches[i].Path)))
+		patchMutation := patches[i].MutationInfo
+		// Check for patches that conflict with the predicate.
+		// TODO: Break down the patch.
+		if hasPredicate {
+			// Walk up path ancestors to find if any predicate filters this path.
+			_, predicateMutation, hasFilter := api.FindAncestorPath(
+				mutationsPredicates[mutationPredicateIndex].PathMutationMap, patchPath)
+			if hasFilter && !predicateMutation.Predicate {
+				slog.Debug("path filtered", "path", string(patchPath))
+				continue
+			}
+		}
+		switch patchMutation.MutationType {
+		case api.MutationTypeAdd, api.MutationTypeReplace:
+			valueString := patchMutation.Value
+			valueDoc, err := gaby.ParseYAML([]byte(valueString))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("error parsing value at path %s: %w", patchPath, err))
+			}
+			// Note: This doesn't preserve indentation nor field ordering.
+			_, err = doc.SetDocExpandP(valueDoc, string(patchPath))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("error setting value at path %s: %w", patchPath, err))
+			}
+		case api.MutationTypeUpdate:
+			// For updates, try to preserve comments when possible
+			valueString := patchMutation.Value
+			valueDoc, err := gaby.ParseYAML([]byte(valueString))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("error parsing value at path %s: %w", patchPath, err))
+				continue
+			}
+
+			// Check if the value is a complex object (map or list) vs a scalar
+			ynode := valueDoc.YNode()
+			isScalarValue := ynode.Kind == yaml.ScalarNode
+
+			if isScalarValue {
+				// For multi-line string updates with a line-level patch, apply the
+				// patch to the target's current value (three-way merge) rather than
+				// replacing it wholesale. This correctly handles the case where the
+				// target has been independently modified.
+				if patchMutation.Patch != "" {
+					currentField := doc.Path(string(patchPath))
+					if currentField != nil {
+						if currentStr, ok := currentField.Data().(string); ok {
+							patched, ok := ApplyScalarPatch(currentStr, patchMutation.Patch)
+							if ok {
+								// Set the patched string directly as a scalar value
+								// rather than parsing it as YAML, which would lose
+								// multi-line string formatting.
+								_, setErr := doc.SetExpandP(patched, string(patchPath))
+								if setErr != nil {
+									errs = append(errs, fmt.Errorf("error setting patched value at path %s: %w", patchPath, setErr))
+								}
+								continue
+							}
+							slog.Info("scalar patch failed, falling back to full value",
+								"path", string(patchPath))
+							// Fall through to use valueDoc (the full Value) as wholesale replacement.
+						}
+					}
+				}
+
+				// TODO: This may no longer make sense now that comments are represented as attributes.
+				// For scalar values, we need to preserve the comment manually
+				// Get the current field to check if it has a comment
+				currentField := doc.Path(string(patchPath))
+				var existingComment string
+				if currentField != nil {
+					existingComment = currentField.GetComments()
+				}
+
+				// Set the new value
+				_, err = doc.SetDocExpandP(valueDoc, string(patchPath))
+				if err != nil {
+					errs = append(errs, fmt.Errorf("error setting value at path %s: %w", patchPath, err))
+				} else if existingComment != "" {
+					// Restore the comment after setting the value
+					updatedField := doc.Path(string(patchPath))
+					if updatedField != nil {
+						updatedField.SetComment(existingComment)
+					}
+				}
+			} else {
+				// For complex objects (maps/lists), use merge to preserve nested comments
+				err = doc.MergeDocP(valueDoc, string(patchPath))
+				if err != nil {
+					errs = append(errs, fmt.Errorf("error merging value at path %s: %w", patchPath, err))
+				}
+			}
+		case api.MutationTypeDelete:
+			if !doc.ExistsP(string(patchPath)) {
+				continue
+			}
+			err := doc.DeleteP(string(patchPath))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("error deleting path %s: %w", patchPath, err))
+			}
+		case api.MutationTypeNone:
+			// Shouldn't happen for paths, but also shouldn't be anything to do
+		}
+	}
+	return errs
 }
 
 func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider) error {
@@ -1272,15 +1300,17 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 //   - Last-write-wins for values: New values replace old values at the same path
 //   - Type preservation: Original mutation type is preserved (Add stays Add, Update stays Update)
 //   - Alias awareness: Handles resources that have been renamed between mutations
-func AddMutations(mutations, newMutations api.ResourceMutationList) api.ResourceMutationList {
+func AddMutations(mutations, newMutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
+	hasMutations := false
 	idx := api.NewResourceMutationIndex(mutations)
 	for i := range newMutations {
+		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeNone {
+			continue
+		}
+		hasMutations = true
 		mi, present := idx.Find(newMutations[i].Resource, newMutations[i].AliasesWithoutScopes)
 		if !present {
 			mutations = append(mutations, newMutations[i])
-			continue
-		}
-		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeNone {
 			continue
 		}
 		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete ||
@@ -1298,6 +1328,10 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) api.Resource
 		// Update the resource name, which may have changed.
 		mutations[mi].Resource.ResourceName = newMutations[i].Resource.ResourceName
 		mutations[mi].Resource.ResourceNameWithoutScope = newMutations[i].Resource.ResourceNameWithoutScope
+		// Set the ResourceMergeID, but do not clear it.
+		if !IsEmptyOrPlaceHolder(newMutations[i].Resource.ResourceMergeID) {
+			mutations[mi].Resource.ResourceMergeID = newMutations[i].Resource.ResourceMergeID
+		}
 		if mutations[mi].Aliases == nil {
 			mutations[mi].Aliases = make(map[api.ResourceName]struct{})
 		}
@@ -1321,10 +1355,16 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) api.Resource
 		for _, entry := range api.SortedMutationMapEntries(newMutations[i].PathMutationMap) {
 			path := entry.Path
 			mutation := *entry.MutationInfo
-			// Exact match: update in place, preserving the original mutation type.
+			// Exact match: update in place.
+			// We originally preserved the original mutation type (either Add or Replace),
+			// unless it's Delete. The idea was that the change is relative to less-specific
+			// changes in the same set of mutations rather than relative to other configuration data.
+			// However, it was unclear the type shouldn't be changed to Update, which would more
+			// accurately represent the latest change, so now we update the mutation type, which
+			// will cause PatchMutations to attempt to merge if used as a patch.
 			if existing, ok := mutations[mi].PathMutationMap[path]; ok {
-				mutationType := existing.MutationType
-				if mutationType == api.MutationTypeDelete &&
+				mutationType := mutation.MutationType
+				if existing.MutationType == api.MutationTypeDelete &&
 					mutation.MutationType != api.MutationTypeDelete {
 					mutationType = api.MutationTypeReplace
 				}
@@ -1333,6 +1373,12 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) api.Resource
 					Index:        mutation.Index,
 					Predicate:    mutation.Predicate,
 					Value:        mutation.Value,
+				}
+				if mutation.MutationType == api.MutationTypeDelete || mutation.MutationType == api.MutationTypeReplace {
+					// Remove any existing child paths it supersedes.
+					for _, childPath := range existingIdx.ChildPaths(path) {
+						delete(mutations[mi].PathMutationMap, childPath)
+					}
 				}
 			} else {
 				// New path: add it and remove any existing child paths it supersedes.
@@ -1343,7 +1389,7 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) api.Resource
 			}
 		}
 	}
-	return mutations
+	return mutations, hasMutations
 }
 
 // SubtractMutations removes mutations that overlap with subtractMutations from mutations.

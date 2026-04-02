@@ -14,7 +14,6 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"gopkg.in/yaml.v3"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -194,29 +193,19 @@ func (*JSONResourceProviderType) GetToolchainType() workerapi.ToolchainType {
 }
 
 // NativeToYAML converts JSON data to YAML format.
+// Key order from the JSON source is preserved.
 func (*JSONResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return []byte{}, nil
 	}
 
-	// Parse JSON into a generic structure
-	var jsonData interface{}
-	if err := json.Unmarshal(data, &jsonData); err != nil {
+	// Parse JSON with gaby (preserves key order via kyaml)
+	doc, err := gaby.ParseJSON(data)
+	if err != nil {
 		return nil, fmt.Errorf("error parsing JSON: %w", err)
 	}
 
-	// Convert to YAML
-	var output bytes.Buffer
-	encoder := yaml.NewEncoder(&output)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(jsonData); err != nil {
-		return nil, fmt.Errorf("error converting JSON to YAML: %w", err)
-	}
-	if err := encoder.Close(); err != nil {
-		return nil, fmt.Errorf("error finalizing YAML encoding: %w", err)
-	}
-
-	return output.Bytes(), nil
+	return doc.Bytes(), nil
 }
 
 // YAMLToNative converts YAML data to JSON format.
@@ -225,20 +214,24 @@ func (*JSONResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 		return []byte{}, nil
 	}
 
-	// Parse YAML into a generic structure
-	var data interface{}
-	if err := yaml.Unmarshal(yamlData, &data); err != nil {
+	// Parse YAML with gaby
+	doc, err := gaby.ParseYAML(yamlData)
+	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
-	// Convert to JSON with indentation
-	output, err := json.MarshalIndent(data, "", "  ")
+	// Get compact JSON from gaby (preserves key order)
+	compactJSON, err := doc.MarshalJSON()
 	if err != nil {
 		return nil, fmt.Errorf("error converting YAML to JSON: %w", err)
 	}
 
-	// Add trailing newline
-	output = append(output, '\n')
+	// Re-indent for readability (json.Indent preserves key order)
+	var indented bytes.Buffer
+	if err := json.Indent(&indented, compactJSON, "", "  "); err != nil {
+		return nil, fmt.Errorf("error indenting JSON: %w", err)
+	}
+	indented.WriteByte('\n')
 
-	return output, nil
+	return indented.Bytes(), nil
 }

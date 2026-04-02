@@ -6,6 +6,7 @@ package generic
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -19,7 +20,7 @@ import (
 )
 
 func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-jsonschema", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-jsonschema", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-jsonschema",
 			Parameters: []api.FunctionParameter{
@@ -48,7 +49,9 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnVetJSONSchema(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -90,8 +93,8 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 			return output, errs
 		}
 
-		// Marshal the document to JSON for validation
-		docJSON, err := doc.MarshalJSON()
+		// Marshal the document to JSON for validation, stripping $comment$ keys
+		docJSON, err := doc.MarshalJSONWithoutCommentKeys()
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "failed to marshal document to JSON for resource %s/%s", resourceType, resourceInfo.ResourceName))
 			return output, errs

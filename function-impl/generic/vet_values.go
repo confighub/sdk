@@ -28,7 +28,7 @@ func registerVetValues(fh handler.FunctionRegistry, converter configkit.ConfigCo
 	if err != nil {
 		slog.Error("couldn't get schema for api.ValueFilter")
 	}
-	fh.RegisterFunction("vet-values", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-values", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-values",
 			Parameters: []api.FunctionParameter{
@@ -63,7 +63,9 @@ func registerVetValues(fh handler.FunctionRegistry, converter configkit.ConfigCo
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetValues(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

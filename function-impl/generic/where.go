@@ -69,7 +69,7 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 }
 
 func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "where-filter",
 			Parameters: []api.FunctionParameter{
@@ -103,7 +103,9 @@ func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnResourceWhereMatch(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnResourceWhereMatch(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -290,7 +292,7 @@ func GenericFnResourceWhereMatchWithComparators(resourceProvider yamlkit.Resourc
 }
 
 func registerSelectWhereResource(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("select-where-resource", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("select-where-resource", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "select-where-resource",
 			Parameters: []api.FunctionParameter{
@@ -319,7 +321,9 @@ func registerSelectWhereResource(fh handler.FunctionRegistry, converter configki
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSelectWhereResource(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSelectWhereResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

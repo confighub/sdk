@@ -343,3 +343,94 @@ database:
 		t.Errorf("Expected YAML to contain 'enabled: false' as boolean, got: %s", yamlStr)
 	}
 }
+
+func TestINIToYAMLWithComments(t *testing.T) {
+	iniData := []byte(`; Global settings
+# Application config
+
+[database]
+# Primary connection
+server = 192.168.1.1
+port = 5432
+`)
+
+	yamlData, err := NewINIResourceProvider().NativeToYAML(iniData)
+	if err != nil {
+		t.Fatalf("Failed to convert INI to YAML: %v", err)
+	}
+
+	yamlStr := string(yamlData)
+	t.Logf("YAML:\n%s", yamlStr)
+
+	if !strings.Contains(yamlStr, "$comment$head$database") {
+		t.Errorf("Expected head comment for database section")
+	}
+	if !strings.Contains(yamlStr, "Global settings") {
+		t.Errorf("Expected 'Global settings' comment text")
+	}
+	if !strings.Contains(yamlStr, "$comment$head$server") {
+		t.Errorf("Expected head comment for server key")
+	}
+	if !strings.Contains(yamlStr, "Primary connection") {
+		t.Errorf("Expected 'Primary connection' comment text")
+	}
+}
+
+func TestYAMLToINIWithComments(t *testing.T) {
+	yamlData := []byte(`$comment$head$database: Database settings
+database:
+  $comment$head$server: Primary host
+  server: 192.168.1.1
+  port: 5432
+`)
+
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
+	if err != nil {
+		t.Fatalf("Failed to convert YAML to INI: %v", err)
+	}
+
+	iniStr := string(iniData)
+	t.Logf("INI:\n%s", iniStr)
+
+	if !strings.Contains(iniStr, "# Database settings") {
+		t.Errorf("Expected '# Database settings' comment")
+	}
+	if !strings.Contains(iniStr, "# Primary host") {
+		t.Errorf("Expected '# Primary host' comment")
+	}
+	if strings.Contains(iniStr, "$comment") {
+		t.Errorf("INI output should not contain $comment keys")
+	}
+}
+
+func TestINIRoundTripWithComments(t *testing.T) {
+	originalINI := []byte(`; Configuration file
+[app]
+# Application name
+name = MyApp
+version = 1.0.0
+`)
+
+	yamlData, err := NewINIResourceProvider().NativeToYAML(originalINI)
+	if err != nil {
+		t.Fatalf("Failed INI to YAML: %v", err)
+	}
+	t.Logf("YAML:\n%s", string(yamlData))
+
+	iniData, err := NewINIResourceProvider().YAMLToNative(yamlData)
+	if err != nil {
+		t.Fatalf("Failed YAML to INI: %v", err)
+	}
+	t.Logf("INI:\n%s", string(iniData))
+
+	iniStr := string(iniData)
+	if !strings.Contains(iniStr, "# Configuration file") {
+		t.Errorf("Round trip lost 'Configuration file' comment")
+	}
+	if !strings.Contains(iniStr, "# Application name") {
+		t.Errorf("Round trip lost 'Application name' comment")
+	}
+	if !strings.Contains(iniStr, "[app]") {
+		t.Errorf("Round trip lost [app] section")
+	}
+}

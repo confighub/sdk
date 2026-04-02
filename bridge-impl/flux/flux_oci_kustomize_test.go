@@ -22,8 +22,8 @@ func TestExtractFluxInventoryObjects_ValidEntries(t *testing.T) {
 			"status": map[string]interface{}{
 				"inventory": map[string]interface{}{
 					"entries": []interface{}{
-						map[string]interface{}{"id": "default_my-deploy_apps_v1_Deployment"},
-						map[string]interface{}{"id": "default_my-svc__v1_Service"},
+						map[string]interface{}{"id": "default_my-deploy_apps_Deployment", "v": "v1"},
+						map[string]interface{}{"id": "default_my-svc__Service", "v": "v1"},
 					},
 				},
 			},
@@ -53,9 +53,10 @@ func TestExtractFluxInventoryObjects_MalformedEntries(t *testing.T) {
 			"status": map[string]interface{}{
 				"inventory": map[string]interface{}{
 					"entries": []interface{}{
-						map[string]interface{}{"id": "bad_entry"},        // too few parts
-						map[string]interface{}{"id": ""},                 // empty id
-						map[string]interface{}{"id": "ns_name_g_v_Kind"}, // valid
+						map[string]interface{}{"id": "bad_entry", "v": "v1"},        // too few parts
+						map[string]interface{}{"id": "", "v": "v1"},                 // empty id
+						map[string]interface{}{"id": "ns_name_g_Kind", "v": "v1"},   // valid
+						map[string]interface{}{"id": "ns_name_g_Kind"},              // missing v
 					},
 				},
 			},
@@ -94,8 +95,8 @@ func TestBuildFluxResourceStatusMap_ReadyWithInventory(t *testing.T) {
 				},
 				"inventory": map[string]interface{}{
 					"entries": []interface{}{
-						map[string]interface{}{"id": "default_my-deploy_apps_v1_Deployment"},
-						map[string]interface{}{"id": "default_my-svc__v1_Service"},
+						map[string]interface{}{"id": "default_my-deploy_apps_Deployment", "v": "v1"},
+						map[string]interface{}{"id": "default_my-svc__Service", "v": "v1"},
 					},
 				},
 			},
@@ -132,7 +133,7 @@ func TestBuildFluxResourceStatusMap_FailedWithInventory(t *testing.T) {
 				},
 				"inventory": map[string]interface{}{
 					"entries": []interface{}{
-						map[string]interface{}{"id": "default_my-deploy_apps_v1_Deployment"},
+						map[string]interface{}{"id": "default_my-deploy_apps_Deployment", "v": "v1"},
 					},
 				},
 			},
@@ -260,32 +261,32 @@ func TestGenerateFluxKustomization_Labels(t *testing.T) {
 
 func TestParseFluxOCIParams_PruneDefaultTrue(t *testing.T) {
 	payload := api.BridgeWorkerPayload{}
-	params, err := parseFluxOCIParams(payload)
+	options, err := parseFluxOCIOptions(payload)
 	require.NoError(t, err)
-	assert.True(t, params.Prune, "Prune should default to true when TargetParams is empty")
+	assert.True(t, options.Prune, "Prune should default to true when TargetParams is empty")
 }
 
 func TestParseFluxOCIParams_PruneExplicitFalse(t *testing.T) {
 	payload := api.BridgeWorkerPayload{
 		TargetOptions: map[string]string{"Prune": "false"},
 	}
-	params, err := parseFluxOCIParams(payload)
+	options, err := parseFluxOCIOptions(payload)
 	require.NoError(t, err)
-	assert.False(t, params.Prune, "Prune should be false when explicitly set to false")
+	assert.False(t, options.Prune, "Prune should be false when explicitly set to false")
 }
 
 func TestParseFluxOCIParams_Defaults(t *testing.T) {
 	payload := api.BridgeWorkerPayload{}
-	params, err := parseFluxOCIParams(payload)
+	options, err := parseFluxOCIOptions(payload)
 	require.NoError(t, err)
 
-	assert.Equal(t, defaultFluxNamespace, params.FluxNamespace)
-	assert.Equal(t, defaultDestinationNamespace, params.TargetNamespace)
-	assert.Equal(t, defaultFluxInterval, params.Interval)
-	assert.Equal(t, defaultFluxOCIPath, params.OCIPath)
-	assert.Equal(t, defaultFluxTargetRevision, params.TargetRevision)
-	assert.Equal(t, kubernetes.LargeWaitTimeout.String(), params.WaitTimeout)
-	assert.True(t, params.Prune)
+	assert.Equal(t, defaultFluxNamespace, options.FluxNamespace)
+	assert.Equal(t, defaultDestinationNamespace, options.TargetNamespace)
+	assert.Equal(t, defaultFluxInterval, options.Interval)
+	assert.Equal(t, defaultFluxOCIPath, options.OCIPath)
+	assert.Equal(t, defaultFluxTargetRevision, options.TargetRevision)
+	assert.Equal(t, kubernetes.LargeWaitTimeout.String(), options.WaitTimeout)
+	assert.True(t, options.Prune)
 }
 
 func TestParseFluxOCIParams_TargetOptions(t *testing.T) {
@@ -304,20 +305,20 @@ func TestParseFluxOCIParams_TargetOptions(t *testing.T) {
 			"WaitTimeout":      "20m",
 		},
 	}
-	params, err := parseFluxOCIParams(payload)
+	options, err := parseFluxOCIOptions(payload)
 	require.NoError(t, err)
 
-	assert.Equal(t, "my-flux", params.FluxNamespace)
-	assert.Equal(t, "my-ns", params.TargetNamespace)
-	assert.Equal(t, "5m", params.Interval)
-	assert.Equal(t, "oci://registry.example.com/charts", params.OCIRepoURL)
-	assert.Equal(t, "registry.example.com", params.OCIHost)
-	assert.Equal(t, "manifests", params.OCIPath)
-	assert.Equal(t, "v1.0.0", params.TargetRevision)
-	assert.False(t, params.Prune)
-	assert.True(t, params.DisableRepoCreds)
-	assert.Equal(t, "my-cluster", params.KubeContext)
-	assert.Equal(t, "20m", params.WaitTimeout)
+	assert.Equal(t, "my-flux", options.FluxNamespace)
+	assert.Equal(t, "my-ns", options.TargetNamespace)
+	assert.Equal(t, "5m", options.Interval)
+	assert.Equal(t, "oci://registry.example.com/charts", options.OCIRepoURL)
+	assert.Equal(t, "registry.example.com", options.OCIHost)
+	assert.Equal(t, "manifests", options.OCIPath)
+	assert.Equal(t, "v1.0.0", options.TargetRevision)
+	assert.False(t, options.Prune)
+	assert.True(t, options.DisableRepoCreds)
+	assert.Equal(t, "my-cluster", options.KubeContext)
+	assert.Equal(t, "20m", options.WaitTimeout)
 }
 
 

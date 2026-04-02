@@ -5,6 +5,7 @@ package generic
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -14,7 +15,7 @@ import (
 )
 
 func registerGetNeeded(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-needed", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-needed", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-needed",
 			OutputInfo: &api.FunctionOutput{
@@ -39,7 +40,9 @@ func registerGetNeeded(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			}
 			return genericFnGetNeeded(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
@@ -49,7 +52,7 @@ func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.Functi
 }
 
 func registerGetProvided(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-provided", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-provided", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-provided",
 			OutputInfo: &api.FunctionOutput{
@@ -74,7 +77,9 @@ func registerGetProvided(fh handler.FunctionRegistry, converter configkit.Config
 			}
 			return genericFnGetProvided(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
@@ -84,7 +89,7 @@ func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.Func
 }
 
 func registerGetPaths(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-paths", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-paths", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-paths",
 			Parameters: []api.FunctionParameter{
@@ -116,7 +121,9 @@ func registerGetPaths(fh handler.FunctionRegistry, converter configkit.ConfigCon
 			}
 			return genericFnGetPaths(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // enrichMergeKeysFromPath extracts merge keys from a resolved path (with numeric indices)

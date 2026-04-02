@@ -12,6 +12,7 @@ import (
 	"github.com/confighub/sdk/bridge-impl/common"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcApi "github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
@@ -154,8 +155,8 @@ func findFluxHelmRepositoryObject(objects []*unstructured.Unstructured) *unstruc
 }
 
 // buildFluxHelmReleaseStatusMap builds a ResourceStatusMap from a Flux HelmRelease.
-// Unlike Kustomization, HelmRelease does not expose a resource inventory,
-// so only the HelmRelease CR itself is reported.
+// Reports the HelmRelease CR status. Managed resource discovery is handled
+// separately via .status.inventory.entries[] when available.
 func buildFluxHelmReleaseStatusMap(hr *unstructured.Unstructured) api.ResourceStatusMap {
 	isReady, isFailed, _ := getFluxCondition(hr)
 
@@ -194,17 +195,18 @@ func buildHelmReleaseResourceKey(hr *unstructured.Unstructured) funcApi.Resource
 func (w *FluxOCIWorker) watchFluxHelmRelease(
 	wctx api.BridgeWorkerContext,
 	payload api.BridgeWorkerPayload,
-	params FluxOCIWorkerParams,
+	options FluxOCIBridgeOptions,
 	hrObj *unstructured.Unstructured,
 	helmRepoObj *unstructured.Unstructured,
+	originalData []byte,
 ) error {
 	hrName := hrObj.GetName()
 	hrNamespace := hrObj.GetNamespace()
 	if hrNamespace == "" {
-		hrNamespace = params.FluxNamespace
+		hrNamespace = options.FluxNamespace
 	}
 
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -222,8 +224,8 @@ func (w *FluxOCIWorker) watchFluxHelmRelease(
 	}
 
 	var timeout time.Duration
-	if params.WaitTimeout != "" {
-		if t, parseErr := time.ParseDuration(params.WaitTimeout); parseErr == nil {
+	if options.WaitTimeout != "" {
+		if t, parseErr := time.ParseDuration(options.WaitTimeout); parseErr == nil {
 			timeout = t
 		}
 	}
@@ -290,15 +292,9 @@ func (w *FluxOCIWorker) watchFluxHelmRelease(
 		}
 
 		if isReady {
-			allLiveCRs := collectFluxLiveCRs(ctx, k8sClient, liveHR, helmRepoObj, params.FluxNamespace)
-
-			liveStateYAML, liveDataData, yamlErr := w.buildFluxLiveStateAndData(wctx.Context(), payload, allLiveCRs)
-			if yamlErr != nil {
-				return lib.SafeSendStatus(wctx, common.NewActionResult(
-					api.ActionStatusFailed,
-					api.ActionResultApplyWaitFailed,
-					fmt.Sprintf("failed to build Flux live state: %v", yamlErr),
-				), yamlErr)
+			liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(ctx, k8sClient, liveHR, originalData)
+			if liveErr != nil {
+				log.Log.Error(liveErr, "Failed to fetch managed resources")
 			}
 
 			select {
@@ -315,7 +311,12 @@ func (w *FluxOCIWorker) watchFluxHelmRelease(
 			)
 			status.ResourceStatuses = resourceStatuses
 			status.LiveState = []byte(liveStateYAML)
-			status.LiveData = liveDataData
+			status.LiveData = []byte(liveDataYAML)
+
+			// BridgeState = inventory ConfigMap tracking the Flux HelmRelease and HelmRepository CRs
+			appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+			status.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 			_ = wctx.SendStatus(status)
 			return nil
 		}
@@ -325,16 +326,18 @@ func (w *FluxOCIWorker) watchFluxHelmRelease(
 }
 
 // refreshFluxHelmRelease refreshes the state of a Flux HelmRelease.
-// Drift detection is based solely on the HelmRelease Ready condition since
-// HelmRelease does not expose a resource inventory.
+// Uses .status.inventory.entries[] for managed resource discovery.
+// If no inventory entries are found, LiveState and LiveData will be empty.
 func (w *FluxOCIWorker) refreshFluxHelmRelease(
 	wctx api.BridgeWorkerContext,
 	payload api.BridgeWorkerPayload,
-	params FluxOCIWorkerParams,
+	options FluxOCIBridgeOptions,
 	expectedHR *unstructured.Unstructured,
 	expectedHelmRepo *unstructured.Unstructured,
+	originalData []byte,
+	refreshParams *api.RefreshParams,
 ) error {
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(params.KubeContext)
+	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -345,7 +348,7 @@ func (w *FluxOCIWorker) refreshFluxHelmRelease(
 
 	hrNamespace := expectedHR.GetNamespace()
 	if hrNamespace == "" {
-		hrNamespace = params.FluxNamespace
+		hrNamespace = options.FluxNamespace
 	}
 	hrName := expectedHR.GetName()
 
@@ -386,18 +389,49 @@ func (w *FluxOCIWorker) refreshFluxHelmRelease(
 		"message", condMsg,
 	)
 
-	allLiveCRs := collectFluxLiveCRs(wctx.Context(), k8sClient, liveHR, expectedHelmRepo, params.FluxNamespace)
+	syncDrifted := !isReady
+	contentDrifted := false
+	var patchedData []byte
 
-	liveStateYAML, liveDataBytes, yamlErr := w.buildFluxLiveStateAndData(wctx.Context(), payload, allLiveCRs)
-	if yamlErr != nil {
-		return lib.SafeSendStatus(wctx, common.NewActionResult(
-			api.ActionStatusFailed,
-			api.ActionResultRefreshFailed,
-			fmt.Sprintf("failed to build Flux live state: %v", yamlErr),
-		), yamlErr)
+	liveStateYAML, liveDataYAML, liveErr := computeManagedResourceState(wctx.Context(), k8sClient, liveHR, originalData)
+	if liveErr != nil {
+		log.Log.Error(liveErr, "Failed to fetch managed resources")
 	}
 
-	isDrifted := !isReady
+	if liveDataYAML != "" {
+		// Content drift detection via diff-patch.
+		//
+		// "Base data" is the last-known-good revision — the YAML that was last
+		// successfully applied to the cluster. We compare it against LiveData
+		// (what's actually running now) to detect whether someone changed the
+		// cluster state outside of ConfigHub. If BaseRevisionData is not
+		// available (e.g. first refresh after import), we fall back to the
+		// current revision's rendered data (originalData).
+		var baseData []byte
+		if refreshParams != nil && len(refreshParams.BaseRevisionData) > 0 {
+			baseData = refreshParams.BaseRevisionData
+		} else {
+			baseData = originalData
+		}
+
+		cleanedBaseData, cleanErr := kubernetes.CleanBaseDataForDrift(baseData)
+		if cleanErr != nil {
+			log.Log.Error(cleanErr, "Failed to clean base data for drift comparison")
+			cleanedBaseData = baseData
+		}
+
+		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false)
+		if diffErr != nil {
+			log.Log.Error(diffErr, "Failed to diff-patch managed resources")
+		} else {
+			contentDrifted = drifted
+			if drifted {
+				patchedData = patched
+			}
+		}
+	}
+
+	isDrifted := syncDrifted || contentDrifted
 
 	var resultType api.ActionResultType
 	var message string
@@ -410,8 +444,16 @@ func (w *FluxOCIWorker) refreshFluxHelmRelease(
 	}
 
 	result := common.NewActionResult(api.ActionStatusCompleted, resultType, message)
-	result.LiveData = liveDataBytes
+	result.LiveData = []byte(liveDataYAML)
 	result.LiveState = []byte(liveStateYAML)
 	result.ResourceStatuses = resourceStatuses
+	if contentDrifted && len(patchedData) > 0 {
+		result.Data = patchedData
+	}
+
+	// BridgeState = inventory ConfigMap tracking the Flux HelmRelease and HelmRepository CRs
+	appliedObjects, _ := kubernetes.ParseObjects(payload.Data)
+	result.BridgeState = w.BuildBridgeState(payload, appliedObjects)
+
 	return wctx.SendStatus(result)
 }

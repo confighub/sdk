@@ -5,6 +5,7 @@ package generic
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -14,7 +15,7 @@ import (
 )
 
 func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("patch-mutations", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("patch-mutations", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "patch-mutations",
 			Parameters: []api.FunctionParameter{
@@ -44,7 +45,9 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnPatchMutations(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

@@ -116,12 +116,14 @@ type K8sApplier interface {
 
 // ApplierConfig contains configuration for creating an applier
 type ApplierConfig struct {
-	KubeContext string
-	LiveData    []byte // LiveData containing inventory and resources
-	SpaceID     string // SpaceID for inventory identification
-	UnitSlug    string // UnitSlug for inventory identification
-	RevisionNum int64  // RevisionNum for the revision being applied
-	WaitTimeout string // WaitTimeout duration string for resource readiness
+	KubeContext      string
+	DefaultNamespace string // Namespace for resources without an explicit namespace
+	LiveData         []byte // LiveData containing inventory and resources (legacy)
+	BridgeState      []byte // BridgeState containing inventory ConfigMap YAML
+	SpaceID          string // SpaceID for inventory identification
+	UnitSlug         string // UnitSlug for inventory identification
+	RevisionNum      int64  // RevisionNum for the revision being applied
+	WaitTimeout      string // WaitTimeout duration string for resource readiness
 }
 
 type ApplierName string

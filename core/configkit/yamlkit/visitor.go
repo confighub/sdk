@@ -541,7 +541,19 @@ func GetPathsAnyType(
 			return output, errors.New("could not convert visitor output to AttributeValueList")
 		}
 		var attributeValue api.AttributeValue
-		comment := currentDoc.GetComments()
+		// Read comments from $comment$ sibling keys in the parent map
+		head, line, foot := resourceDoc.GetCommentKeys(string(context.Path))
+		var commentParts []string
+		if head != "" {
+			commentParts = append(commentParts, head)
+		}
+		if line != "" {
+			commentParts = append(commentParts, line)
+		}
+		if foot != "" {
+			commentParts = append(commentParts, foot)
+		}
+		comment := strings.Join(commentParts, "\n")
 
 		// Deep copy the AttributeInfo so that maps, slices, and pointers in Details
 		// are not shared across AttributeValues from different visitor invocations.
@@ -850,7 +862,8 @@ func DeletePaths(
 	whereExpressions []*api.VisitorRelationalExpression,
 ) error {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		// currentDoc.Data() could be nil, but we don't use the value
+		// Delete associated $comment$ sibling keys before deleting the data path
+		doc.DeleteCommentKeysForPath(string(context.Path))
 		err := doc.DeleteP(string(context.Path))
 		return nil, err
 	}

@@ -9,3 +9,7 @@ const (
 	PlaceHolderBlockApplyString = "confighubplaceholder"
 	PlaceHolderBlockApplyInt    = 999999999
 )
+
+func IsEmptyOrPlaceHolder(s string) bool {
+	return s == "" || s == PlaceHolderBlockApplyString
+}

@@ -179,6 +179,7 @@ type CLIUtilsApplier struct {
 	unitSlug           string
 	revisionNum        int64
 	waitTimeout        string // WaitTimeout duration string for resource readiness
+	defaultNamespace   string // Namespace for resources without an explicit namespace
 	inventoryCM        *InventoryConfigMap
 	invInfo            inventory.Info
 	applyObjects       []*unstructured.Unstructured // Store objects for WaitForApply
@@ -229,26 +230,30 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		return ApplyResult{Error: fmt.Errorf("CRDs not available: %w", err)}
 	}
 
-	// Step 2: Manifest processing - prepare inventory ConfigMap
-	// The inventory ConfigMap should be the first document in the manifests
-	var inventoryObj *unstructured.Unstructured
+	// Step 2: Resolve inventory info
+	//
+	// The inventory ConfigMap is loaded from BridgeState during applier creation
+	// in setupApplierComponents(). If available, a.inventoryCM and a.invInfo are
+	// already populated. Legacy fallback: units created before BridgeState was
+	// introduced stored the inventory ConfigMap embedded in LiveData; the applier
+	// still reads from LiveData if BridgeState is empty.
+	//
+	// If no existing inventory exists (first apply), we create one from
+	// annotations on the input objects. This path is taken when both
+	// BridgeState and LiveData are empty (brand new unit).
 	var invInfo inventory.Info
 
 	if a.inventoryCM != nil && a.inventoryCM.IsValid() {
-		// Use existing inventory from LiveData
-		inventoryObj = a.inventoryCM.Unstructured
 		invInfo = a.invInfo
-		log.Log.Info("📦 Using existing inventory from LiveData", "id", a.inventoryCM.GetInventoryID())
+		log.Log.Info("📦 Using existing inventory", "id", a.inventoryCM.GetInventoryID())
 	} else {
-		// Create new inventory if none exists
+		// Create new inventory if none exists (first apply for this unit)
 		invMetadata := InventoryMetadata{
 			SpaceID:  DefaultSpaceID,
 			UnitSlug: DefaultUnitSlug,
 		}
 
 		// Extract metadata from the first object's annotations.
-		// These annotations are expected to be present in the YAML data received
-		// from the API layer (added during preprocessing or by functions).
 		if len(objects) > 0 {
 			annotations := objects[0].GetAnnotations()
 			if spaceID := annotations[k8skit.SpaceIDAnnotation]; spaceID != "" {
@@ -263,20 +268,16 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 			}
 		}
 
-		// Generate inventory name and ID
-		// Normalize the unit slug to ensure it's a valid Kubernetes resource name
 		normalizedSlug := k8skit.K8sNormalizeName(invMetadata.UnitSlug)
 		invMetadata.InventoryName = fmt.Sprintf("%s-%s", InventoryPrefix, normalizedSlug)
 		if invMetadata.SpaceID != DefaultSpaceID && len(invMetadata.SpaceID) >= 8 {
 			invMetadata.InventoryName = fmt.Sprintf("%s-%s-%s", InventoryPrefix, normalizedSlug, invMetadata.SpaceID[:8])
 		}
-		// For InventoryID, we keep the original slug to maintain consistency with existing inventories
 		invMetadata.InventoryID = fmt.Sprintf("%s-%s", invMetadata.SpaceID, invMetadata.UnitSlug)
 
 		log.Log.Info("📦 Extracted inventory metadata", "name", invMetadata.InventoryName, "id", invMetadata.InventoryID)
-		inventoryObj = a.createInventoryConfigMap(invMetadata)
+		inventoryObj := a.createInventoryConfigMap(invMetadata)
 
-		// Convert to inventory.Info
 		var err error
 		invInfo, err = inventory.ConfigMapToInventoryInfo(inventoryObj)
 		if err != nil {
@@ -285,29 +286,8 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		log.Log.Info("📦 Created new inventory ConfigMap", "id", invMetadata.InventoryID)
 	}
 
-	// Step 3: Split inventory from resources
-	// According to the algorithm, inventory should be first document
-	// We currently follow the algorithm for parity check
-	allObjects := append([]*unstructured.Unstructured{inventoryObj}, objects...)
-	// Split the inventory from the resource objects
-	invObj, resourceObjects, err := inventory.SplitUnstructureds(allObjects)
-	if err != nil {
-		return ApplyResult{Error: fmt.Errorf("failed to split inventory: %w", err)}
-	}
-
-	// Ensure we have the correct inventory info
-	if invObj != nil {
-		invInfo, err = inventory.ConfigMapToInventoryInfo(invObj)
-		if err != nil {
-			return ApplyResult{Error: fmt.Errorf("failed to process inventory: %w", err)}
-		}
-	}
-
-	// Step 4: Applier configuration is already done in initialization
-	// The applier was built with inventory client in setupApplierComponents
-
-	// Step 5: Apply Execution
-	// Configure apply options following the algorithm
+	// Step 3: Apply Execution
+	// Configure apply options
 	applyOptions := apply.ApplierOptions{
 		ServerSideOptions: common.ServerSideOptions{
 			ServerSideApply: true,
@@ -326,14 +306,14 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 	// Step 4.5: Clear managedFields for SSA compatibility
 	// This removes field ownership from other managers (like kubectl), allowing SSA to
 	// properly handle array item removal (e.g., removing old initContainers)
-	if err := a.clearManagedFieldsForObjects(ctx, resourceObjects); err != nil {
+	if err := a.clearManagedFieldsForObjects(ctx, objects); err != nil {
 		log.Log.Error(err, "⚠️ Failed to clear managedFields, continuing with apply")
 		// Continue anyway - this is best-effort cleanup
 	}
 
 	// Run the applier - it returns an event channel
 	log.Log.Info("📋 Starting applier with inventory", "namespace", invInfo.GetNamespace(), "id", invInfo.GetID())
-	eventChannel := a.comps.Applier.Run(ctx, invInfo, resourceObjects, applyOptions)
+	eventChannel := a.comps.Applier.Run(ctx, invInfo, objects, applyOptions)
 
 	// Drain the event channel with context awareness to handle cancellation
 	// This ensures we exit quickly when the operation is overridden/cancelled
@@ -423,18 +403,18 @@ applyDrainLoop:
 	// forever when using a long timeout. Example: A Flux Kustomization with suspend true
 	// never sets observedGeneration, so kstatus never considers it ready.
 	log.Log.Info("⏳ Waiting for resources to be ready")
-	if err := a.waitForResourcesReady(ctx, resourceObjects, waitTimeout); err != nil {
+	if err := a.waitForResourcesReady(ctx, objects, waitTimeout); err != nil {
 		log.Log.Error(err, "Some resources failed to become ready")
 		// Continue even if some resources aren't ready - let WaitForApply handle it
 	}
 
 	// Store metadata for WaitForApply if needed
-	a.applyObjects = resourceObjects
+	a.applyObjects = objects
 	a.invInfo = invInfo
 	a.applyCompleted = true
 
 	// Get live objects to build ResourceSet
-	liveObjects, err := a.getLiveObjects(ctx, resourceObjects, true)
+	liveObjects, err := a.getLiveObjects(ctx, objects, true)
 	if err != nil {
 		log.Log.Error(err, "Failed to get live objects")
 		// Return with what we have
@@ -959,9 +939,9 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 	var invInfo inventory.Info
 
 	if a.inventoryCM != nil && a.inventoryCM.IsValid() {
-		// Use existing inventory from LiveData
+		// Use existing inventory from BridgeState (or LiveData for legacy units)
 		invInfo = a.invInfo
-		log.Log.Info("📦 Using existing inventory from LiveData for destroy",
+		log.Log.Info("📦 Using existing inventory for destroy",
 			"id", a.inventoryCM.GetInventoryID(),
 			"unitSlug", a.unitSlug)
 	} else if a.invInfo != nil {
@@ -1282,10 +1262,15 @@ func (a *CLIUtilsApplier) setDefaultNamespaces(objects []*unstructured.Unstructu
 		return
 	}
 
+	ns := a.defaultNamespace
+	if ns == "" {
+		ns = DefaultNamespace
+	}
+
 	for _, obj := range objects {
 		if obj.GetNamespace() == "" {
 			if isNamespaced, err := a.comps.KubernetesClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
-				obj.SetNamespace("default")
+				obj.SetNamespace(ns)
 			}
 		}
 	}
@@ -1348,10 +1333,11 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	// Initialize klog for CLI-Utils debugging (only once)
 	initKlog()
 
-	// Create default inventory info
+	// Create default inventory info — uses constant name since the inventory ConfigMap
+	// is an in-memory artifact stored in BridgeState, not applied to the cluster.
 	defaultInvInfo := &SimpleInventoryInfo{
-		namespace: "default",
-		name:      "confighub-inventory",
+		namespace: DefaultNamespace,
+		name:      InventoryConfigMapName,
 		id:        fmt.Sprintf("%s-%s", config.SpaceID, config.UnitSlug),
 	}
 
@@ -1394,13 +1380,25 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 	}
 	factory := util.NewFactory(restClientGetter)
 
-	// Determine inventory client based on LiveData
+	// Determine inventory client based on BridgeState (preferred) or LiveData (legacy)
 	var invClient inventory.Client
 	var invInfo inventory.Info
 	var inventoryCM *InventoryConfigMap
 
-	if len(config.LiveData) > 0 {
-		log.Log.Info("📦 Using in-memory inventory from LiveData")
+	if len(config.BridgeState) > 0 {
+		// BridgeState contains the inventory ConfigMap YAML directly
+		log.Log.Info("📦 Using inventory from BridgeState")
+		invClient, inventoryCM, _, err = CreateInventoryFromLiveData(context.Background(), config.BridgeState, defaultInvInfo)
+		if err != nil {
+			log.Log.Error(err, "⚠️ Failed to parse inventory from BridgeState, falling back to default")
+			invClient = NewInMemInventoryClient()
+			inventoryCM = NewInventoryConfigMap(defaultInvInfo)
+		}
+		invInfo = defaultInvInfo
+	} else if len(config.LiveData) > 0 {
+		// Legacy path: units created before BridgeState stored the inventory
+		// ConfigMap embedded in LiveData alongside the resource manifests.
+		log.Log.Info("📦 Using in-memory inventory from LiveData (legacy)")
 		invClient, inventoryCM, _, err = CreateInventoryFromLiveData(context.Background(), config.LiveData, defaultInvInfo)
 		if err != nil {
 			log.Log.Error(err, "⚠️ Failed to create inventory from LiveData, falling back to default")
@@ -1420,8 +1418,8 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 			})
 		} else {
 			invInfo = &SimpleInventoryInfo{
-				namespace: "default",
-				name:      "confighub-inventory",
+				namespace: DefaultNamespace,
+				name:      InventoryConfigMapName,
 				id:        "confighub-" + config.KubeContext,
 			}
 			inventoryCM = NewInventoryConfigMap(invInfo)
@@ -1462,7 +1460,7 @@ func setupApplierComponents(config ApplierConfig) (*ApplierComponents, inventory
 		return nil, nil, nil, fmt.Errorf("failed to create destroyer: %w", err)
 	}
 
-	log.Log.Info("✅ Created applier components", "hasLiveData", len(config.LiveData) > 0)
+	log.Log.Info("✅ Created applier components", "hasBridgeState", len(config.BridgeState) > 0, "hasLiveData", len(config.LiveData) > 0)
 
 	return &ApplierComponents{
 		KubernetesClient: k8sClient,
@@ -1500,16 +1498,17 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 	log.Log.Info("🚀 Created CLIUtilsApplier with LiveDataBuilder and StatusPoller")
 
 	return &CLIUtilsApplier{
-		comps:           comps,
-		liveData:        config.LiveData,
-		spaceID:         config.SpaceID,
-		unitSlug:        config.UnitSlug,
-		revisionNum:     config.RevisionNum,
-		waitTimeout:     config.WaitTimeout,
-		inventoryCM:     inventoryCM,
-		invInfo:         invInfo,
-		liveDataBuilder: liveDataBuilder,
-		poller:          poller,
+		comps:            comps,
+		liveData:         config.LiveData,
+		spaceID:          config.SpaceID,
+		unitSlug:         config.UnitSlug,
+		revisionNum:      config.RevisionNum,
+		waitTimeout:      config.WaitTimeout,
+		defaultNamespace: config.DefaultNamespace,
+		inventoryCM:      inventoryCM,
+		invInfo:          invInfo,
+		liveDataBuilder:  liveDataBuilder,
+		poller:           poller,
 	}, nil
 }
 

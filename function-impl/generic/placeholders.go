@@ -4,6 +4,8 @@
 package generic
 
 import (
+	"log/slog"
+
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -12,7 +14,7 @@ import (
 )
 
 func registerGetPlaceholders(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-placeholders",
 			OutputInfo: &api.FunctionOutput{
@@ -32,7 +34,9 @@ func registerGetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetPlaceholders(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument) (gaby.Container, any, error) {
@@ -42,7 +46,7 @@ func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.
 }
 
 func registerVetPlaceholders(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-placeholders", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-placeholders",
 			OutputInfo: &api.FunctionOutput{
@@ -62,9 +66,11 @@ func registerVetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetPlaceholders(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	// TODO: Deprecated in favor of vet-placeholders. Remove this.
-	fh.RegisterFunction("no-placeholders", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("no-placeholders", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "no-placeholders",
 			OutputInfo: &api.FunctionOutput{
@@ -84,11 +90,13 @@ func registerVetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetPlaceholders(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func registerGetPlaceholderMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-placeholder-mutations", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-placeholder-mutations", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-placeholder-mutations",
 			OutputInfo: &api.FunctionOutput{
@@ -108,7 +116,9 @@ func registerGetPlaceholderMutations(fh handler.FunctionRegistry, converter conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetPlaceholderMutations(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetPlaceholderMutations(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

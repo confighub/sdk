@@ -14,6 +14,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/third_party/gaby"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -228,11 +231,66 @@ func (c *YAMLToPropertiesConverter) GetProperties() map[string]string {
 	return c.properties
 }
 
-// ConvertYAMLToProperties is a convenience function for one-shot conversion
+// YAMLToNative converts YAML data to Java Properties format.
+// If the YAML contains $comment$ map keys, they are converted back to # comments.
+// Key order from the YAML source is preserved.
 func (*PropertiesResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	converter := NewYAMLToPropertiesConverter()
-	if err := converter.ParseYAML(yamlData); err != nil {
-		return nil, err
+	// Parse YAML with gaby to preserve key order
+	doc, err := gaby.ParseYAML(yamlData)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
-	return converter.ToProperties()
+
+	// Extract comment keys from ordered data
+	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
+
+	// Flatten to ordered key=value pairs
+	converter := NewYAMLToPropertiesConverter()
+	var keys []string
+	flattenOrderedProps(cleanData, "", &keys, converter.properties)
+
+	// Write properties in order
+	var buf bytes.Buffer
+	writer := bufio.NewWriter(&buf)
+	for _, key := range keys {
+		value := converter.properties[key]
+		escapedKey := converter.escapeKey(key)
+		escapedValue := converter.escapeValue(value)
+		fmt.Fprintf(writer, "%s=%s\n", escapedKey, escapedValue)
+	}
+	if err := writer.Flush(); err != nil {
+		return nil, fmt.Errorf("error flushing buffer: %w", err)
+	}
+
+	// Re-inject comments into Properties output
+	result := injectPropertiesComments(buf.Bytes(), comments)
+	return result, nil
+}
+
+// flattenOrderedProps recursively flattens nested structures into dot-notation keys,
+// preserving order from ordered maps.
+func flattenOrderedProps(data interface{}, prefix string, keys *[]string, result map[string]string) {
+	buildKey := func(p, k string) string {
+		if p == "" {
+			return k
+		}
+		return p + "." + k
+	}
+	switch v := data.(type) {
+	case *orderedmap.OrderedMap[string, interface{}]:
+		for pair := v.Oldest(); pair != nil; pair = pair.Next() {
+			flattenOrderedProps(pair.Value, buildKey(prefix, pair.Key), keys, result)
+		}
+	case map[string]interface{}:
+		for key, value := range v {
+			flattenOrderedProps(value, buildKey(prefix, key), keys, result)
+		}
+	case []interface{}:
+		for i, item := range v {
+			flattenOrderedProps(item, buildKey(prefix, strconv.Itoa(i)), keys, result)
+		}
+	default:
+		*keys = append(*keys, prefix)
+		result[prefix] = fmt.Sprintf("%v", v)
+	}
 }

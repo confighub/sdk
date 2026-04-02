@@ -355,3 +355,168 @@ metadata:
 		t.Errorf("Unexpected value: %v != %v", act, exp)
 	}
 }
+
+func TestExtractAndInjectCommentsToKeys(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name: "line comment on scalar value",
+			input: `replicas: 3 # Line comment on replicas
+paused: false
+`,
+		},
+		{
+			name: "line comment on sequence value",
+			input: `ports: # Middle line comment
+- containerPort: 4318
+startupProbe:
+  httpGet:
+    path: /health
+    port: 4318
+`,
+		},
+		{
+			name: "head comment",
+			input: `# Head comment
+field: value
+`,
+		},
+		{
+			name: "mixed comments",
+			input: `# Head comment on replicas
+replicas: 3 # Line comment on replicas
+paused: false
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc, err := ParseYAML([]byte(tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+
+			doc.ExtractCommentsToKeys()
+			extracted := doc.String()
+			t.Logf("After ExtractCommentsToKeys:\n%s", extracted)
+
+			doc2, err := ParseYAML([]byte(extracted))
+			if err != nil {
+				t.Fatalf("Failed to re-parse: %v", err)
+			}
+			doc2.InjectCommentsFromKeys()
+			result := doc2.String()
+			t.Logf("After InjectCommentsFromKeys:\n%s", result)
+
+			if result != tt.input {
+				t.Errorf("Round-trip failed:\n  want: %q\n  got:  %q", tt.input, result)
+			}
+		})
+	}
+}
+
+func TestMultiDocCommentPreservation(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "comment above leading separator",
+			input: "# file header\n---\nfoo: bar\n",
+		},
+		{
+			name:  "leading separator no comment",
+			input: "---\nfoo: bar\n",
+		},
+		{
+			name:  "no separator",
+			input: "foo: bar\n",
+		},
+		{
+			name:  "separator between docs",
+			input: "foo: bar\n---\nbaz: qux\n",
+		},
+		{
+			name:  "comment above and below separator",
+			input: "# Before separator\n---\n# After separator\nfield: value\n",
+		},
+		{
+			name:  "doc header survives extract/inject cycle",
+			input: "# Document header\n---\n# Regular head comment\napiVersion: apps/v1\nkind: Deployment\n",
+		},
+		{
+			name:  "doc header with multiple docs",
+			input: "# Header\n---\nfoo: bar\n---\nbaz: qux\n",
+		},
+	}
+
+	// Also test that doc headers survive an ExtractCommentsToKeys/InjectCommentsFromKeys cycle
+	// (simulating NativeToYAML then YAMLToNative for YAML-native kits).
+	extractInjectTests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "doc header preserved through extract/inject",
+			input: "# Document header\n---\n# Regular comment\napiVersion: apps/v1\nkind: Deployment\n",
+		},
+		{
+			name:  "doc header with line comment through extract/inject",
+			input: "# Header\n---\nreplicas: 3 # inline\npaused: false\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			docs, err := ParseAll([]byte(tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+			output := string(docs.Bytes())
+			if output != tt.input {
+				t.Errorf("Round-trip failed:\n  want: %q\n  got:  %q", tt.input, output)
+			}
+
+			docs2, err := ParseAll([]byte(output))
+			if err != nil {
+				t.Fatalf("Failed to re-parse: %v", err)
+			}
+			output2 := string(docs2.Bytes())
+			if output2 != output {
+				t.Errorf("Not stable:\n  first:  %q\n  second: %q", output, output2)
+			}
+		})
+	}
+
+	for _, tt := range extractInjectTests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse, extract comments to keys, inject back, check round-trip
+			docs, err := ParseAll([]byte(tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+			for _, doc := range docs {
+				doc.ExtractCommentsToKeys()
+			}
+			intermediate := string(docs.Bytes())
+			t.Logf("After extract:\n%s", intermediate)
+
+			docs2, err := ParseAll([]byte(intermediate))
+			if err != nil {
+				t.Fatalf("Failed to re-parse: %v", err)
+			}
+			for _, doc := range docs2 {
+				doc.InjectCommentsFromKeys()
+			}
+			output := string(docs2.Bytes())
+			t.Logf("After inject:\n%s", output)
+
+			if output != tt.input {
+				t.Errorf("Round-trip failed:\n  want: %q\n  got:  %q", tt.input, output)
+			}
+		})
+	}
+}

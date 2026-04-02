@@ -1,0 +1,38 @@
+SUCCESS    true    
+CONFIGDATA
+---------
+[app]
+features.0 = authentication
+features.1 = logging
+name       = MyApplication
+version    = 1.0.0
+
+[configHub]
+configName   = MyApplicationConfig
+configSchema = SimpleApp
+
+[database]
+# One comment
+host = localhost
+port = 5432 # Two comment
+
+# Three comment
+[database.ssl]
+enabled = true
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "database.port",
+    "AttributeName": "none",
+    "DataType": "int",
+    "Value": 5432,
+    "Comment": "Two comment",
+    "Index": 0,
+    "FunctionName": "get-int-path"
+  }
+]

@@ -5,6 +5,7 @@ package generic
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -14,7 +15,7 @@ import (
 )
 
 func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("reset", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("reset", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "reset",
 			Parameters: []api.FunctionParameter{
@@ -37,7 +38,9 @@ func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConver
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnReset(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

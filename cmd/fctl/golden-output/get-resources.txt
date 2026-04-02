@@ -1,4 +1,45 @@
 SUCCESS    true    
+CONFIGDATA
+---------
+# Document header comment
+---
+# Regular head comment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mydep
+  annotations:
+    confighub.com/key: something
+  name: mydep
+  namespace: example
+  # Foot comment
+spec:
+  replicas: 3 # Line comment on replicas
+  paused: false
+  selector:
+    matchLabels:
+      app: mydep
+  strategy: {}
+  # Line head comment
+  template:
+    metadata:
+      labels:
+        app: mydep
+    spec:
+      dnsPolicy: ClusterFirst
+      containers:
+      # Array comment
+      - image: nginx:latest
+        name: nginx
+        ports:
+        - containerPort: 8080
+        resources: {}
+      # Internal array comment
+      - image: otel/opentelemetry-collector:latest-amd64
+        name: otel-sidecar
+        ports: # Middle line comment
+        - containerPort: 4318
 OUTPUT
 ------
 [
@@ -7,6 +48,6 @@ OUTPUT
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "ResourceBody": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mydep\n  annotations:\n    confighub.com/key: something\n  name: mydep\n  namespace: example\nspec:\n  replicas: 3 # Line comment on replicas\n  paused: false\n  selector:\n    matchLabels:\n      app: mydep\n  strategy: {}\n  template:\n    metadata:\n      labels:\n        app: mydep\n    spec:\n      dnsPolicy: ClusterFirst\n      containers:\n      - image: nginx:latest\n        name: nginx\n        ports:\n        - containerPort: 8080\n        resources: {}\n      - image: otel/opentelemetry-collector:latest-amd64\n        name: otel-sidecar\n        ports:\n        - containerPort: 4318\n"
+    "ResourceBody": "$comment$head$: '# Document header comment'\n$comment$head$apiVersion: Regular head comment\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  labels:\n    app: mydep\n  annotations:\n    confighub.com/key: something\n  name: mydep\n  namespace: example\n  # Foot comment\nspec:\n  $comment$line$replicas: Line comment on replicas\n  replicas: 3\n  paused: false\n  selector:\n    matchLabels:\n      app: mydep\n  strategy: {}\n  $comment$head$template: Line head comment\n  template:\n    metadata:\n      labels:\n        app: mydep\n    spec:\n      dnsPolicy: ClusterFirst\n      containers:\n      # Array comment\n      - image: nginx:latest\n        name: nginx\n        ports:\n        - containerPort: 8080\n        resources: {}\n      # Internal array comment\n      - image: otel/opentelemetry-collector:latest-amd64\n        name: otel-sidecar\n        $comment$line$ports: Middle line comment\n        ports:\n        - containerPort: 4318\n"
   }
 ]

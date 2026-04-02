@@ -1,0 +1,19 @@
+---
+configHub:
+  configName: MyApplicationConfig
+  configSchema: SimpleApp
+---
+# MyApplication Configuration
+# Version: 1.0.0
+
+This is a plain text configuration document.
+It can contain any text content, including markdown.
+
+## Features
+- authentication
+- logging
+
+## Database
+host: localhost
+port: 5432
+ssl_enabled: true

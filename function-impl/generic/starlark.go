@@ -6,6 +6,7 @@ package generic
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -244,7 +245,7 @@ func starlarkToGo(v starlark.Value) (any, error) {
 
 // registerSetStarlark registers the set-starlark mutating function.
 func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-starlark", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-starlark", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-starlark",
 			Parameters: []api.FunctionParameter{
@@ -272,7 +273,9 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -343,7 +346,7 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 
 // registerVetStarlark registers the vet-starlark validation function.
 func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-starlark", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-starlark", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-starlark",
 			Parameters: []api.FunctionParameter{
@@ -385,7 +388,9 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -517,7 +522,7 @@ func parseValidationResult(result starlark.Value) (api.ValidationResult, error) 
 
 // registerGetStarlark registers the get-starlark extraction function.
 func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-starlark", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-starlark", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-starlark",
 			Parameters: []api.FunctionParameter{
@@ -562,7 +567,9 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnGetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

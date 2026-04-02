@@ -4,6 +4,8 @@
 package generic
 
 import (
+	"log/slog"
+
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -13,7 +15,7 @@ import (
 
 // TODO: Deprecated in favor of vet-approvedby. Remove this.
 func registerIsApproved(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("is-approved", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("is-approved", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "is-approved",
 			Parameters: []api.FunctionParameter{
@@ -42,11 +44,13 @@ func registerIsApproved(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetApprovedBy(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func registerVetApprovedBy(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-approvedby", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-approvedby", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-approvedby",
 			Parameters: []api.FunctionParameter{
@@ -74,16 +78,20 @@ func registerVetApprovedBy(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnVetApprovedBy(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnVetApprovedBy(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	numApprovers := args[0].Value.(int)
 
-	// If the data has changed, previous approvers will be cleared.
-	if api.ConfigDataHasChanged(functionContext, parsedData.Bytes()) {
-		return parsedData, api.ValidationResultFalse, nil
-	}
+	// If the data has changed, previous approvers should be cleared.
+	// TODO: This doesn't work due to conversion. Also, there are cases where
+	// changes by needs/provides should be allowed.
+	// if api.ConfigDataHasChanged(functionContext, parsedData.Bytes()) {
+	// 	return parsedData, api.ValidationResultFalse, nil
+	// }
 
 	if len(functionContext.ApprovedBy) >= numApprovers {
 		return parsedData, api.ValidationResultTrue, nil

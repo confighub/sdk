@@ -6,6 +6,7 @@ package api
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -56,10 +57,19 @@ type MutationMapEntry struct {
 	MutationInfo *MutationInfo
 }
 
-// SortedMutationMapEntries returns the entries of a MutationMap sorted lexicographically
-// by path. Since dots within path segments are escaped (as ~1), the dot separator always
-// denotes segment boundaries, so lexicographic order naturally places parent paths before
-// children (e.g., "spec" < "spec.template" < "spec.template.spec").
+func HasMutations(mutations ResourceMutationList) bool {
+	for i := range mutations {
+		if mutations[i].ResourceMutationInfo.MutationType != MutationTypeNone {
+			return true
+		}
+	}
+	return false
+}
+
+// SortedMutationMapEntries returns the entries of a MutationMap sorted by path.
+// Paths are split into segments on "." (dots within segments are escaped as ~1).
+// Numeric segments are compared numerically so that array indices sort correctly
+// (e.g., "env.2" < "env.10"). Parent paths sort before children.
 func SortedMutationMapEntries(m MutationMap) []MutationMapEntry {
 	entries := make([]MutationMapEntry, 0, len(m))
 	for path, info := range m {
@@ -67,9 +77,49 @@ func SortedMutationMapEntries(m MutationMap) []MutationMapEntry {
 		entries = append(entries, MutationMapEntry{Path: path, MutationInfo: &infoCopy})
 	}
 	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].Path < entries[j].Path
+		return comparePathsNumerically(string(entries[i].Path), string(entries[j].Path)) < 0
 	})
 	return entries
+}
+
+// comparePathsNumerically compares two dot-separated paths segment by segment.
+// Numeric segments are compared as integers; non-numeric segments are compared
+// lexicographically. Shorter paths sort before longer paths when all leading
+// segments are equal (parent before child).
+func comparePathsNumerically(a, b string) int {
+	segsA := strings.Split(a, ".")
+	segsB := strings.Split(b, ".")
+	n := len(segsA)
+	if len(segsB) < n {
+		n = len(segsB)
+	}
+	for k := 0; k < n; k++ {
+		sa, sb := segsA[k], segsB[k]
+		na, errA := strconv.Atoi(sa)
+		nb, errB := strconv.Atoi(sb)
+		if errA == nil && errB == nil {
+			if na != nb {
+				if na < nb {
+					return -1
+				}
+				return 1
+			}
+			continue
+		}
+		if sa != sb {
+			if sa < sb {
+				return -1
+			}
+			return 1
+		}
+	}
+	if len(segsA) < len(segsB) {
+		return -1
+	}
+	if len(segsA) > len(segsB) {
+		return 1
+	}
+	return 0
 }
 
 // PathPrefixIndex provides efficient lookup of child paths (paths that start with a

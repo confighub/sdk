@@ -14,7 +14,7 @@ import (
 )
 
 func registerGetPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-path",
 			Parameters: []api.FunctionParameter{
@@ -47,7 +47,9 @@ func registerGetPath(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			}
 			return GenericFnGetPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnGetPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
@@ -60,7 +62,7 @@ func GenericFnGetPath(resourceProvider yamlkit.ResourceProvider, _ *api.Function
 }
 
 func registerGetStringPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-string-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-string-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-string-path",
 			Parameters: []api.FunctionParameter{
@@ -95,7 +97,9 @@ func registerGetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnGetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -109,7 +113,7 @@ func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.Fu
 }
 
 func registerSetStringPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-string-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-string-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-string-path",
 			Parameters: []api.FunctionParameter{
@@ -144,7 +148,9 @@ func registerSetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnSetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
@@ -159,7 +165,7 @@ func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.Fu
 }
 
 func registerGetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-int-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-int-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-int-path",
 			Parameters: []api.FunctionParameter{
@@ -194,7 +200,9 @@ func registerGetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnGetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -208,7 +216,7 @@ func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.Funct
 }
 
 func registerSetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-int-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-int-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-int-path",
 			Parameters: []api.FunctionParameter{
@@ -243,7 +251,9 @@ func registerSetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnSetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
@@ -258,7 +268,7 @@ func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.Funct
 }
 
 func registerGetBoolPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-bool-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-bool-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-bool-path",
 			Parameters: []api.FunctionParameter{
@@ -293,7 +303,9 @@ func registerGetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnGetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -307,7 +319,7 @@ func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.Func
 }
 
 func registerSetBoolPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-bool-path", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-bool-path", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-bool-path",
 			Parameters: []api.FunctionParameter{
@@ -342,7 +354,9 @@ func registerSetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnSetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
@@ -357,7 +371,7 @@ func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.Func
 }
 
 func registerSetPathComment(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-path-comment", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-path-comment", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-path-comment",
 			Parameters: []api.FunctionParameter{
@@ -392,7 +406,9 @@ func registerSetPathComment(fh handler.FunctionRegistry, converter configkit.Con
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSetPathComment(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
@@ -402,9 +418,10 @@ func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.F
 	comment := args[2].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	visitor := func(doc *gaby.YamlDoc, output any, _ yamlkit.VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		currentDoc.SetComment(comment)
-		return output, nil
+	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
+		// Set the comment as a $comment$line$ sibling key in the parent map
+		err := doc.SetCommentKey(string(context.Path), "line", comment)
+		return output, err
 	}
 	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, nil, resourceProvider, visitor, false, nil)
 	return parsedData, nil, err
@@ -461,12 +478,14 @@ func RegisterPathSetterAndGetter(
 			AttributeName:         attributeName,
 			AffectedResourceTypes: resourceTypes,
 		}
-		fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
+		if err := fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
 			FunctionSignature: *getterSignature,
 			Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 				return genericFnGetVisitorAnyType(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
 			},
-		})
+		}); err != nil {
+			slog.Error("failed to register function", "error", err)
+		}
 
 		// Setter: takes only path parameters, uses UpdatePathsSetterArgument
 		if addSetter {
@@ -486,12 +505,14 @@ func RegisterPathSetterAndGetter(
 				AttributeName:         attributeName,
 				AffectedResourceTypes: resourceTypes,
 			}
-			fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
+			if err := fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
 				FunctionSignature: *setterSignature,
 				Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 					return genericFnSetVisitorDefaults(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
 				},
-			})
+			}); err != nil {
+				slog.Error("failed to register function", "error", err)
+			}
 		}
 
 		// Vet function: takes only path parameters, validates defaults
@@ -517,12 +538,14 @@ func RegisterPathSetterAndGetter(
 			AttributeName:         attributeName,
 			AffectedResourceTypes: resourceTypes,
 		}
-		fh.RegisterFunction("vet-"+name, &handler.FunctionRegistration{
+		if err := fh.RegisterFunction("vet-"+name, &handler.FunctionRegistration{
 			FunctionSignature: *vetSignature,
 			Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 				return genericFnVetVisitorDefaults(vetSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
 			},
-		})
+		}); err != nil {
+			slog.Error("failed to register function", "error", err)
+		}
 		return
 	}
 
@@ -607,15 +630,19 @@ func RegisterPathSetterAndGetter(
 		return
 	}
 	if addSetter {
-		fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
+		if err := fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
 			FunctionSignature: *setterSignature,
 			Function:          setterFunction,
-		})
+		}); err != nil {
+			slog.Error("failed to register function", "error", err)
+		}
 	}
-	fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
 		FunctionSignature: *getterSignature,
 		Function:          getterFunction,
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {

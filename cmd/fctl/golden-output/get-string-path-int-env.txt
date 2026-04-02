@@ -1,0 +1,18 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "MyApplicationConfig",
+    "ResourceNameWithoutScope": "MyApplicationConfig",
+    "ResourceType": "SimpleApp",
+    "ResourceCategory": "AppConfig",
+    "Path": "DATABASE_PORT",
+    "AttributeName": "none",
+    "DataType": "string",
+    "Value": "5432",
+    "Comment": "Two comment",
+    "Index": 0,
+    "FunctionName": "get-string-path"
+  }
+]

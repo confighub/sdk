@@ -21,7 +21,7 @@ const (
 	andOperator = "AND"
 
 	parameterNameRegexpString  = "(?:[A-Za-z][A-Za-z0-9_\\-]{0,127})"
-	pathMapSegmentRegexpString = "(?:[A-Za-z](?:[A-Za-z0-9/_\\-]|(?:\\~[12])){0,127})"
+	pathMapSegmentRegexpString = "(?:[A-Za-z$](?:[A-Za-z0-9/_\\-$]|(?:\\~[12])){0,127})"
 
 	pathMapSegmentBoundtoParameterRegexpString = "(?:@" + pathMapSegmentRegexpString + "\\:" + parameterNameRegexpString + ")"
 	pathIndexSegmentRegexpString               = "(?:[0-9][0-9]{0,9})"

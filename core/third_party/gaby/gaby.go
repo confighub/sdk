@@ -135,6 +135,55 @@ func (c *YamlDoc) Data() interface{} {
 	return v
 }
 
+// DataOrdered returns the underlying data using *orderedmap.OrderedMap[string, interface{}]
+// for mapping nodes, preserving the key order from the YAML source.
+func (c *YamlDoc) DataOrdered() interface{} {
+	if c == nil {
+		return nil
+	}
+	ynode := c.node.YNode()
+	if ynode.Kind == yaml.DocumentNode && len(ynode.Content) > 0 {
+		return nodeToDataOrdered(ynode.Content[0])
+	}
+	return nodeToDataOrdered(ynode)
+}
+
+func nodeToDataOrdered(node *yaml.Node) interface{} {
+	if node == nil {
+		return nil
+	}
+	switch node.Kind {
+	case yaml.MappingNode:
+		m := orderedmap.New[string, interface{}]()
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			key := node.Content[i].Value
+			val := nodeToDataOrdered(node.Content[i+1])
+			m.Set(key, val)
+		}
+		return m
+	case yaml.SequenceNode:
+		result := make([]interface{}, len(node.Content))
+		for i, child := range node.Content {
+			result[i] = nodeToDataOrdered(child)
+		}
+		return result
+	case yaml.ScalarNode:
+		// Decode the scalar to its Go type
+		var v interface{}
+		if err := node.Decode(&v); err != nil {
+			return node.Value
+		}
+		return v
+	case yaml.DocumentNode:
+		if len(node.Content) > 0 {
+			return nodeToDataOrdered(node.Content[0])
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
 // YNode returns yaml's Node to prevent the decoding process.
 func (c *YamlDoc) YNode() *yaml.Node {
 	if c == nil {
@@ -394,6 +443,17 @@ func (c *YamlDoc) ChildrenMap() map[string]*YamlDoc {
 // Set attempts to set the value of a field located by a hierarchy of field
 // names.
 func (c *YamlDoc) Set(value interface{}, hierarchy ...string) (*YamlDoc, error) {
+	return c.setImpl(value, false, hierarchy...)
+}
+
+// SetExpand is like Set but expands arrays on demand when an index is at or
+// beyond the current length. Missing elements up to the target index are
+// filled with null nodes.
+func (c *YamlDoc) SetExpand(value interface{}, hierarchy ...string) (*YamlDoc, error) {
+	return c.setImpl(value, true, hierarchy...)
+}
+
+func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...string) (*YamlDoc, error) {
 	if c == nil {
 		return nil, ErrInvalidInputObj
 	}
@@ -471,14 +531,47 @@ func (c *YamlDoc) Set(value interface{}, hierarchy ...string) (*YamlDoc, error) 
 				if err != nil {
 					return nil, err
 				}
-				if index < 0 || index >= len(elements) {
+				if index < 0 {
 					return nil, ErrOutOfBounds
 				}
-				node = elements[index]
-				if target == len(hierarchy)-1 {
-					err := setValue(node.YNode(), value)
+				if index >= len(elements) {
+					if !expandArrays {
+						return nil, ErrOutOfBounds
+					}
+					// Expand the array with null nodes up to and including the target index.
+					for i := len(elements); i <= index; i++ {
+						newNode := &yaml.Node{}
+						if i == index && target == len(hierarchy)-1 {
+							err := setValue(newNode, value)
+							if err != nil {
+								return nil, err
+							}
+						} else if i == index {
+							newNode.Kind = yaml.MappingNode
+						} else {
+							newNode.Tag = yaml.NodeTagNull
+						}
+						err := node.PipeE(yaml.Append(newNode))
+						if err != nil {
+							return nil, err
+						}
+					}
+					elements, err = node.Elements()
 					if err != nil {
 						return nil, err
+					}
+					node = elements[index]
+					if target == len(hierarchy)-1 {
+						// Value was already set during expansion
+						break
+					}
+				} else {
+					node = elements[index]
+					if target == len(hierarchy)-1 {
+						err := setValue(node.YNode(), value)
+						if err != nil {
+							return nil, err
+						}
 					}
 				}
 			}
@@ -503,6 +596,10 @@ func setValue(node *yaml.Node, value interface{}) error {
 		node.Kind = yaml.ScalarNode
 		node.Value = strconv.FormatBool(v)
 		node.Tag = yaml.NodeTagBool
+	case int64:
+		node.Kind = yaml.ScalarNode
+		node.Value = strconv.FormatInt(v, 10)
+		node.Tag = yaml.NodeTagInt
 	case float64:
 		node.Kind = yaml.ScalarNode
 		node.Value = fmt.Sprintf("%v", v)
@@ -568,6 +665,16 @@ func (c *YamlDoc) SetP(value interface{}, path string) (*YamlDoc, error) {
 // SetDocP sets the value of a field to a YamlDoc at a path using dot notation.
 func (c *YamlDoc) SetDocP(doc *YamlDoc, path string) (*YamlDoc, error) {
 	return c.Set(doc.node.YNode(), DotPathToSlice(path)...)
+}
+
+// SetExpandP is like SetP but expands arrays on demand.
+func (c *YamlDoc) SetExpandP(value interface{}, path string) (*YamlDoc, error) {
+	return c.SetExpand(value, DotPathToSlice(path)...)
+}
+
+// SetDocExpandP is like SetDocP but expands arrays on demand.
+func (c *YamlDoc) SetDocExpandP(doc *YamlDoc, path string) (*YamlDoc, error) {
+	return c.SetExpand(doc.node.YNode(), DotPathToSlice(path)...)
 }
 
 // SetIndex attempts to set a value of an array element based on an index.
@@ -745,6 +852,373 @@ func (c *YamlDoc) SetComment(comment string) {
 	// when parsing.
 	// So just set the LineComment, which DTRT.
 	ynode.LineComment = comment
+}
+
+// commentKeyPrefix is the prefix for $comment$ map keys used to store comments
+// as structured data. This constant must match yamlkit.CommentKeyPrefix.
+const commentKeyPrefix = "$comment$"
+
+// IsCommentKey returns true if the key starts with the $comment$ prefix
+// and contains a valid comment type (head, line, or foot) followed by "$".
+// Matches keys like "$comment$head$foo" and "$comment$line$" (empty target).
+func IsCommentKey(key string) bool {
+	if !strings.HasPrefix(key, commentKeyPrefix) {
+		return false
+	}
+	rest := key[len(commentKeyPrefix):]
+	return strings.HasPrefix(rest, "head$") || strings.HasPrefix(rest, "line$") || strings.HasPrefix(rest, "foot$")
+}
+
+// StripCommentKeys returns a deep copy of this document with all $comment$ keys
+// removed from mapping nodes. Useful before JSON schema validation or other
+// operations that don't understand comment keys.
+func (c *YamlDoc) StripCommentKeys() *YamlDoc {
+	if c == nil || c.node == nil {
+		return c
+	}
+	// Deep copy via round-trip through bytes
+	data := c.Bytes()
+	copy, err := ParseYAML(data)
+	if err != nil {
+		return c
+	}
+	stripCommentKeysFromNode(copy.node.YNode())
+	return copy
+}
+
+func stripCommentKeysFromNode(node *yaml.Node) {
+	if node == nil {
+		return
+	}
+	switch node.Kind {
+	case yaml.DocumentNode:
+		for _, child := range node.Content {
+			stripCommentKeysFromNode(child)
+		}
+	case yaml.MappingNode:
+		// Remove $comment$ key-value pairs and recurse into remaining values
+		var filtered []*yaml.Node
+		for i := 0; i < len(node.Content)-1; i += 2 {
+			keyNode := node.Content[i]
+			valueNode := node.Content[i+1]
+			if keyNode.Kind == yaml.ScalarNode && IsCommentKey(keyNode.Value) {
+				continue
+			}
+			filtered = append(filtered, keyNode, valueNode)
+			stripCommentKeysFromNode(valueNode)
+		}
+		node.Content = filtered
+	case yaml.SequenceNode:
+		for _, child := range node.Content {
+			stripCommentKeysFromNode(child)
+		}
+	}
+}
+
+// BytesWithoutCommentKeys returns the YAML bytes of this document with all
+// $comment$ keys removed.
+func (c *YamlDoc) BytesWithoutCommentKeys() []byte {
+	return c.StripCommentKeys().Bytes()
+}
+
+// MarshalJSONWithoutCommentKeys returns the JSON encoding of this document
+// with all $comment$ keys removed.
+func (c *YamlDoc) MarshalJSONWithoutCommentKeys() ([]byte, error) {
+	return c.StripCommentKeys().MarshalJSON()
+}
+
+// GetCommentKeys returns all $comment$ keys and their values from the parent
+// map of the specified path. The path identifies a data key; this method
+// returns any $comment$head$KEY, $comment$line$KEY, $comment$foot$KEY siblings.
+func (c *YamlDoc) GetCommentKeys(path string) (head, line, foot string) {
+	segments := DotPathToSlice(path)
+	if len(segments) == 0 {
+		return
+	}
+	lastSeg := segments[len(segments)-1]
+
+	// Find the parent node
+	var parentNode *YamlDoc
+	if len(segments) == 1 {
+		parentNode = c
+	} else {
+		parentNode = c.Search(segments[:len(segments)-1]...)
+	}
+	if parentNode == nil || parentNode.node == nil || parentNode.node.YNode().Kind != yaml.MappingNode {
+		return
+	}
+
+	content := parentNode.node.YNode().Content
+	for i := 0; i < len(content)-1; i += 2 {
+		keyNode := content[i]
+		if keyNode.Kind != yaml.ScalarNode {
+			continue
+		}
+		switch keyNode.Value {
+		case commentKeyPrefix + "head$" + lastSeg:
+			head = content[i+1].Value
+		case commentKeyPrefix + "line$" + lastSeg:
+			line = content[i+1].Value
+		case commentKeyPrefix + "foot$" + lastSeg:
+			foot = content[i+1].Value
+		}
+	}
+	return
+}
+
+// SetCommentKey sets a $comment$ sibling key for the specified data path.
+// commentType should be "head", "line", or "foot".
+func (c *YamlDoc) SetCommentKey(path string, commentType string, text string) error {
+	segments := DotPathToSlice(path)
+	if len(segments) == 0 {
+		return ErrInvalidPath
+	}
+	lastSeg := segments[len(segments)-1]
+	commentKey := commentKeyPrefix + commentType + "$" + lastSeg
+
+	// Build the path to the comment key in the parent
+	parentSegments := segments[:len(segments)-1]
+	commentPath := append(parentSegments, commentKey)
+	_, err := c.Set(text, commentPath...)
+	return err
+}
+
+// DeleteCommentKeysForPath removes all $comment$ sibling keys associated with
+// the specified data path.
+func (c *YamlDoc) DeleteCommentKeysForPath(path string) error {
+	segments := DotPathToSlice(path)
+	if len(segments) == 0 {
+		return nil
+	}
+	lastSeg := segments[len(segments)-1]
+	parentSegments := segments[:len(segments)-1]
+
+	for _, ct := range []string{"head", "line", "foot"} {
+		commentKey := commentKeyPrefix + ct + "$" + lastSeg
+		commentPath := append(parentSegments, commentKey)
+		_ = c.Delete(commentPath...) // Ignore errors if key doesn't exist
+	}
+	return nil
+}
+
+// ExtractCommentsToKeys walks the YAML document tree and converts native
+// HeadComment/LineComment/FootComment on nodes into $comment$ sibling keys
+// in the parent mapping. Clears the original node comments.
+func (c *YamlDoc) ExtractCommentsToKeys() error {
+	if c == nil || c.node == nil {
+		return nil
+	}
+	node := c.node.YNode()
+	if node.Kind == yaml.DocumentNode && len(node.Content) > 0 {
+		return extractCommentsFromMapping(node.Content[0])
+	}
+	return extractCommentsFromMapping(node)
+}
+
+func extractCommentsFromMapping(node *yaml.Node) error {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	// Collect comments to add as keys
+	var entries []commentEntry
+
+	for i := 0; i < len(node.Content)-1; i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+
+		if keyNode.Kind != yaml.ScalarNode {
+			continue
+		}
+		// Skip existing comment keys
+		if IsCommentKey(keyNode.Value) {
+			continue
+		}
+
+		key := keyNode.Value
+
+		// Extract comments from the key node (HeadComment is attached to the key)
+		if keyNode.HeadComment != "" {
+			entries = append(entries, commentEntry{
+				commentKey: commentKeyPrefix + "head$" + key,
+				text:       strings.TrimPrefix(strings.TrimPrefix(keyNode.HeadComment, "# "), "#"),
+			})
+			keyNode.HeadComment = ""
+		}
+		if keyNode.LineComment != "" {
+			entries = append(entries, commentEntry{
+				commentKey: commentKeyPrefix + "line$" + key,
+				text:       strings.TrimPrefix(strings.TrimPrefix(keyNode.LineComment, "# "), "#"),
+			})
+			keyNode.LineComment = ""
+		}
+
+		// Also check the value node for comments
+		if valueNode.LineComment != "" {
+			// Value-level line comments are more common (e.g., "key: value # comment")
+			if !hasCommentEntry(entries, commentKeyPrefix+"line$"+key) {
+				entries = append(entries, commentEntry{
+					commentKey: commentKeyPrefix + "line$" + key,
+					text:       strings.TrimPrefix(strings.TrimPrefix(valueNode.LineComment, "# "), "#"),
+				})
+			}
+			valueNode.LineComment = ""
+		}
+		if valueNode.FootComment != "" {
+			entries = append(entries, commentEntry{
+				commentKey: commentKeyPrefix + "foot$" + key,
+				text:       strings.TrimPrefix(strings.TrimPrefix(valueNode.FootComment, "# "), "#"),
+			})
+			valueNode.FootComment = ""
+		}
+
+		// Recurse into child mappings and sequence elements
+		if valueNode.Kind == yaml.MappingNode {
+			extractCommentsFromMapping(valueNode)
+		} else if valueNode.Kind == yaml.SequenceNode {
+			for _, elem := range valueNode.Content {
+				if elem.Kind == yaml.MappingNode {
+					extractCommentsFromMapping(elem)
+				}
+			}
+		}
+	}
+
+	// Insert comment key-value pairs into the mapping
+	for _, entry := range entries {
+		newContent := make([]*yaml.Node, 0, len(node.Content)+2)
+		inserted := false
+		// Insert each comment key just before its target data key
+		targetKey := strings.TrimPrefix(entry.commentKey, commentKeyPrefix)
+		targetKey = targetKey[strings.Index(targetKey, "$")+1:]
+		for i := 0; i < len(node.Content)-1; i += 2 {
+			kn := node.Content[i]
+			if !inserted && kn.Kind == yaml.ScalarNode && kn.Value == targetKey {
+				newContent = append(newContent,
+					&yaml.Node{Kind: yaml.ScalarNode, Value: entry.commentKey, Tag: "!!str"},
+					&yaml.Node{Kind: yaml.ScalarNode, Value: entry.text, Tag: "!!str"},
+				)
+				inserted = true
+			}
+			newContent = append(newContent, node.Content[i], node.Content[i+1])
+		}
+		if !inserted {
+			// Append at end if target not found
+			newContent = append(newContent,
+				&yaml.Node{Kind: yaml.ScalarNode, Value: entry.commentKey, Tag: "!!str"},
+				&yaml.Node{Kind: yaml.ScalarNode, Value: entry.text, Tag: "!!str"},
+			)
+		}
+		node.Content = newContent
+	}
+
+	return nil
+}
+
+// commentEntry is used during ExtractCommentsToKeys to collect comment key-value pairs.
+type commentEntry struct {
+	commentKey string
+	text       string
+}
+
+func hasCommentEntry(entries []commentEntry, key string) bool {
+	for _, e := range entries {
+		if e.commentKey == key {
+			return true
+		}
+	}
+	return false
+}
+
+// InjectCommentsFromKeys walks the YAML document and converts $comment$ sibling keys
+// back into HeadComment/LineComment/FootComment on the corresponding data nodes.
+// Removes the $comment$ keys from the document.
+func (c *YamlDoc) InjectCommentsFromKeys() error {
+	if c == nil || c.node == nil {
+		return nil
+	}
+	node := c.node.YNode()
+	if node.Kind == yaml.DocumentNode && len(node.Content) > 0 {
+		return injectCommentsIntoMapping(node.Content[0])
+	}
+	return injectCommentsIntoMapping(node)
+}
+
+func injectCommentsIntoMapping(node *yaml.Node) error {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	// First, collect all comment keys and their targets
+	type commentInfo struct {
+		commentType string // "head", "line", or "foot"
+		targetKey   string
+		text        string
+	}
+	var commentInfos []commentInfo
+
+	for i := 0; i < len(node.Content)-1; i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+		if keyNode.Kind != yaml.ScalarNode {
+			continue
+		}
+		if IsCommentKey(keyNode.Value) {
+			rest := keyNode.Value[len(commentKeyPrefix):]
+			colonIdx := strings.Index(rest, "$")
+			if colonIdx >= 0 {
+				commentInfos = append(commentInfos, commentInfo{
+					commentType: rest[:colonIdx],
+					targetKey:   rest[colonIdx+1:],
+					text:        valueNode.Value,
+				})
+			}
+		}
+	}
+
+	// Apply comments to their target key nodes and remove comment keys
+	var filtered []*yaml.Node
+	for i := 0; i < len(node.Content)-1; i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+		if keyNode.Kind == yaml.ScalarNode && IsCommentKey(keyNode.Value) {
+			// Preserve the doc comment key ($comment$head$) — it's handled by Container.String()
+			if keyNode.Value == docCommentKey {
+				filtered = append(filtered, keyNode, valueNode)
+			}
+			continue // Skip other comment keys — they'll be applied to target nodes
+		}
+		// Apply any matching comments to this key
+		if keyNode.Kind == yaml.ScalarNode {
+			for _, ci := range commentInfos {
+				if ci.targetKey == keyNode.Value {
+					switch ci.commentType {
+					case "head":
+						keyNode.HeadComment = "# " + ci.text
+					case "line":
+						keyNode.LineComment = "# " + ci.text
+					case "foot":
+						valueNode.FootComment = "# " + ci.text
+					}
+				}
+			}
+		}
+		filtered = append(filtered, keyNode, valueNode)
+
+		// Recurse into child mappings and sequence elements
+		if valueNode.Kind == yaml.MappingNode {
+			injectCommentsIntoMapping(valueNode)
+		} else if valueNode.Kind == yaml.SequenceNode {
+			for _, elem := range valueNode.Content {
+				if elem.Kind == yaml.MappingNode {
+					injectCommentsIntoMapping(elem)
+				}
+			}
+		}
+	}
+	node.Content = filtered
+
+	return nil
 }
 
 // MergeFn merges two objects using a provided function to resolve collisions.
@@ -1368,6 +1842,16 @@ func ParseYAMLBuffer(buffer io.Reader) (*YamlDoc, error) {
 func New() *YamlDoc {
 	node := &yaml.Node{Kind: yaml.MappingNode}
 	return &YamlDoc{node: yaml.NewRNode(node)}
+}
+
+// NewFromData creates a YamlDoc from arbitrary Go data. Supports map[string]interface{},
+// *orderedmap.OrderedMap[string, interface{}], []interface{}, and scalar types.
+func NewFromData(data interface{}) (*YamlDoc, error) {
+	node := &yaml.Node{}
+	if err := setValue(node, data); err != nil {
+		return nil, err
+	}
+	return &YamlDoc{node: yaml.NewRNode(node)}, nil
 }
 
 // Wrap wraps an existing *yaml.RNode into a *YamlDoc.

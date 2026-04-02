@@ -5,6 +5,7 @@ package generic
 
 import (
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/confighub/sdk/core/configkit"
@@ -15,7 +16,7 @@ import (
 )
 
 func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-merge-keys", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-merge-keys", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-merge-keys",
 			OutputInfo: &api.FunctionOutput{
@@ -35,7 +36,9 @@ func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.Confi
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnVetMergeKeys(resourceProvider, fArgs.Options, fArgs.ParsedData)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // GenericFnVetMergeKeys checks for duplicate merge keys across all resources.

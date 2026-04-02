@@ -124,26 +124,12 @@ func (b *LiveDataBuilder) BuildLiveData(
 	log.Log.Info("✅ Fetched live objects",
 		"count", len(liveObjects))
 
-	// Step 5: Build inventory ConfigMap with current state
-	inventoryCM := NewInventoryConfigMapWithOptions(invInfo, InventoryOptions{
-		SpaceID:  b.spaceID,
-		UnitSlug: b.unitSlug,
-	})
-	if err := UpdateInventoryConfigMap(inventoryCM, managedRefs); err != nil {
-		return nil, nil, fmt.Errorf("failed to update inventory ConfigMap: %w", err)
-	}
-
-	// Step 6: Convert objects to YAML
+	// Step 5: Convert objects to YAML — inventory is stored in BridgeState, not LiveData
 	yamlResources, err := ssautil.ObjectsToYAML(liveObjects)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to convert objects to YAML: %w", err)
 	}
-
-	// Step 7: Combine into LiveData
-	liveData, err = CombineInventoryWithResources(inventoryCM, []byte(yamlResources))
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to combine inventory with resources: %w", err)
-	}
+	liveData = []byte(yamlResources)
 
 	// Step 8: Build ResourceSet from events
 	resourceSet = processor.buildResourceSet()

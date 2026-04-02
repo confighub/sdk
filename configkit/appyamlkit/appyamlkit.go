@@ -186,16 +186,35 @@ func (*AppConfigYAMLResourceProviderType) ResourceTypesAreSimilar(resourceTypeA,
 	return resourceTypeA == resourceTypeB
 }
 
-// The conversions are no-ops since AppConfig/YAML is already YAML.
-
+// NativeToYAML converts native YAML comments (HeadComment, LineComment, FootComment)
+// into $comment$ map keys so they have a uniform representation across all formats.
 func (*AppConfigYAMLResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
-	// TODO: deep copy?
-	return data, nil
+	if len(data) == 0 {
+		return data, nil
+	}
+	docs, err := gaby.ParseAll(data)
+	if err != nil {
+		return data, nil // If parse fails, return as-is
+	}
+	for _, doc := range docs {
+		doc.ExtractCommentsToKeys()
+	}
+	return docs.Bytes(), nil
 }
 
+// YAMLToNative converts $comment$ map keys back into native YAML comments.
 func (*AppConfigYAMLResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	// TODO: deep copy?
-	return yamlData, nil
+	if len(yamlData) == 0 {
+		return yamlData, nil
+	}
+	docs, err := gaby.ParseAll(yamlData)
+	if err != nil {
+		return yamlData, nil
+	}
+	for _, doc := range docs {
+		doc.InjectCommentsFromKeys()
+	}
+	return docs.Bytes(), nil
 }
 
 func (*AppConfigYAMLResourceProviderType) DataType() api.DataType {

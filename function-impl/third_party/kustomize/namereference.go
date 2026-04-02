@@ -263,8 +263,6 @@ const (
     kind: CronJob
   - path: spec/jobTemplate/spec/template/spec/imagePullSecrets/name
     kind: CronJob
-  - path: spec/tls/secretName
-    kind: Ingress
   - path: metadata/annotations/ingress.kubernetes.io\/auth-secret
     kind: Ingress
   - path: metadata/annotations/nginx.ingress.kubernetes.io\/auth-secret

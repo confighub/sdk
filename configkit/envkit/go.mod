@@ -3,8 +3,8 @@ module github.com/confighub/sdk/configkit/envkit
 go 1.25.0
 
 require (
-	github.com/confighub/sdk/core v0.1.24
-	gopkg.in/yaml.v3 v3.0.1
+	github.com/confighub/sdk/core v0.0.0
+	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
 
 require (
@@ -32,13 +32,14 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/swaggest/jsonschema-go v0.3.78 // indirect
 	github.com/swaggest/refl v1.4.0 // indirect
-	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

@@ -5,6 +5,7 @@ package generic
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit"
@@ -56,7 +57,7 @@ func CelParseParams(args []api.FunctionArgument, startIndex int) (map[string]any
 
 
 func registerVetCELExpr(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-celexpr", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-celexpr", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-celexpr",
 			Parameters: []api.FunctionParameter{
@@ -86,12 +87,14 @@ func registerVetCELExpr(fh handler.FunctionRegistry, converter configkit.ConfigC
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnCELValidate(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // TODO: Deprecated in favor of vet-celexpr. Remove this.
 func registerCELValidate(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("cel-validate", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("cel-validate", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "cel-validate",
 			Parameters: []api.FunctionParameter{
@@ -121,7 +124,9 @@ func registerCELValidate(fh handler.FunctionRegistry, converter configkit.Config
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnCELValidate(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // CELVarOpts returns the standard CEL variable options for r, object, and params.
@@ -144,7 +149,7 @@ func CELActivation(dataMap map[string]any, params map[string]any) map[string]any
 
 // registerVetCEL registers the vet-cel validation function that returns ValidationResult.
 func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("vet-cel", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("vet-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "vet-cel",
 			Parameters: []api.FunctionParameter{
@@ -180,7 +185,9 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnVetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // GenericFnVetCEL implements vet-cel validation. Extra CEL env options can be passed
@@ -319,7 +326,7 @@ func celMapToAttributeValue(m map[string]any) api.AttributeValue {
 
 // registerGetCEL registers the get-cel extraction function.
 func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("get-cel", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("get-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "get-cel",
 			Parameters: []api.FunctionParameter{
@@ -354,7 +361,9 @@ func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnGetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // GenericFnGetCEL implements get-cel extraction. Extra CEL env options can be passed
@@ -472,7 +481,7 @@ func parseCELAttributeValueList(val ref.Val) (api.AttributeValueList, error) {
 
 // registerSetCEL registers the set-cel mutating function.
 func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("set-cel", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-cel", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-cel",
 			Parameters: []api.FunctionParameter{
@@ -501,7 +510,9 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 // GenericFnSetCEL implements set-cel mutation. The CEL expression returns a

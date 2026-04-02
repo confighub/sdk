@@ -47,7 +47,7 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" vet-images '{"AllowStrings":
 ${FCTL} do test-data/deployment.yaml "MyDeployment" vet-images '{"DenyStrings":{"nginx:latest":true}}' > ${DIR}/vet-images-fail.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-uri nginx example.myreg.com/nginx > ${DIR}/set-image-uri.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-reference nginx ":v17.5.2" > ${DIR}/set-image-reference.txt
-${FCTL} do test-data/confighub.yaml "confighub" set-image-reference-by-uri ghcr.io/confighubai/confighub ":testbuild" > ${DIR}/set-image-reference-by-uri.txt
+${FCTL} do test-data/confighub.yaml "app" set-image-reference-by-uri ghcr.io/example/example ":testbuild" > ${DIR}/set-image-reference-by-uri.txt
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env-var nginx SUCCESS true > ${DIR}/set-env-var.txt
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" get-env-var nginx HOPE > ${DIR}/get-env-var.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-resources nginx all 500m 256Mi 2 > ${DIR}/set-container-resources.txt
@@ -79,6 +79,12 @@ ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "sp
 # Test the .|syntax for where-filter (split path feature)
 ${FCTL} do test-data/deployment.yaml MyApp where-filter "apps/v1/Deployment" "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true" > ${DIR}/where-filter-split-path.txt
 ${FCTL} do test-data/deployment.yaml MyApp vet-schemas > ${DIR}/vet-schemas.txt
+
+# Test vet-format linter
+${FCTL} do test-data/deployment.yaml MyApp vet-format > ${DIR}/vet-format-clean.txt
+${FCTL} do test-data/deployment-lint-problems.yaml MyApp vet-format > ${DIR}/vet-format-problems.txt
+${FCTL} do test-data/deployment-lint-anchors.yaml MyApp vet-format > ${DIR}/vet-format-anchors.txt
+
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-replicas 5 > ${DIR}/set-replicas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-replicas > ${DIR}/get-replicas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-string-path apps/v1/Deployment spec.template.spec.dnsPolicy > ${DIR}/get-string-path.txt
@@ -120,6 +126,55 @@ ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app.properties "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-properties.txt
 ${FCTL} do --toolchain "AppConfig/Properties" test-data/app2.properties "MyConfig" compute-mutations "$(<test-data/app.properties)" 0 > ${DIR}/compute-mutations-properties.txt
+
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-toml.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-toml.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-toml.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" get-bool-path SimpleApp "database.ssl.enabled" > ${DIR}/get-bool-path-toml.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-toml.txt
+${FCTL} do --toolchain "AppConfig/TOML" test-data/app.toml "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-toml.txt
+#${FCTL} do --toolchain "AppConfig/TOML" test-data/app2.toml "MyConfig" compute-mutations "$(<test-data/app.toml)" 0 > ${DIR}/compute-mutations-toml.txt
+
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-ini.txt
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-ini.txt
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-ini.txt
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" get-bool-path SimpleApp "database.ssl.enabled" > ${DIR}/get-bool-path-ini.txt
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-ini.txt
+${FCTL} do --toolchain "AppConfig/INI" test-data/app.ini "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-ini.txt
+#${FCTL} do --toolchain "AppConfig/INI" test-data/app2.ini "MyConfig" compute-mutations "$(<test-data/app.ini)" 0 > ${DIR}/compute-mutations-ini.txt
+
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" set-string-path SimpleApp "DATABASE_SSL_ENABLED" false > ${DIR}/set-string-path-bool-env.txt
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" set-string-path SimpleApp "DATABASE_PORT" 5433 > ${DIR}/set-string-path-int-env.txt
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" set-string-path SimpleApp "DATABASE_HOST" postgres.local.cubby.bz > ${DIR}/set-string-path-env.txt
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" get-string-path SimpleApp "DATABASE_SSL_ENABLED" > ${DIR}/get-string-path-bool-env.txt
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" get-string-path SimpleApp "DATABASE_PORT" > ${DIR}/get-string-path-int-env.txt
+${FCTL} do --toolchain "AppConfig/Env" test-data/app.env "MyConfig" get-string-path SimpleApp "DATABASE_HOST"  > ${DIR}/get-string-path-env.txt
+#${FCTL} do --toolchain "AppConfig/Env" test-data/app2.env "MyConfig" compute-mutations "$(<test-data/app.env)" 0 > ${DIR}/compute-mutations-env.txt
+
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-json.txt
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-json.txt
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-json.txt
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" get-bool-path SimpleApp "database.ssl.enabled" > ${DIR}/get-bool-path-json.txt
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-json.txt
+${FCTL} do --toolchain "AppConfig/JSON" test-data/app.json "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-json.txt
+#${FCTL} do --toolchain "AppConfig/JSON" test-data/app2.json "MyConfig" compute-mutations "$(<test-data/app.json)" 0 > ${DIR}/compute-mutations-json.txt
+
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-yaml.txt
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-yaml.txt
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-yaml.txt
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" get-bool-path SimpleApp "database.ssl.enabled" > ${DIR}/get-bool-path-yaml.txt
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-yaml.txt
+${FCTL} do --toolchain "AppConfig/YAML" test-data/app.yaml "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-yaml.txt
+#${FCTL} do --toolchain "AppConfig/YAML" test-data/app2.yaml "MyConfig" compute-mutations "$(<test-data/app.yaml)" 0 > ${DIR}/compute-mutations-yaml.txt
+
+# TODO: Do something appropriate for Text
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" set-bool-path SimpleApp "database.ssl.enabled" false > ${DIR}/set-bool-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" set-int-path SimpleApp "database.port" 5433 > ${DIR}/set-int-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" set-string-path SimpleApp "database.host" postgres.local.cubby.bz > ${DIR}/set-string-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" get-bool-path SimpleApp "database.ssl.enabled" > ${DIR}/get-bool-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" get-int-path SimpleApp "database.port" > ${DIR}/get-int-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app.text "MyConfig" get-string-path SimpleApp "database.host"  > ${DIR}/get-string-path-text.txt
+#${FCTL} do --toolchain "AppConfig/Text" test-data/app2.text "MyConfig" compute-mutations "$(<test-data/app.text)" 0 > ${DIR}/compute-mutations-text.txt
 
 # Test vet-jsonschema with Grafana LDAP configuration
 ${FCTL} do --toolchain "AppConfig/TOML" test-data/grafana.toml "GrafanaLDAP" vet-jsonschema "$(<test-data/grafana-ldap-schema.json)" > ${DIR}/vet-jsonschema-grafana.txt

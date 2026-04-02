@@ -27831,6 +27831,11 @@
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
+          "HasNewMutations": {
+            "type": "boolean",
+            "description": "Functions produced new mutations (of type other than None)",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Mutations": {
             "$ref": "#/components/schemas/ResourceMutationList"
           },
@@ -29042,6 +29047,16 @@
             "description": "UserID of the user the action was performed by.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserIsBot": {
+            "type": "boolean",
+            "description": "Whether the user who requested the action is a bot user.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserRole": {
+            "type": "string",
+            "description": "Organization-level role of the user who requested the action.",
             "x-go-type-skip-optional-pointer": true
           },
           "Version": {
@@ -30799,6 +30814,16 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "UserIsBot": {
+            "type": "boolean",
+            "description": "Whether the user who requested the action is a bot user.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserRole": {
+            "type": "string",
+            "description": "Organization-level role of the user who requested the action.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Version": {
             "type": "integer",
             "description": "An entity-specific sequence number used for optimistic concurrency control.\nThe value read must be sent in calls to Update.",
@@ -31399,7 +31424,12 @@
           },
           "IsServerWorker": {
             "type": "boolean",
-            "description": "If true, this is the server-hosted worker. Only one per organization.",
+            "description": "If true, this is a server-hosted worker.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UseUserIdentity": {
+            "type": "boolean",
+            "description": "If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true.",
             "x-go-type-skip-optional-pointer": true
           }
         }

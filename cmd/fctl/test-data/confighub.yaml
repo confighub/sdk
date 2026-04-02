@@ -1,102 +1,93 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: confighub-api
-  namespace: confighub-prod
+  name: api
+  namespace: prod
   labels:
-    app: confighub
+    app: app
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: boothub.confighub.net
+    external-dns.alpha.kubernetes.io/hostname: foo.example.net
 spec:
   type: ClusterIP
   ports:
-    - name: confighub-api
+    - name: api
       port: 9090
   selector:
-    app: confighub
+    app: app
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: confighub-bridgeworker
-  namespace: confighub-prod
+  name: worker
+  namespace: prod
   labels:
-    app: confighub
+    app: app
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: boothub.confighub.net
+    external-dns.alpha.kubernetes.io/hostname: foo.example.net
     traefik.ingress.kubernetes.io/service.serversscheme: h2c
 spec:
   type: ClusterIP
   ports:
-    - name: confighub-bridgeworker
+    - name: worker
       port: 9091
   selector:
-    app: confighub
+    app: app
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: confighub
-  namespace: confighub-prod
+  name: server
+  namespace: prod
   labels:
-    app: confighub
+    app: app
 spec:
   selector:
     matchLabels:
-      app: confighub
+      app: app
   template:
     metadata:
       labels:
-        app: confighub
-        app.kubernetes.io/name: confighub
+        app: app
+        app.kubernetes.io/name: app
     spec:
       nodeSelector:
         kubernetes.io/arch: arm64
       imagePullSecrets:
         - name: ghcr-secret
       initContainers:
-        - name: write-spicedb-schema
-          image: ghcr.io/confighubai/confighub:latest
-          command: ["/srv/app/confighub"]
-          args: ["spicedb", "write-schema"]
-          envFrom:
-            - configMapRef:
-                name: confighub-env
-            - secretRef:
-                name: confighub-secret-env
-        - name: confighub-db-init
-          image: ghcr.io/confighubai/confighub:latest
-          command: ["/srv/app/confighub"]
+        - name: db-init
+          image: ghcr.io/example/example:latest
+          command: ["/srv/app/server"]
           args: ["db", "init"]
           envFrom:
             - configMapRef:
-                name: confighub-env
+                name: env
             - secretRef:
-                name: confighub-secret-env
-        - name: confighub-db-migrate
-          image: ghcr.io/confighubai/confighub:latest
-          command: ["/srv/app/confighub"]
+                name: secret-env
+        - name: db-migrate
+          image: ghcr.io/example/example:latest
+          command: ["/srv/app/server"]
           args: ["db", "migrate"]
           envFrom:
             - configMapRef:
-                name: confighub-env
+                name: env
             - secretRef:
-                name: confighub-secret-env
+                name: secret-env
       containers:
-        - name: confighub
-          image: ghcr.io/confighubai/confighub:latest
+        - name: server
+          image: ghcr.io/example/example:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: confighub-env
+                name: env
             - secretRef:
-                name: confighub-secret-env
+                name: secret-env
           ports:
             - containerPort: 9090
               name: http
               protocol: TCP
             - containerPort: 9091
-              name: bridgeworker
+              name: worker
               protocol: TCP
           livenessProbe:
             httpGet:

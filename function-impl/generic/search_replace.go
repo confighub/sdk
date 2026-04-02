@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit"
@@ -14,7 +15,7 @@ import (
 )
 
 func registerSearchReplace(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	fh.RegisterFunction("search-replace", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("search-replace", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "search-replace",
 			Parameters: []api.FunctionParameter{
@@ -42,7 +43,9 @@ func registerSearchReplace(fh handler.FunctionRegistry, converter configkit.Conf
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			return genericFnSearchReplace(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {

@@ -134,6 +134,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	success := true
 	numFilters := functionInvocation.NumFilters
 	messages := []string{}
+	hasMutations := false
 	mutations := []api.ResourceMutation{}
 	mutators := []int{}
 	outputs := make(map[api.OutputType]any)
@@ -246,7 +247,9 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 					return nil, errors.New("compute mutations returned invalid output")
 				}
 				// log.Debugf("%v", newMutations)
-				mutations = yamlkit.AddMutations(mutations, newMutations)
+				var hasNewMutations bool
+				mutations, hasNewMutations = yamlkit.AddMutations(mutations, newMutations)
+				hasMutations = hasMutations || hasNewMutations
 				mutators = append(mutators, functionIndex)
 				serializedData = newSerializedData
 			}
@@ -295,6 +298,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	}
 	resp.Outputs = encodedOutputs
 	resp.Success = success
+	resp.HasNewMutations = hasMutations
 	resp.Mutations = mutations
 	resp.Mutators = mutators
 	resp.ErrorMessages = messages
@@ -606,6 +610,13 @@ func (fh *FunctionHandler) ListPaths(c echo.Context) error {
 }
 
 func (fh *FunctionHandler) RegisterFunction(functionName string, registration *FunctionRegistration) error {
+	// Allow registered functions to be cleared
+	if registration == nil {
+		delete(fh.functionMap, functionName)
+		return nil
+	}
+
+	// Register a function
 	numRequired := 0
 	for _, parameter := range registration.Parameters {
 		if parameter.Required {

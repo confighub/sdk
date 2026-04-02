@@ -13,7 +13,6 @@ import (
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"gopkg.in/yaml.v3"
 )
 
 // YAMLToHCL converts a list of YAML documents to OpenTofu HCL blocks
@@ -27,12 +26,7 @@ func YAMLToHCL(yamlData []byte) ([]byte, error) {
 
 	var hclBlocks []string
 	for _, doc := range parsedData {
-		docBytes := doc.Bytes()
-
-		var data interface{}
-		if err := yaml.Unmarshal(docBytes, &data); err != nil {
-			return nil, fmt.Errorf("failed to parse YAML document: %w", err)
-		}
+		data := doc.Data()
 
 		hclBlock, _, err := convertToHCL(categoryTypeMap, "", data, 0)
 		if err != nil {

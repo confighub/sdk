@@ -1160,6 +1160,8 @@ func MarshalYAMLWithoutReadonlyFields(entityType string, entity interface{}, spa
 		patchData, _ := yaml.Marshal(patchUnit)
 		var patchMap map[string]interface{}
 		yaml.Unmarshal(patchData, &patchMap)
+		// We should only keep metadata fields, not Data
+		delete(patchMap, "Data")
 		return yaml.Marshal(cleanupMap(patchMap, isSpaceResident, entityType))
 
 	case EntityTypeSpace:

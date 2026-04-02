@@ -4,6 +4,7 @@
 package kubernetes
 
 import (
+	"log/slog"
 	"sort"
 	"strings"
 
@@ -207,7 +208,7 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 
 func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
 	// set-pod-security-defaults
-	fh.RegisterFunction("set-pod-security-defaults", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-pod-security-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-pod-security-defaults",
 			Mutating:              true,
@@ -223,10 +224,12 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
 			return fArgs.ParsedData, nil, err
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// set-automount-service-account-token-false
-	fh.RegisterFunction("set-automount-service-account-token-false", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-automount-service-account-token-false", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-automount-service-account-token-false",
 			Mutating:              true,
@@ -242,10 +245,12 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
 			return fArgs.ParsedData, nil, err
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// set-pod-container-security-context-defaults
-	fh.RegisterFunction("set-pod-container-security-context-defaults", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-pod-container-security-context-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-pod-container-security-context-defaults",
 			Mutating:              true,
@@ -261,10 +266,12 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
 			return fArgs.ParsedData, nil, err
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// set-container-resources-defaults
-	fh.RegisterFunction("set-container-resources-defaults", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-container-resources-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-container-resources-defaults",
 			Mutating:              true,
@@ -280,11 +287,13 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
 			return fArgs.ParsedData, nil, err
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 
 	// set-container-probe-defaults
 	resourceTypes := yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
-	fh.RegisterFunction("set-container-probe-defaults", &handler.FunctionRegistration{
+	if err := fh.RegisterFunction("set-container-probe-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName:          "set-container-probe-defaults",
 			Mutating:              true,
@@ -295,7 +304,9 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			AffectedResourceTypes: resourceTypes,
 		},
 		Function: makeK8sFnSetContainerProbeDefaults(rp),
-	})
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 }
 
 func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {

@@ -2,10 +2,7 @@ module github.com/confighub/sdk/configkit/jsonkit
 
 go 1.25.0
 
-require (
-	github.com/confighub/sdk/core v0.1.24
-	gopkg.in/yaml.v3 v3.0.1
-)
+require github.com/confighub/sdk/core v0.0.0
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
@@ -37,8 +34,10 @@ require (
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

@@ -906,3 +906,92 @@ data:
 		assert.Contains(t, string(result), "key3: value3")
 	})
 }
+
+func TestDiffPatch_AddContainerEnvVar(t *testing.T) {
+	original := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: mycontainer
+        image: nginx:1.21
+        env:
+        - name: ENV_A
+          value: alpha
+        - name: ENV_B
+          value: bravo
+        - name: ENV_C
+          value: charlie
+`)
+
+	modified := []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: mycontainer
+        image: nginx:1.21
+        env:
+        - name: ENV_A
+          value: alpha
+        - name: ENV_B
+          value: bravo
+        - name: ENV_C
+          value: charlie
+        - name: ENV_D
+          value: delta
+`)
+
+	target := original
+
+	result, changed, err := yamlkit.DiffPatch(original, modified, target, k8skit.NewK8sResourceProvider())
+	assert.NoError(t, err)
+	assert.True(t, changed)
+
+	// Verify the new env var is present
+	assert.Contains(t, string(result), "ENV_D")
+	assert.Contains(t, string(result), "delta")
+
+	// Verify all original env vars are preserved
+	assert.Contains(t, string(result), "ENV_A")
+	assert.Contains(t, string(result), "ENV_B")
+	assert.Contains(t, string(result), "ENV_C")
+
+	// Verify the result is valid YAML and structurally correct
+	parsedResult, err := gaby.ParseYAML(result)
+	assert.NoError(t, err)
+
+	// Check the new env var at index 3
+	envD := parsedResult.Path("spec.template.spec.containers.0.env.3.name")
+	assert.NotNil(t, envD, "env[3] should exist")
+	if envD != nil {
+		assert.Equal(t, "ENV_D", envD.Data())
+	}
+	envDVal := parsedResult.Path("spec.template.spec.containers.0.env.3.value")
+	assert.NotNil(t, envDVal)
+	if envDVal != nil {
+		assert.Equal(t, "delta", envDVal.Data())
+	}
+}
