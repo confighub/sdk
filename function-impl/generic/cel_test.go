@@ -158,7 +158,7 @@ func TestSetCEL_SetReplicas(t *testing.T) {
 		`{"spec": {"replicas": 5}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 5")
@@ -177,7 +177,7 @@ func TestSetCEL_WithParams(t *testing.T) {
 		"replicas=7",
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 7")
@@ -213,7 +213,7 @@ spec:
 		`{"spec": {"replicas": 5}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -231,7 +231,7 @@ func TestSetCEL_MergePreservesUnspecifiedFields(t *testing.T) {
 		`{"spec": {"replicas": 10}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
 	require.NoError(t, err)
 
 	output := newDocs.String()

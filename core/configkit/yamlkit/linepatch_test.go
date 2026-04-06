@@ -205,7 +205,7 @@ func TestPatchMutations_LinePatchThreeWayMerge(t *testing.T) {
 	require.NotEmpty(t, readmeMutation.Patch, "expected Patch field for multi-line string")
 
 	// Apply mutations to target (three-way merge)
-	result, err := PatchMutations(targetParsed, nil, mutations, testProvider)
+	result, err := PatchMutations(targetParsed, nil, mutations, testProvider, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 
@@ -364,7 +364,7 @@ func TestPatchMutations_JSONStructuralThreeWayMerge(t *testing.T) {
 	require.True(t, strings.HasPrefix(configMutation.Patch, "{"), "expected structural patch")
 
 	// Apply to target
-	result, err := PatchMutations(targetParsed, nil, mutations, testProvider)
+	result, err := PatchMutations(targetParsed, nil, mutations, testProvider, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 

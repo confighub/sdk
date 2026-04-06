@@ -35,6 +35,9 @@ var kubernetesConfigFactory = func(kubeContext string) (*rest.Config, error) {
 // isAuthoritative returns whether the bridge should manage the resource lifecycle.
 // Defaults to false if not set.
 func isAuthoritative(payload api.BridgeWorkerPayload) bool {
+	if payload.DryRun {
+		return false
+	}
 	if v, ok := payload.TargetOptions["IsAuthoritative"]; ok {
 		return v == "true"
 	}

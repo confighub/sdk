@@ -69,8 +69,9 @@ var (
 	triggerDescription   string
 	triggerWhereUnit     string
 	triggerUnitFilter    string
-	triggerWhereResource string
-	triggerFailOpenAfter string
+	triggerWhereResource  string
+	triggerFailOpenAfter  string
+	triggerOtherDataSource string
 )
 
 func init() {
@@ -90,6 +91,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
+	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LiveRevisionNum)")
 	triggerCmd.AddCommand(triggerUpdateCmd)
 }
 
@@ -243,6 +245,9 @@ func runBulkTriggerUpdate() error {
 		if triggerWhereResource != "" {
 			patchMap["WhereResource"] = triggerWhereResource
 		}
+		if triggerOtherDataSource != "" {
+			patchMap["OtherDataSource"] = triggerOtherDataSource
+		}
 		if triggerFailOpenAfter != "" {
 			duration, err := time.ParseDuration(triggerFailOpenAfter)
 			if err == nil {
@@ -390,6 +395,9 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if triggerWhereResource != "" {
 				patchData["WhereResource"] = triggerWhereResource
 			}
+			if triggerOtherDataSource != "" {
+				patchData["OtherDataSource"] = triggerOtherDataSource
+			}
 			if triggerFailOpenAfter != "" {
 				duration, err := time.ParseDuration(triggerFailOpenAfter)
 				if err == nil {
@@ -510,6 +518,9 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if triggerWhereResource != "" {
 		currentTrigger.Trigger.WhereResource = triggerWhereResource
+	}
+	if triggerOtherDataSource != "" {
+		currentTrigger.Trigger.OtherDataSource = triggerOtherDataSource
 	}
 	if triggerFailOpenAfter != "" {
 		duration, err := time.ParseDuration(triggerFailOpenAfter)

@@ -930,7 +930,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 //   - Comment preservation: Update mutations try to preserve YAML comments
 //   - Parent-first ordering: Ensures parent paths are applied before children
 //   - Graceful handling: Logs errors but continues processing other mutations
-func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider) (gaby.Container, error) {
+func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, error) {
 	// Build predicate index with prefer-predicate dedup: when multiple mutation sources
 	// exist for the same resource (e.g., one from clone and one from triggers), prefer
 	// the one with Predicate=true so the resource is not incorrectly filtered out.
@@ -967,12 +967,8 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 
 	var errs []error
 
-	for docIndex, doc := range parsedData {
-		docResourceInfo, err := GetResourceInfo(doc, resourceProvider)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
+	visitor := func(doc *gaby.YamlDoc, _ any, docIndex int, docResourceInfo *api.ResourceInfo) (any, []error) {
+		var visitorErrs []error
 
 		// Find predicate for this document
 		mutationPredicateIndex, hasPredicate := predicateIdx.Find(*docResourceInfo, nil)
@@ -980,7 +976,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		// Filter the patch.
 		if hasPredicate && !mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate {
 			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
-			continue
+			return nil, nil
 		}
 
 		// Find patch for this document, using predicate aliases as additional aliases
@@ -990,7 +986,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		}
 		mutationPatchIndex, ok := patchIdx.Find(*docResourceInfo, predicateAliases)
 		if !ok {
-			continue
+			return nil, nil
 		}
 
 		matchedPatchIndices[mutationPatchIndex] = true
@@ -1002,7 +998,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			valueString := resourcePatchMutation.Value
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
-				errs = append(errs, fmt.Errorf("error parsing value for resource %s: %w",
+				visitorErrs = append(visitorErrs, fmt.Errorf("error parsing value for resource %s: %w",
 					api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo), err))
 			}
 			parsedData[docIndex] = valueDoc
@@ -1012,16 +1008,22 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			// The document will be filtered out when serializing the result
 			parsedData[docIndex] = nil
 			// Shouldn't be any modified paths
-			continue
+			return nil, visitorErrs
 		case api.MutationTypeNone:
 			// None at the resource level means the resource wasn't modified.
-			continue
+			return nil, nil
 		case api.MutationTypeUpdate:
 			// Update at the resource level means some paths were modified.
 		}
 
-		errs = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
-			hasPredicate, mutationsPredicates, mutationPredicateIndex, errs)
+		visitorErrs = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
+			hasPredicate, mutationsPredicates, mutationPredicateIndex, visitorErrs)
+		return nil, visitorErrs
+	}
+
+	_, visitErr := VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	if visitErr != nil {
+		errs = append(errs, visitErr)
 	}
 
 	// Append new documents for Add/Replace mutations that didn't match any existing document.
@@ -1165,7 +1167,7 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	return errs
 }
 
-func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider) error {
+func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) error {
 	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
 	resetResourceMergeIDMap := make(map[string]int)
 	for i := range mutationsPredicates {
@@ -1249,7 +1251,7 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 		return nil, errs
 	}
 
-	_, err := VisitResources(parsedData, nil, resourceProvider, visitor)
+	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 	return err
 }
 

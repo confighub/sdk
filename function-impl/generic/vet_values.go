@@ -61,14 +61,14 @@ func registerVetValues(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnVetValues(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnVetValues(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	attributeName := api.AttributeName(args[0].Value.(string))
 	filterString := args[1].Value.(string)
 	var filter api.ValueFilter
@@ -76,20 +76,20 @@ func genericFnVetValues(resourceProvider yamlkit.ResourceProvider, parsedData ga
 		return parsedData, nil, errors.Wrap(err, "failed to parse value-filter argument")
 	}
 
-	result, err := GenericVetValues(resourceProvider, parsedData, attributeName, &filter)
+	result, err := GenericVetValues(resourceProvider, parsedData, attributeName, &filter, whereExpressions)
 	return parsedData, result, err
 }
 
 // GenericVetValues validates all values at paths registered for the given attribute name
 // against the provided ValueFilter. It is exported so that other functions (e.g. vet-images)
 // can call it.
-func GenericVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, attributeName api.AttributeName, filter *api.ValueFilter) (api.ValidationResult, error) {
+func GenericVetValues(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, attributeName api.AttributeName, filter *api.ValueFilter, whereExpressions []*api.VisitorRelationalExpression) (api.ValidationResult, error) {
 	if err := validateFilter(filter); err != nil {
 		return api.ValidationResult{}, err
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeName)
-	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{"*"}, resourceProvider, api.DataTypeNone, false, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{"*"}, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
 	if err != nil {
 		return api.ValidationResult{}, errors.Wrap(err, "failed to get values for attribute")
 	}

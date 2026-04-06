@@ -6316,6 +6316,22 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
+		if params.OtherDataSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "other_data_source", runtime.ParamLocationQuery, *params.OtherDataSource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Where != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
@@ -10684,6 +10700,22 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
+		if params.OtherDataSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "other_data_source", runtime.ParamLocationQuery, *params.OtherDataSource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Where != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
@@ -13264,6 +13296,22 @@ func NewCreateUnitRequestWithBody(server string, spaceId openapi_types.UUID, par
 
 		}
 
+		if params.MergeExternalSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
@@ -13588,6 +13636,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.MergeExternalSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_mutation", runtime.ParamLocationQuery, *params.WhereMutation); err != nil {
@@ -13843,6 +13907,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.MergeEnd != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_end", runtime.ParamLocationQuery, *params.MergeEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MergeExternalSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -17524,6 +17604,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 		if params.MergeEnd != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_end", runtime.ParamLocationQuery, *params.MergeEnd); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MergeExternalSource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -53,7 +53,7 @@ func AttributeValueForPath(resourceProvider ResourceProvider, path api.ResolvedP
 
 // FindYAMLPathsByValue searches for all paths that match a specified value in a YAML structure
 // and returns an api.AttributeValueList.
-func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourceProvider, searchValue any) api.AttributeValueList {
+func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourceProvider, searchValue any, whereExpressions []*api.VisitorRelationalExpression) api.AttributeValueList {
 	var paths api.AttributeValueList
 
 	searchStringValue, searchValueIsString := searchValue.(string)
@@ -139,7 +139,7 @@ func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourcePr
 		traverse("", doc, resourceInfo)
 		return nil, []error{}
 	}
-	VisitResources(parsedData, nil, resourceProvider, visitor)
+	VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 
 	// TODO: Revisit. Did this for predictable order.
 	sort.Slice(paths, attributeValueCompareFunction(paths))

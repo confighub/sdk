@@ -6,6 +6,7 @@ package yamlkit
 import (
 	"fmt"
 
+	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
@@ -20,6 +21,7 @@ func TransformConfig(
 	originalData []byte,
 	resourceProvider ResourceProvider,
 	transform func(parsedData gaby.Container) ([]byte, error),
+	whereExpressions []*api.VisitorRelationalExpression,
 ) ([]byte, bool, error) {
 	// Strip comments for the transformation
 	strippedData, err := StripComments(originalData)
@@ -45,7 +47,7 @@ func TransformConfig(
 	}
 
 	// Patch changes onto the original data (which has comments)
-	patched, changed, err := DiffPatchWithOptions(strippedData, modifiedData, originalData, resourceProvider, false)
+	patched, changed, err := DiffPatchWithOptions(strippedData, modifiedData, originalData, resourceProvider, false, whereExpressions)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to apply transformation: %w", err)
 	}

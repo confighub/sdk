@@ -99,7 +99,9 @@ func CombineOutputs(
 				return outputs, messages
 			}
 			newResult.Index = functionInvocationIndex
-			newResult.FunctionName = functionName
+			if newResult.FunctionName == "" {
+				newResult.FunctionName = functionName
+			}
 			previousResults = append(previousResults, newResult)
 			output = previousResults
 		} else {
@@ -110,7 +112,9 @@ func CombineOutputs(
 			}
 			for i := range newResult {
 				newResult[i].Index = functionInvocationIndex
-				newResult[i].FunctionName = functionName
+				if newResult[i].FunctionName == "" {
+					newResult[i].FunctionName = functionName
+				}
 			}
 			previousResults = append(previousResults, newResult...)
 			output = previousResults
@@ -124,7 +128,9 @@ func CombineOutputs(
 		}
 		for i := range newResult {
 			newResult[i].Index = functionInvocationIndex
-			newResult[i].FunctionName = functionName
+			if newResult[i].FunctionName == "" {
+				newResult[i].FunctionName = functionName
+			}
 		}
 		previousResults, previousExpectedType := output.(ValidationResultList)
 		if !previousExpectedType {
@@ -147,7 +153,9 @@ func CombineOutputs(
 		}
 		for i := range newOutput {
 			newOutput[i].Index = functionInvocationIndex
-			newOutput[i].FunctionName = functionName
+			if newOutput[i].FunctionName == "" {
+				newOutput[i].FunctionName = functionName
+			}
 		}
 		previousOutput = append(previousOutput, newOutput...)
 		output = previousOutput

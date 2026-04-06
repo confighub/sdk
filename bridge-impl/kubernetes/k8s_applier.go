@@ -124,6 +124,7 @@ type ApplierConfig struct {
 	UnitSlug         string // UnitSlug for inventory identification
 	RevisionNum      int64  // RevisionNum for the revision being applied
 	WaitTimeout      string // WaitTimeout duration string for resource readiness
+	DryRun           bool   // DryRun uses server-side dry run (validates without persisting)
 }
 
 type ApplierName string

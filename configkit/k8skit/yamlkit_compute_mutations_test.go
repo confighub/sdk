@@ -1019,7 +1019,7 @@ spec:
 				targetParsed, err := gaby.ParseAll([]byte(previousYAML))
 				assert.NoError(t, err)
 
-				patched, err := yamlkit.PatchMutations(targetParsed, nil, mutations, k8sProvider)
+				patched, err := yamlkit.PatchMutations(targetParsed, nil, mutations, k8sProvider, nil)
 				assert.NoError(t, err)
 				assert.Len(t, patched, 1)
 

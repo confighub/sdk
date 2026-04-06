@@ -189,6 +189,9 @@ func prepareWorkspace(fs afero.Fs, payload api.BridgeWorkerPayload) (string, err
 // }
 
 func (w *OpenTofuAWSWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	if payload.DryRun {
+		return fmt.Errorf("dry run is not supported for OpenTofu apply")
+	}
 	fs := afero.NewOsFs()
 	workspaceDir, err := prepareWorkspace(fs, payload)
 	if err != nil {
@@ -329,6 +332,9 @@ func (w *OpenTofuAWSWorker) Apply(wctx api.BridgeWorkerContext, payload api.Brid
 }
 
 func (w *OpenTofuAWSWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	if payload.DryRun {
+		return fmt.Errorf("dry run is not supported for OpenTofu destroy")
+	}
 	fs := afero.NewOsFs()
 	tmpDir, err := prepareWorkspace(fs, payload)
 	if err != nil {

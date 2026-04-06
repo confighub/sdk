@@ -508,7 +508,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -520,7 +520,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 // strategic merge (similar to Kubernetes ApplyConfiguration). Only the fields
 // present in the CEL result are modified; all other fields are preserved.
 // Extra CEL env options can be passed by toolchain-specific overrides.
-func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
@@ -546,39 +546,43 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 	originalData := []byte(parsedData.String())
 
 	patched, changed, err := yamlkit.TransformConfig(originalData, resourceProvider, func(strippedParsed gaby.Container) ([]byte, error) {
-		for i, doc := range strippedParsed {
+		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			var dataMap map[string]any
 			if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
 			}
 
 			activation := CELActivation(dataMap, params)
 			val, _, err := program.Eval(activation)
 			if err != nil {
-				return nil, fmt.Errorf("CEL evaluation error on resource %d: %v", i, err)
+				return output, []error{fmt.Errorf("CEL evaluation error on resource %d: %v", index, err)}
 			}
 
 			goVal := celToGo(val)
 			if goVal == nil {
-				return nil, fmt.Errorf("CEL expression returned nil for resource %d", i)
+				return output, []error{fmt.Errorf("CEL expression returned nil for resource %d", index)}
 			}
 
 			// Marshal the partial result and merge it into the original doc
 			patchBytes, err := yaml.Marshal(goVal)
 			if err != nil {
-				return nil, fmt.Errorf("failed to marshal CEL result for resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to marshal CEL result for resource %d: %w", index, err)}
 			}
 			patchDoc, err := gaby.ParseYAML(patchBytes)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse CEL result for resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to parse CEL result for resource %d: %w", index, err)}
 			}
 			if err := doc.MergeDoc(patchDoc); err != nil {
-				return nil, fmt.Errorf("failed to merge CEL result into resource %d: %w", i, err)
+				return output, []error{fmt.Errorf("failed to merge CEL result into resource %d: %w", index, err)}
 			}
+			return output, nil
+		})
+		if err != nil {
+			return nil, err
 		}
 
 		return []byte(strippedParsed.String()), nil
-	})
+	}, whereExpressions)
 	if err != nil {
 		return parsedData, nil, err
 	}

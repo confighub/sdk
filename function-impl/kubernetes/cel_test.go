@@ -185,7 +185,7 @@ func TestK8sSetCEL_SetReplicas(t *testing.T) {
 		`{"spec": {"replicas": 5}}`,
 	})
 
-	newDocs, _, err := generic.GenericFnSetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	newDocs, _, err := generic.GenericFnSetCEL(testResourceProvider, docs, args, nil, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 5")
@@ -202,7 +202,7 @@ func TestK8sSetCEL_WithParams(t *testing.T) {
 		"replicas=7",
 	})
 
-	newDocs, _, err := generic.GenericFnSetCEL(testResourceProvider, docs, args, k8sCELEnvOpts()...)
+	newDocs, _, err := generic.GenericFnSetCEL(testResourceProvider, docs, args, nil, k8sCELEnvOpts()...)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 7")

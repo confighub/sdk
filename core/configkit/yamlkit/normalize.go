@@ -18,7 +18,7 @@ import (
 // If mutationSources is provided, Normalize will attempt to restore the
 // ResourceMergeID from a matching resource in the mutation sources before
 // generating a new UUID.
-func Normalize(parsedData gaby.Container, resourceProvider ResourceProvider, mutationSources *api.ResourceMutationList) error {
+func Normalize(parsedData gaby.Container, resourceProvider ResourceProvider, mutationSources *api.ResourceMutationList, whereExpressions []*api.VisitorRelationalExpression) error {
 	var msIndex *api.ResourceMutationIndex
 	if mutationSources != nil {
 		msIndex = api.NewResourceMutationIndex(*mutationSources)
@@ -52,6 +52,6 @@ func Normalize(parsedData gaby.Container, resourceProvider ResourceProvider, mut
 		}
 		return output, nil
 	}
-	_, err := VisitResources(parsedData, nil, resourceProvider, visitor)
+	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
 	return err
 }

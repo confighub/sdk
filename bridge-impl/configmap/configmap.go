@@ -51,7 +51,7 @@ func initFunctionExecutor() {
 			workerapi.ToolchainAppConfigJSON,
 			workerapi.ToolchainAppConfigEnv,
 			workerapi.ToolchainAppConfigText,
-		})
+		}, true)
 	})
 }
 

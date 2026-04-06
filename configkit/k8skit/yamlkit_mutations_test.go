@@ -705,7 +705,7 @@ metadata:
 			parsed, err := gaby.ParseAll([]byte(tt.config))
 			require.NoError(t, err)
 
-			result, err := yamlkit.PatchMutations(parsed, tt.predicates, tt.mutations, k8skit.NewK8sResourceProvider())
+			result, err := yamlkit.PatchMutations(parsed, tt.predicates, tt.mutations, k8skit.NewK8sResourceProvider(), nil)
 			require.NoError(t, err)
 
 			// Serialize the result using Container's String() method
@@ -799,7 +799,7 @@ spec:
 		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Step 4: Apply final mutations to target
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
+		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		// Verify results
@@ -889,7 +889,7 @@ spec:
 
 		// Subtract and patch
 		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
+		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		// Should still have only 1 resource (Deployment)
@@ -954,7 +954,7 @@ spec:
 
 		// Subtract and patch
 		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider())
+		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		require.Len(t, result, 1)
@@ -1061,7 +1061,7 @@ spec:
 		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result to the target
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1155,7 +1155,7 @@ spec:
 
 		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1264,7 +1264,7 @@ spec:
 		}
 
 		// Apply the result to target - should be no-op since resources delete was subtracted
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1456,7 +1456,7 @@ spec:
 		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1543,7 +1543,7 @@ metadata:
 		}
 
 		// Apply and verify target's value is preserved
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1613,7 +1613,7 @@ spec:
 		parsed, err := gaby.ParseAll([]byte(config))
 		require.NoError(t, err)
 
-		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider())
+		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, result, 1)
 
@@ -1687,7 +1687,7 @@ spec:
 		parsed, err := gaby.ParseAll([]byte(config))
 		require.NoError(t, err)
 
-		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider())
+		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, result, 1)
 
@@ -1756,7 +1756,7 @@ metadata:
 		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply and verify target's annotations are preserved
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider())
+		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 

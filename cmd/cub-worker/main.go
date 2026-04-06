@@ -33,13 +33,14 @@ import (
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/bridge-impl/opentofu"
 	funcimpl "github.com/confighub/sdk/function-impl"
+	k8sfunc "github.com/confighub/sdk/function-impl/kubernetes"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
-	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
-	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
+	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
+	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 )
 
 var rootCmd = &cobra.Command{
@@ -112,13 +113,13 @@ var rootArgs struct {
 
 // providerToolchainTypes maps provider types to the toolchain types they require.
 var providerToolchainTypes = map[string][]workerapi.ToolchainType{
-	LowerProviderTypeConfigHub:         {workerapi.ToolchainConfigHubYAML},
-	LowerProviderTypeKubernetes:        {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeFluxRenderer:      {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeArgoCDRenderer:    {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeArgoCDOCI:         {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeFluxOCI:           {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeOpenTofuAWS:       {workerapi.ToolchainOpenTofuHCL},
+	LowerProviderTypeConfigHub:      {workerapi.ToolchainConfigHubYAML},
+	LowerProviderTypeKubernetes:     {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeFluxRenderer:   {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeArgoCDRenderer: {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeArgoCDOCI:      {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeFluxOCI:        {workerapi.ToolchainKubernetesYAML},
+	LowerProviderTypeOpenTofuAWS:    {workerapi.ToolchainOpenTofuHCL},
 	LowerProviderTypeConfigMapRenderer: {
 		workerapi.ToolchainAppConfigProperties,
 		workerapi.ToolchainAppConfigYAML,
@@ -148,6 +149,13 @@ var availableWorkerFunctions = map[string]struct {
 			FunctionSignature: opagatekeeper.GetVetOPAGatekeeperSignature(),
 			Function:          opagatekeeper.VetOPAGatekeeperFunction,
 			FunctionInit:      opagatekeeper.InitOPAGatekeeper,
+		},
+	},
+	"generate-kubecontext": {
+		toolchain: workerapi.ToolchainKubernetesYAML,
+		registration: handler.FunctionRegistration{
+			FunctionSignature: k8sfunc.GetGenerateKubecontextSignature(),
+			Function:          k8sfunc.GenerateKubecontextFunction,
 		},
 	},
 }
@@ -185,35 +193,34 @@ func parseWorkerFunctions() []parsedWorkerFunction {
 	return parsed
 }
 
-// newFunctionExecutor returns a standard executor if CONFIGHUB_STANDARD_FUNCTIONS
-// is set to "1" or "true", otherwise an empty executor with no functions registered.
-// When using the standard executor, only toolchain types needed by the given
-// providerTypes and workerFunctions are registered.
-// It then registers additional worker functions on the executor.
+// newFunctionExecutor creates a function executor with the required toolchain handlers.
+// If CONFIGHUB_STANDARD_FUNCTIONS is set, all standard functions for the provider types
+// are included. Worker functions (-f flag) always get their toolchain handlers set up.
+// If neither standard functions nor worker functions are requested, an empty executor
+// is returned.
 func newFunctionExecutor(providerTypes []string, workerFunctions []parsedWorkerFunction) executor.FunctionExecutor {
 	var exec *executor.ConcreteFunctionExecutor
-	if v := os.Getenv("CONFIGHUB_STANDARD_FUNCTIONS"); v == "1" || v == "true" {
-		// Build the list of required toolchain types from provider types and worker functions
-		seen := map[workerapi.ToolchainType]bool{}
-		var toolchainTypes []workerapi.ToolchainType
-		for _, pt := range providerTypes {
-			for _, tt := range providerToolchainTypes[pt] {
-				if !seen[tt] {
-					toolchainTypes = append(toolchainTypes, tt)
-					seen[tt] = true
-				}
-			}
+	v := os.Getenv("CONFIGHUB_STANDARD_FUNCTIONS")
+	registerStandardFunctions := v == "1" || v == "true" || v == "TRUE"
+
+	// Build the list of required toolchain types from worker functions and provider types.
+	seen := map[workerapi.ToolchainType]bool{}
+	var toolchainTypes []workerapi.ToolchainType
+	for _, wf := range workerFunctions {
+		if !seen[wf.toolchain] {
+			toolchainTypes = append(toolchainTypes, wf.toolchain)
+			seen[wf.toolchain] = true
 		}
-		for _, wf := range workerFunctions {
-			if !seen[wf.toolchain] {
-				toolchainTypes = append(toolchainTypes, wf.toolchain)
-				seen[wf.toolchain] = true
-			}
-		}
-		exec = funcimpl.NewStandardExecutor(toolchainTypes)
-	} else {
-		exec = executor.NewEmptyExecutor()
 	}
+	for _, pt := range providerTypes {
+		for _, tt := range providerToolchainTypes[pt] {
+			if !seen[tt] {
+				toolchainTypes = append(toolchainTypes, tt)
+				seen[tt] = true
+			}
+		}
+	}
+	exec = funcimpl.NewStandardExecutor(toolchainTypes, registerStandardFunctions)
 
 	for _, wf := range workerFunctions {
 		if err := exec.RegisterFunction(wf.toolchain, wf.registration); err != nil {
@@ -255,14 +262,12 @@ func init() {
 		workerPort = p
 	}
 
-
 	gracePeriodDelay := 10 // default 10 seconds
 	if gpd := os.Getenv("GRACE_PERIOD_DELAY"); gpd != "" {
 		if delay, err := strconv.Atoi(gpd); err == nil && delay >= 0 {
 			gracePeriodDelay = delay
 		}
 	}
-
 
 	workerProviderTypesStr := ""
 	for wt := range availableBridgeWorkers {
@@ -285,7 +290,6 @@ func init() {
 	// TODO not implemented yet
 	// rootCmd.Flags().BoolVarP(&rootArgs.autoRefresh, "auto-refresh", "r", false, "Enable auto-refresh")
 
-
 	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
 
@@ -304,9 +308,9 @@ const (
 // Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
 
 var availableBridgeWorkers = map[string]api.BridgeWorker{
-	LowerProviderTypeConfigHub:    confighub.NewConfigHubBridgeWorker(),
-	LowerProviderTypeKubernetes:   kubernetes.NewKubernetesBridgeWorker(),
-	LowerProviderTypeFluxRenderer: fluxrenderer.NewFluxRendererWorker(),
+	LowerProviderTypeConfigHub:         confighub.NewConfigHubBridgeWorker(),
+	LowerProviderTypeKubernetes:        kubernetes.NewKubernetesBridgeWorker(),
+	LowerProviderTypeFluxRenderer:      fluxrenderer.NewFluxRendererWorker(),
 	LowerProviderTypeOpenTofuAWS:       opentofu.NewOpenTofuAWSWorker(),
 	LowerProviderTypeConfigMapRenderer: configmap.NewConfigMapBridgeWorker(),
 	LowerProviderTypeArgoCDRenderer:    argocdrenderer.NewArgoCDRendererWorker(),

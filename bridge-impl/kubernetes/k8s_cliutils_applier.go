@@ -190,6 +190,15 @@ type CLIUtilsApplier struct {
 	lastResourceSet    ResourceSet                  // Store the last ResourceSet for retrieval
 	poller             *polling.StatusPoller        // Status poller for kstatus-based waiting
 	lastResourceStatus api.ResourceStatusMap        // Store per-resource status from last wait operation
+	dryRun             bool                         // When true, use server-side dry run
+}
+
+// dryRunStrategy returns the appropriate DryRunStrategy based on the dryRun flag.
+func (a *CLIUtilsApplier) dryRunStrategy() common.DryRunStrategy {
+	if a.dryRun {
+		return common.DryRunServer
+	}
+	return common.DryRunNone
 }
 
 // InventoryMetadata contains extracted inventory metadata
@@ -300,15 +309,18 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 		PruneTimeout:           DefaultTimeout,
 		PrunePropagationPolicy: metav1.DeletePropagationForeground, // Foreground for progress reporting
 		InventoryPolicy:        inventory.PolicyAdoptIfNoInventory,
-		DryRunStrategy:         common.DryRunNone,
+		DryRunStrategy:         a.dryRunStrategy(),
 	}
 
 	// Step 4.5: Clear managedFields for SSA compatibility
 	// This removes field ownership from other managers (like kubectl), allowing SSA to
 	// properly handle array item removal (e.g., removing old initContainers)
-	if err := a.clearManagedFieldsForObjects(ctx, objects); err != nil {
-		log.Log.Error(err, "⚠️ Failed to clear managedFields, continuing with apply")
-		// Continue anyway - this is best-effort cleanup
+	// Skip in dry run mode since this mutates cluster state.
+	if !a.dryRun {
+		if err := a.clearManagedFieldsForObjects(ctx, objects); err != nil {
+			log.Log.Error(err, "⚠️ Failed to clear managedFields, continuing with apply")
+			// Continue anyway - this is best-effort cleanup
+		}
 	}
 
 	// Run the applier - it returns an event channel
@@ -370,6 +382,19 @@ applyDrainLoop:
 	if len(applyErrors) > 0 {
 		return ApplyResult{
 			Error: fmt.Errorf("failed to apply resources: %s", strings.Join(applyErrors, "; ")),
+		}
+	}
+
+	// In dry run mode, skip waiting for resources and fetching live objects.
+	// Server-side dry run validates without persisting, so there's nothing to poll.
+	if a.dryRun {
+		a.applyObjects = objects
+		a.invInfo = invInfo
+		a.applyCompleted = true
+		log.Log.Info("🔍 Dry run apply completed, skipping resource readiness wait")
+		return ApplyResult{
+			ResourceStatuses: a.lastResourceStatus,
+			ResourceSet:      NewSimpleResourceSet(),
 		}
 	}
 
@@ -995,7 +1020,7 @@ func (a *CLIUtilsApplier) Destroy(ctx context.Context, objects []*unstructured.U
 		DeletePropagationPolicy: metav1.DeletePropagationForeground, // Foreground for progress reporting
 		InventoryPolicy:         inventory.PolicyAdoptIfNoInventory,
 		EmitStatusEvents:        true, // Always emit for tracking
-		DryRunStrategy:          common.DryRunNone,
+		DryRunStrategy:          a.dryRunStrategy(),
 	}
 
 	// Step 5: Destroy Execution
@@ -1061,6 +1086,18 @@ drainLoop:
 	if len(destroyErrors) > 0 {
 		return DestroyResult{
 			Error: fmt.Errorf("failed to destroy resources: %s", strings.Join(destroyErrors, "; ")),
+		}
+	}
+
+	// In dry run mode, skip waiting for resource termination.
+	// Server-side dry run validates without persisting, so resources were not deleted.
+	if a.dryRun {
+		a.destroyObjects = objects
+		a.invInfo = invInfo
+		a.destroyCompleted = true
+		log.Log.Info("🔍 Dry run destroy completed, skipping resource termination wait")
+		return DestroyResult{
+			ResourceSet: NewSimpleResourceSet(),
 		}
 	}
 
@@ -1509,6 +1546,7 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 		invInfo:          invInfo,
 		liveDataBuilder:  liveDataBuilder,
 		poller:           poller,
+		dryRun:           config.DryRun,
 	}, nil
 }
 

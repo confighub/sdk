@@ -92,6 +92,8 @@ type FunctionInvocation struct {
 	Arguments    []FunctionArgument `description:"Function arguments"`
 }
 
+type OtherDataSource string
+
 type FunctionInvocationList []FunctionInvocation
 
 // A FunctionInvocationRequest contains the configuration data of a configuration Unit, the function context
@@ -99,11 +101,12 @@ type FunctionInvocationList []FunctionInvocation
 // options for the invocation.
 type FunctionInvocationRequest struct {
 	FunctionContext
-	ConfigData          []byte                 `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
-	NumFilters          int                    `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
-	StopOnError         bool                   `description:"If true, stop executing functions on the first error"`
-	WhereResource       string                 `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
-	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
+	ConfigData          []byte                     `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
+	OtherData           map[OtherDataSource][]byte `swaggertype:"string" format:"byte" description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
+	NumFilters          int                        `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
+	StopOnError         bool                       `description:"If true, stop executing functions on the first error"`
+	WhereResource       string                     `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
+	FunctionInvocations FunctionInvocationList     `description:"List of functions to invoke and their arguments"`
 }
 
 // FunctionOptions contains options that affect how functions operate on resources.

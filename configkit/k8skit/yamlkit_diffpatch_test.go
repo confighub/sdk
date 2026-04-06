@@ -564,7 +564,7 @@ data:
 	target := original
 
 	t.Run("without omitAdditions includes all changes", func(t *testing.T) {
-		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.NewK8sResourceProvider(), false)
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.NewK8sResourceProvider(), false, nil)
 
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -574,7 +574,7 @@ data:
 	})
 
 	t.Run("with omitAdditions excludes new keys but includes modifications", func(t *testing.T) {
-		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.NewK8sResourceProvider(), true)
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, modified, target, k8skit.NewK8sResourceProvider(), true, nil)
 
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -584,7 +584,7 @@ data:
 	})
 
 	t.Run("no changes when original and modified are identical", func(t *testing.T) {
-		result, changed, err := yamlkit.DiffPatchWithOptions(original, original, target, k8skit.NewK8sResourceProvider(), true)
+		result, changed, err := yamlkit.DiffPatchWithOptions(original, original, target, k8skit.NewK8sResourceProvider(), true, nil)
 
 		assert.NoError(t, err)
 		assert.False(t, changed)
@@ -615,7 +615,7 @@ data:
 
 		targetMulti := originalMulti
 
-		result, changed, err := yamlkit.DiffPatchWithOptions(originalMulti, modifiedMulti, targetMulti, k8skit.NewK8sResourceProvider(), true)
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalMulti, modifiedMulti, targetMulti, k8skit.NewK8sResourceProvider(), true, nil)
 
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -651,7 +651,7 @@ data:
 		targetWithTwo := originalWithTwo
 
 		// Test that the second resource is deleted
-		result, changed, err := yamlkit.DiffPatchWithOptions(originalWithTwo, modifiedWithOne, targetWithTwo, k8skit.NewK8sResourceProvider(), false)
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalWithTwo, modifiedWithOne, targetWithTwo, k8skit.NewK8sResourceProvider(), false, nil)
 
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -688,7 +688,7 @@ data:
 		targetFieldLevel := originalFieldLevel
 
 		// Test with omitAdditions=true - should only update existing fields
-		result, changed, err := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.NewK8sResourceProvider(), true)
+		result, changed, err := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.NewK8sResourceProvider(), true, nil)
 
 		assert.NoError(t, err)
 		assert.True(t, changed)
@@ -699,7 +699,7 @@ data:
 		assert.NotContains(t, resultStr, "app: test")
 
 		// Test with omitAdditions=false - should include all changes
-		result2, changed2, err2 := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.NewK8sResourceProvider(), false)
+		result2, changed2, err2 := yamlkit.DiffPatchWithOptions(originalFieldLevel, modifiedFieldLevel, targetFieldLevel, k8skit.NewK8sResourceProvider(), false, nil)
 
 		assert.NoError(t, err2)
 		assert.True(t, changed2)

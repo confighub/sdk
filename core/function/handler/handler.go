@@ -129,6 +129,33 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		return nil, err
 	}
 
+	// Pre-scan: verify functions exist and check if any need OtherData
+	needsOtherData := false
+	for _, invocation := range functionInvocation.FunctionInvocations {
+		f, existed := fh.functionMap[invocation.FunctionName]
+		if existed && len(f.OtherDataExpected) > 0 {
+			needsOtherData = true
+			break
+		}
+	}
+
+	// Parse OtherData once before the loop if any function needs it
+	var parsedOtherData map[api.OtherDataSource]gaby.Container
+	if needsOtherData && len(functionInvocation.OtherData) > 0 {
+		parsedOtherData = make(map[api.OtherDataSource]gaby.Container, len(functionInvocation.OtherData))
+		for source, data := range functionInvocation.OtherData {
+			otherYAML, err := fh.GetConverter().NativeToYAML(data)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert OtherData[%s] to YAML", source)
+			}
+			parsed, err := gaby.ParseAll(otherYAML)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse OtherData[%s]", source)
+			}
+			parsedOtherData[source] = parsed
+		}
+	}
+
 	// Errors below are not wrapped here. They need to be wrapped at origin, if necessary.
 	// The reason is so that we can return detailed error messages.
 	success := true
@@ -197,6 +224,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			FunctionContext: &functionContext,
 			Options:         functionOptions,
 			ParsedData:      newParsedData,
+			ParsedOtherData: parsedOtherData,
 			Arguments:       arguments,
 		})
 		if err == nil && isFilter {
@@ -642,6 +670,7 @@ type FunctionImplementationArguments struct {
 	FunctionContext *api.FunctionContext
 	Options         *api.FunctionOptions
 	ParsedData      gaby.Container
+	ParsedOtherData map[api.OtherDataSource]gaby.Container
 	Arguments       []api.FunctionArgument
 }
 

@@ -193,6 +193,9 @@ func runSingleUnitApply(unitSlug string) error {
 
 	// Build apply parameters
 	params := &goclientnew.ApplyUnitParams{}
+	if unitApplyArgs.dryRun {
+		params.DryRun = &unitApplyArgs.dryRun
+	}
 	if revisionParam != nil {
 		params.Revision = revisionParam
 	}

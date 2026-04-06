@@ -221,7 +221,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNamePodSecurityDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -242,7 +242,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameAutomountServiceAccountToken)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -263,7 +263,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNamePodContainerSecurityCtxDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -284,7 +284,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameContainerResourcesDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, nil)
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {

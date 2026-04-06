@@ -221,3 +221,12 @@ var resourceTypeToImmutablePaths = map[api.ResourceType][]string{
 	// 	"metadata.namespace",
 	// },
 }
+
+// AttributeNameImmutable is the attribute name used to register immutable field paths.
+const AttributeNameImmutable = api.AttributeName("immutable")
+
+// GetImmutablePaths returns the map of resource types to their immutable field paths.
+// Used by function-impl/kubernetes to register these paths with the path registry.
+func GetImmutablePaths() map[api.ResourceType][]string {
+	return resourceTypeToImmutablePaths
+}

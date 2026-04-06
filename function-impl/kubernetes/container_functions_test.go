@@ -596,7 +596,7 @@ spec:
 				"myregistry.com/sidecar:v2.0": true,
 			},
 		})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.True(t, result.Passed)
@@ -609,7 +609,7 @@ spec:
 				"myregistry.com/myapp:v1.0": true,
 			},
 		})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.False(t, result.Passed)
@@ -623,7 +623,7 @@ spec:
 				"myregistry.com/sidecar:v2.0": true,
 			},
 		})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.False(t, result.Passed)
@@ -641,7 +641,7 @@ spec:
 				"myregistry.com/sidecar:v2.0": true,
 			},
 		})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.False(t, result.Passed)
@@ -651,7 +651,7 @@ spec:
 
 	t.Run("empty filter passes all", func(t *testing.T) {
 		args := makeFilterArg(t, api.ValueFilter{})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.True(t, result.Passed)
@@ -665,7 +665,7 @@ spec:
 				"myregistry.com/sidecar:v2.0": true,
 			},
 		})
-		_, output, err := k8sFnVetImages(testResourceProvider,docs, args)
+		_, output, err := k8sFnVetImages(testResourceProvider, docs, args, nil)
 		require.NoError(t, err)
 		result := output.(api.ValidationResult)
 		assert.False(t, result.Passed)

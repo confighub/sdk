@@ -1373,8 +1373,11 @@ type FunctionSignature struct {
 	Idempotent bool `json:"Idempotent,omitempty" yaml:"Idempotent,omitempty"`
 
 	// Mutating May change the configuration data
-	Mutating   bool            `json:"Mutating,omitempty" yaml:"Mutating,omitempty"`
-	OutputInfo *FunctionOutput `json:"OutputInfo,omitempty" yaml:"OutputInfo,omitempty"`
+	Mutating bool `json:"Mutating,omitempty" yaml:"Mutating,omitempty"`
+
+	// OtherDataExpected If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used
+	OtherDataExpected []string        `json:"OtherDataExpected,omitempty" yaml:"OtherDataExpected,omitempty"`
+	OutputInfo        *FunctionOutput `json:"OutputInfo,omitempty" yaml:"OutputInfo,omitempty"`
 
 	// Parameters Function parameters, in order
 	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
@@ -1815,6 +1818,7 @@ type QueuedOperation struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+	LiveData    string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
 	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
@@ -2202,7 +2206,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2411,7 +2415,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2507,6 +2511,9 @@ type Trigger struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.
+	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -2650,13 +2657,13 @@ type Unit struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
-	// LiveData The live resources as of the most recent action in the same representation as Data.
+	// LiveData The live resources as of the most recent non-dry-run action in the same representation as Data.
 	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
 
 	// LiveRevisionNum Sequence number the last Revision applied once apply has completed. 0 if no live revision.
 	LiveRevisionNum int64 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
 
-	// LiveState The live state as of the most recent action; content is ProviderType-specific.
+	// LiveState The live state as of the most recent non-dry-run action; content is ProviderType-specific.
 	LiveState       string                `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
 
@@ -2745,6 +2752,7 @@ type UnitAction struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
+	LiveData    string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
 	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
@@ -5035,6 +5043,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
+	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.
+	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
+
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7038,6 +7049,9 @@ type InvokeFunctionsParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
+	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.
+	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
+
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Units returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7737,7 +7751,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7844,7 +7858,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -7974,6 +7989,9 @@ type CreateUnitParams struct {
 	// UpstreamUnitId Unique identifier for a upstream_unit_id
 	UpstreamUnitId *openapi_types.UUID `form:"upstream_unit_id,omitempty" json:"upstream_unit_id,omitempty" yaml:"upstream_unit_id,omitempty"`
 
+	// MergeExternalSource Identifier of the external source. Sets the source type to MergeExternal and appends the source name to the change description.
+	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 }
@@ -8069,6 +8087,9 @@ type PatchUnitParams struct {
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
+	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
+	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
+
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -8155,6 +8176,9 @@ type UpdateUnitParams struct {
 
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
+
+	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
+	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -9498,7 +9522,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9576,7 +9600,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9655,7 +9679,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -9702,7 +9727,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9771,7 +9796,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -9818,7 +9844,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10250,6 +10276,9 @@ type BulkPatchUnitsParams struct {
 
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
+
+	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
+	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.

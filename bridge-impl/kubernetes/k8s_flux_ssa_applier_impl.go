@@ -236,6 +236,9 @@ func setupKubernetesClient(kubeContext string) (KubernetesClient, ResourceManage
 
 // NewFluxSSAApplier creates a new K8sApplier instance using the SSA implementation
 func NewFluxSSAApplier(config ApplierConfig) (K8sApplier, error) {
+	if config.DryRun {
+		return nil, fmt.Errorf("dry run is not supported with the FluxSSA applier")
+	}
 	k8sClient, manager, err := KubernetesClientFactory(config.KubeContext)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubernetes client and manager: %v", err)

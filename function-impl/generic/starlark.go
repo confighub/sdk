@@ -327,7 +327,7 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 			}
 		}
 		return marshalResourceList(modifiedResources)
-	})
+	}, whereExpressions)
 	if err != nil {
 		return parsedData, nil, err
 	}

@@ -413,6 +413,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
+            other_data_source: queryArg.otherDataSource,
             where: queryArg.where,
             filter: queryArg.filter,
             resource_type: queryArg.resourceType,
@@ -1034,6 +1035,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
+            other_data_source: queryArg.otherDataSource,
             where: queryArg.where,
             filter: queryArg.filter,
             resource_type: queryArg.resourceType,
@@ -1367,6 +1369,7 @@ const injectedRtkApi = api
           params: {
             upstream_space_id: queryArg.upstreamSpaceId,
             upstream_unit_id: queryArg.upstreamUnitId,
+            merge_external_source: queryArg.mergeExternalSource,
             allow_exists: queryArg.allowExists,
           },
         }),
@@ -1403,6 +1406,7 @@ const injectedRtkApi = api
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
+            merge_external_source: queryArg.mergeExternalSource,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1426,6 +1430,7 @@ const injectedRtkApi = api
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
+            merge_external_source: queryArg.mergeExternalSource,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1895,6 +1900,7 @@ const injectedRtkApi = api
             merge_source: queryArg.mergeSource,
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
+            merge_external_source: queryArg.mergeExternalSource,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -4014,6 +4020,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
   subgroup?: string;
+  /** Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. */
+  otherDataSource?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Units returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -6167,6 +6175,8 @@ export type InvokeFunctionsApiArg = {
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
   subgroup?: string;
+  /** Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. */
+  otherDataSource?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Units returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -6967,7 +6977,7 @@ export type ListTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7106,6 +7116,7 @@ export type PatchTriggerApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    OtherDataSource?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -7253,6 +7264,8 @@ export type CreateUnitApiArg = {
   upstreamSpaceId?: string;
   /** Unique identifier for a upstream_unit_id */
   upstreamUnitId?: string;
+  /** Identifier of the external source. Sets the source type to MergeExternal and appends the source name to the change description. */
+  mergeExternalSource?: string;
   /** Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity */
   allowExists?: string;
   unit: Unit;
@@ -7324,6 +7337,8 @@ export type PatchUnitApiArg = {
   mergeBase?: string;
   /** Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   mergeEnd?: string;
+  /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
+  mergeExternalSource?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7453,6 +7468,8 @@ export type UpdateUnitApiArg = {
   mergeBase?: string;
   /** Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   mergeEnd?: string;
+  /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
+  mergeExternalSource?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -8898,7 +8915,7 @@ export type BulkDeleteTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8972,7 +8989,7 @@ export type ListAllTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9057,7 +9074,7 @@ export type BulkPatchTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9122,6 +9139,7 @@ export type BulkPatchTriggersApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    OtherDataSource?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -9168,7 +9186,7 @@ export type BulkCreateTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9286,6 +9304,7 @@ export type BulkCreateTriggersApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    OtherDataSource?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -9563,6 +9582,8 @@ export type BulkPatchUnitsApiArg = {
   mergeBase?: string;
   /** Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
   mergeEnd?: string;
+  /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
+  mergeExternalSource?: string;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -10984,7 +11005,7 @@ export type Space = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -11096,7 +11117,7 @@ export type SpaceRead = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -11447,6 +11468,8 @@ export type FunctionSignature = {
   Idempotent?: boolean;
   /** May change the configuration data */
   Mutating?: boolean;
+  /** If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used */
+  OtherDataExpected?: string[];
   OutputInfo?: FunctionOutput;
   /** Function parameters, in order */
   Parameters?: FunctionParameter[] | null;
@@ -11672,6 +11695,7 @@ export type QueuedOperation = {
   ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
+  LiveData?: string;
   LiveState?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;
@@ -12386,11 +12410,11 @@ export type UnitRead = {
   LastAppliedRevisionNum?: number;
   /** LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed. */
   LastChangeDescription?: string;
-  /** The live resources as of the most recent action in the same representation as Data. */
+  /** The live resources as of the most recent non-dry-run action in the same representation as Data. */
   LiveData?: string;
   /** Sequence number the last Revision applied once apply has completed. 0 if no live revision. */
   LiveRevisionNum?: number;
-  /** The live state as of the most recent action; content is ProviderType-specific. */
+  /** The live state as of the most recent non-dry-run action; content is ProviderType-specific. */
   LiveState?: string;
   MutationSources?: ResourceMutationList;
   /** Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates. */
@@ -12796,6 +12820,8 @@ export type Trigger = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  /** Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum. */
+  OtherDataSource?: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -12855,6 +12881,8 @@ export type TriggerRead = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  /** Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum. */
+  OtherDataSource?: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13067,7 +13095,7 @@ export type Target = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -13166,7 +13194,7 @@ export type TargetRead = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
@@ -13638,6 +13666,7 @@ export type UnitAction = {
   ErrorDetails?: ErrorItem[];
   /** ExtraParams contains additional parameters for the operation in string format. */
   ExtraParams?: string;
+  LiveData?: string;
   LiveState?: string;
   /** OrganizationID is the unique identifier of the organization this operation belongs to. */
   OrganizationID?: string;

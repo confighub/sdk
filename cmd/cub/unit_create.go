@@ -129,13 +129,14 @@ Important: Unit slugs must be unique within a space and follow naming convention
 }
 
 var unitCreateArgs struct {
-	upstreamUnitSlug  string
-	upstreamSpaceSlug string
-	importUnitSlug    string
-	toolchainType     string
-	targetSlug        string
-	changesetSlug     string
-	changeDescription string
+	upstreamUnitSlug    string
+	upstreamSpaceSlug   string
+	importUnitSlug      string
+	toolchainType       string
+	targetSlug          string
+	changesetSlug       string
+	changeDescription   string
+	mergeExternalSource string
 	// Bulk create specific flags
 	destSpaces    []string
 	whereSpace    string
@@ -161,6 +162,7 @@ func init() {
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.mergeExternalSource, "merge-external-source", "", "external source identifier (sets source type to MergeExternal)")
 	enableOptionFlag(unitCreateCmd)
 
 	// Bulk create specific flags
@@ -200,8 +202,9 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 
 		// Validate single-mode-only flags are not used in bulk mode
 		if unitCreateArgs.upstreamUnitSlug != "" || unitCreateArgs.upstreamSpaceSlug != "" ||
-			unitCreateArgs.importUnitSlug != "" || unitCreateArgs.toolchainType != string(workerapi.ToolchainKubernetesYAML) {
-			return false, errors.New("--upstream-unit, --upstream-space, --import, and --toolchain flags cannot be used in bulk create mode")
+			unitCreateArgs.importUnitSlug != "" || unitCreateArgs.toolchainType != string(workerapi.ToolchainKubernetesYAML) ||
+			unitCreateArgs.mergeExternalSource != "" {
+			return false, errors.New("--upstream-unit, --upstream-space, --import, --toolchain, and --merge-external-source flags cannot be used in bulk create mode")
 		}
 
 		if len(unitCreateArgs.namePrefixes) > 0 && len(unitCreateArgs.variantLabels) > 0 {
@@ -230,7 +233,12 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 			)
 		}
 
-		// Validate conflicting options - if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
+		// Validate conflicting options
+		if unitCreateArgs.mergeExternalSource != "" && unitCreateArgs.upstreamUnitSlug != "" {
+			return false, errors.New("--merge-external-source and --upstream-unit are mutually exclusive")
+		}
+
+		// if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
 		if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
 			return false, errors.New("can't read both entity attributes and config data from stdin")
 		}
@@ -389,6 +397,9 @@ func runSingleUnitCreate(args []string) error {
 	if unitCreateArgs.upstreamUnitSlug != "" {
 		newParams.UpstreamSpaceId = &upstreamSpaceID
 		newParams.UpstreamUnitId = &upstreamUnitID
+	}
+	if unitCreateArgs.mergeExternalSource != "" {
+		newParams.MergeExternalSource = &unitCreateArgs.mergeExternalSource
 	}
 
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)

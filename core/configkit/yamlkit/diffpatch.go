@@ -40,12 +40,12 @@ func StripComments(yamlData []byte) ([]byte, error) {
 
 // DiffPatch compares original and modified YAML content, generates a patch, and applies it to target data
 func DiffPatch(original, modified, targetData []byte, resourceProvider ResourceProvider) ([]byte, bool, error) {
-	return DiffPatchWithOptions(original, modified, targetData, resourceProvider, false)
+	return DiffPatchWithOptions(original, modified, targetData, resourceProvider, false, nil)
 }
 
 // DiffPatchWithOptions compares original and modified YAML content, generates a patch, and applies it to target data
 // If omitAdditions is true, mutations of type MutationTypeAdd are filtered out before applying the patch
-func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvider ResourceProvider, omitAdditions bool) ([]byte, bool, error) {
+func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvider ResourceProvider, omitAdditions bool, whereExpressions []*api.VisitorRelationalExpression) ([]byte, bool, error) {
 	// Parse original YAML content
 	originalYAML, err := gaby.ParseAll(original)
 	if err != nil {
@@ -101,7 +101,7 @@ func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvide
 	}
 
 	// Apply patch to target data
-	patchedResult, err := PatchMutations(parsedTargetData, nil, mutations, resourceProvider)
+	patchedResult, err := PatchMutations(parsedTargetData, nil, mutations, resourceProvider, whereExpressions)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to apply patch: %v", err)
 	}

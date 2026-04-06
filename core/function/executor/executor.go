@@ -9,11 +9,11 @@ import (
 	"context"
 	"fmt"
 
-	bwapi "github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
+	bwapi "github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
@@ -49,7 +49,7 @@ func NewEmptyExecutor() *ConcreteFunctionExecutor {
 // The toolchain type is derived from the provider's GetToolchainType method.
 // This creates a new FunctionHandler with the provider, which automatically
 // registers the compute-mutations function.
-func (e *ConcreteFunctionExecutor) RegisterToolchain(provider handler.ToolchainProvider) {
+func (e *ConcreteFunctionExecutor) RegisterToolchain(provider handler.ToolchainProvider, captureSignatures bool) *handler.FunctionHandler {
 	toolchain := provider.GetToolchainType()
 	fh := handler.NewFunctionHandler(provider)
 	e.functionRegistry[toolchain] = fh
@@ -57,6 +57,22 @@ func (e *ConcreteFunctionExecutor) RegisterToolchain(provider handler.ToolchainP
 		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
 	}
 	// Capture any functions already registered (e.g., compute-mutations)
+	if captureSignatures {
+		e.CaptureSignatures(toolchain)
+	}
+	return fh
+}
+
+// CaptureSignatures updates the signature registry from the handler's current registrations.
+// Call after using CreateAndRegisterHandler to populate the handler via a registrar.
+func (e *ConcreteFunctionExecutor) CaptureSignatures(toolchain workerapi.ToolchainType) {
+	fh, ok := e.functionRegistry[toolchain]
+	if !ok {
+		return
+	}
+	if _, ok := e.signatureRegistry[toolchain]; !ok {
+		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
+	}
 	for name, registration := range fh.ListCore() {
 		e.signatureRegistry[toolchain][name] = registration.FunctionSignature
 	}
@@ -72,6 +88,12 @@ func (e *ConcreteFunctionExecutor) RegisterFunction(toolchain workerapi.Toolchai
 		}
 	}
 
+	fh, ok := e.functionRegistry[toolchain]
+	if !ok {
+		return fmt.Errorf("toolchain %s not initialized; call RegisterToolchain first or use NewStandardExecutor", toolchain)
+	}
+	fh.RegisterFunction(registration.FunctionSignature.FunctionName, &registration)
+
 	if _, ok := e.signatureRegistry[toolchain]; !ok {
 		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
 	}
@@ -79,12 +101,6 @@ func (e *ConcreteFunctionExecutor) RegisterFunction(toolchain workerapi.Toolchai
 		return fmt.Errorf("function %s already registered", registration.FunctionSignature.FunctionName)
 	}
 	e.signatureRegistry[toolchain][registration.FunctionSignature.FunctionName] = registration.FunctionSignature
-
-	fh, ok := e.functionRegistry[toolchain]
-	if !ok {
-		return fmt.Errorf("toolchain %s not initialized; call RegisterToolchain first or use NewStandardExecutor", toolchain)
-	}
-	fh.RegisterFunction(registration.FunctionSignature.FunctionName, &registration)
 
 	return nil
 }
@@ -133,35 +149,10 @@ func (e *ConcreteFunctionExecutor) GetConverter(toolchain workerapi.ToolchainTyp
 	return fh.GetConverter(), true
 }
 
-// CreateAndRegisterHandler creates a new FunctionHandler for the given provider's toolchain
-// and registers it. Call CaptureSignatures after populating the handler with functions.
-func (e *ConcreteFunctionExecutor) CreateAndRegisterHandler(provider handler.ToolchainProvider) *handler.FunctionHandler {
-	toolchain := provider.GetToolchainType()
-	fh := handler.NewFunctionHandler(provider)
-	e.functionRegistry[toolchain] = fh
-	e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
-	return fh
-}
-
 // GetHandler returns the FunctionHandler for the given toolchain type.
 func (e *ConcreteFunctionExecutor) GetHandler(toolchain workerapi.ToolchainType) (*handler.FunctionHandler, bool) {
 	fh, ok := e.functionRegistry[toolchain]
 	return fh, ok
-}
-
-// CaptureSignatures updates the signature registry from the handler's current registrations.
-// Call after using CreateAndRegisterHandler to populate the handler via a registrar.
-func (e *ConcreteFunctionExecutor) CaptureSignatures(toolchain workerapi.ToolchainType) {
-	fh, ok := e.functionRegistry[toolchain]
-	if !ok {
-		return
-	}
-	if _, ok := e.signatureRegistry[toolchain]; !ok {
-		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
-	}
-	for name, registration := range fh.ListCore() {
-		e.signatureRegistry[toolchain][name] = registration.FunctionSignature
-	}
 }
 
 // ResourceTypePathsEntry pairs a resource type with paths and optional getter/setter invocations.

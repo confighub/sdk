@@ -4,11 +4,11 @@ go 1.25.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/bridge-impl v0.1.25
-	github.com/confighub/sdk/configkit/k8skit v0.1.25
-	github.com/confighub/sdk/configkit/yqkit v0.1.25
-	github.com/confighub/sdk/core v0.1.25
-	github.com/confighub/sdk/function-impl v0.1.25
+	github.com/confighub/sdk/bridge-impl v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0
 	github.com/fatih/color v1.18.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/uuid v1.6.0
@@ -19,6 +19,7 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.10.1
+	golang.org/x/crypto v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.17.3
 	k8s.io/apimachinery v0.33.1
@@ -51,14 +52,14 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/envkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/hclkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.1.25 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.1.25 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/hclkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -185,7 +186,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.starlark.net v0.0.0-20260210143700-b62fd896b91b // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.28.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
@@ -222,6 +222,19 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
+	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
+	github.com/confighub/sdk/configkit/hclkit => ../../configkit/hclkit
+	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
+	github.com/confighub/sdk/function-impl => ../../function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -1096,11 +1096,11 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 
 func makeK8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetImageReferenceByURI(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetImageReferenceByURI(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 	}
 }
 
-func k8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument, opts *api.FunctionOptions) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	imageURI := args[0].Value.(string)
 	newReference := args[1].Value.(string)
@@ -1123,17 +1123,21 @@ func k8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType, parsedData 
 		}
 		return newImage
 	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, nil)
+	var whereExpressions []*api.VisitorRelationalExpression
+	if opts != nil {
+		whereExpressions = opts.WhereResourceExpressions
+	}
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, whereExpressions)
 	return parsedData, nil, err
 }
 
 func makeK8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetImageRegistryByRegistry(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetImageRegistryByRegistry(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 	}
 }
 
-func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument, opts *api.FunctionOptions) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	imageRegistry := args[0].Value.(string)
 	newRegistry := args[1].Value.(string)
@@ -1145,7 +1149,11 @@ func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedD
 		}
 		return newRegistry + strings.TrimPrefix(currentValue, imageRegistry)
 	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, nil)
+	var whereExpressions []*api.VisitorRelationalExpression
+	if opts != nil {
+		whereExpressions = opts.WhereResourceExpressions
+	}
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, whereExpressions)
 	return parsedData, nil, err
 }
 
@@ -1411,11 +1419,11 @@ func k8sSetResources(
 
 func makeK8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetContainerResources(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnSetContainerResources(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 	}
 }
 
-func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument, opts *api.FunctionOptions) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	containerName := args[0].Value.(string)
 	operation := args[1].Value.(string)
@@ -1475,8 +1483,12 @@ func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData g
 	}
 
 	resourceTypeToResourcesPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameContainerResources)
+	var whereExpressions []*api.VisitorRelationalExpression
+	if opts != nil {
+		whereExpressions = opts.WhereResourceExpressions
+	}
 	// TODO: consider setting upsert to true
-	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, false, nil)
+	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, false, whereExpressions)
 	return parsedData, nil, err
 }
 
@@ -2037,17 +2049,21 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, options *api.Func
 
 func makeK8sFnVetImages(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnVetImages(rp, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnVetImages(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 	}
 }
 
-func k8sFnVetImages(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func k8sFnVetImages(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, args []api.FunctionArgument, opts *api.FunctionOptions) (gaby.Container, any, error) {
 	filterString := args[0].Value.(string)
 	var filter api.ValueFilter
 	if err := json.Unmarshal([]byte(filterString), &filter); err != nil {
 		return parsedData, nil, errors.Wrap(err, "failed to parse image-filter argument")
 	}
 
-	result, err := generic.GenericVetValues(rp, parsedData, api.AttributeNameContainerImage, &filter)
+	var whereExpressions []*api.VisitorRelationalExpression
+	if opts != nil {
+		whereExpressions = opts.WhereResourceExpressions
+	}
+	result, err := generic.GenericVetValues(rp, parsedData, api.AttributeNameContainerImage, &filter, whereExpressions)
 	return parsedData, result, err
 }

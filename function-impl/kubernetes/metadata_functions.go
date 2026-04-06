@@ -329,13 +329,17 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 
 func makeK8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnNeededNamespaces(rp, fArgs.ParsedData)
+		var whereExpressions []*api.VisitorRelationalExpression
+		if fArgs.Options != nil {
+			whereExpressions = fArgs.Options.WhereResourceExpressions
+		}
+		return k8sFnNeededNamespaces(rp, fArgs.ParsedData, whereExpressions)
 	}
 }
 
-func k8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container) (gaby.Container, any, error) {
+func k8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// No arguments
 	resourceTypeToNamespacePath := yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameNamespaceNameReference)
-	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, rp, nil)
+	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, rp, whereExpressions)
 	return parsedData, values, err
 }

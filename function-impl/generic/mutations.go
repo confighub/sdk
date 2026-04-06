@@ -43,14 +43,14 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnPatchMutations(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnPatchMutations(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	mutationPredicatesString := args[0].Value.(string)
 	var mutationsPredicates api.ResourceMutationList
 	err := json.Unmarshal([]byte(mutationPredicatesString), &mutationsPredicates)
@@ -64,6 +64,6 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		return parsedData, nil, err
 	}
 
-	parsedData, err = yamlkit.PatchMutations(parsedData, mutationsPredicates, mutationsPatch, resourceProvider)
+	parsedData, err = yamlkit.PatchMutations(parsedData, mutationsPredicates, mutationsPatch, resourceProvider, whereExpressions)
 	return parsedData, nil, err
 }

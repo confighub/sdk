@@ -16,7 +16,7 @@ import (
 )
 
 func echoSetup(rootRouter *echo.Echo) {
-	exec := funcimpl.NewStandardExecutor(nil)
+	exec := funcimpl.NewStandardExecutor(nil, true)
 	apiRouter := rootRouter.Group("/function")
 	setupAPIRootAPI(apiRouter)
 

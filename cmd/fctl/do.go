@@ -80,6 +80,7 @@ func InvokeFunction(
 	transportConfig *client.TransportConfig,
 	toolchain workerapi.ToolchainType,
 	data []byte,
+	otherData map[api.OtherDataSource][]byte,
 	functionContext *api.FunctionContext,
 	whereRes string,
 	functionName string,
@@ -96,6 +97,7 @@ func InvokeFunction(
 
 	return client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
 		ConfigData:          data,
+		OtherData:           otherData,
 		FunctionContext:     *functionContext,
 		FunctionInvocations: functions,
 		WhereResource:       whereRes,
@@ -122,7 +124,27 @@ func fakeFunctionContext(slug string) *api.FunctionContext {
 	return &functionContext
 }
 
+// parseOtherDataFlags parses --other-data flags in the format "Source=filename" and returns
+// a map of OtherDataSource to file contents.
+func parseOtherDataFlags(otherDataFlags []string) map[api.OtherDataSource][]byte {
+	if len(otherDataFlags) == 0 {
+		return nil
+	}
+	result := make(map[api.OtherDataSource][]byte, len(otherDataFlags))
+	for _, flag := range otherDataFlags {
+		parts := strings.SplitN(flag, "=", 2)
+		if len(parts) != 2 {
+			failOnError(fmt.Errorf("invalid --other-data format '%s': expected Source=filename", flag))
+		}
+		source := api.OtherDataSource(parts[0])
+		data := readFile(parts[1])
+		result[source] = data
+	}
+	return result
+}
+
 func newDoCommand() *cobra.Command {
+	var otherDataFlags []string
 	cmd := &cobra.Command{
 		Use:   "do <filename or - for stdin> <unit name> <function name> [<arg1> ...]",
 		Short: "Invoke one function",
@@ -145,7 +167,8 @@ func newDoCommand() *cobra.Command {
 			functionName := args[2]
 			invokeArgs := args[3:]
 
-			respMsg, err := InvokeFunction(transportConfig, toolchain, content, fakeFunctionContext(unitName), whereResource, functionName, invokeArgs...)
+			otherData := parseOtherDataFlags(otherDataFlags)
+			respMsg, err := InvokeFunction(transportConfig, toolchain, content, otherData, fakeFunctionContext(unitName), whereResource, functionName, invokeArgs...)
 			failOnError(err)
 			outputFunctionInvocationResponse(content, respMsg)
 		},
@@ -153,6 +176,7 @@ func newDoCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	cmd.Flags().BoolVar(&outputOnly, "output-only", false, "show function output only")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
+	cmd.Flags().StringArrayVar(&otherDataFlags, "other-data", nil, "additional data by source in format Source=filename (e.g., LiveRevisionNum=live.yaml)")
 
 	return cmd
 }

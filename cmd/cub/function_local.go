@@ -11,9 +11,9 @@ import (
 
 	functionlogger "github.com/labstack/gommon/log"
 
-	funcimpl "github.com/confighub/sdk/function-impl"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/workerapi"
+	funcimpl "github.com/confighub/sdk/function-impl"
 	"github.com/spf13/cobra"
 )
 
@@ -81,7 +81,7 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 	toolchainTypeEnum := workerapi.ToolchainType(toolchainTypeString)
 
 	// Create function executor
-	functionExecutor := funcimpl.NewStandardExecutor(nil)
+	functionExecutor := funcimpl.NewStandardExecutor(nil, true)
 
 	// Get registered functions to validate the function exists
 	registeredFunctions := functionExecutor.RegisteredFunctions()

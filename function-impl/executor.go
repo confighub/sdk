@@ -11,7 +11,6 @@ package impl
 
 import (
 	"github.com/confighub/sdk/configkit/appyamlkit"
-	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/inikit"
@@ -20,10 +19,12 @@ import (
 	"github.com/confighub/sdk/configkit/propkit"
 	"github.com/confighub/sdk/configkit/textkit"
 	"github.com/confighub/sdk/configkit/tomlkit"
+	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/function-impl/appjson"
 	"github.com/confighub/sdk/function-impl/appyaml"
 	"github.com/confighub/sdk/function-impl/confighub"
@@ -35,7 +36,6 @@ import (
 	"github.com/confighub/sdk/function-impl/properties"
 	"github.com/confighub/sdk/function-impl/text"
 	"github.com/confighub/sdk/function-impl/toml"
-	"github.com/confighub/sdk/core/workerapi"
 )
 
 // toolchainSetup pairs a provider with its function registration function.
@@ -47,8 +47,8 @@ type toolchainSetup struct {
 // NewStandardExecutor creates a new FunctionExecutor with the standard functions registered.
 // If toolchainTypes is non-nil, only toolchains in the list are registered.
 // If toolchainTypes is nil, all toolchains are registered.
-func NewStandardExecutor(toolchainTypes []workerapi.ToolchainType) *executor.ConcreteFunctionExecutor {
-	return NewStandardExecutorWithAttributes(toolchainTypes, nil)
+func NewStandardExecutor(toolchainTypes []workerapi.ToolchainType, registerFunctions bool) *executor.ConcreteFunctionExecutor {
+	return NewStandardExecutorWithAttributes(toolchainTypes, registerFunctions, nil)
 }
 
 // NewStandardExecutorWithAttributes creates a new FunctionExecutor with the standard functions
@@ -56,7 +56,7 @@ func NewStandardExecutor(toolchainTypes []workerapi.ToolchainType) *executor.Con
 // FunctionHandler before signatures are captured, avoiding the map-copy issue.
 // If toolchainTypes is non-nil, only toolchains in the list are registered.
 // If toolchainTypes is nil, all toolchains are registered.
-func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType, attributes []executor.AttributeRegistration) *executor.ConcreteFunctionExecutor {
+func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType, registerFunctions bool, attributes []executor.AttributeRegistration) *executor.ConcreteFunctionExecutor {
 	exec := executor.NewEmptyExecutor()
 
 	// Build a set for fast lookup when filtering is requested
@@ -100,7 +100,12 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 			continue
 		}
 
-		fh := exec.CreateAndRegisterHandler(setup.provider)
+		if !registerFunctions {
+			exec.RegisterToolchain(setup.provider, true)
+			continue
+		}
+
+		fh := exec.RegisterToolchain(setup.provider, false)
 		setup.registerFn(fh)
 
 		// Register dynamic attributes for this toolchain

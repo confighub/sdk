@@ -608,6 +608,9 @@ func findFluxOCIRepositoryObject(objects []*unstructured.Unstructured) *unstruct
 }
 
 func (w *FluxOCIWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	if payload.DryRun {
+		return fmt.Errorf("dry run is not supported for Flux apply")
+	}
 	if _, err := w.transformToFluxOCI(wctx, &payload, false); err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -920,7 +923,7 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 			cleanedBaseData = baseData
 		}
 
-		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false)
+		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false, nil)
 		if diffErr != nil {
 			log.Log.Error(diffErr, "Failed to diff-patch managed resources")
 		} else {
@@ -967,6 +970,9 @@ func (w *FluxOCIWorker) Import(wctx api.BridgeWorkerContext, payload api.BridgeW
 }
 
 func (w *FluxOCIWorker) Destroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	if payload.DryRun {
+		return fmt.Errorf("dry run is not supported for Flux destroy")
+	}
 	if _, err := w.transformToFluxOCI(wctx, &payload, true); err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,

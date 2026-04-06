@@ -124,31 +124,25 @@ func registerGetResourcesOfType(fh handler.FunctionRegistry, converter configkit
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetResourcesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnGetResourcesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	resourceType := args[0].Value.(string)
-	resourceMap, _, err := yamlkit.ResourceAndCategoryTypeMaps(parsedData, resourceProvider)
+func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+	resourceType := api.ResourceType(args[0].Value.(string))
+	var list api.ResourceInfoList
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+		func(_ *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
+			if resourceInfo.ResourceType == resourceType {
+				list = append(list, *resourceInfo)
+			}
+			return output, nil
+		})
 	if err != nil {
 		return parsedData, nil, err
-	}
-	list := make(api.ResourceInfoList, 0, len(resourceMap))
-	for resname, resCategoryTypes := range resourceMap {
-		for _, resCategoryType := range resCategoryTypes {
-			if resCategoryType.ResourceType == api.ResourceType(resourceType) {
-				list = append(list, api.ResourceInfo{
-					ResourceName:             resname,
-					ResourceNameWithoutScope: resourceProvider.RemoveScopeFromResourceName(resname),
-					ResourceType:             resCategoryType.ResourceType,
-					ResourceCategory:         resCategoryType.ResourceCategory,
-				})
-			}
-		}
 	}
 	return parsedData, list, nil
 }

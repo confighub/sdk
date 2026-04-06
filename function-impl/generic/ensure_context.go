@@ -36,7 +36,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnEnsureContext(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnEnsureContext(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -44,7 +44,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 }
 
 // TODO: This functionality should move into bridges.
-func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	addContext := args[0].Value.(bool)
 
 	// Check whether adding context is supported by the resource provider
@@ -53,31 +53,34 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 		return parsedData, nil, nil
 	}
 
-	for _, doc := range parsedData {
+	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		if addContext {
 			_, err := doc.SetP(functionContext.UnitSlug, resourceProvider.ContextPath(constants.UnitSlugKeySuffix))
 			if err != nil {
-				return parsedData, nil, err
+				return output, []error{err}
 			}
 			_, err = doc.SetP(functionContext.SpaceID.String(), resourceProvider.ContextPath(constants.SpaceIDKeySuffix))
 			if err != nil {
-				return parsedData, nil, err
+				return output, []error{err}
 			}
 		} else {
 			err := doc.DeleteP(resourceProvider.ContextPath(constants.UnitSlugKeySuffix))
 			if err != nil {
-				return parsedData, nil, err
+				return output, []error{err}
 			}
 			err = doc.DeleteP(resourceProvider.ContextPath(constants.SpaceIDKeySuffix))
 			if err != nil {
-				return parsedData, nil, err
+				return output, []error{err}
 			}
 			// Delete the RevisionNum regardless
 			err = doc.DeleteP(resourceProvider.ContextPath(constants.RevisionNumKeySuffix))
 			if err != nil {
-				return parsedData, nil, err
+				return output, []error{err}
 			}
 		}
+		return output, nil
 	}
-	return parsedData, nil, nil
+
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	return parsedData, nil, err
 }

@@ -40,7 +40,7 @@ func registerGetReferencesOfType(fh handler.FunctionRegistry, converter configki
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnGetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -74,7 +74,7 @@ func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configki
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSetReferencesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -85,25 +85,25 @@ func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeNa
 	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
 }
 
-func genericFnGetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnGetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 
 	paths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeNameForResourceType(api.ResourceType(resourceType)))
 	if paths == nil {
 		return parsedData, nil, nil
 	}
-	values, err := yamlkit.GetStringPaths(parsedData, paths, []any{}, resourceProvider, nil)
+	values, err := yamlkit.GetStringPaths(parsedData, paths, []any{}, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
-func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 	resourceName := args[1].Value.(string)
 
 	var err error
 	paths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeNameForResourceType(api.ResourceType(resourceType)))
 	if paths != nil {
-		err = yamlkit.UpdateStringPaths(parsedData, paths, []any{}, resourceProvider, resourceName, false, nil)
+		err = yamlkit.UpdateStringPaths(parsedData, paths, []any{}, resourceProvider, resourceName, false, whereExpressions)
 	}
 	return parsedData, nil, err
 }

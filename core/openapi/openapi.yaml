@@ -4310,6 +4310,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Source of additional configuration data to pass to functions
+          that need it (e.g., vet-immutable). Supports named revision specifiers:
+          LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum.
+          Can be prefixed with ''Before:'' (e.g., Before:HeadRevisionNum). May be
+          repeated for multiple sources.'
+        in: query
+        name: other_data_source
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Units returned. The expression syntax was inspired by SQL.
@@ -10733,6 +10743,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Source of additional configuration data to pass to functions
+          that need it (e.g., vet-immutable). Supports named revision specifiers:
+          LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum.
+          Can be prefixed with ''Before:'' (e.g., Before:HeadRevisionNum). May be
+          repeated for multiple sources.'
+        in: query
+        name: other_data_source
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Units returned. The expression syntax was inspired by SQL.
@@ -13553,7 +13573,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -14017,6 +14037,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OtherDataSource:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -14452,6 +14476,13 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: Identifier of the external source. Sets the source type to MergeExternal
+          and appends the source name to the change description.
+        in: query
+        name: merge_external_source
+        required: false
+        schema:
+          type: string
       - description: Allowed values are true and false. Default is false. When true,
           reports success when an entity already exists and returns the existing entity
         in: query
@@ -14799,6 +14830,14 @@ paths:
         required: false
         schema:
           type: string
+      - description: Identifier of the external source for merge-on-update. When set,
+          computes mutations between the last MergeExternal revision and the provided
+          data, then patches the current unit data with those mutations.
+        in: query
+        name: merge_external_source
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -15138,6 +15177,14 @@ paths:
           associated with that entity is selected.'
         in: query
         name: merge_end
+        required: false
+        schema:
+          type: string
+      - description: Identifier of the external source for merge-on-update. When set,
+          computes mutations between the last MergeExternal revision and the provided
+          data, then patches the current unit data with those mutations.
+        in: query
+        name: merge_external_source
         required: false
         schema:
           type: string
@@ -19157,7 +19204,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19320,7 +19367,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19477,7 +19524,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19609,6 +19656,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OtherDataSource:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -19739,7 +19790,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -19943,6 +19994,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OtherDataSource:
+                  description: ""
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -20593,6 +20648,14 @@ paths:
           associated with that entity is selected.'
         in: query
         name: merge_end
+        required: false
+        schema:
+          type: string
+      - description: Identifier of the external source for merge-on-update. When set,
+          computes mutations between the last MergeExternal revision and the provided
+          data, then patches the current unit data with those mutations.
+        in: query
+        name: merge_external_source
         required: false
         schema:
           type: string
@@ -25139,6 +25202,13 @@ components:
           description: May change the configuration data
           type: boolean
           x-go-type-skip-optional-pointer: true
+        OtherDataExpected:
+          description: If non-empty, specification of what source(s) are expected
+            in OtherData; if empty, OtherData is not used
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         OutputInfo:
           $ref: '#/components/schemas/FunctionOutput'
         Parameters:
@@ -25967,6 +26037,10 @@ components:
             in string format.
           type: string
           x-go-type-skip-optional-pointer: true
+        LiveData:
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
         LiveState:
           format: base64
           type: string
@@ -26652,7 +26726,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -27028,7 +27102,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -27196,6 +27270,12 @@ components:
           description: Unique identifier for an organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OtherDataSource:
+          description: Specifies the source of additional configuration data to pass
+            to functions that need it (e.g., vet-immutable needs LiveRevisionNum data).
+            Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -27476,8 +27556,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         LiveData:
-          description: The live resources as of the most recent action in the same
-            representation as Data.
+          description: The live resources as of the most recent non-dry-run action
+            in the same representation as Data.
           format: base64
           readOnly: true
           type: string
@@ -27490,7 +27570,8 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         LiveState:
-          description: The live state as of the most recent action; content is ProviderType-specific.
+          description: The live state as of the most recent non-dry-run action; content
+            is ProviderType-specific.
           format: base64
           readOnly: true
           type: string
@@ -27684,6 +27765,10 @@ components:
         ExtraParams:
           description: ExtraParams contains additional parameters for the operation
             in string format.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LiveData:
+          format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         LiveState:

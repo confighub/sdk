@@ -177,18 +177,19 @@ Important: Only one of config-file, --restore, --upgrade, or --merge-source (wit
 }
 
 var (
-	changeDescription string
-	restore           string
-	resolve           string
-	isUpgrade         bool
-	isPatch           bool
-	changesetSlug     string
-	mergeSource       string
-	mergeBase         string
-	mergeEnd          string
-	whereMutation     string
-	filterMutation    string
-	tag               string
+	changeDescription   string
+	restore             string
+	resolve             string
+	isUpgrade           bool
+	isPatch             bool
+	changesetSlug       string
+	mergeSource         string
+	mergeBase           string
+	mergeEnd            string
+	mergeExternalSource string
+	whereMutation       string
+	filterMutation      string
+	tag                 string
 )
 
 func init() {
@@ -206,6 +207,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision for 3-way merge (uses same format as --restore)")
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
+	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
 	enableOptionFlag(unitUpdateCmd)
 	enableWhereFlag(unitUpdateCmd)
@@ -273,8 +275,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --label, --delete-gate, --destroy-gate, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --delete-gate, --destroy-gate, or --changeset"))
 		}
 	}
 
@@ -315,9 +317,12 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
 		}
 	}
+	if mergeExternalSource != "" {
+		optionsSet++
+	}
 
 	if optionsSet > 1 {
-		failOnError(fmt.Errorf("only one of --restore, --resolve, --upgrade, or --merge-source should be specified"))
+		failOnError(fmt.Errorf("only one of --restore, --resolve, --upgrade, --merge-source, or --merge-external-source should be specified"))
 	}
 
 	dataFromEntity := restore != "" || resolve != "" || isUpgrade || mergeSource != ""
@@ -561,6 +566,10 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			newParams.FilterMutation = &filterMutationUUID
 		}
+	}
+
+	if mergeExternalSource != "" {
+		newParams.MergeExternalSource = &mergeExternalSource
 	}
 
 	// Read data payload
@@ -875,6 +884,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.MergeSource = updateParams.MergeSource
 	patchParams.MergeBase = updateParams.MergeBase
 	patchParams.MergeEnd = updateParams.MergeEnd
+	patchParams.MergeExternalSource = updateParams.MergeExternalSource
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag

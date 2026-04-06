@@ -228,11 +228,11 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 			getterArgs[1].Value = expression.Path
 			switch expression.DataType {
 			case api.DataTypeString:
-				_, output, err = GenericFnGetStringPath(resourceProvider, functionContext, parsedData, getterArgs)
+				_, output, err = GenericFnGetStringPath(resourceProvider, functionContext, parsedData, getterArgs, nil)
 			case api.DataTypeInt:
-				_, output, err = GenericFnGetIntPath(resourceProvider, functionContext, parsedData, getterArgs)
+				_, output, err = GenericFnGetIntPath(resourceProvider, functionContext, parsedData, getterArgs, nil)
 			case api.DataTypeBool:
-				_, output, err = GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, getterArgs)
+				_, output, err = GenericFnGetBoolPath(resourceProvider, functionContext, parsedData, getterArgs, nil)
 			default:
 				err = fmt.Errorf("unsupported data type %s", expression.DataType)
 			}

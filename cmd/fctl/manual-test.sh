@@ -199,6 +199,11 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path "apps/v1/Deplo
 ${FCTL} do test-data/ingress-route.yaml "MyDeployment" set-starlark 'for route in r["spec"]["routes"]:                         
       route["match"] = re.sub(params["pattern"], "Host(`" + params["hostname"] + "`)", route["match"])' hostname=test1.testwebsite.prod.confighub.net 'pattern=Host\(`[^`]*`\)( *\|\| *Host\(`[^`]*`\))*' > ${DIR}/starlark-regexp.txt
 
+# Test vet-immutable
+${FCTL} do test-data/deployment.yaml MyApp vet-immutable > ${DIR}/vet-immutable-no-live.txt
+${FCTL} do test-data/deployment.yaml MyApp vet-immutable --other-data LiveRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-same.txt
+${FCTL} do test-data/deployment-selector-changed.yaml MyApp vet-immutable --other-data LiveRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-changed.txt
+
 # These maps are unordered, so this is problematic
 # ${FCTL} listpaths  > ${DIR}/listpaths.txt
 

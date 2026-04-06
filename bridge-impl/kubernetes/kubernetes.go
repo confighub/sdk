@@ -21,14 +21,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-impl/common"
-	"github.com/confighub/sdk/core/worker/api"
-	"github.com/confighub/sdk/core/worker/lib"
-	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
@@ -405,6 +405,7 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 		UnitSlug:         payload.UnitSlug,
 		RevisionNum:      payload.RevisionNum,
 		WaitTimeout:      workerParams.WaitTimeout,
+		DryRun:           payload.DryRun,
 	}, nil
 }
 
@@ -456,6 +457,16 @@ func (w *KubernetesBridgeWorker) GetOrCreateApplier(payload api.BridgeWorkerPayl
 }
 
 func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	// In dry run mode, resources were not actually applied, so skip waiting.
+	if payload.DryRun {
+		log.Log.Info("🔍 Dry run mode - skipping apply watch, resources were not mutated")
+		return wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultApplyCompleted,
+			"Dry run completed - resources validated but not applied",
+		))
+	}
+
 	log.Log.Info("🔄 Waiting for resources to be ready...")
 	workerParams, _, err := ParseTargetParams(payload)
 	if err != nil {
@@ -714,7 +725,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 		baseDataWithoutComments = baseData
 	}
 
-	patched, drifted, err := yamlkit.DiffPatchWithOptions(baseDataWithoutComments, []byte(yamlData), payload.Data, w.resourceProvider, false)
+	patched, drifted, err := yamlkit.DiffPatchWithOptions(baseDataWithoutComments, []byte(yamlData), payload.Data, w.resourceProvider, false, nil)
 	if err != nil {
 		log.Log.Error(err, "Failed to diff patch")
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
@@ -964,6 +975,16 @@ func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload a
 }
 
 func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
+	// In dry run mode, resources were not actually deleted, so skip waiting.
+	if payload.DryRun {
+		log.Log.Info("🔍 Dry run mode - skipping destroy watch, resources were not deleted")
+		return wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusCompleted,
+			api.ActionResultDestroyCompleted,
+			"Dry run completed - resources validated but not destroyed",
+		))
+	}
+
 	log.Log.Info("🔄 Waiting for resources to be terminated...")
 	workerParams, _, err := ParseTargetParams(payload)
 	if err != nil {

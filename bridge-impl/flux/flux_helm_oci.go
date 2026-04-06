@@ -420,7 +420,7 @@ func (w *FluxOCIWorker) refreshFluxHelmRelease(
 			cleanedBaseData = baseData
 		}
 
-		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false)
+		patched, drifted, diffErr := yamlkit.DiffPatchWithOptions(cleanedBaseData, []byte(liveDataYAML), originalData, w.GetResourceProvider(), false, nil)
 		if diffErr != nil {
 			log.Log.Error(diffErr, "Failed to diff-patch managed resources")
 		} else {

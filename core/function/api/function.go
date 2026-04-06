@@ -112,6 +112,7 @@ type FunctionSignature struct {
 	Parameters            []FunctionParameter `description:"Function parameters, in order"`
 	RequiredParameters    int                 `description:"Number of required parameters"`
 	VarArgs               bool                `description:"Last parameter may be repeated"`
+	OtherDataExpected     []OtherDataSource   `json:",omitempty" description:"If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used"`
 	OutputInfo            *FunctionOutput     `description:"Output description"`
 	Mutating              bool                `description:"May change the configuration data"`
 	Validating            bool                `description:"Returns ValidationResult"`

@@ -95,20 +95,20 @@ func registerGetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnGetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnGetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnGetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	values, err := yamlkit.GetStringPaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, nil)
+	values, err := yamlkit.GetStringPaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
@@ -146,21 +146,21 @@ func registerSetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
+			return GenericFnSetStringPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetStringPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 	value := args[2].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, nil)
+	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
@@ -198,20 +198,20 @@ func registerGetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnGetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnGetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnGetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	values, err := yamlkit.GetPaths[int](parsedData, resourceTypeToPaths, []any{}, resourceProvider, nil)
+	values, err := yamlkit.GetPaths[int](parsedData, resourceTypeToPaths, []any{}, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
@@ -249,21 +249,21 @@ func registerSetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
+			return GenericFnSetIntPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetIntPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 	value := args[2].Value.(int)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	err := yamlkit.UpdatePathsValue[int](parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, nil)
+	err := yamlkit.UpdatePathsValue[int](parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
@@ -301,20 +301,20 @@ func registerGetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnGetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnGetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnGetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	values, err := yamlkit.GetPaths[bool](parsedData, resourceTypeToPaths, []any{}, resourceProvider, nil)
+	values, err := yamlkit.GetPaths[bool](parsedData, resourceTypeToPaths, []any{}, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
@@ -352,21 +352,21 @@ func registerSetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
+			return GenericFnSetBoolPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool) (gaby.Container, any, error) {
+func GenericFnSetBoolPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 	value := args[2].Value.(bool)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	err := yamlkit.UpdatePathsValue[bool](parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, nil)
+	err := yamlkit.UpdatePathsValue[bool](parsedData, resourceTypeToPaths, []any{}, resourceProvider, value, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
@@ -404,14 +404,14 @@ func registerSetPathComment(fh handler.FunctionRegistry, converter configkit.Con
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetPathComment(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSetPathComment(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
@@ -423,8 +423,16 @@ func genericFnSetPathComment(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		err := doc.SetCommentKey(string(context.Path), "line", comment)
 		return output, err
 	}
-	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, nil, resourceProvider, visitor, false, nil)
+	_, err := yamlkit.VisitPathsDoc(parsedData, resourceTypeToPaths, []any{}, nil, resourceProvider, visitor, false, whereExpressions)
 	return parsedData, nil, err
+}
+
+// whereFromOptions extracts WhereResourceExpressions from function options, returning nil if absent.
+func whereFromOptions(opts *api.FunctionOptions) []*api.VisitorRelationalExpression {
+	if opts != nil {
+		return opts.WhereResourceExpressions
+	}
+	return nil
 }
 
 // Generalized path setter and getter functions moved from kubernetes/container_functions.go
@@ -481,7 +489,7 @@ func RegisterPathSetterAndGetter(
 		if err := fh.RegisterFunction("get-"+name, &handler.FunctionRegistration{
 			FunctionSignature: *getterSignature,
 			Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-				return genericFnGetVisitorAnyType(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+				return genericFnGetVisitorAnyType(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 			},
 		}); err != nil {
 			slog.Error("failed to register function", "error", err)
@@ -508,7 +516,7 @@ func RegisterPathSetterAndGetter(
 			if err := fh.RegisterFunction("set-"+name, &handler.FunctionRegistration{
 				FunctionSignature: *setterSignature,
 				Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-					return genericFnSetVisitorDefaults(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+					return genericFnSetVisitorDefaults(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 				},
 			}); err != nil {
 				slog.Error("failed to register function", "error", err)
@@ -541,7 +549,7 @@ func RegisterPathSetterAndGetter(
 		if err := fh.RegisterFunction("vet-"+name, &handler.FunctionRegistration{
 			FunctionSignature: *vetSignature,
 			Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-				return genericFnVetVisitorDefaults(vetSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+				return genericFnVetVisitorDefaults(vetSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 			},
 		}); err != nil {
 			slog.Error("failed to register function", "error", err)
@@ -605,24 +613,24 @@ func RegisterPathSetterAndGetter(
 	switch dataType {
 	case api.DataTypeString:
 		setterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetStringVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert)
+			return genericFnSetStringVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert, whereFromOptions(fArgs.Options))
 		}
 		getterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetStringVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+			return genericFnGetStringVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 		}
 	case api.DataTypeInt:
 		setterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetIntVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert)
+			return genericFnSetIntVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert, whereFromOptions(fArgs.Options))
 		}
 		getterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetIntVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+			return genericFnGetIntVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 		}
 	case api.DataTypeBool:
 		setterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetBoolVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert)
+			return genericFnSetBoolVisitor(setterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, upsert, whereFromOptions(fArgs.Options))
 		}
 		getterFunction = func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetBoolVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider)
+			return genericFnGetBoolVisitor(getterSignature, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, resourceProvider, whereFromOptions(fArgs.Options))
 		}
 	default:
 		// Not supported
@@ -645,7 +653,7 @@ func RegisterPathSetterAndGetter(
 	}
 }
 
-func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -661,11 +669,11 @@ func genericFnSetStringVisitor(signature *api.FunctionSignature, _ *api.Function
 	valueToSet := args[len(args)-1].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, nil)
+	err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
-func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -680,11 +688,11 @@ func genericFnGetStringVisitor(signature *api.FunctionSignature, _ *api.Function
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	values, err := yamlkit.GetStringPaths(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, nil)
+	values, err := yamlkit.GetStringPaths(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
-func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -700,11 +708,11 @@ func genericFnSetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionCon
 	valueToSet := args[len(args)-1].Value.(int)
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	err := yamlkit.UpdatePathsValue[int](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, nil)
+	err := yamlkit.UpdatePathsValue[int](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
-func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -719,11 +727,11 @@ func genericFnGetIntVisitor(signature *api.FunctionSignature, _ *api.FunctionCon
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	values, err := yamlkit.GetPaths[int](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, nil)
+	values, err := yamlkit.GetPaths[int](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
-func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool) (gaby.Container, any, error) {
+func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, upsert bool, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All but the last argument should be path arguments. The last argument is the value to set.
@@ -739,11 +747,11 @@ func genericFnSetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionCo
 	valueToSet := args[len(args)-1].Value.(bool)
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	err := yamlkit.UpdatePathsValue[bool](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, nil)
+	err := yamlkit.UpdatePathsValue[bool](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, valueToSet, upsert, whereExpressions)
 	return parsedData, nil, err
 }
 
-func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 
 	// All arguments should be path arguments.
@@ -758,11 +766,11 @@ func genericFnGetBoolVisitor(signature *api.FunctionSignature, _ *api.FunctionCo
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	values, err := yamlkit.GetPaths[bool](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, nil)
+	values, err := yamlkit.GetPaths[bool](parsedData, resourceTypeToPaths, pathArgs, resourceProvider, whereExpressions)
 	return parsedData, values, err
 }
 
-func genericFnGetVisitorAnyType(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnGetVisitorAnyType(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// All arguments should be path arguments.
 	pathArgs := make([]any, len(args))
 	for i := range pathArgs {
@@ -775,11 +783,11 @@ func genericFnGetVisitorAnyType(signature *api.FunctionSignature, _ *api.Functio
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, api.DataTypeNone, false, false, nil)
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
 	return parsedData, values, err
 }
 
-func genericFnSetVisitorDefaults(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnSetVisitorDefaults(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// All arguments should be path arguments.
 	pathArgs := make([]any, len(args))
 	for i := range pathArgs {
@@ -792,11 +800,11 @@ func genericFnSetVisitorDefaults(signature *api.FunctionSignature, _ *api.Functi
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	err := yamlkit.UpdatePathsSetterArgument(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, true, nil)
+	err := yamlkit.UpdatePathsSetterArgument(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, true, whereExpressions)
 	return parsedData, nil, err
 }
 
-func genericFnVetVisitorDefaults(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider) (gaby.Container, any, error) {
+func genericFnVetVisitorDefaults(signature *api.FunctionSignature, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, resourceProvider yamlkit.ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
 	// All arguments should be path arguments.
 	pathArgs := make([]any, len(args))
 	for i := range pathArgs {
@@ -809,6 +817,6 @@ func genericFnVetVisitorDefaults(signature *api.FunctionSignature, _ *api.Functi
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, signature.AttributeName)
-	result, err := yamlkit.VetPathsSetterArgument(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, nil)
+	result, err := yamlkit.VetPathsSetterArgument(parsedData, resourceTypeToPaths, pathArgs, resourceProvider, whereExpressions)
 	return parsedData, result, err
 }

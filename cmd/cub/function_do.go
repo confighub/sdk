@@ -160,6 +160,7 @@ var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
 var functionLiveStateType string
+var functionOtherDataSource string
 
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
@@ -187,6 +188,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionDoCmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
+	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LiveRevisionNum)")
 	functionCmd.AddCommand(functionDoCmd)
 }
 
@@ -428,6 +430,9 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 		dryRunStr := "true"
 		newParams.DryRun = &dryRunStr
 	}
+	if functionOtherDataSource != "" {
+		newParams.OtherDataSource = &functionOtherDataSource
+	}
 
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
 	if cubapi.IsAPIError(err, funcRes) {
@@ -481,6 +486,9 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
 		}
+		if functionOtherDataSource != "" {
+			newParams.OtherDataSource = &functionOtherDataSource
+		}
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *invokeArgs.Body)
 		if cubapi.IsAPIError(err, funcRes) {
 			return nil, errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke function(s) on org")
@@ -511,6 +519,9 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
+		}
+		if functionOtherDataSource != "" {
+			newParams.OtherDataSource = &functionOtherDataSource
 		}
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *invokeArgs.Body)
 		if cubapi.IsAPIError(err, funcRes) {
