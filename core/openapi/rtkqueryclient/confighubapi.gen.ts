@@ -11429,6 +11429,8 @@ export type BridgeOption = {
 export type SupportedConfigType = {
   /** Targets known by the BridgeWorker. Optional. */
   AvailableTargets?: TargetType2[];
+  /** Bridge with compatible BridgeHandles */
+  CompatibleBridge?: string;
   /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
   LiveStateType?: string;
   /** Supported bridge options */

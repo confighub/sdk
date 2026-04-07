@@ -26769,6 +26769,10 @@ components:
             $ref: '#/components/schemas/TargetType2'
           type: array
           x-go-type-skip-optional-pointer: true
+        CompatibleBridge:
+          description: Bridge with compatible BridgeHandles
+          type: string
+          x-go-type-skip-optional-pointer: true
         LiveStateType:
           description: Configuration toolchain and format of the LiveState for this
             bridge; required in order to invoke functions on LiveState

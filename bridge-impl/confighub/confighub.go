@@ -77,10 +77,11 @@ func (w *ConfigHubBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 						LiveStateType: workerapi.ToolchainConfigHubYAML,
 					},
 				},
+				// no CompatibleBridge
 				AvailableTargets: []api.Target{
 					{
-						Name:   api.GenerateTargetName(opts.WorkerSlug, api.ProviderConfigHub, workerapi.ToolchainConfigHubYAML, ""),
-						Params: map[string]interface{}{},
+						BridgeHandle: "ConfigHub",
+						// no name implies no automatic target creation
 					},
 				},
 			},

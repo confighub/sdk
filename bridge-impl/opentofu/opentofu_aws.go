@@ -74,9 +74,11 @@ func (w *OpenTofuAWSWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo {
 				},
 				AvailableTargets: []api.Target{
 					{
-						Name: api.GenerateTargetName(opts.WorkerSlug, api.ProviderOpenTofuAWS, workerapi.ToolchainOpenTofuHCL, ""),
+						BridgeHandle: profile,
+						// no name implies no target created automatically
+						// Name: api.GenerateTargetName(opts.WorkerSlug, api.ProviderOpenTofuAWS, workerapi.ToolchainOpenTofuHCL, ""),
 						Params: (&OpenTofuAWSParams{
-							Profile: profile,
+							Profile: profile, // TODO: use BridgeHandle instead
 							Region:  region,
 						}).ToMap(),
 					},

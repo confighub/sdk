@@ -11,11 +11,11 @@ import (
 	"maps"
 	"strings"
 
-	bridgeapi "github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/bridge-impl/helmutils"
 	"github.com/confighub/sdk/core/cubapi"
 	api "github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/bridge-impl/helmutils"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	bridgeapi "github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -23,19 +23,22 @@ import (
 )
 
 var gitopsImportCmd = &cobra.Command{
-	Use:   "import <target-slug> <render-target-slug>",
+	Use:   "import <target-slug> [render-target-slug]",
 	Short: "Import GitOps resources from a Kubernetes target",
 	Long: getCommandHelp(`Import discovered GitOps resources (ArgoCD Applications, Flux HelmReleases,
 Flux Kustomizations) from a Kubernetes target, render them using a render target,
 and create the corresponding ConfigHub units and links.
 
+If render-target-slug is omitted, the target is also used as the render target.
+
 Examples:
 `+"```"+`
   cub gitops import --space my-space my-k8s-target my-render-target
   cub gitops import --space my-space my-k8s-target my-render-target --where-resource "metadata.namespace = 'argocd'"
+  cub gitops import --space my-space my-multi-provider-target
 `+"```"+`
 `, ""),
-	Args: cobra.ExactArgs(2),
+	Args: cobra.RangeArgs(1, 2),
 	RunE: gitopsImportCmdRun,
 }
 
@@ -108,38 +111,47 @@ func parseResourceType(resourceType string) (apiGroup string, kind string) {
 	return
 }
 
-// providerForResource determines which bridge provider to use based on the API group.
-func providerForResource(apiGroup string) bridgeapi.ProviderType {
+// providerForResource determines which bridge providers to use based on the API group.
+// It returns the renderer provider and the corresponding deployment provider.
+func providerForResource(apiGroup string) (renderer bridgeapi.ProviderType, deployer bridgeapi.ProviderType) {
 	if strings.HasSuffix(apiGroup, "argoproj.io") || apiGroup == "argoproj.io" {
-		return bridgeapi.ProviderArgoCDRenderer
+		return bridgeapi.ProviderArgoCDRenderer, bridgeapi.ProviderArgoCDOCI
 	}
 	if strings.HasSuffix(apiGroup, "fluxcd.io") || strings.Contains(apiGroup, "fluxcd.io") {
-		return bridgeapi.ProviderFluxRenderer
+		return bridgeapi.ProviderFluxRenderer, bridgeapi.ProviderFluxOCI
 	}
-	return ""
+	return "", ""
 }
 
 func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 	targetSlug := args[0]
-	renderTargetSlug := args[1]
-	spaceID := uuid.MustParse(selectedSpaceID)
-
-	// Parse render target
-	renderTarget, err := parseEntityIdentifierSingleAsEntity[goclientnew.Target](
-		renderTargetSlug,
-		EntityTypeTarget,
-		"*",
-		apiGetTargetFromSlugInSpaceCore,
-		func(t *goclientnew.Target) string { return t.TargetID.String() },
-	)
-	if err != nil {
-		return fmt.Errorf("failed to resolve render target: %w", err)
+	renderTargetSlug := targetSlug
+	if len(args) > 1 {
+		renderTargetSlug = args[1]
 	}
+	spaceID := uuid.MustParse(selectedSpaceID)
 
 	// Run discover to find GitOps resources on the target
 	liveState, target, err := runDiscover(targetSlug)
 	if err != nil {
 		return err
+	}
+
+	// Resolve render target
+	var renderTarget *goclientnew.Target
+	if renderTargetSlug == targetSlug {
+		renderTarget = target
+	} else {
+		renderTarget, err = parseEntityIdentifierSingleAsEntity[goclientnew.Target](
+			renderTargetSlug,
+			EntityTypeTarget,
+			"*",
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
+		if err != nil {
+			return fmt.Errorf("failed to resolve render target: %w", err)
+		}
 	}
 
 	if len(liveState) == 0 {
@@ -165,17 +177,19 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Create renderer (-dry) units for each discovered resource
 	var dryUnits []goclientnew.Unit
+	// Track the deployment provider for each dry unit (by index) for wet/crds unit creation
+	var deployProviders []bridgeapi.ProviderType
 	for _, r := range resources {
-		provider := providerForResource(r.apiGroup)
-		if provider == "" {
+		renderer, deployer := providerForResource(r.apiGroup)
+		if renderer == "" {
 			tprint("Skipping resource %s: unknown provider for API group %s", r.resourceName, r.apiGroup)
 			continue
 		}
 
 		// Verify render target supports this provider
-		ct := FindConfigType(renderTarget, string(workerapi.ToolchainKubernetesYAML), string(provider))
+		ct := FindConfigType(renderTarget, string(workerapi.ToolchainKubernetesYAML), string(renderer))
 		if ct == nil {
-			return fmt.Errorf("render target %s does not support provider %s with toolchain Kubernetes/YAML", renderTarget.Slug, provider)
+			return fmt.Errorf("render target %s does not support provider %s with toolchain Kubernetes/YAML", renderTarget.Slug, renderer)
 		}
 
 		drySuffix := "-dry"
@@ -190,10 +204,11 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 				discoverTargetLabel: discoverLabel,
 			},
 			SpaceID:      spaceID,
-			ProviderType: string(provider),
+			ProviderType: string(renderer),
 			Data:         base64.StdEncoding.EncodeToString([]byte(r.resourceBody)),
 		}
 		dryUnits = append(dryUnits, dryUnit)
+		deployProviders = append(deployProviders, deployer)
 	}
 
 	if len(dryUnits) == 0 {
@@ -262,7 +277,14 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 
 	// For each dry unit, inspect LiveState and create corresponding wet/crds units
 	targetIDForWet := target.TargetID
-	for _, dryUnit := range createdDryUnits {
+	for i, dryUnit := range createdDryUnits {
+		// Check if the target supports the corresponding deployment provider
+		deployProvider := ""
+		if dp := deployProviders[i]; dp != "" {
+			if FindConfigType(target, string(workerapi.ToolchainKubernetesYAML), string(dp)) != nil {
+				deployProvider = string(dp)
+			}
+		}
 		// Get the unit's LiveState after apply
 		refreshedUnit, refreshErr := apiGetUnitFromSlug(dryUnit.Slug, "*")
 		if refreshErr != nil {
@@ -304,6 +326,7 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 				TargetID:      &targetIDForWet,
 				Labels:        copyLabels(wetLabels),
 				SpaceID:       spaceID,
+				ProviderType:  deployProvider,
 			}
 			allowExistsStr := "true"
 			crdsCreateRes, crdsErr := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{AllowExists: &allowExistsStr}, crdsUnit)
@@ -326,6 +349,7 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 				TargetID:      &targetIDForWet,
 				Labels:        copyLabels(wetLabels),
 				SpaceID:       spaceID,
+				ProviderType:  deployProvider,
 			}
 			wetCreateRes, wetErr := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{AllowExists: &allowExistsStr}, wetUnit)
 			if cubapi.IsAPIError(wetErr, wetCreateRes) {
@@ -347,6 +371,7 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 				TargetID:      &targetIDForWet,
 				Labels:        copyLabels(wetLabels),
 				SpaceID:       spaceID,
+				ProviderType:  deployProvider,
 			}
 			allowExistsStr := "true"
 			wetCreateRes, wetErr := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{AllowExists: &allowExistsStr}, wetUnit)

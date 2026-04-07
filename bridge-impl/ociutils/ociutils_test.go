@@ -97,6 +97,20 @@ func TestOCIURLBuilder_UnitURL(t *testing.T) {
 			reference: "v5",
 			expected:  "oci://oci.confighub.com/unit/dev/config:v5",
 		},
+		{
+			name:      "uppercase unit slug is lowercased",
+			spaceSlug: "demo-argo2",
+			unitSlug:  "argocd-cubbychat-Application-wet",
+			reference: RefLatest,
+			expected:  "oci://oci.confighub.com/unit/demo-argo2/argocd-cubbychat-application-wet:latest",
+		},
+		{
+			name:      "uppercase space slug is lowercased",
+			spaceSlug: "My-Space",
+			unitSlug:  "my-unit",
+			reference: RefHead,
+			expected:  "oci://oci.confighub.com/unit/my-space/my-unit:head",
+		},
 	}
 
 	for _, tt := range tests {
@@ -130,6 +144,13 @@ func TestOCIURLBuilder_TargetURL(t *testing.T) {
 			targetSlug: "edge-nodes",
 			reference:  RefLive,
 			expected:   "oci://oci.confighub.com/target/staging/edge-nodes:live",
+		},
+		{
+			name:       "uppercase target slug is lowercased",
+			spaceSlug:  "My-Space",
+			targetSlug: "K8s-Cluster",
+			reference:  RefHead,
+			expected:   "oci://oci.confighub.com/target/my-space/k8s-cluster:head",
 		},
 	}
 

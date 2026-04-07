@@ -2239,6 +2239,9 @@ type SupportedConfigType struct {
 	// AvailableTargets Targets known by the BridgeWorker. Optional.
 	AvailableTargets []TargetType2 `json:"AvailableTargets,omitempty" yaml:"AvailableTargets,omitempty"`
 
+	// CompatibleBridge Bridge with compatible BridgeHandles
+	CompatibleBridge string `json:"CompatibleBridge,omitempty" yaml:"CompatibleBridge,omitempty"`
+
 	// LiveStateType Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState
 	LiveStateType string `json:"LiveStateType,omitempty" yaml:"LiveStateType,omitempty"`
 

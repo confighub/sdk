@@ -52,7 +52,8 @@ const BridgeOptionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})
 
 type SupportedConfigType struct {
 	ConfigTypeSignature
-	AvailableTargets []Target `json:",omitempty" description:"Targets known by the BridgeWorker. Optional."`
+	CompatibleBridge ProviderType `json:",omitempty" description:"Bridge with compatible BridgeHandles"`
+	AvailableTargets []Target     `json:",omitempty" description:"Targets known by the BridgeWorker. Optional."`
 }
 
 var bridgeOptionNameRegexp = regexp.MustCompile(BridgeOptionNamePrefixRegexpString + "$")

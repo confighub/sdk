@@ -29801,6 +29801,11 @@
             "description": "Targets known by the BridgeWorker. Optional.",
             "x-go-type-skip-optional-pointer": true
           },
+          "CompatibleBridge": {
+            "type": "string",
+            "description": "Bridge with compatible BridgeHandles",
+            "x-go-type-skip-optional-pointer": true
+          },
           "LiveStateType": {
             "type": "string",
             "description": "Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState",

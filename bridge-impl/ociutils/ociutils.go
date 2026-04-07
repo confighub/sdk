@@ -77,7 +77,7 @@ func NewOCIURLBuilderFromAPIHost(apiHost string) *OCIURLBuilder {
 //
 // Example: oci://oci.confighub.com/unit/production/my-deployment:live
 func (b *OCIURLBuilder) UnitURL(spaceSlug, unitSlug, reference string) string {
-	return fmt.Sprintf("oci://%s/unit/%s/%s:%s", b.Host, spaceSlug, unitSlug, reference)
+	return fmt.Sprintf("oci://%s/unit/%s/%s:%s", b.Host, strings.ToLower(spaceSlug), strings.ToLower(unitSlug), reference)
 }
 
 // TargetURL generates an OCI URL for a target bundle.
@@ -90,7 +90,7 @@ func (b *OCIURLBuilder) UnitURL(spaceSlug, unitSlug, reference string) string {
 //
 // Example: oci://oci.confighub.com/target/production/k8s-cluster:live
 func (b *OCIURLBuilder) TargetURL(spaceSlug, targetSlug, reference string) string {
-	return fmt.Sprintf("oci://%s/target/%s/%s:%s", b.Host, spaceSlug, targetSlug, reference)
+	return fmt.Sprintf("oci://%s/target/%s/%s:%s", b.Host, strings.ToLower(spaceSlug), strings.ToLower(targetSlug), reference)
 }
 
 // RevisionRef returns a reference tag for a specific revision number.

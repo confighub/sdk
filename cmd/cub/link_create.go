@@ -16,7 +16,8 @@ import (
 )
 
 var linkCreateArgs struct {
-	reverse            bool
+	linkSlugs           []string
+	reverse             bool
 	fromDownstreamWhere string
 	toDownstreamWhere   string
 }
@@ -81,6 +82,7 @@ func init() {
 	// Bulk create specific flags
 	enableWhereFlag(linkCreateCmd)
 	enableFilterFlag(linkCreateCmd)
+	linkCreateCmd.Flags().StringSliceVar(&linkCreateArgs.linkSlugs, "link", []string{}, "target specific links by slug or UUID for bulk create (can be repeated or comma-separated)")
 	linkCreateCmd.Flags().BoolVar(&linkCreateArgs.reverse, "reverse", false, "swap FromUnit and ToUnit directions of copied links (for cross-space link reversal)")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.fromDownstreamWhere, "from-downstream-where", "", "where expression to find downstream UpgradeUnit links from each source link's FromUnit; creates one copy per match")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.toDownstreamWhere, "to-downstream-where", "", "where expression to find downstream UpgradeUnit link from each source link's ToUnit; exactly one match required")
@@ -90,13 +92,13 @@ func init() {
 
 func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	hasBulkFlags := where != "" || filter != "" || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != ""
+	hasBulkFlags := where != "" || filter != "" || len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != ""
 	isBulkCreateMode := len(args) == 0 && hasBulkFlags
 
 	if isBulkCreateMode {
 		// Validate bulk create requirements
-		if where == "" && filter == "" {
-			return false, errors.New("bulk create mode requires --where and/or --filter to select source links")
+		if len(linkCreateArgs.linkSlugs) > 0 && (where != "" || filter != "") {
+			return false, errors.New("--link and --where/--filter flags are mutually exclusive")
 		}
 
 		if !linkCreateArgs.reverse && linkCreateArgs.fromDownstreamWhere == "" {
@@ -248,6 +250,21 @@ func runSingleLinkCreate(args []string) error {
 }
 
 func runBulkLinkCreate(cmd *cobra.Command) error {
+	// Build WHERE clause from view identifiers or use provided where clause
+	var effectiveWhere string
+	if len(linkCreateArgs.linkSlugs) > 0 {
+		whereClause, err := buildWhereClauseFromLinks(linkCreateArgs.linkSlugs)
+		if err != nil {
+			return err
+		}
+		effectiveWhere = whereClause
+	} else {
+		effectiveWhere = where
+	}
+
+	// Add space constraint to the where clause only if not org level
+	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
+
 	// Build patch data using consolidated function with link-specific field enhancer
 	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
@@ -264,8 +281,8 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 	}
 
 	// Set where/filter parameters for selecting source links
-	if where != "" {
-		params.Where = &where
+	if effectiveWhere != "" {
+		params.Where = &effectiveWhere
 	}
 	if filter != "" {
 		filterID, parseErr := parseFilterFlag(filter)

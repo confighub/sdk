@@ -193,9 +193,11 @@ func (w *ConfigMapBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo 
 					LiveStateType: workerapi.ToolchainKubernetesYAML,
 				},
 			},
+			// no CompatibleBridge, since otherwise it would be combined with an arbitrary other Target
 			AvailableTargets: []api.Target{
 				{
 					BridgeHandle: "ConfigMap", // no secret needed, can be identical for all ToolchainTypes
+					// no name implies no automatic target creation
 				},
 			},
 		}

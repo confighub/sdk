@@ -175,6 +175,11 @@ func (w *KubernetesBridgeWorker) Info(opts api.InfoOptions) api.BridgeWorkerInfo
 	return w.InfoForToolchainAndProvider(opts, workerapi.ToolchainKubernetesYAML, api.ProviderKubernetes)
 }
 
+func GetDisableTargetCreation() bool {
+	disableTargetVar := os.Getenv("CONFIGHUB_DISABLE_AUTO_TARGET_CREATION")
+	return disableTargetVar != "" && disableTargetVar != "0" && strings.ToLower(disableTargetVar) != "false"
+}
+
 // This supports ToolchainTypes and ProviderTypes that generate and apply Kubernetes resources.
 func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOptions, toolchain workerapi.ToolchainType, provider api.ProviderType) api.BridgeWorkerInfo {
 	// Get available contexts
@@ -190,6 +195,15 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		w.cfg = cfg
 	}
 
+	// Optionally disable target create
+	disableTargets := GetDisableTargetCreation()
+
+	// All other bridges using the Kubernetes bridge internally are compatible and use the same BridgeHandle values
+	compatibleBridge := api.ProviderKubernetes
+	if provider == api.ProviderKubernetes {
+		compatibleBridge = ""
+	}
+
 	kubeConfig, err := k8sCmdConfig.RawConfig()
 	if err != nil {
 		return api.BridgeWorkerInfo{}
@@ -203,16 +217,20 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 		log.Log.Info("Running inside Kubernetes cluster, using in-cluster configuration")
 
 		defaultName := false
-		targetName := os.Getenv("CONFIGHUB_IN_CLUSTER_TARGET_NAME")
-		if targetName == "" {
-			// TODO: Deprecated. Remove this eventually.
-			targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
-		}
+		targetName := "" // no name means don't create a target
 
-		// Ensure target is unique
-		if targetName == "" || toolchain != workerapi.ToolchainKubernetesYAML {
-			defaultName = true
-			targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, "cluster")
+		if !disableTargets {
+			targetName = os.Getenv("CONFIGHUB_IN_CLUSTER_TARGET_NAME")
+			if targetName == "" {
+				// TODO: Deprecated. Remove this eventually.
+				targetName = os.Getenv("IN_CLUSTER_TARGET_NAME")
+			}
+
+			// Ensure target is unique
+			if targetName == "" || toolchain != workerapi.ToolchainKubernetesYAML {
+				defaultName = true
+				targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, "cluster")
+			}
 		}
 
 		targets := []api.Target{
@@ -225,7 +243,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 			},
 		}
 		// Add legacy target for backward compatibility
-		if defaultName && toolchain == workerapi.ToolchainKubernetesYAML {
+		if !disableTargets && defaultName && provider == api.ProviderKubernetes {
 			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, "")
 			targets = append(targets, api.Target{
 				BridgeHandle: "cluster",
@@ -247,6 +265,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 						},
 						Options: kubernetesBridgeOptions(),
 					},
+					CompatibleBridge: compatibleBridge,
 					AvailableTargets: targets,
 				},
 			},
@@ -257,16 +276,20 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 	// Ensure targets are unique
 	var targets []api.Target
 	for contextName := range kubeConfig.Contexts {
+		targetName := "" // no name means don't create a target
+		if !disableTargets {
+			targetName = api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName)
+		}
 		targets = append(targets, api.Target{
 			BridgeHandle: contextName,
-			Name:         api.GenerateTargetName(opts.WorkerSlug, provider, toolchain, contextName),
+			Name:         targetName,
 			Params: KubernetesWorkerParams{
 				KubeContext: contextName,
 				WaitTimeout: LargeWaitTimeout.String(),
 			}.ToMap(),
 		})
 		// Add legacy target for backward compatibility
-		if toolchain == workerapi.ToolchainKubernetesYAML {
+		if !disableTargets && provider == api.ProviderKubernetes {
 			legacyTargetName := generateLegacyKubernetesTargetName(opts.WorkerSlug, contextName)
 			targets = append(targets, api.Target{
 				BridgeHandle: contextName,
@@ -290,6 +313,7 @@ func (w *KubernetesBridgeWorker) InfoForToolchainAndProvider(opts api.InfoOption
 					},
 					Options: kubernetesBridgeOptions(),
 				},
+				CompatibleBridge: compatibleBridge,
 				AvailableTargets: targets,
 			},
 		},
