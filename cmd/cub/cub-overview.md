@@ -24,8 +24,6 @@ To get your current context:
 cub context get
 ```
 
-To change the default confighub host (you probably won't ever need to do this), set the CONFIGHUB_URL environment variable prior to executing `cub auth login`.
-
 ## General CLI Usage patterns
 
 The `cub` CLI follows the pattern of:

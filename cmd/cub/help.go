@@ -54,8 +54,7 @@ func getFormattedOverview() string {
 	content, err := overviewFS.ReadFile("cub-overview.md")
 	if err != nil {
 		// Fallback to simple text if markdown can't be read
-		return `Command line tool for using ConfigHub
-To change the default confighub host, set CONFIGHUB_URL environment variable.`
+		return `Command line tool for using ConfigHub`
 	}
 
 	if IsAgent {
@@ -67,7 +66,6 @@ To change the default confighub host, set CONFIGHUB_URL environment variable.`
 
 func getSimpleHelp() string {
 	return `Command line tool for using ConfigHub
-To change the default confighub host, set CONFIGHUB_URL environment variable.
 
 AI agents should set CONFIGHUB_AGENT=1 for all cub commands with --help, and execute cub --help-overview to display a detailed overview.`
 }

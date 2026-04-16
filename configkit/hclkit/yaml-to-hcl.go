@@ -49,7 +49,7 @@ func isReference(categoryTypeMap yamlkit.ResourceCategoryTypeToNamesMap, s strin
 		var category api.ResourceCategory
 		var typeIndex int
 		if len(segments) > 2 && segments[0] == "data" {
-			category = api.ResourceCategoryDyanmicData
+			category = api.ResourceCategoryDynamicData
 			typeIndex = 1
 		} else {
 			category = api.ResourceCategoryResource

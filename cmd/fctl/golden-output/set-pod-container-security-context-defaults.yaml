@@ -34,6 +34,9 @@ spec:
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           privileged: false
           readOnlyRootFilesystem: true
       # Internal array comment
@@ -43,6 +46,9 @@ spec:
         - containerPort: 4318
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           privileged: false
           readOnlyRootFilesystem: true
       securityContext:

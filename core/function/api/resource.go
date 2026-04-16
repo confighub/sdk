@@ -11,7 +11,7 @@ type ResourceCategory string
 const (
 	ResourceCategoryInvalid     = ResourceCategory("Invalid")
 	ResourceCategoryResource    = ResourceCategory("Resource")
-	ResourceCategoryDyanmicData = ResourceCategory("DynamicData")
+	ResourceCategoryDynamicData = ResourceCategory("DynamicData")
 	ResourceCategoryAppConfig   = ResourceCategory("AppConfig")
 )
 

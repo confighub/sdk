@@ -38,12 +38,13 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns the result of running yq with the specified expression on the configuration data. Does not respect WhereResource because yq operates on the full configuration data; use yq's select() to filter documents.",
+			Description:           "Returns the result of running yq with the specified expression on the configuration data filtered by WhereResource.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnYQ(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, false)
+			expression := fArgs.Arguments[0].Value.(string)
+			return genericFnYQQuery(resourceProvider, fArgs.ParsedData, expression, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -67,33 +68,79 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "The configuration data is updated with the result of running yq -i with the specified expression on the configuration data. Does not respect WhereResource because yq operates on the full configuration data; use yq's select() to filter documents.",
+			Description:           "The configuration data is updated with the result of running yq -i with the specified expression on the configuration data filtered by WhereResource.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnYQ(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, true)
+			expression := fArgs.Arguments[0].Value.(string)
+			return genericFnYQMutating(resourceProvider, fArgs.ParsedData, expression, whereFromOptions(fArgs.Options))
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnYQ(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, mutating bool) (gaby.Container, any, error) {
-	// The argument value types should be verified before this function is called
-	expression := args[0].Value.(string)
-
-	output, err := yqkit.EvalYQExpression(expression, parsedData.String())
+// genericFnYQQuery runs the yq expression on each filtered resource and assembles
+// the output YAML from all results.
+func genericFnYQQuery(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, expression string, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+	var outputDocs gaby.Container
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+		func(doc *gaby.YamlDoc, output any, _ int, _ *api.ResourceInfo) (any, []error) {
+			singleDoc := gaby.Container{doc}
+			result, err := yqkit.EvalYQExpression(expression, singleDoc.String())
+			if err != nil {
+				return output, []error{errors.Wrap(err, "yq expression evaluation failed")}
+			}
+			parsed, err := gaby.ParseAll([]byte(result))
+			if err != nil {
+				return output, []error{errors.Wrap(err, "failed to parse output from yq")}
+			}
+			outputDocs = append(outputDocs, parsed...)
+			return output, nil
+		})
 	if err != nil {
-		return parsedData, nil, errors.Wrap(err, "yq expression evaluation failed")
+		return parsedData, nil, err
 	}
-	if mutating {
-		parsedOutput, err := gaby.ParseAll([]byte(output))
-		if err != nil {
-			return parsedData, nil, errors.Wrap(err, "failed to parse output from yq")
-		}
-		return parsedOutput, nil, nil
-	}
-	wrappedOutput := api.YAMLPayload{Payload: output}
+	wrappedOutput := api.YAMLPayload{Payload: outputDocs.String()}
 	return parsedData, wrappedOutput, nil
+}
+
+// genericFnYQMutating runs the yq expression on each filtered resource in place,
+// replacing matched documents in parsedData with the yq output while leaving
+// unmatched documents unchanged.
+func genericFnYQMutating(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, expression string, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+	// Collect replacements keyed by index in parsedData. Each replacement may
+	// produce zero, one, or multiple documents.
+	replacements := map[int]gaby.Container{}
+
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+		func(doc *gaby.YamlDoc, output any, index int, _ *api.ResourceInfo) (any, []error) {
+			singleDoc := gaby.Container{doc}
+			yqOutput, err := yqkit.EvalYQExpression(expression, singleDoc.String())
+			if err != nil {
+				return output, []error{errors.Wrap(err, "yq expression evaluation failed")}
+			}
+			parsed, err := gaby.ParseAll([]byte(yqOutput))
+			if err != nil {
+				return output, []error{errors.Wrap(err, "failed to parse output from yq")}
+			}
+			replacements[index] = parsed
+			return output, nil
+		})
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	// Assemble result: for each original doc, use the replacement if one was
+	// recorded, otherwise keep the original.
+	var result gaby.Container
+	for i, doc := range parsedData {
+		if replacement, ok := replacements[i]; ok {
+			result = append(result, replacement...)
+		} else {
+			result = append(result, doc)
+		}
+	}
+	return result, nil, nil
 }

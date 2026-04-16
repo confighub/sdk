@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,10 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcapi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/worker/api"
 )
 
 // LargeWaitTimeout is effectively infinite (~10 years) - disabled per #3220
@@ -52,8 +53,9 @@ func (p KubernetesWorkerParams) ToMap() map[string]interface{} {
 }
 
 // EnsureConfigHubContext sets ConfigHub context annotations (UnitSlug, SpaceID, RevisionNum)
-// on the given Kubernetes object. These annotations correspond to the paths returned by
-// K8sResourceProvider.ContextPath() for each field.
+// on a parsed Kubernetes object. Used by the K8s bridge which already has parsed objects.
+// See also k8skit.EnsureConfigHubContextOnData for a text-based variant that preserves
+// YAML comments and key ordering.
 func EnsureConfigHubContext(obj *unstructured.Unstructured, unitSlug, spaceID string, revisionNum int64) {
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
@@ -61,7 +63,7 @@ func EnsureConfigHubContext(obj *unstructured.Unstructured, unitSlug, spaceID st
 	}
 	annotations[k8skit.UnitSlugAnnotation] = unitSlug
 	annotations[k8skit.SpaceIDAnnotation] = spaceID
-	annotations[k8skit.RevisionNumAnnotation] = fmt.Sprintf("%d", revisionNum)
+	annotations[k8skit.RevisionNumAnnotation] = strconv.FormatInt(revisionNum, 10)
 	obj.SetAnnotations(annotations)
 }
 

@@ -21,6 +21,7 @@ const (
 	// Additional Storage types
 	DataTypeUUID                    = DataType("uuid")
 	DataTypeTime                    = DataType("time")
+	DataTypeStringArray             = DataType("[]string")
 	DataTypeStringMap               = DataType("map[string]string")
 	DataTypeStringBoolMap           = DataType("map[string]bool")
 	DataTypeUUIDArray               = DataType("[]uuid")

@@ -192,6 +192,15 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 		registerDefaultPaths(rp, attributeNamePodContainerSecurityCtxDefaults, paths)
 	}
 
+	// Drop all capabilities by default at the container level
+	capDropPaths := makeContainerDefaultPaths(
+		attributeNamePodContainerSecurityCtxDefaults,
+		"securityContext.capabilities.drop",
+		api.DataTypeStringArray,
+		visitorSetter([]any{"ALL"}),
+	)
+	registerDefaultPaths(rp, attributeNamePodContainerSecurityCtxDefaults, capDropPaths)
+
 	// Container resource defaults
 	containerResourceFields := []defaultField{
 		{"resources.requests.cpu", "128m", api.DataTypeString},

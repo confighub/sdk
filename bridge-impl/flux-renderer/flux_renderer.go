@@ -299,12 +299,17 @@ func (w *FluxRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContext,
 		return fmt.Errorf("failed to get %s %s/%s: %w", kind, namespace, name, err)
 	}
 
-	// Check spec.suspend warning
-	var errorMessages []string
+	// spec.suspend must be true so that ConfigHub owns the rendered output.
 	if !isSuspended(existing) {
-		errorMessages = append(errorMessages, fmt.Sprintf(
-			"%s %s/%s: spec.suspend is not true. To avoid conflicts, set spec.suspend to true.",
-			kind, namespace, name))
+		msg := fmt.Sprintf(
+			"%s %s/%s: spec.suspend is not true. To avoid conflicts, set spec.suspend to true, or set the bridge option IsAuthoritative=true on the Target to let the bridge suspend the resource automatically.",
+			kind, namespace, name)
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			msg,
+		))
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Parse the input documents to find the Flux resource
@@ -354,7 +359,6 @@ func (w *FluxRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContext,
 		fmt.Sprintf("Rendered successfully at %s (revision: %s)", time.Now().Format(time.RFC3339), result.Revision),
 	)
 	status.LiveState = result.Manifests
-	status.ErrorMessages = errorMessages
 	return wctx.SendStatus(status)
 }
 
@@ -491,12 +495,17 @@ func (w *FluxRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerContex
 		return fmt.Errorf("failed to get %s %s/%s: %w", kind, namespace, name, err)
 	}
 
-	// Check spec.suspend warning
-	var errorMessages []string
+	// spec.suspend must be true so that ConfigHub owns the rendered output.
 	if !isSuspended(existing) {
-		errorMessages = append(errorMessages, fmt.Sprintf(
-			"%s %s/%s: spec.suspend is not true. To avoid conflicts, set spec.suspend to true.",
-			kind, namespace, name))
+		msg := fmt.Sprintf(
+			"%s %s/%s: spec.suspend is not true. To avoid conflicts, set spec.suspend to true, or set the bridge option IsAuthoritative=true on the Target to let the bridge suspend the resource automatically.",
+			kind, namespace, name)
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			msg,
+		))
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Parse the input documents to find the Flux resource
@@ -553,7 +562,6 @@ func (w *FluxRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerContex
 
 	status := common.NewActionResult(api.ActionStatusCompleted, resultType, msg)
 	status.LiveState = renderResult.Manifests
-	status.ErrorMessages = errorMessages
 	return wctx.SendStatus(status)
 }
 

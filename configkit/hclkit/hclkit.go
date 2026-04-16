@@ -59,12 +59,12 @@ const (
 
 var blockTypeToCategory = map[string]api.ResourceCategory{
 	"resource": api.ResourceCategoryResource,
-	"data":     api.ResourceCategoryDyanmicData,
+	"data":     api.ResourceCategoryDynamicData,
 }
 
 var categoryToBlockType = map[api.ResourceCategory]string{
 	api.ResourceCategoryResource:    "resource",
-	api.ResourceCategoryDyanmicData: "data",
+	api.ResourceCategoryDynamicData: "data",
 }
 
 func convertBlockTypeToCategory(bt string) api.ResourceCategory {

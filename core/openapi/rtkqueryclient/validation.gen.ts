@@ -24,7 +24,7 @@ export const ANNOTATION_KEY_PATTERN_MESSAGE =
   'Must start and end with a letter or number. May contain letters, numbers, hyphens (-), underscores (_), periods (.), and forward slashes (/)';
 
 export const ANNOTATION_VALUE_PATTERN = /^(.|\n)*$/;
-export const ANNOTATION_VALUE_MAX_LENGTH = 128;
+export const ANNOTATION_VALUE_MAX_LENGTH = 1024;
 export const ANNOTATION_VALUE_PATTERN_MESSAGE =
   'Any content is allowed, including multiline text';
 

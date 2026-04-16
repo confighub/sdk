@@ -152,3 +152,168 @@ func TestK8sFnResourceCategoryTypeMap(t *testing.T) {
 	// Assert the result
 	assert.Equal(t, expected, result)
 }
+
+func TestEnsureConfigHubContextOnData_SingleObject(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+data:
+  key: value
+`)
+	result, err := EnsureConfigHubContextOnData(data, "my-unit", "space-abc", 42)
+	assert.NoError(t, err)
+
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.Len(t, container, 1)
+
+	val, _ := container[0].Path(K8sContextPath("UnitSlug")).Data().(string)
+	assert.Equal(t, "my-unit", val)
+	val, _ = container[0].Path(K8sContextPath("SpaceID")).Data().(string)
+	assert.Equal(t, "space-abc", val)
+	val, _ = container[0].Path(K8sContextPath("RevisionNum")).Data().(string)
+	assert.Equal(t, "42", val)
+}
+
+func TestEnsureConfigHubContextOnData_MultipleObjects(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+  namespace: default
+data:
+  key: value
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy1
+  namespace: default
+spec:
+  replicas: 1
+`)
+	result, err := EnsureConfigHubContextOnData(data, "slug", "sid", 7)
+	assert.NoError(t, err)
+
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.Len(t, container, 2)
+
+	for _, doc := range container {
+		val, _ := doc.Path(K8sContextPath("UnitSlug")).Data().(string)
+		assert.Equal(t, "slug", val)
+		val, _ = doc.Path(K8sContextPath("SpaceID")).Data().(string)
+		assert.Equal(t, "sid", val)
+		val, _ = doc.Path(K8sContextPath("RevisionNum")).Data().(string)
+		assert.Equal(t, "7", val)
+	}
+}
+
+func TestEnsureConfigHubContextOnData_PreservesExistingAnnotations(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+  annotations:
+    custom.io/owner: alice
+data:
+  key: value
+`)
+	result, err := EnsureConfigHubContextOnData(data, "unit", "space", 1)
+	assert.NoError(t, err)
+
+	resultStr := string(result)
+	assert.Contains(t, resultStr, "custom.io/owner: alice")
+	assert.Contains(t, resultStr, "confighub.com/UnitSlug: unit")
+}
+
+func TestEnsureConfigHubContextOnData_EmptyData(t *testing.T) {
+	result, err := EnsureConfigHubContextOnData(nil, "unit", "space", 1)
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+
+	result, err = EnsureConfigHubContextOnData([]byte{}, "unit", "space", 1)
+	assert.NoError(t, err)
+	assert.Empty(t, result)
+}
+
+func TestEnsureConfigHubContextOnData_YAMLRoundTrip(t *testing.T) {
+	data := []byte(`# ConfigMap for app config
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+data:
+  # database connection
+  db_host: localhost
+  db_port: "5432"
+---
+# Service for the app
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-svc
+  namespace: default
+spec:
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: myapp
+`)
+	result, err := EnsureConfigHubContextOnData(data, "my-unit", "space-123", 5)
+	assert.NoError(t, err)
+
+	resultStr := string(result)
+
+	// Annotations injected
+	assert.Contains(t, resultStr, "confighub.com/UnitSlug: my-unit")
+	assert.Contains(t, resultStr, "confighub.com/SpaceID: space-123")
+
+	// Both documents present
+	assert.Contains(t, resultStr, "name: app-config")
+	assert.Contains(t, resultStr, "name: app-svc")
+
+	// Comments preserved
+	assert.Contains(t, resultStr, "# ConfigMap for app config")
+	assert.Contains(t, resultStr, "# database connection")
+	assert.Contains(t, resultStr, "# Service for the app")
+
+	// Key ordering preserved
+	assert.Contains(t, resultStr, "db_host: localhost")
+	assert.Contains(t, resultStr, "app: myapp")
+
+	// Document separator preserved
+	assert.Contains(t, resultStr, "---")
+}
+
+func TestEnsureConfigHubContextOnData_OverwritesExisting(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+  annotations:
+    confighub.com/UnitSlug: old-slug
+    confighub.com/SpaceID: old-space
+data:
+  key: value
+`)
+	result, err := EnsureConfigHubContextOnData(data, "new-slug", "new-space", 99)
+	assert.NoError(t, err)
+
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.Len(t, container, 1)
+
+	val, _ := container[0].Path(K8sContextPath("UnitSlug")).Data().(string)
+	assert.Equal(t, "new-slug", val)
+	val, _ = container[0].Path(K8sContextPath("SpaceID")).Data().(string)
+	assert.Equal(t, "new-space", val)
+	val, _ = container[0].Path(K8sContextPath("RevisionNum")).Data().(string)
+	assert.Equal(t, "99", val)
+}

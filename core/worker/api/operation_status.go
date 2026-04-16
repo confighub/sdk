@@ -117,7 +117,7 @@ type ActionResultBaseMeta struct {
 	TerminatedAt *time.Time       `json:",omitempty" bun:"type:timestamptz"`
 }
 
-const MaxActionResultMessageLength = 1024
+const MaxActionResultMessageLength = 4096
 
 func ValidateActionResultBaseMeta(arbm *ActionResultBaseMeta) error {
 	if arbm.RevisionNum < 0 {

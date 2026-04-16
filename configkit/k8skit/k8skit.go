@@ -5,13 +5,15 @@
 package k8skit
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/gosimple/slug"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -375,6 +377,47 @@ const (
 	UnitSlugAnnotation    = ContextKeyPrefix + constants.UnitSlugKeySuffix
 	RevisionNumAnnotation = ContextKeyPrefix + constants.RevisionNumKeySuffix
 )
+
+// EnsureConfigHubContextOnData sets ConfigHub context annotations (UnitSlug, SpaceID,
+// RevisionNum) on every resource in the given multi-document YAML data. Uses gaby's
+// in-place SetP to preserve comments and key ordering. If the data is empty it is
+// returned unchanged. If parsing fails, the original data is returned with the error.
+// See also kubernetes.EnsureConfigHubContext in bridge-impl for a variant that
+// operates on parsed *unstructured.Unstructured objects.
+func EnsureConfigHubContextOnData(data []byte, unitSlug, spaceID string, revisionNum int64) ([]byte, error) {
+	if len(data) == 0 {
+		return data, nil
+	}
+
+	container, err := gaby.ParseAll(data)
+	if err != nil {
+		return data, fmt.Errorf("failed to parse YAML for annotation injection: %w", err)
+	}
+	if len(container) == 0 {
+		return data, nil
+	}
+
+	// NOTE: SetP modifies docs in-place. If a SetP call fails mid-loop, earlier docs
+	// will have been mutated but we return the original data bytes. The in-memory
+	// container state becomes inconsistent, but since we discard it on error this is
+	// safe. In practice SetP on annotation paths should not fail.
+	// TODO: If this becomes a concern, deep-copy the container before mutation or
+	// collect per-doc errors and return partial results.
+	revStr := strconv.FormatInt(revisionNum, 10)
+	for _, doc := range container {
+		if _, err := doc.SetP(unitSlug, K8sContextPath(constants.UnitSlugKeySuffix)); err != nil {
+			return data, fmt.Errorf("failed to set UnitSlug annotation: %w", err)
+		}
+		if _, err := doc.SetP(spaceID, K8sContextPath(constants.SpaceIDKeySuffix)); err != nil {
+			return data, fmt.Errorf("failed to set SpaceID annotation: %w", err)
+		}
+		if _, err := doc.SetP(revStr, K8sContextPath(constants.RevisionNumKeySuffix)); err != nil {
+			return data, fmt.Errorf("failed to set RevisionNum annotation: %w", err)
+		}
+	}
+
+	return container.Bytes(), nil
+}
 
 func K8sContextPath(contextField string) string {
 	// PascalCase is expected for contextField

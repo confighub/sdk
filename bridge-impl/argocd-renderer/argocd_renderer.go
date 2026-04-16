@@ -214,12 +214,17 @@ func (w *ArgoCDRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContex
 		return fmt.Errorf("failed to get Application %s/%s: %w", appNamespace, appName, err)
 	}
 
-	// Check for autosync warning
-	var errorMessages []string
+	// Autosync must be disabled so that ConfigHub owns the rendered output.
 	if HasAutoSync(existing) {
-		errorMessages = append(errorMessages, fmt.Sprintf(
-			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it.",
-			appNamespace, appName))
+		msg := fmt.Sprintf(
+			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it, or set the bridge option IsAuthoritative=true on the Target to let the bridge update the Application automatically (including removing autosync).",
+			appNamespace, appName)
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			msg,
+		))
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Patch refresh/hydrate annotations to trigger ArgoCD to re-fetch sources from git
@@ -249,7 +254,6 @@ func (w *ArgoCDRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContex
 		fmt.Sprintf("Rendered successfully at %s (revision: %s, sourceType: %s)", time.Now().Format(time.RFC3339), result.Revision, result.SourceType),
 	)
 	status.LiveState = result.Manifests
-	status.ErrorMessages = errorMessages
 	return wctx.SendStatus(status)
 }
 
@@ -349,12 +353,17 @@ func (w *ArgoCDRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerCont
 		return fmt.Errorf("failed to get Application %s/%s: %w", appNamespace, appName, err)
 	}
 
-	// Check for autosync warning
-	var errorMessages []string
+	// Autosync must be disabled so that ConfigHub owns the rendered output.
 	if HasAutoSync(existing) {
-		errorMessages = append(errorMessages, fmt.Sprintf(
-			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it.",
-			appNamespace, appName))
+		msg := fmt.Sprintf(
+			"Application %s/%s: autosync is enabled. To avoid conflicts, set spec.syncPolicy.automated to null or remove it, or set the bridge option IsAuthoritative=true on the Target to let the bridge update the Application automatically (including removing autosync).",
+			appNamespace, appName)
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultRefreshFailed,
+			msg,
+		))
+		return fmt.Errorf("%s", msg)
 	}
 
 	// Render manifests via ArgoCD API
@@ -383,7 +392,6 @@ func (w *ArgoCDRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerCont
 
 	status := common.NewActionResult(api.ActionStatusCompleted, resultType, msg)
 	status.LiveState = renderResult.Manifests
-	status.ErrorMessages = errorMessages
 	return wctx.SendStatus(status)
 }
 

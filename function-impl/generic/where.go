@@ -140,7 +140,36 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 	if err != nil {
 		return nil, err
 	}
-	// Visit and evaluate.
+
+	// Merge ConfigHub.* expressions from whereExpr into whereExpressions so they are handled
+	// as pre-filters by VisitResourcesFiltered (via MatchesWhereResourceExpressions), avoiding
+	// a separate evaluation loop for them.
+	var dataPathExpressions []*api.VisitorRelationalExpression
+	for _, expression := range expressions {
+		if !expression.IsSplitPath && strings.HasPrefix(expression.Path, "ConfigHub.") {
+			whereExpressions = append(whereExpressions, expression)
+		} else {
+			dataPathExpressions = append(dataPathExpressions, expression)
+		}
+	}
+
+	// If all expressions were ConfigHub.* (now merged into whereExpressions),
+	// just collect matching resources from the filtered visit.
+	if len(dataPathExpressions) == 0 {
+		matchingResources := map[api.ResourceTypeAndName]bool{}
+		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+			if resourceType == "*" || resourceInfo.ResourceType == api.ResourceType(resourceType) {
+				matchingResources[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
+			}
+			return output, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		return matchingResources, nil
+	}
+
+	// Visit and evaluate remaining data path expressions.
 	// If we allow wildcards, then theoretically the evaluation could be combinatoric to compare
 	// every combination of matching paths. Luckily because we support only conjunctions, which
 	// are commutative, we don't need to compare every combination. We can compare them independently
@@ -152,7 +181,7 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 	var multiErrs []error
 	var output any
 	matchingResources := map[api.ResourceTypeAndName]bool{}
-	for i, expression := range expressions {
+	for i, expression := range dataPathExpressions {
 		// The visitor functions visit all resources of the specified type.
 		// We need to keep track of which resources have matched.
 		// If no paths are found for a resource, that's not a match.
@@ -161,51 +190,6 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 		if expression.IsSplitPath {
 			// Handle split path syntax with .| separator
 			matchingResourcesForExpression, err := evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, customComparators)
-			if err != nil {
-				multiErrs = append(multiErrs, err)
-				matchingResources = nil
-				break
-			}
-			if i == 0 {
-				matchingResources = matchingResourcesForExpression
-			} else {
-				for key := range matchingResources {
-					_, matched := matchingResourcesForExpression[key]
-					if !matched {
-						delete(matchingResources, key)
-					}
-				}
-			}
-		} else if strings.HasPrefix(expression.Path, "ConfigHub.") {
-			// Handle ConfigHub.* paths that reference ResourceInfo fields
-			matchingResourcesForExpression := map[api.ResourceTypeAndName]bool{}
-			_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-				// Skip resources that don't match the resource type filter
-				if resourceType != "*" && resourceInfo.ResourceType != api.ResourceType(resourceType) {
-					return output, nil
-				}
-				var leftValue any
-				switch expression.Path {
-				case "ConfigHub.ResourceName":
-					leftValue = string(resourceInfo.ResourceName)
-				case "ConfigHub.ResourceNameWithoutScope":
-					leftValue = string(resourceInfo.ResourceNameWithoutScope)
-				case "ConfigHub.ResourceType":
-					leftValue = string(resourceInfo.ResourceType)
-				case "ConfigHub.ResourceCategory":
-					leftValue = string(resourceInfo.ResourceCategory)
-				default:
-					return output, []error{fmt.Errorf("unsupported ConfigHub path: %s", expression.Path)}
-				}
-				found, err := api.EvaluateExpression(&expression.RelationalExpression, leftValue, nil, customComparators)
-				if err != nil {
-					return output, []error{err}
-				}
-				if found {
-					matchingResourcesForExpression[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
-				}
-				return output, nil
-			})
 			if err != nil {
 				multiErrs = append(multiErrs, err)
 				matchingResources = nil

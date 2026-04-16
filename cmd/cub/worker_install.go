@@ -90,7 +90,7 @@ func init() {
 	workerInstallCmd.Flags().BoolVar(&workerInstallArgs.exportSecretOnly, "export-secret-only", false, "export only the Secret resource to stdout")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.image, "image", "", "Container image for the worker. Defaults to ghcr.io/confighubai/confighub-worker at the most recent tagged release.")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.imagePullPolicy, "image-pull-policy", "Always", "Image pull policy (Always, IfNotPresent, Never)")
-	workerInstallCmd.Flags().StringVar(&workerInstallArgs.updateStrategy, "update-strategy", "Recreate", "Deployment update strategy (RollingUpdate, Recreate)")
+	workerInstallCmd.Flags().StringVar(&workerInstallArgs.updateStrategy, "update-strategy", "RollingUpdate", "Deployment update strategy (RollingUpdate, Recreate)")
 	workerInstallCmd.Flags().StringVar(&workerInstallArgs.serviceAccount, "service-account", defaultServiceAcccount, "Service account name")
 	enableWaitFlag(workerInstallCmd)
 

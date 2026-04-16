@@ -212,6 +212,65 @@ func TestImportFilterConversionPipeline(t *testing.T) {
 	}
 }
 
+// TestWhereResourceWithDataPaths verifies that ParseAndValidateWhereResource
+// accepts both ConfigHub.* metadata paths and data field paths.
+func TestWhereResourceWithDataPaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+		numExpr int
+	}{
+		{
+			name:    "ConfigHub metadata path",
+			input:   "ConfigHub.ResourceType = 'apps/v1/Deployment'",
+			numExpr: 1,
+		},
+		{
+			name:    "data field path",
+			input:   "spec.replicas > 1",
+			numExpr: 1,
+		},
+		{
+			name:    "kind data path",
+			input:   "kind = 'Deployment'",
+			numExpr: 1,
+		},
+		{
+			name:    "mixed ConfigHub and data paths",
+			input:   "ConfigHub.ResourceType = 'apps/v1/Deployment' AND spec.replicas > 1",
+			numExpr: 2,
+		},
+		{
+			name:    "invalid ConfigHub path",
+			input:   "ConfigHub.InvalidPath = 'test'",
+			wantErr: true,
+		},
+		{
+			name:    "empty input",
+			input:   "",
+			numExpr: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			options, err := ParseAndValidateWhereResource(tc.input)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				if tc.input == "" {
+					assert.Nil(t, options)
+				} else {
+					require.NotNil(t, options)
+					assert.Len(t, options.WhereResourceExpressions, tc.numExpr)
+				}
+			}
+		})
+	}
+}
+
 // TestKubernetesPathSupport validates that Kubernetes-specific paths work correctly
 func TestKubernetesPathSupport(t *testing.T) {
 	kubernetesQueries := []string{

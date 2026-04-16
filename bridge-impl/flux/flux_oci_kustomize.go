@@ -318,11 +318,17 @@ func parseFluxOCIOptions(payload api.BridgeWorkerPayload) (FluxOCIBridgeOptions,
 	if v, ok := payload.TargetOptions["DisableRepoCreds"]; ok {
 		options.DisableRepoCreds = v == "true"
 	}
-	// FIXME: KubeContext should be derived from BridgeHandle, not passed as an option.
-	// BridgeHandle identifies the credentials/coordinates of the bridge to use;
-	// each target has one BridgeHandle but can have multiple option tuples.
-	if v, ok := payload.TargetOptions["KubeContext"]; ok {
-		options.KubeContext = v
+	// Prefer BridgeHandle over deprecated TargetOptions["KubeContext"].
+	options.KubeContext = payload.BridgeHandle
+	if options.KubeContext == "" {
+		if v, ok := payload.TargetOptions["KubeContext"]; ok {
+			options.KubeContext = v
+		}
+	}
+	// "cluster" is the BridgeHandle for in-cluster targets, but
+	// KubernetesConfigFactory expects "" to trigger in-cluster config detection.
+	if options.KubeContext == "cluster" {
+		options.KubeContext = ""
 	}
 	if v, ok := payload.TargetOptions["WaitTimeout"]; ok {
 		options.WaitTimeout = v

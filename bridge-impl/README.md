@@ -141,9 +141,35 @@ type Bridge interface {
 }
 ```
 
+### ConfigTypes and Bridge Options
+
+The `Info()` method returns a `BridgeWorkerInfo` describing the bridge's capabilities as a list of `SupportedConfigType` entries. Each entry carries a `ConfigTypeSignature` with:
+
+- `ProviderType` — identifies which bridge implementation handles units (e.g. `Kubernetes`, `ArgoCDRenderer`, `FluxOCI`).
+- `ToolchainType` — configuration toolchain and format (e.g. `Kubernetes/YAML`).
+- `LiveStateType` — toolchain/format of the LiveState returned by the bridge; optional, defaults to `ToolchainType`.
+- `Options` — a list of `BridgeOption` definitions supported by this ConfigType.
+
+A single Worker can register multiple ConfigTypes on the same Target (e.g. `ArgoCDRenderer` plus `ArgoCDOCI`). The Unit's `ProviderType` selects which ConfigType on the attached Target is used; all three of `ProviderType`, `ToolchainType`, and the Target's supported signatures must match.
+
+Each `BridgeOption` has a `Name` (PascalCase), `Description`, `Required`, `DataType`, and optional `Example`. Options are set on Target entities (and optionally overridden per-Unit via `TargetOptions`). When an operation dispatches, the bridge receives merged values in `BridgeWorkerPayload.TargetOptions`.
+
+Example — the ArgoCD renderer publishes an `IsAuthoritative` option that controls whether it creates/updates/deletes the `Application` resource, or only reads rendered manifests from a pre-existing one:
+
+```go
+info.SupportedConfigTypes[i].Options = append(info.SupportedConfigTypes[i].Options, api.BridgeOption{
+    Name:        "IsAuthoritative",
+    Description: "When true, the bridge creates/updates/deletes the ArgoCD Application resource. When false (default), the Application must already exist and the bridge only reads rendered manifests from it.",
+    Required:    false,
+    DataType:    funcapi.DataTypeBool,
+})
+```
+
+The source of truth for these types is [`core/worker/api/bridge_worker_info.go` in the SDK](https://github.com/confighub/sdk/blob/main/core/worker/api/bridge_worker_info.go).
+
 ### Target Discovery
 
-The `Info()` method returns available targets. In this example it treats a sub-directory as a target. In other (more realistic) use cases, a target may be a Kubernetes cluster represented by a kubecontext, it may be a namespace in a kube cluster or it may be an IaaS cloud identity.
+The `Info()` method also returns available targets (per ConfigType, as `AvailableTargets`). In this example it treats a sub-directory as a target. In other (more realistic) use cases, a target may be a Kubernetes cluster represented by a kubecontext, it may be a namespace in a kube cluster or it may be an IaaS cloud identity.
 
 ### Status Reporting
 

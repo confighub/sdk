@@ -46,6 +46,28 @@ func VisitResources(parsedData gaby.Container, output any, resourceProvider Reso
 	return output, nil
 }
 
+// ResolveConfigHubPath resolves a ConfigHub.* metadata path against a ResourceInfo struct.
+// Returns the resolved value, or an error if the path is unsupported.
+// Keep consistent with ValidWhereResourcePaths in api.go.
+func ResolveConfigHubPath(path string, resourceInfo *api.ResourceInfo) (any, error) {
+	switch path {
+	case "ConfigHub.ResourceName":
+		return string(resourceInfo.ResourceName), nil
+	case "ConfigHub.ResourceNameWithoutScope":
+		return string(resourceInfo.ResourceNameWithoutScope), nil
+	case "ConfigHub.ResourceType":
+		return string(resourceInfo.ResourceType), nil
+	case "ConfigHub.ResourceCategory":
+		return string(resourceInfo.ResourceCategory), nil
+	case "ConfigHub.ResourceNameStableCore":
+		return string(resourceInfo.ResourceNameStableCore), nil
+	case "ConfigHub.ResourceMergeID":
+		return resourceInfo.ResourceMergeID, nil
+	default:
+		return nil, fmt.Errorf("unsupported ConfigHub path: %s", path)
+	}
+}
+
 // MatchesWhereResourceExpressions evaluates each expression against a resource.
 // For paths with the "ConfigHub." prefix, values are resolved from ResourceInfo metadata.
 // For other paths, values are resolved from the resource's YAML document using YamlSafePathGetValueAnyType.
@@ -55,21 +77,10 @@ func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.Resour
 	for _, expr := range expressions {
 		var leftValue any
 		if strings.HasPrefix(expr.Path, "ConfigHub.") {
-			switch expr.Path {
-			case "ConfigHub.ResourceName":
-				leftValue = string(resourceInfo.ResourceName)
-			case "ConfigHub.ResourceNameWithoutScope":
-				leftValue = string(resourceInfo.ResourceNameWithoutScope)
-			case "ConfigHub.ResourceType":
-				leftValue = string(resourceInfo.ResourceType)
-			case "ConfigHub.ResourceCategory":
-				leftValue = string(resourceInfo.ResourceCategory)
-			case "ConfigHub.ResourceNameStableCore":
-				leftValue = string(resourceInfo.ResourceNameStableCore)
-			case "ConfigHub.ResourceMergeID":
-				leftValue = resourceInfo.ResourceMergeID
-			default:
-				return false, fmt.Errorf("unsupported ConfigHub path: %s", expr.Path)
+			var err error
+			leftValue, err = ResolveConfigHubPath(expr.Path, resourceInfo)
+			if err != nil {
+				return false, err
 			}
 		} else {
 			// Resolve the value from the YAML document
@@ -786,8 +797,8 @@ func UpdatePathsSetterArgument(
 		}
 		newValue := context.Details.SetterInvocations[0].Arguments[0].Value
 		switch newValue.(type) {
-		case string, int, bool:
-			// valid scalar type
+		case string, int, bool, []any:
+			// valid scalar or array type (gaby's setValue requires []interface{})
 		default:
 			return output, fmt.Errorf("unsupported value type %T at path %s", newValue, string(context.Path))
 		}
