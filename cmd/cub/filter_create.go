@@ -41,19 +41,19 @@ From Types:
 Examples:
 ` + "```" + `
   # Create a filter for Units with specific labels
-  cub filter create --space my-space --json unit-filter Unit --where-field "Labels.Environment = 'production'"
+  cub filter create --space my-space -o json unit-filter Unit --where-field "Labels.Environment = 'production'"
 
   # Create a filter for Units with specific resource type
-  cub filter create --space my-space --json deployment-filter Unit --resource-type "apps/v1/Deployment"
+  cub filter create --space my-space -o json deployment-filter Unit --resource-type "apps/v1/Deployment"
 
   # Create a filter for Units with data filters
-  cub filter create --space my-space --json replicas-filter Unit --where-data "spec.replicas > 2"
+  cub filter create --space my-space -o json replicas-filter Unit --where-data "spec.replicas > 2"
 
   # Create a filter for Spaces with specific criteria
-  cub filter create --space my-space --json dev-spaces Space --where-field "Labels.Environment = 'dev'"
+  cub filter create --space my-space -o json dev-spaces Space --where-field "Labels.Environment = 'dev'"
 
   # Create a filter with from-space for filtering within a specific space
-  cub filter create --space my-space --json cross-space-filter Unit --from-space other-space --where-field "DisplayName LIKE 'app-%'"
+  cub filter create --space my-space -o json cross-space-filter Unit --from-space other-space --where-field "DisplayName LIKE 'app-%'"
 ` + "```" + `
 
 BULK FILTER CREATION:

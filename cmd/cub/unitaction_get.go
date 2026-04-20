@@ -33,9 +33,13 @@ var (
 func init() {
 	addStandardGetFlags(unitActionGetCmd)
 	unitActionGetCmd.Flags().BoolVar(&showLiveState, "livestate", false, "decode and display the LiveState field")
+	_ = unitActionGetCmd.Flags().MarkDeprecated("livestate", "use 'cub unit-action livestate'")
 	unitActionGetCmd.Flags().BoolVar(&showData, "data", false, "decode and display the Data field")
+	_ = unitActionGetCmd.Flags().MarkDeprecated("data", "use 'cub unit-action data'")
 	unitActionGetCmd.Flags().BoolVar(&showLiveData, "livedata", false, "decode and display the LiveData field")
+	_ = unitActionGetCmd.Flags().MarkDeprecated("livedata", "use 'cub unit-action livedata'")
 	unitActionGetCmd.Flags().BoolVar(&showBridgeState, "bridgestate", false, "decode and display the BridgeState field")
+	_ = unitActionGetCmd.Flags().MarkDeprecated("bridgestate", "use 'cub unit-action bridgestate'")
 	unitActionCmd.AddCommand(unitActionGetCmd)
 }
 

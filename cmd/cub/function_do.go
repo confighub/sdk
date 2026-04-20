@@ -70,7 +70,7 @@ Examples:
   cub function do \
     --space my-space \
     --where "Slug = 'my-deployment'" \
-    --output-only \
+    --show output \
     yq '.spec.template.spec.containers[0].image'
 
   # Use set-int-path to update replica count for a deployment
@@ -86,15 +86,15 @@ Examples:
     --space my-space \
     get-replicas \
     --quiet \
-    --output-jq '.[].Value'
+    --show output -o jq='.[].Value'
 
   # Filter deployments with more than 1 replica
   cub function do \
     --space my-space \
     where-filter apps/v1/Deployment 'spec.replicas > 1' \
     --quiet \
-    --output-jq '.[].Passed' \
-    --jq '.[].UnitID'
+    --show output -o jq='.[].Passed' \
+    -o jq='.[].UnitID'
 
   # Set best-practice pod fields, other than for probes, to default values in all units in all spaces
   cub function do \
@@ -106,8 +106,8 @@ Examples:
   cub function do --space my-space \
     cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1' \
     --quiet \
-    --output-jq '.[].Passed' \
-    --jq '.[].UnitID'
+    --show output -o jq='.[].Passed' \
+    -o jq='.[].UnitID'
 ` + "```" + `
 `
 
@@ -134,13 +134,13 @@ Common agent workflows:
 Key flags for agents:
 - --where: Filter units (use quotes around expressions)
 - --space: Target space ("*" for all spaces where supported)
-- --output-only: Show just function output, not execution details
+- --show output: Show just function output, not execution details
 - --quiet: Suppress status messages
 - --wait: Wait for async triggers to complete
 
 Error handling:
 - Functions return Success: true/false in response
-- Use --quiet --output-jq to extract specific values
+- Use --quiet --show output -o jq=to extract specific values
 - Check function signatures with 'cub function explain FUNCTION_NAME'`
 
 	return getCommandHelp(baseHelp, agentContext)
@@ -164,11 +164,18 @@ var functionOtherDataSource string
 
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	enableShowFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
+	_ = functionDoCmd.Flags().MarkDeprecated("output-only", "use --show output")
 	functionDoCmd.Flags().BoolVar(&outputRaw, "output-json", false, "show output as raw JSON")
+	_ = functionDoCmd.Flags().MarkDeprecated("output-json", "use --show output -o json")
 	functionDoCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	_ = functionDoCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionDoCmd.Flags().BoolVar(&outputValuesOnly, "output-values-only", false, "show output values (from functions returning AttributeValueList) without other response details")
+	_ = functionDoCmd.Flags().MarkDeprecated("output-values-only", "use --show values")
 	functionDoCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	_ = functionDoCmd.Flags().MarkDeprecated("data-only", "use --show data")
+	enableOutputFileFlag(functionDoCmd)
 	// Same flag as unit update
 	functionDoCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	functionDoCmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
@@ -191,6 +198,15 @@ func init() {
 	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LiveRevisionNum)")
 	functionCmd.AddCommand(functionDoCmd)
 }
+
+// Resolved Trigger / Invocation entities from the most recent call to
+// newFunctionInvocationsRequest. validateFunctionKinds reads FunctionName off
+// these so vet/get/set don't have to re-fetch entities we already looked up
+// when building the request body.
+var (
+	resolvedTriggers    []goclientnew.Trigger
+	resolvedInvocations []goclientnew.Invocation
+)
 
 func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req := &goclientnew.FunctionInvocationsRequest{}
@@ -219,32 +235,56 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 		req.BridgeWorkerID = &workerID
 	}
 
-	// Parse and add trigger identifiers
+	// Reset caches; this may be the second call in a process (run.go uses
+	// newFunctionInvocationsRequest for its compute-mutations helper too).
+	resolvedTriggers = nil
+	resolvedInvocations = nil
+
+	// Resolve trigger identifiers to full entities so we also have FunctionName
+	// available without a second API round-trip for verb-scoped validation.
 	if len(functionTriggerIdentifiers) > 0 {
-		triggers, err := parseEntityIdentifiersForTrigger(functionTriggerIdentifiers)
+		triggers, err := parseEntityIdentifiersAsEntities[goclientnew.Trigger](
+			functionTriggerIdentifiers,
+			EntityTypeTrigger,
+			"TriggerID,FunctionName",
+			apiGetTriggerFromSlugInSpaceCore,
+			func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
+		)
 		if err != nil {
 			failOnError(err)
 		}
-		// Convert []uuid.UUID to []goclientnew.UUID
-		triggerUUIDs := make([]goclientnew.UUID, len(triggers))
-		for i, t := range triggers {
-			triggerUUIDs[i] = goclientnew.UUID(t)
+		resolvedTriggers = triggers
+		triggerUUIDs, err := entityUUIDs(triggers, func(t *goclientnew.Trigger) string { return t.TriggerID.String() })
+		if err != nil {
+			failOnError(err)
 		}
-		req.Triggers = triggerUUIDs
+		req.Triggers = make([]goclientnew.UUID, len(triggerUUIDs))
+		for i, id := range triggerUUIDs {
+			req.Triggers[i] = goclientnew.UUID(id)
+		}
 	}
 
-	// Parse and add invocation identifiers
+	// Same shape for invocations.
 	if len(functionInvocationIdentifiers) > 0 {
-		invocations, err := parseEntityIdentifiersForInvocation(functionInvocationIdentifiers)
+		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
+			functionInvocationIdentifiers,
+			EntityTypeInvocation,
+			"InvocationID,FunctionName",
+			apiGetInvocationFromSlugInSpace,
+			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
+		)
 		if err != nil {
 			failOnError(err)
 		}
-		// Convert []uuid.UUID to []goclientnew.UUID
-		invocationUUIDs := make([]goclientnew.UUID, len(invocations))
-		for i, inv := range invocations {
-			invocationUUIDs[i] = goclientnew.UUID(inv)
+		resolvedInvocations = invocations
+		invocationUUIDs, err := entityUUIDs(invocations, func(i *goclientnew.Invocation) string { return i.InvocationID.String() })
+		if err != nil {
+			failOnError(err)
 		}
-		req.Invocations = invocationUUIDs
+		req.Invocations = make([]goclientnew.UUID, len(invocationUUIDs))
+		for i, id := range invocationUUIDs {
+			req.Invocations[i] = goclientnew.UUID(id)
+		}
 	}
 
 	return req
@@ -306,28 +346,8 @@ func parseFunctionArguments(args []string) []goclientnew.FunctionArgument {
 	return funcArgs
 }
 
-// buildWhereClauseFromIdentifiers generates a WHERE clause from entity identifiers
-// uuidField and slugField specify the field names for UUIDs and slugs respectively
-// parseEntityIdentifiersForTrigger wraps the generic function for trigger parsing
-func parseEntityIdentifiersForTrigger(identifiers []string) ([]uuid.UUID, error) {
-	return parseEntityIdentifiers[goclientnew.Trigger](
-		identifiers,
-		EntityTypeTrigger,
-		apiGetTriggerFromSlugInSpaceCore,
-		func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
-	)
-}
-
-// parseEntityIdentifiersForInvocation wraps the generic function for invocation parsing
-func parseEntityIdentifiersForInvocation(identifiers []string) ([]uuid.UUID, error) {
-	return parseEntityIdentifiers[goclientnew.Invocation](
-		identifiers,
-		EntityTypeInvocation,
-		apiGetInvocationFromSlugInSpace,
-		func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
-	)
-}
-
+// buildWhereClauseFromIdentifiers generates a WHERE clause from entity identifiers.
+// uuidField and slugField specify the field names for UUIDs and slugs respectively.
 func buildWhereClauseFromIdentifiers(identifiers []string, uuidField, slugField string) (string, error) {
 	if len(identifiers) == 0 {
 		return "", nil
@@ -537,11 +557,23 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	return resp, nil
 }
 
+// hasAlternativeFunctionOutput reports whether a function sub-payload selector
+// (--show, or any of the deprecated --output-*/--data-only aliases) is active.
+// Used by helpers like awaitTriggersRemoval to decide whether to print
+// informational lines (e.g., apply-gates warnings) alongside the payload.
 func hasAlternativeFunctionOutput() bool {
-	return outputRaw || outputOnly || outputValuesOnly || dataOnly || outputJQ != ""
+	return effectiveShow() != ShowDefault
 }
 
 func functionDoCommandRun(cmd *cobra.Command, args []string) error {
+	return runFunctionInvocations(cmd, args, ModeAny)
+}
+
+// runFunctionInvocations is the shared core for `function do` and the
+// verb-scoped `function vet`, `function get`, `function set` commands.
+// The mode argument enforces the kind constraint on the specified functions
+// (direct, via --trigger, via --invocation) using cached signatures.
+func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKindMode) error {
 	var resp *[]goclientnew.FunctionInvocationsResponse
 
 	// Parse filter parameter
@@ -600,12 +632,23 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	// That makes it more difficult to look up the FunctionSignature in order to validate arguments,
 	// and support optional arguments. run sort of merges all functions together.
 
+	// Verb-prefix convenience: "cub function set image" → "set-image" when
+	// "image" isn't a registered function but "set-image" is. No-op for ModeAny.
+	if mode != ModeAny && len(args) > 0 {
+		args[0] = resolveFunctionNameForVerb(mode, args[0])
+	}
+
 	newBody, err := initializeFunctionInvocationsRequest(args)
 	failOnError(err)
 
+	// Enforce verb-scoped function-kind constraints (no-op for ModeAny).
+	if err := validateFunctionKinds(mode, newBody); err != nil {
+		return err
+	}
+
 	// Save prior HeadMutationNums if displaying mutations
 	var priorHeadMutationNums map[string]priorUnitInfo
-	if displayMutations {
+	if shouldDisplayMutations() {
 		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
 	}
 
@@ -636,65 +679,13 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 		resp = &[]goclientnew.FunctionInvocationsResponse{}
 	}
 
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput() || outputJQ != "" || outputValuesOnly
-
-	if !hasAlternativeOutput {
+	// Dispatch through the unified --show / -o rendering helper. If it didn't
+	// handle output, fall back to the default human summary.
+	if !renderFunctionResponse(resp) {
 		outputFunctionInvocationResponse(resp)
 	}
-	if jsonOutput {
-		displayJSON(resp)
-	}
-	if jq != "" {
-		displayJQ(resp)
-	}
-	if yamlOutput {
-		displayYAML(resp)
-	}
-	if yq != "" {
-		displayYQ(resp)
-	}
-	if outputJQ != "" {
-		for _, resp := range *resp {
-			for _, outputData := range resp.Outputs {
-				if len(outputData) != 0 {
-					outputBytes, err := base64.StdEncoding.DecodeString(outputData)
-					if err != nil {
-						tprintRaw(outputData)
-						failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-					}
-					if strings.TrimSpace(string(outputBytes)) != "null" {
-						displayJQForBytes(outputBytes, outputJQ)
-					}
-				}
-			}
-		}
-	}
-	if outputValuesOnly {
-		for _, resp := range *resp {
-			if attributeOutput, exists := resp.Outputs[string(api.OutputTypeAttributeValueList)]; exists && len(attributeOutput) != 0 {
-				outputBytes, err := base64.StdEncoding.DecodeString(attributeOutput)
-				if err != nil {
-					tprintRaw(attributeOutput)
-					failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-				}
-				if strings.TrimSpace(string(outputBytes)) != "null" {
-					// Try to decode as AttributeValueList
-					var attrValueList api.AttributeValueList
-					err = json.Unmarshal(outputBytes, &attrValueList)
-					if err != nil {
-						tprintRaw(string(outputBytes))
-						failOnError(fmt.Errorf("%s: Failed to decode output as AttributeValueList", err.Error()))
-					}
-					for i := range attrValueList {
-						tprint("%v", attrValueList[i].Value)
-					}
-				}
-			}
-		}
-	}
 	if wait {
-		if !quiet && !hasAlternativeOutput && !hasAlternativeFunctionOutput() {
+		if !quiet && !isAlternativeOutput() && effectiveShow() == ShowDefault {
 			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time
@@ -711,7 +702,7 @@ func functionDoCommandRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display mutations if requested
-	if displayMutations {
+	if shouldDisplayMutations() {
 		// Build description from function names
 		funcDesc := ""
 		if len(args) > 0 {

@@ -35,8 +35,6 @@ func init() {
 	addStandardListFlags(unitTreeCmd)
 	unitTreeCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitTreeCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
-	unitTreeCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,TargetID,Labels.Environment,Annotations.Owner)")
-
 	unitCmd.AddCommand(unitTreeCmd)
 }
 
@@ -407,11 +405,11 @@ func displayTree(nodes []*UnitTreeNode) {
 	}
 }
 
-// shouldDisplayColumns determines if we should show columns based on flags
+// shouldDisplayColumns determines if we should show columns based on flags.
+// Any alternative output (json, yaml, jq, yq, name) would interfere with the
+// column display, so suppress the columns view in those cases.
 func shouldDisplayColumns() bool {
-	// Always show columns unless in JSON/quiet mode or explicitly disabled
-	// Don't show columns in JSON/quiet mode as that would interfere with output
-	return !quiet && !jsonOutput
+	return !quiet && !isAlternativeOutput()
 }
 
 // displayTreeOnly displays just the tree structure
@@ -536,13 +534,12 @@ func getTreeColumns() []string {
 	// Default columns for tree view (using same as unit list)
 	defaultTreeColumns := []string{"UnitStatus.Status", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates"}
 
-	if columns != "" {
-		// Parse custom columns
-		customColumns := strings.Split(columns, ",")
-		for i, col := range customColumns {
-			customColumns[i] = strings.TrimSpace(col)
+	if cols := effectiveColumns(); len(cols) > 0 {
+		custom := make([]string, len(cols))
+		for i, col := range cols {
+			custom[i] = strings.TrimSpace(col)
 		}
-		return customColumns
+		return custom
 	}
 
 	return defaultTreeColumns

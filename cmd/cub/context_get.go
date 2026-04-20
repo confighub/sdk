@@ -26,8 +26,7 @@ Examples:
 }
 
 func init() {
-	enableJsonFlag(contextGetCmd)
-	enableJqFlag(contextGetCmd)
+	addStandardDisplayFlags(contextGetCmd)
 	contextCmd.AddCommand(contextGetCmd)
 }
 

@@ -55,7 +55,7 @@ Output Formats:
   - Default: Line-numbered format with color
   - Unified: Use -u for unified diff format (like git diff)
   - Color: Use -c to enable color in unified diff
-  - Mutations: Use --display-mutations for structured mutation display
+  - Mutations: Use -o mutations for structured mutation display
 
 Examples:
 `+"```"+`
@@ -82,7 +82,7 @@ Examples:
   cub unit diff my-unit --with-unit other-unit
 
   # Show mutations instead of text diff
-  cub unit diff my-unit --display-mutations
+  cub unit diff my-unit -o mutations
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 3),
@@ -104,7 +104,13 @@ func init() {
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LiveRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", defaultTo, "target revision (defaults to HeadRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.withUnit, "with-unit", "", "second unit for cross-unit diff (slug, space/slug, or UUID)")
+	// Register -o locally with a constrained description: unit diff produces a
+	// text or mutations diff, not a structured entity payload, so json/yaml/jq/yq
+	// don't apply here.
+	unitDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
+		`Output format. Only "mutations" is supported; replaces the text diff with a resource-mutations diff.`)
 	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
+	_ = unitDiffCmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
 	unitCmd.AddCommand(unitDiffCmd)
 }
 
@@ -388,6 +394,11 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	revFrom := unitDiffArgs.fromRev
 	revTo := unitDiffArgs.toRev
 
+	// Validate -o: only "mutations" is meaningful for this command.
+	if outputFormat != "" && outputFormat != "mutations" {
+		return fmt.Errorf(`"cub unit diff" only accepts "-o mutations"; %q is not supported`, outputFormat)
+	}
+
 	// Prevent mixing positional arguments with --from/--to flags
 	if len(args) > 1 && (unitDiffArgs.fromRev != defaultFrom || unitDiffArgs.toRev != defaultTo) {
 		return fmt.Errorf("cannot mix positional arguments with --from/--to flags")
@@ -487,7 +498,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to decode revision %d data: %v", revToNum, err)
 	}
 
-	if unitDiffArgs.displayMutations {
+	if unitDiffArgs.displayMutations || outputFormat == "mutations" {
 		// Display mutations instead of text diff
 		lookupMutationsUnitID = toUnit.UnitID.String()
 		displayMutationsFromDryRun(revFromData.Data, revToData.Data, toUnit.SpaceID.String(), "diff")

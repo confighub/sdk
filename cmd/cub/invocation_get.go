@@ -21,10 +21,10 @@ var invocationGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about an invocation that validates replicas
-  cub invocation get --space my-space --json validate-replicas
+  cub invocation get --space my-space -o json validate-replicas
 
   # Get details about an invocation that enforces low resource usage
-  cub invocation get --space my-space --json enforce-low-cost
+  cub invocation get --space my-space -o json enforce-low-cost
 `+"```"+`
 `, ""),
 	RunE: invocationGetCmdRun,

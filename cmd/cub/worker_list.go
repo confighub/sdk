@@ -84,7 +84,7 @@ func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
-		return buildSelectList("BridgeWorker", "", include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
+		return buildSelectList("BridgeWorker", nil, include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -115,7 +115,7 @@ func apiListAllBridgeWorkers(whereFilter string, selectParam string, filterParam
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
-		return buildSelectList("BridgeWorker", "", include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
+		return buildSelectList("BridgeWorker", nil, include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -133,7 +133,11 @@ func apiListAllBridgeWorkers(whereFilter string, selectParam string, filterParam
 }
 
 func getExtendedWorkerSlug(worker *goclientnew.ExtendedBridgeWorker) string {
-	return worker.BridgeWorker.Slug
+	space := ""
+	if worker.Space != nil {
+		space = worker.Space.Slug
+	}
+	return prefixedSlug(space, worker.BridgeWorker.Slug)
 }
 
 func displayExtendedWorkerList(workers []*goclientnew.ExtendedBridgeWorker) {

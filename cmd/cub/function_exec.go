@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -58,8 +57,12 @@ set-namespace myns
 
 func init() {
 	functionExecCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	enableShowFlag(functionExecCmd)
 	functionExecCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
+	_ = functionExecCmd.Flags().MarkDeprecated("output-only", "use --show output")
 	functionExecCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	_ = functionExecCmd.Flags().MarkDeprecated("data-only", "use --show data")
+	enableOutputFileFlag(functionExecCmd)
 	// Same flag as unit update
 	functionExecCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	functionExecCmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
@@ -77,6 +80,7 @@ func init() {
 	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionExecCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	_ = functionExecCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionExecCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionExecCmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the functions on the live state and use the flag value as the toolchain type for live state.")
 	functionCmd.AddCommand(functionExecCmd)
@@ -209,7 +213,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 
 	// Save prior HeadMutationNums if displaying mutations
 	var priorHeadMutationNums map[string]priorUnitInfo
-	if displayMutations {
+	if shouldDisplayMutations() {
 		// Build effective WHERE clause
 		var effectiveWhere string
 		if len(unitIdentifiers) > 0 {
@@ -228,42 +232,11 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput() || outputJQ != ""
-
-	if !hasAlternativeOutput {
+	if !renderFunctionResponse(resp) {
 		outputFunctionInvocationResponse(resp)
 	}
-	if jsonOutput {
-		displayJSON(resp)
-	}
-	if jq != "" {
-		displayJQ(resp)
-	}
-	if yamlOutput {
-		displayYAML(resp)
-	}
-	if yq != "" {
-		displayYQ(resp)
-	}
-	if outputJQ != "" {
-		for _, resp := range *resp {
-			for _, outputData := range resp.Outputs {
-				if len(outputData) != 0 {
-					outputBytes, err := base64.StdEncoding.DecodeString(outputData)
-					if err != nil {
-						tprintRaw(outputData)
-						failOnError(fmt.Errorf("%s: Failed to decode output", err.Error()))
-					}
-					if strings.TrimSpace(string(outputBytes)) != "null" {
-						displayJQForBytes(outputBytes, outputJQ)
-					}
-				}
-			}
-		}
-	}
 	if wait {
-		if !quiet && !dataOnly && !outputOnly {
+		if !quiet && !isAlternativeOutput() && effectiveShow() == ShowDefault {
 			tprintRaw("Awaiting triggers...")
 		}
 		// Wait one at a time
@@ -280,7 +253,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display mutations if requested
-	if displayMutations {
+	if shouldDisplayMutations() {
 		execDesc := "function exec"
 		if file != "" && file != "-" {
 			execDesc = "function exec " + file

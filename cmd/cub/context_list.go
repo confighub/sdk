@@ -29,8 +29,7 @@ Examples:
 }
 
 func init() {
-	enableJsonFlag(contextListCmd)
-	enableJqFlag(contextListCmd)
+	addStandardListDisplayFlags(contextListCmd)
 	contextCmd.AddCommand(contextListCmd)
 }
 

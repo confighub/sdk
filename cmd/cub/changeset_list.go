@@ -24,13 +24,13 @@ Examples:
   cub changeset list --space "*" --where "Description LIKE '%release%'"
 
   # List changesets without headers for scripting
-  cub changeset list --space my-space --no-header
+  cub changeset list --space my-space --no-headers
 
   # List changesets in JSON format
-  cub changeset list --space my-space --json
+  cub changeset list --space my-space -o json
 
   # List only changeset names
-  cub changeset list --space my-space --no-header --names
+  cub changeset list --space my-space --no-headers -o name
 
   # List changesets with matching Descriptions
   cub changeset list --space my-space --where "Description LIKE 'Release%'"
@@ -84,7 +84,11 @@ func changesetListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getChangeSetSlug(changeset *goclientnew.ExtendedChangeSet) string {
-	return changeset.ChangeSet.Slug
+	space := ""
+	if changeset.Space != nil {
+		space = changeset.Space.Slug
+	}
+	return prefixedSlug(space, changeset.ChangeSet.Slug)
 }
 
 func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
@@ -144,7 +148,7 @@ func apiListChangeSets(spaceID string, whereFilter string, selectParam string, f
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "ChangeSetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("ChangeSet", "", include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
+		return buildSelectList("ChangeSet", nil, include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -179,7 +183,7 @@ func apiSearchChangeSets(whereFilter string, selectParam string, filterParam str
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "ChangeSetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("ChangeSet", "", include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
+		return buildSelectList("ChangeSet", nil, include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

@@ -24,7 +24,7 @@ Examples:
   cub changeset get --space my-space release-changeset
 
   # Get details about a changeset in JSON format
-  cub changeset get --space my-space --json hotfix-changeset
+  cub changeset get --space my-space -o json hotfix-changeset
 `+"```"+`
 `, ""),
 	RunE: changesetGetCmdRun,

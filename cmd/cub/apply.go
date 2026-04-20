@@ -140,8 +140,7 @@ func reportApplyResults(results []cubapi.ApplyResult) {
 	}
 
 	// Report summary (only if not using alternative output format)
-	hasAlternativeOutput := hasAlternativeOutput()
-	if !quiet && !hasAlternativeOutput {
+	if !quiet && !isAlternativeOutput() {
 		if created > 0 || updated > 0 || unchanged > 0 || deleted > 0 {
 			tprint("Successfully applied configuration:")
 			if created > 0 {

@@ -20,13 +20,13 @@ Examples:
   cub organization list
 
   # List organizations without headers for scripting
-  cub organization list --no-header
+  cub organization list --no-headers
 
   # List organizations in JSON format
-  cub organization list --json
+  cub organization list -o json
 
   # List organizations with custom JQ filter
-  cub organization list --jq '.[].Slug'
+  cub organization list -o jq='.[].Slug'
 `+"```"+`
 `, ""),
 	RunE: organizationListCmdRun,
@@ -95,7 +95,7 @@ func apiListOrganizations(whereFilter string, selectParam string, filterParam st
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "OrganizationID"}
-		return buildSelectList("Organization", "", "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
+		return buildSelectList("Organization", nil, "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

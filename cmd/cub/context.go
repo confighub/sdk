@@ -88,7 +88,10 @@ type ContextManager struct {
 var contextCmd = &cobra.Command{
 	Use:   "context",
 	Short: "Context commands",
-	Long:  getCommandHelp(`Context commands`, ""),
+	Long: getCommandHelp(
+		`Commands for managing locally stored ConfigHub authentication contexts.`,
+		"Commands operate on local state. Server and authentication not required.",
+	),
 }
 
 func init() {

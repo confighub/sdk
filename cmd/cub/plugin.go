@@ -199,21 +199,8 @@ func init() {
 func pluginListCmdRun(cmd *cobra.Command, args []string) error {
 	plugins := discoverPlugins()
 
-	if hasAlternativeOutput() {
-		if jsonOutput {
-			displayJSON(plugins)
-		}
-		if jq != "" {
-			outJQ := jq
-			jq = outJQ
-			displayJQ(plugins)
-		}
-		if yamlOutput {
-			displayYAML(plugins)
-		}
-		if yq != "" {
-			displayYQ(plugins)
-		}
+	if isAlternativeOutput() {
+		renderPayload(plugins)
 		return nil
 	}
 

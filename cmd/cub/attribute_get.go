@@ -22,10 +22,10 @@ var attributeGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about an attribute
-  cub attribute get --space my-space --json my-attr
+  cub attribute get --space my-space -o json my-attr
 
   # Get attribute details in YAML format
-  cub attribute get --space my-space --yaml my-attr
+  cub attribute get --space my-space -o yaml my-attr
 `+"```"+`
 `, ""),
 	RunE: attributeGetCmdRun,

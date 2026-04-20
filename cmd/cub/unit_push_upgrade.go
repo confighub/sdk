@@ -16,8 +16,12 @@ var unitPushUpgradeCmd = &cobra.Command{
 	Use:   "push-upgrade <name>",
 	Short: "Upgrade downstreams from unit",
 	Long:  getUnitPushUpgradeHelp(),
-	Args:  cobra.ExactArgs(1),
-	RunE:  unitBulkUpgradeCmdRun,
+	Deprecated: `
+Use cub unit update --patch --upgrade instead. It supports --dry-run, -o mutations, --changeset, and other features.
+Use --where and/or --filter to select the units to upgrade, such as --where "Unit.UpstreamUnitID = '<unit-id>' AND Unit.UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum".
+`,
+	Args: cobra.ExactArgs(1),
+	RunE: unitBulkUpgradeCmdRun,
 }
 
 func getUnitPushUpgradeHelp() string {
@@ -39,10 +43,10 @@ Examples:
   cub unit push-upgrade --space my-space base-template --verbose
 
   # Upgrade and get JSON response for programmatic use
-  cub unit push-upgrade --space my-space base-template --json
+  cub unit push-upgrade --space my-space base-template -o json
 
   # Upgrade with specific field selection using jq
-  cub unit push-upgrade --space my-space base-template --jq '.[] | select(.Unit) | .Unit | {Slug, UnitID, HeadRevisionNum}'
+  cub unit push-upgrade --space my-space base-template -o jq='.[] | select(.Unit) | .Unit | {Slug, UnitID, HeadRevisionNum}'
 ` + "```" + `
 `
 
@@ -60,15 +64,15 @@ Upgrade from template unit:
   cub unit push-upgrade --space SPACE template-name --verbose
 
 Get structured push-upgrade results:
-  cub unit push-upgrade --space SPACE template-name --json
+  cub unit push-upgrade --space SPACE template-name -o json
 
 Check specific push-upgrade outcomes:
-  cub unit push-upgrade --space SPACE template-name --jq '.[] | select(.Error) | {Unit: .Unit.Slug, Error: .Error.Message}'
+  cub unit push-upgrade --space SPACE template-name -o jq='.[] | select(.Error) | {Unit: .Unit.Slug, Error: .Error.Message}'
 
 Key flags for agents:
 - --verbose: Show detailed information about upgraded units
-- --json: Get structured response with full push-upgrade details
-- --jq: Extract specific information from push-upgrade results
+- -o json: Get structured response with full push-upgrade details
+- -o jq=<expr>: Extract specific information from push-upgrade results
 - --quiet: Suppress default output for programmatic use
 
 Post-upgrade workflow:

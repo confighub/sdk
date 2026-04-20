@@ -150,7 +150,7 @@ Bulk patch operations:
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)
-- --json: Get structured response with unit ID and details
+- -o json: Get structured response with unit ID and details
 - --verbose: Show detailed update information
 - --from-stdin: Read additional metadata from stdin
 - --replace-from-stdin: Replace entire metadata from stdin
@@ -617,7 +617,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
 
 	// Display mutations if requested
-	if displayMutations {
+	if shouldDisplayMutations() {
 		tprintRaw("")
 		// Build description of the update operation
 		updateDesc := "PatchUnit"
@@ -938,10 +938,10 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	if !done {
 		return errors.New("triggers didn't execute on unit " + unitDetails.Slug)
 	}
-	if len(unitDetails.ApplyGates) > 0 && !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
+	if len(unitDetails.ApplyGates) > 0 && !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
 		tprint("Unit %s (%s) has apply gates: %s", unitDetails.Slug, unitDetails.UnitID.String(), applyGatesToString(unitDetails.ApplyGates))
 	}
-	if len(unitDetails.ApplyWarnings) > 0 && !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
+	if len(unitDetails.ApplyWarnings) > 0 && !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
 		tprint("Unit %s (%s) has apply warnings: %s", unitDetails.Slug, unitDetails.UnitID.String(), applyGatesToString(unitDetails.ApplyWarnings))
 	}
 	return nil
@@ -951,9 +951,6 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 	if responses == nil {
 		return fmt.Errorf("no response data received")
 	}
-
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
 
 	// Wait for triggers BEFORE calling the generic display function
 	if wait {
@@ -965,7 +962,7 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 		}
 
 		if len(successfulUnits) > 0 {
-			if !quiet && !hasAlternativeOutput {
+			if !quiet && !isAlternativeOutput() {
 				tprintRaw("Awaiting triggers...")
 			}
 			// Wait for each successfully updated unit

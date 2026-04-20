@@ -26,16 +26,16 @@ Examples:
   cub revision list --space my-space my-ns
 
   # List revisions without headers
-  cub revision list --space my-space --no-header my-ns
+  cub revision list --space my-space --no-headers my-ns
 
   # List revisions in JSON format
-  cub revision list --space my-space --json my-ns
+  cub revision list --space my-space -o json my-ns
 
   # List revisions using unit ID instead of slug
   cub revision list --space my-space --by-unit-id 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 
   # List revisions with custom JQ filter
-  cub revision list --space my-space --jq '.[].RevisionNum' my-ns
+  cub revision list --space my-space -o jq='.[].RevisionNum' my-ns
 
   # List revisions with specific criteria
   cub revision list --space my-space --where 'RevisionNum > 1' my-ns
@@ -284,7 +284,7 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Revision", "", include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+		return buildSelectList("Revision", nil, include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -326,7 +326,7 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Revision", "", include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+		return buildSelectList("Revision", nil, include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

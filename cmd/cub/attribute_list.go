@@ -24,10 +24,10 @@ Examples:
   cub attribute list --space "*"
 
   # List attributes in JSON format
-  cub attribute list --space my-space --json
+  cub attribute list --space my-space -o json
 
   # List only attribute names
-  cub attribute list --space my-space --no-header --names
+  cub attribute list --space my-space --no-headers -o name
 
   # List attributes for a specific toolchain
   cub attribute list --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
@@ -81,7 +81,11 @@ func attributeListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getAttributeSlug(attr *goclientnew.ExtendedAttribute) string {
-	return attr.Attribute.Slug
+	space := ""
+	if attr.Space != nil {
+		space = attr.Space.Slug
+	}
+	return prefixedSlug(space, attr.Attribute.Slug)
 }
 
 func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
@@ -127,7 +131,7 @@ func apiListAttributes(spaceID string, whereFilter string, selectParam string, f
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "AttributeID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Attribute", "", include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
+		return buildSelectList("Attribute", nil, include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -162,7 +166,7 @@ func apiSearchAttributes(whereFilter string, selectParam string, filterParam str
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "AttributeID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Attribute", "", include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
+		return buildSelectList("Attribute", nil, include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

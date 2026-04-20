@@ -104,12 +104,40 @@ There are also some common flags that affect the output, input, or operation.
 - `--debug`: Print API calls. Applies to all verbs.
 - `--quiet`: Do not print default output. Applies to all verbs.
 - `--verbose`: Print details of the returned entity, additive with default output. Applies to `create` and `update`.
-- `--json`: Print formatted JSON of the response payload, suppressing default output. Applies to most commands.
-- `--jq`: Print the result of applying the specified `jq` expression to the response payload, suppressing default output. Applies to most commands.
-- `--yaml`: Print formatted YAML of the response payload, suppressing default output. Applies to most commands.
-- `--yq`: Print the result of applying the specified `yq` expression to the response payload, suppressing default output. Applies to most commands.
-- `--names`: Print only names, suppressing default output. Applies to `list`.
-- `--no-header`: Omit the header line. Applies to `list`.
+- `-o, --output <format>`: Select an alternative output format (kubectl-style). Accepts one of:
+  - `json` — payload as indented JSON
+  - `yaml` — payload as YAML
+  - `name` — slugs only (space-resident entities print as `<space-slug>/<slug>`)
+  - `wide` — full default columns (list commands)
+  - `jq=<expr>` — apply `jq` expression to the payload
+  - `yq=<expr>` — apply `yq` expression to the payload
+  - `custom-columns=<spec>` — projection spec (list commands with dynamic columns)
+  - `mutations` — colored diff of the resource mutations; works with or without `--dry-run`
+- `--show <section>`: Function commands only (`do`, `exec`, `vet`, `get`, `set`). Selects which sub-payload of a FunctionInvocationsResponse is the subject. Valid values: `output`, `values`, `data`. `--show` and `-o` are orthogonal: `--show output -o json` renders the Outputs section as JSON.
+- `-O, --output-file <path>`: Write raw payloads (such as `--show data` on function commands) to a file. Accepts `{space}`, `{unit}`, `{section}` placeholders for per-unit file paths. Parent directories are created as needed.
+- `--no-headers`: Omit header lines on list output. Applies to `list`.
+- `--columns <fields>`: Select columns to display on list commands that support dynamic columns. Comma-separated or repeated. Equivalent to `-o custom-columns=<spec>`.
+
+The following flags are deprecated in favor of `-o` / `--show` / the new subcommands; they continue to work as aliases (using them prints a one-line migration hint):
+
+| Deprecated | Replacement |
+|---|---|
+| `--json` | `-o json` |
+| `--yaml` | `-o yaml` |
+| `--jq <expr>` | `-o jq=<expr>` |
+| `--yq <expr>` | `-o yq=<expr>` |
+| `--names` | `-o name` |
+| `--no-header` (singular) | `--no-headers` |
+| `--display-mutations` | `-o mutations` |
+| On `function do` / `exec` / `run`: `--output-only` | `--show output` |
+| On `function do` / `exec` / `run`: `--output-json` | `--show output -o json` |
+| On `function do` / `exec` / `run`: `--output-jq <expr>` | `--show output -o jq=<expr>` |
+| On `function do` / `exec` / `run`: `--output-values-only` | `--show values` |
+| On `function do` / `exec` / `run`: `--data-only` | `--show data` |
+| On `cub unit get`: `--data-only` | `cub unit data <unit>` |
+| On `cub revision get`: `--data-only` | `cub revision data <unit> <rev>` |
+| On `cub unit-action get`: `--data`, `--livedata`, `--livestate`, `--bridgestate` | `cub unit-action data|livedata|livestate|bridgestate <unit> <action>` |
+| On `cub unit livedata|livestate|bridgestate`: `-o <file>` (to file) | `-O <file>` / `--output-file <file>` |
 
 #### Other common flags
 
@@ -131,7 +159,7 @@ cub space list
 Create a new space from JSON and show the resulting JSON:
 
 ```
-cub space create --json --from-stdin space-slug < spacemetadata.json
+cub space create -o json --from-stdin space-slug < spacemetadata.json
 ```
 
 ### Triggers
@@ -235,7 +263,7 @@ cub unit list --space $SPACE --where "CreatedAt > '2025-02-18T23:16:34'"
 Find units approved by a specific user by ID:
 
 ```
-cub unit list --no-header --space $SPACE --where "ApprovedBy ? 'c9369257-0d7b-40d0-9127-454d90f5dcf8'"
+cub unit list --no-headers --space $SPACE --where "ApprovedBy ? 'c9369257-0d7b-40d0-9127-454d90f5dcf8'"
 ```
 
 Find units that have been approved:
@@ -253,7 +281,7 @@ cub unit list --space $SPACE --where 'LEN(ApplyGates) > 0'
 Get all apply gates of units with a specific apply gate:
 
 ```
-cub unit list --space $SPACE --where "ApplyGates.complete/vet-placeholders = true" --jq '.[].ApplyGates'
+cub unit list --space $SPACE --where "ApplyGates.complete/vet-placeholders = true" -o jq='.[].ApplyGates'
 ```
 
 Find units with names starting with "test":
@@ -300,35 +328,63 @@ cub unit list --space $SPACE --contains "prod"
 
 ### Functions
 
+Functions are grouped into three verb-scoped commands that enforce the kind of
+function they invoke. Each one validates its arguments against the cached
+function signatures (refreshed at login and by `cub function list`):
+
+- `cub function vet` — validating functions (Validating=true) only
+- `cub function get` — non-mutating functions (Mutating=false; includes plain readonly and validating)
+- `cub function set` — mutating functions (Mutating=true) only
+
+`cub function do` (and `cub function exec`) remain available as a mixed escape
+hatch that accepts any kind.
+
 Set an image for the `nginx` container of a Kubernetes Deployment:
 
 ```
-cub function do --space $SPACE --where "Slug = 'mydeployment'" set-image nginx nginx:mainline-otel
+cub function set --space $SPACE --where "Slug = 'mydeployment'" set-image nginx nginx:mainline-otel
+```
+
+Preview what would change without applying:
+
+```
+cub function set --space $SPACE --where "Slug = 'mydeployment'" --dry-run -o mutations set-image nginx nginx:1.25
 ```
 
 Get the image attribute using `yq`:
 
 ```
-cub function do --space $SPACE --where "Slug = 'mydeployment'" --output-only yq '.spec.template.spec.containers[0].image'
+cub function get --space $SPACE --where "Slug = 'mydeployment'" --show output yq '.spec.template.spec.containers[0].image'
 ```
 
-Get the replica counts of all units in a space that contain resources with replicas:
+Get the replica counts of all units in a space:
 
 ```
-cub function do --space $SPACE get-replicas --output-values-only
+cub function get --space $SPACE --show values get-replicas
 ```
 
 Get the IDs of all units with more than one replica in a space:
 
 ```
-cub function do --space $SPACE where-filter apps/v1/Deployment 'spec.replicas > 1' --quiet --output-jq '.[].Passed' --jq '.[].UnitID'
+cub function vet --space $SPACE where-filter apps/v1/Deployment 'spec.replicas > 1' --quiet --show output -o jq='.[].Passed' -o jq='.[].UnitID'
 ```
 
-Get all resource types in all units within a space
+Get all resource types in all units within a space:
 
 ```
-cub function do --space $SPACE --quiet --output-jq '.[].ResourceType' get-resources
+cub function get --space $SPACE --quiet --show output -o jq='.[].ResourceType' get-resources
 ```
+
+### Raw payload subcommands
+
+For large decoded blobs on a unit, revision, or unit-action, use the dedicated
+subcommands. They emit raw bytes (no `-o` formatting, by design):
+
+- `cub unit data <unit>`, `cub unit livedata <unit>`, `cub unit livestate <unit>`, `cub unit bridgestate <unit>`
+- `cub unit-action data|livedata|livestate|bridgestate <unit> <id-or-num>`
+- `cub revision data <unit> <revision-num>`
+
+Each supports `--filename` to write to a file instead of stdout.
 
 ## Plugins
 

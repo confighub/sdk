@@ -21,10 +21,10 @@ var filterGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a unit filter
-  cub filter get --space my-space --json unit-filter
+  cub filter get --space my-space -o json unit-filter
 
   # Get details about a deployment filter
-  cub filter get --space my-space --json deployment-filter
+  cub filter get --space my-space -o json deployment-filter
 `+"```"+`
 `, ""),
 	RunE: filterGetCmdRun,

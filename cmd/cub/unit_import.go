@@ -104,28 +104,17 @@ func unitImportCmdRun(cmd *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, importRes)
 	}
 	if actionWait {
-		// awaitCompletion will print a unit-centric message !quiet && !hasAlternativeOutput()
+		// awaitCompletion will print a unit-centric message !quiet && !isAlternativeOutput()
 		err = awaitCompletion("import", importRes.JSON200)
 		if err != nil {
 			return err
 		}
-	} else if !quiet && !hasAlternativeOutput() {
+	} else if !quiet && !isAlternativeOutput() {
 		displayStartedOperation(importRes.JSON200)
 		return nil
 	}
 
-	if jsonOutput {
-		displayJSON(importRes.JSON200)
-	}
-	if jq != "" {
-		displayJQ(importRes.JSON200)
-	}
-	if yamlOutput {
-		displayYAML(importRes.JSON200)
-	}
-	if yq != "" {
-		displayYQ(importRes.JSON200)
-	}
+	renderPayload(importRes.JSON200)
 
 	return nil
 }

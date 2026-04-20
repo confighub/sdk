@@ -214,23 +214,12 @@ func runSingleUnitApply(unitSlug string) error {
 		if err != nil {
 			return err
 		}
-	} else if !quiet && !hasAlternativeOutput() {
+	} else if !quiet && !isAlternativeOutput() {
 		displayStartedOperation(applyRes.JSON200)
 		return nil
 	}
 
-	if jsonOutput {
-		displayJSON(applyRes.JSON200)
-	}
-	if jq != "" {
-		displayJQ(applyRes.JSON200)
-	}
-	if yamlOutput {
-		displayYAML(applyRes.JSON200)
-	}
-	if yq != "" {
-		displayYQ(applyRes.JSON200)
-	}
+	renderPayload(applyRes.JSON200)
 
 	return nil
 }
@@ -437,7 +426,7 @@ func awaitBulkCompletion(action string, queuedOps []*goclientnew.QueuedOperation
 			status := actionStatus(event.Status)
 			if isTerminalStatus(status) {
 				delete(pending, opID)
-				if !quiet && !hasAlternativeOutput() && !hasAlternativeFunctionOutput() {
+				if !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
 					displayOperationResults(op.UnitID.String(), event)
 				}
 				if status == goclientnew.ActionStatusTypeFailed {

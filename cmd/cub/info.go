@@ -5,16 +5,14 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/confighub/sdk/core/cubapi"
-	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Show CLI and server details",
-	Long:  getCommandHelp(`Show CLI and server details`, ""),
-	RunE:  infoCmdRun,
+	Use:        "info",
+	Short:      "Show server details",
+	Long:       getCommandHelp(`Show server URL, version, and build information.`, "Authentication not required."),
+	Deprecated: "Use 'cub version' instead.",
+	RunE:       infoCmdRun,
 }
 
 func init() {
@@ -31,17 +29,4 @@ func infoCmdRun(cmd *cobra.Command, args []string) error {
 	detail.Append([]string{"BuiltAt:", apiInfo.BuiltAt})
 	detail.Render()
 	return nil
-}
-
-func GetApiInfo() goclientnew.ApiInfo {
-	payloadRes, err := cubClientNew.ApiInfoWithResponse(ctx)
-	if cubapi.IsAPIError(err, payloadRes) {
-		failOnError(cubapi.InterpretErrorGeneric(err, payloadRes))
-	}
-
-	// empty 200 response from server shouldn't happen
-	if payloadRes.JSON200 == nil {
-		return goclientnew.ApiInfo{}
-	}
-	return *payloadRes.JSON200
 }

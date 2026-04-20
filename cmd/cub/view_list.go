@@ -27,13 +27,13 @@ Examples:
   cub view list --space "*" --where "FilterID IS NOT NULL"
 
   # List views without headers for scripting
-  cub view list --space my-space --no-header
+  cub view list --space my-space --no-headers
 
   # List views in JSON format
-  cub view list --space my-space --json
+  cub view list --space my-space -o json
 
   # List only view names
-  cub view list --space my-space --no-header --names
+  cub view list --space my-space --no-headers -o name
 
   # List views with specific filters
   cub view list --space my-space --where "GroupBy IS NOT NULL"
@@ -90,7 +90,11 @@ func viewListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getViewSlug(view *goclientnew.ExtendedView) string {
-	return view.View.Slug
+	space := ""
+	if view.Space != nil {
+		space = view.Space.Slug
+	}
+	return prefixedSlug(space, view.View.Slug)
 }
 
 func formatColumnsForDisplay(columns []goclientnew.Column) string {
@@ -163,7 +167,7 @@ func apiListViews(spaceID string, whereFilter string, selectParam string, filter
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "ViewID", "SpaceID", "OrganizationID"}
-		return buildSelectList("View", "", include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
+		return buildSelectList("View", nil, include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -198,7 +202,7 @@ func apiSearchViews(whereFilter string, selectParam string, filterParam string) 
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "ViewID", "SpaceID", "OrganizationID"}
-		return buildSelectList("View", "", include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
+		return buildSelectList("View", nil, include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

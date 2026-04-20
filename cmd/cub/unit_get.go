@@ -30,18 +30,16 @@ func getUnitGetHelp() string {
 Examples:
 ` + "```" + `
   # Get details about a namespace unit
-  cub unit get --space my-space --json my-ns
+  cub unit get --space my-space -o json my-ns
 
   # Get details about a deployment unit
-  cub unit get --space my-space --json my-deployment
+  cub unit get --space my-space -o json my-deployment
 
   # Get details about a headlamp application unit
-  cub unit get --space my-space --json headlamp
+  cub unit get --space my-space -o json headlamp
 
-  # Get only the configuration data of a unit
-  cub unit get --space my-space --data-only my-deployment
-
-  cub unit get --space my-space --json my-ns
+  # Get only the configuration data of a unit (use the dedicated subcommand)
+  cub unit data --space my-space my-deployment
 ` + "```" + `
 `
 
@@ -50,31 +48,31 @@ Examples:
 Agent inspection workflow:
 1. Use 'unit get UNIT_SLUG' to understand unit structure and current state
 2. Check revision numbers to understand change history
-3. Use --data-only to get raw configuration for local processing
+3. Use 'cub unit data UNIT_SLUG' to get raw configuration for local processing
 
 Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
 - Revision tracking: HeadRevisionNum vs LiveRevisionNum shows pending changes
 - Approval state: ApprovedBy list and ApplyGates status
-- Configuration data: Actual YAML/HCL content via --data-only
+- Configuration data: Actual YAML/HCL content via 'cub unit data'
 
 Important flags for agents:
-- --data-only: Get just the configuration content, useful for:
-  * Saving to local files for editing
-  * Piping to other tools for processing
-  * Understanding current configuration state
-- --json: Get full metadata in structured format
-- --quiet: Suppress table output, useful with --json
+- -o json: Get full metadata in structured format
+- -o jq=<expr>: Drill into a specific field
+- -o mutations: Show the mutation diff for the current head revision
+
+For the raw configuration bytes, use the dedicated subcommand:
+- cub unit data <unit> [--filename <path>]  — prints or writes the decoded Data
 
 Common agent patterns:
   # Download unit for local editing
-  cub unit get my-app --space prod --data-only > my-app.yaml
-  
+  cub unit data my-app --space prod > my-app.yaml
+
   # Check if unit has pending changes
-  cub unit get my-app --space prod --json --jq '.HeadRevisionNum > .LiveRevisionNum'
-  
+  cub unit get my-app --space prod -o jq='.Unit.HeadRevisionNum > .Unit.LiveRevisionNum'
+
   # Get approval status
-  cub unit get my-app --space prod --json --jq '.ApprovedBy | length'
+  cub unit get my-app --space prod -o jq='.Unit.ApprovedBy | length'
 
 Use the slug or UUID to identify the unit. Slugs are more human-readable and typically preferred.`
 
@@ -86,7 +84,9 @@ func init() {
 	enableWebFlag(unitGetCmd)
 	enableDisplayMutationsFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	_ = unitGetCmd.Flags().MarkDeprecated("data-only", "use 'cub unit data <unit>'")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
+	_ = unitGetCmd.Flags().MarkDeprecated("filename", "use 'cub unit data --filename'")
 	unitCmd.AddCommand(unitGetCmd)
 }
 
@@ -100,6 +100,14 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 		ctx := contextManager.ActiveContext()
 		url := cubapi.GetUnitDetailURL(ctx.Coordinate.ServerURL, selectedSpaceID, unitDetails.Unit.UnitID.String())
 		return openWebUI(url)
+	}
+
+	// -o mutations replaces the default summary with the mutations diff for
+	// the current head revision. The deprecated --display-mutations flag
+	// remains additive and is handled inside displayExtendedUnitDetails.
+	if effectiveOutput().Kind == OutputMutations {
+		displayMutationsForUnit(unitDetails.Unit, 0, "", "")
+		return nil
 	}
 
 	displayGetResults(unitDetails, displayExtendedUnitDetails)
@@ -244,11 +252,11 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		view.Render()
 
-		if len(*unitDetails.Unit.MutationSources) != 0 && (verbose || displayMutations) {
+		if len(*unitDetails.Unit.MutationSources) != 0 && (verbose || shouldDisplayMutations()) {
 			tprintRaw("")
 			tprintRaw("Mutation Sources:")
 			tprintRaw("-----------------")
-			if displayMutations {
+			if shouldDisplayMutations() {
 				lookupMutationsUnitID = unitDetails.Unit.UnitID.String()
 				displayResourceMutationList(unitDetails.Unit.MutationSources, true, 0, "", "")
 			} else {

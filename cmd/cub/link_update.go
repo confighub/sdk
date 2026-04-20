@@ -93,9 +93,6 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 		return fmt.Errorf("no response data received")
 	}
 
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := jsonOutput || jq != ""
-
 	// Wait for triggers BEFORE calling the generic display function
 	if wait {
 		successfulLinks := []*goclientnew.Link{}
@@ -106,7 +103,7 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 		}
 
 		if len(successfulLinks) > 0 {
-			if !quiet && !hasAlternativeOutput {
+			if !quiet && !isAlternativeOutput() {
 				tprintRaw("Awaiting triggers...")
 			}
 			// Wait for triggers on each affected unit

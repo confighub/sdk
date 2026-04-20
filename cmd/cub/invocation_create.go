@@ -60,22 +60,22 @@ invocations based on filters and creates multiple new invocations with optional 
 Single Invocation Examples:
 ` + "```" + `
   # Create an invocation to validate replicas > 1 for Deployments
-  cub invocation create --space my-space --json replicated Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub invocation create --space my-space -o json replicated Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create an invocation to enforce low resource usage (replicas < 10)
-  cub invocation create --space my-space --json lowcost Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub invocation create --space my-space -o json lowcost Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create an invocation to ensure no placeholders exist in resources
-  cub invocation create --space my-space --json complete Kubernetes/YAML vet-placeholders
+  cub invocation create --space my-space -o json complete Kubernetes/YAML vet-placeholders
 
   # Create an invocation requiring approval before applying changes
-  cub invocation create --space my-space --json require-approval Kubernetes/YAML vet-approvedby 1
+  cub invocation create --space my-space -o json require-approval Kubernetes/YAML vet-approvedby 1
 
   # Create an invocation to add a "cloned=true" annotation
-  cub invocation create --space my-space --json stamp Kubernetes/YAML set-annotation cloned true
+  cub invocation create --space my-space -o json stamp Kubernetes/YAML set-annotation cloned true
 
   # Using named arguments for clarity (note the "--" separator)
-  cub invocation create --space my-space --json stamp Kubernetes/YAML -- set-annotation --key=cloned --value=true
+  cub invocation create --space my-space -o json stamp Kubernetes/YAML -- set-annotation --key=cloned --value=true
 ` + "```" + `
 
 Bulk Create Examples:

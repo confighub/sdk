@@ -57,6 +57,7 @@ func init() {
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.workerSlug, "worker", "", "Worker slug to explain a function for")
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.unitSlug, "unit", "", "Unit slug to explain a function for")
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type to explain a function for")
+	addStandardDisplayFlags(functionExplainCmd)
 	functionCmd.AddCommand(functionExplainCmd)
 }
 
@@ -76,15 +77,10 @@ func functionExplainCmdRun(cmd *cobra.Command, args []string) error {
 		failOnError(fmt.Errorf("Function %s not found", functionName))
 	}
 
-	if !quiet {
+	if !quiet && !isAlternativeOutput() {
 		displayFunctionDetails(toolchainType, functionName, &functionDetails)
 	}
-	if jsonOutput {
-		displayJSON(functionDetails)
-	}
-	if jq != "" {
-		displayJQ(functionDetails)
-	}
+	renderPayload(functionDetails)
 
 	return nil
 }

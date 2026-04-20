@@ -201,27 +201,45 @@ func enableQuietFlag(cmd *cobra.Command) {
 }
 
 func enableNoheaderFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&noheader, "no-header", false, "No header for lists")
+	cmd.Flags().BoolVar(&noheader, "no-headers", false, "Don't print headers for table output")
+	// --no-header (singular) is the legacy name; keep as deprecated alias bound to the same var.
+	cmd.Flags().BoolVar(&noheader, "no-header", false, "Deprecated: use --no-headers")
+	_ = cmd.Flags().MarkDeprecated("no-header", "use --no-headers")
 }
 
 func enableJsonFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "JSON output, suppressing default output")
+	_ = cmd.Flags().MarkDeprecated("json", "use -o json")
 }
 
 func enableYamlFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&yamlOutput, "yaml", false, "YAML output, suppressing default output")
+	_ = cmd.Flags().MarkDeprecated("yaml", "use -o yaml")
 }
 
 func enableNamesFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&names, "names", false, "Only output names, suppressing default output")
+	_ = cmd.Flags().MarkDeprecated("names", "use -o name")
 }
 
 func enableJqFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&jq, "jq", "", "jq expression, suppressing default output")
+	_ = cmd.Flags().MarkDeprecated("jq", "use -o jq=<expr>")
 }
 
 func enableYqFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&yq, "yq", "", "yq expression, suppressing default output")
+	_ = cmd.Flags().MarkDeprecated("yq", "use -o yq=<expr>")
+}
+
+func enableOutputFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "",
+		"Output format. One of: json, yaml, name, wide, mutations, jq=<expr>, yq=<expr>, custom-columns=<spec>")
+}
+
+func enableColumnsFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&columns, "columns", nil,
+		"columns to display; can be repeated or comma-separated (e.g., Slug,Labels.Environment)")
 }
 
 func enableSelectFlag(cmd *cobra.Command) {
@@ -293,10 +311,23 @@ func validateStdinFlags() error {
 func addStandardDisplayFlags(cmd *cobra.Command) {
 	enableQuietFlag(cmd)
 	enableVerboseFlag(cmd)
+	enableOutputFlag(cmd)
+	// Back-compat: legacy boolean/string output flags. Marked deprecated by their enable*Flag funcs.
 	enableJsonFlag(cmd)
 	enableJqFlag(cmd)
 	enableYamlFlag(cmd)
 	enableYqFlag(cmd)
+}
+
+// addStandardListDisplayFlags registers the display-side flags common to any
+// list-shaped command: --names, --no-headers, --columns, and the full set of
+// alternative output flags (-o + deprecated aliases). Commands that list local
+// entities (like contexts) use this without the server-side filter flags.
+func addStandardListDisplayFlags(cmd *cobra.Command) {
+	enableNamesFlag(cmd)
+	enableNoheaderFlag(cmd)
+	enableColumnsFlag(cmd)
+	addStandardDisplayFlags(cmd)
 }
 
 func addStandardListFlags(cmd *cobra.Command) {
@@ -304,9 +335,7 @@ func addStandardListFlags(cmd *cobra.Command) {
 	enableFilterFlag(cmd)
 	enableContainsFlag(cmd)
 	enableSelectFlag(cmd)
-	enableNamesFlag(cmd)
-	enableNoheaderFlag(cmd)
-	addStandardDisplayFlags(cmd)
+	addStandardListDisplayFlags(cmd)
 }
 
 func addStandardCreateFlags(cmd *cobra.Command) {

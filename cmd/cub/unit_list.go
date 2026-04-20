@@ -33,10 +33,10 @@ Examples:
   cub unit list --space my-space
 
   # List units without headers for scripting
-  cub unit list --space my-space --no-header
+  cub unit list --space my-space --no-headers
 
   # List only unit names
-  cub unit list --space my-space --no-header --names
+  cub unit list --space my-space --no-headers -o name
 
   # List units with specific labels
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
@@ -56,8 +56,8 @@ Examples:
   # List units with upstream revisions
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
-  # List units with JSON output and JQ filtering
-  cub unit list --space my-space --quiet --json --jq '.[].Slug'
+  # List units with jq filtering
+  cub unit list --space my-space --quiet -o jq='.[].Unit.Slug'
 
   # List units with custom columns
   cub unit list --space my-space --columns Unit.Slug,Target.Slug
@@ -85,7 +85,7 @@ Example extended available columns (not exhaustive):
 Agent discovery workflow:
 1. Start with 'unit list --space SPACE' to see all units
 2. Use --where filters to find specific units of interest
-3. Use --names for scripting and automation
+3. Use -o name for scripting and automation
 
 Key filtering patterns for agents:
 
@@ -105,9 +105,10 @@ Content filtering:
 - By creation time: --where "CreatedAt > '2025-01-01T00:00:00'"
 
 Output formats:
-- --json + --jq: Extract specific fields for further processing
-- --names: Get unit identifiers for use with other commands
-- --quiet: Suppress table headers for clean output
+- -o jq=<expr>: Extract specific fields for further processing
+- -o json: Full JSON payload
+- -o name: Get unit identifiers (printed as <space-slug>/<slug>) for use with other commands
+- --no-headers: Suppress table headers for clean output
 
 The --where flag supports SQL-like expressions with AND conjunctions. All attribute names are PascalCase as in JSON output.`
 
@@ -116,7 +117,7 @@ The --where flag supports SQL-like expressions with AND conjunctions. All attrib
 
 var resourceType string
 var whereData string
-var columns string
+var columns []string
 var whereTrigger string
 var triggerFilter string
 var triggersPassed bool
@@ -195,7 +196,6 @@ func init() {
 	enableWebFlag(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
-	unitListCmd.Flags().StringVar(&columns, "columns", "", "comma-separated list of columns to display (e.g., Name,TargetID,Labels.Environment,Annotations.Owner)")
 	unitListCmd.Flags().StringVar(&whereTrigger, "where-trigger", "", "where expression to match triggers for validation filtering")
 	unitListCmd.Flags().StringVar(&triggerFilter, "trigger-filter", "", "Filter UUID (with From=Trigger) for trigger validation filtering")
 	unitListCmd.Flags().BoolVar(&triggersPassed, "triggers-passed", false, "return units passing trigger validation (default: return failing units)")
@@ -260,16 +260,21 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getExtendedUnitSlug(extendedUnit *goclientnew.ExtendedUnit) string {
-	return extendedUnit.Unit.Slug
+	space := ""
+	if extendedUnit.Space != nil {
+		space = extendedUnit.Space.Slug
+	}
+	return prefixedSlug(space, extendedUnit.Unit.Slug)
 }
 
 func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
+	cols := effectiveColumns()
 	// When a view is active and units have View metadata, display view columns
-	if viewSlug != "" && columns == "" && len(units) > 0 && units[0].View != nil && len(units[0].View.Columns) > 0 {
+	if viewSlug != "" && len(cols) == 0 && len(units) > 0 && units[0].View != nil && len(units[0].View.Columns) > 0 {
 		displayViewColumnList(units)
 		return
 	}
-	DisplayListGeneric(units, columns, defaultUnitColumns, unitAliases, unitCustomColumns)
+	DisplayListGeneric(units, cols, defaultUnitColumns, unitAliases, unitCustomColumns)
 }
 
 // displayViewColumnList displays units using the View's column definitions.
@@ -463,7 +468,7 @@ func apiListExtendedUnits(spaceID string, whereFilter string, resourceType strin
 		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
 		// UnitEventID is not a real field. Remove it.
 		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
-		return buildSelectList("Unit", columns, selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
+		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -517,7 +522,7 @@ func apiSearchUnits(whereFilter string, resourceType string, whereData string, w
 		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
 		// UnitEventID is not a real field. Remove it.
 		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
-		return buildSelectList("Unit", columns, selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
+		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

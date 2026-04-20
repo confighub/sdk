@@ -27,13 +27,13 @@ Examples:
   cub trigger list --space "*" --where "Event = 'Mutation'"
 
   # List triggers without headers for scripting
-  cub trigger list --space my-space --no-header
+  cub trigger list --space my-space --no-headers
 
   # List triggers in JSON format
-  cub trigger list --space my-space --json
+  cub trigger list --space my-space -o json
 
   # List only trigger names
-  cub trigger list --space my-space --no-header --names
+  cub trigger list --space my-space --no-headers -o name
 
   # List triggers with a specific event type
   cub trigger list --space my-space --where "Event = 'Mutation'"
@@ -96,7 +96,11 @@ func triggerListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
-	return trigger.Trigger.Slug
+	space := ""
+	if trigger.Space != nil {
+		space = trigger.Space.Slug
+	}
+	return prefixedSlug(space, trigger.Trigger.Slug)
 }
 
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
@@ -152,7 +156,7 @@ func apiListTriggers(spaceID string, whereFilter string, selectParam string, fil
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Trigger", "", include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
+		return buildSelectList("Trigger", nil, include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -187,7 +191,7 @@ func apiSearchTriggers(whereFilter string, selectParam string, filterParam strin
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Trigger", "", include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
+		return buildSelectList("Trigger", nil, include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

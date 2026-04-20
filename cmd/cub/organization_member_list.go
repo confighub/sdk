@@ -23,13 +23,13 @@ Examples:
   cub organization-member list
 
   # List organization-member without headers for scripting
-  cub organization-member list --no-header
+  cub organization-member list --no-headers
 
   # List organization-member in JSON format
-  cub organization-member list --json
+  cub organization-member list -o json
 
   # List organization-member with custom JQ filter
-  cub organization-member list --jq '.[].UserID'
+  cub organization-member list -o jq='.[].UserID'
 `+"```"+`
 `, ""),
 	RunE: organizationMemberListCmdRun,
@@ -107,7 +107,7 @@ func apiListOrganizationMembers(whereFilter string, selectParam string, filterPa
 	// Auto-select fields based on default display if no custom output format is specified
 	// if selectFields == "" {
 	//     baseFields := []string{"Username", "UserID", "OrganizationID"}
-	//     autoSelect := buildSelectList("OrganizationMember", "", "", defaultOrganizationMemberColumns, organizationMemberAliases, organizationMemberCustomColumnDependencies, baseFields)
+	//     autoSelect := buildSelectList("OrganizationMember", nil, "", defaultOrganizationMemberColumns, organizationMemberAliases, organizationMemberCustomColumnDependencies, baseFields)
 	//     newParams.Select = &autoSelect
 	// } else if selectFields != "" && selectFields != "*" {
 	//     newParams.Select = &selectFields

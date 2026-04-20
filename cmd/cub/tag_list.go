@@ -24,13 +24,13 @@ Examples:
   cub tag list --space "*" --where "Labels.version = '1.0'"
 
   # List tags without headers for scripting
-  cub tag list --space my-space --no-header
+  cub tag list --space my-space --no-headers
 
   # List tags in JSON format
-  cub tag list --space my-space --json
+  cub tag list --space my-space -o json
 
   # List only tag names
-  cub tag list --space my-space --no-header --names
+  cub tag list --space my-space --no-headers -o name
 
   # List tags with specific labels
   cub tag list --space my-space --where "Labels.environment = 'production'"
@@ -87,7 +87,11 @@ func tagListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getTagSlug(tag *goclientnew.ExtendedTag) string {
-	return tag.Tag.Slug
+	space := ""
+	if tag.Space != nil {
+		space = tag.Space.Slug
+	}
+	return prefixedSlug(space, tag.Tag.Slug)
 }
 
 func displayTagList(tags []*goclientnew.ExtendedTag) {
@@ -138,7 +142,7 @@ func apiListTags(spaceID string, whereFilter string, selectParam string, filterP
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TagID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Tag", "", include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
+		return buildSelectList("Tag", nil, include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -173,7 +177,7 @@ func apiSearchTags(whereFilter string, selectParam string, filterParam string) (
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TagID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Tag", "", include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
+		return buildSelectList("Tag", nil, include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

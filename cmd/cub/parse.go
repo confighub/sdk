@@ -284,6 +284,22 @@ func parseEntityIdentifiersAsEntities[T EntityInSpace](
 	return entities, nil
 }
 
+// entityUUIDs extracts the UUID of each entity using the supplied ID getter.
+// Returned slice parallels the input. Factored out so callers that already
+// fetched entities via parseEntityIdentifiersAsEntities can convert to UUIDs
+// without re-fetching.
+func entityUUIDs[T any](entities []T, getEntityID func(*T) string) ([]uuid.UUID, error) {
+	uuids := make([]uuid.UUID, len(entities))
+	for i := range entities {
+		entityUUID, err := uuid.Parse(getEntityID(&entities[i]))
+		if err != nil {
+			return nil, fmt.Errorf("invalid UUID from entity: %w", err)
+		}
+		uuids[i] = entityUUID
+	}
+	return uuids, nil
+}
+
 // parseEntityIdentifiers is a wrapper that returns UUIDs by extracting them from the entities
 func parseEntityIdentifiers[T EntityInSpace](
 	identifiers []string,
@@ -296,19 +312,7 @@ func parseEntityIdentifiers[T EntityInSpace](
 	if err != nil {
 		return nil, err
 	}
-
-	// Extract UUIDs from entities
-	uuids := make([]uuid.UUID, len(entities))
-	for i, entity := range entities {
-		entityIDStr := getEntityID(&entity)
-		entityUUID, err := uuid.Parse(entityIDStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid UUID from entity: %w", err)
-		}
-		uuids[i] = entityUUID
-	}
-
-	return uuids, nil
+	return entityUUIDs(entities, getEntityID)
 }
 
 // parseEntityIdentifierSingle parses a single entity identifier using parseEntityIdentifiers

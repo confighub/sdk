@@ -212,7 +212,7 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, 
 	// Auto-select fields based on default display if no custom output format is specified
 	// if selectFields == "" {
 	//     baseFields := []string{"UnitEventID", "UnitID", "SpaceID", "OrganizationID"}
-	//     autoSelect := buildSelectList("UnitEvent", "", "", defaultUnitEventColumns, unitEventAliases, unitEventCustomColumnDependencies, baseFields)
+	//     autoSelect := buildSelectList("UnitEvent", nil, "", defaultUnitEventColumns, unitEventAliases, unitEventCustomColumnDependencies, baseFields)
 	//     newParams.Select = &autoSelect
 	// } else if selectFields != "" {
 	//     newParams.Select = &selectFields

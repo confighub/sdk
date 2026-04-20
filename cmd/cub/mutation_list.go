@@ -27,16 +27,16 @@ Examples:
   cub mutation list --space my-space my-ns
 
   # List mutations without headers
-  cub mutation list --space my-space --no-header my-ns
+  cub mutation list --space my-space --no-headers my-ns
 
   # List mutations in JSON format
-  cub mutation list --space my-space --json my-ns
+  cub mutation list --space my-space -o json my-ns
 
   # List mutations using unit ID instead of slug
   cub mutation list --space my-space --by-unit-id 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 
   # List mutations with custom JQ filter
-  cub mutation list --space my-space --jq '.[].MutationNum' my-ns
+  cub mutation list --space my-space -o jq='.[].MutationNum' my-ns
 
   # List mutations with specific criteria
   cub mutation list --space my-space --where 'MutationNum > 1' my-ns
@@ -147,7 +147,7 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"MutationNum", "MutationID", "UnitID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Mutation", "", include, defaultMutationColumns, mutationAliases, mutationCustomColumnDependencies, baseFields)
+		return buildSelectList("Mutation", nil, include, defaultMutationColumns, mutationAliases, mutationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

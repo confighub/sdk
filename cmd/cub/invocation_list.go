@@ -26,13 +26,13 @@ Examples:
   cub invocation list --space "*" --where "FunctionName = 'cel-validate'"
 
   # List invocations without headers for scripting
-  cub invocation list --space my-space --no-header
+  cub invocation list --space my-space --no-headers
 
   # List invocations in JSON format
-  cub invocation list --space my-space --json
+  cub invocation list --space my-space -o json
 
   # List only invocation names
-  cub invocation list --space my-space --no-header --names
+  cub invocation list --space my-space --no-headers -o name
 
   # List invocations for a specific toolchain
   cub invocation list --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
@@ -89,7 +89,11 @@ func invocationListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getInvocationSlug(invocation *goclientnew.ExtendedInvocation) string {
-	return invocation.Invocation.Slug
+	space := ""
+	if invocation.Space != nil {
+		space = invocation.Space.Slug
+	}
+	return prefixedSlug(space, invocation.Invocation.Slug)
 }
 
 func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
@@ -136,7 +140,7 @@ func apiListInvocations(spaceID string, whereFilter string, selectParam string, 
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "InvocationID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Invocation", "", include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
+		return buildSelectList("Invocation", nil, include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -171,7 +175,7 @@ func apiSearchInvocations(whereFilter string, selectParam string, filterParam st
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "InvocationID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Invocation", "", include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
+		return buildSelectList("Invocation", nil, include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

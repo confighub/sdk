@@ -257,7 +257,7 @@ func apiListUnitActions(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string,
 	// Auto-select fields based on default display if no custom output format is specified
 	// if selectFields == "" {
 	//     baseFields := []string{"UnitActionID", "UnitID", "SpaceID", "OrganizationID"}
-	//     autoSelect := buildSelectList("UnitAction", "", "", defaultUnitActionColumns, unitActionAliases, unitActionCustomColumnDependencies, baseFields)
+	//     autoSelect := buildSelectList("UnitAction", nil, "", defaultUnitActionColumns, unitActionAliases, unitActionCustomColumnDependencies, baseFields)
 	//     newParams.Select = &autoSelect
 	// } else if selectFields != "" {
 	//     newParams.Select = &selectFields

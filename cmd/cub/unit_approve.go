@@ -321,7 +321,7 @@ func handleBulkUnitApproveResponse(responses200 *[]goclientnew.ApproveResponse, 
 	}
 
 	// Display summary
-	if !jsonOutput {
+	if !isAlternativeOutput() {
 		fmt.Printf("\nBulk %s operation completed:\n", operationName)
 		fmt.Printf("  Success: %d unit(s)\n", successCount)
 		if failureCount > 0 {

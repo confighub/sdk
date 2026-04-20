@@ -785,8 +785,16 @@ func pathsMatchResolved(mutationPath, responsePath string) bool {
 }
 
 // enableDisplayMutationsFlag adds the --display-mutations flag to a command.
+// Deprecated: --display-mutations is retained as an alias for -o mutations.
 func enableDisplayMutationsFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&displayMutations, "display-mutations", false, "display resource mutations")
+	_ = cmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
+}
+
+// shouldDisplayMutations returns true when mutation display is requested,
+// either via the deprecated --display-mutations flag or -o mutations.
+func shouldDisplayMutations() bool {
+	return displayMutations || effectiveOutput().Kind == OutputMutations
 }
 
 // displayMutationsForUnit fetches and displays mutations for a unit, distinguishing

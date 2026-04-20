@@ -45,7 +45,7 @@ Function types:
 - Mutating: true = Modifies configuration data (changes unit state)
 - Validating: true = Returns pass/fail validation results
 
-Use --names to get just function names for scripting.`
+Use -o name to get just function names for scripting.`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
@@ -63,11 +63,7 @@ func init() {
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.unitSlug, "unit", "", "Unit slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for")
 	// Function list doesn't support where
-	enableNamesFlag(functionListCmd)
-	enableQuietFlag(functionListCmd)
-	enableJsonFlag(functionListCmd)
-	enableJqFlag(functionListCmd)
-	enableNoheaderFlag(functionListCmd)
+	addStandardListDisplayFlags(functionListCmd)
 	functionCmd.AddCommand(functionListCmd)
 }
 
@@ -205,31 +201,25 @@ func functionListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// The return type doesn't match displayListResults, so we repeat that code here.
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := names || jsonOutput || jq != ""
+	// The return type doesn't match displayListResults, so we route through
+	// effectiveOutput() manually.
+	spec := effectiveOutput()
+	alt := isAlternativeOutput()
 
-	if !quiet && !hasAlternativeOutput {
+	if !quiet && !alt {
 		displayFunctionList(funcs)
 	}
-	if names {
-		table := tableView()
+	if spec.Kind == OutputName {
 		for toolchainType, functionMap := range funcs {
 			if functionListCmdArgs.toolchainType != "" && functionListCmdArgs.toolchainType != toolchainType {
 				continue
 			}
 			for functionName := range functionMap {
-				table.Append([]string{functionName})
+				tprintRaw(functionName)
 			}
 		}
-		table.Render()
 	}
-	if jsonOutput {
-		displayJSON(funcs)
-	}
-	if jq != "" {
-		displayJQ(funcs)
-	}
+	renderPayload(funcs)
 
 	return nil
 }

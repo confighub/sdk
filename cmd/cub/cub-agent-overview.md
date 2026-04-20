@@ -39,12 +39,17 @@ cub context get
 ### Common Flags
 
 - `--space SPACE_SLUG`: Override default space context; specify `*` to indicate all spaces
-- `--json`: Output formatted JSON, suppressing default output
-- `--jq EXPRESSION`: Apply jq expression to response, suppressing default output
+- `-o, --output <format>`: Select output format (kubectl-style). Values: `json`, `yaml`, `name`, `wide`, `jq=<expr>`, `yq=<expr>`, `custom-columns=<spec>`, `mutations`. For space-resident entities, `-o name` prints `<space-slug>/<slug>` — the same identifier syntax accepted by other commands.
+- `--show <section>`: Function commands only (`function do|exec|vet|get|set`). Selects which part of the response is the subject: `output`, `values`, `data`. Combine with `-o` to format the selected section, e.g. `--show output -o json`.
+- `-O, --output-file <path>`: Write raw payload to a file. Accepts `{space}`, `{unit}`, `{section}` placeholders for per-unit file paths in bulk operations.
+- `--no-headers`: Omit header rows on list commands.
+- `--columns <fields>` or `-o custom-columns=<spec>`: Select columns on list commands that support dynamic columns.
 - `--where "EXPRESSION"`: Filter results using simple relational expressions. The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`. String pattern operators include `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, and `NOT LIKE` and `!~~` for negated pattern matching. String regex operators include `~` for regex matching, `~*` for case-insensitive regex, and `!~`/`!~*` for regex not matching. Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. Pointer types support `IS NULL` and `IS NOT NULL` to check for presence. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. Arrays support the `?` operator to to match any element of the array, as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`. Maps support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Maps also support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence, as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists). The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `Slug IN ('slugone', 'slugtwo')` or `Labels.Environment IN ('production', 'staging')`. An example conjunction is: `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`. See the [Query Language Grammar](#query-language-grammar) section for the formal syntax specification.
 - `--from-stdin`: Read JSON input from stdin for passing to the ConfigHub API
 - `--verbose`: Show detailed output, additive with default output
 - `--debug`: Show API calls
+
+Deprecated flags retained as aliases (using them prints a one-line migration hint; see the mapping in `cub-overview.md`): `--json`, `--yaml`, `--jq`, `--yq`, `--names`, `--no-header` (singular), `--display-mutations`, `--output-only`, `--output-json`, `--output-jq`, `--output-values-only`, `--data-only`, and the additive `--data` / `--livedata` / `--livestate` / `--bridgestate` flags on `unit-action get`. Prefer `-o`, `--show`, and the dedicated subcommands instead.
 
 #### Query Language Grammar
 
@@ -292,7 +297,7 @@ cub space list
 cub space get SPACE_SLUG
 
 # Create new space
-cub space create --json --from-stdin SPACE_SLUG < metadata.json
+cub space create -o json --from-stdin SPACE_SLUG < metadata.json
 ```
 
 #### Config Units
@@ -332,11 +337,21 @@ cub function list
 # Get function details to understand how to correctly invoke a function
 cub function explain FUNCTION_NAME
 
-# Invoke a function on specific units
-cub function do --space SPACE_SLUG --where "Slug = 'myunit'" FUNCTION_NAME [args]
+# Verb-scoped commands — preferred for known function kinds:
+#   vet  — validating functions only (Validating=true)
+#   get  — non-mutating functions (Mutating=false, includes validating)
+#   set  — mutating functions only (Mutating=true)
+#
+# Each verb rejects functions whose kind doesn't match, using the cached
+# function signatures refreshed by `cub function list`. This also makes
+# permission scopes predictable: agents can be granted only `function get`
+# to safely inspect configurations.
+cub function vet --space SPACE_SLUG --where "Slug = 'myunit'" VALIDATING_FN [args]
+cub function get --space SPACE_SLUG --where "Slug = 'myunit'" READONLY_FN [args]
+cub function set --space SPACE_SLUG --where "Slug = 'myunit'" MUTATING_FN [args]
 
-# Invoke a function across all units in space
-cub function do --space SPACE_SLUG FUNCTION_NAME [args]
+# Mixed escape hatch — accepts any kind:
+cub function do --space SPACE_SLUG --where "Slug = 'myunit'" FUNCTION_NAME [args]
 ```
 
 To discover what functions are available, use `cub function list`. Before executing a function
@@ -378,14 +393,14 @@ you are not familiar with, use `cub function explain FUNCTION_NAME`.
 
 ```bash
 # Update images across multiple units across all spaces
-cub function do --space "*" --where "Labels.app = 'myapp'" \
+cub function set --space "*" --where "Labels.app = 'myapp'" \
   set-image nginx nginx:1.25-alpine
 
 # Find all units with placeholders across all spaces
-cub function do --space "*" get-placeholders --output-values-only
+cub function get --space "*" --show values get-placeholders
 
 # Get resource types across all units across all spaces
-cub function do --space "*" get-resources --output-jq '.[].ResourceType'
+cub function get --space "*" --show output -o jq='.[].ResourceType' get-resources
 ```
 
 #### Queries and Filtering
@@ -516,7 +531,7 @@ Typical workflow for editing:
 
 ```bash
 # 1. Download the current config data (e.g., Kubernetes YAML)
-cub unit get myapp --space myspace --data-only > myapp.yaml
+cub unit data myapp --space myspace > myapp.yaml
 
 # 2. Edit the file locally
 # (make your changes to myapp.yaml)

@@ -26,13 +26,13 @@ Examples:
   cub filter list --space "*" --where "From = 'Unit'"
 
   # List filters without headers for scripting
-  cub filter list --space my-space --no-header
+  cub filter list --space my-space --no-headers
 
   # List filters in JSON format
-  cub filter list --space my-space --json
+  cub filter list --space my-space -o json
 
   # List only filter names
-  cub filter list --space my-space --no-header --names
+  cub filter list --space my-space --no-headers -o name
 
   # List filters with a specific From type
   cub filter list --space my-space --where "From = 'Unit'"
@@ -105,7 +105,11 @@ func filterListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getFilterSlug(filter *goclientnew.ExtendedFilter) string {
-	return filter.Filter.Slug
+	space := ""
+	if filter.Space != nil {
+		space = filter.Space.Slug
+	}
+	return prefixedSlug(space, filter.Filter.Slug)
 }
 
 func displayFilterList(filters []*goclientnew.ExtendedFilter) {
@@ -174,7 +178,7 @@ func apiListFilters(spaceID string, whereFilter string, selectParam string) ([]*
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Filter", "", include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
+		return buildSelectList("Filter", nil, include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -216,7 +220,7 @@ func apiSearchFilters(whereFilter string, selectParam string) ([]*goclientnew.Ex
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Filter", "", include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
+		return buildSelectList("Filter", nil, include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

@@ -189,7 +189,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	// Save prior HeadMutationNums if displaying mutations
 	var priorHeadMutationNums map[string]priorUnitInfo
-	if displayMutations {
+	if shouldDisplayMutations() {
 		priorHeadMutationNums = savePriorUnitInfoFromWhere(whereClause, "")
 	}
 
@@ -227,7 +227,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 	}
 
 	if workerUpgradeArgs.dryRun {
-		if displayMutations {
+		if shouldDisplayMutations() {
 			displayMutationsFromFunctionResponse(setImageResp, true, priorHeadMutationNums, "set-image-reference")
 		} else {
 			dataOnly = true
@@ -248,7 +248,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 		}
 	}
 
-	if displayMutations {
+	if shouldDisplayMutations() {
 		displayMutationsFromFunctionResponse(setImageResp, false, priorHeadMutationNums, "set-image-reference")
 	}
 

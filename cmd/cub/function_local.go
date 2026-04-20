@@ -179,7 +179,7 @@ func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
 
 func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 	// Check if any alternative output format is specified
-	hasAltOutput := hasAlternativeOutput()
+	hasAltOutput := isAlternativeOutput()
 
 	// Handle data-only flag
 	if localDataOnly {
@@ -207,18 +207,7 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 
 	// Handle alternative output formats
 	if hasAltOutput {
-		if jsonOutput {
-			displayJSON(response)
-		}
-		if jq != "" {
-			displayJQ(response)
-		}
-		if yamlOutput {
-			displayYAML(response)
-		}
-		if yq != "" {
-			displayYQ(response)
-		}
+		renderPayload(response)
 		return
 	}
 

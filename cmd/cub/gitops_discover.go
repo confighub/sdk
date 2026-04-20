@@ -176,19 +176,8 @@ func gitopsDiscoverCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse resource list: %w", err)
 	}
 
-	if hasAlternativeOutput() {
-		if jsonOutput {
-			displayJSON(resources)
-		}
-		if jq != "" {
-			displayJQ(resources)
-		}
-		if yamlOutput {
-			displayYAML(resources)
-		}
-		if yq != "" {
-			displayYQ(resources)
-		}
+	if isAlternativeOutput() {
+		renderPayload(resources)
 		return nil
 	}
 

@@ -36,7 +36,7 @@ Examples:
   cub changeset create --space my-space hotfix-changeset --description "Hotfix changes"
 
   # Create a changeset from JSON
-  cub changeset create --space my-space --json my-changeset --from-stdin < changeset.json
+  cub changeset create --space my-space -o json my-changeset --from-stdin < changeset.json
 ` + "```" + `
 
 BULK CHANGESET CREATION:

@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -30,8 +29,12 @@ func init() {
 
 	addSpaceFlags(runCmd)
 	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	runCmd.PersistentFlags().StringVar(&showSection, "show", "",
+		"Select which part of the function response to display. One of: output, values, data")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
+	_ = runCmd.PersistentFlags().MarkDeprecated("output-only", "use --show output")
 	runCmd.PersistentFlags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	_ = runCmd.PersistentFlags().MarkDeprecated("data-only", "use --show data")
 	runCmd.PersistentFlags().StringVar(&where, "where", "", "where filter")
 	runCmd.PersistentFlags().StringVar(&filter, "filter", "", "filter to apply (slug, space/filter, or UUID)")
 	runCmd.PersistentFlags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
@@ -42,12 +45,19 @@ func init() {
 	//runCmd.PersistentFlags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	//runCmd.PersistentFlags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	runCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "No output")
+	runCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "",
+		"Output format. One of: json, yaml, name, wide, mutations, jq=<expr>, yq=<expr>, custom-columns=<spec>")
 	runCmd.PersistentFlags().StringVar(&jq, "jq", "", "jq expression")
+	_ = runCmd.PersistentFlags().MarkDeprecated("jq", "use -o jq=<expr>")
 	runCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "JSON output")
+	_ = runCmd.PersistentFlags().MarkDeprecated("json", "use -o json")
 	runCmd.PersistentFlags().StringVar(&yq, "yq", "", "yq expression")
+	_ = runCmd.PersistentFlags().MarkDeprecated("yq", "use -o yq=<expr>")
 	runCmd.PersistentFlags().BoolVar(&yamlOutput, "yaml", false, "YAML output")
+	_ = runCmd.PersistentFlags().MarkDeprecated("yaml", "use -o yaml")
 	runCmd.PersistentFlags().BoolVar(&wait, "wait", false, "wait for completion")
 	runCmd.PersistentFlags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
+	_ = runCmd.PersistentFlags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
@@ -55,6 +65,7 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	runCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
 	runCmd.PersistentFlags().BoolVar(&displayMutations, "display-mutations", false, "display resource mutations")
+	_ = runCmd.PersistentFlags().MarkDeprecated("display-mutations", "use -o mutations")
 
 	RegisterFunctionsAsCobraCommands()
 
@@ -228,7 +239,7 @@ func RegisterFunctionsAsCobraCommands() {
 
 					// Save prior HeadMutationNums if displaying mutations
 					var priorHeadMutationNums map[string]priorUnitInfo
-					if displayMutations {
+					if shouldDisplayMutations() {
 						priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
 					}
 
@@ -250,38 +261,8 @@ func RegisterFunctionsAsCobraCommands() {
 					if respMsgs == nil {
 						respMsgs = &[]goclientnew.FunctionInvocationsResponse{}
 					}
-					// Check if any alternative output format is specified
-					hasAlternativeOutput := hasAlternativeOutput() || outputJQ != ""
-
-					if !hasAlternativeOutput {
+					if !renderFunctionResponse(respMsgs) {
 						outputFunctionInvocationResponse(respMsgs)
-					}
-					if jsonOutput {
-						displayJSON(respMsgs)
-					}
-					if jq != "" {
-						displayJQ(respMsgs)
-					}
-					if yamlOutput {
-						displayYAML(respMsgs)
-					}
-					if yq != "" {
-						displayYQ(respMsgs)
-					}
-					if outputJQ != "" {
-						for _, respMsg := range *respMsgs {
-							for _, outputData := range respMsg.Outputs {
-								if len(outputData) != 0 {
-									outputBytes, err := base64.StdEncoding.DecodeString(outputData)
-									if err != nil {
-										return err
-									}
-									if strings.TrimSpace(string(outputBytes)) != "null" {
-										displayJQForBytes(outputBytes, outputJQ)
-									}
-								}
-							}
-						}
 					}
 					if wait {
 						if !quiet {
@@ -301,7 +282,7 @@ func RegisterFunctionsAsCobraCommands() {
 					}
 
 					// Display mutations if requested
-					if displayMutations {
+					if shouldDisplayMutations() {
 						displayMutationsFromFunctionResponse(respMsgs, dryRun, priorHeadMutationNums, cmdDef.FunctionName)
 					}
 

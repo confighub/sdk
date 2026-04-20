@@ -41,7 +41,7 @@ spec:
             - ALL
         startupProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 8080
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -50,7 +50,7 @@ spec:
           successThreshold: 1
         livenessProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -59,7 +59,7 @@ spec:
           successThreshold: 1
         readinessProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -81,7 +81,7 @@ spec:
         resources: {requests: {cpu: 128m, memory: 128Mi}}
         startupProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 4318
           initialDelaySeconds: 10
           periodSeconds: 10
@@ -90,7 +90,7 @@ spec:
           successThreshold: 1
         livenessProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 4318
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -99,7 +99,7 @@ spec:
           successThreshold: 1
         readinessProbe:
           httpGet:
-            path: confighubplaceholder
+            path: /healthz
             port: 4318
           initialDelaySeconds: 5
           periodSeconds: 10

@@ -24,16 +24,16 @@ Examples:
   cub link list --space "*" --where "DisplayName = 'app-to-db'"
 
   # List links without headers for scripting
-  cub link list --space my-space --no-header
+  cub link list --space my-space --no-headers
 
   # List only link names
-  cub link list --space my-space --no-header --names
+  cub link list --space my-space --no-headers -o name
 
   # List links in JSON format
-  cub link list --space my-space --json
+  cub link list --space my-space -o json
 
   # List links with custom JQ filter
-  cub link list --space my-space --quiet --jq ".[].Slug"
+  cub link list --space my-space --quiet -o jq=".[].Slug"
 
   # List links to a specific unit
   cub link list --space my-space --where "ToUnitID = 'c871ca3a-d9ca-4eeb-a576-79c3b5a2ca97'"
@@ -93,7 +93,11 @@ func linkListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getLinkSlug(extendedLink *goclientnew.ExtendedLink) string {
-	return extendedLink.Link.Slug
+	space := ""
+	if extendedLink.Space != nil {
+		space = extendedLink.Space.Slug
+	}
+	return prefixedSlug(space, extendedLink.Link.Slug)
 }
 
 func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
@@ -165,7 +169,7 @@ func apiSearchLinks(whereFilter string, selectParam string, filterParam string) 
 
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "LinkID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Link", "", include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
+		return buildSelectList("Link", nil, include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		params.Select = &selectValue
@@ -204,7 +208,7 @@ func apiListLinks(spaceID string, whereFilter string, selectParam string, filter
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "LinkID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Link", "", include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
+		return buildSelectList("Link", nil, include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

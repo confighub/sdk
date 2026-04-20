@@ -146,8 +146,37 @@ func tprintRaw(output string) {
 	fmt.Print(output)
 }
 
-func hasAlternativeOutput() bool {
-	return jsonOutput || jq != "" || yamlOutput || yq != "" || names
+// renderPayload applies the requested alternative output format to payload.
+// Returns true if the format was handled (caller should skip default output).
+// The default case (OutputDefault, OutputWide, OutputName, OutputCustomColumns,
+// OutputMutations) are not rendered here; the caller decides how to surface them.
+func renderPayload(payload any) bool {
+	spec := effectiveOutput()
+	switch spec.Kind {
+	case OutputJSON:
+		displayJSON(payload)
+		return true
+	case OutputYAML:
+		displayYAML(payload)
+		return true
+	case OutputJQ:
+		outBytes, err := json.Marshal(payload)
+		failOnError(err)
+		displayJQForBytes(outBytes, spec.Arg)
+		return true
+	case OutputYQ:
+		displayYQWith(payload, spec.Arg)
+		return true
+	}
+	return false
+}
+
+func displayYQWith(entity any, expr string) {
+	outBytes, err := yaml.Marshal(entity)
+	failOnError(err)
+	yqBytes, err := yqkit.EvalYQExpression(expr, string(outBytes))
+	failOnError(err)
+	tprintRaw(string(yqBytes))
 }
 
 func displayJSON(entity any) {
@@ -196,11 +225,7 @@ func displayYAML(entity any) {
 }
 
 func displayYQ(entity any) {
-	outBytes, err := yaml.Marshal(entity)
-	failOnError(err)
-	yqBytes, err := yqkit.EvalYQExpression(yq, string(outBytes))
-	failOnError(err)
-	tprintRaw(string(yqBytes))
+	displayYQWith(entity, yq)
 }
 
 // displayResponseErrorDetails displays detailed information for a single ResponseError
@@ -334,120 +359,57 @@ type DeleteConstraint interface {
 }
 
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
-
-	if !quiet && !hasAlternativeOutput {
+	alt := isAlternativeOutput()
+	if !quiet && !alt {
 		tprint("Successfully created %s %s (%s)", entityName, slug, id)
 	}
 	if verbose {
 		display(entity)
 	}
-	if jsonOutput {
-		displayJSON(entity)
-	}
-	if jq != "" {
-		displayJQ(entity)
-	}
-	if yamlOutput {
-		displayYAML(entity)
-	}
-	if yq != "" {
-		displayYQ(entity)
-	}
+	renderPayload(entity)
 }
 
 func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
-
-	if !quiet && !hasAlternativeOutput {
+	alt := isAlternativeOutput()
+	if !quiet && !alt {
 		tprint("Successfully updated %s %s (%s)", entityName, slug, id)
 	}
 	if verbose {
 		display(entity)
 	}
-	if jsonOutput {
-		displayJSON(entity)
-	}
-	if jq != "" {
-		displayJQ(entity)
-	}
-	if yamlOutput {
-		displayYAML(entity)
-	}
-	if yq != "" {
-		displayYQ(entity)
-	}
+	renderPayload(entity)
 }
 
 func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func(entity *Entity) string, display func(entities []*Entity)) {
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
+	spec := effectiveOutput()
+	alt := isAlternativeOutput()
 
-	if (!quiet || verbose) && !hasAlternativeOutput {
+	if (!quiet || verbose) && !alt {
 		display(entities)
 	}
-	if names && getSlug != nil {
+	if spec.Kind == OutputName && getSlug != nil {
 		// Don't print as table. Extra whitespace makes the output harder to use in scripts.
 		for _, entity := range entities {
 			tprintRaw(getSlug(entity))
 		}
 	}
-	if jsonOutput {
-		displayJSON(entities)
-	}
-	if jq != "" {
-		displayJQ(entities)
-	}
-	if yamlOutput {
-		displayYAML(entities)
-	}
-	if yq != "" {
-		displayYQ(entities)
-	}
+	renderPayload(entities)
 }
 
 func displayGetResults[Entity ModelConstraint](entity *Entity, display func(entity *Entity)) {
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
-
-	if !quiet && !hasAlternativeOutput {
+	alt := isAlternativeOutput()
+	if !quiet && !alt {
 		display(entity)
 	}
-	if jsonOutput {
-		displayJSON(entity)
-	}
-	if jq != "" {
-		displayJQ(entity)
-	}
-	if yamlOutput {
-		displayYAML(entity)
-	}
-	if yq != "" {
-		displayYQ(entity)
-	}
+	renderPayload(entity)
 }
 
 func displayDeleteResults(entityName, slug, id string, response any) {
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
-
-	if !quiet && !hasAlternativeOutput {
+	alt := isAlternativeOutput()
+	if !quiet && !alt {
 		tprint("Successfully deleted %s %s (%s)", entityName, slug, id)
 	}
-	if jsonOutput {
-		displayJSON(response)
-	}
-	if jq != "" {
-		displayJQ(response)
-	}
-	if yamlOutput {
-		displayYAML(response)
-	}
-	if yq != "" {
-		displayYQ(response)
-	}
+	renderPayload(response)
 }
 
 // displayBulkDeleteResults handles the display of bulk delete operation results
@@ -482,25 +444,12 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 		}
 	}
 
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
+	alt := isAlternativeOutput()
 
-	// Display output based on format flags
-	if jsonOutput {
-		displayJSON(responses)
-	}
-	if jq != "" {
-		displayJQ(responses)
-	}
-	if yamlOutput {
-		displayYAML(responses)
-	}
-	if yq != "" {
-		displayYQ(responses)
-	}
+	renderPayload(responses)
 
 	// Display regular output unless quiet or alternative output is specified
-	if !quiet && !hasAlternativeOutput {
+	if !quiet && !alt {
 		// Display verbose success messages
 		if verbose && len(successMessages) > 0 {
 			for _, msg := range successMessages {
@@ -577,25 +526,12 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 		}
 	}
 
-	// Check if any alternative output format is specified
-	hasAlternativeOutput := hasAlternativeOutput()
+	alt := isAlternativeOutput()
 
-	// Display output based on format flags
-	if jsonOutput {
-		displayJSON(responses)
-	}
-	if jq != "" {
-		displayJQ(responses)
-	}
-	if yamlOutput {
-		displayYAML(responses)
-	}
-	if yq != "" {
-		displayYQ(responses)
-	}
+	renderPayload(responses)
 
 	// Display regular output unless quiet or alternative output is specified
-	if !quiet && !hasAlternativeOutput {
+	if !quiet && !alt {
 		// Display verbose success messages
 		if verbose && len(successNames) > 0 {
 			for _, name := range successNames {
@@ -631,21 +567,10 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 // handleBulkUnitActionResponse handles responses from bulk unit action operations (apply, destroy, refresh)
 func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, action string, isDryRun bool) error {
 	if results == nil || len(*results) == 0 {
-		if !quiet && !hasAlternativeOutput() {
+		if !quiet && !isAlternativeOutput() {
 			tprint("No units found matching the filter")
 		}
-		if jsonOutput {
-			displayJSON(results)
-		}
-		if jq != "" {
-			displayJQ(results)
-		}
-		if yamlOutput {
-			displayYAML(results)
-		}
-		if yq != "" {
-			displayYQ(results)
-		}
+		renderPayload(results)
 		return nil
 	}
 
@@ -708,21 +633,10 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 	}
 
 	// Display results in alternative formats
-	if jsonOutput {
-		displayJSON(results)
-	}
-	if jq != "" {
-		displayJQ(results)
-	}
-	if yamlOutput {
-		displayYAML(results)
-	}
-	if yq != "" {
-		displayYQ(results)
-	}
+	renderPayload(results)
 
 	// Display summary
-	if !quiet && !hasAlternativeOutput() {
+	if !quiet && !isAlternativeOutput() {
 		if isDryRun {
 			tprint("") // blank line before summary
 			tprint("Dry run completed (no changes made)")

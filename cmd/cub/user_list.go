@@ -22,13 +22,13 @@ Examples:
   cub user list
 
   # List user without headers for scripting
-  cub user list --no-header
+  cub user list --no-headers
 
   # List user in JSON format
-  cub user list --json
+  cub user list -o json
 
   # List user with custom JQ filter
-  cub user list --jq '.[].UserID'
+  cub user list -o jq='.[].UserID'
 `+"```"+`
 `, ""),
 	RunE: userListCmdRun,
@@ -102,7 +102,7 @@ func apiListUsers(whereFilter string, filterParam string) ([]*goclientnew.User, 
 	// Auto-select fields based on default display if no custom output format is specified
 	// if selectFields == "" {
 	//     baseFields := []string{"Slug", "UserID"}
-	//     autoSelect := buildSelectList("User", "", "", defaultUserColumns, userAliases, userCustomColumnDependencies, baseFields)
+	//     autoSelect := buildSelectList("User", nil, "", defaultUserColumns, userAliases, userCustomColumnDependencies, baseFields)
 	//     newParams.Select = &autoSelect
 	// } else if selectFields != "" {
 	//     newParams.Select = &selectFields

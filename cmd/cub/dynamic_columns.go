@@ -267,8 +267,9 @@ func (p *DynamicColumnProvider) formatValue(v reflect.Value) string {
 	}
 }
 
-// DisplayListGeneric displays a list of entities with dynamic columns
-func DisplayListGeneric[T any](entities []*T, columnSpec string, defaultCols []string, aliases map[string]string, customColumns map[string]func(any) string) {
+// DisplayListGeneric displays a list of entities with dynamic columns.
+// If columnSpec is empty, defaultCols is used.
+func DisplayListGeneric[T any](entities []*T, columnSpec []string, defaultCols []string, aliases map[string]string, customColumns map[string]func(any) string) {
 	provider := NewDynamicColumnProvider(new(T))
 	if aliases != nil {
 		provider.WithAliases(aliases)
@@ -277,14 +278,14 @@ func DisplayListGeneric[T any](entities []*T, columnSpec string, defaultCols []s
 		provider.WithCustomColumns(customColumns)
 	}
 
-	// Parse columns
+	// Resolve columns
 	var cols []string
-	if columnSpec == "" {
+	if len(columnSpec) == 0 {
 		cols = defaultCols
 	} else {
-		cols = strings.Split(columnSpec, ",")
-		for i := range cols {
-			cols[i] = strings.TrimSpace(cols[i])
+		cols = make([]string, len(columnSpec))
+		for i, c := range columnSpec {
+			cols[i] = strings.TrimSpace(c)
 		}
 	}
 
@@ -381,10 +382,11 @@ func fieldIsMap(field string) bool {
 	return mapFields[field]
 }
 
-// buildSelectList builds a select parameter based on specified columns
-func buildSelectList(entity string, columnsSpec string, include string, defaultCols []string, aliases map[string]string, customColumnDeps map[string][]string, baseFields []string) string {
-	columns := strings.Split(columnsSpec, ",")
-	if columnsSpec == "" {
+// buildSelectList builds a select parameter based on specified columns.
+// If columnsSpec is empty, defaultCols is used.
+func buildSelectList(entity string, columnsSpec []string, include string, defaultCols []string, aliases map[string]string, customColumnDeps map[string][]string, baseFields []string) string {
+	columns := columnsSpec
+	if len(columnsSpec) == 0 {
 		columns = defaultCols
 	}
 

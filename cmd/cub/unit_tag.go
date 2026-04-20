@@ -197,7 +197,7 @@ func handleBulkUnitTagResponse(responses200 *[]goclientnew.UnitTagResponse, resp
 	}
 
 	// Display summary
-	if !jsonOutput {
+	if !isAlternativeOutput() {
 		var operation string
 		if revision == "Remove" || revision == "-" {
 			operation = "Tag removal"

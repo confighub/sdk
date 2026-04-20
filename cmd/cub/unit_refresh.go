@@ -134,33 +134,23 @@ func runSingleUnitRefresh(unitSlug string) error {
 		return cubapi.InterpretErrorGeneric(err, refreshRes)
 	}
 
-	// Handle wait flag
-	if actionWait || displayMutations {
-		// awaitCompletion will print a unit-centric message !quiet && !hasAlternativeOutput()
+	// Handle wait flag. Mutation display and alternative output formats both
+	// require the operation to complete first.
+	if actionWait || shouldDisplayMutations() {
+		// awaitCompletion will print a unit-centric message !quiet && !isAlternativeOutput()
 		err = awaitCompletion("refresh", refreshRes.JSON200)
 		if err != nil {
 			return err
 		}
-	} else if !quiet && !hasAlternativeOutput() {
+	} else if !quiet && !isAlternativeOutput() {
 		displayStartedOperation(refreshRes.JSON200)
 		return nil
 	}
 
-	if jsonOutput {
-		displayJSON(refreshRes.JSON200)
-	}
-	if jq != "" {
-		displayJQ(refreshRes.JSON200)
-	}
-	if yamlOutput {
-		displayYAML(refreshRes.JSON200)
-	}
-	if yq != "" {
-		displayYQ(refreshRes.JSON200)
-	}
+	renderPayload(refreshRes.JSON200)
 
 	// Display mutations if requested
-	if displayMutations {
+	if shouldDisplayMutations() {
 		tprintRaw("")
 		if unitRefreshArgs.dryRun {
 			// For dry-run, get the refreshed config data and compute mutations

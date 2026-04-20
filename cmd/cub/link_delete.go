@@ -164,8 +164,7 @@ func runBulkLinkDelete() error {
 
 	// Wait for triggers BEFORE displaying results (for successful deletes)
 	if wait && len(fromUnits) > 0 && res.StatusCode() == 200 {
-		hasAlternativeOutput := jsonOutput || jq != ""
-		if !quiet && !hasAlternativeOutput {
+		if !quiet && !isAlternativeOutput() {
 			tprintRaw("Awaiting triggers...")
 		}
 		// Await triggers on each affected from unit

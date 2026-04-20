@@ -27,13 +27,13 @@ Examples:
   cub space list
 
   # List spaces without headers for scripting
-  cub space list --no-header
+  cub space list --no-headers
 
   # List spaces in JSON format
-  cub space list --json
+  cub space list -o json
 
   # List spaces with custom JQ filter
-  cub space list --jq '.[].Slug'
+  cub space list -o jq='.[].Slug'
 
   # List spaces matching a specific criteria
   cub space list --where "Labels.Environment = 'prod'"
@@ -51,17 +51,17 @@ Common agent patterns:
 
 Initial setup:
   # Discover available spaces
-  cub space list --json --jq '.[].Slug'
+  cub space list -o jq='.[].Space.Slug'
   
   # Set default space context
   cub context set --space CHOSEN_SPACE
 
 Environment-specific operations:
   # Find production spaces
-  cub space list --where "Labels.Environment = 'prod'" --names
+  cub space list --where "Labels.Environment = 'prod'" -o name
   
   # Find staging spaces
-  cub space list --where "Labels.Environment = 'staging'" --names
+  cub space list --where "Labels.Environment = 'staging'" -o name
 
 Key information provided:
 - Space slugs: Used for --space flag and context setting
@@ -69,10 +69,11 @@ Key information provided:
 - Organization context: Which org these spaces belong to
 
 Important flags for agents:
-- --names: Get just space identifiers for automation
-- --json + --jq: Extract specific fields for further processing
+- -o name: Get just space identifiers for automation
+- -o jq=<expr>: Extract specific fields for further processing
+- -o json: Full JSON payload
 - --where: Filter spaces by display name or other attributes
-- --quiet: Suppress table headers for clean output
+- --no-headers: Suppress table headers for clean output
 
 Next steps after listing spaces:
 1. Use 'context set --space SPACE_SLUG' to set default context
@@ -167,7 +168,7 @@ func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
-		return buildSelectList("Space", "", "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
+		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -202,7 +203,7 @@ func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam s
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
-		return buildSelectList("Space", "", "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
+		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

@@ -432,7 +432,7 @@ func setContainerProbeDefaults(containerDoc *gaby.YamlDoc) []error {
 	} else {
 		// No existing probes, add all three with appropriate defaults
 		httpGet := orderedmap.New[string, any]()
-		httpGet.Set("path", yamlkit.PlaceHolderBlockApplyString)
+		httpGet.Set("path", "/healthz")
 		httpGet.Set("port", probePort)
 
 		startupProbe := orderedmap.New[string, any]()

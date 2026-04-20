@@ -70,7 +70,11 @@ func targetListCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func getTargetSlug(exTarget *goclientnew.ExtendedTarget) string {
-	return exTarget.Target.Slug
+	space := ""
+	if exTarget.Space != nil {
+		space = exTarget.Space.Slug
+	}
+	return prefixedSlug(space, exTarget.Target.Slug)
 }
 
 func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
@@ -114,7 +118,7 @@ func apiListTargets(spaceID string, whereFilter string, selectParam string, filt
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TargetID", "BridgeWorkerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Target", "", include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
+		return buildSelectList("Target", nil, include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -147,7 +151,7 @@ func apiListAllTargets(whereFilter string, selectParam string, filterParam strin
 	// Handle select parameter
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "TargetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Target", "", include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
+		return buildSelectList("Target", nil, include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

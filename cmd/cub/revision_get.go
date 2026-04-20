@@ -24,10 +24,10 @@ var revisionGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a specific revision in JSON format
-  cub revision get --space my-space --json my-deployment 3
+  cub revision get --space my-space -o json my-deployment 3
 
-  # Get only the configuration data of a revision
-  cub revision get --space my-space --data-only my-ns 2
+  # Get only the configuration data of a revision (use the dedicated subcommand)
+  cub revision data --space my-space my-ns 2
 `+"```"+`
 `, ""),
 	RunE: revisionGetCmdRun,
@@ -36,6 +36,7 @@ Examples:
 func init() {
 	addStandardGetFlags(revisionGetCmd)
 	revisionGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
+	_ = revisionGetCmd.Flags().MarkDeprecated("data-only", "use 'cub revision data <unit> <revision-num>'")
 	revisionCmd.AddCommand(revisionGetCmd)
 }
 

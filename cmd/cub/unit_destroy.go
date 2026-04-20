@@ -96,24 +96,12 @@ func runSingleUnitDestroy(unitSlug string) error {
 		if err != nil {
 			return err
 		}
-	} else if !quiet && !hasAlternativeOutput() {
+	} else if !quiet && !isAlternativeOutput() {
 		displayStartedOperation(destroyRes.JSON200)
 		return nil
 	}
 
-	// Output JSON if requested
-	if jsonOutput {
-		displayJSON(destroyRes.JSON200)
-	}
-	if jq != "" {
-		displayJQ(destroyRes.JSON200)
-	}
-	if yamlOutput {
-		displayYAML(destroyRes.JSON200)
-	}
-	if yq != "" {
-		displayYQ(destroyRes.JSON200)
-	}
+	renderPayload(destroyRes.JSON200)
 
 	return nil
 }
