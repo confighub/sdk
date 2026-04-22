@@ -36,7 +36,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnEnsureContext(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnEnsureContext(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -44,7 +44,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 }
 
 // TODO: This functionality should move into bridges.
-func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	addContext := args[0].Value.(bool)
 
 	// Check whether adding context is supported by the resource provider
@@ -81,6 +81,6 @@ func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionC
 		return output, nil
 	}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	return parsedData, nil, err
 }

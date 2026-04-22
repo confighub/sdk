@@ -40,11 +40,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			var whereExpressions []*api.VisitorRelationalExpression
-			if fArgs.Options != nil {
-				whereExpressions = fArgs.Options.WhereResourceExpressions
-			}
-			return GenericFnSetHash(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
+			return GenericFnSetHash(resourceProvider, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -57,7 +53,7 @@ func GenericFnSetHash(
 	resourceProvider yamlkit.ResourceProvider,
 	parsedData gaby.Container,
 	args []api.FunctionArgument,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (gaby.Container, any, error) {
 	unresolvedPath := args[0].Value.(string)
 
@@ -70,7 +66,7 @@ func GenericFnSetHash(
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		singleDoc := gaby.Container{doc}
-		values, err := yamlkit.GetPathsAnyType(singleDoc, resourceTypeToPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
+		values, err := yamlkit.GetPathsAnyType(singleDoc, resourceTypeToPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
 		if err != nil {
 			return output, []error{err}
 		}
@@ -96,6 +92,6 @@ func GenericFnSetHash(
 		return output, nil
 	}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	return parsedData, nil, err
 }

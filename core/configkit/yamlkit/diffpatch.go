@@ -45,7 +45,7 @@ func DiffPatch(original, modified, targetData []byte, resourceProvider ResourceP
 
 // DiffPatchWithOptions compares original and modified YAML content, generates a patch, and applies it to target data
 // If omitAdditions is true, mutations of type MutationTypeAdd are filtered out before applying the patch
-func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvider ResourceProvider, omitAdditions bool, whereExpressions []*api.VisitorRelationalExpression) ([]byte, bool, error) {
+func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvider ResourceProvider, omitAdditions bool, options *api.FunctionOptions) ([]byte, bool, error) {
 	// Parse original YAML content
 	originalYAML, err := gaby.ParseAll(original)
 	if err != nil {
@@ -101,7 +101,7 @@ func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvide
 	}
 
 	// Apply patch to target data
-	patchedResult, err := PatchMutations(parsedTargetData, nil, mutations, resourceProvider, whereExpressions)
+	patchedResult, err := PatchMutations(parsedTargetData, nil, mutations, resourceProvider, options)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to apply patch: %v", err)
 	}

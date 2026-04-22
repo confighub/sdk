@@ -51,29 +51,6 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.image",
     "AttributeName": "container-image",
     "DataType": "string",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-image",
-        "Arguments": [
-          {
-            "ParameterName": "container-name",
-            "Value": "nginx"
-          }
-        ]
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-container-image",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "nginx"
-            }
-          ]
-        }
-      ],
-      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
-    },
     "Value": "nginx:latest",
     "Index": 0,
     "FunctionName": "get-image"
@@ -86,29 +63,6 @@ OUTPUT
     "Path": "spec.template.spec.containers.1.image",
     "AttributeName": "container-image",
     "DataType": "string",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-image",
-        "Arguments": [
-          {
-            "ParameterName": "container-name",
-            "Value": "otel-sidecar"
-          }
-        ]
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-container-image",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "otel-sidecar"
-            }
-          ]
-        }
-      ],
-      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
-    },
     "Value": "otel/opentelemetry-collector:latest-amd64",
     "Index": 0,
     "FunctionName": "get-image"

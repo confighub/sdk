@@ -74,7 +74,10 @@ func enableShowFlag(cmd *cobra.Command) {
 // renderFunctionResponse displays a FunctionInvocationsResponse list honoring
 // both --show and -o. Returns true if an alternative path was taken and the
 // caller should skip the default human-summary renderer.
-func renderFunctionResponse(resp *[]goclientnew.FunctionInvocationsResponse) bool {
+// multipleFunctions indicates whether more than one function was invoked; when
+// false, per-output function labels are suppressed to reduce noise in the
+// common single-function case.
+func renderFunctionResponse(resp *[]goclientnew.FunctionInvocationsResponse, multipleFunctions bool) bool {
 	show := effectiveShow()
 	spec := effectiveOutput()
 
@@ -88,7 +91,7 @@ func renderFunctionResponse(resp *[]goclientnew.FunctionInvocationsResponse) boo
 		return false
 
 	case ShowOutput:
-		renderFunctionOutputs(resp, spec)
+		renderFunctionOutputs(resp, spec, multipleFunctions)
 		return true
 
 	case ShowValues:
@@ -105,9 +108,28 @@ func renderFunctionResponse(resp *[]goclientnew.FunctionInvocationsResponse) boo
 // renderFunctionOutputs emits the Outputs section of each response.
 // With -o jq=<expr>, applies jq to each output blob. With -o json, emits
 // decoded JSON per output. Default: pretty-prints using existing formatters.
-func renderFunctionOutputs(resp *[]goclientnew.FunctionInvocationsResponse, spec OutputSpec) {
+// multipleFunctions is threaded through to renderOutputByType.
+func renderFunctionOutputs(resp *[]goclientnew.FunctionInvocationsResponse, spec OutputSpec, multipleFunctions bool) {
 	for i := range *resp {
 		r := &(*resp)[i]
+		// If invoked on just one unit, then don't print the unit in order to make it easier to process the output.
+		if spec.Kind == OutputDefault && len(*resp) > 1 {
+			yamlOutput := false
+			if len(r.Outputs) == 1 {
+				for outputType := range r.Outputs {
+					if outputType == string(api.OutputTypeYAML) {
+						yamlOutput = true
+					}
+				}
+			}
+			if !yamlOutput {
+				tprint("Unit %s:", unitDisplayName(r))
+			}
+			if len(r.Outputs) == 0 {
+				tprintRaw("  No output")
+				continue
+			}
+		}
 		for outputType, outputData := range r.Outputs {
 			if len(outputData) == 0 {
 				continue
@@ -122,50 +144,60 @@ func renderFunctionOutputs(resp *[]goclientnew.FunctionInvocationsResponse, spec
 			}
 			switch spec.Kind {
 			case OutputJQ:
-				displayJQForBytes(outputBytes, spec.Arg)
+				envBytes, err := json.Marshal(buildFunctionOutputEnvelope(r, outputType, outputBytes))
+				failOnError(err)
+				displayJQForBytes(envBytes, spec.Arg)
 			case OutputJSON:
-				// Pretty-print decoded bytes as JSON.
-				var pretty any
-				if err := json.Unmarshal(outputBytes, &pretty); err == nil {
-					displayJSON(pretty)
-				} else {
-					tprintRaw(string(outputBytes))
-				}
+				displayJSON(buildFunctionOutputEnvelope(r, outputType, outputBytes))
 			case OutputYAML:
-				var parsed any
-				if err := json.Unmarshal(outputBytes, &parsed); err == nil {
-					displayYAML(parsed)
-				} else {
-					tprintRaw(string(outputBytes))
-				}
+				displayYAML(buildFunctionOutputEnvelope(r, outputType, outputBytes))
 			case OutputYQ:
-				// YAML-first path: re-render as YAML then yq.
-				var parsed any
-				if err := json.Unmarshal(outputBytes, &parsed); err == nil {
-					displayYQWith(parsed, spec.Arg)
-				} else {
-					tprintRaw(string(outputBytes))
-				}
+				displayYQWith(buildFunctionOutputEnvelope(r, outputType, outputBytes), spec.Arg)
 			default:
 				if len(r.Outputs) > 1 {
 					tprintRaw(fmt.Sprintf("%s:\n", outputType))
 				}
-				renderOutputByType(outputType, outputBytes, false)
+				renderOutputByType(outputType, outputBytes, false, i, multipleFunctions)
 			}
 		}
+	}
+}
+
+// buildFunctionOutputEnvelope wraps a single function output with the
+// identity of the unit it came from, so structured formatters (-o jq/json/
+// yaml/yq) can correlate the result back to its Space and Unit. Output holds
+// the parsed JSON value when outputBytes parse as JSON; otherwise it holds
+// the raw string so downstream formatters still see a well-formed document.
+func buildFunctionOutputEnvelope(r *goclientnew.FunctionInvocationsResponse, outputType string, outputBytes []byte) map[string]any {
+	var output any
+	if err := json.Unmarshal(outputBytes, &output); err != nil {
+		output = string(outputBytes)
+	}
+	return map[string]any{
+		"SpaceID":    r.SpaceID,
+		"UnitID":     r.UnitID,
+		"SpaceSlug":  r.SpaceSlug,
+		"UnitSlug":   r.UnitSlug,
+		"OutputType": outputType,
+		"Output":     output,
 	}
 }
 
 // renderOutputByType mirrors the per-output-type rendering in
 // outputFunctionInvocationResponse so --show output can emit the same
 // human-readable blocks without the surrounding summary.
-func renderOutputByType(outputType string, outputBytes []byte, outputRawFlag bool) {
+// When multipleFunctions is false, per-attribute function labels are
+// suppressed since the function identity is unambiguous.
+func renderOutputByType(outputType string, outputBytes []byte, outputRawFlag bool, i int, multipleFunctions bool) {
 	switch outputType {
 	case string(api.OutputTypeYAML):
 		var payload api.YAMLPayload
 		if err := json.Unmarshal(outputBytes, &payload); err != nil || outputRawFlag {
 			tprintRaw(string(outputBytes))
 		} else {
+			if i > 0 {
+				tprintRaw("---")
+			}
 			tprintRaw(payload.Payload)
 		}
 	case string(api.OutputTypeAttributeValueList):
@@ -174,9 +206,11 @@ func renderOutputByType(outputType string, outputBytes []byte, outputRawFlag boo
 			tprintRaw(string(outputBytes))
 		} else {
 			for i := range payload {
-				funcDisplay := functionDisplayName(payload[i].FunctionName, payload[i].Index)
-				tprint("Function: %s", funcDisplay)
-				displayAttributeValue(&payload[i])
+				if multipleFunctions {
+					funcDisplay := functionDisplayName(payload[i].FunctionName, payload[i].Index)
+					tprint("  Function: %s", funcDisplay)
+				}
+				displayAttributeValue(&payload[i], "")
 			}
 		}
 	case string(api.OutputTypeValidationResultList), string(api.OutputTypeValidationResult):

@@ -47,20 +47,20 @@ func registerGetAttribute(fh handler.FunctionRegistry, converter configkit.Confi
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetAttribute(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnGetAttribute(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	attributeName := args[0].Value.(string)
 	attributePaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeName(attributeName))
 	if len(attributePaths) == 0 {
 		return parsedData, nil, errors.New("attribute " + attributeName + " not registered")
 	}
-	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
+	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
 	return parsedData, values, err
 }
 
@@ -86,24 +86,24 @@ func registerSetAttributes(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetAttributes(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnSetAttributes(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	attributeListString := args[0].Value.(string)
 	var attributeList api.AttributeValueList
 	err := json.Unmarshal([]byte(attributeListString), &attributeList)
 	if err != nil {
 		return parsedData, nil, err
 	}
-	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, whereExpressions)
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, options)
 }
 
-func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, options *api.FunctionOptions) (gaby.Container, any, error) {
 	var multiErrs []error
 	for _, attribute := range attributeList {
 		var err error
@@ -118,7 +118,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not string: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = stringValue
-				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, false, whereExpressions)
+				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -131,7 +131,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 			} else {
 				intValue := int(math.Round(floatValue))
 				setterArgs[2].Value = intValue
-				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, false, whereExpressions)
+				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -142,7 +142,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not bool: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = boolValue
-				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, false, whereExpressions)
+				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -177,15 +177,15 @@ func registerGetDetails(fh handler.FunctionRegistry, converter configkit.ConfigC
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetDetails(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnGetDetails(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	detailPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDetail)
-	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
+	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
 	return parsedData, values, err
 }

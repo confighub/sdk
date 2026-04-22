@@ -53,7 +53,6 @@ func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, options 
 	targetResourceName := api.ResourceName(args[1].Value.(string))
 
 	// Use VisitResources to find the existing resource and track its position
-	whereExpressions := api.GetWhereResourceExpressions(options)
 	foundIndex := -1
 	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		if resourceInfo.ResourceType == targetResourceType &&
@@ -63,7 +62,7 @@ func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, options 
 		return output, []error{}
 	}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	if err != nil {
 		return parsedData, nil, fmt.Errorf("failed to search for resource to delete: %v", err)
 	}

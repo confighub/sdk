@@ -12,14 +12,6 @@ import (
 	"github.com/confighub/sdk/core/function/handler"
 )
 
-// whereFromOpts extracts WhereResourceExpressions from function options, returning nil if absent.
-func whereFromOpts(opts *api.FunctionOptions) []*api.VisitorRelationalExpression {
-	if opts != nil {
-		return opts.WhereResourceExpressions
-	}
-	return nil
-}
-
 func initFunctions(rp *k8skit.K8sResourceProviderType) {
 	err := InitSchemaFinder()
 	if err != nil {

@@ -4,7 +4,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -142,9 +144,22 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Create unit in ConfigHub if --unit flag is provided
 	if workerInstallArgs.unitSlug != "" {
-		unitDetails, err := createUnitWithManifest(workerInstallArgs.unitSlug, workerInstallArgs.targetSlug, manifest)
+		unitDetails, err := createUnitWithManifest(worker, workerInstallArgs.unitSlug, workerInstallArgs.targetSlug, manifest)
 		if err != nil {
 			return err
+		}
+
+		workerPatchJSON, err := json.Marshal(map[string]any{
+			"Annotations": map[string]string{
+				"UnitID": unitDetails.UnitID.String(),
+			},
+		})
+		if err != nil {
+			return err
+		}
+		workerPatchRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, spaceID, worker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(workerPatchJSON))
+		if cubapi.IsAPIError(err, workerPatchRes) {
+			return cubapi.InterpretErrorGeneric(err, workerPatchRes)
 		}
 
 		// Wait for triggers after unit creation
@@ -158,7 +173,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		// Execute functions if functions file is specified
 		if workerInstallArgs.functionsFile != "" {
 			whereClause := "Slug='" + workerInstallArgs.unitSlug + "'"
-			_, err = executeFunctionsFromFile(workerInstallArgs.functionsFile, whereClause, []string{})
+			_, _, err = executeFunctionsFromFile(workerInstallArgs.functionsFile, whereClause, []string{})
 			if err != nil {
 				return err
 			}
@@ -409,7 +424,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 	return string(response.ConfigData), nil
 }
 
-func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew.Unit, error) {
+func createUnitWithManifest(worker *goclientnew.BridgeWorker, unitSlug, targetSlug, manifest string) (*goclientnew.Unit, error) {
 	spaceID := uuid.MustParse(selectedSpaceID)
 
 	// Create new unit
@@ -419,6 +434,9 @@ func createUnitWithManifest(unitSlug, targetSlug, manifest string) (*goclientnew
 		DisplayName:   unitSlug,
 		ToolchainType: string(workerapi.ToolchainKubernetesYAML),
 		Data:          base64.StdEncoding.EncodeToString([]byte(manifest)),
+		Annotations: map[string]string{
+			"BridgeWorkerID": worker.BridgeWorkerID.String(),
+		},
 	}
 
 	// Set target if specified

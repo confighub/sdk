@@ -34,19 +34,18 @@ func registerGetNeeded(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			var whereExpressions []*api.VisitorRelationalExpression
-			if fArgs.Options != nil {
-				whereExpressions = fArgs.Options.WhereResourceExpressions
-			}
-			return genericFnGetNeeded(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
+			return genericFnGetNeeded(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
-	values, err := yamlkit.GetRegisteredNeededStringPaths(parsedData, resourceProvider, whereExpressions)
+func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
+	// Ensure we get the full details, which are needed for needs/provides uses
+	options.IncludeDetails = true
+
+	values, err := yamlkit.GetRegisteredNeededStringPaths(parsedData, resourceProvider, options)
 	// TODO: int, bool
 	return parsedData, values, err
 }
@@ -71,19 +70,18 @@ func registerGetProvided(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			var whereExpressions []*api.VisitorRelationalExpression
-			if fArgs.Options != nil {
-				whereExpressions = fArgs.Options.WhereResourceExpressions
-			}
-			return genericFnGetProvided(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
+			return genericFnGetProvided(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
-	values, err := yamlkit.GetRegisteredProvidedStringPaths(parsedData, resourceProvider, whereExpressions)
+func genericFnGetProvided(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
+	// Ensure we get the full details, which are needed for needs/provides uses
+	options.IncludeDetails = true
+
+	values, err := yamlkit.GetRegisteredProvidedStringPaths(parsedData, resourceProvider, options)
 	// TODO: int, bool
 	return parsedData, values, err
 }
@@ -115,11 +113,7 @@ func registerGetPaths(fh handler.FunctionRegistry, converter configkit.ConfigCon
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			var whereExpressions []*api.VisitorRelationalExpression
-			if fArgs.Options != nil {
-				whereExpressions = fArgs.Options.WhereResourceExpressions
-			}
-			return genericFnGetPaths(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereExpressions)
+			return genericFnGetPaths(resourceProvider, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -138,12 +132,15 @@ func enrichMergeKeysFromPath(parsedData gaby.Container, resourceProvider yamlkit
 	yamlkit.EnrichMergeKeysFromDoc(doc, resourceProvider, attr)
 }
 
-func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	attributeInfoJSON := args[0].Value.(string)
 	var attributeInfoList []api.AttributeInfo
 	if err := json.Unmarshal([]byte(attributeInfoJSON), &attributeInfoList); err != nil {
 		return parsedData, nil, err
 	}
+
+	// Ensure we get the full details, which are needed for needs/provides uses
+	options.IncludeDetails = true
 
 	// Get all requested paths even if not in the path registry
 	var allValues api.AttributeValueList
@@ -153,7 +150,7 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			resourceType = api.ResourceTypeAny
 		}
 		resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, resourceType, api.UnresolvedPath(info.Path))
-		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, false, whereExpressions)
+		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, false, options)
 		if err != nil {
 			return parsedData, nil, err
 		}

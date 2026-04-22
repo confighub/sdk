@@ -72,8 +72,7 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 	passed := true
 
 	// Use VisitResources to iterate over each document
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		var errs []error
 
 		// Get the resource type

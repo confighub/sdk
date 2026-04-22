@@ -255,16 +255,16 @@ func TestWhereResourceWithDataPaths(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			options, err := ParseAndValidateWhereResource(tc.input)
+			whereExpressions, err := ParseAndValidateWhereResource(tc.input)
 			if tc.wantErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				if tc.input == "" {
-					assert.Nil(t, options)
+					assert.Nil(t, whereExpressions)
 				} else {
-					require.NotNil(t, options)
-					assert.Len(t, options.WhereResourceExpressions, tc.numExpr)
+					require.NotNil(t, whereExpressions)
+					assert.Len(t, whereExpressions, tc.numExpr)
 				}
 			}
 		})

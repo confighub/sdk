@@ -10,20 +10,6 @@ OUTPUT
     "Path": "metadata.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/Namespace"
-            }
-          ]
-        }
-      ],
-      "IsNeeded": true
-    },
     "Value": "example",
     "Index": 0,
     "FunctionName": "get-namespace"
@@ -36,20 +22,6 @@ OUTPUT
     "Path": "subjects.0.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/Namespace"
-            }
-          ]
-        }
-      ],
-      "IsNeeded": true
-    },
     "Value": "somens",
     "Index": 0,
     "FunctionName": "get-namespace"
@@ -62,20 +34,6 @@ OUTPUT
     "Path": "subjects.1.namespace",
     "AttributeName": "resource-name",
     "DataType": "string",
-    "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/Namespace"
-            }
-          ]
-        }
-      ],
-      "IsNeeded": true
-    },
     "Value": "somens",
     "Index": 0,
     "FunctionName": "get-namespace"

@@ -248,7 +248,8 @@ func TestSetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	require.Error(t, err, "should fail without WhereResource filter because Service has no spec.template")
 
 	// Now filter to only Deployments
-	options, err := api.ParseAndValidateWhereResource("kind = 'Deployment'")
+	options := api.NewFunctionOptions()
+	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
 	newDocs, _, err := genericFnSetStarlark(testResourceProvider, options, docs, args)
@@ -281,7 +282,8 @@ func TestVetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	assert.False(t, vr.Passed, "should fail without filter because Service has no replicas")
 
 	// With filter, only Deployment is validated
-	options, err := api.ParseAndValidateWhereResource("kind = 'Deployment'")
+	options := api.NewFunctionOptions()
+	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
 	_, output, err = genericFnVetStarlark(testResourceProvider, options, docs, args)
@@ -309,7 +311,8 @@ func TestGetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	require.Error(t, err, "should fail without WhereResource filter because Service has no spec.replicas")
 
 	// With filter, only Deployment is processed
-	options, err := api.ParseAndValidateWhereResource("kind = 'Deployment'")
+	options := api.NewFunctionOptions()
+	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
 	_, output, err := genericFnGetStarlark(testResourceProvider, options, docs, args)

@@ -21,7 +21,7 @@ func TransformConfig(
 	originalData []byte,
 	resourceProvider ResourceProvider,
 	transform func(parsedData gaby.Container) ([]byte, error),
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) ([]byte, bool, error) {
 	// Strip comments for the transformation
 	strippedData, err := StripComments(originalData)
@@ -47,7 +47,7 @@ func TransformConfig(
 	}
 
 	// Patch changes onto the original data (which has comments)
-	patched, changed, err := DiffPatchWithOptions(strippedData, modifiedData, originalData, resourceProvider, false, whereExpressions)
+	patched, changed, err := DiffPatchWithOptions(strippedData, modifiedData, originalData, resourceProvider, false, options)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to apply transformation: %w", err)
 	}

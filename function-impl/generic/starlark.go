@@ -289,13 +289,11 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 	// Get original serialized data for comment preservation
 	originalData := []byte(parsedData.String())
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-
 	// Use TransformConfig for comment-preserving mutation
 	patched, changed, err := yamlkit.TransformConfig(originalData, resourceProvider, func(strippedParsed gaby.Container) ([]byte, error) {
 		// Execute the Starlark program once per matching resource
 		modifiedResources := make([]any, len(strippedParsed))
-		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			var dataMap map[string]any
 			if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
 				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
@@ -327,7 +325,7 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 			}
 		}
 		return marshalResourceList(modifiedResources)
-	}, whereExpressions)
+	}, options)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -421,8 +419,7 @@ func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 	// Call validate(r) for each resource, accumulating results
 	overallResult := api.ValidationResult{Passed: true}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		rDict, err := docToStarlarkDict(doc)
 		if err != nil {
 			return output, []error{err}
@@ -596,8 +593,7 @@ func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 	}
 
 	// Call extract(r) for each resource, accumulating results
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
 
 		rDict, err := docToStarlarkDict(doc)

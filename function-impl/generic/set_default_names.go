@@ -37,7 +37,7 @@ func registerSetDefaultNames(fh handler.FunctionRegistry, converter configkit.Co
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetDefaultNames(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnSetDefaultNames(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -54,7 +54,7 @@ func registerSetDefaultNames(fh handler.FunctionRegistry, converter configkit.Co
 // 	return name
 // }
 
-func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	nameValue := args[0].Value.(string)
 
 	visitor := func(doc *gaby.YamlDoc, output any, context yamlkit.VisitorContext, currentValue string) (any, error) {
@@ -73,6 +73,6 @@ func genericFnSetDefaultNames(resourceProvider yamlkit.ResourceProvider, functio
 		return nil, errors.Wrap(err, "unable to set value of "+pathString)
 	}
 	nameConstructors := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDefaultName)
-	_, err := yamlkit.VisitPaths[string](parsedData, nameConstructors, []any{}, nil, resourceProvider, visitor, false, whereExpressions)
+	_, err := yamlkit.VisitPaths[string](parsedData, nameConstructors, []any{}, nil, resourceProvider, visitor, false, options)
 	return parsedData, nil, err
 }

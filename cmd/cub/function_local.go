@@ -136,8 +136,10 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 		FunctionContext: api.FunctionContext{
 			ToolchainType: toolchainTypeEnum,
 		},
-		ConfigData:          inputData,
-		WhereResource:       whereResource,
+		ConfigData: inputData,
+		FunctionInvocationOptions: api.FunctionInvocationOptions{
+			WhereResource: whereResource,
+		},
 		FunctionInvocations: functionInvocations,
 	}
 

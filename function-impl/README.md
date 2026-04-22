@@ -422,7 +422,7 @@ Multiple expressions can be combined with `AND`. Examples:
 --where-resource "spec.replicas > 1"
 ```
 
-The `WhereResource` string is parsed and validated by `api.ParseAndValidateWhereResource`, which returns a `*FunctionOptions` containing `WhereResourceExpressions`. These expressions are passed to functions via `FunctionImplementationArguments.Options` and used by visitor functions such as `yamlkit.VisitResourcesFiltered` to skip non-matching resources.
+The `WhereResource` string is parsed and validated by `api.ParseAndValidateWhereResource`, which returns the parsed `[]*VisitorRelationalExpression` slice. The handler stores it on the `FunctionOptions.WhereResourceExpressions` field passed to functions via `FunctionImplementationArguments.Options`, and it's used by visitor functions such as `yamlkit.VisitResourcesFiltered` to skip non-matching resources.
 
 ## Local testing
 

@@ -53,11 +53,7 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 			if fArgs.FunctionContext != nil {
 				notLive = fArgs.FunctionContext.NotLive
 			}
-			var whereExpressions []*api.VisitorRelationalExpression
-			if fArgs.Options != nil {
-				whereExpressions = fArgs.Options.WhereResourceExpressions
-			}
-			result, err := GenericVetImmutable(resourceProvider, fArgs.ParsedData, fArgs.ParsedOtherData, attributeName, notLive, whereExpressions)
+			result, err := GenericVetImmutable(resourceProvider, fArgs.ParsedData, fArgs.ParsedOtherData, attributeName, notLive, fArgs.Options)
 			return fArgs.ParsedData, result, err
 		},
 	}); err != nil {
@@ -74,7 +70,7 @@ func GenericVetImmutable(
 	parsedOtherData map[api.OtherDataSource]gaby.Container,
 	attributeName api.AttributeName,
 	notLive bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.ValidationResult, error) {
 	// If no OtherData is present, there's nothing to compare against -- pass.
 	// TODO: If not live, also pass?
@@ -93,13 +89,13 @@ func GenericVetImmutable(
 	}
 
 	// Get immutable field values from the current data
-	currentValues, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, nil, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
+	currentValues, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, nil, resourceProvider, api.DataTypeNone, false, false, options)
 	if err != nil {
 		return api.ValidationResult{}, fmt.Errorf("failed to get immutable field values from current data: %w", err)
 	}
 
 	// Get immutable field values from the live revision data
-	liveValues, err := yamlkit.GetPathsAnyType(liveData, resourceTypeToPaths, nil, resourceProvider, api.DataTypeNone, false, false, whereExpressions)
+	liveValues, err := yamlkit.GetPathsAnyType(liveData, resourceTypeToPaths, nil, resourceProvider, api.DataTypeNone, false, false, options)
 	if err != nil {
 		return api.ValidationResult{}, fmt.Errorf("failed to get immutable field values from live data: %w", err)
 	}

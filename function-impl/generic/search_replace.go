@@ -41,22 +41,22 @@ func registerSearchReplace(fh handler.FunctionRegistry, converter configkit.Conf
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSearchReplace(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnSearchReplace(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnSearchReplace(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	searchValue := args[0].Value.(string)
 	replaceValue := args[1].Value.(string)
 
-	attributeList := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, searchValue, whereExpressions)
+	attributeList := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, searchValue, options)
 	for i := range attributeList {
 		existingValue := attributeList[i].Value.(string)
 		attributeList[i].Value = strings.ReplaceAll(existingValue, searchValue, replaceValue)
 	}
 
-	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, whereExpressions)
+	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, options)
 }

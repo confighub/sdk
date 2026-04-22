@@ -266,6 +266,11 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 				},
 			},
 			"spec": spec,
+			// The operation field triggers an immediate sync when ArgoCD processes
+			// this Application. Without it, ArgoCD would only sync on its next
+			// polling interval. This is the programmatic equivalent of clicking
+			// "Sync" in the ArgoCD UI.
+			// See: https://github.com/argoproj/argo-cd/discussions/20797
 			"operation": map[string]interface{}{
 				"sync": map[string]interface{}{
 					"syncOptions": []interface{}{argoCDSyncOptionCreateNS, argoCDSyncOptionSSA},

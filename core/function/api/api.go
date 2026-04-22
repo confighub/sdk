@@ -101,17 +101,34 @@ type FunctionInvocationList []FunctionInvocation
 // options for the invocation.
 type FunctionInvocationRequest struct {
 	FunctionContext
-	ConfigData          []byte                     `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
-	OtherData           map[OtherDataSource][]byte `swaggertype:"string" format:"byte" description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
-	NumFilters          int                        `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
-	StopOnError         bool                       `description:"If true, stop executing functions on the first error"`
-	WhereResource       string                     `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
-	FunctionInvocations FunctionInvocationList     `description:"List of functions to invoke and their arguments"`
+	ConfigData []byte                     `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
+	OtherData  map[OtherDataSource][]byte `swaggertype:"string" format:"byte" description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
+	FunctionInvocationOptions
+	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }
 
-// FunctionOptions contains options that affect how functions operate on resources.
+// FunctionInvocationOptions contains function execution options passed in FunctionInvocationRequest.
+type FunctionInvocationOptions struct {
+	// Options that apply to sequences of function invocations.
+	NumFilters  int  `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
+	StopOnError bool `description:"If true, stop executing functions on the first error"`
+
+	// Options passed to individual function implementations, translated to FunctionOptions.
+	WhereResource string `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
+}
+
+// FunctionOptions contains options that affect how functions operate on resources that need to be
+// passed to individual function implementations.
 type FunctionOptions struct {
 	WhereResourceExpressions []*VisitorRelationalExpression
+
+	// If true, include full details in function output. For now this is a per-function property
+	// that is passed to the visitor implementation.
+	IncludeDetails bool
+}
+
+func NewFunctionOptions() *FunctionOptions {
+	return &FunctionOptions{}
 }
 
 func GetWhereResourceExpressions(options *FunctionOptions) []*VisitorRelationalExpression {
@@ -119,6 +136,13 @@ func GetWhereResourceExpressions(options *FunctionOptions) []*VisitorRelationalE
 		return nil
 	}
 	return options.WhereResourceExpressions
+}
+
+func GetIncludeDetails(options *FunctionOptions) bool {
+	if options == nil {
+		return false
+	}
+	return options.IncludeDetails
 }
 
 // ValidWhereResourcePaths lists the supported ConfigHub metadata paths for WhereResource filtering.
@@ -135,11 +159,11 @@ var ValidWhereResourcePaths = map[string]bool{
 const MaxExpressionLength = 1024
 
 // ParseAndValidateWhereResource parses and validates a WhereResource filter string.
-// It returns FunctionOptions with the parsed expressions, or nil if whereResource is empty.
+// It returns the parsed expressions, or nil if whereResource is empty.
 // Paths with the "ConfigHub." prefix are validated against ValidWhereResourcePaths.
 // Other paths are treated as resource field paths (e.g., "spec.replicas") and are resolved
 // from the YAML document at evaluation time.
-func ParseAndValidateWhereResource(whereResource string) (*FunctionOptions, error) {
+func ParseAndValidateWhereResource(whereResource string) ([]*VisitorRelationalExpression, error) {
 	if whereResource == "" {
 		return nil, nil
 	}
@@ -152,7 +176,7 @@ func ParseAndValidateWhereResource(whereResource string) (*FunctionOptions, erro
 			return nil, fmt.Errorf("unsupported WhereResource path: %s; must be one of ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory", expr.Path)
 		}
 	}
-	return &FunctionOptions{WhereResourceExpressions: whereExpressions}, nil
+	return whereExpressions, nil
 }
 
 // FunctionIDs contains the IDs related to a function invocation.

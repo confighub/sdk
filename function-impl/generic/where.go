@@ -124,7 +124,7 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 	// Allow blank whereExpr: filter by resourceType only
 	if strings.TrimSpace(whereExpr) == "" {
 		matchingResources := map[api.ResourceTypeAndName]bool{}
-		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			if resourceType == "*" || resourceInfo.ResourceType == api.ResourceType(resourceType) {
 				matchingResources[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
 			}
@@ -155,9 +155,13 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 
 	// If all expressions were ConfigHub.* (now merged into whereExpressions),
 	// just collect matching resources from the filtered visit.
+	mergedOptions := &api.FunctionOptions{WhereResourceExpressions: whereExpressions}
+	if options != nil {
+		mergedOptions.IncludeDetails = options.IncludeDetails
+	}
 	if len(dataPathExpressions) == 0 {
 		matchingResources := map[api.ResourceTypeAndName]bool{}
-		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, mergedOptions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			if resourceType == "*" || resourceInfo.ResourceType == api.ResourceType(resourceType) {
 				matchingResources[api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)] = true
 			}
@@ -325,8 +329,7 @@ func GenericFnSelectWhereResourceWithComparators(resourceProvider yamlkit.Resour
 
 	// Build a list of indices to remove (in reverse order to avoid index shifting)
 	indicesToRemove := []int{}
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		key := api.ResourceTypeAndFullNameFromResourceInfo(*resourceInfo)
 		if !matchingResources[key] {
 			indicesToRemove = append(indicesToRemove, index)

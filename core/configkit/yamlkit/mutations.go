@@ -930,7 +930,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 //   - Comment preservation: Update mutations try to preserve YAML comments
 //   - Parent-first ordering: Ensures parent paths are applied before children
 //   - Graceful handling: Logs errors but continues processing other mutations
-func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, error) {
+func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, error) {
 	// Build predicate index with prefer-predicate dedup: when multiple mutation sources
 	// exist for the same resource (e.g., one from clone and one from triggers), prefer
 	// the one with Predicate=true so the resource is not incorrectly filtered out.
@@ -1021,7 +1021,7 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		return nil, visitorErrs
 	}
 
-	_, visitErr := VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	_, visitErr := VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	if visitErr != nil {
 		errs = append(errs, visitErr)
 	}
@@ -1167,7 +1167,7 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	return errs
 }
 
-func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, whereExpressions []*api.VisitorRelationalExpression) error {
+func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
 	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
 	resetResourceMergeIDMap := make(map[string]int)
 	for i := range mutationsPredicates {
@@ -1251,7 +1251,7 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 		return nil, errs
 	}
 
-	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	return err
 }
 

@@ -1123,11 +1123,7 @@ func k8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType, parsedData 
 		}
 		return newImage
 	}
-	var whereExpressions []*api.VisitorRelationalExpression
-	if opts != nil {
-		whereExpressions = opts.WhereResourceExpressions
-	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, whereExpressions)
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, opts)
 	return parsedData, nil, err
 }
 
@@ -1149,11 +1145,7 @@ func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedD
 		}
 		return newRegistry + strings.TrimPrefix(currentValue, imageRegistry)
 	}
-	var whereExpressions []*api.VisitorRelationalExpression
-	if opts != nil {
-		whereExpressions = opts.WhereResourceExpressions
-	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, whereExpressions)
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, opts)
 	return parsedData, nil, err
 }
 
@@ -1192,8 +1184,7 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOption
 		return parsedData, nil, errors.WithStack(errors.New("no valid key-value pairs"))
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		cPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceInfo.ResourceType]
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
@@ -1483,12 +1474,8 @@ func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData g
 	}
 
 	resourceTypeToResourcesPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameContainerResources)
-	var whereExpressions []*api.VisitorRelationalExpression
-	if opts != nil {
-		whereExpressions = opts.WhereResourceExpressions
-	}
 	// TODO: consider setting upsert to true
-	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, false, whereExpressions)
+	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, false, opts)
 	return parsedData, nil, err
 }
 
@@ -1525,8 +1512,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.Functi
 	}
 
 	namespaceResourceType := api.ResourceType("v1/Namespace")
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		if resourceInfo.ResourceType == namespaceResourceType && podSecurity {
 			// The dots don't need to be escaped when using Set rather than SetP
 			var visitorErrs []error
@@ -1760,8 +1746,7 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, option
 		volumeSource = args[3].Value.(string)
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
@@ -1955,8 +1940,7 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, options *api.Func
 		protocol = "TCP" // Default protocol
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		cPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceInfo.ResourceType]
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
@@ -2060,10 +2044,6 @@ func k8sFnVetImages(rp *k8skit.K8sResourceProviderType, parsedData gaby.Containe
 		return parsedData, nil, errors.Wrap(err, "failed to parse image-filter argument")
 	}
 
-	var whereExpressions []*api.VisitorRelationalExpression
-	if opts != nil {
-		whereExpressions = opts.WhereResourceExpressions
-	}
-	result, err := generic.GenericVetValues(rp, parsedData, api.AttributeNameContainerImage, &filter, whereExpressions)
+	result, err := generic.GenericVetValues(rp, parsedData, api.AttributeNameContainerImage, &filter, opts)
 	return parsedData, result, err
 }

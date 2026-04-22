@@ -814,9 +814,8 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to initialize kubeconform validator")
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
 	result := api.ValidationResult{Passed: true}
-	output, err := yamlkit.VisitResourcesFiltered(parsedData, &result, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, &result, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		vr := output.(*api.ValidationResult)
 		res := resource.Resource{Bytes: doc.BytesWithoutCommentKeys()}
 		valResult := v.ValidateResource(res)

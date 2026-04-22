@@ -230,7 +230,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNamePodSecurityDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, fArgs.Options)
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -251,7 +251,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameAutomountServiceAccountToken)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, fArgs.Options)
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -272,7 +272,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNamePodContainerSecurityCtxDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, fArgs.Options)
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -293,7 +293,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameContainerResourcesDefaults)
-			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, whereFromOpts(fArgs.Options))
+			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, fArgs.Options)
 			return fArgs.ParsedData, nil, err
 		},
 	}); err != nil {
@@ -325,8 +325,7 @@ func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) hand
 }
 
 func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
 			return output, nil

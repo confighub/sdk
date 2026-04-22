@@ -41,19 +41,19 @@ func registerDeletePath(fh handler.FunctionRegistry, converter configkit.ConfigC
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnDeletePath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return GenericFnDeletePath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func GenericFnDeletePath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	// The argument value types should be verified before this function is called
 	resourceType := args[0].Value.(string)
 	unresolvedPath := args[1].Value.(string)
 
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
-	err := yamlkit.DeletePaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, whereExpressions)
+	err := yamlkit.DeletePaths(parsedData, resourceTypeToPaths, []any{}, resourceProvider, options)
 	return parsedData, nil, err
 }

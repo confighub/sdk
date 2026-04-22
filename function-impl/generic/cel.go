@@ -219,8 +219,7 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 
 	overallResult := api.ValidationResult{Passed: true}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		var dataMap map[string]any
 		if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
 			return output, []error{err}
@@ -391,8 +390,7 @@ func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 		return parsedData, nil, fmt.Errorf("failed to create program: %v", err)
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, api.AttributeValueList{}, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
 
 		var dataMap map[string]any
@@ -508,7 +506,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -520,7 +518,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 // strategic merge (similar to Kubernetes ApplyConfiguration). Only the fields
 // present in the CEL result are modified; all other fields are preserved.
 // Extra CEL env options can be passed by toolchain-specific overrides.
-func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
@@ -546,7 +544,7 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 	originalData := []byte(parsedData.String())
 
 	patched, changed, err := yamlkit.TransformConfig(originalData, resourceProvider, func(strippedParsed gaby.Container) ([]byte, error) {
-		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		_, err := yamlkit.VisitResourcesFiltered(strippedParsed, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			var dataMap map[string]any
 			if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {
 				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
@@ -582,7 +580,7 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 		}
 
 		return []byte(strippedParsed.String()), nil
-	}, whereExpressions)
+	}, options)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -627,8 +625,7 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, options *ap
 		details []string
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	output, err := yamlkit.VisitResourcesFiltered(parsedData, &celValidateResult{passed: true}, resourceProvider, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	output, err := yamlkit.VisitResourcesFiltered(parsedData, &celValidateResult{passed: true}, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		result := output.(*celValidateResult)
 		var dataMap map[string]any
 		if err := yaml.Unmarshal(doc.Bytes(), &dataMap); err != nil {

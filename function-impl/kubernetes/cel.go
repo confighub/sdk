@@ -159,7 +159,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnSetCEL(rp, fArgs.ParsedData, fArgs.Arguments, whereFromOpts(fArgs.Options), k8sOpts...)
+			return generic.GenericFnSetCEL(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options, k8sOpts...)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)

@@ -51,29 +51,6 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.image",
     "AttributeName": "container-image",
     "DataType": "string",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-image",
-        "Arguments": [
-          {
-            "ParameterName": "container-name",
-            "Value": "nginx"
-          }
-        ]
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-container-image",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "nginx"
-            }
-          ]
-        }
-      ],
-      "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
-    },
     "Value": "nginx:latest",
     "Index": 0,
     "FunctionName": "get-image"
@@ -86,19 +63,6 @@ OUTPUT
     "Path": "spec.replicas",
     "AttributeName": "replicas",
     "DataType": "int",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-replicas",
-        "Arguments": null
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-replicas",
-          "Arguments": null
-        }
-      ],
-      "Description": "Number of desired pods. This is a pointer to distinguish between explicit zero and not specified. Defaults to 1."
-    },
     "Value": 3,
     "Comment": "Line comment on replicas",
     "Index": 1,

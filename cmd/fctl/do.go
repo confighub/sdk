@@ -100,9 +100,11 @@ func InvokeFunction(
 		OtherData:           otherData,
 		FunctionContext:     *functionContext,
 		FunctionInvocations: functions,
-		WhereResource:       whereRes,
-		NumFilters:          0,
-		StopOnError:         false,
+		FunctionInvocationOptions: api.FunctionInvocationOptions{
+			WhereResource: whereRes,
+			NumFilters:    0,
+			StopOnError:   false,
+		},
 	})
 }
 
@@ -209,11 +211,13 @@ func newDoSeqCommand() *cobra.Command {
 			failOnError(err)
 
 			respMsg, err := client.InvokeFunctions(transportConfig, toolchain, api.FunctionInvocationRequest{
-				FunctionContext:     *fakeFunctionContext(unitName),
-				ConfigData:          content,
-				WhereResource:       whereResource,
-				NumFilters:          numFilters,
-				StopOnError:         stop,
+				FunctionContext: *fakeFunctionContext(unitName),
+				ConfigData:      content,
+				FunctionInvocationOptions: api.FunctionInvocationOptions{
+					WhereResource: whereResource,
+					NumFilters:    numFilters,
+					StopOnError:   stop,
+				},
 				FunctionInvocations: functionList,
 			})
 			failOnError(err)

@@ -57,10 +57,8 @@ func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider
 		bodyFormat = strings.ToLower(args[0].Value.(string))
 	}
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-
 	list := make(api.ResourceList, 0, len(parsedData))
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
 		func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 			var resourceBody string
 			switch bodyFormat {
@@ -124,17 +122,17 @@ func registerGetResourcesOfType(fh handler.FunctionRegistry, converter configkit
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetResourcesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, whereFromOptions(fArgs.Options))
+			return genericFnGetResourcesOfType(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	resourceType := api.ResourceType(args[0].Value.(string))
 	var list api.ResourceInfoList
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
 		func(_ *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 			if resourceInfo.ResourceType == resourceType {
 				list = append(list, *resourceInfo)

@@ -43,8 +43,7 @@ func genericFnVetFormat(resourceProvider yamlkit.ResourceProvider, options *api.
 	config := yamlkit.DefaultLintConfig()
 	var failedAttributes api.AttributeValueList
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
 		func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 			ynode := doc.YNode()
 			if ynode == nil {

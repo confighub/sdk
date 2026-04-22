@@ -43,7 +43,7 @@ func registerNormalize(fh handler.FunctionRegistry, converter configkit.ConfigCo
 				}
 				mutationSources = &ms
 			}
-			err := yamlkit.Normalize(fArgs.ParsedData, resourceProvider, mutationSources, whereFromOptions(fArgs.Options))
+			err := yamlkit.Normalize(fArgs.ParsedData, resourceProvider, mutationSources, fArgs.Options)
 			if err != nil {
 				return fArgs.ParsedData, nil, err
 			}

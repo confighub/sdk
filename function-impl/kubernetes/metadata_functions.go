@@ -302,8 +302,7 @@ func makeK8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType) handler.Funct
 
 func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	// TODO: verbose logging
-	whereExpressions := api.GetWhereResourceExpressions(options)
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, whereExpressions, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		nameSegments := strings.Split(string(resourceInfo.ResourceName), "/")
 		if len(nameSegments) != 2 {
 			return output, []error{fmt.Errorf("improperly formatted resource name %s", string(resourceInfo.ResourceName))}
@@ -329,17 +328,13 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 
 func makeK8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		var whereExpressions []*api.VisitorRelationalExpression
-		if fArgs.Options != nil {
-			whereExpressions = fArgs.Options.WhereResourceExpressions
-		}
-		return k8sFnNeededNamespaces(rp, fArgs.ParsedData, whereExpressions)
+		return k8sFnNeededNamespaces(rp, fArgs.ParsedData, fArgs.Options)
 	}
 }
 
-func k8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func k8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, options *api.FunctionOptions) (gaby.Container, any, error) {
 	// No arguments
 	resourceTypeToNamespacePath := yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameNamespaceNameReference)
-	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, rp, whereExpressions)
+	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, rp, options)
 	return parsedData, values, err
 }

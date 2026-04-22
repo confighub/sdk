@@ -86,12 +86,13 @@ func init() {
 	functionCmd.AddCommand(functionExecCmd)
 }
 
-// executeFunctionsFromFile reads functions from a file and executes them with the given where clause
-func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []string) (*[]goclientnew.FunctionInvocationsResponse, error) {
+// executeFunctionsFromFile reads functions from a file and executes them with the given where clause.
+// Also returns the request body so callers can inspect the number of invocations that were submitted.
+func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []string) (*[]goclientnew.FunctionInvocationsResponse, *goclientnew.FunctionInvocationsRequest, error) {
 	// Parse filter parameter
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Check for mutual exclusivity between flags
@@ -109,7 +110,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		flagCount++
 	}
 	if flagCount > 1 {
-		return nil, fmt.Errorf("--unit, --where, --filter, and --revision flags are mutually exclusive")
+		return nil, nil, fmt.Errorf("--unit, --where, --filter, and --revision flags are mutually exclusive")
 	}
 
 	// Build WHERE clause from unit identifiers if provided
@@ -117,7 +118,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	if len(unitIds) > 0 {
 		whereFromUnits, err := buildWhereClauseFromUnits(unitIds)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		effectiveWhere = whereFromUnits
 	} else {
@@ -130,7 +131,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	if functionChangesetSlug != "" && revisionIdentifier == "" {
 		changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		changesetID = changesetUUID.String()
 		// Add changeset constraint to WHERE clause
@@ -145,7 +146,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		if functionsFile == "-" {
 			content, err = readStdin()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		} else {
 			content = readFile(functionsFile)
@@ -169,7 +170,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	}
 
 	if (newBody.FunctionInvocations == nil || len(*newBody.FunctionInvocations) == 0) && len(newBody.Triggers) == 0 && len(newBody.Invocations) == 0 {
-		return nil, fmt.Errorf("A function file and/or triggers and/or invocations must be specified")
+		return nil, nil, fmt.Errorf("A function file and/or triggers and/or invocations must be specified")
 	}
 
 	// Execute functions
@@ -179,7 +180,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	if revisionIdentifier != "" {
 		resp, err = invokeFunctionsOnRevision(revisionIdentifier, *newBody, dryRun)
 		if err != nil {
-			return resp, err
+			return resp, newBody, err
 		}
 	} else {
 		invokeArgs := &invokeArgs{
@@ -193,7 +194,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {
-			return resp, err
+			return resp, newBody, err
 		}
 	}
 
@@ -202,7 +203,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		resp = &[]goclientnew.FunctionInvocationsResponse{}
 	}
 
-	return resp, nil
+	return resp, newBody, nil
 }
 
 func functionExecCommandRun(cmd *cobra.Command, args []string) error {
@@ -228,11 +229,11 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, "")
 	}
 
-	resp, err := executeFunctionsFromFile(file, where, unitIdentifiers)
+	resp, execBody, err := executeFunctionsFromFile(file, where, unitIdentifiers)
 	if err != nil {
 		return err
 	}
-	if !renderFunctionResponse(resp) {
+	if !renderFunctionResponse(resp, hasMultipleFunctions(execBody)) {
 		outputFunctionInvocationResponse(resp)
 	}
 	if wait {

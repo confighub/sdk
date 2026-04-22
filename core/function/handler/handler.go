@@ -124,7 +124,8 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	serializedData := yamlData
 
 	// Parse and validate WhereResource filter if provided
-	functionOptions, err := api.ParseAndValidateWhereResource(functionInvocation.WhereResource)
+	functionOptions := api.NewFunctionOptions()
+	functionOptions.WhereResourceExpressions, err = api.ParseAndValidateWhereResource(functionInvocation.WhereResource)
 	if err != nil {
 		return nil, err
 	}

@@ -105,8 +105,10 @@ func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.Resour
 }
 
 // VisitResourcesFiltered iterates over resources, skipping those that don't match the
-// whereExpressions. When whereExpressions is nil or empty, it behaves identically to VisitResources.
-func VisitResourcesFiltered(parsedData gaby.Container, output any, resourceProvider ResourceProvider, whereExpressions []*api.VisitorRelationalExpression, visitor ResourceVisitorFunc) (any, error) {
+// WhereResourceExpressions in options. When options has no WhereResourceExpressions,
+// it behaves identically to VisitResources.
+func VisitResourcesFiltered(parsedData gaby.Container, output any, resourceProvider ResourceProvider, options *api.FunctionOptions, visitor ResourceVisitorFunc) (any, error) {
+	whereExpressions := api.GetWhereResourceExpressions(options)
 	if len(whereExpressions) == 0 {
 		return VisitResources(parsedData, output, resourceProvider, visitor)
 	}
@@ -156,7 +158,7 @@ func VisitPaths[T api.Scalar](
 	resourceProvider ResourceProvider,
 	visitor VisitorFunc[T],
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		if currentDoc == nil || currentDoc.Data() == nil {
@@ -182,7 +184,7 @@ func VisitPaths[T api.Scalar](
 		}
 		return output, fmt.Errorf("value %v at path %s cannot be converted to %T", currentDoc.Data(), string(context.Path), currentValue)
 	}
-	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, whereExpressions)
+	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, options)
 }
 
 // VisitorFuncAnyType defines the signature of functions invoked by the visitor functions.
@@ -199,13 +201,13 @@ func VisitPathsAnyType(
 	resourceProvider ResourceProvider,
 	visitor VisitorFuncAnyType,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (any, error) {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		// currentDoc.Data() could be nil
 		return visitor(doc, output, context, currentDoc.Data())
 	}
-	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, whereExpressions)
+	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, options)
 }
 
 // VisitorFuncDoc defines the signature of functions invoked by the visitor function.
@@ -222,7 +224,7 @@ func VisitPathsDoc(
 	resourceProvider ResourceProvider,
 	visitor VisitorFuncDoc,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (any, error) {
 
 	resourceVisitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
@@ -326,7 +328,7 @@ func VisitPathsDoc(
 		}
 		return output, multiErrs
 	}
-	newOutput, err := VisitResourcesFiltered(parsedData, output, resourceProvider, whereExpressions, resourceVisitor)
+	newOutput, err := VisitResourcesFiltered(parsedData, output, resourceProvider, options, resourceVisitor)
 	return newOutput, err
 }
 
@@ -340,7 +342,7 @@ func UpdatePathsFunction[T api.Scalar](
 	resourceProvider ResourceProvider,
 	updater func(T, VisitorContext) T,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue T) (any, error) {
@@ -352,7 +354,7 @@ func UpdatePathsFunction[T api.Scalar](
 		}
 		return output, err
 	}
-	_, err := VisitPaths[T](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, whereExpressions)
+	_, err := VisitPaths[T](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, options)
 	return err
 }
 
@@ -365,13 +367,13 @@ func UpdatePathsValue[T api.Scalar](
 	resourceProvider ResourceProvider,
 	newValue T,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 
 	updater := func(_ T, _ VisitorContext) T {
 		return newValue
 	}
-	err := UpdatePathsFunction[T](parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert, whereExpressions)
+	err := UpdatePathsFunction[T](parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert, options)
 	return err
 }
 
@@ -384,7 +386,7 @@ func UpdatePathsFunctionDoc(
 	resourceProvider ResourceProvider,
 	updater func(*gaby.YamlDoc, VisitorContext) *gaby.YamlDoc,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
@@ -397,7 +399,7 @@ func UpdatePathsFunctionDoc(
 		}
 		return output, err
 	}
-	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, whereExpressions)
+	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, options)
 	return err
 }
 
@@ -438,7 +440,7 @@ func GetPaths[T api.Scalar](
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 	// Determine the data type based on the generic type parameter
 	var dataType api.DataType
@@ -453,7 +455,7 @@ func GetPaths[T api.Scalar](
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
 
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, false, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, false, false, options)
 }
 
 // GetPathsAnyType traverses the specified path patterns of the specified resource types and returns
@@ -467,7 +469,7 @@ func GetPathsAnyType(
 	dataType api.DataType,
 	neededValuesOnly bool,
 	providedValuesOnly bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 
 	visitor := func(resourceDoc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
@@ -568,32 +570,39 @@ func GetPathsAnyType(
 
 		// Deep copy the AttributeInfo so that maps, slices, and pointers in Details
 		// are not shared across AttributeValues from different visitor invocations.
-		deepCopiedAttr := api.DeepCopyAttributeInfo(attr)
-		attributeValue = api.AttributeValue{AttributeInfo: deepCopiedAttr, Value: currentValue, Comment: comment}
+		if neededValuesOnly || providedValuesOnly || api.GetIncludeDetails(options) {
+			deepCopiedAttr := api.DeepCopyAttributeInfo(attr)
+			attributeValue = api.AttributeValue{AttributeInfo: deepCopiedAttr, Value: currentValue, Comment: comment}
 
-		// Append getter and setter arguments to the deep-copied details
-		appendGetterAndSetterArguments(deepCopiedAttr.Details, context.Arguments)
+			// Append getter and setter arguments to the deep-copied details.
+			appendGetterAndSetterArguments(deepCopiedAttr.Details, context.Arguments)
 
-		// For needed values, auto-extract merge keys from the resolved path as preferred properties.
-		// Resolved paths use numeric indices (e.g., spec.template.spec.volumes.1.configMap.name).
-		// We walk the path, find numeric segments, look up the merge key for that array via
-		// MergeKeyForPath, and read the merge key value from the resource document.
-		// if neededValuesOnly && resourceDoc != nil {
-		// 	EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
-		// }
+			// TODO
+			// For needed values, auto-extract merge keys from the resolved path as preferred properties.
+			// Resolved paths use numeric indices (e.g., spec.template.spec.volumes.1.configMap.name).
+			// We walk the path, find numeric segments, look up the merge key for that array via
+			// MergeKeyForPath, and read the merge key value from the resource document.
+			// if neededValuesOnly && resourceDoc != nil {
+			// 	EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
+			// }
 
-		// Invoke the Enricher function if registered for this path
-		if context.PathVisitorInfo != nil {
-			if enricher, ok := context.PathVisitorInfo.Enricher.(AttributeEnricher); ok && enricher != nil {
-				_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
+			// Invoke the Enricher function if registered for this path
+			if context.PathVisitorInfo != nil {
+				if enricher, ok := context.PathVisitorInfo.Enricher.(AttributeEnricher); ok && enricher != nil {
+					_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
+				}
 			}
+		} else {
+			// Don't include Details. Shallow copy, clear Details.
+			attributeValue = api.AttributeValue{AttributeInfo: attr, Value: currentValue, Comment: comment}
+			attributeValue.Details = nil
 		}
 
 		visitorValues = append(visitorValues, attributeValue)
 		return visitorValues, nil
 	}
 	values := []api.AttributeValue{}
-	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor, false, whereExpressions)
+	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor, false, options)
 	if err != nil {
 		return values, err
 	}
@@ -618,7 +627,7 @@ func GetNeededPaths[T api.Scalar](
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 	// Determine the data type based on the generic type parameter
 	var dataType api.DataType
@@ -633,7 +642,7 @@ func GetNeededPaths[T api.Scalar](
 		return nil, fmt.Errorf("type %T not supported", zero)
 	}
 
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, true, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, dataType, true, false, options)
 }
 
 // GetStringPaths traverses the specified path patterns of the specified resource types and returns
@@ -645,9 +654,9 @@ func GetStringPaths(
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, false, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, false, false, options)
 }
 
 // GetNeededStringPaths traverses the specified path patterns of the specified resource types and returns
@@ -660,9 +669,9 @@ func GetNeededStringPaths(
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
-	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, true, false, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToPaths, keys, resourceProvider, api.DataTypeString, true, false, options)
 }
 
 // UpdateStringPathsFunction traverses the specified path patterns of the specified resource types.
@@ -675,7 +684,7 @@ func UpdateStringPathsFunction(
 	resourceProvider ResourceProvider,
 	updater func(string) string,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue string) (any, error) {
@@ -707,7 +716,7 @@ func UpdateStringPathsFunction(
 		}
 		return output, err
 	}
-	_, err := VisitPaths[string](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, whereExpressions)
+	_, err := VisitPaths[string](parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, options)
 	return err
 }
 
@@ -721,13 +730,13 @@ func UpdateStringPaths(
 	resourceProvider ResourceProvider,
 	newValue string,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 
 	updater := func(_ string) string {
 		return newValue
 	}
-	err := UpdateStringPathsFunction(parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert, whereExpressions)
+	err := UpdateStringPathsFunction(parsedData, resourceTypeToPaths, keys, resourceProvider, updater, upsert, options)
 	return err
 }
 
@@ -736,10 +745,10 @@ func UpdateStringPaths(
 func GetRegisteredNeededStringPaths(
 	parsedData gaby.Container,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 	resourceTypeToNeededPaths := GetRegisteredNeededPaths(resourceProvider)
-	return GetNeededStringPaths(parsedData, resourceTypeToNeededPaths, []any{}, resourceProvider, whereExpressions)
+	return GetNeededStringPaths(parsedData, resourceTypeToNeededPaths, []any{}, resourceProvider, options)
 }
 
 // GetRegisteredProvidedStringPaths retrieves Provided values by scanning all attributes
@@ -747,10 +756,10 @@ func GetRegisteredNeededStringPaths(
 func GetRegisteredProvidedStringPaths(
 	parsedData gaby.Container,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 	resourceTypeToProvidedPaths := GetRegisteredProvidedPaths(resourceProvider)
-	return GetPathsAnyType(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider, api.DataTypeString, false, true, whereExpressions)
+	return GetPathsAnyType(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider, api.DataTypeString, false, true, options)
 }
 
 // VisitorSetterInvocationFunctionName is a special function name used to indicate that the
@@ -785,7 +794,7 @@ func UpdatePathsSetterArgument(
 	keys []any,
 	resourceProvider ResourceProvider,
 	upsert bool,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		if context.Details == nil ||
@@ -809,7 +818,7 @@ func UpdatePathsSetterArgument(
 		_, err := doc.SetP(newValue, string(context.Path))
 		return output, err
 	}
-	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, whereExpressions)
+	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, visitor, upsert, options)
 	return err
 }
 
@@ -821,7 +830,7 @@ func VetPathsSetterArgument(
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) (api.ValidationResult, error) {
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		if context.Details == nil ||
@@ -851,7 +860,7 @@ func VetPathsSetterArgument(
 		return output, nil
 	}
 	values := api.AttributeValueList{}
-	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor, false, whereExpressions)
+	output, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, values, resourceProvider, visitor, false, options)
 	if err != nil {
 		return api.ValidationResult{Passed: false}, err
 	}
@@ -870,7 +879,7 @@ func DeletePaths(
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	keys []any,
 	resourceProvider ResourceProvider,
-	whereExpressions []*api.VisitorRelationalExpression,
+	options *api.FunctionOptions,
 ) error {
 	docVisitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		// Delete associated $comment$ sibling keys before deleting the data path
@@ -878,6 +887,6 @@ func DeletePaths(
 		err := doc.DeleteP(string(context.Path))
 		return nil, err
 	}
-	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, docVisitor, false, whereExpressions)
+	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, docVisitor, false, options)
 	return err
 }

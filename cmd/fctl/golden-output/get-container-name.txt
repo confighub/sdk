@@ -51,13 +51,6 @@ OUTPUT
     "Path": "spec.template.spec.containers.0.name",
     "AttributeName": "container-name",
     "DataType": "string",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-name",
-        "Arguments": null
-      },
-      "Description": "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated."
-    },
     "Value": "nginx",
     "Index": 0,
     "FunctionName": "get-container-name"
@@ -70,13 +63,6 @@ OUTPUT
     "Path": "spec.template.spec.containers.1.name",
     "AttributeName": "container-name",
     "DataType": "string",
-    "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-name",
-        "Arguments": null
-      },
-      "Description": "Name of the container specified as a DNS_LABEL. Each container in a pod must have a unique name (DNS_LABEL). Cannot be updated."
-    },
     "Value": "otel-sidecar",
     "Index": 0,
     "FunctionName": "get-container-name"

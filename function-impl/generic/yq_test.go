@@ -91,7 +91,7 @@ func TestYQQuery_MultiDoc_NoFilter(t *testing.T) {
 	require.Len(t, parsedData, 3)
 
 	args := []api.FunctionArgument{{Value: ".metadata.name"}}
-	_, output, err := genericFnYQQuery(rp, parsedData, args[0].Value.(string), nil)
+	_, output, err := genericFnYQQuery(rp, &api.FunctionContext{}, parsedData, args[0].Value.(string), nil)
 	require.NoError(t, err)
 
 	payload, ok := output.(api.YAMLPayload)
@@ -108,7 +108,7 @@ func TestYQQuery_MultiDoc_WhereDeployment(t *testing.T) {
 	require.NoError(t, err)
 
 	args := []api.FunctionArgument{{Value: ".metadata.name"}}
-	_, output, err := genericFnYQQuery(rp, parsedData, args[0].Value.(string), whereFromOptions(whereResourceType("apps/v1/Deployment")))
+	_, output, err := genericFnYQQuery(rp, &api.FunctionContext{}, parsedData, args[0].Value.(string), whereResourceType("apps/v1/Deployment"))
 	require.NoError(t, err)
 
 	payload := output.(api.YAMLPayload)
@@ -124,7 +124,7 @@ func TestYQQuery_MultiDoc_WhereSpecificResource(t *testing.T) {
 	require.NoError(t, err)
 
 	args := []api.FunctionArgument{{Value: ".spec.replicas"}}
-	_, output, err := genericFnYQQuery(rp, parsedData, args[0].Value.(string), whereFromOptions(whereMetadataName("api")))
+	_, output, err := genericFnYQQuery(rp, &api.FunctionContext{}, parsedData, args[0].Value.(string), whereMetadataName("api"))
 	require.NoError(t, err)
 
 	payload := output.(api.YAMLPayload)
@@ -154,7 +154,7 @@ func TestYQMutating_MultiDoc_WhereDeployment(t *testing.T) {
 	require.NoError(t, err)
 
 	args := []api.FunctionArgument{{Value: ".spec.replicas = 5"}}
-	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereFromOptions(whereResourceType("apps/v1/Deployment")))
+	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereResourceType("apps/v1/Deployment"))
 	require.NoError(t, err)
 	// All 3 documents should be present
 	require.Len(t, result, 3)
@@ -173,7 +173,7 @@ func TestYQMutating_MultiDoc_WhereSpecificResource(t *testing.T) {
 	require.NoError(t, err)
 
 	args := []api.FunctionArgument{{Value: ".spec.replicas = 10"}}
-	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereFromOptions(whereMetadataName("web")))
+	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereMetadataName("web"))
 	require.NoError(t, err)
 	require.Len(t, result, 3)
 
@@ -200,7 +200,7 @@ data:
 	require.NoError(t, err)
 
 	args := []api.FunctionArgument{{Value: ".data.key1"}}
-	_, output, err := genericFnYQQuery(rp, parsedData, args[0].Value.(string), nil)
+	_, output, err := genericFnYQQuery(rp, &api.FunctionContext{}, parsedData, args[0].Value.(string), nil)
 	require.NoError(t, err)
 
 	payload := output.(api.YAMLPayload)
@@ -215,7 +215,7 @@ func TestYQMutating_PreservesUnmatchedDocs(t *testing.T) {
 
 	// Filter to only Service, mutate it
 	args := []api.FunctionArgument{{Value: ".spec.type = \"NodePort\""}}
-	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereFromOptions(whereResourceType("v1/Service")))
+	result, _, err := genericFnYQMutating(rp, parsedData, args[0].Value.(string), whereResourceType("v1/Service"))
 	require.NoError(t, err)
 	// All 3 docs should be present
 	require.Len(t, result, 3)

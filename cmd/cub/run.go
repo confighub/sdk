@@ -261,7 +261,7 @@ func RegisterFunctionsAsCobraCommands() {
 					if respMsgs == nil {
 						respMsgs = &[]goclientnew.FunctionInvocationsResponse{}
 					}
-					if !renderFunctionResponse(respMsgs) {
+					if !renderFunctionResponse(respMsgs, hasMultipleFunctions(newBody)) {
 						outputFunctionInvocationResponse(respMsgs)
 					}
 					if wait {

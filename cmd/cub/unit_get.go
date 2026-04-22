@@ -25,7 +25,7 @@ var unitGetCmd = &cobra.Command{
 }
 
 func getUnitGetHelp() string {
-	baseHelp := `Get detailed information about a unit in a space including its configuration, status, and metadata.
+	baseHelp := `Get metadata and status information about a unit in a space.
 
 Examples:
 ` + "```" + `
@@ -46,7 +46,7 @@ Examples:
 	agentContext := `Critical for inspecting unit configuration and state before making changes.
 
 Agent inspection workflow:
-1. Use 'unit get UNIT_SLUG' to understand unit structure and current state
+1. Use 'unit get UNIT_SLUG' to understand unit metadata and current state
 2. Check revision numbers to understand change history
 3. Use 'cub unit data UNIT_SLUG' to get raw configuration for local processing
 

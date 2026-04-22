@@ -45,12 +45,11 @@ func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.Confi
 func GenericFnVetMergeKeys(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	var failedAttributes api.AttributeValueList
 
-	whereExpressions := api.GetWhereResourceExpressions(options)
 	visitor := func(doc *gaby.YamlDoc, _ any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		findDuplicateMergeKeys(doc, "", resourceInfo, resourceProvider, &failedAttributes)
 		return nil, nil
 	}
-	yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions, visitor)
+	yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 
 	result := api.ValidationResult{
 		Passed:           len(failedAttributes) == 0,

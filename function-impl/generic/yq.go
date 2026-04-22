@@ -7,12 +7,13 @@ import (
 	"log/slog"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/configkit/yqkit"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
-	"github.com/confighub/sdk/configkit/yqkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"sigs.k8s.io/yaml"
 )
 
 func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
@@ -44,7 +45,7 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			expression := fArgs.Arguments[0].Value.(string)
-			return genericFnYQQuery(resourceProvider, fArgs.ParsedData, expression, whereFromOptions(fArgs.Options))
+			return genericFnYQQuery(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, expression, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -74,21 +75,37 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			expression := fArgs.Arguments[0].Value.(string)
-			return genericFnYQMutating(resourceProvider, fArgs.ParsedData, expression, whereFromOptions(fArgs.Options))
+			return genericFnYQMutating(resourceProvider, fArgs.ParsedData, expression, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
+type resourceContext struct {
+	api.FunctionContext
+	api.ResourceInfo
+}
+
 // genericFnYQQuery runs the yq expression on each filtered resource and assembles
 // the output YAML from all results.
-func genericFnYQQuery(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, expression string, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnYQQuery(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, expression string, options *api.FunctionOptions) (gaby.Container, any, error) {
 	var outputDocs gaby.Container
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
-		func(doc *gaby.YamlDoc, output any, _ int, _ *api.ResourceInfo) (any, []error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
+		func(doc *gaby.YamlDoc, output any, _ int, ri *api.ResourceInfo) (any, []error) {
 			singleDoc := gaby.Container{doc}
-			result, err := yqkit.EvalYQExpression(expression, singleDoc.String())
+			data := singleDoc.String()
+			// Append ConfigHub metadata and resource metadata for reference in yq output
+			metadata := map[string]*resourceContext{}
+			metadata["ConfigHub"] = &resourceContext{
+				FunctionContext: *functionContext,
+				ResourceInfo:    *ri,
+			}
+			metadataBytes, err := yaml.Marshal(metadata)
+			if err == nil {
+				data += string(metadataBytes)
+			}
+			result, err := yqkit.EvalYQExpression(expression, data)
 			if err != nil {
 				return output, []error{errors.Wrap(err, "yq expression evaluation failed")}
 			}
@@ -109,12 +126,12 @@ func genericFnYQQuery(resourceProvider yamlkit.ResourceProvider, parsedData gaby
 // genericFnYQMutating runs the yq expression on each filtered resource in place,
 // replacing matched documents in parsedData with the yq output while leaving
 // unmatched documents unchanged.
-func genericFnYQMutating(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, expression string, whereExpressions []*api.VisitorRelationalExpression) (gaby.Container, any, error) {
+func genericFnYQMutating(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, expression string, options *api.FunctionOptions) (gaby.Container, any, error) {
 	// Collect replacements keyed by index in parsedData. Each replacement may
 	// produce zero, one, or multiple documents.
 	replacements := map[int]gaby.Container{}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, whereExpressions,
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
 		func(doc *gaby.YamlDoc, output any, index int, _ *api.ResourceInfo) (any, []error) {
 			singleDoc := gaby.Container{doc}
 			yqOutput, err := yqkit.EvalYQExpression(expression, singleDoc.String())
