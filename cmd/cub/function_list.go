@@ -35,7 +35,8 @@ Agent workflow:
 3. Use 'function explain FUNCTION_NAME' for detailed parameter information
 
 Filter options:
-- --toolchain: Show functions for specific toolchain (Kubernetes/YAML, OpenTofu/HCL, etc.)
+- --where: SQL-inspired filter over FunctionSignature attributes. Supported attributes: ToolchainType, FunctionName, Description, RequiredParameters, VarArgs, Mutating, Validating, Hermetic, Idempotent, FunctionType, AttributeName, and OutputInfo.OutputType / OutputInfo.ResultName / OutputInfo.Description. Example: --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName LIKE '%image%'"
+- --toolchain: Shortcut that is AND'd into --where as ToolchainType = '<toolchain>'
 - --target: Show functions available for a specific deployment target
 - --worker: Show functions available on a specific worker
 - --unit: Show functions available for a specific unit
@@ -45,7 +46,9 @@ Function types:
 - Mutating: true = Modifies configuration data (changes unit state)
 - Validating: true = Returns pass/fail validation results
 
-Use -o name to get just function names for scripting.`
+Use -o name to get just function names for scripting.
+
+Note: Filtered results (--where or --toolchain supplied) are not cached locally.`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
@@ -61,8 +64,8 @@ func init() {
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.targetSlug, "target", "", "Target slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.workerSlug, "worker", "", "Worker slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.unitSlug, "unit", "", "Unit slug to list functions for")
-	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for")
-	// Function list doesn't support where
+	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for (AND'd into --where as ToolchainType = '<toolchain>')")
+	enableWhereFlag(functionListCmd)
 	addStandardListDisplayFlags(functionListCmd)
 	functionCmd.AddCommand(functionListCmd)
 }
@@ -72,10 +75,13 @@ type functionsByEntity map[string]functionsByToolchain
 
 const builtinFunctionKey = "builtin"
 
-func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsByToolchain, error) {
+func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
 	entity := builtinFunctionKey
 	funcs := functionsByToolchain{}
 	params := &goclientnew.ListFunctionsParams{}
+	if whereClause != "" {
+		params.Where = &whereClause
+	}
 
 	// Validate that selectedSpaceID is not "*" when target, worker, or unit is specified
 	if selectedSpaceID == "*" && (targetSlug != "" || workerSlug != "" || unitSlug != "") {
@@ -117,6 +123,9 @@ func listFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsBy
 		orgListParams := &goclientnew.ListOrgFunctionsParams{}
 		if executorSpace != "" {
 			orgListParams.ExecutorSpace = &executorSpace
+		}
+		if whereClause != "" {
+			orgListParams.Where = &whereClause
 		}
 		orgFuncsRes, err := cubClientNew.ListOrgFunctionsWithResponse(ctx, orgListParams)
 		if cubapi.IsAPIError(err, orgFuncsRes) {
@@ -186,17 +195,25 @@ func saveFunctionsForEntity(entity string, functionMap functionsByToolchain) err
 	return nil
 }
 
-func listAndSaveFunctions(targetSlug, workerSlug, unitSlug string) (string, functionsByToolchain, error) {
-	entity, functions, err := listFunctions(targetSlug, workerSlug, unitSlug)
+// listAndMaybeSaveFunctions fetches functions and caches them locally only when the
+// result is a full listing (no --where / --toolchain filtering). Filtered results are
+// returned without being written to ~/.confighub/functions.json, so subsequent calls
+// that rely on the cache continue to see the last unfiltered snapshot.
+func listAndMaybeSaveFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
+	entity, functions, err := listFunctions(targetSlug, workerSlug, unitSlug, whereClause)
 	if err != nil {
 		return entity, functions, err
+	}
+	if whereClause != "" {
+		return entity, functions, nil
 	}
 	err = saveFunctionsForEntity(entity, functions)
 	return entity, functions, err
 }
 
 func functionListCmdRun(cmd *cobra.Command, args []string) error {
-	_, funcs, err := listAndSaveFunctions(functionListCmdArgs.targetSlug, functionListCmdArgs.workerSlug, functionListCmdArgs.unitSlug)
+	effectiveWhere := addToolchainToWhereClause(where, functionListCmdArgs.toolchainType)
+	_, funcs, err := listAndMaybeSaveFunctions(functionListCmdArgs.targetSlug, functionListCmdArgs.workerSlug, functionListCmdArgs.unitSlug, effectiveWhere)
 	if err != nil {
 		return err
 	}
@@ -210,10 +227,7 @@ func functionListCmdRun(cmd *cobra.Command, args []string) error {
 		displayFunctionList(funcs)
 	}
 	if spec.Kind == OutputName {
-		for toolchainType, functionMap := range funcs {
-			if functionListCmdArgs.toolchainType != "" && functionListCmdArgs.toolchainType != toolchainType {
-				continue
-			}
+		for _, functionMap := range funcs {
 			for functionName := range functionMap {
 				tprintRaw(functionName)
 			}
@@ -237,9 +251,6 @@ func displayFunctionList(funcs map[string]map[string]goclientnew.FunctionSignatu
 	}
 	functions := [][]string{}
 	for toolchainType, functionMap := range funcs {
-		if functionListCmdArgs.toolchainType != "" && functionListCmdArgs.toolchainType != toolchainType {
-			continue
-		}
 		for functionName, f := range functionMap {
 			row := []string{
 				toolchainType,

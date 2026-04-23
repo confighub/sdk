@@ -27,7 +27,9 @@ var functionDoCmd = &cobra.Command{
 func getFunctionDoHelp() string {
 	baseHelp := `Invoke a function on units in a space, or across all spaces if the selected space is "*". 
 
-Functions can be used to modify, validate, or inspect unit configurations.
+Functions can be used to modify, validate, or inspect unit configurations. Use cub function set,
+cub function vet, or cub function get to validate that the invoked functions perform the desired type
+of operation.
 
 Function argument values may be simply listed in order so long as no optional parameters are skipped.
 Parameters may be specified out of order using the "--parameter-name=value" syntax.  These are not cub
@@ -46,20 +48,20 @@ To display usage details of a specific function, run:
 
 Example Functions:
 
-  - set-image: Update container image in a deployment
+  - set-container-image: Update container image in a deployment
   - set-int-path: Set an integer value at a specific path in the configuration
   - get-replicas: Get the number of replicas for deployments
   - set-replicas: Set the number of replicas for deployments
   - where-filter: Filter units based on a condition
-  - cel-validate: Validate resources using CEL expressions
+  - vet-cel: Validate resources using CEL expressions
 
 Examples:
 ` + "```" + `
-  # Use set-image to update container image in a deployment
+  # Use set-container-image to update container image in a deployment
   cub function do \
     --space my-space \
     --where "Slug = 'my-deployment'" \
-    set-image nginx nginx:mainline-otel \
+    set-container-image nginx nginx:mainline-otel \
     --wait
 
   # Use yq function to get container image from a deployment
@@ -89,21 +91,13 @@ Examples:
     --space my-space \
     where-filter apps/v1/Deployment 'spec.replicas > 1' \
     --quiet \
-    --show output -o jq='.[].Passed' \
-    -o jq='.[].UnitID'
-
-  # Set best-practice pod fields, other than for probes, to default values in all units in all spaces
-  cub function do \
-    --space "*" \
-	-- \
-	set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false
+    --show output -o jq='. as $e | .Output[] | select(.Passed == true) | {space: $e.SpaceSlug, unit: $e.UnitSlug}'
 
   # Validate deployment replicas using CEL
   cub function do --space my-space \
-    cel-validate 'r.kind != "Deployment" || r.spec.replicas > 1' \
+    vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1' \
     --quiet \
-    --show output -o jq='.[].Passed' \
-    -o jq='.[].UnitID'
+    --show output -o jq='. as $e | .Output[] | select(.Passed == true) | {space: $e.SpaceSlug, unit: $e.UnitSlug}'
 ` + "```" + `
 `
 
@@ -121,11 +115,11 @@ Common agent workflows:
    cub function do --space SPACE --where "Slug = 'UNIT'" yq '.spec.replicas'
 
 2. Modify configuration:
-   cub function do --space SPACE --where "Slug = 'UNIT'" set-image nginx nginx:1.25-alpine --wait
+   cub function do --space SPACE --where "Slug = 'UNIT'" set-container-image nginx nginx:1.25-alpine --wait
 
 3. Validate after changes:
-   cub function do --space SPACE --where "Slug = 'UNIT'" no-placeholders
-   cub function do --space SPACE --where "Slug = 'UNIT'" cel-validate 'r.spec.replicas > 0'
+   cub function do --space SPACE --where "Slug = 'UNIT'" vet-placeholders
+   cub function do --space SPACE --where "Slug = 'UNIT'" vet-celexpr 'r.spec.replicas > 0'
 
 Key flags for agents:
 - --where: Filter units (use quotes around expressions)

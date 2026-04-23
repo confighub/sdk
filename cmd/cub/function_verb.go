@@ -76,7 +76,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	}
 	// Cache miss: best-effort refresh, then retry once. Pass --worker through
 	// so worker-provided functions participate in the convenience.
-	if _, _, err := listAndSaveFunctions("", workerSlug, ""); err == nil {
+	if _, _, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
 		if resolved, ok := lookup(); ok {
 			return resolved
 		}
@@ -85,7 +85,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 		// Also refresh the builtin entity so verb-prefix resolution against
 		// builtin functions still works when --worker is set but the short
 		// name refers to a builtin.
-		if _, _, err := listAndSaveFunctions("", "", ""); err == nil {
+		if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
 			if resolved, ok := lookup(); ok {
 				return resolved
 			}
@@ -144,7 +144,7 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 	if missing {
 		// Best-effort refresh. Include --worker if set so worker-provided
 		// functions are validated against their own catalog.
-		if _, _, err := listAndSaveFunctions("", workerSlug, ""); err == nil {
+		if _, _, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
 			cached, _ = loadFunctions()
 			sigs = flattenFunctionSignatures(cached)
 		}
@@ -157,7 +157,7 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 			}
 		}
 		if stillMissing && workerSlug != "" {
-			if _, _, err := listAndSaveFunctions("", "", ""); err == nil {
+			if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
 				cached, _ = loadFunctions()
 				sigs = flattenFunctionSignatures(cached)
 			}

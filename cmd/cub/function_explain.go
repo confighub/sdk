@@ -62,11 +62,14 @@ func init() {
 }
 
 func functionExplainCmdRun(cmd *cobra.Command, args []string) error {
-	_, funcs, err := listAndSaveFunctions(functionExplainCmdArgs.targetSlug, functionExplainCmdArgs.workerSlug, functionExplainCmdArgs.unitSlug)
-	failOnError(err)
-
 	toolchainType := functionExplainCmdArgs.toolchainType
 	functionName := args[0]
+
+	// Filter the server-side list down to exactly the requested (toolchain, function).
+	// The result is not cached locally since it's a filtered listing.
+	whereClause := fmt.Sprintf("ToolchainType = '%s' AND FunctionName = '%s'", toolchainType, functionName)
+	_, funcs, err := listFunctions(functionExplainCmdArgs.targetSlug, functionExplainCmdArgs.workerSlug, functionExplainCmdArgs.unitSlug, whereClause)
+	failOnError(err)
 
 	toolchainFuncs, found := funcs[toolchainType]
 	if !found {

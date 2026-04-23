@@ -109,6 +109,7 @@ func SupportedToolchainsToString() string {
 // OutputType, kind of function (mutating/readonly or validating), and description of the function.
 type FunctionSignature struct {
 	FunctionName          string              `description:"Name of the function in kabob-case"`
+	ToolchainType         workerapi.ToolchainType `json:",omitempty" swaggertype:"string" description:"Toolchain under which the function is registered"`
 	Parameters            []FunctionParameter `description:"Function parameters, in order"`
 	RequiredParameters    int                 `description:"Number of required parameters"`
 	VarArgs               bool                `description:"Last parameter may be repeated"`

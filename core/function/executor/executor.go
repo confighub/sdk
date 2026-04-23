@@ -74,7 +74,9 @@ func (e *ConcreteFunctionExecutor) CaptureSignatures(toolchain workerapi.Toolcha
 		e.signatureRegistry[toolchain] = make(map[string]funcapi.FunctionSignature)
 	}
 	for name, registration := range fh.ListCore() {
-		e.signatureRegistry[toolchain][name] = registration.FunctionSignature
+		sig := registration.FunctionSignature
+		sig.ToolchainType = toolchain
+		e.signatureRegistry[toolchain][name] = sig
 	}
 }
 
@@ -92,6 +94,7 @@ func (e *ConcreteFunctionExecutor) RegisterFunction(toolchain workerapi.Toolchai
 	if !ok {
 		return fmt.Errorf("toolchain %s not initialized; call RegisterToolchain first or use NewStandardExecutor", toolchain)
 	}
+	registration.FunctionSignature.ToolchainType = toolchain
 	fh.RegisterFunction(registration.FunctionSignature.FunctionName, &registration)
 
 	if _, ok := e.signatureRegistry[toolchain]; !ok {

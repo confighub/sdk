@@ -4,8 +4,24 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
+
+// addToolchainToWhereClause AND's a ToolchainType equality constraint into an existing
+// where clause. Mirrors addSpaceIDToWhereClause. Empty toolchain returns the clause
+// unchanged so --toolchain can be left unset.
+func addToolchainToWhereClause(whereClause, toolchain string) string {
+	if toolchain == "" {
+		return whereClause
+	}
+	constraint := fmt.Sprintf("ToolchainType = '%s'", toolchain)
+	if whereClause == "" {
+		return constraint
+	}
+	return fmt.Sprintf("%s AND %s", whereClause, constraint)
+}
 
 var functionCmd = &cobra.Command{
 	Use:               "function",

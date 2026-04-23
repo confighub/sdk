@@ -120,24 +120,24 @@ There are also some common flags that affect the output, input, or operation.
 
 The following flags are deprecated in favor of `-o` / `--show` / the new subcommands; they continue to work as aliases (using them prints a one-line migration hint):
 
-| Deprecated | Replacement |
-|---|---|
-| `--json` | `-o json` |
-| `--yaml` | `-o yaml` |
-| `--jq <expr>` | `-o jq=<expr>` |
-| `--yq <expr>` | `-o yq=<expr>` |
-| `--names` | `-o name` |
-| `--no-header` (singular) | `--no-headers` |
-| `--display-mutations` | `-o mutations` |
-| On `function do` / `exec` / `run`: `--output-only` | `--show output` |
-| On `function do` / `exec` / `run`: `--output-json` | `--show output -o json` |
-| On `function do` / `exec` / `run`: `--output-jq <expr>` | `--show output -o jq=<expr>` |
-| On `function do` / `exec` / `run`: `--output-values-only` | `--show values` |
-| On `function do` / `exec` / `run`: `--data-only` | `--show data` |
-| On `cub unit get`: `--data-only` | `cub unit data <unit>` |
-| On `cub revision get`: `--data-only` | `cub revision data <unit> <rev>` |
-| On `cub unit-action get`: `--data`, `--livedata`, `--livestate`, `--bridgestate` | `cub unit-action data|livedata|livestate|bridgestate <unit> <action>` |
-| On `cub unit livedata|livestate|bridgestate`: `-o <file>` (to file) | `-O <file>` / `--output-file <file>` |
+| Deprecated                                                                       | Replacement                      |
+| -------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------- | ------------------------------------ | ---------------------------- |
+| `--json`                                                                         | `-o json`                        |
+| `--yaml`                                                                         | `-o yaml`                        |
+| `--jq <expr>`                                                                    | `-o jq=<expr>`                   |
+| `--yq <expr>`                                                                    | `-o yq=<expr>`                   |
+| `--names`                                                                        | `-o name`                        |
+| `--no-header` (singular)                                                         | `--no-headers`                   |
+| `--display-mutations`                                                            | `-o mutations`                   |
+| On `function do` / `exec` / `run`: `--output-only`                               | `--show output`                  |
+| On `function do` / `exec` / `run`: `--output-json`                               | `--show output -o json`          |
+| On `function do` / `exec` / `run`: `--output-jq <expr>`                          | `--show output -o jq=<expr>`     |
+| On `function do` / `exec` / `run`: `--output-values-only`                        | `--show values`                  |
+| On `function do` / `exec` / `run`: `--data-only`                                 | `--show data`                    |
+| On `cub unit get`: `--data-only`                                                 | `cub unit data <unit>`           |
+| On `cub revision get`: `--data-only`                                             | `cub revision data <unit> <rev>` |
+| On `cub unit-action get`: `--data`, `--livedata`, `--livestate`, `--bridgestate` | `cub unit-action data            | livedata                            | livestate                            | bridgestate <unit> <action>` |
+| On `cub unit livedata                                                            | livestate                        | bridgestate`: `-o <file>` (to file) | `-O <file>` / `--output-file <file>` |
 
 #### Other common flags
 
@@ -366,13 +366,13 @@ cub function get --space $SPACE --show values get-replicas
 Get the IDs of all units with more than one replica in a space:
 
 ```
-cub function vet --space $SPACE where-filter apps/v1/Deployment 'spec.replicas > 1' --quiet --show output -o jq='.[].Passed' -o jq='.[].UnitID'
+cub function vet --space $SPACE where-filter apps/v1/Deployment 'spec.replicas > 1' --quiet --show output -o jq='. as $e | .Output[] | select(.Passed == true) | {space: $e.SpaceSlug, unit: $e.UnitSlug}'
 ```
 
 Get all resource types in all units within a space:
 
 ```
-cub function get --space $SPACE --quiet --show output -o jq='.[].ResourceType' get-resources
+cub function get --space $SPACE --quiet --show output -o jq='.Output[].ResourceType' get-resources
 ```
 
 ### Raw payload subcommands

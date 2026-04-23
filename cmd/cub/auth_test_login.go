@@ -105,7 +105,7 @@ func authTestLoginCmdRun(cmd *cobra.Command, args []string) error {
 	displayContextDetails(contextManager.ActiveContext())
 
 	// Preload builtin functions
-	if _, _, err := listAndSaveFunctions("", "", ""); err != nil {
+	if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err != nil {
 		return err
 	}
 
