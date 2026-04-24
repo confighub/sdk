@@ -3,6 +3,11 @@
 
 package api
 
+import (
+	"fmt"
+	"strings"
+)
+
 // TODO: Unify DataType and OutputType.
 
 // DataType represents the data type of a function parameter or configuration attribute.
@@ -79,4 +84,29 @@ func DataTypeIsSerializedAsString(dataType DataType) bool {
 		return false
 	}
 	return true
+}
+
+// ParseStringArrayCSV parses a DataTypeStringArray argument value serialized as
+// a comma-separated string into a []string. Whitespace around each element is
+// trimmed and empty elements are dropped. A nil value or empty string returns
+// a nil slice.
+func ParseStringArrayCSV(value any) ([]string, error) {
+	if value == nil {
+		return nil, nil
+	}
+	s, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected string for %s, got %T", DataTypeStringArray, value)
+	}
+	if s == "" {
+		return nil, nil
+	}
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result, nil
 }

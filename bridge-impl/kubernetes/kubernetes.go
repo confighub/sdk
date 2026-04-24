@@ -421,15 +421,15 @@ func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error)
 	}
 
 	return ApplierConfig{
-		KubeContext:      kubeContext,
-		DefaultNamespace: ResolveNamespace(payload),
-		LiveData:         payload.LiveData,
-		BridgeState:      payload.BridgeState,
-		SpaceID:          payload.SpaceID.String(),
-		UnitSlug:         payload.UnitSlug,
-		RevisionNum:      payload.RevisionNum,
-		WaitTimeout:      workerParams.WaitTimeout,
-		DryRun:           payload.DryRun,
+		KubeContext:       kubeContext,
+		EnforcedNamespace: ResolveNamespace(payload),
+		LiveData:          payload.LiveData,
+		BridgeState:       payload.BridgeState,
+		SpaceID:           payload.SpaceID.String(),
+		UnitSlug:          payload.UnitSlug,
+		RevisionNum:       payload.RevisionNum,
+		WaitTimeout:       workerParams.WaitTimeout,
+		DryRun:            payload.DryRun,
 	}, nil
 }
 

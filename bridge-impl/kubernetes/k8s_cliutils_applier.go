@@ -16,6 +16,7 @@ import (
 
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcApi "github.com/confighub/sdk/core/function/api"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -179,7 +180,7 @@ type CLIUtilsApplier struct {
 	unitSlug           string
 	revisionNum        int64
 	waitTimeout        string // WaitTimeout duration string for resource readiness
-	defaultNamespace   string // Namespace for resources without an explicit namespace
+	enforcedNamespace  string // If non-empty, every namespaced resource's metadata.namespace must equal this value
 	inventoryCM        *InventoryConfigMap
 	invInfo            inventory.Info
 	applyObjects       []*unstructured.Unstructured // Store objects for WaitForApply
@@ -230,7 +231,9 @@ func (a *CLIUtilsApplier) Apply(ctx context.Context, objects []*unstructured.Uns
 	}
 
 	a.ensureConfigHubContextOnObjects(objects)
-	a.setDefaultNamespaces(objects)
+	if err := a.validateNamespaces(objects); err != nil {
+		return ApplyResult{Error: err}
+	}
 	log.Log.Info("🚀 Starting apply operation", "count", len(objects))
 
 	// Step 1.5: Check CRD availability before attempting to apply
@@ -860,7 +863,9 @@ func (a *CLIUtilsApplier) WaitForApply(ctx context.Context, objects []*unstructu
 	if len(objects) == 0 && len(a.applyObjects) > 0 {
 		objects = a.applyObjects
 	}
-	a.setDefaultNamespaces(objects)
+	if err := a.validateNamespaces(objects); err != nil {
+		return WaitResult{Error: err}
+	}
 
 	// Check if Apply has already completed
 	if !a.applyCompleted {
@@ -934,7 +939,9 @@ func (a *CLIUtilsApplier) Refresh(ctx context.Context, objects []*unstructured.U
 		return nil, err
 	}
 
-	a.setDefaultNamespaces(objects)
+	if err := a.validateNamespaces(objects); err != nil {
+		return nil, err
+	}
 	// TODO: This should not return an error in the case of Not Found
 	// Return uncleaned live objects - caller will cleanup for LiveData, keep uncleaned for LiveState
 	return a.getLiveObjects(ctx, objects, false)
@@ -1183,7 +1190,9 @@ func (a *CLIUtilsApplier) WaitForDestroy(ctx context.Context, objects []*unstruc
 	if len(objects) == 0 && len(a.destroyObjects) > 0 {
 		objects = a.destroyObjects
 	}
-	a.setDefaultNamespaces(objects)
+	if err := a.validateNamespaces(objects); err != nil {
+		return WaitResult{Error: err}
+	}
 
 	// Check if destroy has already been completed
 	if a.destroyCompleted {
@@ -1294,23 +1303,60 @@ func (a *CLIUtilsApplier) ensureConfigHubContextOnObjects(objects []*unstructure
 	}
 }
 
-func (a *CLIUtilsApplier) setDefaultNamespaces(objects []*unstructured.Unstructured) {
+// validateNamespaces returns an error if any namespaced resource is missing
+// metadata.namespace or has a placeholder value there, if any cluster-scoped
+// resource has metadata.namespace set, or — when the applier was configured
+// with an enforced namespace — if a namespaced resource's namespace does not
+// match it. Callers must set metadata.namespace explicitly on every namespaced
+// object and leave it unset on cluster-scoped objects — the applier no longer
+// fills in a default.
+func (a *CLIUtilsApplier) validateNamespaces(objects []*unstructured.Unstructured) error {
 	if a.comps.KubernetesClient == nil {
-		return
+		return nil
 	}
 
-	ns := a.defaultNamespace
-	if ns == "" {
-		ns = DefaultNamespace
-	}
-
+	var missing, placeholder, clusterScoped, mismatched []string
 	for _, obj := range objects {
-		if obj.GetNamespace() == "" {
-			if isNamespaced, err := a.comps.KubernetesClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
-				obj.SetNamespace(ns)
+		ns := obj.GetNamespace()
+		ident := fmt.Sprintf("%s/%s %q", obj.GetAPIVersion(), obj.GetKind(), obj.GetName())
+
+		isNamespaced, err := a.comps.KubernetesClient.IsObjectNamespaced(obj)
+		if err != nil {
+			return fmt.Errorf("failed to determine scope of %s: %w", ident, err)
+		}
+
+		switch {
+		case !isNamespaced:
+			if ns != "" {
+				clusterScoped = append(clusterScoped, fmt.Sprintf("%s (namespace=%q)", ident, ns))
 			}
+		case ns == "":
+			missing = append(missing, ident)
+		case yamlkit.IsStringPlaceHolderValue(ns):
+			placeholder = append(placeholder, fmt.Sprintf("%s (namespace=%q)", ident, ns))
+		case a.enforcedNamespace != "" && ns != a.enforcedNamespace:
+			mismatched = append(mismatched, fmt.Sprintf("%s (namespace=%q)", ident, ns))
 		}
 	}
+
+	var errs []error
+	if len(missing) > 0 {
+		errs = append(errs, fmt.Errorf("metadata.namespace is required on namespaced resources but is not set on: %s",
+			strings.Join(missing, ", ")))
+	}
+	if len(placeholder) > 0 {
+		errs = append(errs, fmt.Errorf("metadata.namespace has a placeholder value on: %s",
+			strings.Join(placeholder, ", ")))
+	}
+	if len(clusterScoped) > 0 {
+		errs = append(errs, fmt.Errorf("metadata.namespace must not be set on cluster-scoped resources: %s",
+			strings.Join(clusterScoped, ", ")))
+	}
+	if len(mismatched) > 0 {
+		errs = append(errs, fmt.Errorf("metadata.namespace must equal the Target-enforced namespace %q on: %s",
+			a.enforcedNamespace, strings.Join(mismatched, ", ")))
+	}
+	return errors.Join(errs...)
 }
 
 func (a *CLIUtilsApplier) getLiveObjects(ctx context.Context, objects []*unstructured.Unstructured, doCleanup bool) ([]*unstructured.Unstructured, error) {
@@ -1535,18 +1581,18 @@ func NewCLIUtilsApplier(config ApplierConfig) (K8sApplier, error) {
 	log.Log.Info("🚀 Created CLIUtilsApplier with LiveDataBuilder and StatusPoller")
 
 	return &CLIUtilsApplier{
-		comps:            comps,
-		liveData:         config.LiveData,
-		spaceID:          config.SpaceID,
-		unitSlug:         config.UnitSlug,
-		revisionNum:      config.RevisionNum,
-		waitTimeout:      config.WaitTimeout,
-		defaultNamespace: config.DefaultNamespace,
-		inventoryCM:      inventoryCM,
-		invInfo:          invInfo,
-		liveDataBuilder:  liveDataBuilder,
-		poller:           poller,
-		dryRun:           config.DryRun,
+		comps:             comps,
+		liveData:          config.LiveData,
+		spaceID:           config.SpaceID,
+		unitSlug:          config.UnitSlug,
+		revisionNum:       config.RevisionNum,
+		waitTimeout:       config.WaitTimeout,
+		enforcedNamespace: config.EnforcedNamespace,
+		inventoryCM:       inventoryCM,
+		invInfo:           invInfo,
+		liveDataBuilder:   liveDataBuilder,
+		poller:            poller,
+		dryRun:            config.DryRun,
 	}, nil
 }
 

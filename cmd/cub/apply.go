@@ -81,7 +81,7 @@ func applyCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Apply the configuration
-	results, newInventory, err := cubapi.Apply(ctx, cubClientNew, data, lastAppliedData, oldInventory, selectedSpaceSlug)
+	results, newInventory, err := cubapi.Apply(ctx, cubClientNew, data, lastAppliedData, oldInventory, selectedSpaceSlug, "", "")
 	if err != nil {
 		return err
 	}

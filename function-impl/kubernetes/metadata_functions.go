@@ -12,14 +12,23 @@ import (
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
-	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 )
 
 func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
 	if err := fh.RegisterFunction("ensure-namespaces", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName:          "ensure-namespaces",
+			FunctionName: "ensure-namespaces",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "cluster-scoped-types",
+					Required:      false,
+					Description:   "Additional Kubernetes resource types to treat as cluster-scoped, as a comma-separated list of apiVersion/Kind (e.g. \"example.com/v1/Foo,example.com/v1/Bar\")",
+					DataType:      api.DataTypeStringArray,
+					Example:       "example.com/v1/Foo,example.com/v1/Bar",
+				},
+			},
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
@@ -296,12 +305,28 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 
 func makeK8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnEnsureNamespaces(rp, fArgs.Options, fArgs.ParsedData)
+		return k8sFnEnsureNamespaces(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
-	// TODO: verbose logging
+func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	var extraClusterScoped map[api.ResourceType]bool
+	for _, arg := range args {
+		if arg.ParameterName != "cluster-scoped-types" {
+			continue
+		}
+		types, err := api.ParseStringArrayCSV(arg.Value)
+		if err != nil {
+			return parsedData, nil, fmt.Errorf("cluster-scoped-types: %w", err)
+		}
+		if len(types) > 0 {
+			extraClusterScoped = make(map[api.ResourceType]bool, len(types))
+			for _, t := range types {
+				extraClusterScoped[api.ResourceType(t)] = true
+			}
+		}
+	}
+
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		nameSegments := strings.Split(string(resourceInfo.ResourceName), "/")
 		if len(nameSegments) != 2 {
@@ -309,13 +334,12 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		}
 		if nameSegments[0] == "" {
 			// No namespace. Check whether it should have one.
-			// TODO: Handle CRDs.
-			_, isClusterScoped := k8skit.K8sClusterScopedResourceTypes[resourceInfo.ResourceType]
-			if !isClusterScoped {
-				_, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
-				if err != nil {
-					return output, []error{err}
-				}
+			if k8skit.IsResourceTypeClusterScoped(resourceInfo.ResourceType) || extraClusterScoped[resourceInfo.ResourceType] {
+				return output, nil
+			}
+			_, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
+			if err != nil {
+				return output, []error{err}
 			}
 		}
 		return output, nil

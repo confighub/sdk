@@ -31,7 +31,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set function context values (e.g., unit slug, space ID) in configuration resource/element attributes (if possible) if add-context is true and remove the context if false. These values can be used to find the corresponding unit in ConfigHub, such as with `cub k8s source`.",
+			Description:           "[Deprecated] It is recommended to bridge implementers to do this in the bridge instead so as not to clutter configuration data. Set function context values (e.g., unit slug, space ID) in configuration resource/element attributes (if possible) if add-context is true and remove the context if false. These values can be used to find the corresponding unit in ConfigHub, such as with `cub k8s source`.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -43,7 +43,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 	}
 }
 
-// TODO: This functionality should move into bridges.
+// TODO: Remove this once the functionality moves into all bridges.
 func genericFnEnsureContext(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	addContext := args[0].Value.(bool)
 

@@ -192,6 +192,8 @@ func (w *ConfigHubBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.
 		lastAppliedData,
 		oldInventory,
 		defaultSpaceSlug,
+		payload.UnitSlug,
+		payload.SpaceID.String(),
 	)
 
 	if err != nil {

@@ -429,11 +429,14 @@ func awaitBulkCompletion(action string, queuedOps []*goclientnew.QueuedOperation
 				if !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
 					displayOperationResults(op.UnitID.String(), event)
 				}
-				if status == goclientnew.ActionStatusTypeFailed {
-					results[opID] = fmt.Errorf("%s failed on unit %s", action, unitSlugs[opID])
-				} else {
+				switch status {
+				case goclientnew.ActionStatusTypeCompleted:
 					results[opID] = nil // success
+				default:
+					results[opID] = fmt.Errorf("%s %s on unit %s: %s", action, strings.ToLower(string(status)), unitSlugs[opID], event.Message)
 				}
+			} else {
+				results[opID] = fmt.Errorf("%s not yet completed on unit %s: %s", action, unitSlugs[opID], event.Message)
 			}
 		}
 
@@ -447,11 +450,6 @@ func awaitBulkCompletion(action string, queuedOps []*goclientnew.QueuedOperation
 				}
 			}
 		}
-	}
-
-	// Mark remaining pending operations as timed out
-	for opID := range pending {
-		results[opID] = fmt.Errorf("%s didn't complete on unit %s", action, unitSlugs[opID])
 	}
 
 	return results

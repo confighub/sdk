@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -100,67 +98,78 @@ func ParseTargetParams(payload api.BridgeWorkerPayload) (KubernetesWorkerParams,
 	return params, kubeContext, nil
 }
 
-// ResolveNamespace determines the namespace for resources that lack an explicit namespace.
+// ResolveNamespace determines the namespace to enforce on resources as their
+// metadata.namespace, when enforcement is desired.
 // Precedence:
 //  1. TargetOptions["Namespace"] — explicit user override via BridgeOptions
 //  2. Pod namespace (in-cluster) or kubeconfig context.namespace (out-of-cluster)
-//  3. "default" — hardcoded fallback
+//  3. "" — no namespace enforcement
 func ResolveNamespace(payload api.BridgeWorkerPayload) string {
 	// 1. Explicit override from BridgeOptions
 	if v, ok := payload.TargetOptions["Namespace"]; ok && v != "" {
 		return v
 	}
 
+	// This is believed to not be useful.
 	// 2. Resolve from context — use BridgeHandle (not the normalized kubeContext)
 	// because resolveContextNamespace needs "cluster" to trigger in-cluster detection.
 	// Fall back to TargetParams KubeContext for old targets.
-	handle := payload.BridgeHandle
-	if handle == "" {
-		var params KubernetesWorkerParams
-		if len(payload.TargetParams) > 0 {
-			json.Unmarshal(payload.TargetParams, &params)
-		}
-		handle = params.KubeContext
-	}
-	ns := resolveContextNamespace(handle)
-	if ns != "" {
-		return ns
-	}
+	// handle := payload.BridgeHandle
+	// if handle == "" {
+	// 	var params KubernetesWorkerParams
+	// 	if len(payload.TargetParams) > 0 {
+	// 		json.Unmarshal(payload.TargetParams, &params)
+	// 	}
+	// 	handle = params.KubeContext
+	// }
+	// if ns := resolveContextNamespace(handle); ns != "" {
+	// 	return ns
+	// }
 
-	// 3. Fallback
-	return "default"
+	// 3. No enforcement
+	return ""
 }
 
-// resolveContextNamespace reads the namespace from a kubeconfig context.
+// We treat the worker as potentially multi-tenant and constrain the namespaces it can deploy to by:
+// (a) in-cluster permissions
+// (b) the Namespace bridge option set on the Target (or Unit) - see validateNamespaces
+// (c) a Trigger associated with the Target can set the namespace
+
+// resolveContextNamespace read the namespace from a kubeconfig context.
 // For in-cluster pods, reads the pod's namespace from the service account mount.
 // Returns empty string if no namespace can be determined.
-func resolveContextNamespace(kubeContext string) string {
-	// In-cluster: read the pod's own namespace from the service account mount.
-	// This is the namespace the pod is running in, which is often the intended
-	// deployment target in multi-tenant setups.
-	if kubeContext == "" || kubeContext == "cluster" {
-		if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
-			return strings.TrimSpace(string(ns))
-		}
-		return ""
-	}
+// func resolveContextNamespace(kubeContext string) string {
+// In-cluster:
+// The pod's own namespace is in the service account mount.
 
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{
-		CurrentContext: kubeContext,
-	}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	ns, _, err := kubeConfig.Namespace()
-	if err != nil {
-		return ""
-	}
-	// clientcmd.Namespace() returns "default" when no namespace is configured;
-	// return empty so the caller's fallback logic handles it uniformly.
-	if ns == "default" {
-		return ""
-	}
-	return ns
-}
+// This is probably NOT what the user wants.
+
+// if kubeContext == "" || kubeContext == "cluster" {
+// 	if ns, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(ns) > 0 {
+// 		return strings.TrimSpace(string(ns))
+// 	}
+// 	return ""
+// }
+
+// The namespace last set in the context is potentially arbitrary based on what the kubecontext
+// was last used for, and is not necessarily what the user wants to use.
+
+// loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+// configOverrides := &clientcmd.ConfigOverrides{
+// 	CurrentContext: kubeContext,
+// }
+// kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+// ns, _, err := kubeConfig.Namespace()
+// if err != nil {
+// 	return ""
+// }
+// // clientcmd.Namespace() returns "default" when no namespace is configured;
+// // return empty so the caller's fallback logic handles it uniformly.
+// if ns == "default" {
+// 	return ""
+// }
+// return ns
+// }
 
 // ParseObjects parses YAML objects from payload data
 func ParseObjects(data []byte) ([]*unstructured.Unstructured, error) {

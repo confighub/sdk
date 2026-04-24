@@ -20,7 +20,7 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	api.ResourceType("apiregistration.k8s.io/v1/APIService"):                           {},
 	api.ResourceType("storage.k8s.io/v1/StorageClass"):                                 {},
 	api.ResourceType("storage.k8s.io/v1/CSIDriver"):                                    {},
-	api.ResourceType("networking.k8s.io/v1/IngressClass"):                               {},
+	api.ResourceType("networking.k8s.io/v1/IngressClass"):                              {},
 	// Traefik
 	api.ResourceType("gateway.networking.k8s.io/v1/GatewayClass"):       {},
 	api.ResourceType("gateway.networking.k8s.io/v1beta1/GatewayClass"):  {},
@@ -50,55 +50,55 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	// Argo Rollouts
 	api.ResourceType("argoproj.io/v1alpha1/ClusterAnalysisTemplate"): {},
 	// Kyverno
-	api.ResourceType("kyverno.io/v1/ClusterPolicy"):                    {},
-	api.ResourceType("kyverno.io/v2beta1/ClusterPolicy"):               {},
-	api.ResourceType("kyverno.io/v2/ClusterCleanupPolicy"):             {},
-	api.ResourceType("kyverno.io/v2alpha1/ClusterCleanupPolicy"):       {},
-	api.ResourceType("kyverno.io/v2beta1/ClusterCleanupPolicy"):        {},
-	api.ResourceType("kyverno.io/v2/ClusterAdmissionReport"):           {},
-	api.ResourceType("kyverno.io/v1alpha2/ClusterAdmissionReport"):     {},
-	api.ResourceType("kyverno.io/v2/ClusterBackgroundScanReport"):      {},
+	api.ResourceType("kyverno.io/v1/ClusterPolicy"):                     {},
+	api.ResourceType("kyverno.io/v2beta1/ClusterPolicy"):                {},
+	api.ResourceType("kyverno.io/v2/ClusterCleanupPolicy"):              {},
+	api.ResourceType("kyverno.io/v2alpha1/ClusterCleanupPolicy"):        {},
+	api.ResourceType("kyverno.io/v2beta1/ClusterCleanupPolicy"):         {},
+	api.ResourceType("kyverno.io/v2/ClusterAdmissionReport"):            {},
+	api.ResourceType("kyverno.io/v1alpha2/ClusterAdmissionReport"):      {},
+	api.ResourceType("kyverno.io/v2/ClusterBackgroundScanReport"):       {},
 	api.ResourceType("kyverno.io/v1alpha2/ClusterBackgroundScanReport"): {},
 	// Gatekeeper
-	api.ResourceType("templates.gatekeeper.sh/v1/ConstraintTemplate"):        {},
-	api.ResourceType("templates.gatekeeper.sh/v1alpha1/ConstraintTemplate"):  {},
-	api.ResourceType("templates.gatekeeper.sh/v1beta1/ConstraintTemplate"):   {},
-	api.ResourceType("mutations.gatekeeper.sh/v1/Assign"):                    {},
-	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/Assign"):              {},
-	api.ResourceType("mutations.gatekeeper.sh/v1beta1/Assign"):               {},
-	api.ResourceType("mutations.gatekeeper.sh/v1/AssignMetadata"):            {},
-	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/AssignMetadata"):      {},
-	api.ResourceType("mutations.gatekeeper.sh/v1beta1/AssignMetadata"):       {},
-	api.ResourceType("mutations.gatekeeper.sh/v1/ModifySet"):                 {},
-	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/ModifySet"):           {},
-	api.ResourceType("mutations.gatekeeper.sh/v1beta1/ModifySet"):            {},
-	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/AssignImage"):         {},
+	api.ResourceType("templates.gatekeeper.sh/v1/ConstraintTemplate"):       {},
+	api.ResourceType("templates.gatekeeper.sh/v1alpha1/ConstraintTemplate"): {},
+	api.ResourceType("templates.gatekeeper.sh/v1beta1/ConstraintTemplate"):  {},
+	api.ResourceType("mutations.gatekeeper.sh/v1/Assign"):                   {},
+	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/Assign"):             {},
+	api.ResourceType("mutations.gatekeeper.sh/v1beta1/Assign"):              {},
+	api.ResourceType("mutations.gatekeeper.sh/v1/AssignMetadata"):           {},
+	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/AssignMetadata"):     {},
+	api.ResourceType("mutations.gatekeeper.sh/v1beta1/AssignMetadata"):      {},
+	api.ResourceType("mutations.gatekeeper.sh/v1/ModifySet"):                {},
+	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/ModifySet"):          {},
+	api.ResourceType("mutations.gatekeeper.sh/v1beta1/ModifySet"):           {},
+	api.ResourceType("mutations.gatekeeper.sh/v1alpha1/AssignImage"):        {},
 	// Crossplane
-	api.ResourceType("apiextensions.crossplane.io/v1/CompositeResourceDefinition"):  {},
-	api.ResourceType("apiextensions.crossplane.io/v2/CompositeResourceDefinition"):  {},
-	api.ResourceType("apiextensions.crossplane.io/v1/Composition"):                  {},
-	api.ResourceType("apiextensions.crossplane.io/v1/CompositionRevision"):          {},
-	api.ResourceType("apiextensions.crossplane.io/v1alpha1/CompositionRevision"):    {},
-	api.ResourceType("apiextensions.crossplane.io/v1beta1/CompositionRevision"):     {},
-	api.ResourceType("apiextensions.crossplane.io/v1alpha1/EnvironmentConfig"):      {},
-	api.ResourceType("apiextensions.crossplane.io/v1beta1/EnvironmentConfig"):       {},
-	api.ResourceType("pkg.crossplane.io/v1/Provider"):                               {},
-	api.ResourceType("pkg.crossplane.io/v1/ProviderRevision"):                       {},
-	api.ResourceType("pkg.crossplane.io/v1/Configuration"):                          {},
-	api.ResourceType("pkg.crossplane.io/v1/ConfigurationRevision"):                  {},
-	api.ResourceType("pkg.crossplane.io/v1beta1/DeploymentRuntimeConfig"):           {},
-	api.ResourceType("pkg.crossplane.io/v1/Function"):                               {},
-	api.ResourceType("pkg.crossplane.io/v1beta1/Function"):                          {},
-	api.ResourceType("pkg.crossplane.io/v1/FunctionRevision"):                       {},
-	api.ResourceType("pkg.crossplane.io/v1beta1/FunctionRevision"):                  {},
+	api.ResourceType("apiextensions.crossplane.io/v1/CompositeResourceDefinition"): {},
+	api.ResourceType("apiextensions.crossplane.io/v2/CompositeResourceDefinition"): {},
+	api.ResourceType("apiextensions.crossplane.io/v1/Composition"):                 {},
+	api.ResourceType("apiextensions.crossplane.io/v1/CompositionRevision"):         {},
+	api.ResourceType("apiextensions.crossplane.io/v1alpha1/CompositionRevision"):   {},
+	api.ResourceType("apiextensions.crossplane.io/v1beta1/CompositionRevision"):    {},
+	api.ResourceType("apiextensions.crossplane.io/v1alpha1/EnvironmentConfig"):     {},
+	api.ResourceType("apiextensions.crossplane.io/v1beta1/EnvironmentConfig"):      {},
+	api.ResourceType("pkg.crossplane.io/v1/Provider"):                              {},
+	api.ResourceType("pkg.crossplane.io/v1/ProviderRevision"):                      {},
+	api.ResourceType("pkg.crossplane.io/v1/Configuration"):                         {},
+	api.ResourceType("pkg.crossplane.io/v1/ConfigurationRevision"):                 {},
+	api.ResourceType("pkg.crossplane.io/v1beta1/DeploymentRuntimeConfig"):          {},
+	api.ResourceType("pkg.crossplane.io/v1/Function"):                              {},
+	api.ResourceType("pkg.crossplane.io/v1beta1/Function"):                         {},
+	api.ResourceType("pkg.crossplane.io/v1/FunctionRevision"):                      {},
+	api.ResourceType("pkg.crossplane.io/v1beta1/FunctionRevision"):                 {},
 	// Cilium
-	api.ResourceType("cilium.io/v2/CiliumClusterwideNetworkPolicy"):      {},
-	api.ResourceType("cilium.io/v2/CiliumClusterwideEnvoyConfig"):        {},
-	api.ResourceType("cilium.io/v2/CiliumNode"):                          {},
-	api.ResourceType("cilium.io/v2/CiliumIdentity"):                      {},
-	api.ResourceType("cilium.io/v2/CiliumExternalWorkload"):              {},
-	api.ResourceType("cilium.io/v2/CiliumCIDRGroup"):                     {},
-	api.ResourceType("cilium.io/v2alpha1/CiliumCIDRGroup"):               {},
+	api.ResourceType("cilium.io/v2/CiliumClusterwideNetworkPolicy"): {},
+	api.ResourceType("cilium.io/v2/CiliumClusterwideEnvoyConfig"):   {},
+	api.ResourceType("cilium.io/v2/CiliumNode"):                     {},
+	api.ResourceType("cilium.io/v2/CiliumIdentity"):                 {},
+	api.ResourceType("cilium.io/v2/CiliumExternalWorkload"):         {},
+	api.ResourceType("cilium.io/v2/CiliumCIDRGroup"):                {},
+	api.ResourceType("cilium.io/v2alpha1/CiliumCIDRGroup"):          {},
 	// Snapshot storage
 	api.ResourceType("snapshot.storage.k8s.io/v1/VolumeSnapshotClass"):   {},
 	api.ResourceType("snapshot.storage.k8s.io/v1/VolumeSnapshotContent"): {},
@@ -109,10 +109,14 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	api.ResourceType("services.k8s.aws/v1alpha1/IAMRoleSelector"): {},
 }
 
+func IsResourceTypeClusterScoped(rt api.ResourceType) bool {
+	_, ok := K8sClusterScopedResourceTypes[rt]
+	return ok
+}
+
 // IsClusterScoped returns true if the given apiVersion and kind represent a cluster-scoped resource.
 // It checks against the known cluster-scoped resource types in K8sClusterScopedResourceTypes.
 func IsClusterScoped(apiVersion, kind string) bool {
 	resourceType := api.ResourceType(apiVersion + "/" + kind)
-	_, ok := K8sClusterScopedResourceTypes[resourceType]
-	return ok
+	return IsResourceTypeClusterScoped(resourceType)
 }

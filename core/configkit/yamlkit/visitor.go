@@ -533,12 +533,11 @@ func GetPathsAnyType(
 		if neededValuesOnly {
 			switch currentDataType {
 			case api.DataTypeString:
-				if stringVal, ok := currentValue.(string); ok &&
-					!strings.Contains(stringVal, PlaceHolderBlockApplyString) {
+				if stringVal, ok := currentValue.(string); ok && !IsStringPlaceHolderValue(stringVal) {
 					return output, nil // skip if there's already a value
 				}
 			case api.DataTypeInt:
-				if intVal, ok := currentValue.(int); ok && intVal != PlaceHolderBlockApplyInt {
+				if intVal, ok := currentValue.(int); ok && !IsIntPlaceHolderValue(intVal) {
 					return output, nil // skip if there's already a value
 				}
 			case api.DataTypeBool:
@@ -767,22 +766,6 @@ func GetRegisteredProvidedStringPaths(
 // real function. It is not a valid function name.
 const VisitorSetterInvocationFunctionName = "$visitor"
 
-// isPlaceholderValue returns true if the value is a placeholder that should be replaced with a default.
-func isPlaceholderValue(value any) bool {
-	// Treat no value as a placeholder value
-	if value == nil {
-		return true
-	}
-	switch v := value.(type) {
-	case string:
-		return strings.Contains(v, PlaceHolderBlockApplyString)
-	case int:
-		return v == PlaceHolderBlockApplyInt || v == -PlaceHolderBlockApplyInt
-	default:
-		return false
-	}
-}
-
 // UpdatePathsSetterArgument traverses the specified path patterns of the specified resource types.
 // For each path, if the visitor context has Details with a SetterInvocation using
 // VisitorSetterInvocationFunctionName, the value at the path is set to the first argument's Value.
@@ -812,7 +795,7 @@ func UpdatePathsSetterArgument(
 			return output, fmt.Errorf("unsupported value type %T at path %s", newValue, string(context.Path))
 		}
 		// Skip if the current value is already set to a non-placeholder value
-		if currentDoc != nil && !isPlaceholderValue(currentDoc.Data()) {
+		if currentDoc != nil && !IsPlaceholderValue(currentDoc.Data()) {
 			return output, nil
 		}
 		_, err := doc.SetP(newValue, string(context.Path))

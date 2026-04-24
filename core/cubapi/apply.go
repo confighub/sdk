@@ -12,6 +12,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/third_party/gaby"
@@ -43,12 +44,16 @@ const (
 var ErrEntityNotFound = errors.New("entity not found")
 
 // Apply processes the configuration data and returns the results and updated inventory.
+// If unitSlug and spaceID are non-empty, each applied entity is annotated with the
+// managing Unit's slug and SpaceID (confighub.com/UnitSlug, confighub.com/SpaceID),
+// analogous to k8skit.EnsureConfigHubContextOnData for the Kubernetes bridge.
 func Apply(
 	ctx context.Context,
 	client *goclientnew.ClientWithResponses,
 	data, lastAppliedData []byte,
 	oldInventory *Inventory,
 	defaultSpaceSlug string,
+	unitSlug, spaceID string,
 ) ([]ApplyResult, *Inventory, error) {
 
 	// Parse the YAML data
@@ -115,7 +120,7 @@ func Apply(
 		}
 
 		// Process the entity
-		action, entity, entityID, err := processEntity(ctx, client, yamlDoc, lastAppliedDoc, resourceInfo, spaceSlug)
+		action, entity, entityID, err := processEntity(ctx, client, yamlDoc, lastAppliedDoc, resourceInfo, spaceSlug, resourceProvider, unitSlug, spaceID)
 		if err != nil {
 			result.Action = "failed"
 			result.Error = err
@@ -413,9 +418,23 @@ func GetEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 	}
 }
 
-func processEntity(ctx context.Context, client *goclientnew.ClientWithResponses, yamlDoc *gaby.YamlDoc, lastAppliedDoc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, spaceSlug string) (string, interface{}, string, error) {
+func processEntity(ctx context.Context, client *goclientnew.ClientWithResponses, yamlDoc *gaby.YamlDoc, lastAppliedDoc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, spaceSlug string, resourceProvider yamlkit.ResourceProvider, unitSlug, spaceID string) (string, interface{}, string, error) {
 	entityType := string(resourceInfo.ResourceType)
 	entityName := string(resourceInfo.ResourceNameWithoutScope)
+
+	// Annotate the entity with the managing ConfigHub Unit's identity so applied
+	// entities carry the same context the Kubernetes bridge stamps on managed
+	// resources via k8skit.EnsureConfigHubContextOnData.
+	if unitSlug != "" {
+		if _, err := yamlDoc.SetP(unitSlug, resourceProvider.ContextPath(constants.UnitSlugKeySuffix)); err != nil {
+			return "", nil, "", fmt.Errorf("failed to set UnitSlug annotation: %w", err)
+		}
+	}
+	if spaceID != "" {
+		if _, err := yamlDoc.SetP(spaceID, resourceProvider.ContextPath(constants.SpaceIDKeySuffix)); err != nil {
+			return "", nil, "", fmt.Errorf("failed to set SpaceID annotation: %w", err)
+		}
+	}
 
 	// Marshal the YAML document to JSON
 	jsonData, err := yamlDoc.MarshalJSON()
@@ -436,18 +455,18 @@ func processEntity(ctx context.Context, client *goclientnew.ClientWithResponses,
 	}
 
 	// Get the space ID for this entity
-	spaceID, err := getSpaceIDFromSlug(ctx, client, spaceSlug)
+	entitySpaceID, err := getSpaceIDFromSlug(ctx, client, spaceSlug)
 	if err != nil {
 		return "", nil, "", fmt.Errorf("failed to get space '%s' for %s: %w", spaceSlug, entityName, err)
 	}
 
 	// Check if entity exists using the new GetEntityBySlug function
-	existingEntity, err := GetEntityBySlug(ctx, client, entityType, entityName, spaceID)
+	existingEntity, err := GetEntityBySlug(ctx, client, entityType, entityName, entitySpaceID)
 	entityExists := err == nil && existingEntity != nil
 
 	// Create or update the entity
 	if entityExists {
-		entity, entityID, err := updateEntity(ctx, client, entityType, spaceID, spaceSlug, entityName, existingEntity, jsonData, lastAppliedJSON)
+		entity, entityID, err := updateEntity(ctx, client, entityType, entitySpaceID, spaceSlug, entityName, existingEntity, jsonData, lastAppliedJSON)
 		if err != nil {
 			return "", nil, "", err
 		}
@@ -458,7 +477,7 @@ func processEntity(ctx context.Context, client *goclientnew.ClientWithResponses,
 		}
 		return "updated", entity, entityID, nil
 	} else {
-		entity, entityID, err := createEntity(ctx, client, entityType, spaceID, spaceSlug, entityName, jsonData)
+		entity, entityID, err := createEntity(ctx, client, entityType, entitySpaceID, spaceSlug, entityName, jsonData)
 		if err != nil {
 			return "", nil, "", err
 		}
