@@ -30,8 +30,12 @@ The available ProviderTypes are:
 
 - ConfigHub
 - Kubernetes
-- OpenTofu/AWS
-- ConfigMap
+- FluxRenderer
+- FluxOCI
+- ArgoCDRenderer
+- ArgoCDOCI
+- ConfigMapRenderer
+- OpenTofu/AWS (experimental)
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 	`, ""),

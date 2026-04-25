@@ -19,7 +19,10 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version, commit and build date",
 	Long:  `Show the build version, commit hash, and build date for worker`,
-	Run:   versionCmdRun,
+	// Override the root's PersistentPreRunE so `version` skips
+	// CONFIGHUB_WORKER_ID / CONFIGHUB_WORKER_SECRET validation.
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+	Run:               versionCmdRun,
 }
 
 func init() {

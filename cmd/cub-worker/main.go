@@ -10,7 +10,7 @@ import (
 	neturl "net/url"
 	"os"
 	"os/signal"
-	"strconv"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -32,13 +32,13 @@ import (
 	fluxrenderer "github.com/confighub/sdk/bridge-impl/flux-renderer"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/bridge-impl/opentofu"
-	funcimpl "github.com/confighub/sdk/function-impl"
-	k8sfunc "github.com/confighub/sdk/function-impl/kubernetes"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
+	funcimpl "github.com/confighub/sdk/function-impl"
+	k8sfunc "github.com/confighub/sdk/function-impl/kubernetes"
 	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
 	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 )
@@ -60,9 +60,11 @@ The available ProviderTypes are:
 - ConfigHub
 - Kubernetes
 - FluxRenderer
+- FluxOCI
 - ArgoCDRenderer
-- OpenTofu/AWS
+- ArgoCDOCI
 - ConfigMapRenderer
+- OpenTofu/AWS (experimental)
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmaprenderer".
 
@@ -72,18 +74,27 @@ via the CONFIGHUB_WORKER_PROVIDER_TYPES environment variable.
 By default, all provider types are started.
 
 The worker takes its configuration primarily from environment variables.
+Flags should only be used for testing. They are not part of the worker invocation contract
+used by cub worker install, cub worker run, and cub worker get-envs.
 
-The other environment variables it expects are:
+The environment variables it expects are:
+
+- CONFIGHUB_WORKER_ID: The worker ID
+- CONFIGHUB_WORKER_SECRET: The worker secret
+
+Optional environment variables:
+
+- CONFIGHUB_WORKER_PROVIDER_TYPES: Comma-separated list of lower-cased provider types
+- CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server", "vet-opa-gatekeeper")
 
 - CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
-- CONFIGHUB_WORKER_ID: The worker ID
-- CONFIGHUB_WORKER_SECRET: The worker secret
-- CONFIGHUB_WORKER_PROVIDER_TYPES: Comma-separated list of lower-cased provider types
-- CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server", "vet-opa-gatekeeper")
 - CONFIGHUB_WORKER_HTTP_SERVER_ENABLED: When set, enables a HTTP server with a prometheus exporter endpoint
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: The port to listen for a server, currently only exposes metrics
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
+
+Run "cub-worker-run docgen env" to print the worker environment variables as a JSON Schema.
+Run "cub-worker-run docgen command" to print Cobra YAML documentation for the worker command.
 `,
 	SilenceErrors:     true,
 	SilenceUsage:      true,
@@ -95,21 +106,13 @@ const (
 	defaultConfighubScheme           = "https"
 	defaultConfighubHost             = "hub.confighub.com"
 	defaultConfighubURL              = defaultConfighubScheme + "://" + defaultConfighubHost
+	defaultMainPort                  = "443"
 	defaultWorkerPort                = "443"
 	defaultServerPort                = "9092"
 	defaultHTTPServerShutdownTimeout = 5 * time.Second
 )
 
-var rootArgs struct {
-	configHubURL           string
-	mainPort               string
-	workerPort             string
-	workerID               string
-	workerSecret           string
-	workerProviderTypesStr string
-	gracePeriodDelay       int // Delay in seconds after SIGTERM before starting shutdown
-	// autoRefresh  bool
-}
+var rootArgs ConfigHubWorkerArgs
 
 // providerToolchainTypes maps provider types to the toolchain types they require.
 var providerToolchainTypes = map[string][]workerapi.ToolchainType{
@@ -169,12 +172,11 @@ type parsedWorkerFunction struct {
 
 // parseWorkerFunctions parses and validates the CONFIGHUB_WORKER_FUNCTIONS env var.
 func parseWorkerFunctions() []parsedWorkerFunction {
-	workerFunctions := os.Getenv("CONFIGHUB_WORKER_FUNCTIONS")
-	if workerFunctions == "" {
+	if rootArgs.WorkerFunctions == "" {
 		return nil
 	}
 	var parsed []parsedWorkerFunction
-	for _, name := range strings.Split(workerFunctions, ",") {
+	for _, name := range strings.Split(rootArgs.WorkerFunctions, ",") {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			continue
@@ -200,7 +202,7 @@ func parseWorkerFunctions() []parsedWorkerFunction {
 // is returned.
 func newFunctionExecutor(providerTypes []string, workerFunctions []parsedWorkerFunction) executor.FunctionExecutor {
 	var exec *executor.ConcreteFunctionExecutor
-	v := os.Getenv("CONFIGHUB_STANDARD_FUNCTIONS")
+	v := rootArgs.StandardFunctions
 	registerStandardFunctions := v == "1" || v == "true" || v == "TRUE"
 
 	// Build the list of required toolchain types from worker functions and provider types.
@@ -234,63 +236,36 @@ func newFunctionExecutor(providerTypes []string, workerFunctions []parsedWorkerF
 }
 
 func init() {
-	url := defaultConfighubURL
-	mainPort := "443"
-	if envUrl := os.Getenv("CONFIGHUB_URL"); envUrl != "" {
-		parsedURL, err := neturl.Parse(envUrl)
-		if err != nil {
-			log.FromContext(context.Background()).Error(err, "Bad CONFIGHUB_URL")
-			url = defaultConfighubURL
-		} else {
-			if parsedURL.Scheme == "" {
-				parsedURL.Scheme = defaultConfighubScheme
-			}
-			if parsedURL.Host == "" {
-				parsedURL.Host = defaultConfighubHost
-			}
-			port := parsedURL.Port()
-			if parsedURL.Port() != "" {
-				mainPort = port
-			}
-			// Drop any ports, paths, query params, etc.
-			url = parsedURL.Scheme + "://" + parsedURL.Hostname()
+	// Populate rootArgs from environment variables. We don't fail on errors
+	// here because (a) the docgen command must work without any env vars set,
+	// and (b) flags can supply CONFIGHUB_WORKER_ID / CONFIGHUB_WORKER_SECRET
+	// instead of env. Required-field validation happens in rootPreRunE.
+	if err := rootArgs.loadEnv(context.Background()); err != nil {
+		log.FromContext(context.Background()).Error(err, "Failed to load worker config from environment")
+	}
+	rootArgs.normalizeURL()
+
+	// Default provider types: every built-in bridge worker, comma-separated.
+	// Sort for deterministic flag-default output (relevant to "docgen command").
+	if rootArgs.WorkerProviderTypes == "" {
+		var providers []string
+		for wt := range availableBridgeWorkers {
+			providers = append(providers, wt)
 		}
+		sort.Strings(providers)
+		rootArgs.WorkerProviderTypes = strings.Join(providers, ",")
 	}
 
-	workerPort := defaultWorkerPort
-	if p := os.Getenv("CONFIGHUB_WORKER_PORT"); p != "" {
-		workerPort = p
-	}
-
-	gracePeriodDelay := 10 // default 10 seconds
-	if gpd := os.Getenv("GRACE_PERIOD_DELAY"); gpd != "" {
-		if delay, err := strconv.Atoi(gpd); err == nil && delay >= 0 {
-			gracePeriodDelay = delay
-		}
-	}
-
-	workerProviderTypesStr := ""
-	for wt := range availableBridgeWorkers {
-		workerProviderTypesStr += "," + wt
-	}
-	workerProviderTypesStr = strings.TrimPrefix(workerProviderTypesStr, ",")
-	if wt := os.Getenv("CONFIGHUB_WORKER_PROVIDER_TYPES"); wt != "" {
-		workerProviderTypesStr = wt
-	}
-
-	// Flags should only be used for testing. They are not part of the worker invocation contract.
-
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.configHubURL, "url", "u", url, "ConfigHub Server URL (CONFIGHUB_URL)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.mainPort, "main-port", "", mainPort, "ConfigHub Main Port (extracted from CONFIGHUB_URL by default)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerPort, "worker-port", "p", workerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerID, "worker-id", "w", os.Getenv("CONFIGHUB_WORKER_ID"), "Worker ID (CONFIGHUB_WORKER_ID)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerSecret, "worker-secret", "s", os.Getenv("CONFIGHUB_WORKER_SECRET"), "Worker Secret (CONFIGHUB_WORKER_SECRET)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.workerProviderTypesStr, "provider-types", "t", workerProviderTypesStr, "Comma-separated list of provider types (CONFIGHUB_WORKER_PROVIDER_TYPES)")
-
-	// TODO not implemented yet
-	// rootCmd.Flags().BoolVarP(&rootArgs.autoRefresh, "auto-refresh", "r", false, "Enable auto-refresh")
-
-	rootCmd.PersistentFlags().IntVar(&rootArgs.gracePeriodDelay, "grace-period-delay", gracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
+	// Define flags. The current value of each rootArgs field (loaded from env
+	// or defaulted above) is used as the flag default, so passing a flag
+	// overrides the corresponding environment variable.
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.ConfigHubURL, "url", "u", rootArgs.ConfigHubURL, "ConfigHub Server URL (CONFIGHUB_URL)")
+	rootCmd.PersistentFlags().StringVar(&rootArgs.MainPort, "main-port", rootArgs.MainPort, "ConfigHub Main Port (extracted from CONFIGHUB_URL by default)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerPort, "worker-port", "p", rootArgs.WorkerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerID, "worker-id", "w", rootArgs.WorkerID, "Worker ID (CONFIGHUB_WORKER_ID)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerSecret, "worker-secret", "s", rootArgs.WorkerSecret, "Worker Secret (CONFIGHUB_WORKER_SECRET)")
+	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerProviderTypes, "provider-types", "t", rootArgs.WorkerProviderTypes, "Comma-separated list of provider types (CONFIGHUB_WORKER_PROVIDER_TYPES)")
+	rootCmd.PersistentFlags().IntVar(&rootArgs.GracePeriodDelay, "grace-period-delay", rootArgs.GracePeriodDelay, "Delay in seconds after receiving SIGTERM before starting shutdown (GRACE_PERIOD_DELAY)")
 }
 
 // These are lowercase to make the provider type matching case insensitive
@@ -319,15 +294,15 @@ var availableBridgeWorkers = map[string]api.BridgeWorker{
 }
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
-	// ignore required flag marking for version command
-	if cmd != versionCmd {
-		if os.Getenv("CONFIGHUB_WORKER_ID") == "" {
-			_ = cmd.MarkPersistentFlagRequired("worker-id")
-		}
-
-		if os.Getenv("CONFIGHUB_WORKER_SECRET") == "" {
-			_ = cmd.MarkPersistentFlagRequired("worker-secret")
-		}
+	var missing []string
+	if rootArgs.WorkerID == "" {
+		missing = append(missing, "--worker-id (CONFIGHUB_WORKER_ID)")
+	}
+	if rootArgs.WorkerSecret == "" {
+		missing = append(missing, "--worker-secret (CONFIGHUB_WORKER_SECRET)")
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("required: %s", strings.Join(missing, ", "))
 	}
 	return nil
 }
@@ -342,14 +317,14 @@ func newHTTPServer() *echo.Echo {
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	workerProviderTypesStr := strings.ToLower(rootArgs.workerProviderTypesStr)
+	workerProviderTypesStr := strings.ToLower(rootArgs.WorkerProviderTypes)
 	if len(args) > 0 {
 		// Override provider types
 		workerProviderTypesStr = strings.ToLower(args[0])
 	}
 
 	// Initialize frontdoor client
-	frontdoorClient := lib.NewWorkerFrontdoorClient(rootArgs.configHubURL, rootArgs.mainPort, rootArgs.workerID, rootArgs.workerSecret)
+	frontdoorClient := lib.NewWorkerFrontdoorClient(rootArgs.ConfigHubURL, rootArgs.MainPort, rootArgs.WorkerID, rootArgs.WorkerSecret)
 	if frontdoorClient == nil {
 		return errors.New("frontdoor client initialization failed")
 	}
@@ -374,10 +349,10 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 		// Handle workers that need credentials at construction time
 		if lowerProviderType == LowerProviderTypeArgoCDOCI {
-			directBridgeWorker = argocd.NewArgoCDOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
+			directBridgeWorker = argocd.NewArgoCDOCIWorker(rootArgs.WorkerID, rootArgs.WorkerSecret)
 			ok = true
 		} else if lowerProviderType == LowerProviderTypeFluxOCI {
-			directBridgeWorker = flux.NewFluxOCIWorker(rootArgs.workerID, rootArgs.workerSecret)
+			directBridgeWorker = flux.NewFluxOCIWorker(rootArgs.WorkerID, rootArgs.WorkerSecret)
 			ok = true
 		} else {
 			directBridgeWorker, ok = availableBridgeWorkers[lowerProviderType]
@@ -425,29 +400,29 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	signal.Notify(sigChan, syscall.SIGTERM)
 
 	// Check if the URL already contains a port
-	parsedURL, err := neturl.Parse(rootArgs.configHubURL)
+	parsedURL, err := neturl.Parse(rootArgs.ConfigHubURL)
 	if err != nil {
 		// Handle potential parsing error, though init() should prevent this
-		log.FromContext(ctx).Error(err, "Failed to parse configHubURL", "url", rootArgs.configHubURL)
+		log.FromContext(ctx).Error(err, "Failed to parse configHubURL", "url", rootArgs.ConfigHubURL)
 		// Decide on fallback behavior, e.g., use default or return error
 		// For now, let's proceed with the potentially malformed URL, assuming init handled basics
 	}
 
-	finalURL := rootArgs.configHubURL // Default to original URL
+	finalURL := rootArgs.ConfigHubURL // Default to original URL
 
 	if err == nil { // Only proceed if parsing was successful
 		hostname := parsedURL.Hostname() // Get hostname without port
 		if hostname == "" {
-			log.FromContext(ctx).Info("Could not extract hostname from URL, not modifying port", "url", rootArgs.configHubURL)
+			log.FromContext(ctx).Info("Could not extract hostname from URL, not modifying port", "url", rootArgs.ConfigHubURL)
 		} else if parsedURL.Scheme == "" {
 			// Handle case where scheme is missing (though init tries to add https)
-			log.FromContext(ctx).Info("URL scheme is missing, cannot reliably reconstruct URL with new port", "url", rootArgs.configHubURL)
+			log.FromContext(ctx).Info("URL scheme is missing, cannot reliably reconstruct URL with new port", "url", rootArgs.ConfigHubURL)
 		} else {
 			// Always use the workerPort, replacing existing or appending
 			// Reconstruct the URL: scheme://hostname:workerPort
-			finalURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.workerPort)
+			finalURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.WorkerPort)
 		}
-	} // Note: If err != nil, finalURL remains rootArgs.configHubURL
+	} // Note: If err != nil, finalURL remains rootArgs.ConfigHubURL
 
 	metricsProvider, err := lib.NewPrometheusProvider()
 	if err != nil {
@@ -457,13 +432,13 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	metricsMeter := metricsProvider.Meter("confighub-worker")
 
 	var httpServer *echo.Echo
-	if httpServerEnabled := os.Getenv("CONFIGHUB_WORKER_HTTP_SERVER_ENABLED"); httpServerEnabled != "" && httpServerEnabled != "0" {
+	if httpServerEnabled := rootArgs.HTTPServerEnabled; httpServerEnabled != "" && httpServerEnabled != "0" {
 		httpServer = newHTTPServer()
 	}
 
 	w := lib.New(finalURL, // Use the potentially modified URL
-		rootArgs.workerID,
-		rootArgs.workerSecret).
+		rootArgs.WorkerID,
+		rootArgs.WorkerSecret).
 		WithBridgeWorker(bridgeDispatcher).
 		WithFunctionExecutor(newFunctionExecutor(providerTypes, workerFunctions)).
 		WithMetricsMeter(metricsMeter)
@@ -475,7 +450,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	})
 	if httpServer != nil {
 		eg.Go(func() error {
-			port := os.Getenv("CONFIGHUB_WORKER_HTTP_SERVER_PORT")
+			port := rootArgs.HTTPServerPort
 			if port == "" {
 				port = defaultServerPort
 			}
@@ -491,9 +466,9 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	// Sleep for configured delay to allow new pod to become active
 	// This ensures smooth handoff in rolling updates with our standby promotion system
-	if rootArgs.gracePeriodDelay > 0 {
-		log.FromContext(ctx).Info("Waiting for smooth handoff to new pod...", "delay_seconds", rootArgs.gracePeriodDelay)
-		time.Sleep(time.Duration(rootArgs.gracePeriodDelay) * time.Second)
+	if rootArgs.GracePeriodDelay > 0 {
+		log.FromContext(ctx).Info("Waiting for smooth handoff to new pod...", "delay_seconds", rootArgs.GracePeriodDelay)
+		time.Sleep(time.Duration(rootArgs.GracePeriodDelay) * time.Second)
 	}
 
 	// Wait for all pending operations to complete first
@@ -505,13 +480,8 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	if httpServer != nil {
 		serverShutdownTimeout := defaultHTTPServerShutdownTimeout
-		if shutdownOverride := os.Getenv("CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT"); shutdownOverride != "" {
-			override, err := strconv.Atoi(shutdownOverride)
-			if err != nil {
-				log.FromContext(context.Background()).Info("Failed to parse HTTP server shutdown override, using default", "error", err)
-			} else {
-				serverShutdownTimeout = time.Duration(override) * time.Second
-			}
+		if rootArgs.ServerShutdownTimeoutSeconds > 0 {
+			serverShutdownTimeout = time.Duration(rootArgs.ServerShutdownTimeoutSeconds) * time.Second
 		}
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
