@@ -38,9 +38,10 @@ type ConfigHubWorkerArgs struct {
 	ConfigHubURL string `env:"CONFIGHUB_URL, default=https://hub.confighub.com" json:"CONFIGHUB_URL" description:"Base URL (scheme and host) of the ConfigHub API."`
 	WorkerPort   string `env:"CONFIGHUB_WORKER_PORT, default=443" json:"CONFIGHUB_WORKER_PORT" description:"Port for the worker's HTTP/2 connection to ConfigHub."`
 
-	HTTPServerEnabled            string `env:"CONFIGHUB_WORKER_HTTP_SERVER_ENABLED" json:"CONFIGHUB_WORKER_HTTP_SERVER_ENABLED,omitempty" description:"When set to a non-empty value other than \"0\", enables an HTTP server with a Prometheus metrics endpoint at /internal/metrics."`
-	HTTPServerPort               string `env:"CONFIGHUB_WORKER_HTTP_SERVER_PORT, default=9092" json:"CONFIGHUB_WORKER_HTTP_SERVER_PORT" description:"Port for the worker's local HTTP server (currently only exposes Prometheus metrics)."`
-	ServerShutdownTimeoutSeconds int    `env:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT, default=5" json:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT" description:"Number of seconds the local HTTP server is given to shut down gracefully."`
+	HTTPServerEnabled             string `env:"CONFIGHUB_WORKER_HTTP_SERVER_ENABLED" json:"CONFIGHUB_WORKER_HTTP_SERVER_ENABLED,omitempty" description:"When set to a non-empty value other than \"0\", enables an HTTP server with a Prometheus metrics endpoint at /internal/metrics."`
+	HTTPServerPort                string `env:"CONFIGHUB_WORKER_HTTP_SERVER_PORT, default=9092" json:"CONFIGHUB_WORKER_HTTP_SERVER_PORT" description:"Port for the worker's local HTTP server (currently only exposes Prometheus metrics)."`
+	ServerShutdownTimeoutSeconds  int    `env:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT, default=5" json:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT" description:"Number of seconds the local HTTP server is given to shut down gracefully."`
+	LivenessEventThresholdSeconds int    `env:"CONFIGHUB_WORKER_LIVENESS_EVENT_THRESHOLD, default=45" json:"CONFIGHUB_WORKER_LIVENESS_EVENT_THRESHOLD" description:"Maximum age in seconds of the most recent handled event before /internal/ok and /internal/ready report unhealthy. The backend sends heartbeats every 15s and keepalives every 30s, so the default of 45s tolerates one missed tick."`
 
 	StandardFunctions string `env:"CONFIGHUB_STANDARD_FUNCTIONS" json:"CONFIGHUB_STANDARD_FUNCTIONS,omitempty" description:"When set to \"1\", \"true\", or \"TRUE\", registers all standard functions for the active provider types' toolchains."`
 

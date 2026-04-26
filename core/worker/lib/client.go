@@ -65,6 +65,12 @@ type workerClient struct {
 	eventCounter   metric.Int64Counter
 	actionCounter  metric.Int64Counter
 	errorCounter   metric.Int64Counter
+
+	// eventStateMu guards lastEventHandledAt and serving, which are read by
+	// HTTP probe handlers concurrently with the event loop.
+	eventStateMu       sync.RWMutex
+	lastEventHandledAt time.Time
+	serving            bool
 }
 
 func newClient(
@@ -403,6 +409,10 @@ func (c *workerClient) startStream(ctx context.Context) error {
 	log.Printf("[INFO] Starting to read events from stream")
 	eventCount := 0
 
+	c.eventStateMu.Lock()
+	c.serving = true
+	c.eventStateMu.Unlock()
+
 	for {
 		line, err := scanner.ReadString('\n')
 		if err != nil {
@@ -461,6 +471,10 @@ func (c *workerClient) startStream(ctx context.Context) error {
 
 // handleEventWithLogging wraps handleEvent with proper error handling and logging
 func (c *workerClient) handleEventWithLogging(ctx context.Context, eventType string, data []byte, eventNumber int) error {
+	c.eventStateMu.Lock()
+	c.lastEventHandledAt = time.Now()
+	c.eventStateMu.Unlock()
+
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("[ERROR] Panic while processing event #%d (type: %s): %v", eventNumber, eventType, r)
@@ -1045,7 +1059,28 @@ func (c *workerClient) sendResultOnce(result *api.ActionResult) error {
 
 // WaitForPendingOperations blocks until all in-flight operations are complete
 func (c *workerClient) WaitForPendingOperations() {
+	c.eventStateMu.Lock()
+	c.serving = false
+	c.eventStateMu.Unlock()
+
 	log.Printf("[INFO] Waiting for pending operations to complete...")
 	c.operationsWg.Wait()
 	log.Printf("[INFO] All operations completed")
+}
+
+// LastEventHandledAt returns the time the most recent event was handled by
+// handleEventWithLogging. Returns the zero time if no event has been handled yet.
+func (c *workerClient) LastEventHandledAt() time.Time {
+	c.eventStateMu.RLock()
+	defer c.eventStateMu.RUnlock()
+	return c.lastEventHandledAt
+}
+
+// IsServing reports whether the worker is currently inside the event-stream
+// read loop. It is set to true just before the loop begins and false when
+// WaitForPendingOperations is called during shutdown.
+func (c *workerClient) IsServing() bool {
+	c.eventStateMu.RLock()
+	defer c.eventStateMu.RUnlock()
+	return c.serving
 }

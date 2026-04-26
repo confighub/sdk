@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"log"
+	"sync/atomic"
+	"time"
 
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/function/executor"
@@ -20,8 +22,10 @@ type Worker struct {
 	workerSecret     string
 	bridgeWorker     api.BridgeWorker
 	functionExecutor executor.FunctionExecutor
-	client           *workerClient
-	metricsMeter     metric.Meter
+	// client is set in Start; reads from probe handlers may race with that
+	// assignment, so use atomic.Pointer for safe publication.
+	client       atomic.Pointer[workerClient]
+	metricsMeter metric.Meter
 }
 
 func New(url, id, secret string) *Worker {
@@ -50,9 +54,30 @@ func (b *Worker) WithMetricsMeter(meter metric.Meter) *Worker {
 
 // WaitForPendingOperations waits for all in-flight operations to complete
 func (b *Worker) WaitForPendingOperations() {
-	if b.client != nil {
-		b.client.WaitForPendingOperations()
+	if c := b.client.Load(); c != nil {
+		c.WaitForPendingOperations()
 	}
+}
+
+// LastEventHandledAt returns the time the worker most recently handled an
+// event from the ConfigHub server's stream. Returns the zero time if the
+// worker has not started or has not yet handled an event.
+func (b *Worker) LastEventHandledAt() time.Time {
+	c := b.client.Load()
+	if c == nil {
+		return time.Time{}
+	}
+	return c.LastEventHandledAt()
+}
+
+// IsServing reports whether the worker's event-stream loop is currently
+// running. Returns false before Start and after WaitForPendingOperations.
+func (b *Worker) IsServing() bool {
+	c := b.client.Load()
+	if c == nil {
+		return false
+	}
+	return c.IsServing()
 }
 
 func (b *Worker) Start(ctx context.Context) error {
@@ -64,7 +89,7 @@ func (b *Worker) Start(ctx context.Context) error {
 		b.functionExecutor,
 		b.metricsMeter,
 	)
-	b.client = client
+	b.client.Store(client)
 
 	subCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -86,7 +111,7 @@ func (b *Worker) Start(ctx context.Context) error {
 	}
 	log.Printf("Starting worker with ID: %s", b.workerId)
 	log.Printf("Starting worker with Token: %s...", b.workerSecret[:8])
-	if err := b.client.Start(subCtx); err != nil {
+	if err := client.Start(subCtx); err != nil {
 		log.Printf("Error starting worker: %v", err)
 		return err
 	}

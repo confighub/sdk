@@ -4,12 +4,14 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
 	neturl "net/url"
 	"os"
 	"os/signal"
+	"slices"
 	"sort"
 	"strings"
 	"syscall"
@@ -17,6 +19,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/labstack/echo-contrib/echoprometheus"
+	"github.com/labstack/echo-contrib/pprof"
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -307,13 +310,94 @@ func rootPreRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func newHTTPServer() *echo.Echo {
+func newHTTPServer(w *lib.Worker, livenessThreshold time.Duration) *echo.Echo {
 	rootRouter := echo.New()
 	rootRouter.HideBanner = true
 	internalRouter := rootRouter.Group("/internal")
 	internalRouter.GET("/metrics", echoprometheus.NewHandler())
 
+	// Default route /debug/pprof/*
+	// Example: go tool pprof http://localhost:9092/internal/pprof/heap
+	pprof.Register(rootRouter, "/internal/pprof")
+	internalRouter.GET("/routes", listRoutes(rootRouter))
+	internalRouter.GET("/ok", livenessHandler(w, livenessThreshold))
+	internalRouter.GET("/ready", readinessHandler(w, livenessThreshold))
+
 	return rootRouter
+}
+
+func listRoutes(router *echo.Echo) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		routes := router.Routes()
+		slices.SortFunc(routes, func(a, b *echo.Route) int {
+			const noRoute = "echo_route_not_found"
+			if a.Method == noRoute && b.Method != noRoute {
+				return 1
+			}
+			if a.Method != noRoute && b.Method == noRoute {
+				return -1
+			}
+			r := cmp.Compare(a.Path, b.Path)
+			if r != 0 {
+				return r
+			}
+			return cmp.Compare(a.Method, b.Method)
+		})
+		return c.JSON(http.StatusOK, routes)
+	}
+}
+
+type probeOK struct {
+	LastEventHandledAt time.Time `description:"Time at which the worker most recently handled an event from the ConfigHub server's stream."`
+}
+
+type probeError struct {
+	Error              string    `description:"Human-readable explanation of why the probe failed."`
+	LastEventHandledAt time.Time `description:"Time at which the worker most recently handled an event from the ConfigHub server's stream. Zero value if the worker has not yet handled any events."`
+}
+
+// eventStaleError returns a probeError describing a stale-event condition if
+// the worker has not handled an event within livenessThreshold, or nil if the
+// worker is current. The zero LastEventHandledAt (worker never reached the
+// stream loop) is treated as stale.
+func eventStaleError(w *lib.Worker, livenessThreshold time.Duration) *probeError {
+	last := w.LastEventHandledAt()
+	if last.IsZero() {
+		return &probeError{
+			Error: "no event has been handled yet",
+		}
+	}
+	if age := time.Since(last); age > livenessThreshold {
+		return &probeError{
+			Error:              fmt.Sprintf("last event was handled %s ago at %s, exceeds threshold %s", age.Round(time.Second), last.Format(time.RFC3339), livenessThreshold),
+			LastEventHandledAt: last,
+		}
+	}
+	return nil
+}
+
+func livenessHandler(w *lib.Worker, livenessThreshold time.Duration) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if probeErr := eventStaleError(w, livenessThreshold); probeErr != nil {
+			return c.JSON(http.StatusServiceUnavailable, probeErr)
+		}
+		return c.JSON(http.StatusOK, probeOK{LastEventHandledAt: w.LastEventHandledAt()})
+	}
+}
+
+func readinessHandler(w *lib.Worker, livenessThreshold time.Duration) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if !w.IsServing() {
+			return c.JSON(http.StatusServiceUnavailable, probeError{
+				Error:              "worker is not serving",
+				LastEventHandledAt: w.LastEventHandledAt(),
+			})
+		}
+		if probeErr := eventStaleError(w, livenessThreshold); probeErr != nil {
+			return c.JSON(http.StatusServiceUnavailable, probeErr)
+		}
+		return c.JSON(http.StatusOK, probeOK{LastEventHandledAt: w.LastEventHandledAt()})
+	}
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
@@ -431,17 +515,18 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	metricsMeter := metricsProvider.Meter("confighub-worker")
 
-	var httpServer *echo.Echo
-	if httpServerEnabled := rootArgs.HTTPServerEnabled; httpServerEnabled != "" && httpServerEnabled != "0" {
-		httpServer = newHTTPServer()
-	}
-
 	w := lib.New(finalURL, // Use the potentially modified URL
 		rootArgs.WorkerID,
 		rootArgs.WorkerSecret).
 		WithBridgeWorker(bridgeDispatcher).
 		WithFunctionExecutor(newFunctionExecutor(providerTypes, workerFunctions)).
 		WithMetricsMeter(metricsMeter)
+
+	var httpServer *echo.Echo
+	if httpServerEnabled := rootArgs.HTTPServerEnabled; httpServerEnabled != "" && httpServerEnabled != "0" {
+		livenessThreshold := time.Duration(rootArgs.LivenessEventThresholdSeconds) * time.Second
+		httpServer = newHTTPServer(w, livenessThreshold)
+	}
 
 	// Start worker in a errgroup with the http server so we can handle signals
 	eg, ctx := errgroup.WithContext(ctx)
