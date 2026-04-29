@@ -100,8 +100,9 @@ func DiffPatchWithOptions(original, modified, targetData []byte, resourceProvide
 		return nil, false, fmt.Errorf("failed to parse target YAML: %v", err)
 	}
 
-	// Apply patch to target data
-	patchedResult, err := PatchMutations(parsedTargetData, nil, mutations, resourceProvider, options)
+	// Apply patch to target data. Conflicts are not surfaced via DiffPatch's API today;
+	// callers that need them should use PatchMutations directly.
+	patchedResult, _, err := PatchMutations(parsedTargetData, nil, mutations, nil, resourceProvider, options)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to apply patch: %v", err)
 	}

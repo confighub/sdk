@@ -4064,7 +4064,7 @@ export type ListOrgFunctionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on FunctionSignature: RequiredParameters, VarArgs, Validating, Idempotent, FunctionType, AttributeName, ToolchainType, FunctionName, Description, Mutating, Hermetic, OutputInfo.OutputType, OutputInfo.ResultName, OutputInfo.Description.
+    Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6250,7 +6250,7 @@ export type ListFunctionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on FunctionSignature: RequiredParameters, VarArgs, Validating, Idempotent, FunctionType, AttributeName, ToolchainType, FunctionName, Description, Mutating, Hermetic, OutputInfo.OutputType, OutputInfo.ResultName, OutputInfo.Description.
+    Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
     
     The whole string must be query-encoded. */
   where?: string;

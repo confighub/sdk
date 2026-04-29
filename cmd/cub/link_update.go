@@ -72,7 +72,7 @@ func init() {
 	enableWaitFlag(linkUpdateCmd)
 	addLinkFieldFlags(linkUpdateCmd)
 	linkUpdateCmd.Flags().BoolVar(&linkPatch, "patch", false, "use patch API for individual or bulk operations")
-	linkUpdateCmd.Flags().BoolVar(&linkReverse, "reverse", false, "swap FromUnit and ToUnit directions (requires --patch)")
+	linkUpdateCmd.Flags().BoolVar(&linkReverse, "reverse", false, "swap FromUnit and ToUnit directions (requires --patch); cross-space links are reversed by creating reversed copies and deleting the originals")
 	enableWhereFlag(linkUpdateCmd)
 	enableFilterFlag(linkUpdateCmd)
 	linkUpdateCmd.Flags().StringSliceVar(&linkIdentifiers, "link", []string{}, "target specific links by slug or UUID for bulk patch (can be repeated or comma-separated)")
@@ -198,24 +198,19 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
 	}
 
-	var effectiveWhere string
-	if len(linkIdentifiers) > 0 {
-		whereClause, err := buildWhereClauseFromLinks(linkIdentifiers)
-		if err != nil {
-			return err
-		}
-		effectiveWhere = whereClause
-	} else {
-		effectiveWhere = where
+	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkIdentifiers, where, selectedSpaceID)
+	if err != nil {
+		return err
 	}
-
-	// Add space constraint to the where clause only if not org level
-	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function with link-specific field enhancer
 	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
 		return err
+	}
+
+	if linkReverse {
+		return runBulkLinkUpdateReverse(effectiveWhere, filterID, patchJSON)
 	}
 
 	// Build bulk patch parameters
@@ -226,9 +221,6 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
-	}
-	if linkReverse {
-		params.Reverse = &linkReverse
 	}
 
 	// Call the bulk patch API
@@ -246,6 +238,159 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", effectiveWhere)
 }
 
+// runBulkLinkUpdateReverse handles bulk --reverse for both same-space and
+// cross-space links. The server can only reverse same-space links in place
+// via PATCH; cross-space links are reversed by creating reversed copies (in
+// the new from-unit's space) and deleting the originals.
+func runBulkLinkUpdateReverse(effectiveWhere, filterID string, patchJSON []byte) error {
+	// Pre-fetch matched links so we can split same-space from cross-space and
+	// drive the two paths separately. The single search call avoids surfacing
+	// spurious "no links found" errors from the bulk-create endpoint when no
+	// cross-space links match.
+	extLinks, err := apiSearchLinks(effectiveWhere, "*", filterID)
+	if err != nil {
+		return err
+	}
+
+	var sameSpaceIDs, crossSpaceIDs []uuid.UUID
+	for _, el := range extLinks {
+		if el.Link == nil {
+			continue
+		}
+		if el.Link.SpaceID == el.Link.ToSpaceID {
+			sameSpaceIDs = append(sameSpaceIDs, el.Link.LinkID)
+		} else {
+			crossSpaceIDs = append(crossSpaceIDs, el.Link.LinkID)
+		}
+	}
+
+	if len(sameSpaceIDs) == 0 && len(crossSpaceIDs) == 0 {
+		if !quiet && !isAlternativeOutput() {
+			tprint("No links matched")
+		}
+		return nil
+	}
+
+	var firstErr error
+
+	// Same-space subset: in-place reversal via bulk patch.
+	if len(sameSpaceIDs) > 0 {
+		if err := runSameSpaceLinkPatchReverse(sameSpaceIDs, patchJSON); err != nil {
+			firstErr = err
+		}
+	}
+
+	// Cross-space subset: copy with reverse, then delete originals whose
+	// copies were created successfully.
+	if len(crossSpaceIDs) > 0 {
+		if err := runCrossSpaceLinkReverse(crossSpaceIDs, patchJSON); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+
+	return firstErr
+}
+
+// runSameSpaceLinkPatchReverse reverses same-space links in place by issuing a
+// BulkPatchLinks call with reverse=true scoped to the given link IDs.
+func runSameSpaceLinkPatchReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
+	ssWhere := buildLinkIDsWhere(linkIDs)
+	include := "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
+	rev := true
+	params := &goclientnew.BulkPatchLinksParams{
+		Where:   &ssWhere,
+		Include: &include,
+		Reverse: &rev,
+	}
+	res, err := cubClientNew.BulkPatchLinksWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchJSON),
+	)
+	if err != nil {
+		return err
+	}
+	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", ssWhere)
+}
+
+// runCrossSpaceLinkReverse reverses cross-space links by creating reversed
+// copies in the new from-unit's space, then deleting only those originals
+// whose copies were created successfully.
+func runCrossSpaceLinkReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
+	csWhere := buildLinkIDsWhere(linkIDs)
+
+	createRes, err := callBulkCreateLinks(csWhere, "", patchJSON, true, "", "", false)
+	if err != nil {
+		return err
+	}
+
+	var firstErr error
+	if err := handleBulkLinkUpdateResponse(createRes.JSON200, createRes.JSON207, createRes.StatusCode(), "create", csWhere); err != nil {
+		firstErr = err
+	}
+
+	// Only delete originals whose reversed copies were successfully created.
+	sourceIDs := successfullyReversedSourceIDs(createRes)
+	if len(sourceIDs) == 0 {
+		return firstErr
+	}
+
+	delWhere := buildLinkIDsWhere(sourceIDs)
+
+	// If wait was requested, await triggers on the reversed-copy from-units
+	// (handled by handleBulkLinkUpdateResponse above) AND on the original
+	// from-units that the delete will affect.
+	var fromUnits []linkFromUnit
+	if wait {
+		links, err := apiSearchLinks(delWhere, "*", "")
+		if err != nil {
+			return err
+		}
+		fromUnits = uniqueFromUnitsFromLinks(links)
+	}
+
+	delRes, err := callBulkDeleteLinks(delWhere, "", "")
+	if cubapi.IsAPIError(err, delRes) {
+		return cubapi.InterpretErrorGeneric(err, delRes)
+	}
+
+	if wait && len(fromUnits) > 0 && delRes.StatusCode() == 200 {
+		awaitTriggersOnLinkFromUnits(fromUnits)
+	}
+
+	if err := handleBulkLinkDeleteResponse(delRes.JSON200, delRes.JSON207, delRes.StatusCode(), "delete", delWhere); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	return firstErr
+}
+
+// successfullyReversedSourceIDs returns the LinkIDs of the source links whose
+// reversed copies were created successfully (tracked via UpstreamLinkID on
+// the new links).
+func successfullyReversedSourceIDs(res *goclientnew.BulkCreateLinksResponse) []uuid.UUID {
+	var responses *[]goclientnew.LinkCreateOrUpdateResponse
+	switch res.StatusCode() {
+	case 200:
+		responses = res.JSON200
+	case 207:
+		responses = res.JSON207
+	default:
+		return nil
+	}
+	if responses == nil {
+		return nil
+	}
+	var ids []uuid.UUID
+	for _, r := range *responses {
+		if r.Error != nil || r.Link == nil || r.Link.UpstreamLinkID == nil {
+			continue
+		}
+		ids = append(ids, *r.Link.UpstreamLinkID)
+	}
+	return ids
+}
+
 func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
 		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
@@ -260,13 +405,16 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
 	linkID := currentLink.LinkID
 
-	// Get patch data from stdin/filename or use empty patch
-	var patchData []byte
-
 	// Build patch data using consolidated function with link-specific field enhancer
-	patchData, err = BuildPatchData(linkFieldsEnhancer(cmd))
+	patchData, err := BuildPatchData(linkFieldsEnhancer(cmd))
 	if err != nil {
 		return err
+	}
+
+	// Cross-space links can't be reversed in place; create a reversed copy in
+	// the new from-unit's space and delete the original.
+	if linkReverse && currentLink.SpaceID != currentLink.ToSpaceID {
+		return runCrossSpaceLinkReverse([]uuid.UUID{linkID}, patchData)
 	}
 
 	// Call the individual patch API

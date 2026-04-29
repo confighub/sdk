@@ -796,17 +796,38 @@ func (c *YamlDoc) Delete(hierarchy ...string) error {
 	if len(hierarchy) == 0 {
 		return ErrInvalidQuery
 	}
+	// ConfigHub local fix: traverse intermediate segments using the same logic
+	// as searchStrict so that integer segments resolve into sequence elements.
+	// The original implementation only used yaml.Get, which is mapping-only.
 	node := c.node
 	for target := 0; target < len(hierarchy)-1; target++ {
 		pathSeg := hierarchy[target]
-		fieldNode, err := node.Pipe(yaml.Get(pathSeg))
-		if err != nil {
-			return err
+		switch node.YNode().Kind {
+		case yaml.MappingNode, yaml.ScalarNode:
+			fieldNode, err := node.Pipe(yaml.Get(pathSeg))
+			if err != nil {
+				return err
+			}
+			if fieldNode == nil {
+				return ErrNotFound
+			}
+			node = fieldNode
+		case yaml.SequenceNode:
+			index, err := strconv.Atoi(pathSeg)
+			if err != nil {
+				return fmt.Errorf("failed to resolve path segment '%v': invalid array index", pathSeg)
+			}
+			elements, err := node.Elements()
+			if err != nil {
+				return err
+			}
+			if index < 0 || index >= len(elements) {
+				return ErrOutOfBounds
+			}
+			node = elements[index]
+		default:
+			return fmt.Errorf("failed to resolve path segment '%v': unexpected node kind %v", pathSeg, node.YNode().Kind)
 		}
-		if fieldNode == nil {
-			return ErrNotFound
-		}
-		node = fieldNode
 	}
 	lastSeg := hierarchy[len(hierarchy)-1]
 	if index, err := strconv.Atoi(lastSeg); err == nil {

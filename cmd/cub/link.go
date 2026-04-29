@@ -5,8 +5,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -129,6 +131,40 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 
 func buildWhereClauseFromLinks(linkIds []string) (string, error) {
 	return buildWhereClauseFromIdentifiers(linkIds, "LinkID", "Slug")
+}
+
+// buildLinkBulkEffectiveWhere builds the effective where clause for bulk link
+// operations. If linkIdents are supplied, they are converted to a LinkID/Slug
+// IN clause; otherwise the user-supplied where clause is used. The space
+// constraint is then appended unless the caller passed "*" for spaceID.
+func buildLinkBulkEffectiveWhere(linkIdents []string, whereClause, spaceID string) (string, error) {
+	var ew string
+	if len(linkIdents) > 0 {
+		wc, err := buildWhereClauseFromLinks(linkIdents)
+		if err != nil {
+			return "", err
+		}
+		ew = wc
+	} else {
+		ew = whereClause
+	}
+	return addSpaceIDToWhereClause(ew, spaceID), nil
+}
+
+// buildLinkIDsWhere returns "LinkID IN ('uuid1','uuid2',...)" for the given
+// link IDs, or "LinkID = '<id>'" for a single ID. Returns "" for an empty list.
+func buildLinkIDsWhere(linkIDs []uuid.UUID) string {
+	if len(linkIDs) == 0 {
+		return ""
+	}
+	if len(linkIDs) == 1 {
+		return fmt.Sprintf("LinkID = '%s'", linkIDs[0])
+	}
+	quoted := make([]string, len(linkIDs))
+	for i, id := range linkIDs {
+		quoted[i] = "'" + id.String() + "'"
+	}
+	return "LinkID IN (" + strings.Join(quoted, ",") + ")"
 }
 
 func init() {

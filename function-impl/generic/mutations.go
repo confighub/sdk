@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"log/slog"
 
+	"github.com/swaggest/jsonschema-go"
+
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -15,6 +17,11 @@ import (
 )
 
 func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	reflector := jsonschema.Reflector{}
+	conflictListSchema, err := reflector.Reflect(api.MutationConflictList{})
+	if err != nil {
+		slog.Error("couldn't get schema for api.MutationConflictList", "error", err)
+	}
 	if err := fh.RegisterFunction("patch-mutations", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "patch-mutations",
@@ -33,6 +40,19 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 					DataType:         api.DataTypeResourceMutationList,
 					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
+				{
+					ParameterName:    "mutations-to-subtract",
+					Required:         false,
+					Description:      "Mutations to subtract from the patch (e.g., target-side changes relative to a merge base) before applying. Pass an empty list or omit to skip subtraction.",
+					DataType:         api.DataTypeResourceMutationList,
+					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "conflicts",
+				Description: "Mutations from the patch that were dropped (subtracted by the target, filtered by a predicate, or unresolvable against the target's data) and any target-side mutations the patch erased. Empty when the patch applied cleanly.",
+				OutputType:  api.OutputTypeMutationConflictList,
+				Schema:      &conflictListSchema,
 			},
 			Mutating:              true,
 			Validating:            false,
@@ -64,6 +84,23 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		return parsedData, nil, err
 	}
 
-	parsedData, err = yamlkit.PatchMutations(parsedData, mutationsPredicates, mutationsPatch, resourceProvider, options)
-	return parsedData, nil, err
+	var mutationsToSubtract api.ResourceMutationList
+	if len(args) > 2 {
+		if subtractString, ok := args[2].Value.(string); ok && subtractString != "" {
+			if err := json.Unmarshal([]byte(subtractString), &mutationsToSubtract); err != nil {
+				return parsedData, nil, err
+			}
+		}
+	}
+
+	parsedData, conflicts, err := yamlkit.PatchMutations(parsedData, mutationsPredicates, mutationsPatch, mutationsToSubtract, resourceProvider, options)
+	if err != nil {
+		return parsedData, nil, err
+	}
+	// Return nil rather than an empty slice when there's nothing to report so
+	// the executor doesn't surface an empty Output entry on a clean patch.
+	if len(conflicts) == 0 {
+		return parsedData, nil, nil
+	}
+	return parsedData, conflicts, nil
 }

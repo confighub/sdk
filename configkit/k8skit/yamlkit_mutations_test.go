@@ -403,7 +403,7 @@ spec:
 			require.NoError(t, err)
 
 			// Subtract target changes from source changes
-			result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+			result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 			tt.validateResult(t, result)
 		})
@@ -705,7 +705,7 @@ metadata:
 			parsed, err := gaby.ParseAll([]byte(tt.config))
 			require.NoError(t, err)
 
-			result, err := yamlkit.PatchMutations(parsed, tt.predicates, tt.mutations, k8skit.NewK8sResourceProvider(), nil)
+			result, _, err := yamlkit.PatchMutations(parsed, tt.predicates, tt.mutations, nil, k8skit.NewK8sResourceProvider(), nil)
 			require.NoError(t, err)
 
 			// Serialize the result using Container's String() method
@@ -796,10 +796,10 @@ spec:
 		require.NoError(t, err)
 
 		// Step 3: Subtract target changes from source changes
-		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		finalMutations, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Step 4: Apply final mutations to target
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
+		result, _, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		// Verify results
@@ -888,8 +888,8 @@ spec:
 		require.NoError(t, err)
 
 		// Subtract and patch
-		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
+		finalMutations, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		// Should still have only 1 resource (Deployment)
@@ -953,8 +953,8 @@ spec:
 		require.NoError(t, err)
 
 		// Subtract and patch
-		finalMutations := yamlkit.SubtractMutations(sourceMutations, targetMutations)
-		result, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, k8skit.NewK8sResourceProvider(), nil)
+		finalMutations, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _, err := yamlkit.PatchMutations(targetParsed, nil, finalMutations, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 
 		require.Len(t, result, 1)
@@ -1058,10 +1058,10 @@ spec:
 		assert.True(t, hasImage, "Target should have image mutation")
 
 		// Subtract target changes from source
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result to the target
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1153,9 +1153,9 @@ spec:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1254,32 +1254,33 @@ spec:
 		_, hasCpu := targetMutations[0].PathMutationMap[cpuPath]
 		assert.True(t, hasCpu, "Target should have cpu mutation")
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, conflicts := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
-		// The resources delete should be subtracted because target modified a child path
-		// Check that the resources delete mutation is not in the result
+		// The resources Delete passes through; once the parent block is removed
+		// the target's child cpu change can't apply, so a DeleteShadowed
+		// conflict is emitted for the cpu path.
+		hasResourcesDelete := false
 		for _, m := range result {
-			_, hasResourcesDelete := m.PathMutationMap[resourcesPath]
-			assert.False(t, hasResourcesDelete, "Resources delete should be subtracted since target modified cpu")
+			if _, found := m.PathMutationMap[resourcesPath]; found {
+				hasResourcesDelete = true
+			}
 		}
+		assert.True(t, hasResourcesDelete, "Resources delete passes through; target's child change can't survive parent removal")
 
-		// Apply the result to target - should be no-op since resources delete was subtracted
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		var deleteShadowedForCpu bool
+		for _, c := range conflicts {
+			if c.Reason == api.ConflictReasonDeleteShadowed && c.Path == cpuPath {
+				deleteShadowedForCpu = true
+			}
+		}
+		assert.True(t, deleteShadowedForCpu, "expected DeleteShadowed conflict for the lost cpu override")
+
+		// Apply the result to target — resources block is removed.
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
-
-		// Resources should still exist with target's cpu value
-		assert.True(t, patchedResult[0].ExistsP("spec.template.spec.containers.0.resources"), "Resources should still exist")
-
-		cpu, found, err := yamlkit.YamlSafePathGetValue[string](patchedResult[0], "spec.template.spec.containers.0.resources.limits.cpu", false)
-		require.NoError(t, err)
-		require.True(t, found)
-		assert.Equal(t, "1000m", cpu, "Target's CPU modification should be preserved")
-
-		memory, found, err := yamlkit.YamlSafePathGetValue[string](patchedResult[0], "spec.template.spec.containers.0.resources.limits.memory", false)
-		require.NoError(t, err)
-		require.True(t, found)
-		assert.Equal(t, "512Mi", memory, "Memory should be preserved")
+		assert.False(t, patchedResult[0].ExistsP("spec.template.spec.containers.0.resources"),
+			"Resources block should be removed (source-side Delete applied)")
 	})
 
 	t.Run("Case 3 - verify combined paths in result", func(t *testing.T) {
@@ -1366,7 +1367,7 @@ spec:
 		_, targetCpu := targetMutations[0].PathMutationMap[cpuPath]
 		assert.True(t, targetCpu, "Target should have cpu mutation")
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Verify the result structure
 		require.Len(t, result, 1, "Should have one resource mutation")
@@ -1453,10 +1454,10 @@ spec:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply the result
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1534,7 +1535,7 @@ metadata:
 		assert.True(t, sourceHasVersion, "Source should have version mutation")
 		assert.True(t, targetHasVersion, "Target should have version mutation")
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// The version path should be removed from result (Case 1 exact match)
 		if len(result) > 0 {
@@ -1543,7 +1544,7 @@ metadata:
 		}
 
 		// Apply and verify target's value is preserved
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 
@@ -1613,7 +1614,7 @@ spec:
 		parsed, err := gaby.ParseAll([]byte(config))
 		require.NoError(t, err)
 
-		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider(), nil)
+		result, _, err := yamlkit.PatchMutations(parsed, nil, mutations, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, result, 1)
 
@@ -1687,7 +1688,7 @@ spec:
 		parsed, err := gaby.ParseAll([]byte(config))
 		require.NoError(t, err)
 
-		result, err := yamlkit.PatchMutations(parsed, nil, mutations, k8skit.NewK8sResourceProvider(), nil)
+		result, _, err := yamlkit.PatchMutations(parsed, nil, mutations, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, result, 1)
 
@@ -1753,10 +1754,10 @@ metadata:
 		targetMutations, err := yamlkit.ComputeMutations(baseParsed, targetParsed, 2, k8skit.NewK8sResourceProvider())
 		require.NoError(t, err)
 
-		result := yamlkit.SubtractMutations(sourceMutations, targetMutations)
+		result, _ := yamlkit.SubtractMutations(sourceMutations, targetMutations)
 
 		// Apply and verify target's annotations are preserved
-		patchedResult, err := yamlkit.PatchMutations(targetParsed, nil, result, k8skit.NewK8sResourceProvider(), nil)
+		patchedResult, _, err := yamlkit.PatchMutations(targetParsed, nil, result, nil, k8skit.NewK8sResourceProvider(), nil)
 		require.NoError(t, err)
 		require.Len(t, patchedResult, 1)
 

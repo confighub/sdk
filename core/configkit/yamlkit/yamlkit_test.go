@@ -632,56 +632,74 @@ func TestResolveAssociativeSegments(t *testing.T) {
     image: nginx:1.19
   - name: sidecar
     image: sidecar:v1
+  legacy:
+  - image: legacy:v1
+  - image: legacy:v2
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
 	tests := []struct {
-		name     string
-		path     string
-		expected string
+		name             string
+		path             string
+		expectedPath     string
+		expectedResolved bool
 	}{
 		{
-			name:     "no associative segments",
-			path:     "spec.containers.0.image",
-			expected: "spec.containers.0.image",
+			name:             "no associative segments",
+			path:             "spec.containers.0.image",
+			expectedPath:     "spec.containers.0.image",
+			expectedResolved: true,
 		},
 		{
-			name:     "?key=value;@index resolved by key",
-			path:     "spec.containers.?name=sidecar;@1.image",
-			expected: "spec.containers.1.image",
+			name:             "?key=value;@index resolved by key",
+			path:             "spec.containers.?name=sidecar;@1.image",
+			expectedPath:     "spec.containers.1.image",
+			expectedResolved: true,
 		},
 		{
-			name:     "?key=value;@index key matches different index",
-			path:     "spec.containers.?name=nginx;@1.image",
-			expected: "spec.containers.0.image",
+			name:             "?key=value;@index key matches different index",
+			path:             "spec.containers.?name=nginx;@1.image",
+			expectedPath:     "spec.containers.0.image",
+			expectedResolved: true,
 		},
 		{
-			name:     "?key=value;@index falls back to index",
-			path:     "spec.containers.?name=missing;@0.image",
-			expected: "spec.containers.0.image",
+			name:             "?key=value;@index does not fall back when fallback element has different merge-key value",
+			path:             "spec.containers.?name=missing;@0.image",
+			expectedPath:     "spec.containers.?name=missing;@0.image",
+			expectedResolved: false,
 		},
 		{
-			name:     "?key=value without index",
-			path:     "spec.containers.?name=nginx.image",
-			expected: "spec.containers.0.image",
+			name:             "?key=value;@index falls back to legacy element without merge-key field",
+			path:             "spec.legacy.?name=anything;@0.image",
+			expectedPath:     "spec.legacy.0.image",
+			expectedResolved: true,
 		},
 		{
-			name:     "?key=value no match no fallback",
-			path:     "spec.containers.?name=missing.image",
-			expected: "spec.containers.?name=missing.image",
+			name:             "?key=value without index",
+			path:             "spec.containers.?name=nginx.image",
+			expectedPath:     "spec.containers.0.image",
+			expectedResolved: true,
 		},
 		{
-			name:     "?key=value;@index out of bounds uses index anyway",
-			path:     "spec.containers.?name=missing;@99.image",
-			expected: "spec.containers.99.image",
+			name:             "?key=value no match no fallback",
+			path:             "spec.containers.?name=missing.image",
+			expectedPath:     "spec.containers.?name=missing.image",
+			expectedResolved: false,
+		},
+		{
+			name:             "?key=value;@index out of bounds falls back (append semantics)",
+			path:             "spec.containers.?name=missing;@99.image",
+			expectedPath:     "spec.containers.99.image",
+			expectedResolved: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ResolveAssociativeSegments(docs[0], tt.path)
-			assert.Equal(t, tt.expected, result)
+			result, resolved := ResolveAssociativeSegments(docs[0], tt.path)
+			assert.Equal(t, tt.expectedPath, result)
+			assert.Equal(t, tt.expectedResolved, resolved)
 		})
 	}
 }

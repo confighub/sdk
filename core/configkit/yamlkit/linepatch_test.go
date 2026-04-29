@@ -137,7 +137,7 @@ func TestComputeMutationsForDocs_MultiLineStringPatch(t *testing.T) {
 	require.NoError(t, err)
 
 	pathMutationMap := make(api.MutationMap)
-	ComputeMutationsForDocs("", previousDoc, modifiedDoc, 0, pathMutationMap, nil)
+	ComputeMutationsForDocs("", previousDoc, modifiedDoc, 0, pathMutationMap, nil, nil, nil)
 
 	mutation, ok := pathMutationMap["text"]
 	require.True(t, ok, "expected mutation at path 'text'")
@@ -158,7 +158,7 @@ func TestComputeMutationsForDocs_SingleLineNoPatch(t *testing.T) {
 	require.NoError(t, err)
 
 	pathMutationMap := make(api.MutationMap)
-	ComputeMutationsForDocs("", previousDoc, modifiedDoc, 0, pathMutationMap, nil)
+	ComputeMutationsForDocs("", previousDoc, modifiedDoc, 0, pathMutationMap, nil, nil, nil)
 
 	mutation, ok := pathMutationMap["name"]
 	require.True(t, ok)
@@ -205,7 +205,7 @@ func TestPatchMutations_LinePatchThreeWayMerge(t *testing.T) {
 	require.NotEmpty(t, readmeMutation.Patch, "expected Patch field for multi-line string")
 
 	// Apply mutations to target (three-way merge)
-	result, err := PatchMutations(targetParsed, nil, mutations, testProvider, nil)
+	result, _, err := PatchMutations(targetParsed, nil, mutations, nil, testProvider, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 
@@ -364,7 +364,7 @@ func TestPatchMutations_JSONStructuralThreeWayMerge(t *testing.T) {
 	require.True(t, strings.HasPrefix(configMutation.Patch, "{"), "expected structural patch")
 
 	// Apply to target
-	result, err := PatchMutations(targetParsed, nil, mutations, testProvider, nil)
+	result, _, err := PatchMutations(targetParsed, nil, mutations, nil, testProvider, nil)
 	require.NoError(t, err)
 	require.Len(t, result, 1)
 

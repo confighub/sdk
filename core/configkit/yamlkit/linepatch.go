@@ -83,7 +83,7 @@ func computeStructuralPatch(previous, modified, format string) string {
 	}
 
 	mutations := make(api.MutationMap)
-	ComputeMutationsForDocs("", prevDoc, modDoc, 0, mutations, nil)
+	ComputeMutationsForDocs("", prevDoc, modDoc, 0, mutations, nil, nil, nil)
 
 	if len(mutations) == 0 {
 		return ""

@@ -246,10 +246,10 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			if functionInvocation.StopOnError {
 				break
 			}
+		} else {
+			invocationInfo += ": succeeded"
+			slog.Info(invocationInfo)
 		}
-
-		invocationInfo += ": succeeded"
-		slog.Info(invocationInfo)
 
 		if f.Mutating {
 			newSerializedDataString := newParsedData.String()

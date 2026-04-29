@@ -12,6 +12,7 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestK8sFnComputeMutations(t *testing.T) {
@@ -608,7 +609,7 @@ rollingUpdate:
 
 			// Create the mutation map and call the function
 			pathMutationMap := api.MutationMap{}
-			yamlkit.ComputeMutationsForDocs(tt.path, previousDoc, modifiedDoc, int64(tt.functionIndex), pathMutationMap, nil)
+			yamlkit.ComputeMutationsForDocs(tt.path, previousDoc, modifiedDoc, int64(tt.functionIndex), pathMutationMap, nil, nil, nil)
 
 			// Verify the mutation map
 			for path, expectedInfo := range tt.expected {
@@ -812,10 +813,15 @@ spec:
 `,
 			validateResult: func(t *testing.T, mutations api.ResourceMutationList) {
 				assert.Len(t, mutations, 1)
-				// With strategic merge, reordering is not a mutation since
-				// elements match by name, not position
-				assert.Equal(t, api.MutationTypeNone, mutations[0].ResourceMutationInfo.MutationType)
+				// Path-level: no mutations, since elements match by merge key.
+				// Resource-level: Update, because the array's element order
+				// changed and was recorded in ArrayOrders so PatchMutations
+				// can reorder the target accordingly.
 				assert.Len(t, mutations[0].PathMutationMap, 0)
+				envPath := api.ResolvedPath("spec.template.spec.containers.?name=nginx;@0.env")
+				require.Contains(t, mutations[0].ArrayOrders, envPath)
+				assert.Equal(t, []string{"VAR_C", "VAR_A", "VAR_B"}, mutations[0].ArrayOrders[envPath])
+				assert.Equal(t, api.MutationTypeUpdate, mutations[0].ResourceMutationInfo.MutationType)
 			},
 		},
 		{
@@ -1019,7 +1025,7 @@ spec:
 				targetParsed, err := gaby.ParseAll([]byte(previousYAML))
 				assert.NoError(t, err)
 
-				patched, err := yamlkit.PatchMutations(targetParsed, nil, mutations, k8sProvider, nil)
+				patched, _, err := yamlkit.PatchMutations(targetParsed, nil, mutations, nil, k8sProvider, nil)
 				assert.NoError(t, err)
 				assert.Len(t, patched, 1)
 

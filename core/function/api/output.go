@@ -34,6 +34,10 @@ func UnmarshalOutput(outputBytes []byte, outputType OutputType) (any, error) {
 		var output ResourceList
 		err := json.Unmarshal(outputBytes, &output)
 		return output, err
+	case OutputTypeMutationConflictList:
+		var output MutationConflictList
+		err := json.Unmarshal(outputBytes, &output)
+		return output, err
 	case OutputTypeYAML:
 		var output YAMLPayload
 		err := json.Unmarshal(outputBytes, &output)
@@ -72,6 +76,8 @@ func CombineOutputs(
 			output = ResourceInfoList{}
 		case OutputTypeResourceList:
 			output = ResourceList{}
+		case OutputTypeMutationConflictList:
+			output = MutationConflictList{}
 		case OutputTypeYAML:
 			output = YAMLPayload{}
 		default:
@@ -183,6 +189,20 @@ func CombineOutputs(
 		newOutput, newExpectedType := newOutput.(ResourceList)
 		if !newExpectedType {
 			messages = append(messages, "couldn't convert new result to ResourceList")
+			return outputs, messages
+		}
+		previousOutput = append(previousOutput, newOutput...)
+		output = previousOutput
+
+	case OutputTypeMutationConflictList:
+		previousOutput, previousExpectedType := output.(MutationConflictList)
+		if !previousExpectedType {
+			messages = append(messages, "couldn't convert previous result to MutationConflictList")
+			return outputs, messages
+		}
+		newOutput, newExpectedType := newOutput.(MutationConflictList)
+		if !newExpectedType {
+			messages = append(messages, "couldn't convert new result to MutationConflictList")
 			return outputs, messages
 		}
 		previousOutput = append(previousOutput, newOutput...)

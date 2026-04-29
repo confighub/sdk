@@ -5,6 +5,7 @@ package api
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,12 +33,33 @@ type ResourceMutation struct {
 	Resource             ResourceInfo              `description:"Identifiers of the resource to which the mutations correspond"`
 	ResourceMutationInfo MutationInfo              `description:"Resource-level mutation information, such as for Add, Delete, or Replace"`
 	PathMutationMap      MutationMap               `description:"Path-level mutation information; more deeply nested paths override values represented at higher levels"`
+	ArrayOrders          ArrayOrderMap             `json:",omitempty" description:"For merge-keyed arrays whose element set or order changed in this mutation: the desired sequence of merge-key values in source order, keyed by the array's parent path. PatchMutations applies this as a reorder pass after path mutations so positional associative arrays (e.g., Kubernetes initContainers, env, ports) preserve source-side ordering rather than landing append-on-clash."`
+	ArrayElementAliases  ArrayElementAliasMap      `json:",omitempty" description:"For merge-keyed arrays in which an element was renamed (its merge-key value changed): the array parent path mapped to a previous-merge-key -> new-merge-key map. PatchMutations rewrites the matched element's merge-key field accordingly so child paths and ArrayOrders entries resolve under the new key."`
 	Aliases              map[ResourceName]struct{} `json:",omitempty" description:"Names (with scopes, if any) used in current and prior revisions of this resource"`
 	AliasesWithoutScopes map[ResourceName]struct{} `json:",omitempty" description:"Names without scopes used in current and prior revisions of this resource"`
 }
 type ResourceMutationList []ResourceMutation
 
 type MutationMap map[ResolvedPath]MutationInfo
+
+// ArrayOrderMap records, for each merge-keyed array path whose element set or
+// order changed in a ResourceMutation, the desired sequence of merge-key values
+// in source order. PatchMutations consumes this to reorder the target's array
+// after path mutations are applied, so positional associative arrays (e.g.,
+// Kubernetes initContainers, env, ports) preserve source-side ordering rather
+// than collecting Adds at the end.
+type ArrayOrderMap map[ResolvedPath][]string
+
+// ArrayElementAliasMap records merge-key renames detected at the element level
+// inside a merge-keyed array. The outer key is the array's parent path; the
+// inner map is from the previous merge-key value to the new merge-key value.
+// PatchMutations rewrites the merge-key field on each affected element after
+// applying path mutations and before the reorder pass, so child paths and
+// ArrayOrders entries (which use the new key) resolve correctly while
+// SubtractMutations (which compares paths between source and target diffs)
+// can keep using the previous key — the diff path encoded in PathMutationMap
+// stays under the previous key for that reason.
+type ArrayElementAliasMap map[ResolvedPath]map[string]string
 
 // TODO: should Value be []byte?
 // NOTE: If we put a comment on MutationType, then the go client generator incorrectly wraps
@@ -56,6 +78,51 @@ type MutationMapEntry struct {
 	Path         ResolvedPath
 	MutationInfo *MutationInfo
 }
+
+// ConflictReason describes why a mutation was dropped from a patch instead of
+// being applied. Surfaced via SubtractMutations and PatchMutations.
+type ConflictReason string
+
+const (
+	// ConflictReasonSubtracted: the source mutation was removed by
+	// SubtractMutations because the target had its own mutation at the same
+	// path or under an ancestor of the source path.
+	ConflictReasonSubtracted ConflictReason = "Subtracted"
+	// ConflictReasonDeleteShadowed: the source mutation was a Delete on a
+	// path or resource and the target had child mutations under it. The
+	// Delete still applies (the parent is gone, so the target's child
+	// edits have nowhere to live); this conflict surfaces each lost target
+	// mutation so the caller can see what was discarded. The conflict's
+	// Path is the displaced target path; Source is the source-side parent
+	// Delete; Target is the displaced target mutation.
+	ConflictReasonDeleteShadowed ConflictReason = "DeleteShadowed"
+	// ConflictReasonPredicateFiltered: a path or resource in the patch was
+	// skipped by PatchMutations because the corresponding predicate had
+	// Predicate=false (directly or via an ancestor path).
+	ConflictReasonPredicateFiltered ConflictReason = "PredicateFiltered"
+	// ConflictReasonUnresolvedPath: a path in the patch couldn't be fully
+	// resolved against the target document — typically because the
+	// merge-key value at an associative segment didn't match any element
+	// in the target. PatchMutations skips Update and Delete in this case.
+	// (Add/Replace falls back to appending instead and does not produce
+	// this conflict.)
+	ConflictReasonUnresolvedPath ConflictReason = "UnresolvedPath"
+)
+
+// MutationConflict records that a mutation in a patch was not applied because
+// of an interaction with the target's own state (subtraction, predicate filter,
+// or unresolved associative path). Conflicts are advisory: the patched output
+// is correct as-is, but the conflict tells the caller what part of the patch
+// they wanted to apply was dropped, so they can surface it as a merge issue.
+type MutationConflict struct {
+	Reason   ConflictReason `description:"Why the mutation was dropped"`
+	Resource ResourceInfo   `description:"Resource the mutation applied to"`
+	Path     ResolvedPath   `json:",omitempty" description:"Path of the mutation; empty for resource-level conflicts"`
+	Source   MutationInfo   `description:"The dropped source-side mutation"`
+	Target   *MutationInfo  `json:",omitempty" description:"The target-side mutation that caused the drop, when applicable (Subtracted, DeleteShadowed)"`
+}
+
+type MutationConflictList []MutationConflict
 
 func HasMutations(mutations ResourceMutationList) bool {
 	for i := range mutations {
@@ -76,8 +143,8 @@ func SortedMutationMapEntries(m MutationMap) []MutationMapEntry {
 		infoCopy := info
 		entries = append(entries, MutationMapEntry{Path: path, MutationInfo: &infoCopy})
 	}
-	sort.Slice(entries, func(i, j int) bool {
-		return comparePathsNumerically(string(entries[i].Path), string(entries[j].Path)) < 0
+	slices.SortFunc(entries, func(a, b MutationMapEntry) int {
+		return comparePathsNumerically(string(a.Path), string(b.Path))
 	})
 	return entries
 }
@@ -89,11 +156,8 @@ func SortedMutationMapEntries(m MutationMap) []MutationMapEntry {
 func comparePathsNumerically(a, b string) int {
 	segsA := strings.Split(a, ".")
 	segsB := strings.Split(b, ".")
-	n := len(segsA)
-	if len(segsB) < n {
-		n = len(segsB)
-	}
-	for k := 0; k < n; k++ {
+	n := min(len(segsA), len(segsB))
+	for k := range n {
 		sa, sb := segsA[k], segsB[k]
 		na, errA := strconv.Atoi(sa)
 		nb, errB := strconv.Atoi(sb)
@@ -136,9 +200,7 @@ func NewPathPrefixIndex(m MutationMap) *PathPrefixIndex {
 	for path := range m {
 		paths = append(paths, path)
 	}
-	sort.Slice(paths, func(i, j int) bool {
-		return paths[i] < paths[j]
-	})
+	slices.Sort(paths)
 	return &PathPrefixIndex{SortedPaths: paths}
 }
 

@@ -69,6 +69,7 @@ const (
 	OutputTypeYAML                 = OutputType("YAML")
 	OutputTypeOpaque               = OutputType("Opaque")
 	OutputTypeResourceMutationList = OutputType("ResourceMutationList")
+	OutputTypeMutationConflictList = OutputType("MutationConflictList")
 )
 
 const MaxDataTypeLength = 32

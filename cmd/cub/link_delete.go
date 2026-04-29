@@ -99,21 +99,84 @@ func runBulkLinkDelete() error {
 		return err
 	}
 
-	var effectiveWhere string
-	if len(linkDeleteIdentifiers) > 0 {
-		whereClause, err := buildWhereClauseFromLinks(linkDeleteIdentifiers)
+	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkDeleteIdentifiers, where, selectedSpaceID)
+	if err != nil {
+		return err
+	}
+
+	// If wait is requested, fetch the links first so we know which from-units
+	// to await triggers on after the delete completes.
+	var fromUnits []linkFromUnit
+	if wait {
+		links, err := apiSearchLinks(effectiveWhere, "*", filterID)
 		if err != nil {
 			return err
 		}
-		effectiveWhere = whereClause
-	} else {
-		effectiveWhere = where
+		fromUnits = uniqueFromUnitsFromLinks(links)
 	}
 
-	// Add space constraint to the where clause only if not org level
-	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
+	res, err := callBulkDeleteLinks(effectiveWhere, filterID, contains)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
+	}
 
-	// Build bulk delete parameters
+	// Wait for triggers BEFORE displaying results (for successful deletes)
+	if wait && len(fromUnits) > 0 && res.StatusCode() == 200 {
+		awaitTriggersOnLinkFromUnits(fromUnits)
+	}
+
+	// Handle the response
+	return handleBulkLinkDeleteResponse(res.JSON200, res.JSON207, res.StatusCode(), "delete", effectiveWhere)
+}
+
+// linkFromUnit identifies the from-unit of a link, used to await triggers
+// after a bulk link operation that affects multiple links across spaces.
+type linkFromUnit struct {
+	UnitID  string
+	SpaceID string
+}
+
+// uniqueFromUnitsFromLinks returns the unique (FromUnitID, SpaceID) pairs from
+// the given links.
+func uniqueFromUnitsFromLinks(links []*goclientnew.ExtendedLink) []linkFromUnit {
+	seen := make(map[string]bool)
+	var out []linkFromUnit
+	for _, link := range links {
+		if link.Link == nil {
+			continue
+		}
+		unitID := link.Link.FromUnitID.String()
+		spaceID := link.Link.SpaceID.String()
+		key := unitID + ":" + spaceID
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, linkFromUnit{UnitID: unitID, SpaceID: spaceID})
+	}
+	return out
+}
+
+// awaitTriggersOnLinkFromUnits awaits trigger removal on each provided
+// from-unit. Errors fetching individual units are silently ignored so the
+// caller can proceed with the remaining units.
+func awaitTriggersOnLinkFromUnits(fromUnits []linkFromUnit) {
+	if !quiet && !isAlternativeOutput() {
+		tprintRaw("Awaiting triggers...")
+	}
+	for _, unit := range fromUnits {
+		unitDetails, err := apiGetUnitInSpace(unit.UnitID, unit.SpaceID, "*")
+		if err != nil {
+			continue
+		}
+		_ = awaitTriggersRemoval(unitDetails)
+	}
+}
+
+// callBulkDeleteLinks issues a BulkDeleteLinks API call. Used by
+// runBulkLinkDelete and the cross-space path of runBulkLinkUpdate. The
+// containsClause is optional and may be empty.
+func callBulkDeleteLinks(effectiveWhere, filterID, containsClause string) (*goclientnew.BulkDeleteLinksResponse, error) {
 	include := "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
 	params := &goclientnew.BulkDeleteLinksParams{
 		Where:   &effectiveWhere,
@@ -122,64 +185,10 @@ func runBulkLinkDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
-	if contains != "" {
-		params.Contains = &contains
+	if containsClause != "" {
+		params.Contains = &containsClause
 	}
-
-	// If wait is requested, we need to fetch the links first to get their FromUnitIDs and SpaceIDs
-	var fromUnits []struct {
-		UnitID  string
-		SpaceID string
-	}
-	if wait {
-		// Use apiSearchLinks to fetch links that will be deleted
-		links, err := apiSearchLinks(effectiveWhere, "*", filterID)
-		if err != nil {
-			return err
-		}
-
-		// Extract unique FromUnitID/SpaceID pairs
-		uniqueUnits := make(map[string]bool)
-		for _, link := range links {
-			unitID := link.Link.FromUnitID.String()
-			spaceID := link.Link.SpaceID.String()
-			key := unitID + ":" + spaceID
-			if !uniqueUnits[key] {
-				uniqueUnits[key] = true
-				fromUnits = append(fromUnits, struct {
-					UnitID  string
-					SpaceID string
-				}{
-					UnitID:  unitID,
-					SpaceID: spaceID,
-				})
-			}
-		}
-	}
-
-	res, err := cubClientNew.BulkDeleteLinksWithResponse(ctx, params)
-	if cubapi.IsAPIError(err, res) {
-		return cubapi.InterpretErrorGeneric(err, res)
-	}
-
-	// Wait for triggers BEFORE displaying results (for successful deletes)
-	if wait && len(fromUnits) > 0 && res.StatusCode() == 200 {
-		if !quiet && !isAlternativeOutput() {
-			tprintRaw("Awaiting triggers...")
-		}
-		// Await triggers on each affected from unit
-		for _, unit := range fromUnits {
-			unitDetails, err := apiGetUnitInSpace(unit.UnitID, unit.SpaceID, "*") // get all fields for now
-			if err != nil {
-				// Continue with other units if one fails
-				continue
-			}
-			_ = awaitTriggersRemoval(unitDetails)
-		}
-	}
-
-	// Handle the response
-	return handleBulkLinkDeleteResponse(res.JSON200, res.JSON207, res.StatusCode(), "delete", effectiveWhere)
+	return cubClientNew.BulkDeleteLinksWithResponse(ctx, params)
 }
 
 func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {

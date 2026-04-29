@@ -250,20 +250,10 @@ func runSingleLinkCreate(args []string) error {
 }
 
 func runBulkLinkCreate(cmd *cobra.Command) error {
-	// Build WHERE clause from view identifiers or use provided where clause
-	var effectiveWhere string
-	if len(linkCreateArgs.linkSlugs) > 0 {
-		whereClause, err := buildWhereClauseFromLinks(linkCreateArgs.linkSlugs)
-		if err != nil {
-			return err
-		}
-		effectiveWhere = whereClause
-	} else {
-		effectiveWhere = where
+	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkCreateArgs.linkSlugs, where, selectedSpaceID)
+	if err != nil {
+		return err
 	}
-
-	// Add space constraint to the where clause only if not org level
-	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function with link-specific field enhancer
 	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
@@ -271,45 +261,22 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 		return err
 	}
 
-	// Build bulk create parameters
-	params := &goclientnew.BulkCreateLinksParams{}
-
-	// Set allow_exists parameter if flag is set
-	if allowExists {
-		allowExistsStr := "true"
-		params.AllowExists = &allowExistsStr
-	}
-
-	// Set where/filter parameters for selecting source links
-	if effectiveWhere != "" {
-		params.Where = &effectiveWhere
-	}
+	var filterID string
 	if filter != "" {
-		filterID, parseErr := parseFilterFlag(filter)
-		if parseErr != nil {
-			return errors.Wrapf(parseErr, "error parsing filter")
+		filterID, err = parseFilterFlag(filter)
+		if err != nil {
+			return errors.Wrapf(err, "error parsing filter")
 		}
-		params.Filter = &filterID
 	}
 
-	// Set retargeting parameters
-	if linkCreateArgs.reverse {
-		reverseVal := true
-		params.Reverse = &reverseVal
-	}
-	if linkCreateArgs.fromDownstreamWhere != "" {
-		params.FromDownstreamWhere = &linkCreateArgs.fromDownstreamWhere
-	}
-	if linkCreateArgs.toDownstreamWhere != "" {
-		params.ToDownstreamWhere = &linkCreateArgs.toDownstreamWhere
-	}
-
-	// Call the bulk create API
-	bulkRes, err := cubClientNew.BulkCreateLinksWithBodyWithResponse(
-		ctx,
-		params,
-		"application/merge-patch+json",
-		bytes.NewReader(patchJSON),
+	bulkRes, err := callBulkCreateLinks(
+		effectiveWhere,
+		filterID,
+		patchJSON,
+		linkCreateArgs.reverse,
+		linkCreateArgs.fromDownstreamWhere,
+		linkCreateArgs.toDownstreamWhere,
+		allowExists,
 	)
 	if err != nil {
 		return err
@@ -318,4 +285,44 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 	// Handle the response
 	return handleBulkLinkUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create",
 		fmt.Sprintf("where: %s, reverse: %v, from_downstream_where: %s", where, linkCreateArgs.reverse, linkCreateArgs.fromDownstreamWhere))
+}
+
+// callBulkCreateLinks issues a BulkCreateLinks API call. Source links are
+// selected via effectiveWhere/filterID; retargeting is controlled by reverse
+// and the optional downstream-where expressions. Used by both runBulkLinkCreate
+// and the cross-space path of runBulkLinkUpdate.
+func callBulkCreateLinks(
+	effectiveWhere, filterID string,
+	patchJSON []byte,
+	reverse bool,
+	fromDownstreamWhere, toDownstreamWhere string,
+	allowExistsFlag bool,
+) (*goclientnew.BulkCreateLinksResponse, error) {
+	params := &goclientnew.BulkCreateLinksParams{}
+	if allowExistsFlag {
+		s := "true"
+		params.AllowExists = &s
+	}
+	if effectiveWhere != "" {
+		params.Where = &effectiveWhere
+	}
+	if filterID != "" {
+		params.Filter = &filterID
+	}
+	if reverse {
+		rev := true
+		params.Reverse = &rev
+	}
+	if fromDownstreamWhere != "" {
+		params.FromDownstreamWhere = &fromDownstreamWhere
+	}
+	if toDownstreamWhere != "" {
+		params.ToDownstreamWhere = &toDownstreamWhere
+	}
+	return cubClientNew.BulkCreateLinksWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchJSON),
+	)
 }

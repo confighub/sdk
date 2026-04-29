@@ -4258,7 +4258,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on FunctionSignature: RequiredParameters, VarArgs, Validating, Idempotent, FunctionType, AttributeName, ToolchainType, FunctionName, Description, Mutating, Hermetic, OutputInfo.OutputType, OutputInfo.ResultName, OutputInfo.Description.
+          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
 
           The whole string must be query-encoded.
         in: query
@@ -4544,12 +4544,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unable to process configuration data
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker is overloaded with outstanding function invocations
         "500":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Something went wrong while processing Function.
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker is unavailable; one or more function sources
+            were not executed
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Timed out waiting for the bridge worker to return a function
+            result
         default:
           content:
             application/json:
@@ -10717,7 +10737,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on FunctionSignature: RequiredParameters, VarArgs, Validating, Idempotent, FunctionType, AttributeName, ToolchainType, FunctionName, Description, Mutating, Hermetic, OutputInfo.OutputType, OutputInfo.ResultName, OutputInfo.Description.
+          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
 
           The whole string must be query-encoded.
         in: query
@@ -11017,12 +11037,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unable to process configuration data
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker is overloaded with outstanding function invocations
         "500":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Something went wrong while processing Function.
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Bridge worker is unavailable; one or more function sources
+            were not executed
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Timed out waiting for the bridge worker to return a function
+            result
         default:
           content:
             application/json:

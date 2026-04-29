@@ -57,6 +57,13 @@ const (
 
 	ActionResultFunctionInvocationCompleted ActionResultType = "FunctionInvocationCompleted"
 	ActionResultFunctionInvocationFailed    ActionResultType = "FunctionInvocationFailed"
+
+	// ActionResultHeartbeatNotReady is set by the worker on a heartbeat response
+	// when the worker is connected and responding but is under resource pressure
+	// (e.g., low memory) and should not be sent additional work. The Message field
+	// describes the cause. This is a structured signal so callers don't have to
+	// infer condition from a free-form Message string.
+	ActionResultHeartbeatNotReady ActionResultType = "HeartbeatNotReady"
 )
 
 var ValidActionResult = map[ActionResultType]bool{
@@ -75,6 +82,7 @@ var ValidActionResult = map[ActionResultType]bool{
 	ActionResultImportFailed:                true,
 	ActionResultFunctionInvocationCompleted: true,
 	ActionResultFunctionInvocationFailed:    true,
+	ActionResultHeartbeatNotReady:           true,
 }
 
 type ActionType string

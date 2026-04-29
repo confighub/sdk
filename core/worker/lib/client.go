@@ -573,9 +573,11 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			*/
 
 			heartbeatMessage := ""
+			heartbeatResult := api.ActionResultNone
 			if len(pressureMessages) > 0 {
 				// e.g., "MemoryPressure+DiskPressure"
 				heartbeatMessage = strings.Join(pressureMessages, "+")
+				heartbeatResult = api.ActionResultHeartbeatNotReady
 			}
 			// --- Check Resource Pressure --- END ---
 
@@ -585,9 +587,9 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 			result := &api.ActionResult{
 				ActionResultBaseMeta: api.ActionResultBaseMeta{
 					Action:       api.ActionHeartbeat,
-					Result:       api.ActionResultNone, // Result type is less important here
+					Result:       heartbeatResult, // HeartbeatNotReady when pressured, None otherwise
 					Status:       api.ActionStatusCompleted,
-					Message:      heartbeatMessage, // Send pressure status or empty string
+					Message:      heartbeatMessage, // human-readable cause (or empty)
 					StartedAt:    startedAt,
 					TerminatedAt: &terminatedAt,
 				},
@@ -746,10 +748,11 @@ func (c *workerClient) handleEvent(ctx context.Context, eventType string, data [
 
 			success := c.unitQueues.CancelOperation(op.Payload.QueuedOperationID)
 
-			// Send acknowledgment
+			// Send acknowledgment. A successful cancel sends Canceled (not Completed)
+			// so callers can distinguish "we aborted the work" from "the work finished".
 			startedAt := time.Now()
 			terminatedAt := startedAt
-			status := api.ActionStatusCompleted
+			status := api.ActionStatusCanceled
 			message := "Operation cancelled"
 			if !success {
 				status = api.ActionStatusFailed

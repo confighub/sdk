@@ -22,10 +22,11 @@ func (c *workerClient) processFunctionCommand(ctx *defaultFunctionWorkerContext,
 		// Cancel the operation
 		success := c.unitQueues.CancelOperation(reqEvent.Payload.QueuedOperationID)
 
-		// Send acknowledgment
+		// Send acknowledgment. A successful cancel sends Canceled (not Completed)
+		// so callers can distinguish "we aborted the work" from "the work finished".
 		startedAt := time.Now()
 		terminatedAt := startedAt
-		status := api.ActionStatusCompleted
+		status := api.ActionStatusCanceled
 		message := "Operation cancelled"
 		if !success {
 			status = api.ActionStatusFailed

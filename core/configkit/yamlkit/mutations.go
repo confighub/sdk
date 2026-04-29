@@ -20,82 +20,62 @@ import (
 
 // ComputeMutations and ComputeMutationsForDocs Overview
 //
-// ComputeMutations performs a structured diff between two YAML configurations (represented as
-// gaby.Container, which is a list of parsed YAML documents). It determines what changes were
-// made and records them in a way that can be accumulated over subsequent edits, using api.OffsetMutations
-// and AddMutations.
+// ComputeMutations performs a structured diff between two YAML configurations (represented
+// as gaby.Container, which is a list of parsed YAML documents). It determines what changed
+// and records the result as an api.ResourceMutationList: one entry per resource, each
+// carrying a resource-level MutationType, a PathMutationMap of leaf-level changes, and
+// alias information so renamed resources can still be matched.
 //
-// ComputeMutations is currently used in three related ways:
-// 1. Diffing two revisions of the same unit to use with PatchMutations in a diff/patch (aka three-way merge) of
-//    a different unit or the same unit (for redo/rebase)
-// 2. Diffing a single change, by a mutating function or a configuration data update or refresh, and accumulating it
-//    with prior mutations to later use to set Predicates to enhance (1).
-// 3. Diffing revisions of two different units to use with SubtractMutations to enhance (1)
+// The output is the data form of a "patch" that can be:
 //
-// Input:
-//   - previousParsedData: The "before" state (parsed YAML documents)
-//   - modifiedParsedData: The "after" state (parsed YAML documents)
-//   - functionIndex: A sequence number to track which function/operation made the change
-//   - resourceProvider: Toolchain-specific interface for extracting resource metadata
+//  1. Replayed onto a different (or earlier) configuration via PatchMutations as part of a
+//     three-way merge (e.g., upgrading a downstream Unit from upstream).
+//  2. Accumulated across sequential edits via api.OffsetMutations + AddMutations to record
+//     a compiled history of who changed what (used as predicates for selective patching).
+//  3. Diffed against another mutation set via SubtractMutations / PatchMutations'
+//     mutationsToSubtract argument so target-side changes survive the patch.
 //
-// Output:
-//   - api.ResourceMutationList: A list of mutations, one per resource/document
+// Inputs:
+//   - previousParsedData / modifiedParsedData: the "before" / "after" parsed YAML docs.
+//   - functionIndex: a sequence number identifying which operation produced this diff.
+//   - resourceProvider: toolchain-specific interface for extracting resource metadata
+//     and (importantly) for declaring which array paths are merge-keyed associative arrays.
 //
-// Algorithm:
+// Algorithm at a glance:
 //
-// 1. Resource Matching
+//  1. Resource matching (this function): for each modified doc, find the corresponding
+//     previous doc by ResourceMergeID, then by ResourceType+Name, then by fuzzy similarity
+//     score (path-mutation count / total lines, with a maxMatchScore threshold). Unmatched
+//     modified docs are Adds; unmatched previous docs are Deletes. Both old and new names
+//     are recorded in Aliases / AliasesWithoutScopes so subsequent operations can match
+//     across renames.
 //
-// For each document in the modified data, it tries to find the corresponding document in
-// the previous data:
-//   - Exact name match: If ResourceType and ResourceName match exactly, it's a definite match
-//   - Fuzzy matching: If names don't match, it uses a similarity score based on the number
-//     of path-level differences divided by total lines. This handles renamed resources.
-//   - Match threshold: If the best match score exceeds 1.0, the resource is considered new
+//  2. Path-level diff (ComputeMutationsForDocs): for matched resources, do a stack-based
+//     deep comparison. Maps are compared by key. Arrays are compared by positional index
+//     by default; when the resource provider declares a merge key for the array path,
+//     elements are matched by merge-key value and paths use the ?key=value;@index syntax
+//     so the per-element mutation can be applied at the target element regardless of its
+//     current index.
 //
-// 2. Path-Level Diff via ComputeMutationsForDocs
-//
-// For matched resources, it performs a deep comparison using a stack-based traversal:
-//   - Compares children of maps recursively
-//   - Detects Add: key exists in modified but not previous
-//   - Detects Update: key exists in both but contents differ
-//   - Detects Delete: key exists in previous but not modified
-//   - Handles arrays by index
-//
-// 3. Mutation Types
-//
-// For each resource, the function assigns a ResourceMutationInfo.MutationType:
-//   - Add: Resource in modified, not in previous
-//   - Update: Resource in both, has path changes
-//   - None: Resource in both, no path changes
-//   - Delete: Resource in previous, not in modified
-//
-// 4. Alias Tracking
-//
-// When resources are matched (even with different names), both the old and new names are
-// recorded in Aliases and AliasesWithoutScopes. This enables tracking resources across renames.
+//  3. Resource-level MutationType is then Add (modified-only), Delete (previous-only),
+//     Update (matched and path map non-empty), or None (matched, no path changes).
 //
 // Example:
 //
-// Given previousParsedData:
+//	previous:                                    modified:
+//	  apiVersion: apps/v1                          apiVersion: apps/v1
+//	  kind: Deployment                             kind: Deployment
+//	  metadata:                                    metadata:
+//	    name: myapp                                  name: myapp
+//	  spec:                                        spec:
+//	    replicas: 1                                  replicas: 3
+//	    template:                                    template:
+//	      spec:                                        spec:
+//	        containers:                                  containers:
+//	        - name: app                                  - name: app
+//	          image: nginx:1.19                            image: nginx:1.20
 //
-//	apiVersion: apps/v1
-//	kind: Deployment
-//	metadata:
-//	  name: myapp
-//	spec:
-//	  replicas: 1
-//
-// And modifiedParsedData:
-//
-//	apiVersion: apps/v1
-//	kind: Deployment
-//	metadata:
-//	  name: myapp
-//	spec:
-//	  replicas: 3
-//	  image: nginx:1.20
-//
-// ComputeMutations would return:
+// With the K8s resource provider (merge key "name" on containers) the result is:
 //
 //	ResourceMutationList{
 //	  {
@@ -103,7 +83,7 @@ import (
 //	    ResourceMutationInfo: {MutationType: Update, Index: 1},
 //	    PathMutationMap: {
 //	      "spec.replicas": {MutationType: Update, Value: "3"},
-//	      "spec.image":    {MutationType: Add, Value: "nginx:1.20"},
+//	      "spec.template.spec.containers.?name=app;@0.image": {MutationType: Update, Value: "nginx:1.20"},
 //	    },
 //	    Aliases: {"default/myapp": {}},
 //	  },
@@ -121,18 +101,30 @@ func AssociativePathSegment(mergeKey string, mergeKeyValue string, index int) st
 	return "?" + EscapeDotsInPathSegment(mergeKey) + "=" + EscapeDotsInPathSegment(mergeKeyValue) + ";@" + strconv.Itoa(index)
 }
 
-// ResolveAssociativeSegments resolves ?key=value;@index segments in a path to numeric indices
-// by looking up elements in the document. It tries key=value match first, then falls back to
-// the positional index. Returns the resolved path with numeric indices only.
-func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) string {
+// ResolveAssociativeSegments resolves ?key=value;@index segments in a path to numeric
+// indices by looking up elements in the document. It tries key=value match first; if no
+// element matches by merge-key value, it considers the positional index:
+//
+//   - Out of bounds: the index is used as-is. This preserves Add-as-append semantics
+//     (e.g., a new element being appended to an array) and is harmless for Delete since
+//     the caller checks existence before deleting.
+//   - In bounds, element has no merge-key field: legacy data — fall back positionally.
+//   - In bounds, element has a different merge-key value: a different element. The
+//     segment is left unresolved so the caller can skip the operation.
+//
+// Returns the resolved path and a bool that is true only when every associative segment
+// was resolved (by merge-key match, by out-of-bounds index, or by legacy fallback).
+func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 	if !strings.Contains(path, "?") {
-		return path
+		return path, true
 	}
 	segments := gaby.DotPathToSlice(path)
 	var resolvedSegments []string
 	currentNode := doc
+	allResolved := true
 	for _, segment := range segments {
-		if !strings.HasPrefix(segment, "?") {
+		kv, isAssociative := strings.CutPrefix(segment, "?")
+		if !isAssociative {
 			resolvedSegments = append(resolvedSegments, EscapeDotsInPathSegment(segment))
 			if currentNode != nil {
 				currentNode = currentNode.S(segment)
@@ -140,20 +132,18 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) string {
 			continue
 		}
 		// Parse ?key=value or ?key=value;@index
-		kv := strings.TrimPrefix(segment, "?")
-		kvParts := strings.SplitN(kv, "=", 2)
-		if len(kvParts) != 2 {
+		key, value, ok := strings.Cut(kv, "=")
+		if !ok {
 			// Invalid, keep as-is
 			resolvedSegments = append(resolvedSegments, EscapeDotsInPathSegment(segment))
 			currentNode = nil
+			allResolved = false
 			continue
 		}
-		key := kvParts[0]
-		value := kvParts[1]
 		fallbackIndex := ""
-		if semiAt := strings.Index(value, ";@"); semiAt >= 0 {
-			fallbackIndex = value[semiAt+2:]
-			value = value[:semiAt]
+		if v, idx, ok := strings.Cut(value, ";@"); ok {
+			value = v
+			fallbackIndex = idx
 		}
 
 		resolved := false
@@ -170,27 +160,308 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) string {
 					break
 				}
 			}
-			// Fall back to positional index
+			// Fall back to the positional index when there is no key match. If the index
+			// is out of bounds (appending), use it as-is. If the element at the index
+			// has no value for the merge key, treat it as legacy data and fall back
+			// positionally. Otherwise the in-bounds element has a different merge-key
+			// value — it's a different element, so leave the segment unresolved.
 			if !resolved && fallbackIndex != "" {
 				idx, err := strconv.Atoi(fallbackIndex)
-				if err == nil && idx >= 0 && idx < len(elements) {
-					resolvedSegments = append(resolvedSegments, fallbackIndex)
-					currentNode = elements[idx]
-					resolved = true
+				if err == nil && idx >= 0 {
+					if idx >= len(elements) {
+						resolvedSegments = append(resolvedSegments, fallbackIndex)
+						currentNode = nil
+						resolved = true
+					} else if elements[idx].S(key) == nil {
+						resolvedSegments = append(resolvedSegments, fallbackIndex)
+						currentNode = elements[idx]
+						resolved = true
+					}
 				}
 			}
 		}
 		if !resolved {
-			// Can't resolve — use fallback index if available, otherwise keep segment as-is
-			if fallbackIndex != "" {
-				resolvedSegments = append(resolvedSegments, fallbackIndex)
-			} else {
-				resolvedSegments = append(resolvedSegments, EscapeDotsInPathSegment(segment))
-			}
+			// Couldn't resolve. Keep the segment as-is so callers can detect the
+			// unresolved state and skip the operation.
+			resolvedSegments = append(resolvedSegments, EscapeDotsInPathSegment(segment))
 			currentNode = nil
+			allResolved = false
 		}
 	}
-	return strings.Join(resolvedSegments, ".")
+	return strings.Join(resolvedSegments, "."), allResolved
+}
+
+// mergeArrayOrderMaps merges source-side and target-side ArrayOrderMap entries,
+// for each path that source has, by weaving the two desired sequences together.
+// Paths only in target are dropped (target's reorder for an array source didn't
+// touch is already in place; no patch reorder is needed). See mergeArrayOrders
+// for the per-array merge semantics.
+//
+// sourceArrayElementAliases (a sourceParentPath -> {oldKey -> newKey} map)
+// translates target-side keys to source-side keys before merging when source
+// renamed an element: target's diff (computed against the merge base) uses
+// the previous merge-key value for that element, while source's ArrayOrders
+// entry uses the new key. Translating target's order brings them into the
+// same key namespace so common elements line up correctly during the merge.
+func mergeArrayOrderMaps(sourceArrayOrders, targetArrayOrders api.ArrayOrderMap, sourceArrayElementAliases api.ArrayElementAliasMap) api.ArrayOrderMap {
+	if len(sourceArrayOrders) == 0 {
+		return nil
+	}
+	if len(targetArrayOrders) == 0 && len(sourceArrayElementAliases) == 0 {
+		return sourceArrayOrders
+	}
+	result := make(api.ArrayOrderMap, len(sourceArrayOrders))
+	for path, sourceOrder := range sourceArrayOrders {
+		targetOrder := targetArrayOrders[path]
+		if pathAliases, ok := sourceArrayElementAliases[path]; ok && len(pathAliases) > 0 && len(targetOrder) > 0 {
+			translated := make([]string, len(targetOrder))
+			for i, k := range targetOrder {
+				if newKey, ok := pathAliases[k]; ok {
+					translated[i] = newKey
+				} else {
+					translated[i] = k
+				}
+			}
+			targetOrder = translated
+		}
+		if len(targetOrder) == 0 {
+			result[path] = sourceOrder
+			continue
+		}
+		result[path] = mergeArrayOrders(sourceOrder, targetOrder)
+	}
+	return result
+}
+
+// mergeArrayOrders combines source's and target's desired sequences for a single
+// merge-keyed array path. The result threads the two so:
+//
+//   - Common elements (present in both sequences by merge-key value) form a
+//     spine in source's order. If source and target disagree about the relative
+//     order of common elements, source wins (it's the patch's intent).
+//   - Source-only elements (added by source's diff, not in target) keep their
+//     position relative to source's spine: each is emitted right after its
+//     preceding common element from source's view.
+//   - Target-only elements (added by target's diff, not in source) keep their
+//     position relative to source's spine using their preceding common element
+//     from target's view: each is emitted right after that common.
+//   - At each common anchor, source-only elements emit before target-only
+//     elements (source has explicit intent to add at that position; target's
+//     element predates the patch).
+//   - Front-of-array (no preceding common): source-only first, then target-only.
+//
+// This is the LCS-style merge described in the positional-arrays plan: the
+// common subsequence is the LCS picked in source's order; insertions on either
+// side are attached to their preceding LCS anchor.
+func mergeArrayOrders(sourceOrder, targetOrder []string) []string {
+	if len(sourceOrder) == 0 {
+		return targetOrder
+	}
+	if len(targetOrder) == 0 {
+		return sourceOrder
+	}
+	sourceSet := make(map[string]bool, len(sourceOrder))
+	for _, k := range sourceOrder {
+		sourceSet[k] = true
+	}
+	targetSet := make(map[string]bool, len(targetOrder))
+	for _, k := range targetOrder {
+		targetSet[k] = true
+	}
+
+	// Bucket source-only keys by their preceding common in source's order.
+	// Empty key = "before the first common".
+	sourceOnlyAfter := make(map[string][]string)
+	var lastCommon string
+	for _, s := range sourceOrder {
+		if sourceSet[s] && targetSet[s] {
+			lastCommon = s
+		} else {
+			sourceOnlyAfter[lastCommon] = append(sourceOnlyAfter[lastCommon], s)
+		}
+	}
+	// Bucket target-only keys by their preceding common in target's order.
+	targetOnlyAfter := make(map[string][]string)
+	lastCommon = ""
+	for _, t := range targetOrder {
+		if sourceSet[t] && targetSet[t] {
+			lastCommon = t
+		} else if !sourceSet[t] {
+			targetOnlyAfter[lastCommon] = append(targetOnlyAfter[lastCommon], t)
+		}
+	}
+
+	// Emit. Front first, then walk source over commons.
+	result := make([]string, 0, len(sourceOrder)+len(targetOrder))
+	result = append(result, sourceOnlyAfter[""]...)
+	result = append(result, targetOnlyAfter[""]...)
+	for _, s := range sourceOrder {
+		if !(sourceSet[s] && targetSet[s]) {
+			continue // source-only, already emitted via the bucket
+		}
+		result = append(result, s)
+		result = append(result, sourceOnlyAfter[s]...)
+		result = append(result, targetOnlyAfter[s]...)
+	}
+	return result
+}
+
+// reorderArrayByMergeKey rearranges the elements of a SequenceNode at the given
+// path inside doc so they match desiredOrder by merge-key value. Elements whose
+// merge-key value is in desiredOrder are emitted in that order, followed by
+// elements not in desiredOrder (in their original relative order). Elements
+// without a merge-key value are also kept in their original relative order
+// after the keyed ones.
+//
+// path may contain associative segments — they're resolved against doc first.
+// If the path doesn't resolve to a SequenceNode, this is a no-op.
+func reorderArrayByMergeKey(doc *gaby.YamlDoc, path string, mergeKey string, desiredOrder []string) {
+	if doc == nil || mergeKey == "" || len(desiredOrder) == 0 {
+		return
+	}
+	resolvedPath, ok := ResolveAssociativeSegments(doc, path)
+	if !ok {
+		return
+	}
+	arrayDoc := doc.Path(resolvedPath)
+	if arrayDoc == nil {
+		return
+	}
+	node := arrayDoc.YNode()
+	if node == nil || node.Kind != yaml.SequenceNode {
+		return
+	}
+	content := node.Content
+	if len(content) <= 1 {
+		return
+	}
+
+	// Build merge-key value -> index for current elements. Elements without a
+	// merge-key field map to the empty string, but we don't include those in
+	// the lookup map (they're always treated as not-in-desired).
+	keyToIndex := make(map[string]int, len(content))
+	for i, elem := range content {
+		if elem.Kind != yaml.MappingNode {
+			continue
+		}
+		for j := 0; j < len(elem.Content)-1; j += 2 {
+			k, v := elem.Content[j], elem.Content[j+1]
+			if k.Kind == yaml.ScalarNode && k.Value == mergeKey && v.Kind == yaml.ScalarNode {
+				keyToIndex[v.Value] = i
+				break
+			}
+		}
+	}
+
+	used := make([]bool, len(content))
+	reordered := make([]*yaml.Node, 0, len(content))
+	for _, key := range desiredOrder {
+		if idx, found := keyToIndex[key]; found && !used[idx] {
+			reordered = append(reordered, content[idx])
+			used[idx] = true
+		}
+	}
+	for i, elem := range content {
+		if !used[i] {
+			reordered = append(reordered, elem)
+		}
+	}
+	node.Content = reordered
+}
+
+// mutationCost returns the cost (in leaf-value units) of a single mutation.
+// A path mutation with no Value or with a scalar Value contributes 1; one
+// whose Value is a YAML mapping or sequence contributes the number of leaf
+// scalars inside the subtree, since deleting/adding a whole container or
+// a whole resources block represents many field-level changes even though
+// it shows up as a single entry in PathMutationMap.
+func mutationCost(info api.MutationInfo) int {
+	if info.Value == "" {
+		return 1
+	}
+	parsed, err := gaby.ParseYAML([]byte(info.Value))
+	if err != nil || parsed == nil {
+		return 1
+	}
+	n := countLeafNodes(parsed.YNode())
+	if n < 1 {
+		return 1
+	}
+	return n
+}
+
+// mutationMapCost sums mutationCost over every entry in the map.
+func mutationMapCost(m api.MutationMap) int {
+	total := 0
+	for _, info := range m {
+		total += mutationCost(info)
+	}
+	return total
+}
+
+// countLeafNodes returns the number of scalar leaves reachable from node by
+// recursively descending into mappings and sequences. A scalar contributes 1.
+func countLeafNodes(node *yaml.Node) int {
+	if node == nil {
+		return 0
+	}
+	switch node.Kind {
+	case yaml.DocumentNode:
+		total := 0
+		for _, c := range node.Content {
+			total += countLeafNodes(c)
+		}
+		return total
+	case yaml.MappingNode:
+		total := 0
+		// Mapping content alternates key, value; count value subtrees only.
+		for i := 1; i < len(node.Content); i += 2 {
+			total += countLeafNodes(node.Content[i])
+		}
+		return total
+	case yaml.SequenceNode:
+		total := 0
+		for _, c := range node.Content {
+			total += countLeafNodes(c)
+		}
+		return total
+	case yaml.ScalarNode, yaml.AliasNode:
+		return 1
+	}
+	return 0
+}
+
+// appendPathForAdd returns a numeric path that appends to the parent array of an
+// associative path whose trailing segment couldn't be matched by merge-key value.
+// Used by applyPathMutations when an Add's merge-key path doesn't match any
+// existing element and the element at the fallback index has a different
+// merge-key value: rather than overwriting that unrelated element, the new
+// element is appended to the array (index = len(elements)).
+//
+// Returns the rewritten path and true on success. Returns false if the path's
+// last segment is not associative or the parent path can't be resolved to an
+// array in the current doc.
+func appendPathForAdd(doc *gaby.YamlDoc, path string) (string, bool) {
+	segments := gaby.DotPathToSlice(path)
+	if len(segments) == 0 {
+		return "", false
+	}
+	last := segments[len(segments)-1]
+	if !strings.HasPrefix(last, "?") {
+		return "", false
+	}
+	parentSegments := segments[:len(segments)-1]
+	parentPath := JoinPathSegments(parentSegments)
+	parentNode := doc.Path(parentPath)
+	if parentNode == nil {
+		return "", false
+	}
+	children := parentNode.Children()
+	if children == nil {
+		return "", false
+	}
+	parentSegments = append(parentSegments, strconv.Itoa(len(children)))
+	return JoinPathSegments(parentSegments), true
 }
 
 // StripAssociativeSegments converts ?key=value;@index segments to just the numeric index.
@@ -202,21 +473,20 @@ func StripAssociativeSegments(path string) string {
 	}
 	segments := gaby.DotPathToSlice(path)
 	for i, segment := range segments {
-		if !strings.HasPrefix(segment, "?") {
+		kv, isAssociative := strings.CutPrefix(segment, "?")
+		if !isAssociative {
 			continue
 		}
-		kv := strings.TrimPrefix(segment, "?")
-		kvParts := strings.SplitN(kv, "=", 2)
-		if len(kvParts) != 2 {
+		_, value, ok := strings.Cut(kv, "=")
+		if !ok {
 			continue
 		}
-		value := kvParts[1]
-		if strings.HasPrefix(value, "@") {
+		if idx, isDirect := strings.CutPrefix(value, "@"); isDirect {
 			// ?key=@index -> index
-			segments[i] = strings.TrimPrefix(value, "@")
-		} else if semiAt := strings.Index(value, ";@"); semiAt >= 0 {
+			segments[i] = idx
+		} else if _, idx, ok := strings.Cut(value, ";@"); ok {
 			// ?key=value;@index -> index
-			segments[i] = value[semiAt+2:]
+			segments[i] = idx
 		}
 	}
 	return JoinPathSegments(segments)
@@ -237,50 +507,63 @@ func ExtractMergeKeysFromPath(path string) []MergeKeyEntry {
 	segments := gaby.DotPathToSlice(path)
 	var entries []MergeKeyEntry
 	for _, segment := range segments {
-		if !strings.HasPrefix(segment, "?") {
+		kv, isAssociative := strings.CutPrefix(segment, "?")
+		if !isAssociative {
 			continue
 		}
-		kv := strings.TrimPrefix(segment, "?")
-		kvParts := strings.SplitN(kv, "=", 2)
-		if len(kvParts) != 2 {
+		key, value, ok := strings.Cut(kv, "=")
+		if !ok {
 			continue
 		}
-		key := strings.ReplaceAll(kvParts[0], "~1", ".")
-		value := kvParts[1]
 		if strings.HasPrefix(value, "@") {
 			// ?key=@index — direct index, no merge key value
 			continue
 		}
-		if semiAt := strings.Index(value, ";@"); semiAt >= 0 {
-			value = value[:semiAt]
+		if v, _, ok := strings.Cut(value, ";@"); ok {
+			value = v
 		}
-		value = strings.ReplaceAll(value, "~1", ".")
-		entries = append(entries, MergeKeyEntry{Key: key, Value: value})
+		entries = append(entries, MergeKeyEntry{
+			Key:   strings.ReplaceAll(key, "~1", "."),
+			Value: strings.ReplaceAll(value, "~1", "."),
+		})
 	}
 	return entries
 }
 
-// ComputeMutationsForDocs determines the edits that have been performed to transform the previousDoc
-// into modifiedDoc. The resulting mutations are associated with the provided functionIndex.
-// The pathMutationMap is modified in place.
+// ComputeMutationsForDocs determines the edits that have been performed to transform the
+// previousDoc into modifiedDoc and records them in pathMutationMap (modified in place),
+// associated with the provided functionIndex.
 //
-// mergeKeyLookup, if non-nil, is called with array paths to determine whether the array
-// is associative (has a merge key). If so, elements are matched by merge key value
-// instead of positional index, and paths use the ?key=value;@index syntax.
-func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup) {
-	// NOTE: We do not tombstone removed paths in mutations so they are not later re-added
-	// by a patch. Example: a port in a Service is removed from a downstream unit and
-	// some part of that port spec is modified in the upstream unit. The next PatchMutations
-	// for upgrade would reinsert the port. We handle that by removing them from the mutations
-	// before they are patched with SubtractMutations and/or by selecting mutations eligible to
-	// be patched, by setting the Predicate values.
-
-	// There's also the reciprocal issue of what to do in the case that a field is modified
-	// in a downstream unit and a block of configuration around it (e.g., a resource or a container)
-	// is removed from the upstream unit. For now, we will remove those deletions using SubtractMutations.
-
-	// TODO: Decide what to do about embedded accessors
-
+// mergeKeyLookup, if non-nil, is called with array paths to determine whether the array is
+// merge-keyed associative. If so, elements are matched by merge-key value (not positional
+// index) and paths use the ?key=value;@index syntax. The positional index is retained as a
+// fallback hint, but PatchMutations only uses it when the element at that index has no
+// merge-key field (legacy data) or the index is out of bounds (append).
+//
+// Design notes:
+//
+//   - Removed paths are not tombstoned. If an element in the downstream is then modified
+//     by upstream, the corresponding path will be present in mutationsPatch and absent
+//     from the target's data; the upstream path's child will not be re-added because
+//     PatchMutations honors the target's removal via mutationsToSubtract.
+//   - The reciprocal case — a field modified downstream while the surrounding block is
+//     removed upstream — is reconciled in PatchMutations / SubtractMutations.
+//
+// TODO: Decide what to do about embedded accessors
+//
+// arrayOrders, if non-nil, is populated with the desired merge-key sequence for
+// every merge-keyed array we descend into whose modified-side order or element
+// set differs from the previous side. PatchMutations consumes these to reorder
+// the target array after path mutations are applied, so positional associative
+// arrays preserve source-side ordering.
+//
+// arrayElementAliases, if non-nil, is populated with element-level renames
+// detected inside merge-keyed arrays. When an unmatched modified element and
+// an unmatched previous element are similar enough, the pair is treated as a
+// rename: child paths are emitted under the previous merge-key value (so they
+// align with target-side paths in SubtractMutations) and the alias is
+// recorded so PatchMutations rewrites the merge-key field at apply time.
+func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap) {
 	// Define a traversal item for our stack
 	type traversalItem struct {
 		path        string
@@ -434,12 +717,27 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					index int
 					doc   *gaby.YamlDoc
 				}
+				type pendingAddEntry struct {
+					modifiedIndex int
+					modifiedChild *gaby.YamlDoc
+					keyValue      string
+				}
+				var pendingAdds []pendingAddEntry
 				previousByKey := make(map[string]previousEntry, len(previousArrayChildren))
+				previousKeySeq := make([]string, 0, len(previousArrayChildren))
 				for i, child := range previousArrayChildren {
 					keyNode := child.S(mergeKey)
 					if keyNode != nil {
 						keyValue := fmt.Sprintf("%v", keyNode.Data())
 						previousByKey[keyValue] = previousEntry{index: i, doc: child}
+						previousKeySeq = append(previousKeySeq, keyValue)
+					}
+				}
+				// Build the modified-side merge-key sequence for arrayOrders.
+				modifiedKeySeq := make([]string, 0, len(modifiedArrayChildren))
+				for _, modifiedChild := range modifiedArrayChildren {
+					if keyNode := modifiedChild.S(mergeKey); keyNode != nil {
+						modifiedKeySeq = append(modifiedKeySeq, fmt.Sprintf("%v", keyNode.Data()))
 					}
 				}
 
@@ -482,14 +780,139 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 							modifiedDoc: modifiedChild,
 						})
 					} else {
-						// Not found in previous; this is an addition.
-						currentPath := path + "." + AssociativePathSegment(mergeKey, keyValue, modifiedIndex)
+						// Defer: might be a rename. The rename-detection pass below
+						// pairs each unmatched modified element against unmatched
+						// previous elements via similarity; truly-unmatched ones
+						// fall through to Add emission afterward.
+						pendingAdds = append(pendingAdds, pendingAddEntry{
+							modifiedIndex: modifiedIndex,
+							modifiedChild: modifiedChild,
+							keyValue:      keyValue,
+						})
+					}
+				}
+
+				// Rename-detection pass. For each pending Add, find the unmatched
+				// previous element that yields the smallest sub-diff. If the
+				// similarity score (sub-diff path count / modified element line
+				// count) is below the threshold, treat the pair as a rename:
+				//   - emit child path mutations under the PREVIOUS merge-key value
+				//     (so SubtractMutations aligns source's paths with target's
+				//     paths, which still use the previous key);
+				//   - record the rename in arrayElementAliases so PatchMutations
+				//     can rewrite the element's merge-key field at apply time;
+				//   - mark the previous element as matched so it won't emit a
+				//     Delete in the unmatched-previous loop below.
+				for _, pa := range pendingAdds {
+					bestPrevIdx := -1
+					bestPrevDiff := math.MaxInt
+					var bestPrevPathMap api.MutationMap
+					var bestPrevArrayOrders api.ArrayOrderMap
+					var bestPrevAliases api.ArrayElementAliasMap
+					var bestPrevKeyValue string
+					for prevIdx := range previousArrayChildren {
+						if previousMatched[prevIdx] {
+							continue
+						}
+						prevChild := previousArrayChildren[prevIdx]
+						prevKeyNode := prevChild.S(mergeKey)
+						if prevKeyNode == nil {
+							continue
+						}
+						prevKeyValue := fmt.Sprintf("%v", prevKeyNode.Data())
+						tmpPathMap := api.MutationMap{}
+						tmpArrayOrders := api.ArrayOrderMap{}
+						tmpAliases := api.ArrayElementAliasMap{}
+						subPath := path + "." + AssociativePathSegment(mergeKey, prevKeyValue, pa.modifiedIndex)
+						ComputeMutationsForDocs(subPath, prevChild, pa.modifiedChild, functionIndex, tmpPathMap, mergeKeyLookup, tmpArrayOrders, tmpAliases)
+						// Cost is the leaf-value count of the sub-diff so a
+						// mutation whose Value is a whole subtree (e.g., an
+						// Add/Delete of a container or env-var block) is
+						// counted at full weight rather than as one entry.
+						cost := mutationMapCost(tmpPathMap)
+						if cost < bestPrevDiff {
+							bestPrevIdx = prevIdx
+							bestPrevDiff = cost
+							bestPrevPathMap = tmpPathMap
+							bestPrevArrayOrders = tmpArrayOrders
+							bestPrevAliases = tmpAliases
+							bestPrevKeyValue = prevKeyValue
+						}
+					}
+
+					accepted := false
+					var mergeKeyFieldPath api.ResolvedPath
+					if bestPrevIdx >= 0 {
+						modLines := strings.Count(pa.modifiedChild.String(), "\n")
+						score := float64(bestPrevDiff)
+						if modLines > 0 {
+							score = float64(bestPrevDiff) / float64(modLines)
+						}
+						// Tighter than the resource-level threshold (1.0): a
+						// rename is "the merge key changed and most everything
+						// else is the same". 0.3 lets a pure rename plus a
+						// handful of correlated field changes (e.g., args on
+						// an init container) pair, but rejects a similar-
+						// shaped new element coincidentally landing alongside
+						// an unrelated removal.
+						const renameScoreThreshold = 0.3
+						// Sanity check: the sub-diff must include the merge-
+						// key field change itself. If it doesn't, this isn't
+						// a rename at all (the merge keys differ but the diff
+						// somehow elided the .name field) and we shouldn't
+						// pair.
+						mergeKeyFieldPath = api.ResolvedPath(
+							path + "." + AssociativePathSegment(mergeKey, bestPrevKeyValue, pa.modifiedIndex) +
+								"." + EscapeDotsInPathSegment(mergeKey))
+						if _, hasMergeKeyChange := bestPrevPathMap[mergeKeyFieldPath]; hasMergeKeyChange &&
+							score < renameScoreThreshold {
+							accepted = true
+						}
+					}
+
+					if !accepted {
+						currentPath := path + "." + AssociativePathSegment(mergeKey, pa.keyValue, pa.modifiedIndex)
 						pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 							MutationType: api.MutationTypeAdd,
 							Index:        functionIndex,
 							Predicate:    true,
-							Value:        modifiedChild.String(),
+							Value:        pa.modifiedChild.String(),
 						}
+						continue
+					}
+
+					previousMatched[bestPrevIdx] = true
+					// Drop the merge-key field's path Update from the sub-diff:
+					// the rename is applied via the ArrayElementAliases rename
+					// pass at the end of applyPathMutations. Leaving an
+					// explicit ?name=db-init;@N.name -> "db-init-v2" path
+					// mutation in place would change the element's merge-key
+					// value mid-loop and break subsequent child-path
+					// resolution that still uses the previous key. (The path
+					// was computed above as part of the rename guard.)
+					delete(bestPrevPathMap, mergeKeyFieldPath)
+					for p, m := range bestPrevPathMap {
+						pathMutationMap[p] = m
+					}
+					if arrayOrders != nil {
+						for p, o := range bestPrevArrayOrders {
+							arrayOrders[p] = o
+						}
+					}
+					if arrayElementAliases != nil {
+						for p, a := range bestPrevAliases {
+							if arrayElementAliases[p] == nil {
+								arrayElementAliases[p] = make(map[string]string)
+							}
+							for k, v := range a {
+								arrayElementAliases[p][k] = v
+							}
+						}
+						ap := api.ResolvedPath(path)
+						if arrayElementAliases[ap] == nil {
+							arrayElementAliases[ap] = make(map[string]string)
+						}
+						arrayElementAliases[ap][bestPrevKeyValue] = pa.keyValue
 					}
 				}
 
@@ -512,6 +935,14 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						Predicate:    true,
 						Value:        child.String(),
 					}
+				}
+
+				// Record the modified-side merge-key sequence so PatchMutations
+				// can reorder the target array after path mutations are applied.
+				// Skip when the sequence matches previous: nothing to reorder
+				// against the merge base.
+				if arrayOrders != nil && len(modifiedKeySeq) > 0 && !slices.Equal(modifiedKeySeq, previousKeySeq) {
+					arrayOrders[api.ResolvedPath(path)] = modifiedKeySeq
 				}
 			} else {
 				// Non-associative array: positional matching.
@@ -648,6 +1079,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		maxMatchScore := 1.0
 		numDocLines := strings.Count(modifiedParsedData.String(), "\n")
 		var pathMutationMap api.MutationMap
+		var arrayOrderMap api.ArrayOrderMap
+		var arrayElementAliasMap api.ArrayElementAliasMap
 		var previousResourceMergeID string
 		minMutationLength := math.MaxInt
 		aliases := map[api.ResourceName]struct{}{}
@@ -673,10 +1106,12 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			// Path-Level Diff
 			// Compute the detailed path-level differences between the two documents.
 			tmpMutationMap := api.MutationMap{}
+			tmpArrayOrders := api.ArrayOrderMap{}
+			tmpArrayElementAliases := api.ArrayElementAliasMap{}
 			mergeKeyLookup := MergeKeyLookup(func(path string) (string, bool) {
 				return resourceProvider.MergeKeyForPath(modifiedResourceType, path)
 			})
-			ComputeMutationsForDocs("", previousDoc, modifiedDoc, functionIndex, tmpMutationMap, mergeKeyLookup)
+			ComputeMutationsForDocs("", previousDoc, modifiedDoc, functionIndex, tmpMutationMap, mergeKeyLookup, tmpArrayOrders, tmpArrayElementAliases)
 
 			// ResourceMergeID match — if both have valid UUID ResourceMergeIDs and they match, it's a definite match.
 			if api.IsUUID(modifiedResourceMergeID) && api.IsUUID(previousResourceMergeID) && modifiedResourceMergeID == previousResourceMergeID {
@@ -684,6 +1119,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				matchIndex = previousDocIndex
 				bestMatchScore = 0.0
 				pathMutationMap = tmpMutationMap
+				arrayOrderMap = tmpArrayOrders
+				arrayElementAliasMap = tmpArrayElementAliases
 				aliases = map[api.ResourceName]struct{}{
 					previousResourceName: {},
 				}
@@ -707,6 +1144,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				matchIndex = previousDocIndex
 				bestMatchScore = 0.0
 				pathMutationMap = tmpMutationMap
+				arrayOrderMap = tmpArrayOrders
+				arrayElementAliasMap = tmpArrayElementAliases
 				// Alias Tracking - record both old and new names
 				aliases = map[api.ResourceName]struct{}{
 					previousResourceName: {},
@@ -728,10 +1167,16 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			// TODO: special-case the only resource of matching type
 			// TODO: some attributes, like container names and images, are more important than others
 			// TODO: Do we need a name kernel pattern to deal with common prefixes and suffixes?
-			// TODO: take into account the number of subpaths (leaf values) of the paths in the map
-			if len(tmpMutationMap) < minMutationLength {
-				minMutationLength = len(tmpMutationMap)
+			// Cost is the leaf-value count of the sub-diff (mutationMapCost)
+			// so a mutation whose Value is a YAML subtree (e.g., a whole
+			// container Add/Delete) is counted at full weight rather than
+			// contributing 1 per map entry.
+			cost := mutationMapCost(tmpMutationMap)
+			if cost < minMutationLength {
+				minMutationLength = cost
 				pathMutationMap = tmpMutationMap
+				arrayOrderMap = tmpArrayOrders
+				arrayElementAliasMap = tmpArrayElementAliases
 				bestMatchScore = float64(minMutationLength) / float64(numDocLines)
 				matchIndex = previousDocIndex
 				// Re-initialize aliases and aliasesWithoutScopes
@@ -805,10 +1250,18 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				// no Value at this level
 			},
 			PathMutationMap:      pathMutationMap,
+			ArrayOrders:          arrayOrderMap,
+			ArrayElementAliases:  arrayElementAliasMap,
 			Aliases:              aliases,
 			AliasesWithoutScopes: aliasesWithoutScopes,
 		}
-		if len(pathMutationMap) == 0 {
+		if len(arrayOrderMap) == 0 {
+			mutation.ArrayOrders = nil
+		}
+		if len(arrayElementAliasMap) == 0 {
+			mutation.ArrayElementAliases = nil
+		}
+		if len(pathMutationMap) == 0 && len(arrayOrderMap) == 0 && len(arrayElementAliasMap) == 0 {
 			mutation.ResourceMutationInfo.MutationType = api.MutationTypeNone
 		}
 		mutations = append(mutations, mutation)
@@ -873,64 +1326,89 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 }
 
 // PatchMutations applies a set of mutations to configuration data, effectively "replaying"
-// recorded changes onto a YAML document. It's the inverse of ComputeMutations - where
-// ComputeMutations determines what changed, PatchMutations applies those changes.
+// recorded changes onto a YAML document. It's the inverse of ComputeMutations: whereas
+// ComputeMutations determines what changed, PatchMutations applies the recorded changes.
 //
-// mutationsPatch is sometimes generated from other configuration units, such as in the canonical
-// case of upgrade from upstream. Or may be generated from past revisions or even live state.
-// So it may not match the provided configuration data in some ways, such as resource names
-// and whole resources.
-// By default all resources and paths are patchable. Predicates are used to preserve existing changes.
-// mutationsPredicates is expected to have been generated from the mutations corresponding to the
-// configuration data being patched. So it is expected to match the contents of parsedData.
-// It is acceptable for mutationsPredicates to be nil.
+// In typical usage mutationsPatch is the diff produced by ComputeMutations against a
+// different (or earlier) version of the same configuration — e.g., the diff between an
+// upstream Unit's old and new revisions, applied to a downstream Unit. Because of that,
+// mutationsPatch may reference resource names, alias names, or paths that don't match
+// parsedData verbatim; PatchMutations does its own resource lookup (with alias fallback)
+// and path resolution.
+//
+// Three-way merge: pass mutationsToSubtract to subtract another mutation set (typically
+// the diff between the merge base and the current target) from mutationsPatch first.
+// This is how target-side changes are preserved against the upstream patch (see
+// SubtractMutations). Pass nil (or an empty list) to skip subtraction.
+//
+// Predicates: mutationsPredicates is the accumulated MutationSources of the data being
+// patched (see AddMutations). When a Predicate is false at the resource or any ancestor
+// path, that part of mutationsPatch is filtered out. Default Predicate=true means all
+// changes are eligible. mutationsPredicates may be nil.
 //
 // Algorithm:
 //
-// 1. Process Each Document
+//  1. Resource matching (per document in parsedData): look up the corresponding patch
+//     entry by ResourceMergeID, then ResourceTypeAndName, then by predicate aliases (so
+//     a renamed resource is still matched to its upstream patch entry).
 //
-// For each document in parsedData:
+//  2. Resource-level mutation:
 //
-// Resource Matching:
-//   - Tries to find matching patch by current resource name
-//   - Falls back to originalName annotation (for cloned resources)
-//   - Falls back to AliasesWithoutScopes from predicates
+//     | MutationType     | Action                                           |
+//     |------------------|--------------------------------------------------|
+//     | Add / Replace    | Replace entire document with the mutation's Value|
+//     | Delete           | Set document to nil (filtered on serialization)  |
+//     | None             | Skip (no changes)                                |
+//     | Update           | Process path-level mutations                     |
 //
-// Predicate Filtering (Resource Level):
-//   - If predicate exists and Predicate == false, skip the entire resource
+//  3. Path-level mutation (for Update): sorted by api.SortedMutationMapEntries (numeric
+//     segments compared as integers, parents before children), then partitioned so all
+//     Deletes run before all non-Deletes. Deletes-first prevents a Delete with positional
+//     fallback from clobbering an Add at the same array parent.
 //
-// Resource-Level Mutations:
+//     Each path is resolved through ResolveAssociativeSegments, which honors merge keys
+//     and only falls back to a positional index when the element at that index has no
+//     merge-key field (legacy data) or the index is out of bounds. If the path can't be
+//     fully resolved, the operation is skipped — except for Add/Replace, which appends
+//     to the parent array (so a new merge-keyed element can be introduced even when its
+//     desired index is occupied by a different element). The append-on-clash rule
+//     trades position fidelity for data preservation; positional associative arrays
+//     such as initContainers will require an additional reorder pass to fully restore
+//     source-side ordering.
 //
-//	| MutationType     | Action                                           |
-//	|------------------|--------------------------------------------------|
-//	| Add / Replace    | Replace entire document with the mutation's Value|
-//	| Delete           | Set document to nil (filtered on serialization)  |
-//	| None             | Skip (no changes)                                |
-//	| Update           | Process path-level mutations                     |
+//     Predicate filtering: a path or any ancestor with Predicate=false in
+//     mutationsPredicates causes the path to be skipped.
 //
-// 2. Path-Level Mutations
+//     Apply by type:
 //
-// For Update mutations, process each path in PathMutationMap:
+//     | MutationType     | Action                                                |
+//     |------------------|-------------------------------------------------------|
+//     | Add / Replace    | Set value at the resolved path (overwrites)           |
+//     | Update (scalar)  | If MutationInfo.Patch is set, three-way text merge.   |
+//     |                  | Otherwise replace (preserving YAML comments).         |
+//     | Update (complex) | Recursive merge with the existing value (preserves    |
+//     |                  | nested comments and unset fields).                    |
+//     | Delete           | Remove the path from document (no-op if missing)      |
 //
-//   - Sort paths: Process parent paths before children (lexicographic sort)
+//  4. After visiting all existing documents, any unmatched Add/Replace patch entries are
+//     parsed and appended as new documents to parsedData. Their per-path mutations are
+//     applied to the new document (no subtraction, no predicate filtering).
 //
-//   - Predicate filtering: Check path and all parent paths for Predicate == false
+// Errors are accumulated and joined; PatchMutations does its best to apply every patch
+// it can rather than aborting on the first problem.
 //
-//   - Apply by type:
-//
-//     | MutationType     | Action                                    |
-//     |------------------|-------------------------------------------|
-//     | Add / Replace    | Set value at path (overwrites)            |
-//     | Update           | Merge value at path (preserves comments)  |
-//     | Delete           | Remove the path from document             |
-//
-// Key Behaviors:
-//   - Alias awareness: Matches resources even when names differ between patch and target
-//   - Predicate filtering: Allows selective application of changes
-//   - Comment preservation: Update mutations try to preserve YAML comments
-//   - Parent-first ordering: Ensures parent paths are applied before children
-//   - Graceful handling: Logs errors but continues processing other mutations
-func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, error) {
+// PatchMutations also returns a MutationConflictList recording every part of the patch
+// that was not applied: SubtractMutations conflicts (forwarded from the subtract step),
+// PredicateFiltered (resource-level and path-level), and UnresolvedPath (when an
+// associative segment couldn't be matched against the target). The conflicts are
+// advisory — the returned data already reflects the drops.
+func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch, mutationsToSubtract api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
+	var conflicts api.MutationConflictList
+	if len(mutationsToSubtract) > 0 {
+		var subtractConflicts api.MutationConflictList
+		mutationsPatch, subtractConflicts = SubtractMutations(mutationsPatch, mutationsToSubtract)
+		conflicts = append(conflicts, subtractConflicts...)
+	}
 	// Build predicate index with prefer-predicate dedup: when multiple mutation sources
 	// exist for the same resource (e.g., one from clone and one from triggers), prefer
 	// the one with Predicate=true so the resource is not incorrectly filtered out.
@@ -973,12 +1451,6 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		// Find predicate for this document
 		mutationPredicateIndex, hasPredicate := predicateIdx.Find(*docResourceInfo, nil)
 
-		// Filter the patch.
-		if hasPredicate && !mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate {
-			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
-			return nil, nil
-		}
-
 		// Find patch for this document, using predicate aliases as additional aliases
 		var predicateAliases map[api.ResourceName]struct{}
 		if hasPredicate {
@@ -986,6 +1458,20 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		}
 		mutationPatchIndex, ok := patchIdx.Find(*docResourceInfo, predicateAliases)
 		if !ok {
+			return nil, nil
+		}
+
+		// Filter the patch at the resource level.
+		if hasPredicate && !mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate {
+			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
+			predicateMutInfo := mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo
+			conflicts = append(conflicts, api.MutationConflict{
+				Reason:   api.ConflictReasonPredicateFiltered,
+				Resource: mutationsPatch[mutationPatchIndex].Resource,
+				Source:   mutationsPatch[mutationPatchIndex].ResourceMutationInfo,
+				Target:   &predicateMutInfo,
+			})
+			matchedPatchIndices[mutationPatchIndex] = true
 			return nil, nil
 		}
 
@@ -1016,8 +1502,16 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			// Update at the resource level means some paths were modified.
 		}
 
-		visitorErrs = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
-			hasPredicate, mutationsPredicates, mutationPredicateIndex, visitorErrs)
+		var pathConflicts api.MutationConflictList
+		mergeKeyLookup := MergeKeyLookup(func(path string) (string, bool) {
+			return resourceProvider.MergeKeyForPath(docResourceInfo.ResourceType, path)
+		})
+		visitorErrs, pathConflicts = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
+			hasPredicate, mutationsPredicates, mutationPredicateIndex, mutationsPatch[mutationPatchIndex].Resource,
+			mutationsPatch[mutationPatchIndex].ArrayOrders, mutationsPatch[mutationPatchIndex].ArrayElementAliases,
+			mergeKeyLookup,
+			visitorErrs)
+		conflicts = append(conflicts, pathConflicts...)
 		return nil, visitorErrs
 	}
 
@@ -1041,27 +1535,115 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource), err))
 				continue
 			}
-			errs = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
-				false, nil, 0, errs)
+			var pathConflicts api.MutationConflictList
+			mergeKeyLookup := MergeKeyLookup(func(path string) (string, bool) {
+				return resourceProvider.MergeKeyForPath(mutationsPatch[i].Resource.ResourceType, path)
+			})
+			errs, pathConflicts = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
+				false, nil, 0, mutationsPatch[i].Resource,
+				mutationsPatch[i].ArrayOrders, mutationsPatch[i].ArrayElementAliases,
+				mergeKeyLookup,
+				errs)
+			conflicts = append(conflicts, pathConflicts...)
 			parsedData = append(parsedData, valueDoc)
 		}
 	}
 
-	return parsedData, errors.Join(errs...)
+	return parsedData, conflicts, errors.Join(errs...)
 }
 
 // applyPathMutations applies path-level mutations from a PathMutationMap to a document.
-// If hasPredicate is true, paths are filtered against the predicate's PathMutationMap.
+// If hasPredicate is true, paths whose path or any ancestor has Predicate=false in the
+// caller's predicate map are skipped.
+//
+// Path resolution uses ResolveAssociativeSegments. If a path can't be fully resolved
+// (typically because a merge-keyed element no longer exists in the target with the
+// recorded merge-key value), Update and Delete operations are skipped. Add/Replace
+// instead falls back to appending to the parent array (see appendPathForAdd) so a new
+// merge-keyed element from the patch can still be introduced even when its source-side
+// index in the target is occupied by an unrelated element.
+//
+// Within a single PathMutationMap, Deletes run before Adds/Updates/Replaces. This
+// matters for "rename" pairs (Delete old + Add new at the same array parent): with
+// Deletes-first the old element is gone before the new element's path is resolved, so
+// the Add doesn't have to fight the Delete for the same fallback index. ComputeMutations
+// produces Deletes and Adds for disjoint elements, so reordering them within a resource
+// is safe.
+//
+// Returns the (possibly extended) errs slice and a list of MutationConflicts for any
+// path mutations that were dropped (predicate-filtered or unresolved). Conflicts for
+// paths skipped via the Add append-fallback are NOT recorded (the Add was applied,
+// just at a different index).
+//
+// If arrayOrders is non-empty, after path mutations are applied each merge-keyed
+// array is reordered to match the recorded source-side merge-key sequence. This
+// is what gives positional associative arrays (initContainers, env, ports) their
+// correct ordering when a rename, insertion, or reorder is part of the patch.
 func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	hasPredicate bool, mutationsPredicates api.ResourceMutationList, mutationPredicateIndex int,
-	errs []error) []error {
+	resource api.ResourceInfo, arrayOrders api.ArrayOrderMap,
+	arrayElementAliases api.ArrayElementAliasMap,
+	mergeKeyLookup MergeKeyLookup,
+	errs []error) ([]error, api.MutationConflictList) {
 
-	// Sort paths so parents are processed before children.
-	patches := api.SortedMutationMapEntries(pathMutationMap)
+	var conflicts api.MutationConflictList
+
+	// Sort paths so parents are processed before children, then partition so all Deletes
+	// run before all non-Deletes. Path order is preserved within each partition.
+	sorted := api.SortedMutationMapEntries(pathMutationMap)
+	patches := make([]api.MutationMapEntry, 0, len(sorted))
+	for _, entry := range sorted {
+		if entry.MutationInfo.MutationType == api.MutationTypeDelete {
+			patches = append(patches, entry)
+		}
+	}
+	for _, entry := range sorted {
+		if entry.MutationInfo.MutationType != api.MutationTypeDelete {
+			patches = append(patches, entry)
+		}
+	}
 
 	for i := range patches {
-		patchPath := api.ResolvedPath(ResolveAssociativeSegments(doc, string(patches[i].Path)))
+		resolvedPath, resolved := ResolveAssociativeSegments(doc, string(patches[i].Path))
+		patchPath := api.ResolvedPath(resolvedPath)
 		patchMutation := patches[i].MutationInfo
+		if !resolved {
+			// The path contains an associative segment whose merge-key value didn't
+			// match any element in the current doc, and the element at the fallback
+			// index has a different merge-key value (i.e., is not the same element).
+			// For Add/Replace, fall back to appending the new element to the parent
+			// array — this preserves the upstream's intent to add a new element with
+			// a unique merge-key value while avoiding clobbering the unrelated
+			// element that happens to occupy the source-side index. For Update and
+			// Delete, the element being addressed simply isn't there, so skip.
+			if patchMutation.MutationType == api.MutationTypeAdd ||
+				patchMutation.MutationType == api.MutationTypeReplace {
+				if appendPath, ok := appendPathForAdd(doc, resolvedPath); ok {
+					patchPath = api.ResolvedPath(appendPath)
+				} else {
+					slog.Debug("patch path unresolved (Add), skipping",
+						"path", string(patches[i].Path), "resolved", resolvedPath)
+					conflicts = append(conflicts, api.MutationConflict{
+						Reason:   api.ConflictReasonUnresolvedPath,
+						Resource: resource,
+						Path:     patches[i].Path,
+						Source:   *patchMutation,
+					})
+					continue
+				}
+			} else {
+				slog.Debug("patch path unresolved, skipping",
+					"path", string(patches[i].Path), "resolved", resolvedPath,
+					"mutationType", string(patchMutation.MutationType))
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonUnresolvedPath,
+					Resource: resource,
+					Path:     patches[i].Path,
+					Source:   *patchMutation,
+				})
+				continue
+			}
+		}
 		// Check for patches that conflict with the predicate.
 		// TODO: Break down the patch.
 		if hasPredicate {
@@ -1070,6 +1652,14 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 				mutationsPredicates[mutationPredicateIndex].PathMutationMap, patchPath)
 			if hasFilter && !predicateMutation.Predicate {
 				slog.Debug("path filtered", "path", string(patchPath))
+				predicateMutCopy := predicateMutation
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonPredicateFiltered,
+					Resource: resource,
+					Path:     patches[i].Path,
+					Source:   *patchMutation,
+					Target:   &predicateMutCopy,
+				})
 				continue
 			}
 		}
@@ -1164,9 +1754,84 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 			// Shouldn't happen for paths, but also shouldn't be anything to do
 		}
 	}
-	return errs
+
+	// Rename pass: for each (arrayPath, oldKey -> newKey) in arrayElementAliases,
+	// find the array element whose merge-key value is oldKey at arrayPath in the
+	// current doc and rewrite its merge-key field to newKey. Runs after path
+	// mutations (which used oldKey-encoded paths to align with target's diff)
+	// and before the reorder pass (which uses newKey to look up elements via
+	// ArrayOrders).
+	if len(arrayElementAliases) > 0 && mergeKeyLookup != nil {
+		for arrayPath, aliases := range arrayElementAliases {
+			mergeKey, _ := mergeKeyLookup(string(arrayPath))
+			if mergeKey == "" {
+				continue
+			}
+			resolvedArrayPath, ok := ResolveAssociativeSegments(doc, string(arrayPath))
+			if !ok {
+				continue
+			}
+			arrayDoc := doc.Path(resolvedArrayPath)
+			if arrayDoc == nil {
+				continue
+			}
+			node := arrayDoc.YNode()
+			if node == nil || node.Kind != yaml.SequenceNode {
+				continue
+			}
+			for _, elem := range node.Content {
+				if elem.Kind != yaml.MappingNode {
+					continue
+				}
+				for j := 0; j < len(elem.Content)-1; j += 2 {
+					k, v := elem.Content[j], elem.Content[j+1]
+					if k.Kind == yaml.ScalarNode && k.Value == mergeKey && v.Kind == yaml.ScalarNode {
+						if newKey, ok := aliases[v.Value]; ok {
+							v.Value = newKey
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Reorder pass: for each merge-keyed array path with a recorded desired
+	// order, rearrange the target array's elements so they match. This runs
+	// after path mutations (so newly-added or appended elements are present)
+	// and uses the resource provider's merge-key lookup to identify each
+	// element by its key field.
+	if len(arrayOrders) > 0 && mergeKeyLookup != nil {
+		// Process longer paths first so an inner array (e.g. an env array
+		// nested in a container) is reordered before its outer container is
+		// reordered around it.
+		paths := make([]api.ResolvedPath, 0, len(arrayOrders))
+		for p := range arrayOrders {
+			paths = append(paths, p)
+		}
+		slices.SortFunc(paths, func(a, b api.ResolvedPath) int {
+			return len(b) - len(a) // longer paths first
+		})
+		for _, path := range paths {
+			mergeKey, _ := mergeKeyLookup(string(path))
+			if mergeKey == "" {
+				continue
+			}
+			reorderArrayByMergeKey(doc, string(path), mergeKey, arrayOrders[path])
+		}
+	}
+
+	return errs, conflicts
 }
 
+// Reset walks each path in mutationsPredicates and, where Predicate=true and the value
+// at the corresponding location in parsedData is a string or int, sets the value back to
+// the toolchain's placeholder marker (PlaceHolderBlockApplyString / PlaceHolderBlockApplyInt).
+// Used by the "reset" function to revert the leaves last touched by a chosen subset of
+// historical mutations to their unset state, leaving everything else alone.
+//
+// ResourceMergeID and the legacy ResourceID path are always preserved — they identify the
+// resource for cross-unit matching and must not be wiped.
 func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
 	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
 	resetResourceMergeIDMap := make(map[string]int)
@@ -1224,7 +1889,11 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 			if legacyResourceIDContextPath != "" && strings.HasSuffix(string(path), legacyResourceIDContextPath) {
 				continue
 			}
-			resolvedPath := api.ResolvedPath(ResolveAssociativeSegments(doc, string(path)))
+			resolvedPathStr, pathResolved := ResolveAssociativeSegments(doc, string(path))
+			if !pathResolved {
+				continue
+			}
+			resolvedPath := api.ResolvedPath(resolvedPathStr)
 			value, found, err := YamlSafePathGetValueAnyType(doc, resolvedPath, true)
 			if err != nil {
 				errs = append(errs, err)
@@ -1255,53 +1924,50 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 	return err
 }
 
-// AddMutations merges newMutations into (existing) mutations and returns the result.
-// It's used to accumulate changes over sequential edits, creating a compiled history
-// of all modifications.
+// AddMutations merges newMutations into mutations and returns the result, accumulating
+// changes over sequential edits to produce a compiled history of all modifications. The
+// accumulated form is what's stored as a Unit's MutationSources and what feeds the
+// Predicate map passed into PatchMutations.
 //
 // Algorithm:
 //
-// 1. Process Each New Mutation
+//  1. Resource matching: by current ResourceTypeAndName, then by ResourceMergeID, then by
+//     AliasesWithoutScopes (handling renames). Unmatched new mutations are appended as
+//     new resource entries.
 //
-// For each mutation in newMutations:
+//  2. Resource-level merge:
 //
-// Resource Matching:
-//   - First tries to match by current ResourceTypeAndName
-//   - If not found, checks AliasesWithoutScopes to handle renamed resources
-//   - If still not found, appends as a new resource mutation
+//     | Existing Type    | New Type              | Result              |
+//     |------------------|-----------------------|---------------------|
+//     | Any              | None                  | Keep existing       |
+//     | Any              | Delete or Replace     | Replace with new    |
+//     | None             | Any (non-None)        | Replace with new    |
+//     | Delete           | Any (non-Delete)      | Change to Replace   |
+//     | Add/Update       | Add/Update            | Merge path mutations|
 //
-// Resource-Level Merge Rules:
+//  3. Path-level merge: process newMutations' paths sorted least-specific to most-specific
+//     so parent paths land before children. For each new path:
 //
-//	| Existing Type    | New Type              | Result              |
-//	|------------------|-----------------------|---------------------|
-//	| Any              | None                  | Keep existing       |
-//	| Any              | Delete or Replace     | Replace with new    |
-//	| None             | Any (non-None)        | Replace with new    |
-//	| Delete           | Any (non-Delete)      | Change to Replace   |
-//	| Add/Update       | Add/Update            | Merge path mutations|
+//     - Exact match in existing: replace the existing entry, taking the new MutationType
+//       (so a later edit's intent — e.g., an Update on a previously-Added field — is
+//       reflected). Exception: Delete → non-Delete becomes Replace, since the field was
+//       previously erased and is now being re-set.
+//     - Existing path is a child of the new path AND new path is Delete or Replace: drop
+//       the now-superseded child paths.
+//     - Otherwise: insert the new path verbatim, dropping any existing children it
+//       supersedes.
 //
-// 2. Path-Level Merge
+//     Because the new MutationType replaces the existing one on exact match, when this
+//     accumulated record is later used as a patch, PatchMutations sees the latest intent
+//     (e.g., Update to merge with the target's value rather than wholesale Replace).
 //
-// When merging Add/Update mutations, the path mutations are combined:
-//   - Exact path match: Update the value, preserving the original mutation type
-//     (except Delete → non-Delete becomes Replace)
-//   - New path is prefix of existing: Remove existing child paths (the new value supersedes them)
-//   - New path not found: Add it to the map.
+//  4. Alias tracking: union of both sides' Aliases / AliasesWithoutScopes so a resource
+//     can still be matched after another rename.
 //
-// One implication of this approach is that a path and value might appear at the resource level
-// or in the path map at a higher level (path prefix), or even at multiple levels, and can be
-// then overridden by a value of a more specific path. The values need to be patched from least
-// specific to most specific in order to produce the resulting configuration data.
-//
-// 3. Alias Tracking
-//
-// Merges aliases from both mutations to track all names the resource has had.
-//
-// Key Behaviors:
-//   - Accumulative: Designed to be called repeatedly as changes occur
-//   - Last-write-wins for values: New values replace old values at the same path
-//   - Type preservation: Original mutation type is preserved (Add stays Add, Update stays Update)
-//   - Alias awareness: Handles resources that have been renamed between mutations
+// Key behaviors:
+//   - Accumulative: designed to be called repeatedly as changes occur.
+//   - Last-write-wins for values and types on exact-path matches.
+//   - Alias awareness: handles resources renamed between mutation sets.
 func AddMutations(mutations, newMutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
 	hasMutations := false
 	idx := api.NewResourceMutationIndex(mutations)
@@ -1345,6 +2011,34 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 		}
 		for alias := range newMutations[i].AliasesWithoutScopes {
 			mutations[mi].AliasesWithoutScopes[alias] = struct{}{}
+		}
+
+		// Merge ArrayOrders: last-writer-wins per array path. The newer
+		// mutation set's view of the desired array order supersedes the
+		// older one's. (Both are computed against the same target — newer
+		// reflects the latest source-side intent.)
+		if len(newMutations[i].ArrayOrders) > 0 {
+			if mutations[mi].ArrayOrders == nil {
+				mutations[mi].ArrayOrders = make(api.ArrayOrderMap, len(newMutations[i].ArrayOrders))
+			}
+			for path, order := range newMutations[i].ArrayOrders {
+				mutations[mi].ArrayOrders[path] = order
+			}
+		}
+
+		// Merge ArrayElementAliases: last-writer-wins per (arrayPath, oldKey).
+		if len(newMutations[i].ArrayElementAliases) > 0 {
+			if mutations[mi].ArrayElementAliases == nil {
+				mutations[mi].ArrayElementAliases = make(api.ArrayElementAliasMap, len(newMutations[i].ArrayElementAliases))
+			}
+			for path, aliases := range newMutations[i].ArrayElementAliases {
+				if mutations[mi].ArrayElementAliases[path] == nil {
+					mutations[mi].ArrayElementAliases[path] = make(map[string]string, len(aliases))
+				}
+				for oldKey, newKey := range aliases {
+					mutations[mi].ArrayElementAliases[path][oldKey] = newKey
+				}
+			}
 		}
 
 		// Merge the path mutations. The overall MutationType, Add or Update or Replace, should remain the same.
@@ -1394,64 +2088,74 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 	return mutations, hasMutations
 }
 
-// SubtractMutations removes mutations that overlap with subtractMutations from mutations.
-// It's used in three-way merging to ensure that changes made in a target unit take precedence
-// over changes from a source unit.
+// SubtractMutations removes from mutations any changes that overlap with subtractMutations,
+// implementing the "preserve target-side changes" half of three-way merging. Typically
+// invoked from PatchMutations via its mutationsToSubtract argument.
 //
-// Use Case:
+// Use case:
 //
-// When merging source unit changes into a target unit:
-//   - Source: base → sourceEnd (upstream changes)
-//   - Target: base → target (local customizations)
-//   - Result: SubtractMutations(sourceMutations, targetMutations) gives changes that
-//     won't overwrite local customizations
+//	source : ComputeMutations(base, sourceEnd)  // upstream changes
+//	target : ComputeMutations(base, target)     // local customizations
+//	patch  : SubtractMutations(source, target)  // source changes that don't conflict
 //
-// Both operands are expected to be mutation diffs produced by ComputeMutations.
-// ComputeMutations generates Add, Delete, Update, and None mutations (not Replace).
-// None means the resource was present but not changed. AddMutations is what converts
-// Delete followed by Add to Replace. Replace is handled here just in case, but not expected.
-// Update at the resource level has an empty Value - all values are in the PathMutationMap.
+// When PatchMutations applies patch to target, target-side customizations remain because
+// the source paths that would have overwritten them have been removed.
+//
+// Both operands are expected to be diffs produced by ComputeMutations: Add, Delete,
+// Update, or None at the resource level. (Replace, which AddMutations may produce when
+// accumulating, is handled here defensively but not expected.) Update at the resource
+// level has an empty Value — all changes live in PathMutationMap.
 //
 // Algorithm:
 //
-// 1. Resource Matching
+//  1. Resource matching: by ResourceMergeID, ResourceTypeAndName, then AliasesWithoutScopes
+//     from either side (so renamed resources subtract correctly).
 //
-// For each mutation, find corresponding subtraction mutation by:
-//   - Current ResourceTypeAndName
-//   - AliasesWithoutScopes from either mutation (handles renamed resources)
+//  2. Resource-level subtraction:
 //
-// 2. Resource-Level Subtraction
+//     | Subtract Type | Mutation Type | Result                                          |
+//     |---------------|---------------|-------------------------------------------------|
+//     | Delete        | Any           | Drop (target removed the resource)              |
+//     | Replace       | Any           | Drop (target redefined the resource)            |
+//     | None          | Any           | Keep (target didn't change it)                  |
+//     | Any           | None          | Keep (source didn't change it)                  |
+//     | Update/Add    | Delete        | Keep source Delete; emit DeleteShadowed for     |
+//     |               |               | each target mutation under it (the target's     |
+//     |               |               | edits have nowhere to live once the resource    |
+//     |               |               | is gone)                                        |
+//     | Update/Add    | Update/Add    | Path-level subtraction                          |
 //
-//	| Subtract Type | Mutation Type | Result                                     |
-//	|---------------|---------------|--------------------------------------------|
-//	| Delete        | Any           | Remove entirely (target deleted)           |
-//	| Replace       | Any           | Remove entirely (target redefined)         |
-//	| None          | Any           | Keep mutation (target didn't change it)    |
-//	| Any           | None          | Keep mutation (source didn't change it)    |
-//	| Update/Add    | Delete        | Remove (don't delete what target modified) |
-//	| Update/Add    | Update/Add    | Process path-level subtraction             |
+//  3. Path-level subtraction: paths are walked using a NewPathPrefixIndex (binary search
+//     over a sorted path list) so prefix relationships are O(log n + k):
 //
-// 3. Path-Level Subtraction
+//     - Case 1 (exact match): subtract has the same path → drop the source path.
+//     - Case 2 (subtract is ancestor): subtract has spec.containers.0 and source has
+//       spec.containers.0.image → drop the source path (parent was changed in target).
+//     - Case 3 (subtract is descendant): subtract has spec.containers.0.image and source
+//       has spec.containers.0 (whole block). If the source path is a Delete, keep it
+//       and emit a DeleteShadowed conflict for each target child path that's being
+//       erased — once the parent is gone the child changes can't apply. Otherwise
+//       keep the source path and splice in subtract's more-specific paths so
+//       PatchMutations' parent-before-child processing lets target's change win.
 //
-// For each path in the mutation's PathMutationMap:
-//   - Case 1 - Exact match: Path exists in subtractMutations → remove it
-//   - Case 2 - Subtract path is prefix: e.g., subtract has spec.containers.0,
-//     mutation has spec.containers.0.image → remove it (parent was changed)
-//   - Case 3 - Mutation path is prefix: e.g., mutation has spec.containers.0 (whole block),
-//     subtract has spec.containers.0.image → if the mutation is a Delete, skip it entirely
-//     (can't partially un-delete). Otherwise, keep the mutation and add the subtractMutation
-//     paths. PatchMutations processes paths from least specific to most specific, so the
-//     subtractMutation's more specific paths will override the mutation's value.
+//  4. If subtraction empties an Update's PathMutationMap, the resource-level type
+//     downgrades to None.
 //
-// Key Behaviors:
-//   - Target precedence: Changes in subtractMutations take priority
-//   - Alias awareness: Matches resources across renames
-//   - Partial expansion: Only expands paths as needed, keeping unaffected branches whole
-//   - Type conversion: If all paths are subtracted from an Update, it becomes None
-func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) api.ResourceMutationList {
+// Returns the patch with subtractions applied, plus a MutationConflictList
+// recording every drop (resource-level and path-level) so callers can surface
+// them as merge conflicts. The conflicts are advisory — the returned
+// ResourceMutationList already reflects the drops.
+//
+// Key behaviors:
+//   - Target precedence: subtractMutations always wins where it overlaps.
+//   - Alias awareness: matches resources across renames.
+//   - Partial expansion: only splits a parent path when subtract has finer-grained
+//     conflicts under it; unaffected branches stay whole.
+func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) (api.ResourceMutationList, api.MutationConflictList) {
 	subtractIdx := api.NewResourceMutationIndex(subtractMutations)
 
 	result := make(api.ResourceMutationList, 0, len(mutations))
+	var conflicts api.MutationConflictList
 
 	for i := range mutations {
 		mutation := mutations[i]
@@ -1464,6 +2168,7 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 		}
 
 		subtractMutation := subtractMutations[si]
+		targetResMutInfo := subtractMutation.ResourceMutationInfo
 
 		// Handle resource-level subtraction
 
@@ -1478,15 +2183,24 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 
 		// If the resource was deleted in subtractMutations, don't include any changes to it
 		if subtractMutation.ResourceMutationInfo.MutationType == api.MutationTypeDelete {
-			// Resource was deleted in target - don't include any source changes
+			conflicts = append(conflicts, api.MutationConflict{
+				Reason:   api.ConflictReasonSubtracted,
+				Resource: mutation.Resource,
+				Source:   mutation.ResourceMutationInfo,
+				Target:   &targetResMutInfo,
+			})
 			continue
 		}
 
 		// If the resource was replaced in subtractMutations, remove it entirely
 		// (the target has completely redefined this resource)
 		if subtractMutation.ResourceMutationInfo.MutationType == api.MutationTypeReplace {
-			// Resource was replaced in target - don't include source changes
-			// Replace means the target deleted and re-added the resource.
+			conflicts = append(conflicts, api.MutationConflict{
+				Reason:   api.ConflictReasonSubtracted,
+				Resource: mutation.Resource,
+				Source:   mutation.ResourceMutationInfo,
+				Target:   &targetResMutInfo,
+			})
 			continue
 		}
 
@@ -1501,10 +2215,30 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 			continue
 		}
 
-		// If the mutation is a Delete at resource level, and the subtraction is Update or Add,
-		// then the target has modified paths and the deletion should not be allowed.
+		// If the source is a Delete at resource level and the target made changes,
+		// the source's intent to remove the resource still wins — the target's
+		// customizations have nowhere to live once the resource is gone. Let
+		// the Delete through and emit DeleteShadowed for the target's
+		// resource-level mutation and each path mutation it had, so the caller
+		// can surface the lost work.
 		if mutation.ResourceMutationInfo.MutationType == api.MutationTypeDelete {
-			// Target modified the resource, don't delete it
+			conflicts = append(conflicts, api.MutationConflict{
+				Reason:   api.ConflictReasonDeleteShadowed,
+				Resource: mutation.Resource,
+				Source:   mutation.ResourceMutationInfo,
+				Target:   &targetResMutInfo,
+			})
+			for _, entry := range api.SortedMutationMapEntries(subtractMutation.PathMutationMap) {
+				targetMutCopy := *entry.MutationInfo
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonDeleteShadowed,
+					Resource: mutation.Resource,
+					Path:     entry.Path,
+					Source:   mutation.ResourceMutationInfo,
+					Target:   &targetMutCopy,
+				})
+			}
+			result = append(result, mutation)
 			continue
 		}
 
@@ -1512,11 +2246,16 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 		// replaced, or updated in mutations, then merge the two.
 
 		// For Update at resource level, we need to filter out path mutations
-		// that were changed in the target
+		// that were changed in the target. ArrayOrders is merged: each
+		// merge-keyed array's source-side desired order is woven with the
+		// target-side desired order so target-side inserts keep their
+		// relative position in the final merged sequence.
 		newMutation := api.ResourceMutation{
 			Resource:             mutation.Resource,
 			ResourceMutationInfo: mutation.ResourceMutationInfo,
 			PathMutationMap:      make(api.MutationMap),
+			ArrayOrders:          mergeArrayOrderMaps(mutation.ArrayOrders, subtractMutation.ArrayOrders, mutation.ArrayElementAliases),
+			ArrayElementAliases:  mutation.ArrayElementAliases,
 			Aliases:              mutation.Aliases,
 			AliasesWithoutScopes: mutation.AliasesWithoutScopes,
 		}
@@ -1528,7 +2267,15 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 			pathMutation := *entry.MutationInfo
 
 			// Case 1: Exact match - subtract this path
-			if _, found := subtractMutation.PathMutationMap[path]; found {
+			if targetMut, found := subtractMutation.PathMutationMap[path]; found {
+				targetMutCopy := targetMut
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonSubtracted,
+					Resource: mutation.Resource,
+					Path:     path,
+					Source:   pathMutation,
+					Target:   &targetMutCopy,
+				})
 				continue
 			}
 
@@ -1536,7 +2283,16 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 			// e.g., subtract has spec.containers.0 and we have spec.containers.0.image
 			// In this case, the target changed a parent, so don't apply child changes.
 			// Walk up path segments doing map lookups: O(depth) instead of O(n).
-			if api.HasAncestorPath(subtractMutation.PathMutationMap, path) {
+			if ancestorPath, ancestorMut, hasAncestor := api.FindAncestorPath(subtractMutation.PathMutationMap, path); hasAncestor {
+				_ = ancestorPath
+				ancestorMutCopy := ancestorMut
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonSubtracted,
+					Resource: mutation.Resource,
+					Path:     path,
+					Source:   pathMutation,
+					Target:   &ancestorMutCopy,
+				})
 				continue
 			}
 
@@ -1545,8 +2301,23 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 			// Use the prefix index for O(log n) lookup.
 			childPaths := subtractPrefixIdx.ChildPaths(path)
 			if len(childPaths) > 0 {
-				// If the mutation is a Delete, we can't partially un-delete, so skip it entirely
+				// If the source mutation is a Delete, the target's child changes
+				// have nowhere to live once the parent is removed. Let the Delete
+				// through and emit DeleteShadowed for each lost child so the
+				// caller can surface the dropped target work.
 				if pathMutation.MutationType == api.MutationTypeDelete {
+					for _, childPath := range childPaths {
+						childMut := subtractMutation.PathMutationMap[childPath]
+						childMutCopy := childMut
+						conflicts = append(conflicts, api.MutationConflict{
+							Reason:   api.ConflictReasonDeleteShadowed,
+							Resource: mutation.Resource,
+							Path:     childPath,
+							Source:   pathMutation,
+							Target:   &childMutCopy,
+						})
+					}
+					newMutation.PathMutationMap[path] = pathMutation
 					continue
 				}
 				// Keep the mutation path and add the subtractMutation paths that override it.
@@ -1562,10 +2333,11 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 			}
 		}
 
-		// If we removed all path mutations and the resource-level mutation was Update,
-		// convert to None
-		if len(newMutation.PathMutationMap) == 0 &&
-			(newMutation.ResourceMutationInfo.MutationType == api.MutationTypeUpdate) {
+		// If we removed all path mutations and there are no array reorders or
+		// element-rename rewrites to apply either, downgrade an Update to None.
+		if len(newMutation.PathMutationMap) == 0 && len(newMutation.ArrayOrders) == 0 &&
+			len(newMutation.ArrayElementAliases) == 0 &&
+			newMutation.ResourceMutationInfo.MutationType == api.MutationTypeUpdate {
 			newMutation.ResourceMutationInfo.MutationType = api.MutationTypeNone
 		}
 
@@ -1575,7 +2347,7 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) ap
 		}
 	}
 
-	return result
+	return result, conflicts
 }
 
 // FindMutationIndex looks up the mutation index for a specific resource and path
