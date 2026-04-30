@@ -19,4 +19,5 @@ UnitEvents are explained at https://docs.confighub.com/background/entities/unit-
 func init() {
 	addSpaceFlags(unitEventCmd)
 	rootCmd.AddCommand(unitEventCmd)
+	addExplainCmd(unitEventCmd, "UnitEvent")
 }

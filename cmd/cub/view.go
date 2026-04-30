@@ -19,6 +19,7 @@ Views are explained at https://docs.confighub.com/background/entities/view/.`, "
 func init() {
 	addSpaceFlags(viewCmd)
 	rootCmd.AddCommand(viewCmd)
+	addExplainCmd(viewCmd, "View")
 }
 
 // buildWhereClauseFromViews generates a WHERE clause from view identifiers

@@ -19,6 +19,7 @@ Triggers are explained at https://docs.confighub.com/background/entities/trigger
 func init() {
 	addSpaceFlags(triggerCmd)
 	rootCmd.AddCommand(triggerCmd)
+	addExplainCmd(triggerCmd, "Trigger")
 }
 
 // buildWhereClauseFromTriggers generates a WHERE clause from trigger identifiers

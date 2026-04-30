@@ -170,4 +170,5 @@ func buildLinkIDsWhere(linkIDs []uuid.UUID) string {
 func init() {
 	addSpaceFlags(linkCmd)
 	rootCmd.AddCommand(linkCmd)
+	addExplainCmd(linkCmd, "Link")
 }

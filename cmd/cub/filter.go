@@ -19,6 +19,7 @@ Filters are explained at https://docs.confighub.com/background/entities/filter/.
 func init() {
 	addSpaceFlags(filterCmd)
 	rootCmd.AddCommand(filterCmd)
+	addExplainCmd(filterCmd, "Filter")
 }
 
 // buildWhereClauseFromFilters generates a WHERE clause from filter identifiers

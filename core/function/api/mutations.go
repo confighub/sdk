@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // NOTE: Move is not currently supported.
@@ -120,6 +122,11 @@ type MutationConflict struct {
 	Path     ResolvedPath   `json:",omitempty" description:"Path of the mutation; empty for resource-level conflicts"`
 	Source   MutationInfo   `description:"The dropped source-side mutation"`
 	Target   *MutationInfo  `json:",omitempty" description:"The target-side mutation that caused the drop, when applicable (Subtracted, DeleteShadowed)"`
+	// UnitID identifies the other unit involved in this conflict (the upstream
+	// unit for upgrade/merge, or the link target for resolve). Set by the
+	// caller after PatchMutations returns; PatchMutations itself doesn't know
+	// about ConfigHub units. Zero when not set or not applicable.
+	UnitID uuid.UUID `json:",omitempty" description:"ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)"`
 }
 
 type MutationConflictList []MutationConflict

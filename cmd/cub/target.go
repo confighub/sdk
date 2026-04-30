@@ -20,6 +20,7 @@ Targets are explained at https://docs.confighub.com/background/entities/target/.
 func init() {
 	addSpaceFlags(targetCmd)
 	rootCmd.AddCommand(targetCmd)
+	addExplainCmd(targetCmd, "Target")
 }
 
 // FindConfigType returns the TargetConfigType matching the given toolchain and provider.

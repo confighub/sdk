@@ -26,6 +26,7 @@ A guide for how to use workers is at https://docs.confighub.com/guide/workers/.`
 func init() {
 	addSpaceFlags(workerCmd)
 	rootCmd.AddCommand(workerCmd)
+	addExplainCmd(workerCmd, "BridgeWorker")
 }
 
 // apiGetBridgeWorkerFromSlug supports space/slug syntax through the generic parser

@@ -19,6 +19,7 @@ Invocations are explained at https://docs.confighub.com/background/entities/invo
 func init() {
 	addSpaceFlags(invocationCmd)
 	rootCmd.AddCommand(invocationCmd)
+	addExplainCmd(invocationCmd, "Invocation")
 }
 
 // buildWhereClauseFromInvocations generates a WHERE clause from invocation identifiers

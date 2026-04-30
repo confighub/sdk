@@ -188,6 +188,12 @@ type ApproveResponse struct {
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
+// ArrayElementAliasMap defines model for ArrayElementAliasMap.
+type ArrayElementAliasMap map[string]map[string]string
+
+// ArrayOrderMap defines model for ArrayOrderMap.
+type ArrayOrderMap map[string][]string
+
 // Attribute Defines a dynamic configuration attribute that registers getter and setter functions
 // and their associated paths in a Space's FunctionExecutor. Attributes enable per-Space
 // customization of the function registry by specifying a set of paths within a resource
@@ -494,7 +500,12 @@ type BridgeWorker struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
-	UserID    *UUID     `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// UserID UserID is the ID of the bot user associated with this bridge worker.
+	// This user is created when the bridge worker is created and is used for
+	// audit trails and permissions.
+	// For legacy workers, this field may be nil (zero UUID).
+	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1158,8 +1169,10 @@ type Filter struct {
 	FilterID openapi_types.UUID `json:"FilterID,omitempty" yaml:"FilterID,omitempty"`
 
 	// From From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.
-	From        string `json:"From" yaml:"From"`
-	FromSpaceID *UUID  `json:"FromSpaceID,omitempty" yaml:"FromSpaceID,omitempty"`
+	From string `json:"From" yaml:"From"`
+
+	// FromSpaceID FromSpaceID optionally specifies a Space to filter within. Only relevant for spaced entity spaces. (optional)
+	FromSpaceID *openapi_types.UUID `json:"FromSpaceID,omitempty" yaml:"FromSpaceID,omitempty"`
 
 	// Hash SHA256 hash of the filter parameters encoded as hexadecimal. (readonly)
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -1238,7 +1251,8 @@ type FunctionInvocationList = []FunctionInvocation
 
 // FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
 type FunctionInvocationsRequest struct {
-	BridgeWorkerID *UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	// BridgeWorkerID BridgeWorkerID is the identifier of the associated worker that will execute these functions.
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// ChangeDescription ChangeDescription is a description of the change being made, if any.
 	ChangeDescription   string                  `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
@@ -1436,8 +1450,10 @@ type Invocation struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments      []FunctionArgument `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *UUID              `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
+
+	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor.
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1572,9 +1588,15 @@ type Link struct {
 
 	// UpstreamLastMergedRevisionNum The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState.
 	UpstreamLastMergedRevisionNum int64 `json:"UpstreamLastMergedRevisionNum,omitempty" yaml:"UpstreamLastMergedRevisionNum,omitempty"`
-	UpstreamLinkID                *UUID `json:"UpstreamLinkID,omitempty" yaml:"UpstreamLinkID,omitempty"`
-	UpstreamOrganizationID        *UUID `json:"UpstreamOrganizationID,omitempty" yaml:"UpstreamOrganizationID,omitempty"`
-	UpstreamSpaceID               *UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
+
+	// UpstreamLinkID Link ID of the link this link was cloned from (if any).
+	UpstreamLinkID *openapi_types.UUID `json:"UpstreamLinkID,omitempty" yaml:"UpstreamLinkID,omitempty"`
+
+	// UpstreamOrganizationID Organization ID of the link this link was cloned from (if any).
+	UpstreamOrganizationID *openapi_types.UUID `json:"UpstreamOrganizationID,omitempty" yaml:"UpstreamOrganizationID,omitempty"`
+
+	// UpstreamSpaceID Space ID of the link this link was cloned from (if any).
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// UseLiveState Take data from the LiveState of the upstream Unit rather than from Data.
 	UseLiveState bool `json:"UseLiveState,omitempty" yaml:"UseLiveState,omitempty"`
@@ -1612,15 +1634,21 @@ type Mutation struct {
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
-	InvocationID       *UUID               `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
-	LinkID             *UUID               `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+
+	// InvocationID InvocationID is the identifier of the function invoked, if there is a corresponding Invocation.
+	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+
+	// LinkID LinkID is the unique identifier of the link if the change was made due to resolving a link.
+	LinkID *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
 
 	// MergeBaseRevisionNum MergeBaseRevisionNum is the sequence number of the revision preceding merged changes, if the change was due to a merge operation.
 	MergeBaseRevisionNum int64 `json:"MergeBaseRevisionNum,omitempty" yaml:"MergeBaseRevisionNum,omitempty"`
 
 	// MergeEndRevisionNum MergeEndRevisionNum is the sequence number of the revision ending merged changes, if the change was due to a merge operation.
 	MergeEndRevisionNum int64 `json:"MergeEndRevisionNum,omitempty" yaml:"MergeEndRevisionNum,omitempty"`
-	MergeSourceID       *UUID `json:"MergeSourceID,omitempty" yaml:"MergeSourceID,omitempty"`
+
+	// MergeSourceID MergeSourceID is the unique identifier of the unit if the change was made due to merging from another unit, including for clone and upgrade.
+	MergeSourceID *openapi_types.UUID `json:"MergeSourceID,omitempty" yaml:"MergeSourceID,omitempty"`
 
 	// MutationID Unique identifier for a Mutation.
 	MutationID openapi_types.UUID `json:"MutationID,omitempty" yaml:"MutationID,omitempty"`
@@ -1651,8 +1679,10 @@ type Mutation struct {
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. The prefix 'ConfigHub' is reserved.
-	Subgroup  string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
-	TriggerID *UUID  `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+	Subgroup string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
+
+	// TriggerID TriggerID is the unique identifier of the trigger if the change was made by a trigger.
+	TriggerID *openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
@@ -1666,6 +1696,24 @@ type Mutation struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
+
+// MutationConflict defines model for MutationConflict.
+type MutationConflict struct {
+	// Path Path of the mutation; empty for resource-level conflicts
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Reason Why the mutation was dropped
+	Reason   string        `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+	Source   *MutationInfo `json:"Source,omitempty" yaml:"Source,omitempty"`
+	Target   *MutationInfo `json:"Target,omitempty" yaml:"Target,omitempty"`
+
+	// UnitID ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// MutationConflictList defines model for MutationConflictList.
+type MutationConflictList = []MutationConflict
 
 // MutationInfo defines model for MutationInfo.
 type MutationInfo struct {
@@ -1917,6 +1965,8 @@ type ResourceMutation struct {
 
 	// AliasesWithoutScopes Names without scopes used in current and prior revisions of this resource
 	AliasesWithoutScopes map[string]map[string]interface{} `json:"AliasesWithoutScopes,omitempty" yaml:"AliasesWithoutScopes,omitempty"`
+	ArrayElementAliases  *ArrayElementAliasMap             `json:"ArrayElementAliases,omitempty" yaml:"ArrayElementAliases,omitempty"`
+	ArrayOrders          *ArrayOrderMap                    `json:"ArrayOrders,omitempty" yaml:"ArrayOrders,omitempty"`
 	PathMutationMap      *MutationMap                      `json:"PathMutationMap,omitempty" yaml:"PathMutationMap,omitempty"`
 	Resource             *ResourceInfo                     `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 	ResourceMutationInfo *MutationInfo                     `json:"ResourceMutationInfo,omitempty" yaml:"ResourceMutationInfo,omitempty"`
@@ -2023,8 +2073,10 @@ type Revision struct {
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
-	ApprovedBy  []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
-	ChangeSetID *UUID  `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
+
+	// ChangeSetID Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
 	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of this revision's data.
 	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
@@ -2094,8 +2146,10 @@ type Schema = interface{}
 // Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 type Space struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations       map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	AttributeFilterID *UUID             `json:"AttributeFilterID,omitempty" yaml:"AttributeFilterID,omitempty"`
+	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// AttributeFilterID Reference to a Filter entity used to identify Attributes for the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'.
+	AttributeFilterID *openapi_types.UUID `json:"AttributeFilterID,omitempty" yaml:"AttributeFilterID,omitempty"`
 
 	// AttributeHash Hash of all registered Attribute configurations for the Space. (readonly)
 	AttributeHash string `json:"AttributeHash,omitempty" yaml:"AttributeHash,omitempty"`
@@ -2129,9 +2183,11 @@ type Space struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID         openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	TriggerFilterID *UUID              `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
-	TriggerHash     string             `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// TriggerFilterID Reference to a Filter entity used to identify Triggers that should be invoked on Units within this Space. The Filter's From field must be set to 'Trigger'.
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	TriggerHash     string              `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
 
 	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
@@ -2262,7 +2318,9 @@ type SupportedConfigType struct {
 type Tag struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChangeSetID *UUID             `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// ChangeSetID ChangeSetID is the optional ID of the ChangeSet this Tag is associated with.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -2377,9 +2435,11 @@ type Target struct {
 	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// ToolchainType ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text".
-	ToolchainType   string `json:"ToolchainType" yaml:"ToolchainType"`
-	TriggerFilterID *UUID  `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
-	TriggerHash     string `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
+	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
+
+	// TriggerFilterID Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'.
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	TriggerHash     string              `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
 
 	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
@@ -2474,8 +2534,10 @@ type Trigger struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments      []FunctionArgument `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *UUID              `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
+
+	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -2509,8 +2571,10 @@ type Trigger struct {
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
 
 	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
-	Hash         string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
-	InvocationID *UUID  `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
+
+	// InvocationID InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation.
+	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
@@ -2535,8 +2599,10 @@ type Trigger struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// TriggerID TriggerID uniquely identifies a trigger within the system.
-	TriggerID    openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
-	UnitFilterID *UUID              `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
+	TriggerID openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+
+	// UnitFilterID References a Filter entity (with From=Unit) to restrict which Units this Trigger applies to.
+	UnitFilterID *openapi_types.UUID `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
@@ -2605,9 +2671,13 @@ type Unit struct {
 	ApprovedBy []UUID `json:"ApprovedBy" yaml:"ApprovedBy"`
 
 	// BridgeState Additional state used by the Bridge; content is ProviderType-specific.
-	BridgeState    string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
-	BridgeWorkerID *UUID  `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChangeSetID    *UUID  `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	BridgeState string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
+
+	// BridgeWorkerID ID of the BridgeWorker from the Target assigned to this Unit.
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+
+	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
 	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of the configuration data.
 	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
@@ -2696,7 +2766,9 @@ type Unit struct {
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-	TargetID  *UUID  `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// TargetOptions Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker.
 	TargetOptions map[string]string `json:"TargetOptions,omitempty" yaml:"TargetOptions,omitempty"`
@@ -2708,13 +2780,19 @@ type Unit struct {
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt              time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
-	UpstreamOrganizationID *UUID     `json:"UpstreamOrganizationID,omitempty" yaml:"UpstreamOrganizationID,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
-	// UpstreamRevisionNum Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded.
+	// UpstreamOrganizationID Unique identifier for the Organization of the Unit this unit was cloned from, if any.
+	UpstreamOrganizationID *openapi_types.UUID `json:"UpstreamOrganizationID,omitempty" yaml:"UpstreamOrganizationID,omitempty"`
+
+	// UpstreamRevisionNum Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded. To change this revision number, change the UpstreamLastMergedRevisionNum of the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty" yaml:"UpstreamRevisionNum,omitempty"`
-	UpstreamSpaceID     *UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
-	UpstreamUnitID      *UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
+
+	// UpstreamSpaceID Unique identifier for the Space of the Unit this unit was cloned from, if any.
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
+
+	// UpstreamUnitID Unique identifier for Unit this unit was cloned from, if any. To change or remove the upstream unit, change or delete the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.
+	UpstreamUnitID *openapi_types.UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
 
 	// ValidationResults A map from gate/warning name to the list of validation results that caused the gate or warning.
 	ValidationResults map[string]ValidationResultList `json:"ValidationResults,omitempty" yaml:"ValidationResults,omitempty"`
@@ -2818,8 +2896,9 @@ type UnitActionResponse struct {
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
 type UnitCreateOrUpdateResponse struct {
-	Error *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Links []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
+	Conflicts *MutationConflictList        `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Error     *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Links     []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
@@ -2844,8 +2923,10 @@ type UnitCreateOrUpdateResponse struct {
 // in the connected Bridge. The status and drift detection help track the health
 // and consistency of the provisioned configuration compared to what is defined in the Unit.
 type UnitEvent struct {
-	Action         *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-	BridgeWorkerID *UUID       `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// BridgeWorkerID BridgeWorkerID is the ID of the bridge worker that performed this action. This field is populated from the Target's BridgeWorkerID when the event is created.
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -3026,7 +3107,9 @@ type View struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-	FilterID   *UUID  `json:"FilterID,omitempty" yaml:"FilterID,omitempty"`
+
+	// FilterID FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional)
+	FilterID *openapi_types.UUID `json:"FilterID,omitempty" yaml:"FilterID,omitempty"`
 
 	// GroupBy Column to group by (optional).
 	GroupBy string `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`

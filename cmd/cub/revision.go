@@ -19,4 +19,5 @@ Revisions are explained at https://docs.confighub.com/background/entities/revisi
 func init() {
 	addSpaceFlags(revisionCmd)
 	rootCmd.AddCommand(revisionCmd)
+	addExplainCmd(revisionCmd, "Revision")
 }

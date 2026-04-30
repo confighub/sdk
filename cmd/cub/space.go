@@ -40,6 +40,7 @@ Most unit and function commands require a space context either through --space f
 
 func init() {
 	rootCmd.AddCommand(spaceCmd)
+	addExplainCmd(spaceCmd, "Space")
 }
 
 var spaceFlag string

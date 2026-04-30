@@ -16,4 +16,5 @@ var userCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(userCmd)
+	addExplainCmd(userCmd, "User")
 }

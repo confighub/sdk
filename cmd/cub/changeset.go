@@ -23,6 +23,7 @@ A guide for how to use ChangeSets is at https://docs.confighub.com/guide/change-
 func init() {
 	addSpaceFlags(changesetCmd)
 	rootCmd.AddCommand(changesetCmd)
+	addExplainCmd(changesetCmd, "ChangeSet")
 }
 
 // buildWhereClauseFromChangeSets generates a WHERE clause from changeset identifiers

@@ -632,7 +632,15 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		} else if len(args) > 1 {
 			updateDesc = "update from " + args[1]
 		}
-		if dryRun {
+		if restore != "" {
+			// Restore snapshots the revision's MutationSources onto the unit
+			// (same indices as the restored revision), so the usual split
+			// display can't tell new vs prior. Compute the diff on the fly
+			// to show the user what changed because of this restore.
+			lookupMutationsUnitID = unitDetails.UnitID.String()
+			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
+			displayMutationsForRestore(currentUnit.Data, unitDetails.Data, unitDetails.SpaceID.String(), dryRun, priorRevision, updateDesc)
+		} else if dryRun {
 			// Dry-run returns the unit as it would look after the update,
 			// including MutationSources with the proposed mutations.
 			displayMutationsForUnit(unitDetails, priorHeadMutationNum, updateDesc, "dry-run")

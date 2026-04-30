@@ -21,6 +21,7 @@ Organizations are explained at https://docs.confighub.com/background/entities/or
 
 func init() {
 	rootCmd.AddCommand(organizationCmd)
+	addExplainCmd(organizationCmd, "Organization")
 }
 
 var selectedOrganizationID string

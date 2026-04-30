@@ -23973,6 +23973,18 @@ components:
         Unit:
           $ref: '#/components/schemas/Unit'
       type: object
+    ArrayElementAliasMap:
+      additionalProperties:
+        additionalProperties:
+          type: string
+        type: object
+      type: object
+    ArrayOrderMap:
+      additionalProperties:
+        items:
+          type: string
+        type: array
+      type: object
     Attribute:
       description: |-
         Defines a dynamic configuration attribute that registers getter and setter functions
@@ -24538,7 +24550,15 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         UserID:
-          $ref: '#/components/schemas/UUID'
+          description: |-
+            UserID is the ID of the bot user associated with this bridge worker.
+            This user is created when the bridge worker is created and is used for
+            audit trails and permissions.
+            For legacy workers, this field may be nil (zero UUID).
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
             control. The value read must be sent in calls to Update.
@@ -25232,7 +25252,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         FromSpaceID:
-          $ref: '#/components/schemas/UUID'
+          description: FromSpaceID optionally specifies a Space to filter within.
+            Only relevant for spaced entity spaces. (optional)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Hash:
           description: SHA256 hash of the filter parameters encoded as hexadecimal.
             (readonly)
@@ -25350,7 +25374,11 @@ components:
         of functions on the configuration data of the matching Units or Revision.
       properties:
         BridgeWorkerID:
-          $ref: '#/components/schemas/UUID'
+          description: BridgeWorkerID is the identifier of the associated worker that
+            will execute these functions.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         ChangeDescription:
           description: ChangeDescription is a description of the change being made,
             if any.
@@ -25706,7 +25734,12 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for a Bridge Worker to execute the function
+            specified by the Invocation. If unspecified, use the builtin function
+            executor.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -25977,11 +26010,23 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         UpstreamLinkID:
-          $ref: '#/components/schemas/UUID'
+          description: Link ID of the link this link was cloned from (if any).
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         UpstreamOrganizationID:
-          $ref: '#/components/schemas/UUID'
+          description: Organization ID of the link this link was cloned from (if any).
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         UpstreamSpaceID:
-          $ref: '#/components/schemas/UUID'
+          description: Space ID of the link this link was cloned from (if any).
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         UseLiveState:
           description: Take data from the LiveState of the upstream Unit rather than
             from Data.
@@ -26041,9 +26086,17 @@ components:
         FunctionInvocation:
           $ref: '#/components/schemas/FunctionInvocation'
         InvocationID:
-          $ref: '#/components/schemas/UUID'
+          description: InvocationID is the identifier of the function invoked, if
+            there is a corresponding Invocation.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         LinkID:
-          $ref: '#/components/schemas/UUID'
+          description: LinkID is the unique identifier of the link if the change was
+            made due to resolving a link.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         MergeBaseRevisionNum:
           description: MergeBaseRevisionNum is the sequence number of the revision
             preceding merged changes, if the change was due to a merge operation.
@@ -26057,7 +26110,11 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         MergeSourceID:
-          $ref: '#/components/schemas/UUID'
+          description: MergeSourceID is the unique identifier of the unit if the change
+            was made due to merging from another unit, including for clone and upgrade.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         MutationID:
           description: Unique identifier for a Mutation.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -26116,7 +26173,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerID:
-          $ref: '#/components/schemas/UUID'
+          description: TriggerID is the unique identifier of the trigger if the change
+            was made by a trigger.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         UnitID:
           description: Unique identifier for a Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -26145,6 +26206,34 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
+    MutationConflict:
+      properties:
+        Path:
+          description: Path of the mutation; empty for resource-level conflicts
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: Why the mutation was dropped
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+        Source:
+          $ref: '#/components/schemas/MutationInfo'
+        Target:
+          $ref: '#/components/schemas/MutationInfo'
+        UnitID:
+          description: ID of the other unit involved in the conflict (upstream for
+            upgrade/merge, link target for resolve)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    MutationConflictList:
+      items:
+        $ref: '#/components/schemas/MutationConflict'
+      type: array
     MutationInfo:
       properties:
         Index:
@@ -26623,6 +26712,10 @@ components:
             this resource
           type: object
           x-go-type-skip-optional-pointer: true
+        ArrayElementAliases:
+          $ref: '#/components/schemas/ArrayElementAliasMap'
+        ArrayOrders:
+          $ref: '#/components/schemas/ArrayOrderMap'
         PathMutationMap:
           $ref: '#/components/schemas/MutationMap'
         Resource:
@@ -26804,7 +26897,11 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         ChangeSetID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for the ChangeSet to which this Revision
+            belongs. Optional. Revisions are not required to belong to ChangeSets.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         ContentHash:
           description: 'Deprecated: Use DataHash instead. The CRC32 hash of this revision''s
             data.'
@@ -26939,7 +27036,11 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         AttributeFilterID:
-          $ref: '#/components/schemas/UUID'
+          description: Reference to a Filter entity used to identify Attributes for
+            the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         AttributeHash:
           description: Hash of all registered Attribute configurations for the Space.
             (readonly)
@@ -27015,7 +27116,12 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
-          $ref: '#/components/schemas/UUID'
+          description: Reference to a Filter entity used to identify Triggers that
+            should be invoked on Units within this Space. The Filter's From field
+            must be set to 'Trigger'.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         TriggerHash:
           readOnly: true
           type: string
@@ -27196,7 +27302,12 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         ChangeSetID:
-          $ref: '#/components/schemas/UUID'
+          description: ChangeSetID is the optional ID of the ChangeSet this Tag is
+            associated with.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -27433,7 +27544,12 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
-          $ref: '#/components/schemas/UUID'
+          description: Reference to a Filter entity used to identify Triggers that
+            should be invoked on Units this Target is attached to. The Filter's From
+            field must be set to 'Trigger'.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         TriggerHash:
           readOnly: true
           type: string
@@ -27582,7 +27698,11 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for a Bridge Worker to execute the function
+            specified by the Trigger. If unspecified, use the builtin function executor.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -27647,7 +27767,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         InvocationID:
-          $ref: '#/components/schemas/UUID'
+          description: InvocationID is the identifier of the function to be invoked,
+            if there is a corresponding Invocation.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Labels:
           additionalProperties:
             maxLength: 128
@@ -27703,7 +27827,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         UnitFilterID:
-          $ref: '#/components/schemas/UUID'
+          description: References a Filter entity (with From=Unit) to restrict which
+            Units this Trigger applies to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -27821,9 +27949,17 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
-          $ref: '#/components/schemas/UUID'
+          description: ID of the BridgeWorker from the Target assigned to this Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         ChangeSetID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for the ChangeSet to which the current Revision
+            belongs. Optional. Units are not required to belong to ChangeSets.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         ContentHash:
           description: 'Deprecated: Use DataHash instead. The CRC32 hash of the configuration
             data.'
@@ -28023,7 +28159,13 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         TargetID:
-          $ref: '#/components/schemas/UUID'
+          description: TargetID is the identifier of the target this unit is associated
+            with. This defines where the configuration will be applied. It must be
+            set to a valid Target within the same Space before the Unit can be Applied,
+            Destroyed, Imported, or Refreshed.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         TargetOptions:
           additionalProperties:
             type: string
@@ -28054,19 +28196,37 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         UpstreamOrganizationID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for the Organization of the Unit this unit
+            was cloned from, if any.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         UpstreamRevisionNum:
           description: Sequence number for the Revision of the Unit this unit was
             cloned from, or 0. This is updated to the upstream Unit's head revision
-            number when the Unit is upgraded.
+            number when the Unit is upgraded. To change this revision number, change
+            the UpstreamLastMergedRevisionNum of the corresponding Link of UpdateType
+            UpgradeUnit from this Unit to the upstream Unit.
           format: int64
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
         UpstreamSpaceID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for the Space of the Unit this unit was cloned
+            from, if any.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         UpstreamUnitID:
-          $ref: '#/components/schemas/UUID'
+          description: Unique identifier for Unit this unit was cloned from, if any.
+            To change or remove the upstream unit, change or delete the corresponding
+            Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         ValidationResults:
           additionalProperties:
             $ref: '#/components/schemas/ValidationResultList'
@@ -28267,6 +28427,8 @@ components:
       type: object
     UnitCreateOrUpdateResponse:
       properties:
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Links:
@@ -28290,7 +28452,12 @@ components:
         Action:
           $ref: '#/components/schemas/ActionType'
         BridgeWorkerID:
-          $ref: '#/components/schemas/UUID'
+          description: BridgeWorkerID is the ID of the bridge worker that performed
+            this action. This field is populated from the Target's BridgeWorkerID
+            when the event is created.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -28646,7 +28813,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         FilterID:
-          $ref: '#/components/schemas/UUID'
+          description: FilterID identifies a filter. At least one of FilterID or Of
+            must be specified. (optional)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         GroupBy:
           description: Column to group by (optional).
           type: string

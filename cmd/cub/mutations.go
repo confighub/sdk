@@ -823,6 +823,125 @@ func displayMutationsFromDryRun(previousData, changedData string, unitSpaceID st
 	displayResourceMutationList(mutations, false, 0, newChangeDescription, "dry-run")
 }
 
+// displayMutationsForRestore computes and displays the diff produced by a restore.
+// Restore now snapshots the restored revision's MutationSources verbatim onto the
+// unit, so the usual prior/new split can't tell them apart. We compute a fresh
+// diff via compute-mutations on the server and present it under a "New changes
+// from restore to N" header.
+//
+// The compute-mutations function diffs the unit's persisted data against a
+// config-doc-list argument. Which side of the diff lives where depends on
+// whether this was a dry-run:
+//   - Non-dry-run: the unit on the server has the post-restore data, so we pass
+//     previousData (pre-restore) as config-doc-list with reverse=false to get
+//     the diff pre-restore → post-restore.
+//   - Dry-run: the unit on the server still has the pre-restore data (dry-run
+//     didn't persist), so we pass restoredData (returned in the dry-run
+//     response) as config-doc-list with reverse=true to flip the diff into the
+//     same pre-restore → post-restore direction.
+func displayMutationsForRestore(previousData, restoredData string, unitSpaceID string, isDryRun bool, priorRevision string, newChangeDescription string) {
+	var configDocList, reverse string
+	if isDryRun {
+		configDocList = restoredData
+		reverse = "true"
+	} else {
+		configDocList = previousData
+		reverse = "false"
+	}
+	mutations, err := invokeComputeMutations(configDocList, reverse, unitSpaceID)
+	if err != nil {
+		tprintErr("Failed to compute mutations: %s", err.Error())
+		return
+	}
+	if mutations == nil || len(*mutations) == 0 {
+		tprintRaw("No new changes")
+		return
+	}
+
+	// Fetch old values for the displayed paths so the table shows old → new.
+	// Dry-run: the unit on the server still has the pre-restore data, so
+	// get-paths on the unit returns the old values directly. Non-dry-run:
+	// the unit has the post-restore data, so we have to query the prior
+	// revision instead.
+	var oldValues map[string]string
+	if isDryRun {
+		oldValues = fetchOldPathValues(mutations, 0)
+	} else if priorRevision != "" {
+		oldValues = fetchOldPathValuesFromRevision(mutations, 0, priorRevision)
+	}
+
+	if newChangeDescription != "" {
+		tprintRaw("New changes from " + newChangeDescription + ":")
+	}
+	displayMutationEntries(mutations, false, 0, nil, false, oldValues)
+}
+
+// invokeComputeMutations runs the compute-mutations function on the unit
+// identified by lookupMutationsUnitID, with the given base64-encoded
+// config-doc-list argument and the given reverse flag (as a string "true"
+// or "false"). Returns the resulting ResourceMutationList.
+func invokeComputeMutations(configDocListBase64, reverse, unitSpaceID string) (*goclientnew.ResourceMutationList, error) {
+	if configDocListBase64 == "" {
+		return nil, nil
+	}
+	cfgBytes, err := base64.StdEncoding.DecodeString(configDocListBase64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode config-doc-list: %w", err)
+	}
+
+	body := newFunctionInvocationsRequest()
+	functionIndex := "1"
+	alreadyConverted := "false"
+	invocation := &goclientnew.FunctionInvocation{
+		FunctionName: "compute-mutations",
+		Arguments: []goclientnew.FunctionArgument{
+			argFromString("config-doc-list", string(cfgBytes)),
+			argFromString("function-index", functionIndex),
+			argFromString("already-converted", alreadyConverted),
+			argFromString("reverse", reverse),
+		},
+	}
+	body.FunctionInvocations = &[]goclientnew.FunctionInvocation{*invocation}
+
+	invokeArgs := &invokeArgs{
+		Where:  fmt.Sprintf("UnitID = '%s'", lookupMutationsUnitID),
+		DryRun: true, // compute-mutations is hermetic and non-mutating
+		Body:   body,
+	}
+
+	savedSpaceID := selectedSpaceID
+	if unitSpaceID != "" {
+		selectedSpaceID = unitSpaceID
+	}
+	resp, err := invokeFunctionsOnUnits(invokeArgs)
+	selectedSpaceID = savedSpaceID
+	if err != nil {
+		return nil, fmt.Errorf("failed to invoke compute-mutations: %w", err)
+	}
+	if resp == nil || len(*resp) == 0 {
+		return nil, nil
+	}
+	for _, r := range *resp {
+		if !r.Success {
+			continue
+		}
+		outputData, exists := r.Outputs[string(api.OutputTypeResourceMutationList)]
+		if !exists || outputData == "" {
+			continue
+		}
+		outputBytes, err := base64.StdEncoding.DecodeString(outputData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode compute-mutations output: %w", err)
+		}
+		var mutations goclientnew.ResourceMutationList
+		if err := json.Unmarshal(outputBytes, &mutations); err != nil {
+			return nil, fmt.Errorf("failed to parse compute-mutations output: %w", err)
+		}
+		return &mutations, nil
+	}
+	return nil, nil
+}
+
 // displayMutationsFromFunctionResponse displays mutations from a function invocation response.
 // For both dry-run and non-dry-run, the Mutations field contains the full MutationSources
 // with mutation indices corresponding to MutationNums. We use priorUnits to distinguish

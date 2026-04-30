@@ -19,4 +19,5 @@ UnitActions are explained at https://docs.confighub.com/background/entities/unit
 func init() {
 	addSpaceFlags(unitActionCmd)
 	rootCmd.AddCommand(unitActionCmd)
+	addExplainCmd(unitActionCmd, "UnitAction")
 }

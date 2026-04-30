@@ -26448,6 +26448,24 @@
           }
         }
       },
+      "ArrayElementAliasMap": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "ArrayOrderMap": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
       "Attribute": {
         "required": [
           "Slug",
@@ -27070,7 +27088,11 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UserID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "UserID is the ID of the bot user associated with this bridge worker.\nThis user is created when the bridge worker is created and is used for\naudit trails and permissions.\nFor legacy workers, this field may be nil (zero UUID).",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "Version": {
             "type": "integer",
@@ -27992,7 +28014,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "FromSpaceID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "FromSpaceID optionally specifies a Space to filter within. Only relevant for spaced entity spaces. (optional)",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "Hash": {
             "type": "string",
@@ -28136,7 +28161,10 @@
         "type": "object",
         "properties": {
           "BridgeWorkerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "BridgeWorkerID is the identifier of the associated worker that will execute these functions.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "ChangeDescription": {
             "type": "string",
@@ -28551,7 +28579,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "BridgeWorkerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "CreatedAt": {
             "type": "string",
@@ -28846,13 +28877,25 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UpstreamLinkID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Link ID of the link this link was cloned from (if any).",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UpstreamOrganizationID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Organization ID of the link this link was cloned from (if any).",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UpstreamSpaceID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Space ID of the link this link was cloned from (if any).",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UseLiveState": {
             "type": "boolean",
@@ -28918,10 +28961,16 @@
             "$ref": "#/components/schemas/FunctionInvocation"
           },
           "InvocationID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "InvocationID is the identifier of the function invoked, if there is a corresponding Invocation.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "LinkID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "LinkID is the unique identifier of the link if the change was made due to resolving a link.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "MergeBaseRevisionNum": {
             "type": "integer",
@@ -28936,7 +28985,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "MergeSourceID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "MergeSourceID is the unique identifier of the unit if the change was made due to merging from another unit, including for clone and upgrade.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "MutationID": {
             "type": "string",
@@ -29004,7 +29056,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "TriggerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "TriggerID is the unique identifier of the trigger if the change was made by a trigger.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UnitID": {
             "type": "string",
@@ -29036,6 +29091,43 @@
           }
         },
         "description": "Mutation is a single source of mutation for a Revision."
+      },
+      "MutationConflict": {
+        "type": "object",
+        "properties": {
+          "Path": {
+            "type": "string",
+            "description": "Path of the mutation; empty for resource-level conflicts",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why the mutation was dropped",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          },
+          "Source": {
+            "$ref": "#/components/schemas/MutationInfo"
+          },
+          "Target": {
+            "$ref": "#/components/schemas/MutationInfo"
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "MutationConflictList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MutationConflict"
+        }
       },
       "MutationInfo": {
         "type": "object",
@@ -29551,6 +29643,12 @@
             "description": "Names without scopes used in current and prior revisions of this resource",
             "x-go-type-skip-optional-pointer": true
           },
+          "ArrayElementAliases": {
+            "$ref": "#/components/schemas/ArrayElementAliasMap"
+          },
+          "ArrayOrders": {
+            "$ref": "#/components/schemas/ArrayOrderMap"
+          },
           "PathMutationMap": {
             "$ref": "#/components/schemas/MutationMap"
           },
@@ -29777,7 +29875,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ChangeSetID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "ContentHash": {
             "type": "integer",
@@ -29932,7 +30033,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "AttributeFilterID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Reference to a Filter entity used to identify Attributes for the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "AttributeHash": {
             "type": "string",
@@ -30018,7 +30122,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "TriggerFilterID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Reference to a Filter entity used to identify Triggers that should be invoked on Units within this Space. The Filter's From field must be set to 'Trigger'.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "TriggerHash": {
             "type": "string",
@@ -30159,7 +30266,11 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ChangeSetID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "ChangeSetID is the optional ID of the ChangeSet this Tag is associated with.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "CreatedAt": {
             "type": "string",
@@ -30417,7 +30528,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "TriggerFilterID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "TriggerHash": {
             "type": "string",
@@ -30543,7 +30657,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "BridgeWorkerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "CreatedAt": {
             "type": "string",
@@ -30613,7 +30730,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "InvocationID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "Labels": {
             "type": "object",
@@ -30674,7 +30794,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UnitFilterID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "References a Filter entity (with From=Unit) to restrict which Units this Trigger applies to.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UpdatedAt": {
             "type": "string",
@@ -30786,10 +30909,17 @@
             "x-go-type-skip-optional-pointer": true
           },
           "BridgeWorkerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "ID of the BridgeWorker from the Target assigned to this Unit.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "ChangeSetID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "ContentHash": {
             "type": "integer",
@@ -30999,7 +31129,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "TargetID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "TargetOptions": {
             "type": "object",
@@ -31030,20 +31163,32 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UpstreamOrganizationID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for the Organization of the Unit this unit was cloned from, if any.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UpstreamRevisionNum": {
             "type": "integer",
-            "description": "Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded.",
+            "description": "Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded. To change this revision number, change the UpstreamLastMergedRevisionNum of the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.",
             "format": "int64",
             "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "UpstreamSpaceID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for the Space of the Unit this unit was cloned from, if any.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "UpstreamUnitID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "Unique identifier for Unit this unit was cloned from, if any. To change or remove the upstream unit, change or delete the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "ValidationResults": {
             "type": "object",
@@ -31255,6 +31400,9 @@
       "UnitCreateOrUpdateResponse": {
         "type": "object",
         "properties": {
+          "Conflicts": {
+            "$ref": "#/components/schemas/MutationConflictList"
+          },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
@@ -31277,7 +31425,10 @@
             "$ref": "#/components/schemas/ActionType"
           },
           "BridgeWorkerID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "BridgeWorkerID is the ID of the bridge worker that performed this action. This field is populated from the Target's BridgeWorkerID when the event is created.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "CreatedAt": {
             "type": "string",
@@ -31713,7 +31864,10 @@
             "x-go-type-skip-optional-pointer": true
           },
           "FilterID": {
-            "$ref": "#/components/schemas/UUID"
+            "type": "string",
+            "description": "FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional)",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "GroupBy": {
             "type": "string",

@@ -117,17 +117,13 @@ func ParseApplication(data []byte) (*unstructured.Unstructured, error) {
 	return obj, nil
 }
 
-// DisableAutoSync sets spec.syncPolicy.automated.enabled to false to prevent ArgoCD
-// from deploying. This preserves the rest of the automated policy (prune, selfHeal, etc.)
-// while ensuring the controller skips automated sync.
+// DisableAutoSync removes spec.syncPolicy.automated to prevent ArgoCD from deploying.
+// If spec.syncPolicy is then empty, it is removed as well.
 func DisableAutoSync(app *unstructured.Unstructured) {
-	// Ensure the automated map exists before setting enabled
-	automated, found, _ := unstructured.NestedMap(app.Object, "spec", "syncPolicy", "automated")
-	if !found || automated == nil {
-		// No automated policy — nothing to disable
-		return
+	unstructured.RemoveNestedField(app.Object, "spec", "syncPolicy", "automated")
+	if syncPolicy, found, _ := unstructured.NestedMap(app.Object, "spec", "syncPolicy"); found && len(syncPolicy) == 0 {
+		unstructured.RemoveNestedField(app.Object, "spec", "syncPolicy")
 	}
-	unstructured.SetNestedField(app.Object, false, "spec", "syncPolicy", "automated", "enabled")
 }
 
 // createOrUpdateApplication creates the Application in the cluster, or updates it if it exists.

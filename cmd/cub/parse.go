@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -396,14 +397,6 @@ type Unmarshalable interface {
 
 // Functionality for populating entities from stdin.
 
-func populateNewModelFromStdin(v interface{}) error {
-	jsonBytes, err := readStdin()
-	if err != nil {
-		return err
-	}
-	return mergeEntityWithData(v, jsonBytes)
-}
-
 func mergeEntityWithData(v any, data []byte) error {
 	// Parse YAML/JSON input into a generic structure, then re-marshal as JSON
 	// and unmarshal into the target. This ensures that generated types with
@@ -417,7 +410,9 @@ func mergeEntityWithData(v any, data []byte) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(jsonData, v)
+	dec := json.NewDecoder(bytes.NewReader(jsonData))
+	dec.DisallowUnknownFields()
+	return dec.Decode(v)
 }
 
 // convertYAMLToJSON converts YAML-unmarshaled data to JSON-compatible types.

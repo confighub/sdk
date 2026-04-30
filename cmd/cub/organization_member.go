@@ -16,4 +16,5 @@ var organizationMemberCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(organizationMemberCmd)
+	addExplainCmd(organizationMemberCmd, "OrganizationMember")
 }

@@ -47,6 +47,7 @@ Units are scoped to spaces and can be linked to other units to model dependencie
 func init() {
 	addSpaceFlags(unitCmd)
 	rootCmd.AddCommand(unitCmd)
+	addExplainCmd(unitCmd, "Unit")
 }
 
 // buildWhereClauseFromUnits generates a WHERE clause from unit identifiers

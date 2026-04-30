@@ -19,4 +19,5 @@ Mutations are explained at https://docs.confighub.com/background/entities/mutati
 func init() {
 	addSpaceFlags(mutationCmd)
 	rootCmd.AddCommand(mutationCmd)
+	addExplainCmd(mutationCmd, "Mutation")
 }

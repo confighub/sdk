@@ -24,6 +24,7 @@ var attributeDescription string
 func init() {
 	addSpaceFlags(attributeCmd)
 	rootCmd.AddCommand(attributeCmd)
+	addExplainCmd(attributeCmd, "Attribute")
 }
 
 // buildWhereClauseFromAttributes generates a WHERE clause from attribute identifiers

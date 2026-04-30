@@ -19,6 +19,7 @@ Tags are explained at https://docs.confighub.com/background/entities/tag/.`, "")
 func init() {
 	addSpaceFlags(tagCmd)
 	rootCmd.AddCommand(tagCmd)
+	addExplainCmd(tagCmd, "Tag")
 }
 
 // buildWhereClauseFromTags generates a WHERE clause from tag identifiers

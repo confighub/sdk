@@ -11132,7 +11132,6 @@ export type StandardErrorResponse = {
   /** Message returned with the response. */
   Message?: string;
 };
-export type Uuid = string;
 export type Subjects = {
   UserIDs?: {
     [key: string]: boolean;
@@ -11146,7 +11145,8 @@ export type Space = {
   Annotations?: {
     [key: string]: string;
   };
-  AttributeFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Attributes for the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'. */
+  AttributeFilterID?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -11164,7 +11164,8 @@ export type Space = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  TriggerFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units within this Space. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
   /** Filter expression to identify Attributes that should be registered in the Space's FunctionExecutor. The specified string is an expression for the purpose of filtering
@@ -11238,12 +11239,14 @@ export type Space = {
     The whole string must be query-encoded. */
   WhereTrigger?: string;
 };
+export type Uuid = string;
 export type SpaceRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
     [key: string]: string;
   };
-  AttributeFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Attributes for the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'. */
+  AttributeFilterID?: string;
   /** Hash of all registered Attribute configurations for the Space. (readonly) */
   AttributeHash?: string;
   /** List of Attribute IDs that match the WhereAttribute and/or AttributeFilterID criteria. (readonly) */
@@ -11271,7 +11274,8 @@ export type SpaceRead = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  TriggerFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units within this Space. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
   TriggerHash?: string;
   /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
   TriggerIDs?: Uuid[];
@@ -11759,7 +11763,6 @@ export type BridgeWorker = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  UserID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
@@ -11813,7 +11816,11 @@ export type BridgeWorkerRead = {
   SpaceSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
-  UserID?: Uuid;
+  /** UserID is the ID of the bot user associated with this bridge worker.
+    This user is created when the bridge worker is created and is used for
+    audit trails and permissions.
+    For legacy workers, this field may be nil (zero UUID). */
+  UserID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
@@ -12048,7 +12055,6 @@ export type Tag = {
   Annotations?: {
     [key: string]: string;
   };
-  ChangeSetID?: Uuid;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -12075,7 +12081,8 @@ export type TagRead = {
   Annotations?: {
     [key: string]: string;
   };
-  ChangeSetID?: Uuid;
+  /** ChangeSetID is the optional ID of the ChangeSet this Tag is associated with. */
+  ChangeSetID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -12146,7 +12153,8 @@ export type Filter = {
   FilterID?: string;
   /** From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase. */
   From: string;
-  FromSpaceID?: Uuid;
+  /** FromSpaceID optionally specifies a Space to filter within. Only relevant for spaced entity spaces. (optional) */
+  FromSpaceID?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -12187,7 +12195,8 @@ export type FilterRead = {
   FilterID?: string;
   /** From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase. */
   From: string;
-  FromSpaceID?: Uuid;
+  /** FromSpaceID optionally specifies a Space to filter within. Only relevant for spaced entity spaces. (optional) */
+  FromSpaceID?: string;
   /** SHA256 hash of the filter parameters encoded as hexadecimal. (readonly) */
   Hash?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -12235,6 +12244,14 @@ export type FilterCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Filter?: FilterRead;
 };
+export type ArrayElementAliasMap = {
+  [key: string]: {
+    [key: string]: string;
+  };
+};
+export type ArrayOrderMap = {
+  [key: string]: string[];
+};
 export type MutationType = 'Add' | 'Delete' | 'Update' | 'Replace' | 'None';
 export type MutationInfo = {
   /** Function index or sequence number corresponding to the change */
@@ -12273,6 +12290,8 @@ export type ResourceMutation = {
   AliasesWithoutScopes?: {
     [key: string]: object;
   };
+  ArrayElementAliases?: ArrayElementAliasMap;
+  ArrayOrders?: ArrayOrderMap;
   PathMutationMap?: MutationMap;
   Resource?: ResourceInfo;
   ResourceMutationInfo?: MutationInfo;
@@ -12308,7 +12327,8 @@ export type FunctionInvocationsResponse = {
 };
 export type FunctionInvocationList = FunctionInvocation[] | null;
 export type FunctionInvocationsRequest = {
-  BridgeWorkerID?: Uuid;
+  /** BridgeWorkerID is the identifier of the associated worker that will execute these functions. */
+  BridgeWorkerID?: string;
   /** ChangeDescription is a description of the change being made, if any. */
   ChangeDescription?: string;
   FunctionInvocations?: FunctionInvocationList;
@@ -12356,7 +12376,8 @@ export type Invocation = {
   };
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
+  /** Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor. */
+  BridgeWorkerID?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -12390,7 +12411,8 @@ export type InvocationRead = {
   };
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
+  /** Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor. */
+  BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -12456,8 +12478,8 @@ export type Unit = {
   Annotations?: {
     [key: string]: string;
   };
-  BridgeWorkerID?: Uuid;
-  ChangeSetID?: Uuid;
+  /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
   /** The full configuration data for this unit. The maximum size is 67108864 bytes. */
   Data?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
@@ -12485,7 +12507,8 @@ export type Unit = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  TargetID?: Uuid;
+  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+  TargetID?: string;
   /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
   TargetOptions?: {
     [key: string]: string;
@@ -12494,9 +12517,6 @@ export type Unit = {
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
-  UpstreamOrganizationID?: Uuid;
-  UpstreamSpaceID?: Uuid;
-  UpstreamUnitID?: Uuid;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
@@ -12598,8 +12618,10 @@ export type UnitRead = {
   ApprovedBy?: Uuid[] | null;
   /** Additional state used by the Bridge; content is ProviderType-specific. */
   BridgeState?: string;
-  BridgeWorkerID?: Uuid;
-  ChangeSetID?: Uuid;
+  /** ID of the BridgeWorker from the Target assigned to this Unit. */
+  BridgeWorkerID?: string;
+  /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
   /** Deprecated: Use DataHash instead. The CRC32 hash of the configuration data. */
   ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -12665,7 +12687,8 @@ export type UnitRead = {
   SpaceID?: string;
   /** Slug of the Space this entity belongs to. (readonly) */
   SpaceSlug?: string;
-  TargetID?: Uuid;
+  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+  TargetID?: string;
   /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
   TargetOptions?: {
     [key: string]: string;
@@ -12676,11 +12699,14 @@ export type UnitRead = {
   UnitID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
-  UpstreamOrganizationID?: Uuid;
-  /** Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded. */
+  /** Unique identifier for the Organization of the Unit this unit was cloned from, if any. */
+  UpstreamOrganizationID?: string;
+  /** Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded. To change this revision number, change the UpstreamLastMergedRevisionNum of the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit. */
   UpstreamRevisionNum?: number;
-  UpstreamSpaceID?: Uuid;
-  UpstreamUnitID?: Uuid;
+  /** Unique identifier for the Space of the Unit this unit was cloned from, if any. */
+  UpstreamSpaceID?: string;
+  /** Unique identifier for Unit this unit was cloned from, if any. To change or remove the upstream unit, change or delete the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit. */
+  UpstreamUnitID?: string;
   /** A map from gate/warning name to the list of validation results that caused the gate or warning. */
   ValidationResults?: {
     [key: string]: ValidationResultList;
@@ -12742,9 +12768,6 @@ export type Link = {
   UpdateType?: string;
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
-  UpstreamLinkID?: Uuid;
-  UpstreamOrganizationID?: Uuid;
-  UpstreamSpaceID?: Uuid;
   /** Take data from the LiveState of the upstream Unit rather than from Data. */
   UseLiveState?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12802,9 +12825,12 @@ export type LinkRead = {
   UpdatedAt?: string;
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
-  UpstreamLinkID?: Uuid;
-  UpstreamOrganizationID?: Uuid;
-  UpstreamSpaceID?: Uuid;
+  /** Link ID of the link this link was cloned from (if any). */
+  UpstreamLinkID?: string;
+  /** Organization ID of the link this link was cloned from (if any). */
+  UpstreamOrganizationID?: string;
+  /** Space ID of the link this link was cloned from (if any). */
+  UpstreamSpaceID?: string;
   /** Take data from the LiveState of the upstream Unit rather than from Data. */
   UseLiveState?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12869,7 +12895,8 @@ export type Revision = {
   };
   /** the users that have approved the latest version of the config data for the Unit. */
   ApprovedBy?: Uuid[];
-  ChangeSetID?: Uuid;
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
   /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
   ContentHash?: number;
   /** The full configuration data for this unit at this revision. */
@@ -12915,7 +12942,8 @@ export type RevisionRead = {
   };
   /** the users that have approved the latest version of the config data for the Unit. */
   ApprovedBy?: Uuid[];
-  ChangeSetID?: Uuid;
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
   /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
   ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -13027,7 +13055,8 @@ export type Trigger = {
   };
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
+  /** Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor. */
+  BridgeWorkerID?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -13045,7 +13074,8 @@ export type Trigger = {
   FailOpenAfter?: number | null;
   /** Function name */
   FunctionName?: string;
-  InvocationID?: Uuid;
+  /** InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation. */
+  InvocationID?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -13063,7 +13093,8 @@ export type Trigger = {
   ToolchainType: string;
   /** TriggerID uniquely identifies a trigger within the system. */
   TriggerID?: string;
-  UnitFilterID?: Uuid;
+  /** References a Filter entity (with From=Unit) to restrict which Units this Trigger applies to. */
+  UnitFilterID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
   /** Warn indicates whether this trigger produces ApplyWarnings instead of ApplyGates when its validating function fails. ApplyWarnings are non-blocking. */
@@ -13080,7 +13111,8 @@ export type TriggerRead = {
   };
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
-  BridgeWorkerID?: Uuid;
+  /** Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor. */
+  BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -13106,7 +13138,8 @@ export type TriggerRead = {
   FunctionName?: string;
   /** SHA256 hash of the trigger's specification fields, used to detect changes. */
   Hash?: string;
-  InvocationID?: Uuid;
+  /** InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation. */
+  InvocationID?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -13126,7 +13159,8 @@ export type TriggerRead = {
   ToolchainType: string;
   /** TriggerID uniquely identifies a trigger within the system. */
   TriggerID?: string;
-  UnitFilterID?: Uuid;
+  /** References a Filter entity (with From=Unit) to restrict which Units this Trigger applies to. */
+  UnitFilterID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** Validating indicates whether this is a validating function (true) or not (false).
@@ -13293,7 +13327,8 @@ export type Target = {
   TargetID?: string;
   /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
   ToolchainType: string;
-  TriggerFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
   /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
@@ -13387,7 +13422,8 @@ export type TargetRead = {
   TargetID?: string;
   /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
   ToolchainType: string;
-  TriggerFilterID?: Uuid;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
   TriggerHash?: string;
   /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
   TriggerIDs?: Uuid[];
@@ -13481,13 +13517,16 @@ export type ResourceInfoType2 = {
 };
 export type Mutation = {
   FunctionInvocation?: FunctionInvocation;
-  InvocationID?: Uuid;
-  LinkID?: Uuid;
+  /** InvocationID is the identifier of the function invoked, if there is a corresponding Invocation. */
+  InvocationID?: string;
+  /** LinkID is the unique identifier of the link if the change was made due to resolving a link. */
+  LinkID?: string;
   /** MergeBaseRevisionNum is the sequence number of the revision preceding merged changes, if the change was due to a merge operation. */
   MergeBaseRevisionNum?: number;
   /** MergeEndRevisionNum is the sequence number of the revision ending merged changes, if the change was due to a merge operation. */
   MergeEndRevisionNum?: number;
-  MergeSourceID?: Uuid;
+  /** MergeSourceID is the unique identifier of the unit if the change was made due to merging from another unit, including for clone and upgrade. */
+  MergeSourceID?: string;
   /** Unique identifier for a Mutation. */
   MutationID?: string;
   /** Sequence number for the Mutation. */
@@ -13507,7 +13546,8 @@ export type Mutation = {
   SpaceID?: string;
   /** User-defined category for the Mutation. The prefix 'ConfigHub' is reserved. */
   Subgroup?: string;
-  TriggerID?: Uuid;
+  /** TriggerID is the unique identifier of the trigger if the change was made by a trigger. */
+  TriggerID?: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
   /** Sequence number of the upstream revision the unit was upgraded from, if the change was due to an upgrade operation. */
@@ -13523,13 +13563,16 @@ export type MutationRead = {
   /** The type of entity. */
   EntityType?: string;
   FunctionInvocation?: FunctionInvocation;
-  InvocationID?: Uuid;
-  LinkID?: Uuid;
+  /** InvocationID is the identifier of the function invoked, if there is a corresponding Invocation. */
+  InvocationID?: string;
+  /** LinkID is the unique identifier of the link if the change was made due to resolving a link. */
+  LinkID?: string;
   /** MergeBaseRevisionNum is the sequence number of the revision preceding merged changes, if the change was due to a merge operation. */
   MergeBaseRevisionNum?: number;
   /** MergeEndRevisionNum is the sequence number of the revision ending merged changes, if the change was due to a merge operation. */
   MergeEndRevisionNum?: number;
-  MergeSourceID?: Uuid;
+  /** MergeSourceID is the unique identifier of the unit if the change was made due to merging from another unit, including for clone and upgrade. */
+  MergeSourceID?: string;
   /** Unique identifier for a Mutation. */
   MutationID?: string;
   /** Sequence number for the Mutation. */
@@ -13551,7 +13594,8 @@ export type MutationRead = {
   SpaceSlug?: string;
   /** User-defined category for the Mutation. The prefix 'ConfigHub' is reserved. */
   Subgroup?: string;
-  TriggerID?: Uuid;
+  /** TriggerID is the unique identifier of the trigger if the change was made by a trigger. */
+  TriggerID?: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
@@ -13563,7 +13607,8 @@ export type MutationRead = {
 };
 export type UnitEvent = {
   Action?: ActionType;
-  BridgeWorkerID?: Uuid;
+  /** BridgeWorkerID is the ID of the bridge worker that performed this action. This field is populated from the Target's BridgeWorkerID when the event is created. */
+  BridgeWorkerID?: string;
   Message?: string;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
@@ -13587,7 +13632,8 @@ export type UnitEvent = {
 };
 export type UnitEventRead = {
   Action?: ActionType;
-  BridgeWorkerID?: Uuid;
+  /** BridgeWorkerID is the ID of the bridge worker that performed this action. This field is populated from the Target's BridgeWorkerID when the event is created. */
+  BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -13676,7 +13722,8 @@ export type View = {
   };
   /** Friendly name for the entity. */
   DisplayName?: string;
-  FilterID?: Uuid;
+  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
+  FilterID?: string;
   /** Column to group by (optional). */
   GroupBy?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -13719,7 +13766,8 @@ export type ViewRead = {
   DisplayName?: string;
   /** The type of entity. */
   EntityType?: string;
-  FilterID?: Uuid;
+  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
+  FilterID?: string;
   /** Column to group by (optional). */
   GroupBy?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -13976,12 +14024,26 @@ export type TriggerCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Trigger?: TriggerRead;
 };
+export type MutationConflict = {
+  /** Path of the mutation; empty for resource-level conflicts */
+  Path?: string;
+  /** Why the mutation was dropped */
+  Reason?: string;
+  Resource?: ResourceInfo;
+  Source?: MutationInfo;
+  Target?: MutationInfo;
+  /** ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve) */
+  UnitID?: string;
+};
+export type MutationConflictList = MutationConflict[];
 export type UnitCreateOrUpdateResponse = {
+  Conflicts?: MutationConflictList;
   Error?: ResponseError;
   Links?: LinkCreateOrUpdateResponse[];
   Unit?: Unit;
 };
 export type UnitCreateOrUpdateResponseRead = {
+  Conflicts?: MutationConflictList;
   Error?: ResponseError;
   Links?: LinkCreateOrUpdateResponseRead[];
   Unit?: UnitRead;
