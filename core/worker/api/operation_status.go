@@ -44,6 +44,7 @@ const (
 	ActionResultNone              ActionResultType = "None"
 	ActionResultApplyCompleted    ActionResultType = "ApplyCompleted"
 	ActionResultApplySynced       ActionResultType = "ApplySynced" // Config pushed to target, waiting for resources to be ready
+	ActionResultApplyStuck        ActionResultType = "ApplyStuck"  // Waiting for readiness, but no progress observed for a while
 	ActionResultApplyFailed       ActionResultType = "ApplyFailed"
 	ActionResultApplyWaitFailed   ActionResultType = "ApplyWaitFailed"
 	ActionResultDestroyCompleted  ActionResultType = "DestroyCompleted"
@@ -70,6 +71,7 @@ var ValidActionResult = map[ActionResultType]bool{
 	ActionResultNone:                        true,
 	ActionResultApplyCompleted:              true,
 	ActionResultApplySynced:                 true,
+	ActionResultApplyStuck:                  true,
 	ActionResultApplyFailed:                 true,
 	ActionResultApplyWaitFailed:             true,
 	ActionResultDestroyCompleted:            true,
@@ -223,6 +225,11 @@ const (
 	ResourceReadinessReady ResourceReadinessType = "Ready"
 	// ResourceReadinessInProgress indicates the resource is progressing towards ready state
 	ResourceReadinessInProgress ResourceReadinessType = "InProgress"
+	// ResourceReadinessStuck indicates the resource has been InProgress without
+	// observed progress for longer than the staleness threshold. Its controller
+	// may be suspended, missing, broken, or backpressured. The resource is not
+	// failed; if progress resumes it transitions back to InProgress.
+	ResourceReadinessStuck ResourceReadinessType = "Stuck"
 	// ResourceReadinessFailed indicates the resource failed to reach ready state
 	ResourceReadinessFailed ResourceReadinessType = "Failed"
 	// ResourceReadinessTerminating indicates the resource is being deleted
