@@ -63,6 +63,17 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	}
 	generic.RegisterPathSetterAndGetter(fh, "namespace", namespaceParameters,
 		" the namespace attributes in resource", AttributeNameNamespaceNameReference, rp, true, false, false)
+	nameParameters := []api.FunctionParameter{
+		{
+			ParameterName: "name",
+			Required:      true,
+			Description:   "Value of metadata.name in the resources",
+			DataType:      api.DataTypeString,
+		},
+	}
+	generic.RegisterPathSetterAndGetter(fh, "name", nameParameters,
+		" metadata.name in resources. Use --where-resource to scope to a specific resource type.",
+		AttributeNameMetadataName, rp, true, false, false)
 	api.InitTypeSchemas()
 	if err := fh.RegisterFunction("get-needed-namespaces", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -124,6 +135,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 const AttributeNameNamespaceNameReference = api.AttributeName("namespace-name-reference")
 const AttributeNameAnnotationValue = api.AttributeName("annotation-value")
 const AttributeNameLabelValue = api.AttributeName("label-value")
+const AttributeNameMetadataName = api.AttributeName("metadata-name")
 
 func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 	namespaceResourceType := api.ResourceType("v1/Namespace")
@@ -143,6 +155,17 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(namespaceResourceType)}},
 	}
 	yamlkit.RegisterPathsByAttributeName(rp, api.AttributeNameResourceName, namespaceResourceType, pathInfos, &yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation}, false, true)
+
+	// Register metadata.name on every Kubernetes resource type so that set-name / get-name
+	// can target it. Callers should use --where-resource to scope the operation to a single
+	// resource type (otherwise every resource would receive the same name).
+	yamlkit.RegisterPathsByAttributeName(rp, AttributeNameMetadataName, api.ResourceType(api.ResourceTypeAny), api.PathToVisitorInfoType{
+		api.UnresolvedPath("metadata.name"): {
+			Path:          api.UnresolvedPath("metadata.name"),
+			AttributeName: AttributeNameMetadataName,
+			DataType:      api.DataTypeString,
+		},
+	}, nil, false, false)
 
 	// These paths are not included in kustomize's namereference list.
 	var resourceTypeToNamespacePath = api.ResourceTypeToPathToVisitorInfoType{

@@ -71,11 +71,22 @@ func init() {
 	functionCmd.AddCommand(functionLocalCmd)
 }
 
-func invokeLocalFunction(inputData []byte, functionName string, functionArgs []string, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
-	functionlogger.SetLevel(functionlogger.ERROR)
+// localFunctionInvocation describes one function call to invokeLocalFunctions:
+// the function name plus its positional/named arguments in cub-CLI form.
+type localFunctionInvocation struct {
+	FunctionName string
+	Arguments    []string
+}
 
-	// Parse the function arguments using the existing helper
-	invocation := initializeFunctionInvocation(functionName, functionArgs)
+func invokeLocalFunction(inputData []byte, functionName string, functionArgs []string, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
+	return invokeLocalFunctions(inputData, []localFunctionInvocation{{
+		FunctionName: functionName,
+		Arguments:    functionArgs,
+	}}, whereResource, toolchainTypeString)
+}
+
+func invokeLocalFunctions(inputData []byte, invocations []localFunctionInvocation, whereResourceFilter, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
+	functionlogger.SetLevel(functionlogger.ERROR)
 
 	// Convert toolchain type string to workerapi.ToolchainType
 	toolchainTypeEnum := workerapi.ToolchainType(toolchainTypeString)
@@ -83,52 +94,56 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 	// Create function executor
 	functionExecutor := funcimpl.NewStandardExecutor(nil, true)
 
-	// Get registered functions to validate the function exists
+	// Get registered functions to validate the functions exist
 	registeredFunctions := functionExecutor.RegisteredFunctions()
-	if toolchainFunctions, ok := registeredFunctions[toolchainTypeEnum]; ok {
-		if _, functionExists := toolchainFunctions[functionName]; !functionExists {
-			return nil, fmt.Errorf("function '%s' not found for toolchain '%s'", functionName, toolchainTypeString)
-		}
-	} else {
+	toolchainFunctions, ok := registeredFunctions[toolchainTypeEnum]
+	if !ok {
 		return nil, fmt.Errorf("no functions registered for toolchain '%s'", toolchainTypeString)
 	}
 
-	// Convert function arguments from goclientnew.FunctionArgument to api.FunctionArgument
-	var apiArgs []api.FunctionArgument
-	for _, arg := range invocation.Arguments {
-		apiArg := api.FunctionArgument{}
-
-		// Handle parameter name if present
-		if arg.ParameterName != nil {
-			apiArg.ParameterName = *arg.ParameterName
+	apiInvocations := make([]api.FunctionInvocation, 0, len(invocations))
+	for _, inv := range invocations {
+		if _, functionExists := toolchainFunctions[inv.FunctionName]; !functionExists {
+			return nil, fmt.Errorf("function '%s' not found for toolchain '%s'", inv.FunctionName, toolchainTypeString)
 		}
 
-		// Handle value - need to extract the actual string value
-		if arg.Value != nil {
-			// The Value field contains the actual value as a union type
-			// We need to get the string representation
-			valueBytes, err := json.Marshal(arg.Value)
-			if err == nil {
-				var strValue string
-				// Try to unmarshal as string first
-				if err := json.Unmarshal(valueBytes, &strValue); err == nil {
-					apiArg.Value = strValue
-				} else {
-					// If not a string, use the raw JSON string
-					apiArg.Value = string(valueBytes)
+		// Parse the function arguments using the existing helper
+		parsed := initializeFunctionInvocation(inv.FunctionName, inv.Arguments)
+
+		// Convert function arguments from goclientnew.FunctionArgument to api.FunctionArgument
+		var apiArgs []api.FunctionArgument
+		for _, arg := range parsed.Arguments {
+			apiArg := api.FunctionArgument{}
+
+			// Handle parameter name if present
+			if arg.ParameterName != nil {
+				apiArg.ParameterName = *arg.ParameterName
+			}
+
+			// Handle value - need to extract the actual string value
+			if arg.Value != nil {
+				// The Value field contains the actual value as a union type
+				// We need to get the string representation
+				valueBytes, err := json.Marshal(arg.Value)
+				if err == nil {
+					var strValue string
+					// Try to unmarshal as string first
+					if err := json.Unmarshal(valueBytes, &strValue); err == nil {
+						apiArg.Value = strValue
+					} else {
+						// If not a string, use the raw JSON string
+						apiArg.Value = string(valueBytes)
+					}
 				}
 			}
+
+			apiArgs = append(apiArgs, apiArg)
 		}
 
-		apiArgs = append(apiArgs, apiArg)
-	}
-
-	// Create function invocation
-	functionInvocations := []api.FunctionInvocation{
-		{
-			FunctionName: functionName,
+		apiInvocations = append(apiInvocations, api.FunctionInvocation{
+			FunctionName: inv.FunctionName,
 			Arguments:    apiArgs,
-		},
+		})
 	}
 
 	// Create function invocation request
@@ -138,12 +153,12 @@ func invokeLocalFunction(inputData []byte, functionName string, functionArgs []s
 		},
 		ConfigData: inputData,
 		FunctionInvocationOptions: api.FunctionInvocationOptions{
-			WhereResource: whereResource,
+			WhereResource: whereResourceFilter,
 		},
-		FunctionInvocations: functionInvocations,
+		FunctionInvocations: apiInvocations,
 	}
 
-	// Execute the function
+	// Execute the functions
 	ctx := context.Background()
 	response, err := functionExecutor.Invoke(ctx, invocationRequest)
 	if err != nil {

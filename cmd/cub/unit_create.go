@@ -335,6 +335,15 @@ func runSingleUnitCreate(args []string) error {
 		}
 		var base64Content strfmt.Base64 = content
 		newUnit.Data = base64Content.String()
+
+		// Set the external config data source if it isn't already set
+		if unitCreateArgs.mergeExternalSource == "" {
+			if args[1] == "-" {
+				unitCreateArgs.mergeExternalSource = "stdin"
+			} else {
+				unitCreateArgs.mergeExternalSource = args[1]
+			}
+		}
 	}
 
 	err := setAnnotations(&newUnit.Annotations)

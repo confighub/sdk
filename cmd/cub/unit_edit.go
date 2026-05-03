@@ -112,6 +112,7 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	updatedData := base64.StdEncoding.EncodeToString(updatedContent)
 	currentUnit.Data = updatedData
+	// Edit is a read+modify+write, so it is not considered an external merge source
 	unitDetails, err := updateUnit(spaceID, currentUnit, params)
 	if err != nil {
 		return err

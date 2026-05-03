@@ -1715,7 +1715,7 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.Functi
 						continue
 					}
 					for _, containerDoc := range containersDoc.Children() {
-						errs := setContainerProbeDefaults(containerDoc)
+						errs := setContainerProbeDefaults(containerDoc, probePaths{liveness: "/healthz", readiness: "/healthz", startup: "/healthz"})
 						visitorErrs = append(visitorErrs, errs...)
 					}
 				}

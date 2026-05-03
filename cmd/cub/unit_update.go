@@ -203,7 +203,7 @@ func init() {
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
-	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore)")
+	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore); with --merge-external-source, overrides the default selection of the latest MergeExternal revision")
 	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision for 3-way merge (uses same format as --restore)")
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
@@ -309,9 +309,16 @@ func checkConflictingArgs(args []string) bool {
 		if mergeBase == "" || mergeEnd == "" {
 			failOnError(fmt.Errorf("--merge-base and --merge-end must be provided with --merge-source"))
 		}
+	} else if mergeExternalSource != "" {
+		if mergeEnd != "" {
+			failOnError(fmt.Errorf("--merge-end cannot be used with --merge-external-source"))
+		}
+		if whereMutation != "" || filterMutation != "" {
+			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
+		}
 	} else {
 		if mergeBase != "" || mergeEnd != "" {
-			failOnError(fmt.Errorf("--merge-source must be provided with --merge-base and --merge-end"))
+			failOnError(fmt.Errorf("--merge-source or --merge-external-source must be provided with --merge-base"))
 		}
 		if whereMutation != "" || filterMutation != "" {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
@@ -568,10 +575,6 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if mergeExternalSource != "" {
-		newParams.MergeExternalSource = &mergeExternalSource
-	}
-
 	// Read data payload
 	if len(args) > 1 {
 		if args[1] == "-" && flagPopulateModelFromStdin {
@@ -583,6 +586,27 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		var base64Content strfmt.Base64 = content
 		currentUnit.Data = base64Content.String()
+
+		// We don't set the external config data source automatically because there isn't a reliable
+		// way to determine whether this is an external upload or read+modify+write implicitly.
+		// if mergeExternalSource == "" {
+		// 	if args[1] == "-" {
+		// 		mergeExternalSource = "stdin"
+		// 	} else {
+		// 		mergeExternalSource = args[1]
+		// 	}
+		// }
+	}
+
+	if mergeExternalSource != "" {
+		newParams.MergeExternalSource = &mergeExternalSource
+		if mergeBase != "" {
+			mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, currentUnit.UnitID, currentUnit.SpaceID.String(), currentUnit.HeadRevisionNum)
+			if err != nil {
+				return fmt.Errorf("invalid merge base specification: %w", err)
+			}
+			newParams.MergeBase = &mergeBaseFormatted
+		}
 	}
 
 	if tag != "" {

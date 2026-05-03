@@ -47,7 +47,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "cub-worker-run <provider-types>",
+	Use:   "cub-worker-run [<provider-types>]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Start a worker process",
 	Long: `Start a worker process to serve one or more supported provider types.
@@ -92,12 +92,13 @@ Optional environment variables:
 
 - CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
-- CONFIGHUB_WORKER_HTTP_SERVER_ENABLED: When set, enables a HTTP server with a prometheus exporter endpoint
-- CONFIGHUB_WORKER_HTTP_SERVER_PORT: The port to listen for a server, currently only exposes metrics
+- CONFIGHUB_WORKER_HTTP_SERVER_PORT: When set, starts a local HTTP server on this port. Exposes /internal/metrics (Prometheus), /internal/pprof, /internal/ok (liveness), and /internal/ready (readiness). When unset, no HTTP server is started.
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
 
 Run "cub-worker-run docgen env" to print the worker environment variables as a JSON Schema.
 Run "cub-worker-run docgen command" to print Cobra YAML documentation for the worker command.
+Run "cub-worker-run docgen runtime" to print the worker's runtime spec (ports, paths, probes) as YAML.
+Run "cub-worker-run get-env" to print the loaded worker configuration as JSON.
 `,
 	SilenceErrors:     true,
 	SilenceUsage:      true,
@@ -111,7 +112,6 @@ const (
 	defaultConfighubURL              = defaultConfighubScheme + "://" + defaultConfighubHost
 	defaultMainPort                  = "443"
 	defaultWorkerPort                = "443"
-	defaultServerPort                = "9092"
 	defaultHTTPServerShutdownTimeout = 5 * time.Second
 )
 
@@ -523,7 +523,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		WithMetricsMeter(metricsMeter)
 
 	var httpServer *echo.Echo
-	if httpServerEnabled := rootArgs.HTTPServerEnabled; httpServerEnabled != "" && httpServerEnabled != "0" {
+	if rootArgs.HTTPServerPort != "" {
 		livenessThreshold := time.Duration(rootArgs.LivenessEventThresholdSeconds) * time.Second
 		httpServer = newHTTPServer(w, livenessThreshold)
 	}
@@ -535,11 +535,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	})
 	if httpServer != nil {
 		eg.Go(func() error {
-			port := rootArgs.HTTPServerPort
-			if port == "" {
-				port = defaultServerPort
-			}
-			if startErr := httpServer.Start(":" + port); startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {
+			if startErr := httpServer.Start(":" + rootArgs.HTTPServerPort); startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {
 				return errors.Wrap(startErr, "HTTP server unexpected failure")
 			}
 			return nil

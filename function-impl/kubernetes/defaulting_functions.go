@@ -304,7 +304,30 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 	resourceTypes := yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
 	if err := fh.RegisterFunction("set-container-probe-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName:          "set-container-probe-defaults",
+			FunctionName: "set-container-probe-defaults",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "liveness-path",
+					Required:      false,
+					Description:   "URL path for the liveness probe HTTP GET. Defaults to /healthz.",
+					DataType:      api.DataTypeString,
+					Example:       "/internal/ok",
+				},
+				{
+					ParameterName: "readiness-path",
+					Required:      false,
+					Description:   "URL path for the readiness probe HTTP GET. Defaults to /healthz.",
+					DataType:      api.DataTypeString,
+					Example:       "/internal/ready",
+				},
+				{
+					ParameterName: "startup-path",
+					Required:      false,
+					Description:   "URL path for the startup probe HTTP GET. Defaults to /healthz.",
+					DataType:      api.DataTypeString,
+					Example:       "/internal/ok",
+				},
+			},
 			Mutating:              true,
 			Hermetic:              true,
 			Idempotent:            true,
@@ -318,13 +341,40 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 	}
 }
 
+// probePaths holds per-probe-type URL paths.
+type probePaths struct {
+	liveness  string
+	readiness string
+	startup   string
+}
+
 func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnSetContainerProbeDefaults(rp, fArgs.Options, fArgs.ParsedData)
+		// Look up by ParameterName (not slice index) because optional
+		// args may be sparse: when only some named args are supplied,
+		// the handler packs only the present ones into the slice. The
+		// handler populates ParameterName on positional args too, so
+		// this works for either call style.
+		paths := probePaths{liveness: "/healthz", readiness: "/healthz", startup: "/healthz"}
+		for _, a := range fArgs.Arguments {
+			s, ok := a.Value.(string)
+			if !ok || s == "" {
+				continue
+			}
+			switch a.ParameterName {
+			case "liveness-path":
+				paths.liveness = s
+			case "readiness-path":
+				paths.readiness = s
+			case "startup-path":
+				paths.startup = s
+			}
+		}
+		return k8sFnSetContainerProbeDefaults(rp, fArgs.Options, fArgs.ParsedData, paths)
 	}
 }
 
-func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
+func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, paths probePaths) (gaby.Container, any, error) {
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
 		if !ok {
@@ -356,7 +406,7 @@ func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options 
 					continue
 				}
 				for _, containerDoc := range containersDoc.Children() {
-					errs := setContainerProbeDefaults(containerDoc)
+					errs := setContainerProbeDefaults(containerDoc, paths)
 					multiErrs = append(multiErrs, errs...)
 				}
 			}
@@ -371,7 +421,7 @@ func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options 
 
 // setContainerProbeDefaults adds probes to a single container doc.
 // Factored out from k8sFnSetPodDefaults for reuse.
-func setContainerProbeDefaults(containerDoc *gaby.YamlDoc) []error {
+func setContainerProbeDefaults(containerDoc *gaby.YamlDoc, paths probePaths) []error {
 	multiErrs := []error{}
 
 	// Determine the port to use for probes
@@ -429,13 +479,18 @@ func setContainerProbeDefaults(containerDoc *gaby.YamlDoc) []error {
 			}
 		}
 	} else {
-		// No existing probes, add all three with appropriate defaults
-		httpGet := orderedmap.New[string, any]()
-		httpGet.Set("path", "/healthz")
-		httpGet.Set("port", probePort)
+		// No existing probes, add all three with appropriate defaults.
+		// Each probe gets its own httpGet (liveness/readiness/startup may
+		// differ in path, and orderedmap is reference-shared if reused).
+		newHTTPGet := func(path string) *orderedmap.OrderedMap[string, any] {
+			m := orderedmap.New[string, any]()
+			m.Set("path", path)
+			m.Set("port", probePort)
+			return m
+		}
 
 		startupProbe := orderedmap.New[string, any]()
-		startupProbe.Set("httpGet", httpGet)
+		startupProbe.Set("httpGet", newHTTPGet(paths.startup))
 		startupProbe.Set("initialDelaySeconds", 10)
 		startupProbe.Set("periodSeconds", 10)
 		startupProbe.Set("timeoutSeconds", 1)
@@ -447,10 +502,10 @@ func setContainerProbeDefaults(containerDoc *gaby.YamlDoc) []error {
 		}
 
 		livenessProbe := orderedmap.New[string, any]()
-		livenessProbe.Set("httpGet", httpGet)
+		livenessProbe.Set("httpGet", newHTTPGet(paths.liveness))
 		livenessProbe.Set("initialDelaySeconds", 30)
-		livenessProbe.Set("periodSeconds", 10)
-		livenessProbe.Set("timeoutSeconds", 1)
+		livenessProbe.Set("periodSeconds", 20)
+		livenessProbe.Set("timeoutSeconds", 5)
 		livenessProbe.Set("failureThreshold", 3)
 		livenessProbe.Set("successThreshold", 1)
 		_, err = containerDoc.Set(livenessProbe, "livenessProbe")
@@ -459,10 +514,10 @@ func setContainerProbeDefaults(containerDoc *gaby.YamlDoc) []error {
 		}
 
 		readinessProbe := orderedmap.New[string, any]()
-		readinessProbe.Set("httpGet", httpGet)
+		readinessProbe.Set("httpGet", newHTTPGet(paths.readiness))
 		readinessProbe.Set("initialDelaySeconds", 5)
 		readinessProbe.Set("periodSeconds", 10)
-		readinessProbe.Set("timeoutSeconds", 1)
+		readinessProbe.Set("timeoutSeconds", 2)
 		readinessProbe.Set("failureThreshold", 3)
 		readinessProbe.Set("successThreshold", 1)
 		_, err = containerDoc.Set(readinessProbe, "readinessProbe")

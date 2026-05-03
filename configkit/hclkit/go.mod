@@ -3,7 +3,7 @@ module github.com/confighub/sdk/configkit/hclkit
 go 1.25.0
 
 require (
-	github.com/confighub/sdk/core v0.1.39
+	github.com/confighub/sdk/core v0.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/zclconf/go-cty v1.16.1
@@ -53,6 +53,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -46,8 +46,8 @@ spec:
             path: /healthz
             port: 8080
           initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 1
+          periodSeconds: 20
+          timeoutSeconds: 5
           failureThreshold: 3
           successThreshold: 1
         readinessProbe:
@@ -56,7 +56,7 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 10
-          timeoutSeconds: 1
+          timeoutSeconds: 2
           failureThreshold: 3
           successThreshold: 1
       # Internal array comment
@@ -78,8 +78,8 @@ spec:
             path: /healthz
             port: 4318
           initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 1
+          periodSeconds: 20
+          timeoutSeconds: 5
           failureThreshold: 3
           successThreshold: 1
         readinessProbe:
@@ -88,6 +88,6 @@ spec:
             port: 4318
           initialDelaySeconds: 5
           periodSeconds: 10
-          timeoutSeconds: 1
+          timeoutSeconds: 2
           failureThreshold: 3
           successThreshold: 1
