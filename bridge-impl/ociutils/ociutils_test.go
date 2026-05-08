@@ -168,6 +168,42 @@ func TestRevisionRef(t *testing.T) {
 	assert.Equal(t, "v0", RevisionRef(0))
 }
 
+func TestHelmRevisionRef(t *testing.T) {
+	assert.Equal(t, "0.1.0", HelmRevisionRef(1))
+	assert.Equal(t, "0.5.0", HelmRevisionRef(5))
+	assert.Equal(t, "0.42.0", HelmRevisionRef(42))
+	assert.Equal(t, "0.1000.0", HelmRevisionRef(1000))
+}
+
+func TestParseHelmRevisionRef(t *testing.T) {
+	cases := []struct {
+		ref     string
+		want    int
+		wantOK  bool
+	}{
+		{"0.1.0", 1, true},
+		{"0.5.0", 5, true},
+		{"0.1000.0", 1000, true},
+		{"0.0.0", 0, false},      // 0 is not a valid revision
+		{"0.-1.0", 0, false},     // negative not allowed
+		{"0.5", 0, false},        // missing trailing .0
+		{"5.0.0", 0, false},      // wrong shape (major != 0)
+		{"0.5.1", 0, false},      // wrong shape (patch != 0)
+		{"v5", 0, false},         // non-Helm form
+		{"6.7.0-v5", 0, false},   // chart-version-prefixed form (not used)
+		{"", 0, false},
+		{"0..0", 0, false},
+		{"0.foo.0", 0, false},
+	}
+	for _, tc := range cases {
+		got, ok := ParseHelmRevisionRef(tc.ref)
+		assert.Equal(t, tc.wantOK, ok, "ref=%q", tc.ref)
+		if tc.wantOK {
+			assert.Equal(t, tc.want, got, "ref=%q", tc.ref)
+		}
+	}
+}
+
 func TestOCIURLBuilder_UnitURLFromInfo(t *testing.T) {
 	builder := NewOCIURLBuilder("oci.confighub.com")
 

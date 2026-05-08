@@ -247,9 +247,21 @@ func TestCRD_EstablishedFalseBelowThresholdNotStuck(t *testing.T) {
 func TestApplication_NoSyncPolicyIsStuck(t *testing.T) {
 	obj := newObj("argoproj.io/v1alpha1", "Application", "argocd", "a")
 	ctx, cc := ctxCC()
-	st, reason := Application(ctx, cc, mustInput(obj, status.InProgressStatus, 0))
+	st, reason := Application(ctx, cc, mustInput(obj, status.InProgressStatus, testThreshold+time.Second))
 	if st != api.ResourceReadinessStuck || reason == "" {
 		t.Fatalf("Application with no syncPolicy.automated should be stuck, got status=%q reason=%q", st, reason)
+	}
+}
+
+func TestApplication_NoSyncPolicyBelowThresholdNotStuck(t *testing.T) {
+	// The renderer flow applies an Application without auto-sync just to
+	// harvest rendered manifests as LiveState. Within StuckThreshold the
+	// classifier must hold its verdict so the renderer has time to read.
+	obj := newObj("argoproj.io/v1alpha1", "Application", "argocd", "a")
+	ctx, cc := ctxCC()
+	st, _ := Application(ctx, cc, mustInput(obj, status.InProgressStatus, 0))
+	if st != "" {
+		t.Fatalf("Application with no syncPolicy.automated below threshold should not yet be stuck, got %q", st)
 	}
 }
 
@@ -257,7 +269,7 @@ func TestApplication_AutomatedEnabledFalseIsStuck(t *testing.T) {
 	obj := newObj("argoproj.io/v1alpha1", "Application", "argocd", "a")
 	_ = unstructured.SetNestedMap(obj.Object, map[string]interface{}{"enabled": false}, "spec", "syncPolicy", "automated")
 	ctx, cc := ctxCC()
-	st, _ := Application(ctx, cc, mustInput(obj, status.InProgressStatus, 0))
+	st, _ := Application(ctx, cc, mustInput(obj, status.InProgressStatus, testThreshold+time.Second))
 	if st != api.ResourceReadinessStuck {
 		t.Fatalf("Application with automated.enabled=false should be stuck, got %q", st)
 	}
@@ -392,10 +404,11 @@ func TestRegistry_KindClassifierRunsEvenWhenKStatusCurrent(t *testing.T) {
 	// ArgoCD Application with no syncPolicy.automated. kstatus default for a
 	// CRD with empty status is Current. Without the reordering, the kind
 	// classifier would never fire and the Application would be called Ready.
+	// Past StuckThreshold so the auto-sync gate has elapsed.
 	obj := newObj("argoproj.io/v1alpha1", "Application", "argocd", "app")
 	reg := DefaultRegistry()
 	ctx, cc := ctxCC()
-	st, reason := reg.Classify(ctx, cc, mustInput(obj, status.CurrentStatus, 0))
+	st, reason := reg.Classify(ctx, cc, mustInput(obj, status.CurrentStatus, testThreshold+time.Second))
 	if st != api.ResourceReadinessStuck {
 		t.Fatalf("auto-sync-disabled Application must be Stuck regardless of kstatus, got %s", st)
 	}

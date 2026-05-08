@@ -48,18 +48,18 @@ func isAuthoritative(payload api.BridgeWorkerPayload) bool {
 // to Kubernetes manifests without applying them to a cluster.
 // It looks up artifact URLs and digests from Flux source controller resources.
 //
-// When IsAuthoritative=true, Apply sets spec.suspend=true on the Flux resource
-// (if it exists) using the Kubernetes client directly, then renders manifests.
-// Destroy deletes the resource via the Kubernetes client. Refresh delegates to
+// When IsAuthoritative=true, Apply SSA-applies the Flux resource (injecting
+// spec.suspend=true so ConfigHub owns the suspend field) via the main cliutils
+// applier, then renders manifests. The main applier submits with a short
+// reconcile timeout and does not block on readiness, so a suspended
+// Kustomization (whose status.observedGeneration never advances) no longer
+// hangs Apply. Destroy deletes the resource through the same applier so
+// inventory cleanup and Apply share one code path. Refresh delegates to
 // KubernetesBridgeWorker.
 //
-// NOTE: We do NOT use KubernetesBridgeWorker.Apply because its SSA applier
-// waits for resources to become ready. The kustomize-controller skips suspended
-// Kustomization resources entirely (never updates status.observedGeneration),
-// which causes the applier to hang indefinitely.
-//
-// When IsAuthoritative=false (default), the Flux resource must already exist in the cluster.
-// The bridge only reads rendered manifests without modifying the resource.
+// When IsAuthoritative=false (default), the Flux resource must already exist
+// in the cluster. The bridge only reads rendered manifests without modifying
+// the resource.
 type FluxRendererWorker struct {
 	KubernetesBridgeWorker kubernetes.KubernetesBridgeWorker
 }
@@ -133,32 +133,24 @@ func (w *FluxRendererWorker) Apply(wctx api.BridgeWorkerContext, payload api.Bri
 	return w.applyAuthoritative(wctx, payload)
 }
 
-// applyAuthoritative ensures spec.suspend=true on the Flux resource (if it exists)
-// using the Kubernetes client directly, then renders manifests.
+// applyAuthoritative SSA-applies the Flux resource with spec.suspend=true via
+// the main cliutils applier, then renders manifests using Flux source-controller
+// artifacts. The main applier submits with a short reconcile timeout and does
+// not block on readiness, so the suspended CR (whose observedGeneration never
+// advances) does not stall the Apply. ConfigHub owns the Flux resource
+// lifecycle: Apply creates/updates it here, Destroy deletes it.
 func (w *FluxRendererWorker) applyAuthoritative(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
-	var params kubernetes.KubernetesWorkerParams
-	if len(payload.TargetParams) > 0 {
-		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
-			wctx.SendStatus(common.NewActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultApplyFailed,
-				fmt.Sprintf("failed to parse target parameters: %v", err),
-			))
-			return fmt.Errorf("failed to parse target parameters: %w", err)
-		}
-	}
-
-	k8sClient, err := createFluxRendererK8sClient(params.KubeContext)
+	workerParams, _, err := kubernetes.ParseTargetParams(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultApplyFailed,
-			fmt.Sprintf("failed to create Kubernetes client: %v", err),
+			fmt.Sprintf("failed to parse target parameters: %v", err),
 		))
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return fmt.Errorf("failed to parse target parameters: %w", err)
 	}
 
-	// Find the Flux resource from payload
+	// Find the Flux resource from payload so we know which document to suspend.
 	kind, apiVersion, name, namespace, err := findFluxResource(payload.Data)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
@@ -169,33 +161,72 @@ func (w *FluxRendererWorker) applyAuthoritative(wctx api.BridgeWorkerContext, pa
 		return fmt.Errorf("failed to find Flux resource: %w", err)
 	}
 
-	// If the resource exists in the cluster, ensure spec.suspend is true
-	existing := &unstructured.Unstructured{}
-	existing.SetAPIVersion(apiVersion)
-	existing.SetKind(kind)
-	key := types.NamespacedName{Namespace: namespace, Name: name}
-	if err := k8sClient.Get(wctx.Context(), key, existing); err != nil {
-		if !apierrors.IsNotFound(err) {
-			wctx.SendStatus(common.NewActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultApplyFailed,
-				fmt.Sprintf("failed to get %s %s/%s: %v", kind, namespace, name, err),
-			))
-			return fmt.Errorf("failed to get %s %s/%s: %w", kind, namespace, name, err)
-		}
-		// Resource doesn't exist — that's fine, just render
-	} else if !isSuspended(existing) {
-		// Resource exists but spec.suspend is not true — patch it
-		patch := []byte(`{"spec":{"suspend":true}}`)
-		if err := k8sClient.Patch(wctx.Context(), existing, client.RawPatch(types.MergePatchType, patch)); err != nil {
-			log.Log.Error(err, "Failed to set spec.suspend=true", "kind", kind, "namespace", namespace, "name", name)
-		} else {
-			log.Log.Info("Set spec.suspend=true", "kind", kind, "namespace", namespace, "name", name)
-		}
+	// Inject spec.suspend=true into the payload so SSA-apply claims ownership
+	// of the suspend field and the Flux controller stays out of the way.
+	mutatedData, err := ensureResourceSuspended(payload.Data, kind, apiVersion, namespace, name)
+	if err != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to set spec.suspend=true: %v", err),
+		))
+		return fmt.Errorf("failed to set spec.suspend=true: %w", err)
 	}
 
-	// Render manifests
-	parsed, err := ParseDocumentsWithResources(payload.Data)
+	// SSA-apply the Flux resource via the main applier. Apply() submits with a
+	// short reconcile timeout and returns; the renderer's WatchForApply is a
+	// no-op, so the statuspoller never runs for renderer applies.
+	mutatedPayload := payload
+	mutatedPayload.Data = mutatedData
+	applierConfig, err := kubernetes.CreateApplierConfig(mutatedPayload)
+	if err != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to build applier config: %v", err),
+		))
+		return fmt.Errorf("failed to build applier config: %w", err)
+	}
+	applier, err := kubernetes.NewK8sApplier(kubernetes.CLIUtilsSSA, applierConfig)
+	if err != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to create applier: %v", err),
+		))
+		return fmt.Errorf("failed to create applier: %w", err)
+	}
+	objects, err := kubernetes.ParseObjects(mutatedData)
+	if err != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to parse objects: %v", err),
+		))
+		return fmt.Errorf("failed to parse objects: %w", err)
+	}
+	applyResult := applier.Apply(wctx, objects)
+	if applyResult.Error != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to apply Flux resource: %v", applyResult.Error),
+		))
+		return fmt.Errorf("failed to apply Flux resource: %w", applyResult.Error)
+	}
+
+	// Render manifests. Still need a k8s client for artifact-source lookups.
+	k8sClient, err := createFluxRendererK8sClient(workerParams.KubeContext)
+	if err != nil {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultApplyFailed,
+			fmt.Sprintf("failed to create Kubernetes client: %v", err),
+		))
+		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	parsed, err := ParseDocumentsWithResources(mutatedData)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
@@ -216,7 +247,7 @@ func (w *FluxRendererWorker) applyAuthoritative(wctx api.BridgeWorkerContext, pa
 	}
 
 	input := RenderInput{
-		Documents: payload.Data,
+		Documents: mutatedData,
 		Options: RenderOptions{
 			ArtifactSource: artifactSource,
 		},
@@ -373,58 +404,52 @@ func (w *FluxRendererWorker) Destroy(wctx api.BridgeWorkerContext, payload api.B
 		return wctx.SendStatus(result)
 	}
 
-	// Authoritative: delete the Flux resource via Kubernetes client
-	var params kubernetes.KubernetesWorkerParams
-	if len(payload.TargetParams) > 0 {
-		if err := json.Unmarshal(payload.TargetParams, &params); err != nil {
-			wctx.SendStatus(common.NewActionResult(
-				api.ActionStatusFailed,
-				api.ActionResultDestroyFailed,
-				fmt.Sprintf("failed to parse target parameters: %v", err),
-			))
-			return fmt.Errorf("failed to parse target parameters: %w", err)
-		}
-	}
-
-	k8sClient, err := createFluxRendererK8sClient(params.KubeContext)
+	// Authoritative: delete the Flux resource through the main applier so
+	// inventory cleanup and Apply share the same code path. Mirrors
+	// applyAuthoritative: build ApplierConfig from the payload, construct
+	// the cliutils applier, parse the objects, and let Destroy handle the
+	// rest.
+	applierConfig, err := kubernetes.CreateApplierConfig(payload)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyFailed,
-			fmt.Sprintf("failed to create Kubernetes client: %v", err),
+			fmt.Sprintf("failed to build applier config: %v", err),
 		))
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return fmt.Errorf("failed to build applier config: %w", err)
 	}
-
-	kind, apiVersion, name, namespace, err := findFluxResource(payload.Data)
+	applier, err := kubernetes.NewK8sApplier(kubernetes.CLIUtilsSSA, applierConfig)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyFailed,
-			fmt.Sprintf("failed to find Flux resource: %v", err),
+			fmt.Sprintf("failed to create applier: %v", err),
 		))
-		return fmt.Errorf("failed to find Flux resource: %w", err)
+		return fmt.Errorf("failed to create applier: %w", err)
 	}
-
-	obj := &unstructured.Unstructured{}
-	obj.SetAPIVersion(apiVersion)
-	obj.SetKind(kind)
-	obj.SetName(name)
-	obj.SetNamespace(namespace)
-
-	if err := k8sClient.Delete(wctx.Context(), obj); err != nil && !apierrors.IsNotFound(err) {
+	objects, err := kubernetes.ParseObjects(payload.Data)
+	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
 			api.ActionResultDestroyFailed,
-			fmt.Sprintf("failed to delete %s %s/%s: %v", kind, namespace, name, err),
+			fmt.Sprintf("failed to parse objects: %v", err),
 		))
-		return fmt.Errorf("failed to delete %s %s/%s: %w", kind, namespace, name, err)
+		return fmt.Errorf("failed to parse objects: %w", err)
+	}
+	destroyResult := applier.Destroy(wctx, objects)
+	if destroyResult.Error != nil && !apierrors.IsNotFound(destroyResult.Error) {
+		wctx.SendStatus(common.NewActionResult(
+			api.ActionStatusFailed,
+			api.ActionResultDestroyFailed,
+			fmt.Sprintf("failed to destroy Flux resource: %v", destroyResult.Error),
+		))
+		return fmt.Errorf("failed to destroy Flux resource: %w", destroyResult.Error)
 	}
 
 	result := common.NewActionResult(
 		api.ActionStatusCompleted,
 		api.ActionResultDestroyCompleted,
-		fmt.Sprintf("Destroyed %s %s/%s at %s", kind, namespace, name, time.Now().Format(time.RFC3339)),
+		fmt.Sprintf("Destroyed at %s", time.Now().Format(time.RFC3339)),
 	)
 	return wctx.SendStatus(result)
 }

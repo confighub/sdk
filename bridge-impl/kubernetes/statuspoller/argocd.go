@@ -33,18 +33,44 @@ import (
 // so Generic would always return "". A healthy Application with auto-sync on
 // and no ComparisonError is treated as Ready via kstatus's Current passthrough
 // in Registry.Classify.
+// When an ArgoCD Application has auto-sync turned off, the ArgoCD
+// controller won't deploy it without manual intervention, so we flag it
+// as Stuck. But the ArgoCD renderer flow deliberately turns auto-sync
+// off as a signal that ConfigHub (not ArgoCD) will do the deploying,
+// and the renderer just needs to read the rendered manifests off the
+// resource — usually within a couple of seconds. So we hold the
+// auto-sync-disabled verdict for StuckThreshold (~30s): the renderer
+// finishes reading well before then and is unaffected, while a real
+// long-stuck Application still gets flagged after the grace period.
+// ComparisonError stays immediate because that condition is a real
+// controller signal that the Application can't be evaluated.
 func Application(ctx context.Context, cc *ClassifierContext, in ClassifierInput) (api.ResourceReadinessType, string) {
+	st, reason := classifyApplication(in)
+	if reason == reasonAutoSyncDisabled && in.Now.Sub(in.LastChangeAt) < cc.StuckThreshold {
+		return "", ""
+	}
+	return st, reason
+}
+
+// classifyApplication runs the Application Stuck rules without the
+// StuckThreshold gate. ApplicationSet's recursive aggregation reuses this so
+// children can be classified Stuck immediately on the first poll, since
+// ApplicationSet's own kstate is Current and the wait loop would otherwise
+// exit before the gate elapsed.
+func classifyApplication(in ClassifierInput) (api.ResourceReadinessType, string) {
 	if in.Object == nil {
 		return "", ""
 	}
 	if !hasArgoAutoSync(in.Object) {
-		return api.ResourceReadinessStuck, "Application has auto-sync disabled (spec.syncPolicy.automated.enabled=false or absent); controller will not deploy without a manual sync"
+		return api.ResourceReadinessStuck, reasonAutoSyncDisabled
 	}
 	if reason, ok := conditionPresent(in.Object, "ComparisonError"); ok {
 		return api.ResourceReadinessStuck, "Application ComparisonError: " + reason
 	}
 	return "", ""
 }
+
+const reasonAutoSyncDisabled = "Application has auto-sync disabled (spec.syncPolicy.automated.enabled=false or absent); controller will not deploy without a manual sync"
 
 // ApplicationSet classifies argoproj.io/ApplicationSet.
 //
@@ -130,7 +156,7 @@ func allGeneratedAppsStuck(ctx context.Context, cc *ClassifierContext, in Classi
 		}
 		total++
 		subInput.Object = app
-		st, reason := Application(ctx, cc, subInput)
+		st, reason := classifyApplication(subInput)
 		if st != api.ResourceReadinessStuck {
 			return false, ""
 		}

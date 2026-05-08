@@ -153,7 +153,7 @@ func TestGetAllClusterResources(t *testing.T) {
 		{
 			name: "success with kube-system included",
 			client: func() *MockK8sClient {
-				_, mockClient := setupMockResourceManager(t)
+				mockClient := new(MockK8sClient)
 				setupMockListWithCondition(mockClient, func(list *unstructured.UnstructuredList) []unstructured.Unstructured {
 					gvk := list.GetObjectKind().GroupVersionKind()
 					// Only return items for Pod resources to make test predictable
@@ -171,7 +171,7 @@ func TestGetAllClusterResources(t *testing.T) {
 		{
 			name: "success with kube-system excluded",
 			client: func() *MockK8sClient {
-				_, mockClient := setupMockResourceManager(t)
+				mockClient := new(MockK8sClient)
 				setupMockListWithCondition(mockClient, func(list *unstructured.UnstructuredList) []unstructured.Unstructured {
 					gvk := list.GetObjectKind().GroupVersionKind()
 					// Only return items for Pod resources to make test predictable

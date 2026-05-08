@@ -8,6 +8,7 @@ package ociutils
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -97,6 +98,41 @@ func (b *OCIURLBuilder) TargetURL(spaceSlug, targetSlug, reference string) strin
 // Format: v{revisionNum} (e.g., "v5", "v42")
 func RevisionRef(revisionNum int) string {
 	return fmt.Sprintf("v%d", revisionNum)
+}
+
+// HelmRevisionRef returns a SemVer 2.0 OCI tag pinned to a specific
+// ConfigHub revision number for Helm units. Format: 0.{revisionNum}.0
+// (e.g., "0.5.0", "0.42.0").
+//
+// Helm OCI consumers (ArgoCD HelmSource, Flux HelmRepository/HelmRelease)
+// require the targetRevision/version field to be a valid SemVer 2.0
+// string, so plain "v{N}" or bare "{N}" cannot be used. The 0.{N}.0
+// shape sorts numerically by minor version per SemVer §11 (numeric
+// identifiers compare numerically), avoiding the lexical-sort hazard
+// of letter prefixes. The Helm chart's actual version is preserved on
+// the OCI artifact's manifest annotations rather than the tag.
+func HelmRevisionRef(revisionNum int) string {
+	return fmt.Sprintf("0.%d.0", revisionNum)
+}
+
+// ParseHelmRevisionRef parses a tag in the HelmRevisionRef format and
+// returns the revision number it pins. Returns (n, true) if ref is
+// "0.{n}.0" with n > 0, otherwise (0, false).
+func ParseHelmRevisionRef(ref string) (int, bool) {
+	const prefix = "0."
+	const suffix = ".0"
+	if !strings.HasPrefix(ref, prefix) || !strings.HasSuffix(ref, suffix) {
+		return 0, false
+	}
+	mid := ref[len(prefix) : len(ref)-len(suffix)]
+	if mid == "" {
+		return 0, false
+	}
+	n, err := strconv.Atoi(mid)
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
 }
 
 // UnitOCIInfo contains the information needed to construct a unit OCI URL.

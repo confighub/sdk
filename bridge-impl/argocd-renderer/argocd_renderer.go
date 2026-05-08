@@ -469,7 +469,7 @@ func (w *ArgoCDRendererWorker) watchForApplyAuthoritative(wctx api.BridgeWorkerC
 	}
 
 	// Wait for the Application resource to be ready
-	waitResult := applier.WaitForApply(wctx.Context(), objects, timeout)
+	waitResult := applier.WaitForApply(wctx, objects, timeout)
 	if waitResult.Error != nil {
 		if errors.Is(waitResult.Error, context.Canceled) {
 			log.Log.Info("Apply wait cancelled")

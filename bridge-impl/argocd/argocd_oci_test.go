@@ -65,7 +65,6 @@ var (
 		"SelfHealEnabled":      "true",
 		"OCIRepoURL":           "oci://ghcr.io/myorg/manifests",
 		"OCIPath":              "apps/myapp",
-		"TargetRevision":       "v1.0.0",
 	}
 
 	testArgoCDOCIMinimalOptions = map[string]string{
@@ -91,7 +90,6 @@ func TestParseArgoCDOCIParams_FullParams(t *testing.T) {
 	assert.True(t, options.SelfHealEnabled)
 	assert.Equal(t, "oci://ghcr.io/myorg/manifests", options.OCIRepoURL)
 	assert.Equal(t, "apps/myapp", options.OCIPath)
-	assert.Equal(t, "v1.0.0", options.TargetRevision)
 }
 
 func TestParseArgoCDOCIParams_WithDefaults(t *testing.T) {
@@ -111,7 +109,6 @@ func TestParseArgoCDOCIParams_WithDefaults(t *testing.T) {
 	assert.False(t, options.SelfHealEnabled)
 	assert.Equal(t, "oci://ghcr.io/myorg/manifests", options.OCIRepoURL)
 	assert.Equal(t, defaultOCIPath, options.OCIPath)
-	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
 func TestParseArgoCDOCIParams_EmptyParams(t *testing.T) {
@@ -128,7 +125,6 @@ func TestParseArgoCDOCIParams_EmptyParams(t *testing.T) {
 	assert.Equal(t, defaultProject, options.Project)
 	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
 	assert.Equal(t, defaultOCIPath, options.OCIPath)
-	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
 func TestParseArgoCDOCIParams_EmptyOptions(t *testing.T) {
@@ -143,7 +139,6 @@ func TestParseArgoCDOCIParams_EmptyOptions(t *testing.T) {
 	assert.Equal(t, defaultProject, options.Project)
 	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
 	assert.Equal(t, defaultOCIPath, options.OCIPath)
-	assert.Equal(t, defaultTargetRevision, options.TargetRevision)
 }
 
 func TestGenerateArgoCDApplication_Success(t *testing.T) {
@@ -347,7 +342,8 @@ func TestTransformToArgoCDOCIApplication_InferredOCIHost(t *testing.T) {
 	assert.Contains(t, yamlStr, "name: production-my-deployment")
 	// Should infer OCI host from server URL and auto-construct the OCI URL
 	assert.Contains(t, yamlStr, "repoURL: oci://oci.hub.confighub.com/unit/production/my-deployment")
-	assert.Contains(t, yamlStr, "targetRevision: latest")
+	// targetRevision is pinned to payload.RevisionNum (no symbolic tags).
+	assert.Contains(t, yamlStr, "targetRevision: v5")
 }
 
 func TestTransformToArgoCDOCIApplication_AutoConstructOCIURL(t *testing.T) {
@@ -371,9 +367,9 @@ func TestTransformToArgoCDOCIApplication_AutoConstructOCIURL(t *testing.T) {
 	yamlStr := string(payload.Data)
 	// Should use stable name based on SpaceSlug + UnitSlug
 	assert.Contains(t, yamlStr, "name: production-my-deployment")
-	// Should auto-construct the OCI URL with "latest" as default
+	// Should auto-construct the OCI URL; targetRevision derived from payload.RevisionNum.
 	assert.Contains(t, yamlStr, "repoURL: oci://oci.hub.confighub.com/unit/production/my-deployment")
-	assert.Contains(t, yamlStr, "targetRevision: latest")
+	assert.Contains(t, yamlStr, "targetRevision: v5")
 }
 
 func TestTransformToArgoCDOCIApplication_DefaultParams(t *testing.T) {
@@ -567,8 +563,8 @@ func TestArgoCDOCIWorker_Refresh_NoDrift(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -664,8 +660,8 @@ func TestArgoCDOCIWorker_Refresh_Drifted(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -752,8 +748,8 @@ func TestArgoCDOCIWorker_Refresh_NotFound(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -817,8 +813,8 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -917,7 +913,6 @@ func TestArgoCDOCIBridgeOptions_JSONMarshaling(t *testing.T) {
 		SelfHealEnabled:      true,
 		OCIRepoURL:           "oci://ghcr.io/myorg/manifests",
 		OCIPath:              "apps/myapp",
-		TargetRevision:       "v1.0.0",
 	}
 
 	// Test marshaling
@@ -1206,8 +1201,8 @@ func TestArgoCDOCIWorker_Refresh_DriftedWithManagedResourceData(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1300,8 +1295,8 @@ func TestArgoCDOCIWorker_WatchForApply_Success(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1408,8 +1403,8 @@ func TestArgoCDOCIWorker_WatchForApply_OperationFailed(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1470,8 +1465,8 @@ func TestArgoCDOCIWorker_Refresh_UnknownStatus(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1537,8 +1532,8 @@ func TestArgoCDOCIWorker_WatchForApply_ContextCanceled(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1577,8 +1572,8 @@ func TestArgoCDOCIWorker_WatchForApply_CompletionSendStatusError(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -1670,8 +1665,8 @@ func TestArgoCDOCIWorker_WatchForApply_ContextCanceledDuringCompletion(t *testin
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -2015,8 +2010,8 @@ func TestArgoCDOCIWorker_Refresh_ContentDriftWithSyncedStatus(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -2114,8 +2109,8 @@ func TestArgoCDOCIWorker_Refresh_ManagedResourceNotFound(t *testing.T) {
 
 	// Override kubernetes.KubernetesClientFactory
 	originalFactory := kubernetes.KubernetesClientFactory
-	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, kubernetes.ResourceManager, error) {
-		return mockClient, nil, nil
+	kubernetes.KubernetesClientFactory = func(kubeContext string) (kubernetes.KubernetesClient, error) {
+		return mockClient, nil
 	}
 	defer func() { kubernetes.KubernetesClientFactory = originalFactory }()
 
@@ -2385,9 +2380,12 @@ func TestTransformToArgoCDOCIApplication_HelmUnit(t *testing.T) {
 
 	yamlStr := string(payload.Data)
 
-	// Should generate Helm-style source with chart name, chart version and release name
+	// Should generate Helm-style source with chart name, release name, and a
+	// SemVer-shaped revision-pinned targetRevision derived from RevisionNum.
+	// The Helm chart's actual version (1.2.3) is no longer the OCI tag.
 	assert.Contains(t, yamlStr, "chart: nginx")
-	assert.Contains(t, yamlStr, "targetRevision: 1.2.3")
+	assert.Contains(t, yamlStr, "targetRevision: 0.1.0")
+	assert.NotContains(t, yamlStr, "targetRevision: 1.2.3")
 	assert.NotContains(t, yamlStr, "path:")
 	assert.Contains(t, yamlStr, "releaseName: my-release")
 
@@ -2422,8 +2420,10 @@ func TestTransformToArgoCDOCIApplication_HelmUnit_InferredOCI(t *testing.T) {
 
 	yamlStr := string(payload.Data)
 
-	// Helm unit: targetRevision should be the chart version, not the OCI tag
-	assert.Contains(t, yamlStr, "targetRevision: 2.0.0")
+	// Helm unit: targetRevision is the SemVer-shaped revision pin derived
+	// from RevisionNum (5), not the chart version (2.0.0).
+	assert.Contains(t, yamlStr, "targetRevision: 0.5.0")
+	assert.NotContains(t, yamlStr, "targetRevision: 2.0.0")
 	assert.NotContains(t, yamlStr, "path:")
 	// OCI URL should still be auto-constructed
 	assert.Contains(t, yamlStr, "repoURL: oci://oci.hub.confighub.com/unit/production/my-release")
@@ -2451,9 +2451,9 @@ func TestTransformToArgoCDOCIApplication_NonHelmUnit_PreservesPath(t *testing.T)
 
 	yamlStr := string(payload.Data)
 
-	// Non-Helm: should have path and standard targetRevision
+	// Non-Helm: should have path and targetRevision derived from payload.RevisionNum.
 	assert.Contains(t, yamlStr, "path: apps/myapp")
-	assert.Contains(t, yamlStr, "targetRevision: v1.0.0")
+	assert.Contains(t, yamlStr, "targetRevision: v1")
 }
 
 func TestTransformToArgoCDOCIApplication_PartialHelmLabels_NotHelm(t *testing.T) {
@@ -2482,9 +2482,152 @@ func TestTransformToArgoCDOCIApplication_PartialHelmLabels_NotHelm(t *testing.T)
 
 	yamlStr := string(payload.Data)
 
-	// Partial labels should NOT trigger Helm mode
+	// Partial labels should NOT trigger Helm mode; targetRevision derived from payload.RevisionNum.
 	assert.Contains(t, yamlStr, "path:")
-	assert.Contains(t, yamlStr, "targetRevision: v1.0.0")
+	assert.Contains(t, yamlStr, "targetRevision: v1")
+}
+
+// Regression: a Target with a stored TargetRevision (e.g. "head") must not
+// influence the generated Application — the bridge always pins the OCI tag to
+// the revision being applied. Closes #4222 (TargetRevision policy bypass).
+func TestTransformToArgoCDOCIApplication_StoredTargetRevisionIgnored(t *testing.T) {
+	mockCtx := kubernetes.SetupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	spaceID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetOptions: map[string]string{
+			"OCIHost":        "oci.hub.confighub.com",
+			"TargetRevision": "head",
+		},
+		UnitSlug:    "my-deployment",
+		SpaceSlug:   "production",
+		SpaceID:     spaceID,
+		RevisionNum: 7,
+		Data:        testConfigMapYAML,
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+	assert.Contains(t, yamlStr, "targetRevision: v7")
+	assert.NotContains(t, yamlStr, "targetRevision: head")
+	assert.NotContains(t, yamlStr, "targetRevision: latest")
+}
+
+// Exercises the v{N} derivation across a range of RevisionNum values. The
+// expected OCI tag must match the form ociutils.RevisionRef produces, which
+// is the same form the OCI server's resolveReferenceCore parses.
+func TestTransformToArgoCDOCIApplication_RevisionNumDerivation(t *testing.T) {
+	cases := []struct {
+		revNum  int64
+		wantTag string
+	}{
+		{1, "targetRevision: v1"},
+		{5, "targetRevision: v5"},
+		{42, "targetRevision: v42"},
+		{1000, "targetRevision: v1000"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.wantTag, func(t *testing.T) {
+			mockCtx := kubernetes.SetupMockContext(t)
+			mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+			payload := api.BridgeWorkerPayload{
+				TargetOptions: map[string]string{"OCIHost": "oci.hub.confighub.com"},
+				UnitSlug:      "my-deployment",
+				SpaceSlug:     "production",
+				SpaceID:       uuid.New(),
+				RevisionNum:   tc.revNum,
+				Data:          testConfigMapYAML,
+			}
+			worker := &ArgoCDOCIWorker{}
+			_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+			assert.NoError(t, err)
+			assert.Contains(t, string(payload.Data), tc.wantTag)
+		})
+	}
+}
+
+// Exercises the 0.{N}.0 derivation on the Helm path across a range of
+// RevisionNum values. The expected OCI tag must match the form
+// ociutils.HelmRevisionRef produces, which is the same form the OCI
+// server's resolveReferenceCore parses (via ociutils.ParseHelmRevisionRef).
+func TestTransformToArgoCDOCIApplication_HelmRevisionNumDerivation(t *testing.T) {
+	cases := []struct {
+		revNum  int64
+		wantTag string
+	}{
+		{1, "targetRevision: 0.1.0"},
+		{5, "targetRevision: 0.5.0"},
+		{42, "targetRevision: 0.42.0"},
+		{1000, "targetRevision: 0.1000.0"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.wantTag, func(t *testing.T) {
+			mockCtx := kubernetes.SetupMockContext(t)
+			mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+			payload := api.BridgeWorkerPayload{
+				TargetOptions: map[string]string{"OCIHost": "oci.hub.confighub.com"},
+				UnitSlug:      "my-release",
+				SpaceSlug:     "production",
+				SpaceID:       uuid.New(),
+				RevisionNum:   tc.revNum,
+				Data:          testConfigMapYAML,
+				UnitLabels: map[string]string{
+					helmutils.HelmReleaseLabel:         "my-release",
+					helmutils.HelmChartLabel:           "nginx",
+					helmutils.HelmChartVersionLabel:    "9.9.9",
+					helmutils.HelmChartAPIVersionLabel: "v2",
+				},
+			}
+			worker := &ArgoCDOCIWorker{}
+			_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+			assert.NoError(t, err)
+			yamlStr := string(payload.Data)
+			assert.Contains(t, yamlStr, tc.wantTag)
+			// Chart version (9.9.9) must NOT appear as the OCI tag anymore.
+			assert.NotContains(t, yamlStr, "targetRevision: 9.9.9")
+		})
+	}
+}
+
+// Regression: a Helm Target with stored TargetRevision="head" must not
+// influence the generated Application's targetRevision; the bridge always
+// pins to the SemVer-shaped revision form for the apply event's revision.
+func TestTransformToArgoCDOCIApplication_HelmStoredTargetRevisionIgnored(t *testing.T) {
+	mockCtx := kubernetes.SetupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	payload := api.BridgeWorkerPayload{
+		TargetOptions: map[string]string{
+			"OCIHost":        "oci.hub.confighub.com",
+			"TargetRevision": "head",
+		},
+		UnitSlug:    "my-release",
+		SpaceSlug:   "production",
+		SpaceID:     uuid.New(),
+		RevisionNum: 7,
+		Data:        testConfigMapYAML,
+		UnitLabels: map[string]string{
+			helmutils.HelmReleaseLabel:         "my-release",
+			helmutils.HelmChartLabel:           "nginx",
+			helmutils.HelmChartVersionLabel:    "1.2.3",
+			helmutils.HelmChartAPIVersionLabel: "v2",
+		},
+	}
+
+	worker := &ArgoCDOCIWorker{}
+	_, err := worker.transformToArgoCDOCIApplication(mockCtx, &payload, false)
+	assert.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+	assert.Contains(t, yamlStr, "targetRevision: 0.7.0")
+	assert.NotContains(t, yamlStr, "targetRevision: head")
+	assert.NotContains(t, yamlStr, "targetRevision: 1.2.3")
 }
 
 func TestTransformToArgoCDOCIApplication_SkipRepoCreds(t *testing.T) {

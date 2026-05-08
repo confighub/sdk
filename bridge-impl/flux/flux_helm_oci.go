@@ -206,7 +206,7 @@ func (w *FluxOCIWorker) watchFluxHelmRelease(
 		hrNamespace = options.FluxNamespace
 	}
 
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -337,7 +337,7 @@ func (w *FluxOCIWorker) refreshFluxHelmRelease(
 	originalData []byte,
 	refreshParams *api.RefreshParams,
 ) error {
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,

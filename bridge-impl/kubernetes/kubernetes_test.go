@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/cenkalti/backoff/v5"
 	"github.com/confighub/sdk/core/worker/api"
@@ -320,7 +321,7 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 	tests := []struct {
 		name                string
 		payload             api.BridgeWorkerPayload
-		setupMockFunc       func(*testing.T, *MockK8sClient, *MockResourceManager)
+		setupMockFunc       func(*testing.T, *MockK8sClient)
 		expectedError       bool
 		expectedStatusCalls int
 	}{
@@ -389,15 +390,15 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockCtx := SetupMockContext(t)
-			mockManager, mockClient := setupMockResourceManager(t)
+			mockClient := new(MockK8sClient)
 
 			// Set up expected status calls
 			setupImportStatusMocks(t, mockCtx, tt.expectedStatusCalls)
 
 			// Set up specific mock behaviors
-			tt.setupMockFunc(t, mockClient, mockManager)
+			tt.setupMockFunc(t, mockClient)
 
-			restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
+			restoreFunc := setupKubernetesClientFactory(t, mockClient)
 			defer restoreFunc()
 
 			worker := NewKubernetesBridgeWorker()
@@ -409,6 +410,38 @@ func TestKubernetesBridgeWorker_Import(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			mockCtx.AssertNumberOfCalls(t, "SendStatus", tt.expectedStatusCalls)
+		})
+	}
+}
+
+// TestParseProgressingTimeout pins the contract callers rely on:
+//
+//   - Missing or empty option -> return 0 so the statuspoller picks its
+//     default (5 * StuckThreshold = 150s).
+//   - Valid Go duration string  -> return the parsed duration verbatim.
+//   - Unparseable string        -> log a warning and return 0; never propagate
+//     the parse error. The bridge would rather degrade to a sane default
+//     than fail the whole apply on a typo'd Target option.
+func TestParseProgressingTimeout(t *testing.T) {
+	tcs := []struct {
+		name string
+		opts map[string]string
+		want time.Duration
+	}{
+		{"unset -> 0", nil, 0},
+		{"empty string -> 0", map[string]string{"ProgressingTimeout": ""}, 0},
+		{"valid 5m -> 5m", map[string]string{"ProgressingTimeout": "5m"}, 5 * time.Minute},
+		{"valid 150s -> 150s", map[string]string{"ProgressingTimeout": "150s"}, 150 * time.Second},
+		{"valid 2h30m -> 2h30m", map[string]string{"ProgressingTimeout": "2h30m"}, 2*time.Hour + 30*time.Minute},
+		{"unparseable -> 0 (silent fallback)", map[string]string{"ProgressingTimeout": "not-a-duration"}, 0},
+		{"unrelated keys ignored", map[string]string{"Namespace": "demo"}, 0},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseProgressingTimeout(api.BridgeWorkerPayload{TargetOptions: tc.opts})
+			if got != tc.want {
+				t.Fatalf("ProgressingTimeout=%q: want %s, got %s", tc.opts["ProgressingTimeout"], tc.want, got)
+			}
 		})
 	}
 }

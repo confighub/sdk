@@ -268,10 +268,14 @@ func TestBuildFluxHelmReleaseStatusMap_Failed(t *testing.T) {
 			"apiVersion": fluxHelmReleaseAPIVersion,
 			"kind":       fluxKindHelmRelease,
 			"metadata": map[string]interface{}{
-				"name":      "test-hr",
-				"namespace": "flux-system",
+				"name":       "test-hr",
+				"namespace":  "flux-system",
+				"generation": int64(1),
 			},
 			"status": map[string]interface{}{
+				// observedGeneration must equal generation; otherwise the
+				// Ready=False condition is treated as still-reconciling.
+				"observedGeneration": int64(1),
 				"conditions": []interface{}{
 					map[string]interface{}{
 						"type":    fluxConditionReady,

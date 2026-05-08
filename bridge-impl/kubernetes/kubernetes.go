@@ -118,22 +118,8 @@ func CreateRetryBackoff(params KubernetesWorkerParams) *backoff.ExponentialBackO
 
 // NewKubernetesBridgeWorker creates a new KubernetesBridgeWorker with CLI Utils SSA as default
 func NewKubernetesBridgeWorker() *KubernetesBridgeWorker {
-	defaultApplier := CLIUtilsSSA
-
-	// Check for deprecated environment variable
-	if oldEnv := os.Getenv("CONFIGHUB_USE_CLIUTILS_APPLIER"); oldEnv != "" {
-		log.Log.Info("⚠️ CONFIGHUB_USE_CLIUTILS_APPLIER is deprecated and will be ignored. CLIUtils applier is now the default. Use USE_LEGACY_FLUX_APPLIER=true to opt-out if needed.")
-	}
-
-	// Check for legacy FluxSSA opt-in
-	if os.Getenv("USE_LEGACY_FLUX_APPLIER") == "true" ||
-		os.Getenv("USE_LEGACY_FLUX_APPLIER") == "1" {
-		defaultApplier = FluxSSA
-		log.Log.Info("⚠️ Using legacy FluxSSA applier via USE_LEGACY_FLUX_APPLIER environment variable")
-	}
-
 	return &KubernetesBridgeWorker{
-		applierType:      defaultApplier, // Default to CLI Utils SSA for inventory support
+		applierType:      CLIUtilsSSA,
 		resourceProvider: k8skit.NewK8sResourceProvider(),
 	}
 }
@@ -330,7 +316,30 @@ func kubernetesBridgeOptions() []api.BridgeOption {
 			DataType:    funcapi.DataTypeString,
 			Example:     "production",
 		},
+		{
+			Name:        "ProgressingTimeout",
+			Description: "Go duration after which a resource still kstatus=InProgress with no controller signal is flagged Stuck (e.g. \"150s\", \"5m\"). Kind-specific Stuck classifiers always take precedence; this is the last-resort time-based fallback. Defaults to 150s.",
+			Required:    false,
+			DataType:    funcapi.DataTypeString,
+			Example:     "150s",
+		},
 	}
+}
+
+// parseProgressingTimeout reads the ProgressingTimeout BridgeOption from the
+// payload, returning zero if unset or unparseable. The statuspoller applies its
+// own default (150s) when the value is zero.
+func parseProgressingTimeout(payload api.BridgeWorkerPayload) time.Duration {
+	raw, ok := payload.TargetOptions["ProgressingTimeout"]
+	if !ok || raw == "" {
+		return 0
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		log.Log.Info("⚠️ Invalid ProgressingTimeout, using default", "value", raw, "error", err.Error())
+		return 0
+	}
+	return d
 }
 
 func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api.BridgeWorkerPayload) error {
@@ -369,7 +378,7 @@ func (w *KubernetesBridgeWorker) Apply(wctx api.BridgeWorkerContext, payload api
 		return err
 	}
 
-	result := applier.Apply(wctx.Context(), objects)
+	result := applier.Apply(wctx, objects)
 	if result.Error != nil {
 		// Skip sending Failed status for interrupted operations - status already sent
 		if errors.Is(result.Error, ErrOperationInterrupted) {
@@ -413,23 +422,26 @@ func ObjectsToYAML(objects []*unstructured.Unstructured) (string, error) {
 	return gaby.NormalizeYAML(yamlData), err
 }
 
-// createApplierConfig creates an ApplierConfig from the payload
-func createApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error) {
+// CreateApplierConfig creates an ApplierConfig from the payload. Exported so
+// renderer bridges can build an applier config and apply auxiliary resources
+// (e.g. the Flux CR that the Flux renderer SSA-applies with spec.suspend=true).
+func CreateApplierConfig(payload api.BridgeWorkerPayload) (ApplierConfig, error) {
 	workerParams, kubeContext, err := ParseTargetParams(payload)
 	if err != nil {
 		return ApplierConfig{}, fmt.Errorf("failed to parse target params: %v", err)
 	}
 
 	return ApplierConfig{
-		KubeContext:       kubeContext,
-		EnforcedNamespace: ResolveNamespace(payload),
-		LiveData:          payload.LiveData,
-		BridgeState:       payload.BridgeState,
-		SpaceID:           payload.SpaceID.String(),
-		UnitSlug:          payload.UnitSlug,
-		RevisionNum:       payload.RevisionNum,
-		WaitTimeout:       workerParams.WaitTimeout,
-		DryRun:            payload.DryRun,
+		KubeContext:        kubeContext,
+		EnforcedNamespace:  ResolveNamespace(payload),
+		LiveData:           payload.LiveData,
+		BridgeState:        payload.BridgeState,
+		SpaceID:            payload.SpaceID.String(),
+		UnitSlug:           payload.UnitSlug,
+		RevisionNum:        payload.RevisionNum,
+		WaitTimeout:        workerParams.WaitTimeout,
+		DryRun:             payload.DryRun,
+		ProgressingTimeout: parseProgressingTimeout(payload),
 	}, nil
 }
 
@@ -443,7 +455,7 @@ func (w *KubernetesBridgeWorker) GetOrCreateApplier(payload api.BridgeWorkerPayl
 
 	// For CLI Utils SSA, create a fresh applier each time
 	if w.applierType == CLIUtilsSSA {
-		applierConfig, err := createApplierConfig(payload)
+		applierConfig, err := CreateApplierConfig(payload)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +472,7 @@ func (w *KubernetesBridgeWorker) GetOrCreateApplier(payload api.BridgeWorkerPayl
 		return w.applier, nil
 	}
 
-	applierConfig, err := createApplierConfig(payload)
+	applierConfig, err := CreateApplierConfig(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -541,7 +553,7 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 
 	// TODO: do we throw an error if the wait times out?
 	// Default behavior is to wait 2m0s
-	waitResult := applier.WaitForApply(wctx.Context(), objects, timeout)
+	waitResult := applier.WaitForApply(wctx, objects, timeout)
 	if waitResult.Error != nil {
 		// Check if cancelled first
 		if errors.Is(waitResult.Error, context.Canceled) {
@@ -689,7 +701,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 	}
 
 	// retrievedObjects contains UNCLEANED live objects from the cluster
-	retrievedObjects, err := applier.Refresh(wctx.Context(), objects)
+	retrievedObjects, err := applier.Refresh(wctx, objects)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -806,7 +818,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		), err)
 	}
 
-	k8sclient, man, err := KubernetesClientFactory(kubeContext)
+	k8sclient, err := KubernetesClientFactory(kubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -872,7 +884,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 		}
 
 		// Return uncleaned objects - we'll cleanup for LiveData below, keep uncleaned for LiveState
-		retrievedObjects, err = GetLiveObjects(wctx.Context(), man.Client(), objects, false, false)
+		retrievedObjects, err = GetLiveObjects(wctx.Context(), k8sclient, objects, false, false)
 		if err != nil {
 			log.Log.Error(err, "Failed to retrieve live objects")
 			return lib.SafeSendStatus(wctx, common.NewActionResult(
@@ -976,7 +988,7 @@ func (w *KubernetesBridgeWorker) Destroy(wctx api.BridgeWorkerContext, payload a
 		return err
 	}
 
-	result := applier.Destroy(wctx.Context(), objects)
+	result := applier.Destroy(wctx, objects)
 	if result.Error != nil {
 		// Skip sending Failed status for interrupted operations - status already sent
 		if errors.Is(result.Error, ErrOperationInterrupted) {
@@ -1055,7 +1067,7 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 		}
 	}
 
-	waitResult := applier.WaitForDestroy(wctx.Context(), objects, timeout)
+	waitResult := applier.WaitForDestroy(wctx, objects, timeout)
 	if waitResult.Error != nil {
 		// Check if cancelled first
 		if errors.Is(waitResult.Error, context.Canceled) {

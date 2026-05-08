@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/confighub/sdk/core/worker/api"
-	"github.com/fluxcd/pkg/ssa"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,31 +99,31 @@ type MockK8sApplier struct {
 	mock.Mock
 }
 
-func (m *MockK8sApplier) Apply(ctx context.Context, objects []*unstructured.Unstructured) ApplyResult {
-	args := m.Called(ctx, objects)
+func (m *MockK8sApplier) Apply(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) ApplyResult {
+	args := m.Called(wctx, objects)
 	return args.Get(0).(ApplyResult)
 }
 
-func (m *MockK8sApplier) WaitForApply(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
-	args := m.Called(ctx, objects, timeout)
+func (m *MockK8sApplier) WaitForApply(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
+	args := m.Called(wctx, objects, timeout)
 	return args.Get(0).(WaitResult)
 }
 
-func (m *MockK8sApplier) Refresh(ctx context.Context, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
-	args := m.Called(ctx, objects)
+func (m *MockK8sApplier) Refresh(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+	args := m.Called(wctx, objects)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*unstructured.Unstructured), args.Error(1)
 }
 
-func (m *MockK8sApplier) Destroy(ctx context.Context, objects []*unstructured.Unstructured) DestroyResult {
-	args := m.Called(ctx, objects)
+func (m *MockK8sApplier) Destroy(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) DestroyResult {
+	args := m.Called(wctx, objects)
 	return args.Get(0).(DestroyResult)
 }
 
-func (m *MockK8sApplier) WaitForDestroy(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
-	args := m.Called(ctx, objects, timeout)
+func (m *MockK8sApplier) WaitForDestroy(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult {
+	args := m.Called(wctx, objects, timeout)
 	return args.Get(0).(WaitResult)
 }
 
@@ -134,40 +133,6 @@ func (m *MockK8sApplier) BuildLiveState(ctx context.Context) ([]*unstructured.Un
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*unstructured.Unstructured), args.Error(1)
-}
-
-// MockResourceManager is a mock implementation of the ResourceManager interface.
-type MockResourceManager struct {
-	mock.Mock
-}
-
-func (m *MockResourceManager) Client() KubernetesClient {
-	args := m.Called()
-	return args.Get(0).(KubernetesClient)
-}
-
-func (m *MockResourceManager) ApplyAllStaged(ctx context.Context, objects []*unstructured.Unstructured, opts ssa.ApplyOptions) (*ssa.ChangeSet, error) {
-	args := m.Called(ctx, objects, opts)
-	changeSet := args.Get(0)
-	if changeSet == nil {
-		changeSet = &ssa.ChangeSet{Entries: []ssa.ChangeSetEntry{}}
-	}
-	return changeSet.(*ssa.ChangeSet), args.Error(1)
-}
-
-func (m *MockResourceManager) Wait(objects []*unstructured.Unstructured, opts ssa.WaitOptions) error {
-	args := m.Called(objects, opts)
-	return args.Error(0)
-}
-
-func (m *MockResourceManager) WaitForTermination(objects []*unstructured.Unstructured, opts ssa.WaitOptions) error {
-	args := m.Called(objects, opts)
-	return args.Error(0)
-}
-
-func (m *MockResourceManager) DeleteAll(ctx context.Context, objects []*unstructured.Unstructured, opts ssa.DeleteOptions) (*ssa.ChangeSet, error) {
-	args := m.Called(ctx, objects, opts)
-	return args.Get(0).(*ssa.ChangeSet), args.Error(1)
 }
 
 // SetupMockContext creates a new MockBridgeWorkerContext with default context.

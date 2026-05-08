@@ -79,7 +79,6 @@ type ArgoCDOCIBridgeOptions struct {
 	OCIRepoURL           string `json:",omitempty"` // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
 	OCIHost              string `json:",omitempty"` // OCI registry host - optional, inferred from server URL if not set
 	OCIPath              string `json:",omitempty"` // Path within OCI artifact (default: ".")
-	TargetRevision       string `json:",omitempty"` // OCI tag or digest (default: "latest")
 	DisableRepoCreds     bool   `json:",omitempty"` // Skip auto-generation of ArgoCD repo-creds Secret (default: false)
 }
 
@@ -91,7 +90,6 @@ const (
 	defaultProject              = "default"
 	defaultSyncPolicy           = "manual"
 	defaultOCIPath              = "."
-	defaultTargetRevision       = "latest"
 )
 
 // ArgoCD Application sync status values (from .status.sync.status)
@@ -325,9 +323,6 @@ func parseArgoCDOCIOptions(payload api.BridgeWorkerPayload) (ArgoCDOCIBridgeOpti
 	if v, ok := payload.TargetOptions["OCIPath"]; ok {
 		options.OCIPath = v
 	}
-	if v, ok := payload.TargetOptions["TargetRevision"]; ok {
-		options.TargetRevision = v
-	}
 	// TargetOptions values are always strings; bool fields need explicit conversion.
 	if v, ok := payload.TargetOptions["PruneEnabled"]; ok {
 		options.PruneEnabled = v == "true"
@@ -357,9 +352,6 @@ func parseArgoCDOCIOptions(payload api.BridgeWorkerPayload) (ArgoCDOCIBridgeOpti
 	}
 	if options.OCIPath == "" {
 		options.OCIPath = defaultOCIPath
-	}
-	if options.TargetRevision == "" {
-		options.TargetRevision = defaultTargetRevision
 	}
 
 	return options, nil
@@ -430,9 +422,8 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 		return options, err
 	}
 
-	// Determine OCI URL and target revision
+	// Determine OCI URL
 	ociRepoURL := options.OCIRepoURL
-	targetRevision := options.TargetRevision
 
 	// Track the OCI host for repo-creds generation
 	var ociHost string
@@ -456,18 +447,14 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 			SpaceSlug: payload.SpaceSlug,
 			UnitSlug:  payload.UnitSlug,
 		}
-		ociRepoURL = builder.UnitURLFromInfo(info)
-
-		// When auto-constructing, the reference is embedded in the URL
-		// ArgoCD expects repoURL without the tag for OCI sources
-		// So we need to split: oci://host/unit/space/unit:ref -> repoURL=oci://host/unit/space/unit, targetRevision=ref
-		parsed, parseErr := ociutils.ParseOCIURL(ociRepoURL)
+		// UnitURLFromInfo embeds a "latest" reference; ArgoCD's OCI source
+		// expects repoURL without an embedded reference, and targetRevision
+		// is supplied below from the revision being applied.
+		parsed, parseErr := ociutils.ParseOCIURL(builder.UnitURLFromInfo(info))
 		if parseErr != nil {
 			return options, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
 		}
-		// Reconstruct URL without the reference for ArgoCD
 		ociRepoURL = fmt.Sprintf("%s%s/%s/%s/%s", ociURLScheme, parsed.Host, parsed.ResourceType, parsed.SpaceSlug, parsed.ResourceSlug)
-		targetRevision = parsed.Reference
 	} else {
 		// Extract host from the provided OCIRepoURL
 		// Strip "oci://" prefix for URL parsing
@@ -480,17 +467,39 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 	// Generate a stable name based on SpaceSlug and UnitSlug for in-place updates
 	appName := k8skit.K8sNormalizeName(fmt.Sprintf("%s-%s", payload.SpaceSlug, payload.UnitSlug))
 
-	// Detect Helm units by checking for all required Helm labels
-	// (HelmRelease, HelmChart, HelmChartVersion, HelmChartAPIVersion).
-	// When detected, override targetRevision with the chart version.
+	// targetRevision is the OCI tag the deployment-side Application pulls.
+	//
+	// Do NOT default this to a symbolic tag. The OCI server resolves
+	// "head" to HeadRevisionNum, "latest" to LastAppliedRevisionNum,
+	// and "live" to the live state at pull time. Each is wrong for
+	// different reasons:
+	//   - "head" bypasses ApplyGates: HeadRevisionNum advances on
+	//     every Unit edit, so a CR pinned to "head" reconciles
+	//     against unit data that never went through apply.
+	//   - "latest" does not bypass ApplyGates, but it floats with
+	//     whatever was applied most recently, so the deployed state
+	//     drifts under concurrent applies and rollbacks (see #4242).
+	//   - "live" is circular on the deploy side.
+	//
+	// payload.RevisionNum is the revision this apply event is for. We
+	// pin to that exact revision so the deployed state matches what
+	// ConfigHub authorized.
+	//
+	// Helm units use a SemVer-shaped form ("0.{N}.0") because ArgoCD
+	// HelmSource requires a valid SemVer 2.0 string for targetRevision.
+	// Helm's actual chart version is preserved on the OCI manifest's
+	// annotations, not on this tag.
 	isHelm := helmutils.IsHelmChart(payload.UnitLabels)
 	var helmReleaseName string
 	var helmChartName string
+	var targetRevision string
 	if isHelm {
 		metadata := helmutils.ExtractHelmMetadata(payload.UnitLabels, payload.UnitSlug)
-		targetRevision = metadata.ChartVersion
+		targetRevision = ociutils.HelmRevisionRef(int(payload.RevisionNum))
 		helmReleaseName = metadata.ReleaseName
 		helmChartName = metadata.ChartName
+	} else {
+		targetRevision = ociutils.RevisionRef(int(payload.RevisionNum))
 	}
 
 	args := &argoCDApplicationArgs{
@@ -616,13 +625,6 @@ func (w *ArgoCDOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
 				Example:     ".",
 			},
 			api.BridgeOption{
-				Name:        "TargetRevision",
-				Description: "OCI tag or digest to deploy. Defaults to \"latest\".",
-				Required:    false,
-				DataType:    funcApi.DataTypeString,
-				Example:     "latest",
-			},
-			api.BridgeOption{
 				Name:        "DisableRepoCreds",
 				Description: "When true, skip auto-generation of the ArgoCD repo-creds Secret. Defaults to false.",
 				Required:    false,
@@ -703,7 +705,7 @@ func (w *ArgoCDOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload ap
 	}
 
 	// Create a Kubernetes client to poll the Application CR
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -876,7 +878,7 @@ func (w *ArgoCDOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Brid
 	}
 
 	// Create Kubernetes client
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,

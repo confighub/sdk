@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fluxcd/pkg/ssa"
 	ssautil "github.com/fluxcd/pkg/ssa/utils"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -973,14 +972,6 @@ func ParseGroupVersionKind(s string) (schema.GroupVersionKind, error) {
 	}, nil
 }
 
-type ResourceManager interface {
-	ApplyAllStaged(ctx context.Context, objects []*unstructured.Unstructured, opts ssa.ApplyOptions) (*ssa.ChangeSet, error)
-	Wait(objects []*unstructured.Unstructured, opts ssa.WaitOptions) error
-	WaitForTermination(objects []*unstructured.Unstructured, opts ssa.WaitOptions) error
-	DeleteAll(ctx context.Context, objects []*unstructured.Unstructured, opts ssa.DeleteOptions) (*ssa.ChangeSet, error)
-	Client() KubernetesClient // Updated to return KubernetesClient interface
-}
-
 type KubernetesClient interface {
 	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
@@ -993,11 +984,3 @@ type KubernetesClient interface {
 	List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error
 }
 
-type WrappedResourceManager struct {
-	*ssa.ResourceManager
-	Client_ KubernetesClient
-}
-
-func (w *WrappedResourceManager) Client() KubernetesClient {
-	return w.Client_
-}

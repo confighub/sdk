@@ -4,13 +4,9 @@
 package kubernetes
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/confighub/sdk/core/worker/api"
-	"github.com/fluxcd/pkg/ssa"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -53,65 +49,17 @@ data:
 			},
 		},
 	}
-
-	// Common test options
-	testWaitOptions = ssa.WaitOptions{
-		Interval: 5 * time.Second,
-		Timeout:  1 * time.Minute,
-	}
-
-	testApplyOptions = ssa.ApplyOptions{
-		Force: false,
-	}
 )
 
 // Test helper functions
 
-// setupMockResourceManager creates a new MockResourceManager with a MockK8sClient
-func setupMockResourceManager(t *testing.T) (*MockResourceManager, *MockK8sClient) {
-	t.Helper()
-	mockManager := new(MockResourceManager)
-	mockClient := new(MockK8sClient)
-	mockManager.On("Client").Return(mockClient)
-	return mockManager, mockClient
-}
-
-// setupMockApplyAllStaged sets up a mock expectation for ApplyAllStaged
-func setupMockApplyAllStaged(t *testing.T, mockManager *MockResourceManager, returnError error) {
-	t.Helper()
-	mockManager.On("ApplyAllStaged",
-		mock.MatchedBy(func(ctx context.Context) bool {
-			return ctx != nil
-		}),
-		mock.MatchedBy(func(objects []*unstructured.Unstructured) bool {
-			return len(objects) == 1 && objects[0].GetName() == testName
-		}),
-		mock.MatchedBy(func(opts ssa.ApplyOptions) bool {
-			return opts.Force == testApplyOptions.Force
-		}),
-	).Return(&ssa.ChangeSet{Entries: []ssa.ChangeSetEntry{}}, returnError)
-}
-
-// setupMockWait sets up a mock expectation for Wait
-func setupMockWait(t *testing.T, mockManager *MockResourceManager, returnError error) {
-	t.Helper()
-	mockManager.On("Wait",
-		mock.MatchedBy(func(objects []*unstructured.Unstructured) bool {
-			return len(objects) == 1 && objects[0].GetName() == testName
-		}),
-		mock.MatchedBy(func(opts ssa.WaitOptions) bool {
-			return opts.Interval == testWaitOptions.Interval &&
-				opts.Timeout == testWaitOptions.Timeout
-		}),
-	).Return(returnError)
-}
-
-// setupKubernetesClientFactory sets up the KubernetesClientFactory for testing
-func setupKubernetesClientFactory(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) func() {
+// setupKubernetesClientFactory swaps in a fake KubernetesClientFactory for the
+// duration of a test and returns a restore function the caller defers.
+func setupKubernetesClientFactory(t *testing.T, mockClient *MockK8sClient) func() {
 	t.Helper()
 	originalFunc := KubernetesClientFactory
-	KubernetesClientFactory = func(kubeContext string) (KubernetesClient, ResourceManager, error) {
-		return mockClient, mockManager, nil
+	KubernetesClientFactory = func(kubeContext string) (KubernetesClient, error) {
+		return mockClient, nil
 	}
 	return func() { KubernetesClientFactory = originalFunc }
 }
@@ -352,84 +300,6 @@ func createStandardTestPayload(targetParams, data []byte) api.BridgeWorkerPayloa
 	}
 }
 
-// Helper functions for mock setup
-func setupApplyOperationMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, applyErr, waitErr error) {
-	t.Helper()
-	SetupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Starting to apply resources...")
-	SetupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Applying resources...")
-
-	if applyErr != nil {
-		SetupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyFailed, "Failed to apply resources")
-	} else {
-		// Add mock for the LiveState status that Apply now sends
-		mockCtx.On("SendStatus", mock.MatchedBy(func(status *api.ActionResult) bool {
-			// This is the third status sent by Apply with LiveState
-			return status.Status == api.ActionStatusProgressing &&
-				status.Message == "Resources applied successfully"
-		})).Return(nil).Once()
-
-		SetupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "resources successfully")
-	}
-
-	setupMockApplyAllStaged(t, mockManager, applyErr)
-	if waitErr != nil {
-		setupMockWait(t, mockManager, waitErr)
-	}
-}
-
-func setupWatchOperationMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, waitErr error) {
-	t.Helper()
-	SetupMockSendStatus(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Waiting for the applied resources...")
-
-	if waitErr != nil {
-		if waitErr == context.DeadlineExceeded {
-			SetupMockSendStatusContains(t, mockCtx, api.ActionStatusProgressing, api.ActionResultNone, "Failed to wait for resources")
-		} else {
-			SetupMockSendStatusContains(t, mockCtx, api.ActionStatusFailed, api.ActionResultApplyWaitFailed, "Failed to wait for resources")
-		}
-	} else {
-		SetupMockSendStatusContains(t, mockCtx, api.ActionStatusCompleted, api.ActionResultApplyCompleted, "resources successfully")
-	}
-
-	setupMockWait(t, mockManager, waitErr)
-}
-
-func setupMockClientGet(t *testing.T, mockClient *MockK8sClient, namespace, name string, returnErr error) {
-	t.Helper()
-	mockClient.On("Get",
-		mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil }),
-		client.ObjectKey{Namespace: namespace, Name: name},
-		mock.MatchedBy(func(obj client.Object) bool {
-			u, ok := obj.(*unstructured.Unstructured)
-			return ok && u.GetName() == name && u.GetNamespace() == namespace
-		}), mock.Anything,
-	).Return(returnErr)
-}
-
-func setupFullApplyTest(t *testing.T, applyErr, waitErr error) (*MockBridgeWorkerContext, *MockResourceManager, *MockK8sClient, func()) {
-	t.Helper()
-	mockCtx := SetupMockContext(t)
-	mockManager, mockClient := setupMockResourceManager(t)
-
-	setupApplyOperationMocks(t, mockCtx, mockManager, applyErr, waitErr)
-	setupMockClientGet(t, mockClient, testNamespace, testName, nil)
-	mockManager.On("Client").Return(mockClient)
-
-	restoreFunc := setupKubernetesClientFactory(t, mockClient, mockManager)
-	return mockCtx, mockManager, mockClient, restoreFunc
-}
-
-func assertStandardApplyResults(t *testing.T, err error, mockCtx *MockBridgeWorkerContext, mockManager *MockResourceManager, expectedError bool, expectedStatusCalls, expectedApplyCalls int) {
-	t.Helper()
-	if expectedError {
-		assert.Error(t, err)
-	} else {
-		assert.NoError(t, err)
-	}
-	mockCtx.AssertNumberOfCalls(t, "SendStatus", expectedStatusCalls)
-	mockManager.AssertNumberOfCalls(t, "ApplyAllStaged", expectedApplyCalls)
-}
-
 // Helper functions for import tests
 func setupImportStatusMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, expectedCalls int) {
 	t.Helper()
@@ -448,7 +318,7 @@ func setupImportStatusMocks(t *testing.T, mockCtx *MockBridgeWorkerContext, expe
 	}
 }
 
-func setupMockGetResourcesWithParams(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+func setupMockGetResourcesWithParams(t *testing.T, mockClient *MockK8sClient) {
 	t.Helper()
 	mockClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		list := args.Get(1).(*unstructured.UnstructuredList)
@@ -456,16 +326,15 @@ func setupMockGetResourcesWithParams(t *testing.T, mockClient *MockK8sClient, mo
 	})
 }
 
-func setupMockGetAllClusterResources(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+func setupMockGetAllClusterResources(t *testing.T, mockClient *MockK8sClient) {
 	t.Helper()
-	setupMockGetResourcesWithParams(t, mockClient, mockManager)
+	setupMockGetResourcesWithParams(t, mockClient)
 }
 
-func setupMockGetLiveObjects(t *testing.T, mockClient *MockK8sClient, mockManager *MockResourceManager) {
+func setupMockGetLiveObjects(t *testing.T, mockClient *MockK8sClient) {
 	t.Helper()
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		obj := args.Get(2).(*unstructured.Unstructured)
 		obj.Object = testConfigMap.Object
 	})
-	mockManager.On("Client").Return(mockClient)
 }

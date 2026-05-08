@@ -120,10 +120,14 @@ func TestBuildFluxResourceStatusMap_FailedWithInventory(t *testing.T) {
 			"apiVersion": fluxKustomizationAPIVersion,
 			"kind":       fluxKindKustomization,
 			"metadata": map[string]interface{}{
-				"name":      "test-ks",
-				"namespace": "flux-system",
+				"name":       "test-ks",
+				"namespace":  "flux-system",
+				"generation": int64(1),
 			},
 			"status": map[string]interface{}{
+				// observedGeneration must equal generation; otherwise the
+				// Ready=False condition is treated as still-reconciling.
+				"observedGeneration": int64(1),
 				"conditions": []interface{}{
 					map[string]interface{}{
 						"type":    fluxConditionReady,
@@ -284,7 +288,6 @@ func TestParseFluxOCIParams_Defaults(t *testing.T) {
 	assert.Equal(t, defaultDestinationNamespace, options.TargetNamespace)
 	assert.Equal(t, defaultFluxInterval, options.Interval)
 	assert.Equal(t, defaultFluxOCIPath, options.OCIPath)
-	assert.Equal(t, defaultFluxTargetRevision, options.TargetRevision)
 	assert.Equal(t, kubernetes.LargeWaitTimeout.String(), options.WaitTimeout)
 	assert.True(t, options.Prune)
 }
@@ -298,7 +301,6 @@ func TestParseFluxOCIParams_TargetOptions(t *testing.T) {
 			"OCIRepoURL":       "oci://registry.example.com/charts",
 			"OCIHost":          "registry.example.com",
 			"OCIPath":          "manifests",
-			"TargetRevision":   "v1.0.0",
 			"Prune":            "false",
 			"DisableRepoCreds": "true",
 			"KubeContext":      "my-cluster",
@@ -314,7 +316,6 @@ func TestParseFluxOCIParams_TargetOptions(t *testing.T) {
 	assert.Equal(t, "oci://registry.example.com/charts", options.OCIRepoURL)
 	assert.Equal(t, "registry.example.com", options.OCIHost)
 	assert.Equal(t, "manifests", options.OCIPath)
-	assert.Equal(t, "v1.0.0", options.TargetRevision)
 	assert.False(t, options.Prune)
 	assert.True(t, options.DisableRepoCreds)
 	assert.Equal(t, "my-cluster", options.KubeContext)
@@ -374,7 +375,150 @@ var testFluxOCITargetOptions = map[string]string{
 	"Interval":        "5m",
 	"OCIRepoURL":      "oci://ghcr.io/myorg/manifests",
 	"OCIPath":         "apps/myapp",
-	"TargetRevision":  "v1.0.0",
+}
+
+// Regression: a Target with a stored TargetRevision (e.g. "head") must not
+// influence the generated OCIRepository — the bridge always pins spec.ref.tag
+// to the revision being applied. Closes #4222 (TargetRevision policy bypass).
+func TestTransformToFluxOCI_StoredTargetRevisionIgnored(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	spaceID := uuid.New()
+	payload := api.BridgeWorkerPayload{
+		TargetOptions: map[string]string{
+			"OCIHost":        "oci.hub.confighub.com",
+			"TargetRevision": "head",
+		},
+		UnitSlug:    "my-app",
+		SpaceSlug:   "test-space",
+		SpaceID:     spaceID,
+		RevisionNum: 7,
+		Data:        testConfigMapYAML,
+	}
+
+	worker := NewFluxOCIWorker("", "")
+	_, err := worker.transformToFluxOCI(mockCtx, &payload, false)
+	require.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+	assert.Contains(t, yamlStr, "tag: v7")
+	assert.NotContains(t, yamlStr, "tag: head")
+	assert.NotContains(t, yamlStr, "tag: latest")
+}
+
+// Exercises the v{N} derivation across a range of RevisionNum values. The
+// expected OCI tag must match the form ociutils.RevisionRef produces, which
+// is the same form the OCI server's resolveReferenceCore parses.
+func TestTransformToFluxOCI_RevisionNumDerivation(t *testing.T) {
+	cases := []struct {
+		revNum  int64
+		wantTag string
+	}{
+		{1, "tag: v1"},
+		{5, "tag: v5"},
+		{42, "tag: v42"},
+		{1000, "tag: v1000"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.wantTag, func(t *testing.T) {
+			mockCtx := setupMockContext(t)
+			mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+			payload := api.BridgeWorkerPayload{
+				TargetOptions: map[string]string{"OCIHost": "oci.hub.confighub.com"},
+				UnitSlug:      "my-app",
+				SpaceSlug:     "test-space",
+				SpaceID:       uuid.New(),
+				RevisionNum:   tc.revNum,
+				Data:          testConfigMapYAML,
+			}
+			worker := NewFluxOCIWorker("", "")
+			_, err := worker.transformToFluxOCI(mockCtx, &payload, false)
+			require.NoError(t, err)
+			assert.Contains(t, string(payload.Data), tc.wantTag)
+		})
+	}
+}
+
+// Exercises the 0.{N}.0 derivation on the Helm path across a range of
+// RevisionNum values. The HelmRelease's chart.spec.version must match
+// the form ociutils.HelmRevisionRef produces, which is the same form
+// the OCI server resolves via ociutils.ParseHelmRevisionRef.
+func TestTransformToFluxOCI_HelmRevisionNumDerivation(t *testing.T) {
+	cases := []struct {
+		revNum     int64
+		wantVersion string
+	}{
+		{1, "version: 0.1.0"},
+		{5, "version: 0.5.0"},
+		{42, "version: 0.42.0"},
+		{1000, "version: 0.1000.0"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.wantVersion, func(t *testing.T) {
+			mockCtx := setupMockContext(t)
+			mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+			payload := api.BridgeWorkerPayload{
+				TargetOptions: map[string]string{"OCIHost": "oci.hub.confighub.com"},
+				UnitSlug:      "my-nginx",
+				SpaceSlug:     "test-space",
+				SpaceID:       uuid.New(),
+				RevisionNum:   tc.revNum,
+				Data:          testConfigMapYAML,
+				UnitLabels: map[string]string{
+					helmutils.HelmReleaseLabel:         "my-release",
+					helmutils.HelmChartLabel:           "nginx",
+					helmutils.HelmChartVersionLabel:    "9.9.9",
+					helmutils.HelmChartAPIVersionLabel: "v2",
+				},
+			}
+			worker := NewFluxOCIWorker("", "")
+			_, err := worker.transformToFluxOCI(mockCtx, &payload, false)
+			require.NoError(t, err)
+			yamlStr := string(payload.Data)
+			assert.Contains(t, yamlStr, tc.wantVersion)
+			// Chart version (9.9.9) must NOT appear as the Helm version anymore.
+			assert.NotContains(t, yamlStr, "version: 9.9.9")
+		})
+	}
+}
+
+// Regression: a Helm Target with stored TargetRevision="head" must not
+// influence the generated HelmRelease's chart.spec.version; the bridge
+// always pins to the SemVer-shaped revision form for the apply event's
+// revision.
+func TestTransformToFluxOCI_HelmStoredTargetRevisionIgnored(t *testing.T) {
+	mockCtx := setupMockContext(t)
+	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
+
+	payload := api.BridgeWorkerPayload{
+		TargetOptions: map[string]string{
+			"OCIHost":        "oci.hub.confighub.com",
+			"TargetRevision": "head",
+		},
+		UnitSlug:    "my-nginx",
+		SpaceSlug:   "test-space",
+		SpaceID:     uuid.New(),
+		RevisionNum: 7,
+		Data:        testConfigMapYAML,
+		UnitLabels: map[string]string{
+			helmutils.HelmReleaseLabel:         "my-release",
+			helmutils.HelmChartLabel:           "nginx",
+			helmutils.HelmChartVersionLabel:    "1.2.3",
+			helmutils.HelmChartAPIVersionLabel: "v2",
+		},
+	}
+
+	worker := NewFluxOCIWorker("", "")
+	_, err := worker.transformToFluxOCI(mockCtx, &payload, false)
+	require.NoError(t, err)
+
+	yamlStr := string(payload.Data)
+	assert.Contains(t, yamlStr, "version: 0.7.0")
+	assert.NotContains(t, yamlStr, "version: head")
+	assert.NotContains(t, yamlStr, "version: 1.2.3")
 }
 
 func TestTransformToFluxOCI_Success(t *testing.T) {
@@ -540,7 +684,10 @@ func TestTransformToFluxOCI_HelmChartGeneratesHelmCRs(t *testing.T) {
 	assert.Contains(t, yamlStr, "type: oci")
 	// HelmRelease chart must use UnitSlug (not HelmChartName) since ConfigHub pushes to oci://host/unit/space/<unit-slug>
 	assert.Contains(t, yamlStr, "chart: my-nginx")
-	assert.Contains(t, yamlStr, "version: 1.2.3")
+	// chart.spec.version is the SemVer-shaped revision pin (RevisionNum=1)
+	// derived via ociutils.HelmRevisionRef, not the chart's actual version.
+	assert.Contains(t, yamlStr, "version: 0.1.0")
+	assert.NotContains(t, yamlStr, "version: 1.2.3")
 	assert.Contains(t, yamlStr, "releaseName: my-release")
 }
 

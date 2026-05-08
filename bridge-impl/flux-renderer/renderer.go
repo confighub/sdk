@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	sigsyaml "sigs.k8s.io/yaml"
 )
 
 // ParsedDocuments holds the parsed resources from a multi-document YAML input.
@@ -95,6 +96,51 @@ func ParseDocumentsWithResources(data []byte) (*ParsedDocuments, error) {
 	}
 
 	return result, nil
+}
+
+// ensureResourceSuspended returns a multi-doc YAML with spec.suspend=true set
+// on the document matching kind/apiVersion/namespace/name. If the field is
+// already true, the input is returned unchanged. Used by the authoritative
+// renderer path so the main applier SSA-applies the resource with ConfigHub
+// owning the suspend field, preventing the Flux controller from reconciling
+// what ConfigHub renders.
+func ensureResourceSuspended(data []byte, kind, apiVersion, namespace, name string) ([]byte, error) {
+	docs, err := parseYAMLDocuments(data)
+	if err != nil {
+		return nil, err
+	}
+	modified := false
+	for _, doc := range docs {
+		if doc.GetKind() != kind ||
+			doc.GetAPIVersion() != apiVersion ||
+			doc.GetNamespace() != namespace ||
+			doc.GetName() != name {
+			continue
+		}
+		suspended, _, _ := unstructured.NestedBool(doc.Object, "spec", "suspend")
+		if suspended {
+			continue
+		}
+		if err := unstructured.SetNestedField(doc.Object, true, "spec", "suspend"); err != nil {
+			return nil, fmt.Errorf("failed to set spec.suspend: %w", err)
+		}
+		modified = true
+	}
+	if !modified {
+		return data, nil
+	}
+	var buf bytes.Buffer
+	for i, doc := range docs {
+		b, err := sigsyaml.Marshal(doc.Object)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal document: %w", err)
+		}
+		if i > 0 {
+			buf.WriteString("---\n")
+		}
+		buf.Write(b)
+	}
+	return buf.Bytes(), nil
 }
 
 // resourceKey creates a key for looking up resources by namespace/name.

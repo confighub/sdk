@@ -4,7 +4,6 @@
 package kubernetes
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -99,19 +98,21 @@ type DestroyResult struct {
 // level, while K8sApplier focuses on direct resource manipulation (apply/destroy/refresh).
 type K8sApplier interface {
 	// Apply applies the given objects to the cluster
-	Apply(ctx context.Context, objects []*unstructured.Unstructured) ApplyResult
+	Apply(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) ApplyResult
 
-	// WaitForApply waits for applied resources to be ready
-	WaitForApply(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult
+	// WaitForApply waits for applied resources to be ready. Progress is
+	// streamed through wctx.SendStatus; implementations that don't stream
+	// (e.g. cluster-internal waits) ignore wctx beyond Context().
+	WaitForApply(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult
 
 	// Refresh retrieves the current live state of objects
-	Refresh(ctx context.Context, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error)
+	Refresh(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) ([]*unstructured.Unstructured, error)
 
 	// Destroy deletes the given objects from the cluster
-	Destroy(ctx context.Context, objects []*unstructured.Unstructured) DestroyResult
+	Destroy(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured) DestroyResult
 
 	// WaitForDestroy waits for resources to be terminated and returns the final state
-	WaitForDestroy(ctx context.Context, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult
+	WaitForDestroy(wctx api.BridgeWorkerContext, objects []*unstructured.Unstructured, timeout time.Duration) WaitResult
 }
 
 // ApplierConfig contains configuration for creating an applier
@@ -125,12 +126,15 @@ type ApplierConfig struct {
 	RevisionNum       int64  // RevisionNum for the revision being applied
 	WaitTimeout       string // WaitTimeout duration string for resource readiness
 	DryRun            bool   // DryRun uses server-side dry run (validates without persisting)
+	// ProgressingTimeout bounds how long a resource may remain kstatus=InProgress
+	// with no augmented-status transition before the statuspoller flags it Stuck.
+	// Zero means use the statuspoller's default (150s).
+	ProgressingTimeout time.Duration
 }
 
 type ApplierName string
 
 const (
-	FluxSSA     ApplierName = "FluxSSA"
 	CLIUtilsSSA ApplierName = "CLIUtilsSSA"
 )
 
@@ -139,8 +143,6 @@ var K8sApplierFactory = defaultK8sApplierFactory
 
 func defaultK8sApplierFactory(name ApplierName, config ApplierConfig) (K8sApplier, error) {
 	switch name {
-	case FluxSSA:
-		return NewFluxSSAApplier(config)
 	case CLIUtilsSSA:
 		return NewCLIUtilsApplier(config)
 	}

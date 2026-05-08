@@ -74,7 +74,6 @@ type FluxOCIBridgeOptions struct {
 	OCIRepoURL       string // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
 	OCIHost          string // OCI registry host - optional, inferred from server URL if not set
 	OCIPath          string // Path within OCI artifact (default: ".")
-	TargetRevision   string // OCI tag (default: "latest")
 	Prune            bool   // Enable pruning of orphaned resources (default: true)
 	DisableRepoCreds bool   // Skip auto-generation of OCI credentials Secret (default: false)
 }
@@ -84,7 +83,6 @@ const (
 	defaultFluxNamespace      = "flux-system"
 	defaultFluxInterval       = "10m"
 	defaultFluxOCIPath        = "."
-	defaultFluxTargetRevision = "latest"
 	ociURLScheme                 = "oci://"
 	defaultPollInterval          = 5 * time.Second
 	annotationExternalLink       = "link.argocd.argoproj.io/external-link"
@@ -308,9 +306,6 @@ func parseFluxOCIOptions(payload api.BridgeWorkerPayload) (FluxOCIBridgeOptions,
 	if v, ok := payload.TargetOptions["OCIPath"]; ok {
 		options.OCIPath = v
 	}
-	if v, ok := payload.TargetOptions["TargetRevision"]; ok {
-		options.TargetRevision = v
-	}
 	// TargetOptions values are always strings; bool fields need explicit conversion.
 	if v, ok := payload.TargetOptions["Prune"]; ok {
 		options.Prune = v != "false"
@@ -347,9 +342,6 @@ func parseFluxOCIOptions(payload api.BridgeWorkerPayload) (FluxOCIBridgeOptions,
 	if options.OCIPath == "" {
 		options.OCIPath = defaultFluxOCIPath
 	}
-	if options.TargetRevision == "" {
-		options.TargetRevision = defaultFluxTargetRevision
-	}
 	if options.WaitTimeout == "" {
 		options.WaitTimeout = kubernetes.LargeWaitTimeout.String()
 	}
@@ -363,9 +355,8 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 		return options, err
 	}
 
-	// Determine OCI URL and target revision
+	// Determine OCI URL
 	ociRepoURL := options.OCIRepoURL
-	targetRevision := options.TargetRevision
 
 	// Track the OCI host for creds generation
 	var ociHost string
@@ -389,16 +380,14 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 			SpaceSlug: payload.SpaceSlug,
 			UnitSlug:  payload.UnitSlug,
 		}
-		rawURL := builder.UnitURLFromInfo(info)
-
-		// Split URL and reference: oci://host/unit/space/unit:ref -> repoURL without tag, targetRevision=ref
-		parsed, parseErr := ociutils.ParseOCIURL(rawURL)
+		// UnitURLFromInfo embeds a "latest" reference; Flux's OCIRepository
+		// wants spec.url without an embedded reference, with spec.ref.tag
+		// set below from the revision being applied.
+		parsed, parseErr := ociutils.ParseOCIURL(builder.UnitURLFromInfo(info))
 		if parseErr != nil {
 			return options, fmt.Errorf("failed to parse auto-constructed OCI URL: %w", parseErr)
 		}
-		// Reconstruct URL without the reference for Flux OCIRepository
 		ociRepoURL = fmt.Sprintf("%s%s/%s/%s/%s", ociURLScheme, parsed.Host, parsed.ResourceType, parsed.SpaceSlug, parsed.ResourceSlug)
-		targetRevision = parsed.Reference
 	} else {
 		// Extract host from the provided OCIRepoURL
 		rawURL := strings.TrimPrefix(ociRepoURL, ociURLScheme)
@@ -416,15 +405,40 @@ func (w *FluxOCIWorker) transformToFluxOCI(wctx api.BridgeWorkerContext, payload
 		isHTTP = probeOCIProtocol(ociHost)
 	}
 
-	// Detect Helm units and extract Helm metadata
+	// targetRevision is the OCI tag the deployment-side OCIRepository pulls.
+	//
+	// Do NOT default this to a symbolic tag. The OCI server resolves
+	// "head" to HeadRevisionNum, "latest" to LastAppliedRevisionNum,
+	// and "live" to the live state at pull time. Each is wrong for
+	// different reasons:
+	//   - "head" bypasses ApplyGates: HeadRevisionNum advances on
+	//     every Unit edit, so a CR pinned to "head" reconciles
+	//     against unit data that never went through apply.
+	//   - "latest" does not bypass ApplyGates, but it floats with
+	//     whatever was applied most recently, so the deployed state
+	//     drifts under concurrent applies and rollbacks (see #4242).
+	//   - "live" is circular on the deploy side.
+	//
+	// payload.RevisionNum is the revision this apply event is for. We
+	// pin to that exact revision so the deployed state matches what
+	// ConfigHub authorized.
+	//
+	// Helm units use a SemVer-shaped form ("0.{N}.0") because Flux
+	// HelmRelease's chart.spec.version requires a valid SemVer 2.0
+	// string. Helm's actual chart version is preserved on the OCI
+	// manifest's annotations, not on this tag.
 	isHelm := helmutils.IsHelmChart(payload.UnitLabels)
 	var helmReleaseName, helmChartName, helmChartVersion string
+	var targetRevision string
 	if isHelm {
 		metadata := helmutils.ExtractHelmMetadata(payload.UnitLabels, payload.UnitSlug)
-		targetRevision = metadata.ChartVersion
+		helmRevisionTag := ociutils.HelmRevisionRef(int(payload.RevisionNum))
+		targetRevision = helmRevisionTag
+		helmChartVersion = helmRevisionTag
 		helmReleaseName = metadata.ReleaseName
 		helmChartName = metadata.ChartName
-		helmChartVersion = metadata.ChartVersion
+	} else {
+		targetRevision = ociutils.RevisionRef(int(payload.RevisionNum))
 	}
 
 	args := &fluxOCIArgs{
@@ -554,13 +568,6 @@ func (w *FluxOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
 				Example:     ".",
 			},
 			api.BridgeOption{
-				Name:        "TargetRevision",
-				Description: "OCI tag or digest to deploy. Defaults to \"latest\".",
-				Required:    false,
-				DataType:    funcApi.DataTypeString,
-				Example:     "latest",
-			},
-			api.BridgeOption{
 				Name:        "Prune",
 				Description: "Enable pruning of orphaned Kubernetes resources managed by Flux. Defaults to true.",
 				Required:    false,
@@ -671,7 +678,7 @@ func (w *FluxOCIWorker) WatchForApply(wctx api.BridgeWorkerContext, payload api.
 	}
 
 	// Create a Kubernetes client to poll the Kustomization CR
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -843,7 +850,7 @@ func (w *FluxOCIWorker) Refresh(wctx api.BridgeWorkerContext, payload api.Bridge
 		), noObjErr)
 	}
 	// Create Kubernetes client
-	k8sClient, _, err := kubernetes.KubernetesClientFactory(options.KubeContext)
+	k8sClient, err := kubernetes.KubernetesClientFactory(options.KubeContext)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,
@@ -1031,11 +1038,26 @@ func collectFluxLiveCRs(ctx context.Context, k8sClient kubernetes.KubernetesClie
 
 // getFluxCondition extracts the Ready condition from a Flux object.
 // Returns (isReady, isFailed, message).
+//
+// A Flux HelmRelease or Kustomization briefly reports Ready=False while
+// the controller is still working — for example, "HelmChart not ready:
+// latest generation has not been reconciled yet" shows up for a few
+// seconds during normal reconciliation. We don't want to treat that
+// early Ready=False as a hard failure. So Ready=False is only terminal
+// once the controller has caught up to the spec we just wrote
+// (status.observedGeneration ≥ metadata.generation). While it's still
+// catching up, the caller keeps polling. This eliminates spurious
+// failures during the first few seconds of reconciliation while still
+// reporting real, settled failures correctly.
 func getFluxCondition(obj *unstructured.Unstructured) (bool, bool, string) {
 	conditions, found, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if err != nil || !found {
 		return false, false, ""
 	}
+
+	gen := obj.GetGeneration()
+	observed, observedFound, _ := unstructured.NestedInt64(obj.Object, "status", "observedGeneration")
+	reconciled := observedFound && observed >= gen
 
 	for _, c := range conditions {
 		cond, ok := c.(map[string]interface{})
@@ -1052,7 +1074,9 @@ func getFluxCondition(obj *unstructured.Unstructured) (bool, bool, string) {
 		case fluxConditionStatusTrue:
 			return true, false, message
 		case fluxConditionStatusFalse:
-			return false, true, message
+			// Only terminal when reconciliation has settled on the current
+			// spec. Otherwise the controller is still catching up.
+			return false, reconciled, message
 		default:
 			return false, false, message
 		}
