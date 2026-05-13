@@ -38,7 +38,9 @@ Toolchain Types:
 - AppConfig/YAML: For application YAML configurations
 - AppConfig/TOML: For application TOML configurations
 - AppConfig/INI: For application INI configurations
-- OpenTofu/HCL: For OpenTofu HCL configurations
+- AppConfig/Env: For application Env configurations
+- AppConfig/YAML: For application YAML configurations
+- AppConfig/JSON: For application JSON configurations
 
 Example Functions:
 

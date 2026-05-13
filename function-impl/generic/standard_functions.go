@@ -34,6 +34,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerSetAttributes(fh, converter, resourceProvider)
 	registerGetNeeded(fh, converter, resourceProvider)
 	registerGetProvided(fh, converter, resourceProvider)
+	registerGetReferences(fh, converter, resourceProvider)
 	registerGetPaths(fh, converter, resourceProvider)
 	registerVetCELExpr(fh, converter, resourceProvider)
 	registerCELValidate(fh, converter, resourceProvider)

@@ -20,6 +20,9 @@ OUTPUT
           }
         ]
       },
+      "ProvidedProperties": {
+        "ResourceType": "v1/Namespace"
+      },
       "IsProvided": true
     },
     "Value": "foobar",

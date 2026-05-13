@@ -137,7 +137,6 @@ const (
 	ProviderArgoCDRenderer    ProviderType = "ArgoCDRenderer"
 	ProviderArgoCDOCI         ProviderType = "ArgoCDOCI"
 	ProviderConfigMapRenderer ProviderType = "ConfigMapRenderer"
-	ProviderOpenTofuAWS       ProviderType = "OpenTofu/AWS"
 	ProviderNoop              ProviderType = "Noop"
 )
 
@@ -149,7 +148,6 @@ var SupportedProviders = map[ProviderType]bool{
 	ProviderArgoCDRenderer:    true,
 	ProviderArgoCDOCI:         true,
 	ProviderConfigMapRenderer: true,
-	ProviderOpenTofuAWS:       true,
 	ProviderNoop:              true,
 }
 

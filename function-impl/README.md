@@ -12,7 +12,7 @@ The intent is that, like command-line tools and other API-based automation, Conf
 
 Many kinds of configuration data, such as Kubernetes resources and cloud resources serialized in some Infrastructure as Code format, have well defined, stable schemas, like APIs. Such data is well suited to be operated on by stable functions. Kustomize operates on Kubernetes resources based on the same principle.
 
-Functions are currently implemented for a number of configuration formats, including Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text, and OpenTofu/HCL. See the [Configuration formats](#configuration-formats-other-than-kubernetesyaml) section for more details.
+Functions are currently implemented for a number of configuration formats, including Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text, and ConfigHub/YAML. See the [Configuration formats](#configuration-formats-other-than-kubernetesyaml) section for more details.
 
 ## Authoring functions
 
@@ -49,6 +49,8 @@ gaby is layered on top of the [kustomize kyaml library](https://github.com/kuber
 The Kubernetes API and cloud APIs contain a number of associative lists, such as container lists and environment variable lists, where the keys identifying the array elements are map elements of the array element, such as `name`. yamlkit has a function for resolving associative paths to array index syntax, `ResolveAssociativePaths`. The syntax for an associative list path lookup is `.?<map key>:<parameter name>=<map value>`, as in `spec.template.spec.containers.?name:container-name=%s.image` (using a Sprintf placeholder). The `:<parameter name>` is optional, but is used to match corresponding values.
 
 `ResolveAssociativePaths` also supports wildcards. `*` is the simplest form of wildcard. As with associative matches, matched segments may be bound to parameter names. The syntax is `.*?<map key>:<getter parameter name>`, as in `spec.template.spec.containers.*?name:container-name`. When the value substituted into an associative list lookup is `*`, `ResolveAssociativePaths` automatically converts the path expression into the wildcard form.
+
+The wildcard form also accepts an optional `=<value>` filter that restricts matches to children whose `<map key>` field equals `<value>`. The syntax is `.*?<map key>=<value>` or `.*?<map key>:<getter parameter name>=<value>`. For example, `subjects.*?kind=ServiceAccount.namespace` matches the `namespace` field on every `subjects[]` element whose `kind` is `ServiceAccount` — useful for upserting RBAC `RoleBinding`/`ClusterRoleBinding` subjects while leaving `Group` and `User` subjects untouched. The filter value is compared by string equality (with default `%v` formatting for non-string scalars).
 
 `ResolveAssociativePaths` can also bind map keys to parameters, using `.@<map key>:<parameter name>`, for a specific key, or `.*@:<parameter name>` for any key.
 
@@ -455,7 +457,6 @@ The following configuration formats are supported, identified by their Toolchain
 - AppConfig/JSON (`ToolchainAppConfigJSON`)
 - AppConfig/Env — env files with KEY=value lines (`ToolchainAppConfigEnv`)
 - AppConfig/Text — plain text files stored as arrays of line objects (`ToolchainAppConfigText`)
-- OpenTofu/HCL (`ToolchainOpenTofuHCL`)
 - ConfigHub/YAML — internal ConfigHub YAML format (`ToolchainConfigHubYAML`)
 
 ### NativeToYAML / YAMLToNative conversion
@@ -530,4 +531,4 @@ Converters are registered with a `ResourceProvider`, which may be implemented us
 	generic.RegisterStandardFunctions(fh, k8skit.K8sResourceProvider, k8skit.K8sResourceProvider)
 ```
 
-The `ResourceProvider` interface is used to interact with configuration element metadata, such as resource categories, types, and names. The `ResourceCategory` identifies what kind of configuration element it is. Kubernetes only contains elements of category `api.ResourceCategoryResource`. Java Properties only contains elements of category `api.ResourceCategoryAppConfig`. OpenTofu contains elements of categories `api.ResourceCategoryResource` and `api.ResourceCategoryDynamicData`, which corresponds to [data sources](https://opentofu.org/docs/language/data-sources/).
+The `ResourceProvider` interface is used to interact with configuration element metadata, such as resource categories, types, and names. The `ResourceCategory` identifies what kind of configuration element it is. Kubernetes only contains elements of category `api.ResourceCategoryResource`. Java Properties only contains elements of category `api.ResourceCategoryAppConfig`.

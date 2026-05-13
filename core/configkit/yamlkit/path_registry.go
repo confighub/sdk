@@ -475,39 +475,65 @@ func GetPathVisitorInfo(resourceProvider ResourceProvider, resourceType api.Reso
 // GetRegisteredNeededPaths returns a combined registry of all paths marked as IsNeeded
 // across all attributes in the path registry.
 func GetRegisteredNeededPaths(resourceProvider ResourceProvider) api.ResourceTypeToPathToVisitorInfoType {
-	return getRegisteredPathsByFlag(resourceProvider, true, false)
+	return getRegisteredPathsByFlag(resourceProvider, true, false, nil)
 }
 
 // GetRegisteredProvidedPaths returns a combined registry of all paths marked as IsProvided
 // across all attributes in the path registry.
 func GetRegisteredProvidedPaths(resourceProvider ResourceProvider) api.ResourceTypeToPathToVisitorInfoType {
-	return getRegisteredPathsByFlag(resourceProvider, false, true)
+	return getRegisteredPathsByFlag(resourceProvider, false, true, nil)
 }
 
-func getRegisteredPathsByFlag(resourceProvider ResourceProvider, needed, provided bool) api.ResourceTypeToPathToVisitorInfoType {
+// GetRegisteredNeededPathsByProperty returns a combined registry of all paths marked as
+// IsNeeded whose Details.NeededRequired map contains every key listed in neededRequired.
+// Values of those required keys are not checked — only presence. This is useful for finding
+// paths that participate in a particular kind of match (e.g., all resource references via
+// the "ResourceType" key) regardless of whether the current value at the path is a
+// placeholder.
+func GetRegisteredNeededPathsByProperty(resourceProvider ResourceProvider, neededRequired []string) api.ResourceTypeToPathToVisitorInfoType {
+	return getRegisteredPathsByFlag(resourceProvider, true, false, neededRequired)
+}
+
+func getRegisteredPathsByFlag(resourceProvider ResourceProvider, needed, provided bool, neededRequired []string) api.ResourceTypeToPathToVisitorInfoType {
 	combined := make(api.ResourceTypeToPathToVisitorInfoType)
 	pathRegistry := resourceProvider.GetPathRegistry()
 	for _, resourceTypeToPathToVisitorInfo := range pathRegistry {
 		for rt, pathToVisitorInfo := range resourceTypeToPathToVisitorInfo {
 			for path, info := range pathToVisitorInfo {
-				if info.Details != nil && ((needed && info.Details.IsNeeded) || (provided && info.Details.IsProvided)) {
-					if _, ok := combined[rt]; !ok {
-						combined[rt] = make(api.PathToVisitorInfoType)
-					}
-					existing, exists := combined[rt][path]
-					if !exists {
-						// Copy to avoid modifying the registry's PathVisitorInfo
-						infoCopy := *info
-						if info.Details != nil {
-							detailsCopy := *info.Details
-							infoCopy.Details = &detailsCopy
+				if info.Details == nil {
+					continue
+				}
+				if !((needed && info.Details.IsNeeded) || (provided && info.Details.IsProvided)) {
+					continue
+				}
+				if len(neededRequired) > 0 {
+					hasAll := true
+					for _, key := range neededRequired {
+						if _, ok := info.Details.NeededRequired[key]; !ok {
+							hasAll = false
+							break
 						}
-						combined[rt][path] = &infoCopy
-					} else if existing != info {
-						// The same path may appear under multiple attribute names with
-						// different subsets of setter/getter invocations. Merge them.
-						mergeDetails(existing, info)
 					}
+					if !hasAll {
+						continue
+					}
+				}
+				if _, ok := combined[rt]; !ok {
+					combined[rt] = make(api.PathToVisitorInfoType)
+				}
+				existing, exists := combined[rt][path]
+				if !exists {
+					// Copy to avoid modifying the registry's PathVisitorInfo
+					infoCopy := *info
+					if info.Details != nil {
+						detailsCopy := *info.Details
+						infoCopy.Details = &detailsCopy
+					}
+					combined[rt][path] = &infoCopy
+				} else if existing != info {
+					// The same path may appear under multiple attribute names with
+					// different subsets of setter/getter invocations. Merge them.
+					mergeDetails(existing, info)
 				}
 			}
 		}

@@ -36,7 +36,7 @@ clean:
 # Sibling modules that contain tests
 CORE_MODULES = ./core 
 TEST_MODULES = ./function-impl ./bridge-impl ./worker-function-impl \
-	./configkit/yqkit ./configkit/hclkit ./configkit/tomlkit ./configkit/inikit \
+	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit
 CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl

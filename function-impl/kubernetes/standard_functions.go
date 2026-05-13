@@ -184,8 +184,9 @@ func gvkString(gvk resid.Gvk) api.ResourceType {
 	return api.ResourceType(g + "/" + v + "/" + k)
 }
 
+// Create a resource-type-specific attribute name that matches AttributeName character restrictions.
 func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {
-	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
+	return api.AttributeName(string(api.AttributeNameResourceName) + "-" + strings.ReplaceAll(string(resourceType), "/", "-"))
 }
 
 var segmentIsArray = map[string]struct{}{
@@ -531,7 +532,7 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 			},
 			api.UnresolvedPath("rules.*.resourceNames.*"): {
 				Path:          api.UnresolvedPath("rules.*.resourceNames.*"),
-				AttributeName: api.AttributeName("resource-name"),
+				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
 			},
 			api.UnresolvedPath("rules.*.verbs.*"): {

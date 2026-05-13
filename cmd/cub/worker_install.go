@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/workerapi"
@@ -49,7 +50,6 @@ The available ProviderTypes are:
 - ArgoCDRenderer
 - ArgoCDOCI
 - ConfigMapRenderer
-- OpenTofu/AWS (experimental)
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 
@@ -351,8 +351,10 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 		{FunctionName: "set-string-path", Arguments: []string{"apps/v1/Deployment", "spec.template.spec.containers.?name=worker.imagePullPolicy", imagePullPolicy}},
 		{FunctionName: "set-env", Arguments: setEnvArgs},
 		{FunctionName: "set-pod-container-security-context-defaults"},
-		{FunctionName: "set-container-resources-defaults"},
+		// Resources can be set after generation
+		// {FunctionName: "set-container-resources-defaults"},
 		{FunctionName: "set-container-volume-mount-path", Arguments: []string{"worker", "tmp", "/tmp", "emptyDir"}},
+		{FunctionName: "set-annotation", Arguments: []string{k8skit.ContextKeyPrefix + "BridgeWorkerID", worker.BridgeWorkerID.String()}},
 	}
 	if httpPort > 0 {
 		invocations = append(invocations, httpPortInvocations(httpPort, isStandardWorkerImage(image))...)

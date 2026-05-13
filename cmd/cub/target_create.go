@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/cubapi"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -247,9 +247,6 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 	}
 	// TODO: allow any provider type that a bridge implements by looking at SupportedConfigTypes
 
-	if providerType == string(api.ProviderOpenTofuAWS) && toolchainType != string(workerapi.ToolchainOpenTofuHCL) {
-		return errors.New("provider OpenTofu/AWS requires toolchain OpenTofu/HCL")
-	}
 	if providerType == string(api.ProviderKubernetes) &&
 		toolchainType != string(workerapi.ToolchainKubernetesYAML) {
 		return fmt.Errorf("provider %s requires toolchain Kubernetes/YAML", providerType)

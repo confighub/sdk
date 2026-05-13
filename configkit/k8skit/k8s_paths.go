@@ -42,3 +42,40 @@ var ReplicatedControllerResourceTypes = []api.ResourceType{
 	api.ResourceType("apps/v1/StatefulSet"),
 	api.ResourceType("argoproj.io/v1alpha1/Rollout"),
 }
+
+// ResourceTypeToPodTemplateLabelsPaths maps Kubernetes resource types to the
+// dot-separated paths where the pod-template labels map lives (the labels that
+// will be applied to pods produced by the workload). For v1/Pod, this is the
+// pod's own metadata.labels.
+var ResourceTypeToPodTemplateLabelsPaths = map[api.ResourceType][]string{
+	api.ResourceType("apps/v1/Deployment"):           {"spec.template.metadata.labels"},
+	api.ResourceType("apps/v1/ReplicaSet"):           {"spec.template.metadata.labels"},
+	api.ResourceType("apps/v1/DaemonSet"):            {"spec.template.metadata.labels"},
+	api.ResourceType("apps/v1/StatefulSet"):          {"spec.template.metadata.labels"},
+	api.ResourceType("batch/v1/Job"):                 {"spec.template.metadata.labels"},
+	api.ResourceType("batch/v1/CronJob"):             {"spec.jobTemplate.spec.template.metadata.labels"},
+	api.ResourceType("v1/Pod"):                       {"metadata.labels"},
+	api.ResourceType("argoproj.io/v1alpha1/Rollout"): {"spec.template.metadata.labels"},
+}
+
+// ResourceTypeToPodLabelSelectorPaths maps Kubernetes resource types to the
+// dot-separated paths where the pod label-selector map lives. For
+// matchLabels-style selectors this is the path of the matchLabels map; for the
+// flat v1/Service selector it's spec.selector itself. Only selectors that
+// target the resource's own workload pods are included — e.g. NetworkPolicy's
+// spec.podSelector is here, but spec.ingress[].from[].podSelector and
+// spec.egress[].to[].podSelector are not, since those reference other
+// workloads.
+var ResourceTypeToPodLabelSelectorPaths = map[api.ResourceType][]string{
+	api.ResourceType("apps/v1/Deployment"):                  {"spec.selector.matchLabels"},
+	api.ResourceType("apps/v1/ReplicaSet"):                  {"spec.selector.matchLabels"},
+	api.ResourceType("apps/v1/DaemonSet"):                   {"spec.selector.matchLabels"},
+	api.ResourceType("apps/v1/StatefulSet"):                 {"spec.selector.matchLabels"},
+	api.ResourceType("batch/v1/Job"):                        {"spec.selector.matchLabels"},
+	api.ResourceType("batch/v1/CronJob"):                    {"spec.jobTemplate.spec.selector.matchLabels"},
+	api.ResourceType("argoproj.io/v1alpha1/Rollout"):        {"spec.selector.matchLabels"},
+	api.ResourceType("v1/Service"):                          {"spec.selector"},
+	api.ResourceType("policy/v1/PodDisruptionBudget"):       {"spec.selector.matchLabels"},
+	api.ResourceType("networking.k8s.io/v1/NetworkPolicy"):  {"spec.podSelector.matchLabels"},
+	api.ResourceType("monitoring.coreos.com/v1/PodMonitor"): {"spec.selector.matchLabels"},
+}

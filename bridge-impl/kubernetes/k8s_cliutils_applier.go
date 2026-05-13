@@ -317,16 +317,40 @@ func drainEventChannel(
 // applyEventFailure is the failureFor predicate for Apply's event drain.
 // It returns the per-resource error message to accumulate; "" for events
 // that are observed (and possibly logged) but not terminal failures.
+//
+// ApplyFailed and ApplySkipped are both terminal: cli-utils emits
+// ApplySkipped when an apply filter rejects the resource (inventory
+// policy mismatch, unmet dependency, missing local namespace, …). In
+// every case the resource was not actuated, so the bridge's apply
+// intent was not fulfilled and the caller must see a non-empty error
+// rather than a silent partial success. ApplySuccessful contributes
+// nothing.
 func applyEventFailure(e event.Event) string {
 	switch e.Type {
 	case event.ErrorType:
 		log.Log.Error(e.ErrorEvent.Err, "❌ Apply error event")
 		return e.ErrorEvent.Err.Error()
 	case event.ApplyType:
-		if e.ApplyEvent.Status == event.ApplyFailed && e.ApplyEvent.Error != nil {
-			log.Log.Error(e.ApplyEvent.Error, "❌ Failed to apply resource",
-				"identifier", e.ApplyEvent.Identifier.String())
-			return fmt.Sprintf("%s: %s", e.ApplyEvent.Identifier, e.ApplyEvent.Error)
+		switch e.ApplyEvent.Status {
+		case event.ApplyFailed:
+			if e.ApplyEvent.Error != nil {
+				log.Log.Error(e.ApplyEvent.Error, "❌ Failed to apply resource",
+					"identifier", e.ApplyEvent.Identifier.String())
+				return fmt.Sprintf("%s: %s", e.ApplyEvent.Identifier, e.ApplyEvent.Error)
+			}
+		case event.ApplySkipped:
+			// Always carries a non-nil filter reason from cli-utils
+			// (apply_task.go createApplySkippedEvent). Defensive on
+			// nil to keep the drain robust if the upstream contract
+			// changes.
+			reason := "skipped by apply filter"
+			if e.ApplyEvent.Error != nil {
+				reason = e.ApplyEvent.Error.Error()
+			}
+			log.Log.Error(e.ApplyEvent.Error, "⚠️ Resource not applied",
+				"identifier", e.ApplyEvent.Identifier.String(),
+				"reason", reason)
+			return fmt.Sprintf("%s: %s", e.ApplyEvent.Identifier, reason)
 		}
 	case event.PruneType:
 		// Prune failures are logged but not treated as terminal: the
@@ -392,13 +416,28 @@ func (a *CLIUtilsApplier) Apply(wctx api.BridgeWorkerContext, objects []*unstruc
 		return ApplyResult{Error: err}
 	}
 
+	// Step 2.5: Pre-flight inventory partition. Splits objects into
+	// "to apply" and "conflict" buckets; cross-bridge shared resources
+	// already in place under another inventory are dropped from the
+	// apply set entirely so cli-utils does not skip them mid-apply.
+	// Surfacing the conflict here gives the operator a single error
+	// naming the owning unit and avoids partial actuation.
+	toApply, conflicts, err := a.partitionByInventoryOwnership(ctx, invInfo.GetID().String(), objects)
+	if err != nil {
+		return ApplyResult{Error: err}
+	}
+	if conflictErr := formatInventoryConflicts(conflicts); conflictErr != nil {
+		log.Log.Error(conflictErr, "❌ Cross-inventory conflict detected", "count", len(conflicts))
+		return ApplyResult{Error: conflictErr}
+	}
+
 	// Step 3: Apply Execution
 	//
 	// Apply is the "submit" half of ConfigHub's two-phase model: push config
 	// to the target and return. Waiting for readiness is the job of
 	// WaitForApply, which reports progress (including Stuck) back to the
 	// server as it observes kstatus changes.
-	if err := a.runApplyAndDrain(ctx, invInfo, objects); err != nil {
+	if err := a.runApplyAndDrain(ctx, invInfo, toApply); err != nil {
 		return ApplyResult{Error: err}
 	}
 
@@ -1231,6 +1270,136 @@ func (a *CLIUtilsApplier) resolveInventoryInfo(objects []*unstructured.Unstructu
 	}
 	log.Log.Info("📦 Created new inventory ConfigMap", "id", meta.InventoryID)
 	return info, nil
+}
+
+// inventoryConflict identifies a resource the cluster already attributes
+// to a different ConfigHub inventory than the one performing this Apply.
+// It carries the parsed owner identity when the inventory ID matches the
+// "{spaceID}-{unitSlug}" shape ConfigHub emits, and the raw ID otherwise.
+type inventoryConflict struct {
+	Identifier    object.ObjMetadata
+	OwnerInvID    string
+	OwnerSpaceID  string
+	OwnerUnitSlug string
+}
+
+// partitionByInventoryOwnership is a pre-flight pass that mirrors the
+// cli-utils InventoryPolicyApplyFilter (see PolicyAdoptIfNoInventory):
+// for each candidate object it fetches the live cluster object and
+// places it into one of three buckets.
+//
+//   - toApply: the object is absent, unowned, or already owned by us
+//     (cli-utils will create it or update it in place).
+//   - conflicts: the live object is owned by a different inventory and
+//     is not shared bridge infrastructure (see below). The caller
+//     surfaces this as a single human-readable error naming the owning
+//     unit instead of relying on the per-resource ApplySkipped events
+//     cli-utils would emit mid-apply.
+//   - excluded (third bucket, not returned because callers don't need
+//     it explicitly): shared bridge infrastructure that is already in
+//     place under another inventory's annotation. We remove these from
+//     the apply set so cli-utils' own InventoryPolicyApplyFilter does
+//     not skip them mid-apply and trip the drain. The live object
+//     stays as it is — bridge-generated shared resources (e.g. the
+//     argocd-oci repo-creds Secret) are deterministic per OCI host, so
+//     content is identical across units.
+//
+// "Shared bridge infrastructure" is identified by matching
+// app.kubernetes.io/managed-by labels on the desired-state object and
+// the live object. The manager identity supersedes per-unit inventory
+// identity for these resources.
+//
+// Get errors other than NotFound abort the scan: applying on a partial
+// view of the cluster could mask a conflict and lead to the silent
+// partial actuation we are trying to prevent.
+func (a *CLIUtilsApplier) partitionByInventoryOwnership(
+	ctx context.Context,
+	ownInvID string,
+	objects []*unstructured.Unstructured,
+) (toApply []*unstructured.Unstructured, conflicts []inventoryConflict, err error) {
+	for _, obj := range objects {
+		key := client.ObjectKey{Namespace: obj.GetNamespace(), Name: obj.GetName()}
+		current := obj.DeepCopy()
+		if getErr := a.comps.KubernetesClient.Get(ctx, key, current); getErr != nil {
+			if apierrors.IsNotFound(getErr) {
+				toApply = append(toApply, obj)
+				continue
+			}
+			return nil, nil, fmt.Errorf("inventory pre-flight: get %s/%s: %w",
+				obj.GetNamespace(), obj.GetName(), getErr)
+		}
+		owner := current.GetAnnotations()[inventory.OwningInventoryKey]
+		if owner == "" || owner == ownInvID {
+			toApply = append(toApply, obj)
+			continue
+		}
+		if sharedByManagedBy(obj, current) {
+			// Excluded from the apply set so cli-utils does not skip
+			// it and trip the drain. The live object stays as it is.
+			log.Log.Info("⤴ Skipping shared bridge infrastructure (already in place under another inventory)",
+				"identifier", object.UnstructuredToObjMetadata(current).String(),
+				"manager", obj.GetLabels()[k8skit.LabelManagedBy])
+			continue
+		}
+		spaceID, slug := parseInventoryID(owner)
+		conflicts = append(conflicts, inventoryConflict{
+			Identifier:    object.UnstructuredToObjMetadata(current),
+			OwnerInvID:    owner,
+			OwnerSpaceID:  spaceID,
+			OwnerUnitSlug: slug,
+		})
+	}
+	return toApply, conflicts, nil
+}
+
+// sharedByManagedBy reports whether two objects (the desired-state
+// object being applied and its live counterpart) name the same
+// app.kubernetes.io/managed-by value. When they do, the resource is
+// shared bridge infrastructure and per-unit ownership is intentionally
+// not exclusive. An empty value on either side is never a match — a
+// user-authored resource without the label is still strictly checked.
+func sharedByManagedBy(desired, live *unstructured.Unstructured) bool {
+	d := desired.GetLabels()[k8skit.LabelManagedBy]
+	if d == "" {
+		return false
+	}
+	return d == live.GetLabels()[k8skit.LabelManagedBy]
+}
+
+// parseInventoryID splits a ConfigHub inventory ID
+// ("{spaceID}-{unitSlug}", with spaceID a 36-character UUID) into its
+// parts. Returns ("", invID) when the input does not match the expected
+// shape, so callers can still print the raw ID as a fallback identity.
+func parseInventoryID(invID string) (spaceID, unitSlug string) {
+	const uuidLen = 36
+	if len(invID) > uuidLen+1 && invID[uuidLen] == '-' {
+		return invID[:uuidLen], invID[uuidLen+1:]
+	}
+	return "", invID
+}
+
+// formatInventoryConflicts renders a stable, sorted error listing every
+// cross-inventory conflict. Returns nil when conflicts is empty so
+// callers can use the result directly as an apply error. Sort order is
+// by identifier so two runs of the same input produce the same message
+// (test stability and easier diffing in CI logs).
+func formatInventoryConflicts(conflicts []inventoryConflict) error {
+	if len(conflicts) == 0 {
+		return nil
+	}
+	sort.Slice(conflicts, func(i, j int) bool {
+		return conflicts[i].Identifier.String() < conflicts[j].Identifier.String()
+	})
+	parts := make([]string, len(conflicts))
+	for i, c := range conflicts {
+		owner := c.OwnerInvID
+		if c.OwnerSpaceID != "" && c.OwnerUnitSlug != "" {
+			owner = fmt.Sprintf("unit %q in space %s", c.OwnerUnitSlug, c.OwnerSpaceID)
+		}
+		parts[i] = fmt.Sprintf("%s is already managed by %s", c.Identifier, owner)
+	}
+	return fmt.Errorf("%d resource(s) already managed by other ConfigHub units: %s",
+		len(conflicts), strings.Join(parts, "; "))
 }
 
 // runApplyAndDrain executes the cli-utils Applier against the resolved

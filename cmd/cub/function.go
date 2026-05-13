@@ -47,7 +47,7 @@ Functions are categorized as:
 - Modification (mutating): set-*, search-replace  
 - Validation (checking): vet-placeholders, vet-celexpr, vet-approvedby
 
-Functions are toolchain-specific (Kubernetes/YAML, OpenTofu/HCL, etc.) and operate on units matching specified criteria.`
+Functions are toolchain-specific (Kubernetes/YAML, AppConfig/Properties, etc.) and operate on units matching specified criteria.`
 
 	return getCommandHelp(baseHelp, agentContext)
 }

@@ -50,6 +50,42 @@ func genericFnGetNeeded(resourceProvider yamlkit.ResourceProvider, _ *api.Functi
 	return parsedData, values, err
 }
 
+func registerGetReferences(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	if err := fh.RegisterFunction("get-references", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "get-references",
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "attribute-list",
+				Description: "Resource reference attributes",
+				OutputType:  api.OutputTypeAttributeValueList,
+				Schema:      &api.AttributeValueListSchema,
+			},
+			Mutating:              false,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Returns a list of all resource references (paths with NeededRequired[\"ResourceType\"]) and their current values, whether or not the value is a placeholder. The returned AttributeValues include AttributeNeedsProvidesDetails. See https://docs.confighub.com/background/concepts/needsprovides/ for more information.",
+			FunctionType:          api.FunctionTypePathVisitor,
+			AttributeName:         api.AttributeNameNone,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			return genericFnGetReferences(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
+		},
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
+}
+
+func genericFnGetReferences(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
+	// Ensure we get the full details, which are needed for needs/provides uses
+	options.IncludeDetails = true
+
+	resourceTypeToReferencePaths := yamlkit.GetRegisteredNeededPathsByProperty(resourceProvider, []string{"ResourceType"})
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToReferencePaths, []any{}, resourceProvider, api.DataTypeString, false, false, options)
+	return parsedData, values, err
+}
+
 func registerGetProvided(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("get-provided", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{

@@ -13,13 +13,16 @@ import (
 	"github.com/confighub/sdk/bridge-impl/kubernetes/statuspoller"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/worker/api"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/cli-utils/pkg/apis/actuation"
 	"sigs.k8s.io/cli-utils/pkg/apply"
 	"sigs.k8s.io/cli-utils/pkg/apply/event"
 	"sigs.k8s.io/cli-utils/pkg/inventory"
 	"sigs.k8s.io/cli-utils/pkg/object"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // TestCadenceInvariants pins the ordering relationships between the wait-loop
@@ -357,11 +360,23 @@ func TestDrainEventChannel_ContextCancel(t *testing.T) {
 }
 
 // TestApplyEventFailure pins which apply events are terminal failures.
-// ErrorType and ApplyFailed-with-error contribute messages; everything
-// else (including PruneFailed, which is logged but not terminal, and
-// ApplySuccessful) returns "".
+// ErrorType, ApplyFailed-with-error, and ApplySkipped contribute
+// messages; everything else (including PruneFailed, which is logged but
+// not terminal, and ApplySuccessful) returns "". ApplySkipped is
+// terminal because cli-utils only emits it when a filter rejected the
+// apply — the resource was not actuated, so the bridge's intent was
+// not fulfilled and the caller must see a non-empty error.
 func TestApplyEventFailure(t *testing.T) {
 	apiErr := errors.New("network blip")
+	skipErr := &inventory.PolicyPreventedActuationError{
+		Strategy: actuation.ActuationStrategyApply,
+		Policy:   inventory.PolicyAdoptIfNoInventory,
+		Status:   inventory.NoMatch,
+	}
+	skipID := object.ObjMetadata{
+		GroupKind: schema.GroupKind{Kind: "Namespace"},
+		Name:      "shared-ns",
+	}
 	tcs := []struct {
 		name string
 		ev   event.Event
@@ -369,6 +384,7 @@ func TestApplyEventFailure(t *testing.T) {
 	}{
 		{"ErrorType returns the error string", event.Event{Type: event.ErrorType, ErrorEvent: event.ErrorEvent{Err: apiErr}}, "network blip"},
 		{"ApplyFailed with error contributes a failure", event.Event{Type: event.ApplyType, ApplyEvent: event.ApplyEvent{Status: event.ApplyFailed, Error: apiErr}}, ": network blip"},
+		{"ApplySkipped contributes a failure carrying the filter reason", event.Event{Type: event.ApplyType, ApplyEvent: event.ApplyEvent{Status: event.ApplySkipped, Identifier: skipID, Error: skipErr}}, "shared-ns"},
 		{"ApplySuccessful is silent", event.Event{Type: event.ApplyType, ApplyEvent: event.ApplyEvent{Status: event.ApplySuccessful}}, ""},
 		{"PruneFailed is logged, not terminal", event.Event{Type: event.PruneType, PruneEvent: event.PruneEvent{Status: event.PruneFailed, Error: apiErr}}, ""},
 		{"InitType is silent", event.Event{Type: event.InitType}, ""},
@@ -472,6 +488,38 @@ func TestRunApplyAndDrain(t *testing.T) {
 		// Ensure the sentinel is NOT used here — sentinel is for cancel only.
 		if errors.Is(err, ErrOperationInterrupted) {
 			t.Fatal("apply failure: must not return ErrOperationInterrupted; that sentinel is reserved for cancel")
+		}
+	})
+
+	t.Run("apply skipped: surfaces as per-object failure", func(t *testing.T) {
+		// cli-utils emits ApplySkipped (not ApplyFailed) when a filter
+		// rejects the apply — most commonly because the resource is
+		// already owned by another inventory and InventoryPolicy is
+		// AdoptIfNoInventory. The drain must surface skipped resources
+		// as failures so a later ApplySuccessful event in the same
+		// stream cannot mask the partial actuation.
+		skipErr := &inventory.PolicyPreventedActuationError{
+			Strategy: actuation.ActuationStrategyApply,
+			Policy:   inventory.PolicyAdoptIfNoInventory,
+			Status:   inventory.NoMatch,
+		}
+		skipID := object.ObjMetadata{
+			GroupKind: schema.GroupKind{Kind: "Namespace"},
+			Name:      "shared-ns",
+		}
+		fa := &fakeApplier{
+			events: []event.Event{
+				{Type: event.ApplyType, ApplyEvent: event.ApplyEvent{Status: event.ApplySkipped, Identifier: skipID, Error: skipErr}},
+				{Type: event.ApplyType, ApplyEvent: event.ApplyEvent{Status: event.ApplySuccessful}},
+			},
+		}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{Applier: fa}, dryRun: true}
+		err := a.runApplyAndDrain(context.Background(), &SimpleInventoryInfo{}, nil)
+		if err == nil {
+			t.Fatal("apply skipped: want non-nil error, got nil")
+		}
+		if !strings.Contains(err.Error(), "shared-ns") {
+			t.Fatalf("apply skipped: error should identify the skipped resource, got %q", err.Error())
 		}
 	})
 
@@ -1034,4 +1082,287 @@ func TestDestroyEventFailure(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestParseInventoryID pins the "{spaceID}-{unitSlug}" decoding.
+// Inputs that don't fit the shape return ("", input) so callers can
+// fall back to printing the raw ID.
+func TestParseInventoryID(t *testing.T) {
+	const uuid = "00000000-0000-0000-0000-000000000000"
+	tcs := []struct {
+		name      string
+		invID     string
+		wantSpace string
+		wantSlug  string
+	}{
+		{"default UUID and slug", uuid + "-default", uuid, "default"},
+		{"slug containing hyphens preserved verbatim", uuid + "-my-app-prod", uuid, "my-app-prod"},
+		{"too short to be UUID-prefixed", "short-name", "", "short-name"},
+		{"missing hyphen at UUID boundary", uuid + "default", "", uuid + "default"},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			gotSpace, gotSlug := parseInventoryID(tc.invID)
+			if gotSpace != tc.wantSpace || gotSlug != tc.wantSlug {
+				t.Fatalf("parseInventoryID(%q): want (%q,%q), got (%q,%q)",
+					tc.invID, tc.wantSpace, tc.wantSlug, gotSpace, gotSlug)
+			}
+		})
+	}
+}
+
+// TestFormatInventoryConflicts pins the operator-facing message: empty
+// returns nil, populated returns a sorted, structured error that names
+// the owning unit (or falls back to the raw inventory ID when the ID
+// can't be decoded).
+func TestFormatInventoryConflicts(t *testing.T) {
+	const spaceA = "00000000-0000-0000-0000-000000000000"
+
+	t.Run("empty returns nil so callers can use it directly", func(t *testing.T) {
+		if err := formatInventoryConflicts(nil); err != nil {
+			t.Fatalf("formatInventoryConflicts(nil): want nil, got %v", err)
+		}
+	})
+
+	t.Run("decoded owner renders unit and space", func(t *testing.T) {
+		err := formatInventoryConflicts([]inventoryConflict{{
+			Identifier:    object.ObjMetadata{GroupKind: schema.GroupKind{Kind: "Namespace"}, Name: "shared-ns"},
+			OwnerInvID:    spaceA + "-other-unit",
+			OwnerSpaceID:  spaceA,
+			OwnerUnitSlug: "other-unit",
+		}})
+		if err == nil {
+			t.Fatal("want error, got nil")
+		}
+		want := []string{"shared-ns", `"other-unit"`, spaceA, "1 resource(s)"}
+		for _, s := range want {
+			if !strings.Contains(err.Error(), s) {
+				t.Errorf("error %q missing %q", err.Error(), s)
+			}
+		}
+	})
+
+	t.Run("undecodable owner falls back to raw inventory ID", func(t *testing.T) {
+		err := formatInventoryConflicts([]inventoryConflict{{
+			Identifier: object.ObjMetadata{GroupKind: schema.GroupKind{Kind: "ConfigMap"}, Namespace: "ns", Name: "cm"},
+			OwnerInvID: "raw-opaque-id",
+		}})
+		if err == nil || !strings.Contains(err.Error(), "raw-opaque-id") {
+			t.Fatalf("want error mentioning raw ID, got %v", err)
+		}
+	})
+
+	t.Run("multiple conflicts are sorted by identifier for stable output", func(t *testing.T) {
+		err := formatInventoryConflicts([]inventoryConflict{
+			{Identifier: object.ObjMetadata{GroupKind: schema.GroupKind{Kind: "Namespace"}, Name: "zeta"}, OwnerInvID: "z"},
+			{Identifier: object.ObjMetadata{GroupKind: schema.GroupKind{Kind: "Namespace"}, Name: "alpha"}, OwnerInvID: "a"},
+		})
+		if err == nil {
+			t.Fatal("want error, got nil")
+		}
+		got := err.Error()
+		if strings.Index(got, "alpha") > strings.Index(got, "zeta") {
+			t.Fatalf("want alpha before zeta in stable-sorted message, got %q", got)
+		}
+	})
+}
+
+// stubKubeClient satisfies KubernetesClient by embedding the interface
+// (nil for unused methods) and intercepting only Get. The objects map
+// keys on "namespace/name" and supplies the annotations the stub
+// returns. The optional labels map (same keying) supplies labels for
+// tests that exercise label-based logic. Missing keys yield a NotFound
+// error.
+type stubKubeClient struct {
+	KubernetesClient
+	objects map[string]map[string]string
+	labels  map[string]map[string]string
+	getErr  error // when non-nil, Get returns this for any key (mismatch test)
+}
+
+func (s *stubKubeClient) Get(_ context.Context, key client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+	if s.getErr != nil {
+		return s.getErr
+	}
+	ann, ok := s.objects[key.Namespace+"/"+key.Name]
+	if !ok {
+		return apierrors.NewNotFound(schema.GroupResource{Resource: "objects"}, key.Name)
+	}
+	if u, isU := obj.(*unstructured.Unstructured); isU {
+		u.SetName(key.Name)
+		u.SetNamespace(key.Namespace)
+		u.SetAnnotations(ann)
+		if lbl, ok := s.labels[key.Namespace+"/"+key.Name]; ok {
+			u.SetLabels(lbl)
+		}
+	}
+	return nil
+}
+
+// TestPartitionByInventoryOwnership pins the pre-flight contract.
+// Objects are sorted into three buckets:
+//   - toApply: absent, unowned, or already ours
+//   - conflicts: owned by another inventory and not shared infra
+//   - excluded (neither toApply nor conflicts): shared bridge infra
+//     that matches on app.kubernetes.io/managed-by labels — dropped
+//     from the apply set so cli-utils' own InventoryPolicyApplyFilter
+//     does not skip it mid-apply and trip the drain.
+//
+// NotFound is benign (first apply); other Get errors abort the scan
+// rather than silently apply on a partial cluster view.
+func TestPartitionByInventoryOwnership(t *testing.T) {
+	const ownID = "00000000-0000-0000-0000-000000000000-mine"
+	const otherID = "11111111-1111-1111-1111-111111111111-other"
+
+	mkObj := func(kind, namespace, name string) *unstructured.Unstructured {
+		o := &unstructured.Unstructured{}
+		o.SetGroupVersionKind(schema.GroupVersionKind{Version: "v1", Kind: kind})
+		o.SetNamespace(namespace)
+		o.SetName(name)
+		return o
+	}
+
+	t.Run("absent and matching objects pass through to toApply", func(t *testing.T) {
+		stub := &stubKubeClient{objects: map[string]map[string]string{
+			"/already-mine":     {inventory.OwningInventoryKey: ownID},
+			"default/no-anno":   nil,
+			"default/empty-own": {inventory.OwningInventoryKey: ""},
+		}}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		objects := []*unstructured.Unstructured{
+			mkObj("Namespace", "", "absent"),
+			mkObj("Namespace", "", "already-mine"),
+			mkObj("ConfigMap", "default", "no-anno"),
+			mkObj("ConfigMap", "default", "empty-own"),
+		}
+		toApply, conflicts, err := a.partitionByInventoryOwnership(context.Background(), ownID, objects)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("want no conflicts, got %+v", conflicts)
+		}
+		if len(toApply) != 4 {
+			t.Fatalf("want all 4 objects in toApply, got %d", len(toApply))
+		}
+	})
+
+	t.Run("foreign owner is recorded with parsed identity and dropped from toApply", func(t *testing.T) {
+		stub := &stubKubeClient{objects: map[string]map[string]string{
+			"/shared-ns": {inventory.OwningInventoryKey: otherID},
+		}}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		toApply, conflicts, err := a.partitionByInventoryOwnership(context.Background(), ownID,
+			[]*unstructured.Unstructured{mkObj("Namespace", "", "shared-ns")})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("want 1 conflict, got %d", len(conflicts))
+		}
+		if conflicts[0].OwnerUnitSlug != "other" || conflicts[0].OwnerSpaceID != "11111111-1111-1111-1111-111111111111" {
+			t.Errorf("owner identity not parsed: got %+v", conflicts[0])
+		}
+		if conflicts[0].Identifier.Name != "shared-ns" {
+			t.Errorf("identifier mismatch: got %+v", conflicts[0].Identifier)
+		}
+		if len(toApply) != 0 {
+			t.Errorf("conflicted object must not be in toApply, got %d", len(toApply))
+		}
+	})
+
+	t.Run("non-NotFound Get error aborts the scan", func(t *testing.T) {
+		stub := &stubKubeClient{getErr: errors.New("api server unreachable")}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		_, _, err := a.partitionByInventoryOwnership(context.Background(), ownID,
+			[]*unstructured.Unstructured{mkObj("Namespace", "", "any")})
+		if err == nil {
+			t.Fatal("want error, got nil")
+		}
+		if !strings.Contains(err.Error(), "inventory pre-flight") {
+			t.Errorf("error should be tagged as pre-flight, got %q", err.Error())
+		}
+	})
+
+	t.Run("shared bridge infrastructure is excluded from both toApply and conflicts", func(t *testing.T) {
+		// The argocd-oci bridge generates a deterministically named
+		// repo-creds Secret per OCI host and includes it in every
+		// unit's apply payload. The second unit's apply must not pass
+		// the Secret to cli-utils (which would skip it under
+		// PolicyAdoptIfNoInventory) and must not flag it as a
+		// conflict. The shared marker is matching
+		// app.kubernetes.io/managed-by labels on both sides.
+		stub := &stubKubeClient{
+			objects: map[string]map[string]string{
+				"argocd/confighub-oci-creds-host": {inventory.OwningInventoryKey: otherID},
+			},
+			labels: map[string]map[string]string{
+				"argocd/confighub-oci-creds-host": {k8skit.LabelManagedBy: "argocd-oci-bridge"},
+			},
+		}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		desired := mkObj("Secret", "argocd", "confighub-oci-creds-host")
+		desired.SetLabels(map[string]string{k8skit.LabelManagedBy: "argocd-oci-bridge"})
+		toApply, conflicts, err := a.partitionByInventoryOwnership(context.Background(), ownID,
+			[]*unstructured.Unstructured{desired})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(conflicts) != 0 {
+			t.Fatalf("want 0 conflicts (shared infrastructure exempt), got %+v", conflicts)
+		}
+		if len(toApply) != 0 {
+			t.Fatalf("shared infrastructure must be excluded from toApply too, got %d", len(toApply))
+		}
+	})
+
+	t.Run("mismatched managed-by still surfaces as conflict", func(t *testing.T) {
+		// If the live object's managed-by points at a different
+		// manager (e.g. another tool claimed the same name first),
+		// co-management is NOT safe and the conflict must surface.
+		stub := &stubKubeClient{
+			objects: map[string]map[string]string{
+				"argocd/shared": {inventory.OwningInventoryKey: otherID},
+			},
+			labels: map[string]map[string]string{
+				"argocd/shared": {k8skit.LabelManagedBy: "some-other-tool"},
+			},
+		}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		desired := mkObj("Secret", "argocd", "shared")
+		desired.SetLabels(map[string]string{k8skit.LabelManagedBy: "argocd-oci-bridge"})
+		_, conflicts, err := a.partitionByInventoryOwnership(context.Background(), ownID,
+			[]*unstructured.Unstructured{desired})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("want 1 conflict (managed-by mismatch), got %d", len(conflicts))
+		}
+	})
+
+	t.Run("empty managed-by on either side does not exempt", func(t *testing.T) {
+		// User-authored resources without the label are still
+		// strictly checked. An empty value on either side is never a
+		// match.
+		stub := &stubKubeClient{
+			objects: map[string]map[string]string{
+				"default/cm": {inventory.OwningInventoryKey: otherID},
+			},
+			labels: map[string]map[string]string{
+				"default/cm": {k8skit.LabelManagedBy: ""},
+			},
+		}
+		a := &CLIUtilsApplier{comps: &ApplierComponents{KubernetesClient: stub}}
+		desired := mkObj("ConfigMap", "default", "cm")
+		desired.SetLabels(map[string]string{k8skit.LabelManagedBy: "argocd-oci-bridge"})
+		_, conflicts, err := a.partitionByInventoryOwnership(context.Background(), ownID,
+			[]*unstructured.Unstructured{desired})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(conflicts) != 1 {
+			t.Fatalf("want 1 conflict (empty live managed-by), got %d", len(conflicts))
+		}
+	})
 }

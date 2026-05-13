@@ -14875,7 +14875,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -15363,7 +15363,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -15493,7 +15493,7 @@
             }
           },
           "200": {
-            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
+            "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).",
             "content": {
               "application/json": {
                 "schema": {
@@ -17293,7 +17293,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -23552,7 +23552,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -23874,7 +23874,7 @@
                   },
                   "ToolchainType": {
                     "type": "string",
-                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
+                    "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
                     "nullable": true
                   },
                   "Version": {
@@ -26729,7 +26729,7 @@
           },
           "ResourceCategory": {
             "type": "string",
-            "description": "Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig",
+            "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceMergeID": {
@@ -26823,7 +26823,7 @@
           },
           "ResourceCategory": {
             "type": "string",
-            "description": "Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig",
+            "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceMergeID": {
@@ -29558,7 +29558,7 @@
         "properties": {
           "ResourceCategory": {
             "type": "string",
-            "description": "Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig",
+            "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceMergeID": {
@@ -29599,7 +29599,7 @@
         "properties": {
           "ResourceCategory": {
             "type": "string",
-            "description": "Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig",
+            "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceMergeID": {
@@ -30524,7 +30524,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"ConfigHub/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\".",
+            "description": "ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include \"Kubernetes/YAML\", \"ConfigHub/YAML\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\".",
             "x-go-type-skip-optional-pointer": true
           },
           "TriggerFilterID": {
@@ -30568,7 +30568,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
+        "description": "Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy)."
       },
       "TargetConfigType": {
         "type": "object",
@@ -31144,7 +31144,7 @@
           },
           "ToolchainType": {
             "type": "string",
-            "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"OpenTofu/HCL\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
+            "description": "ToolchainType specifies the type of toolchain for this unit. Possible values include \"Kubernetes/YAML\", \"AppConfig/Properties\", \"AppConfig/YAML\", \"AppConfig/TOML\", \"AppConfig/INI\", \"AppConfig/JSON\", \"AppConfig/Env\", \"AppConfig/Text\", \"ConfigHub/YAML\".",
             "x-go-type-skip-optional-pointer": true
           },
           "UnitID": {

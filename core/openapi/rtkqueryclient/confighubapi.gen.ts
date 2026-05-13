@@ -6942,7 +6942,7 @@ export type ListTargetsApiArg = {
   select?: string;
 };
 export type CreateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type CreateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -6983,7 +6983,7 @@ export type GetTargetApiArg = {
   targetId: string;
 };
 export type PatchTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type PatchTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7028,7 +7028,7 @@ export type PatchTargetApiArg = {
   };
 };
 export type UpdateTargetApiResponse =
-  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, OpenTofu/HCL, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., Kubernetes, OpenTofu/AWS, ConfigMap). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
+  /** status 200 Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy). */ TargetRead;
 export type UpdateTargetApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7524,7 +7524,7 @@ export type PatchUnitApiArg = {
     TargetOptions?: {
       [key: string]: string | null;
     } | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -9769,7 +9769,7 @@ export type BulkPatchUnitsApiArg = {
     TargetOptions?: {
       [key: string]: string | null;
     } | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -9980,7 +9980,7 @@ export type BulkCreateUnitsApiArg = {
     TargetOptions?: {
       [key: string]: string | null;
     } | null;
-    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
+    /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -12268,7 +12268,7 @@ export type MutationMap = {
   [key: string]: MutationInfo;
 };
 export type ResourceInfo = {
-  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
   /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceMergeID?: string;
@@ -12513,7 +12513,7 @@ export type Unit = {
   TargetOptions?: {
     [key: string]: string;
   };
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -12544,7 +12544,7 @@ export type AttributeValue = {
   Issues?: Issue[];
   /** Path of the attribute */
   Path?: string;
-  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
   /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceMergeID?: string;
@@ -12571,7 +12571,7 @@ export type AttributeInfo = {
   InLiveState?: boolean;
   /** Path of the attribute */
   Path?: string;
-  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
   /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceMergeID?: string;
@@ -12693,7 +12693,7 @@ export type UnitRead = {
   TargetOptions?: {
     [key: string]: string;
   };
-  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
+  /** ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML". */
   ToolchainType: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
@@ -13325,7 +13325,7 @@ export type Target = {
   SpaceID?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
   ToolchainType: string;
   /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
   TriggerFilterID?: string;
@@ -13420,7 +13420,7 @@ export type TargetRead = {
   SpaceSlug?: string;
   /** Unique identifier for a Target. */
   TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "OpenTofu/HCL", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
   ToolchainType: string;
   /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
   TriggerFilterID?: string;
@@ -13504,7 +13504,7 @@ export type ExtendedTriggerRead = {
   UnitFilter?: FilterRead;
 };
 export type ResourceInfoType2 = {
-  /** Category of configuration element represented in the configuration data; Kubernetes and OpenTofu resources are of category Resource, and application configuration files are of category AppConfig */
+  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
   /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
   ResourceMergeID?: string;

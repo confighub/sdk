@@ -68,6 +68,9 @@ OUTPUT
           ]
         }
       ],
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
       "IsNeeded": true
     },
     "Value": "confighubplaceholder",
@@ -94,6 +97,9 @@ OUTPUT
           ]
         }
       ],
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
       "IsNeeded": true
     },
     "Value": "confighubplaceholder",

@@ -34,7 +34,6 @@ import (
 	"github.com/confighub/sdk/bridge-impl/flux"
 	fluxrenderer "github.com/confighub/sdk/bridge-impl/flux-renderer"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
-	"github.com/confighub/sdk/bridge-impl/opentofu"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/worker/api"
@@ -67,7 +66,6 @@ The available ProviderTypes are:
 - ArgoCDRenderer
 - ArgoCDOCI
 - ConfigMapRenderer
-- OpenTofu/AWS (experimental)
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmaprenderer".
 
@@ -125,7 +123,6 @@ var providerToolchainTypes = map[string][]workerapi.ToolchainType{
 	LowerProviderTypeArgoCDRenderer: {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeArgoCDOCI:      {workerapi.ToolchainKubernetesYAML},
 	LowerProviderTypeFluxOCI:        {workerapi.ToolchainKubernetesYAML},
-	LowerProviderTypeOpenTofuAWS:    {workerapi.ToolchainOpenTofuHCL},
 	LowerProviderTypeConfigMapRenderer: {
 		workerapi.ToolchainAppConfigProperties,
 		workerapi.ToolchainAppConfigYAML,
@@ -277,7 +274,6 @@ const (
 	LowerProviderTypeKubernetes        = "kubernetes"
 	LowerProviderTypeFluxOCI           = "fluxoci"
 	LowerProviderTypeFluxRenderer      = "fluxrenderer"
-	LowerProviderTypeOpenTofuAWS       = "opentofu/aws"
 	LowerProviderTypeConfigMapRenderer = "configmaprenderer"
 	LowerProviderTypeArgoCDRenderer    = "argocdrenderer"
 	LowerProviderTypeArgoCDOCI         = "argocdoci"
@@ -289,7 +285,6 @@ var availableBridgeWorkers = map[string]api.BridgeWorker{
 	LowerProviderTypeConfigHub:         confighub.NewConfigHubBridgeWorker(),
 	LowerProviderTypeKubernetes:        kubernetes.NewKubernetesBridgeWorker(),
 	LowerProviderTypeFluxRenderer:      fluxrenderer.NewFluxRendererWorker(),
-	LowerProviderTypeOpenTofuAWS:       opentofu.NewOpenTofuAWSWorker(),
 	LowerProviderTypeConfigMapRenderer: configmap.NewConfigMapBridgeWorker(),
 	LowerProviderTypeArgoCDRenderer:    argocdrenderer.NewArgoCDRendererWorker(),
 	// ArgoCDOCI worker is initialized in rootRunE with credentials (like ConfigHub worker)

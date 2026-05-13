@@ -109,6 +109,21 @@ func JoinPathSegments(segments []string) string {
 	return strings.Join(segments, ".")
 }
 
+// filterValueMatches reports whether a field value extracted from a YAML document
+// matches a string filter value provided in an associative path expression
+// (e.g., the "ServiceAccount" in "*?kind=ServiceAccount"). String values match
+// directly; scalar non-string values match if their default formatting equals
+// the filter.
+func filterValueMatches(fieldValue any, filterValue string) bool {
+	if fieldValue == nil {
+		return false
+	}
+	if s, ok := fieldValue.(string); ok {
+		return s == filterValue
+	}
+	return fmt.Sprintf("%v", fieldValue) == filterValue
+}
+
 func PathIsResolved(path string, includeAt bool) bool {
 	if includeAt {
 		return !strings.ContainsAny(path, "?*@|")
@@ -205,9 +220,17 @@ func ResolveAssociativePaths(
 			// Gaby Search supports wildcards, at least for array sequence nodes,
 			// but I'm unsure how it returns multiple results. We resolve wildcards here.
 
-			var parameterKey, parameterName string
+			var parameterKey, parameterName, filterValue string
+			var hasFilter bool
 			if strings.HasPrefix(segment, "*?") {
 				keyName := strings.TrimPrefix(segment, "*?")
+				// Optional filter: *?key=value or *?key:param=value selects only children
+				// whose `key` field equals `value`.
+				if eqIdx := strings.Index(keyName, "="); eqIdx >= 0 {
+					filterValue = keyName[eqIdx+1:]
+					keyName = keyName[:eqIdx]
+					hasFilter = true
+				}
 				keyNameParts := strings.Split(keyName, ":")
 				parameterKey = keyNameParts[0]
 				switch len(keyNameParts) {
@@ -217,6 +240,9 @@ func ResolveAssociativePaths(
 					parameterName = keyNameParts[1]
 				default:
 					return []ResolvedPathInfo{}, fmt.Errorf("invalid parameter expression '%s'", segment)
+				}
+				if hasFilter && parameterKey == "" {
+					return []ResolvedPathInfo{}, fmt.Errorf("filter value requires a key in '%s'", segment)
 				}
 			} else if strings.HasPrefix(segment, "*@:") {
 				parameterName = strings.TrimPrefix(segment, "*@:")
@@ -230,6 +256,22 @@ func ResolveAssociativePaths(
 					if constraintSegment != "" && key != constraintSegment {
 						continue
 					}
+					var fieldValue any
+					if parameterKey != "" {
+						fieldValueNode := child.S(parameterKey)
+						if fieldValueNode != nil {
+							fieldValue = fieldValueNode.Data()
+						} else if accessor != nil {
+							if scalarValue, ok := child.Data().(string); ok {
+								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
+									fieldValue = extracted
+								}
+							}
+						}
+					}
+					if hasFilter && !filterValueMatches(fieldValue, filterValue) {
+						continue
+					}
 					newPos := currentPosition{
 						ResolvedSegments:    append(workList[0].ResolvedSegments, EscapeDotsInPathSegment(key)),
 						CurrentSegmentIndex: workList[0].CurrentSegmentIndex + 1,
@@ -237,15 +279,8 @@ func ResolveAssociativePaths(
 						ParentNode:          child,
 					}
 					if parameterKey != "" {
-						fieldValueNode := child.S(parameterKey)
-						if fieldValueNode != nil {
-							newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
-						} else if accessor != nil {
-							if scalarValue, ok := child.Data().(string); ok {
-								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
-									newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: extracted})
-								}
-							}
+						if fieldValue != nil {
+							newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValue})
 						}
 					} else if parameterName != "" {
 						newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: key})
@@ -261,23 +296,30 @@ func ResolveAssociativePaths(
 					if constraintSegment != "" && indexString != constraintSegment {
 						continue
 					}
+					var fieldValue any
+					if parameterKey != "" {
+						fieldValueNode := child.S(parameterKey)
+						if fieldValueNode != nil {
+							fieldValue = fieldValueNode.Data()
+						} else if accessor != nil {
+							if scalarValue, ok := child.Data().(string); ok {
+								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
+									fieldValue = extracted
+								}
+							}
+						}
+					}
+					if hasFilter && !filterValueMatches(fieldValue, filterValue) {
+						continue
+					}
 					newPos := currentPosition{
 						ResolvedSegments:    append(workList[0].ResolvedSegments, indexString),
 						CurrentSegmentIndex: workList[0].CurrentSegmentIndex + 1,
 						PathArguments:       workList[0].PathArguments,
 						ParentNode:          child,
 					}
-					if parameterKey != "" {
-						fieldValueNode := child.S(parameterKey)
-						if fieldValueNode != nil {
-							newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValueNode.Data()})
-						} else if accessor != nil {
-							if scalarValue, ok := child.Data().(string); ok {
-								if extracted, err := accessor.Extract(scalarValue, parameterKey); err == nil {
-									newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: extracted})
-								}
-							}
-						}
+					if parameterKey != "" && fieldValue != nil {
+						newPos.PathArguments = append(newPos.PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: fieldValue})
 					}
 					workList = append(workList, newPos)
 				}

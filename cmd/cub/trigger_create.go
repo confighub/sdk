@@ -37,7 +37,7 @@ Events:
   - Mutation: Triggered when a resource is being modified
   - PostClone: Triggered after a resource is cloned
 
-Config Types:
+Toolchain Types:
 
   - Kubernetes/YAML: For Kubernetes YAML configurations
   - ConfigHub/YAML: For ConfigHub YAML configurations
@@ -45,7 +45,9 @@ Config Types:
   - AppConfig/YAML: For application YAML configurations
   - AppConfig/TOML: For application TOML configurations
   - AppConfig/INI: For application INI configurations
-  - OpenTofu/HCL: For OpenTofu HCL configurations
+  - AppConfig/Env: For application Env configurations
+  - AppConfig/YAML: For application YAML configurations
+  - AppConfig/JSON: For application JSON configurations
 
 Example Functions:
 

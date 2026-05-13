@@ -243,6 +243,57 @@ subjects:
 	assert.Equal(t, api.ResolvedPath("subjects.1.namespace"), results[1].Path)
 }
 
+func TestResolveWildcardFilter(t *testing.T) {
+	yamlFixture := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: myrb
+subjects:
+- kind: ServiceAccount
+  name: robot-sa
+- kind: Group
+  name: admins
+- kind: ServiceAccount
+  name: my-sa
+  namespace: existing
+- kind: User
+  name: alice
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Filter: only ServiceAccount subjects. namespace doesn't exist on the first SA.
+	// Without "|" on namespace, non-upsert mode skips paths that don't exist, so we
+	// only get the one SA that already has namespace.
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*?kind=ServiceAccount.namespace"), "", false, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("subjects.2.namespace"), results[0].Path)
+
+	// With "|", upsert mode resolves both SA subjects (creates namespace on the one missing it).
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*?kind=ServiceAccount.|namespace"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(results))
+	resolvedPaths := []api.ResolvedPath{results[0].Path, results[1].Path}
+	assert.Contains(t, resolvedPaths, api.ResolvedPath("subjects.0.namespace"))
+	assert.Contains(t, resolvedPaths, api.ResolvedPath("subjects.2.namespace"))
+
+	// Filter with parameter binding: *?kind:k=ServiceAccount.|namespace binds kind to k.
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*?kind:k=ServiceAccount.|namespace"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(results))
+	for _, r := range results {
+		assert.Equal(t, 1, len(r.PathArguments))
+		assert.Equal(t, "k", r.PathArguments[0].ParameterName)
+		assert.Equal(t, "ServiceAccount", r.PathArguments[0].Value)
+	}
+
+	// No matches when the filter value doesn't appear.
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("subjects.*?kind=Robot.|namespace"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+}
+
 func TestResolveAssociation_NamedAssociation(t *testing.T) {
 	// YAML fixture with multiple containers
 	yamlFixture := `apiVersion: apps/v1

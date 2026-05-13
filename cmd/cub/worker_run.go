@@ -35,7 +35,6 @@ The available ProviderTypes are:
 - ArgoCDRenderer
 - ArgoCDOCI
 - ConfigMapRenderer
-- OpenTofu/AWS (experimental)
 
 Here the provider types are case-insensitive and they can be comma-separated, like "kubernetes,configmap".
 	`, ""),

@@ -12,7 +12,6 @@ package impl
 import (
 	"github.com/confighub/sdk/configkit/appyamlkit"
 	"github.com/confighub/sdk/configkit/envkit"
-	"github.com/confighub/sdk/configkit/hclkit"
 	"github.com/confighub/sdk/configkit/inikit"
 	"github.com/confighub/sdk/configkit/jsonkit"
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -32,7 +31,6 @@ import (
 	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/function-impl/ini"
 	"github.com/confighub/sdk/function-impl/kubernetes"
-	"github.com/confighub/sdk/function-impl/opentofu"
 	"github.com/confighub/sdk/function-impl/properties"
 	"github.com/confighub/sdk/function-impl/text"
 	"github.com/confighub/sdk/function-impl/toml"
@@ -70,7 +68,6 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 
 	cubRP := cubkit.NewConfigHubResourceProvider()
 	k8sRP := k8skit.NewK8sResourceProvider()
-	hclRP := hclkit.NewHclResourceProvider()
 	propRP := propkit.NewPropertiesResourceProvider()
 	appyamlRP := appyamlkit.NewAppConfigYAMLResourceProvider()
 	tomlRP := tomlkit.NewTOMLResourceProvider()
@@ -82,7 +79,6 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 	setups := []toolchainSetup{
 		{cubRP, func(fh handler.FunctionRegistry) { confighub.RegisterFunctions(cubRP, fh) }},
 		{k8sRP, func(fh handler.FunctionRegistry) { kubernetes.RegisterFunctions(k8sRP, fh) }},
-		{hclRP, func(fh handler.FunctionRegistry) { opentofu.RegisterFunctions(hclRP, fh) }},
 		{propRP, func(fh handler.FunctionRegistry) { properties.RegisterFunctions(propRP, fh) }},
 		{appyamlRP, func(fh handler.FunctionRegistry) { appyaml.RegisterFunctions(appyamlRP, fh) }},
 		{tomlRP, func(fh handler.FunctionRegistry) { toml.RegisterFunctions(tomlRP, fh) }},

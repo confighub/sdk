@@ -9,7 +9,6 @@ type ToolchainType string
 const (
 	ToolchainConfigHubYAML       ToolchainType = "ConfigHub/YAML"
 	ToolchainKubernetesYAML      ToolchainType = "Kubernetes/YAML"
-	ToolchainOpenTofuHCL         ToolchainType = "OpenTofu/HCL"
 	ToolchainAppConfigProperties ToolchainType = "AppConfig/Properties"
 	ToolchainAppConfigYAML       ToolchainType = "AppConfig/YAML"
 	ToolchainAppConfigTOML       ToolchainType = "AppConfig/TOML"

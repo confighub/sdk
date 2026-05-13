@@ -4,11 +4,11 @@ go 1.25.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/bridge-impl v0.1.41
-	github.com/confighub/sdk/configkit/k8skit v0.1.41
-	github.com/confighub/sdk/configkit/yqkit v0.1.41
-	github.com/confighub/sdk/core v0.1.41
-	github.com/confighub/sdk/function-impl v0.1.41
+	github.com/confighub/sdk/bridge-impl v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0
 	github.com/fatih/color v1.18.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/uuid v1.6.0
@@ -38,11 +38,9 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/a8m/envsubst v1.4.3 // indirect
-	github.com/agext/levenshtein v1.2.1 // indirect
 	github.com/alecthomas/participle/v2 v2.1.4 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
-	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -52,14 +50,13 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/envkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/hclkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.1.41 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.1.41 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -111,7 +108,6 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
-	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
@@ -177,7 +173,6 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yannh/kubeconform v0.6.7 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
-	github.com/zclconf/go-cty v1.16.1 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
@@ -187,7 +182,6 @@ require (
 	go.starlark.net v0.0.0-20260210143700-b62fd896b91b // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
@@ -195,7 +189,6 @@ require (
 	golang.org/x/term v0.38.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	google.golang.org/grpc v1.79.3 // indirect
@@ -222,6 +215,18 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
+	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
+	github.com/confighub/sdk/function-impl => ../../function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
