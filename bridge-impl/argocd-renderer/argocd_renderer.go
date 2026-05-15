@@ -237,8 +237,10 @@ func (w *ArgoCDRendererWorker) applyNonAuthoritative(wctx api.BridgeWorkerContex
 		return fmt.Errorf("failed to patch refresh annotations on Application %s/%s: %w", appNamespace, appName, err)
 	}
 
-	// Render manifests via ArgoCD API (Application already exists)
-	result, err := RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
+	// Render manifests via ArgoCD API (Application already exists).
+	// existing carries the destination settings the renderer bakes into
+	// the rendered output (spec.destination.namespace, CreateNamespace).
+	result, err := RenderExistingArgoCD(wctx.Context(), k8sClient, existing, config)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
@@ -366,8 +368,9 @@ func (w *ArgoCDRendererWorker) refreshNonAuthoritative(wctx api.BridgeWorkerCont
 		return fmt.Errorf("%s", msg)
 	}
 
-	// Render manifests via ArgoCD API
-	renderResult, err := RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
+	// Render manifests via ArgoCD API. existing carries the destination
+	// settings the renderer bakes into the rendered output.
+	renderResult, err := RenderExistingArgoCD(wctx.Context(), k8sClient, existing, config)
 	if err != nil {
 		wctx.SendStatus(common.NewActionResult(
 			api.ActionStatusFailed,
@@ -531,12 +534,6 @@ func (w *ArgoCDRendererWorker) watchForApplyAuthoritative(wctx api.BridgeWorkerC
 		), err))
 	}
 
-	appName := app.GetName()
-	appNamespace := app.GetNamespace()
-	if appNamespace == "" {
-		appNamespace = "argocd"
-	}
-
 	if err := wctx.SendStatus(common.NewActionResult(
 		api.ActionStatusProgressing,
 		api.ActionResultNone,
@@ -545,7 +542,7 @@ func (w *ArgoCDRendererWorker) watchForApplyAuthoritative(wctx api.BridgeWorkerC
 		return err
 	}
 
-	renderResult, err := RenderExistingArgoCD(wctx.Context(), k8sClient, appName, appNamespace, config)
+	renderResult, err := RenderExistingArgoCD(wctx.Context(), k8sClient, app, config)
 	if err != nil {
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
 			api.ActionStatusFailed,

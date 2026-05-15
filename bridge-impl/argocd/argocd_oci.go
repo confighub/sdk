@@ -67,29 +67,32 @@ func (w *ArgoCDOCIWorker) ID() api.BridgeWorkerID {
 }
 
 // ArgoCDOCIBridgeOptions contains the configuration parameters for the ArgoCD OCI bridge worker.
+//
+// DestinationNamespace is intentionally absent: the renderer bakes the
+// source Application's spec.destination.namespace into the rendered
+// manifests so the stored configuration is self-contained. See issue
+// #4222.
 type ArgoCDOCIBridgeOptions struct {
-	KubeContext          string `json:",omitempty"`
-	ArgoCDNamespace      string `json:",omitempty"` // Namespace where ArgoCD Application will be created (default: "argocd")
-	DestinationServer    string `json:",omitempty"` // Target cluster API server URL (default: "https://kubernetes.default.svc")
-	DestinationNamespace string `json:",omitempty"` // Target namespace for deployed resources (default: "default")
-	Project              string `json:",omitempty"` // ArgoCD project name (default: "default")
-	SyncPolicy           string `json:",omitempty"` // "automated" or "manual" (default: "manual")
-	PruneEnabled         bool   `json:",omitempty"` // Enable pruning of orphaned resources
-	SelfHealEnabled      bool   `json:",omitempty"` // Enable self-healing (auto-sync on drift)
-	OCIRepoURL           string `json:",omitempty"` // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
-	OCIHost              string `json:",omitempty"` // OCI registry host - optional, inferred from server URL if not set
-	OCIPath              string `json:",omitempty"` // Path within OCI artifact (default: ".")
-	DisableRepoCreds     bool   `json:",omitempty"` // Skip auto-generation of ArgoCD repo-creds Secret (default: false)
+	KubeContext       string `json:",omitempty"`
+	ArgoCDNamespace   string `json:",omitempty"` // Namespace where ArgoCD Application will be created (default: "argocd")
+	DestinationServer string `json:",omitempty"` // Target cluster API server URL (default: "https://kubernetes.default.svc")
+	Project           string `json:",omitempty"` // ArgoCD project name (default: "default")
+	SyncPolicy        string `json:",omitempty"` // "automated" or "manual" (default: "manual")
+	PruneEnabled      bool   `json:",omitempty"` // Enable pruning of orphaned resources
+	SelfHealEnabled   bool   `json:",omitempty"` // Enable self-healing (auto-sync on drift)
+	OCIRepoURL        string `json:",omitempty"` // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
+	OCIHost           string `json:",omitempty"` // OCI registry host - optional, inferred from server URL if not set
+	OCIPath           string `json:",omitempty"` // Path within OCI artifact (default: ".")
+	DisableRepoCreds  bool   `json:",omitempty"` // Skip auto-generation of ArgoCD repo-creds Secret (default: false)
 }
 
 // Default values for ArgoCD OCI worker parameters
 const (
-	defaultArgoCDNamespace      = "argocd"
-	defaultDestinationServer    = "https://kubernetes.default.svc"
-	defaultDestinationNamespace = "default"
-	defaultProject              = "default"
-	defaultSyncPolicy           = "manual"
-	defaultOCIPath              = "."
+	defaultArgoCDNamespace   = "argocd"
+	defaultDestinationServer = "https://kubernetes.default.svc"
+	defaultProject           = "default"
+	defaultSyncPolicy        = "manual"
+	defaultOCIPath           = "."
 )
 
 // ArgoCD Application sync status values (from .status.sync.status)
@@ -118,12 +121,16 @@ const (
 )
 
 // ArgoCD Kubernetes resource identifiers
+//
+// CreateNamespace=true is intentionally not used here: the renderer
+// emits a Namespace document into the rendered output when the source
+// Application requested it (see argocd-renderer ExtractDestinationSettings),
+// so the deployment bridge does not need to inject a sync option for it.
 const (
 	argoCDAPIVersion          = "argoproj.io/v1alpha1"
 	argoCDKindApplication     = "Application"
 	argoCDFinalizer           = "resources-finalizer.argocd.argoproj.io"
 	argoCDSyncPolicyAutomated = "automated"
-	argoCDSyncOptionCreateNS  = "CreateNamespace=true"
 	argoCDSyncOptionSSA       = "ServerSideApply=true"
 	k8sKindSecret             = "Secret"
 )
@@ -167,21 +174,20 @@ func buildResourceKey(group, version, kind, namespace, name string) funcApi.Reso
 
 type argoCDApplicationArgs struct {
 	Name                 string
-	ArgoCDNamespace      string
-	UnitSlug             string
-	UnitID               string
-	SpaceID              string
-	RevisionNum          string
-	Project              string
-	OCIRepoURL           string
-	OCIPath              string
-	TargetRevision       string
-	DestinationServer    string
-	DestinationNamespace string
-	SyncPolicy           string
-	PruneEnabled         bool
-	SelfHealEnabled      bool
-	ConfigHubURL         string
+	ArgoCDNamespace   string
+	UnitSlug          string
+	UnitID            string
+	SpaceID           string
+	RevisionNum       string
+	Project           string
+	OCIRepoURL        string
+	OCIPath           string
+	TargetRevision    string
+	DestinationServer string
+	SyncPolicy        string
+	PruneEnabled      bool
+	SelfHealEnabled   bool
+	ConfigHubURL      string
 	// Helm-specific fields
 	IsHelm          bool   // When true, generate Helm-style source (no path, chart version as targetRevision)
 	HelmReleaseName string // Helm release name (from HelmRelease label)
@@ -222,17 +228,21 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 		source["path"] = args.OCIPath
 	}
 
+	// The destination namespace is intentionally omitted: the renderer
+	// bakes spec.destination.namespace from the source Application into
+	// the rendered manifests (see argocd-renderer.ExtractDestinationSettings).
+	// ArgoCD applies each rendered resource into the namespace it
+	// declares; cluster-scoped resources stay cluster-scoped.
 	spec := map[string]interface{}{
 		"project": args.Project,
 		"source":  source,
 		"destination": map[string]interface{}{
-			"server":    args.DestinationServer,
-			"namespace": args.DestinationNamespace,
+			"server": args.DestinationServer,
 		},
 	}
 
 	spec["syncPolicy"] = map[string]interface{}{
-		"syncOptions": []interface{}{argoCDSyncOptionCreateNS, argoCDSyncOptionSSA},
+		"syncOptions": []interface{}{argoCDSyncOptionSSA},
 	}
 	if args.SyncPolicy == argoCDSyncPolicyAutomated {
 		spec["syncPolicy"].(map[string]interface{})["automated"] = map[string]interface{}{
@@ -271,7 +281,7 @@ func generateArgoCDApplication(args *argoCDApplicationArgs) ([]byte, error) {
 			// See: https://github.com/argoproj/argo-cd/discussions/20797
 			"operation": map[string]interface{}{
 				"sync": map[string]interface{}{
-					"syncOptions": []interface{}{argoCDSyncOptionCreateNS, argoCDSyncOptionSSA},
+					"syncOptions": []interface{}{argoCDSyncOptionSSA},
 				},
 			},
 		},
@@ -305,9 +315,6 @@ func parseArgoCDOCIOptions(payload api.BridgeWorkerPayload) (ArgoCDOCIBridgeOpti
 	if v, ok := payload.TargetOptions["DestinationServer"]; ok {
 		options.DestinationServer = v
 	}
-	if v, ok := payload.TargetOptions["DestinationNamespace"]; ok {
-		options.DestinationNamespace = v
-	}
 	if v, ok := payload.TargetOptions["Project"]; ok {
 		options.Project = v
 	}
@@ -340,9 +347,6 @@ func parseArgoCDOCIOptions(payload api.BridgeWorkerPayload) (ArgoCDOCIBridgeOpti
 	}
 	if options.DestinationServer == "" {
 		options.DestinationServer = defaultDestinationServer
-	}
-	if options.DestinationNamespace == "" {
-		options.DestinationNamespace = defaultDestinationNamespace
 	}
 	if options.Project == "" {
 		options.Project = defaultProject
@@ -503,25 +507,24 @@ func (w *ArgoCDOCIWorker) transformToArgoCDOCIApplication(wctx api.BridgeWorkerC
 	}
 
 	args := &argoCDApplicationArgs{
-		Name:                 appName,
-		ArgoCDNamespace:      options.ArgoCDNamespace,
-		UnitSlug:             payload.UnitSlug,
-		UnitID:               payload.UnitID.String(),
-		SpaceID:              payload.SpaceID.String(),
-		RevisionNum:          fmt.Sprintf("%d", payload.RevisionNum),
-		Project:              options.Project,
-		OCIRepoURL:           ociRepoURL,
-		OCIPath:              options.OCIPath,
-		TargetRevision:       targetRevision,
-		DestinationServer:    options.DestinationServer,
-		DestinationNamespace: options.DestinationNamespace,
-		SyncPolicy:           options.SyncPolicy,
-		PruneEnabled:         options.PruneEnabled,
-		SelfHealEnabled:      options.SelfHealEnabled,
-		ConfigHubURL:         wctx.GetServerURL(),
-		IsHelm:               isHelm,
-		HelmReleaseName:      helmReleaseName,
-		HelmChartName:        helmChartName,
+		Name:              appName,
+		ArgoCDNamespace:   options.ArgoCDNamespace,
+		UnitSlug:          payload.UnitSlug,
+		UnitID:            payload.UnitID.String(),
+		SpaceID:           payload.SpaceID.String(),
+		RevisionNum:       fmt.Sprintf("%d", payload.RevisionNum),
+		Project:           options.Project,
+		OCIRepoURL:        ociRepoURL,
+		OCIPath:           options.OCIPath,
+		TargetRevision:    targetRevision,
+		DestinationServer: options.DestinationServer,
+		SyncPolicy:        options.SyncPolicy,
+		PruneEnabled:      options.PruneEnabled,
+		SelfHealEnabled:   options.SelfHealEnabled,
+		ConfigHubURL:      wctx.GetServerURL(),
+		IsHelm:            isHelm,
+		HelmReleaseName:   helmReleaseName,
+		HelmChartName:     helmChartName,
 	}
 
 	applicationYAML, err := generateArgoCDApplication(args)
@@ -567,13 +570,6 @@ func (w *ArgoCDOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
 				Required:    false,
 				DataType:    funcApi.DataTypeString,
 				Example:     "https://kubernetes.default.svc",
-			},
-			api.BridgeOption{
-				Name:        "DestinationNamespace",
-				Description: "Target namespace for deployed resources. Defaults to \"default\".",
-				Required:    false,
-				DataType:    funcApi.DataTypeString,
-				Example:     "default",
 			},
 			api.BridgeOption{
 				Name:        "Project",

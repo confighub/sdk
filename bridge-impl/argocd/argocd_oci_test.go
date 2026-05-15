@@ -55,16 +55,15 @@ func (e *mockForbiddenError) Status() metav1.Status {
 // Test data for ArgoCD OCI worker
 var (
 	testArgoCDOCITargetOptions = map[string]string{
-		"KubeContext":          "test-context",
-		"ArgoCDNamespace":      "argocd",
-		"DestinationServer":    "https://kubernetes.default.svc",
-		"DestinationNamespace": "production",
-		"Project":              "my-project",
-		"SyncPolicy":           "automated",
-		"PruneEnabled":         "true",
-		"SelfHealEnabled":      "true",
-		"OCIRepoURL":           "oci://ghcr.io/myorg/manifests",
-		"OCIPath":              "apps/myapp",
+		"KubeContext":       "test-context",
+		"ArgoCDNamespace":   "argocd",
+		"DestinationServer": "https://kubernetes.default.svc",
+		"Project":           "my-project",
+		"SyncPolicy":        "automated",
+		"PruneEnabled":      "true",
+		"SelfHealEnabled":   "true",
+		"OCIRepoURL":        "oci://ghcr.io/myorg/manifests",
+		"OCIPath":           "apps/myapp",
 	}
 
 	testArgoCDOCIMinimalOptions = map[string]string{
@@ -83,7 +82,6 @@ func TestParseArgoCDOCIParams_FullParams(t *testing.T) {
 	assert.Equal(t, "test-context", options.KubeContext)
 	assert.Equal(t, "argocd", options.ArgoCDNamespace)
 	assert.Equal(t, "https://kubernetes.default.svc", options.DestinationServer)
-	assert.Equal(t, "production", options.DestinationNamespace)
 	assert.Equal(t, "my-project", options.Project)
 	assert.Equal(t, "automated", options.SyncPolicy)
 	assert.True(t, options.PruneEnabled)
@@ -102,7 +100,6 @@ func TestParseArgoCDOCIParams_WithDefaults(t *testing.T) {
 	assert.Equal(t, "test-context", options.KubeContext)
 	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
 	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
-	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
 	assert.Equal(t, defaultProject, options.Project)
 	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
 	assert.False(t, options.PruneEnabled)
@@ -121,7 +118,6 @@ func TestParseArgoCDOCIParams_EmptyParams(t *testing.T) {
 	// All defaults should be applied
 	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
 	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
-	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
 	assert.Equal(t, defaultProject, options.Project)
 	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
 	assert.Equal(t, defaultOCIPath, options.OCIPath)
@@ -135,7 +131,6 @@ func TestParseArgoCDOCIParams_EmptyOptions(t *testing.T) {
 	// All defaults should be applied
 	assert.Equal(t, defaultArgoCDNamespace, options.ArgoCDNamespace)
 	assert.Equal(t, defaultDestinationServer, options.DestinationServer)
-	assert.Equal(t, defaultDestinationNamespace, options.DestinationNamespace)
 	assert.Equal(t, defaultProject, options.Project)
 	assert.Equal(t, defaultSyncPolicy, options.SyncPolicy)
 	assert.Equal(t, defaultOCIPath, options.OCIPath)
@@ -153,7 +148,6 @@ func TestGenerateArgoCDApplication_Success(t *testing.T) {
 		OCIPath:              ".",
 		TargetRevision:       "latest",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "automated",
 		PruneEnabled:         true,
 		SelfHealEnabled:      true,
@@ -197,7 +191,6 @@ func TestGenerateArgoCDApplication_ManualSyncPolicy(t *testing.T) {
 		OCIPath:              ".",
 		TargetRevision:       "latest",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "manual",
 		PruneEnabled:         false,
 		SelfHealEnabled:      false,
@@ -208,9 +201,11 @@ func TestGenerateArgoCDApplication_ManualSyncPolicy(t *testing.T) {
 
 	yamlStr := string(yamlBytes)
 
-	// Manual sync policy should have syncOptions but not automated block
+	// Manual sync policy should have syncOptions but not automated block.
+	// CreateNamespace is intentionally not emitted: the renderer bakes
+	// a Namespace document into the rendered output instead.
 	assert.Contains(t, yamlStr, "syncPolicy:")
-	assert.Contains(t, yamlStr, "CreateNamespace=true")
+	assert.NotContains(t, yamlStr, "CreateNamespace=true")
 	assert.NotContains(t, yamlStr, "automated:")
 	assert.NotContains(t, yamlStr, "prune:")
 	assert.NotContains(t, yamlStr, "selfHeal:")
@@ -233,7 +228,6 @@ func TestGenerateArgoCDApplication_ExternalLinkAnnotation(t *testing.T) {
 		OCIPath:              ".",
 		TargetRevision:       "latest",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "manual",
 		ConfigHubURL:         "https://app.confighub.com",
 	}
@@ -258,7 +252,6 @@ func TestGenerateArgoCDApplication_DefaultExternalLinkWhenURLEmpty(t *testing.T)
 		OCIPath:              ".",
 		TargetRevision:       "latest",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "manual",
 		ConfigHubURL:         "",
 	}
@@ -903,16 +896,15 @@ func TestArgoCDOCIWorker_Refresh_WithInventory(t *testing.T) {
 
 func TestArgoCDOCIBridgeOptions_JSONMarshaling(t *testing.T) {
 	options := ArgoCDOCIBridgeOptions{
-		KubeContext:          "test-context",
-		ArgoCDNamespace:      "argocd",
-		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "production",
-		Project:              "my-project",
-		SyncPolicy:           "automated",
-		PruneEnabled:         true,
-		SelfHealEnabled:      true,
-		OCIRepoURL:           "oci://ghcr.io/myorg/manifests",
-		OCIPath:              "apps/myapp",
+		KubeContext:       "test-context",
+		ArgoCDNamespace:   "argocd",
+		DestinationServer: "https://kubernetes.default.svc",
+		Project:           "my-project",
+		SyncPolicy:        "automated",
+		PruneEnabled:      true,
+		SelfHealEnabled:   true,
+		OCIRepoURL:        "oci://ghcr.io/myorg/manifests",
+		OCIPath:           "apps/myapp",
 	}
 
 	// Test marshaling
@@ -2265,7 +2257,6 @@ func TestGenerateArgoCDApplication_HelmSource(t *testing.T) {
 		OCIPath:              ".",
 		TargetRevision:       "1.2.3",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "automated",
 		PruneEnabled:         true,
 		SelfHealEnabled:      true,
@@ -2308,7 +2299,6 @@ func TestGenerateArgoCDApplication_NonHelmSourceHasPath(t *testing.T) {
 		OCIPath:              ".",
 		TargetRevision:       "latest",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "manual",
 		IsHelm:               false,
 	}
@@ -2334,7 +2324,6 @@ func TestGenerateArgoCDApplication_HelmSource_EmptyReleaseName(t *testing.T) {
 		OCIRepoURL:           "oci://ghcr.io/myorg/charts",
 		TargetRevision:       "1.0.0",
 		DestinationServer:    "https://kubernetes.default.svc",
-		DestinationNamespace: "default",
 		SyncPolicy:           "manual",
 		IsHelm:               true,
 		HelmReleaseName:      "",

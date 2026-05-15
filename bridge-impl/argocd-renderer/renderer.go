@@ -31,7 +31,67 @@ const (
 	ArgoCDRefreshAnnotation = "argocd.argoproj.io/refresh"
 	// ArgoCDHydrateAnnotation triggers ArgoCD to re-hydrate rendered manifests.
 	ArgoCDHydrateAnnotation = "argocd.argoproj.io/hydrate"
+	// createNamespaceSyncOption is the ArgoCD sync option that asks ArgoCD
+	// to create the destination namespace if it does not exist. The
+	// renderer detects this on the source Application and emits a
+	// Namespace document into the rendered output so the stored
+	// configuration is self-contained.
+	createNamespaceSyncOption = "CreateNamespace=true"
 )
+
+// DestinationSettings captures the destination-related fields the renderer
+// bakes into the rendered output so the manifests stored in ConfigHub are
+// self-contained: downstream apply paths do not need to re-derive a
+// destination namespace at apply time, and the deployment bridge does not
+// need a DestinationNamespace option.
+type DestinationSettings struct {
+	// Namespace is spec.destination.namespace from the source Application.
+	// When non-empty, the renderer sets metadata.namespace on every
+	// namespaced resource in the rendered output that does not already
+	// have one.
+	Namespace string
+
+	// CreateNamespace is true when the source Application's syncOptions
+	// (either spec.syncPolicy.syncOptions or operation.sync.syncOptions)
+	// contains "CreateNamespace=true". When true and Namespace is
+	// non-empty, the renderer prepends a Namespace document to the
+	// rendered output.
+	CreateNamespace bool
+}
+
+// ExtractDestinationSettings reads namespace-related settings from an
+// ArgoCD Application. The renderer uses these to bake namespace
+// information into the rendered output. Returns a zero value when the
+// Application has neither a destination namespace nor a CreateNamespace
+// sync option (the renderer then leaves the manifests untouched).
+func ExtractDestinationSettings(app *unstructured.Unstructured) DestinationSettings {
+	ns, _, _ := unstructured.NestedString(app.Object, "spec", "destination", "namespace")
+
+	createNS := false
+	for _, path := range [][]string{
+		{"spec", "syncPolicy", "syncOptions"},
+		{"operation", "sync", "syncOptions"},
+	} {
+		opts, found, _ := unstructured.NestedStringSlice(app.Object, path...)
+		if !found {
+			continue
+		}
+		for _, opt := range opts {
+			if opt == createNamespaceSyncOption {
+				createNS = true
+				break
+			}
+		}
+		if createNS {
+			break
+		}
+	}
+
+	return DestinationSettings{
+		Namespace:       ns,
+		CreateNamespace: createNS,
+	}
+}
 
 // NOTE: The results of rendering aren't being deployed as the renderer unit, so UnitSlug and SpaceID
 // annotations should not be added by the renderer. They will be added by the deployment bridge.
@@ -39,6 +99,10 @@ const (
 // RenderArgoCD renders an ArgoCD Application to Kubernetes manifests.
 // It creates/updates the Application in the cluster (with auto-sync disabled),
 // then calls the ArgoCD API to get the rendered manifests.
+//
+// The Application's destination settings (spec.destination.namespace and the
+// CreateNamespace sync option) are baked into the rendered output so the
+// stored configuration is self-contained.
 func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, config Config) (*RenderResult, error) {
 	app, err := ParseApplication(appYAML)
 	if err != nil {
@@ -52,6 +116,22 @@ func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, 
 		return nil, fmt.Errorf("failed to create/update Application: %w", err)
 	}
 
+	return renderFromApplication(ctx, k8sClient, app, config)
+}
+
+// RenderExistingArgoCD renders manifests for an ArgoCD Application that
+// already exists in the cluster. Unlike RenderArgoCD, it does not create or
+// update the Application. The caller passes the in-cluster Application so
+// destination settings can be extracted from its spec.
+func RenderExistingArgoCD(ctx context.Context, k8sClient client.Client, app *unstructured.Unstructured, config Config) (*RenderResult, error) {
+	return renderFromApplication(ctx, k8sClient, app, config)
+}
+
+// renderFromApplication is the shared body of RenderArgoCD and
+// RenderExistingArgoCD: fetch manifests from ArgoCD's API, then bake the
+// Application's destination namespace and CreateNamespace setting into
+// the rendered output.
+func renderFromApplication(ctx context.Context, k8sClient client.Client, app *unstructured.Unstructured, config Config) (*RenderResult, error) {
 	appName := app.GetName()
 	appNamespace := app.GetNamespace()
 	if appNamespace == "" {
@@ -63,27 +143,8 @@ func RenderArgoCD(ctx context.Context, appYAML []byte, k8sClient client.Client, 
 		return nil, fmt.Errorf("failed to get manifests from ArgoCD: %w", err)
 	}
 
-	yamlBytes, err := convertManifestsToYAML(k8sClient, manifestResp.Manifests)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert manifests to YAML: %w", err)
-	}
-
-	return &RenderResult{
-		Manifests:  yamlBytes,
-		Revision:   manifestResp.Revision,
-		SourceType: manifestResp.SourceType,
-	}, nil
-}
-
-// RenderExistingArgoCD renders manifests for an ArgoCD Application that already exists in the cluster.
-// Unlike RenderArgoCD, it does not create or update the Application.
-func RenderExistingArgoCD(ctx context.Context, k8sClient client.Client, appName, appNamespace string, config Config) (*RenderResult, error) {
-	manifestResp, err := getManifestsWithRetry(ctx, config, appName, appNamespace)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get manifests from ArgoCD: %w", err)
-	}
-
-	yamlBytes, err := convertManifestsToYAML(k8sClient, manifestResp.Manifests)
+	settings := ExtractDestinationSettings(app)
+	yamlBytes, err := convertManifestsToYAML(k8sClient, manifestResp.Manifests, settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert manifests to YAML: %w", err)
 	}
@@ -226,11 +287,23 @@ func getManifests(ctx context.Context, config Config, appName, appNamespace stri
 	return &manifestResp, nil
 }
 
-// convertManifestsToYAML converts JSON manifest strings to a multi-document YAML byte slice.
-// It strips the ArgoCD tracking-id annotation from each resource and adds a placeholder
-// namespace to namespaced resources.
-func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte, error) {
+// convertManifestsToYAML converts JSON manifest strings to a multi-document
+// YAML byte slice. For each rendered resource it strips the ArgoCD
+// tracking-id annotation, and — when the source Application named a
+// destination namespace — sets metadata.namespace on namespaced resources
+// that did not already have one. When CreateNamespace=true was set on the
+// source Application a Namespace document is prepended to the output so
+// the stored configuration carries the namespace creation intent.
+func convertManifestsToYAML(k8sClient client.Client, manifests []string, settings DestinationSettings) ([]byte, error) {
 	var docs []string
+
+	if settings.CreateNamespace && settings.Namespace != "" {
+		nsDoc, err := marshalNamespaceDoc(settings.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		docs = append(docs, nsDoc)
+	}
 
 	for i, manifest := range manifests {
 		// Parse JSON into unstructured to remove tracking annotation
@@ -249,13 +322,15 @@ func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte
 			obj.SetAnnotations(annotations)
 		}
 
-		// Commented out: we do not expect the ArgoCD renderer to generate resources
-		// with confighub placeholders in the namespace field.
-		// if obj.GetNamespace() == "" {
-		// 	if isNamespaced, err := k8sClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
-		// 		obj.SetNamespace(yamlkit.PlaceHolderBlockApplyString)
-		// 	}
-		// }
+		// Bake the destination namespace into namespaced resources that
+		// don't already have one. ArgoCD itself applies destination at
+		// sync time; ConfigHub stores rendered output and needs the
+		// manifests to be self-contained.
+		if settings.Namespace != "" && obj.GetNamespace() == "" {
+			if isNamespaced, err := k8sClient.IsObjectNamespaced(obj); err == nil && isNamespaced {
+				obj.SetNamespace(settings.Namespace)
+			}
+		}
 
 		// Marshal back to JSON, then convert to YAML
 		jsonBytes, err := obj.MarshalJSON()
@@ -270,6 +345,23 @@ func convertManifestsToYAML(k8sClient client.Client, manifests []string) ([]byte
 	}
 
 	return []byte(strings.Join(docs, "---\n")), nil
+}
+
+// marshalNamespaceDoc renders a minimal Namespace document so the
+// resulting bundle can stand on its own when applied via a deployment
+// bridge (no need for the bridge to inject CreateNamespace=true sync
+// options on its own).
+func marshalNamespaceDoc(name string) (string, error) {
+	ns := map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "Namespace",
+		"metadata":   map[string]interface{}{"name": name},
+	}
+	yamlBytes, err := sigsyaml.Marshal(ns)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal Namespace doc: %w", err)
+	}
+	return string(yamlBytes), nil
 }
 
 // SetRefreshAnnotations adds refresh and hydrate annotations to an Application

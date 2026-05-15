@@ -20,16 +20,22 @@ Examples:
 `+"```"+`
   # Get the environment variables for a Bridge Worker
   cub worker get-envs <worker-slug>
+
+  # Emit plain KEY=value lines (no shell prefix, no comments). Suitable for
+  # writing to a .env file or feeding to a kustomize secretGenerator.
+  cub worker get-envs --no-export <worker-slug>
 `+"```"+`
 `, ""),
 	RunE: workerEnvsCmdRun,
 }
 
 var workerEnvsArgs struct {
-	slug string
+	slug     string
+	noExport bool
 }
 
 func init() {
+	workerEnvsCmd.Flags().BoolVar(&workerEnvsArgs.noExport, "no-export", false, "Emit plain KEY=value lines without shell-specific export/setenv prefixes or source-with comments")
 	workerCmd.AddCommand(workerEnvsCmd)
 }
 
@@ -38,6 +44,12 @@ func workerEnvsCmdRun(_ *cobra.Command, args []string) error {
 	worker, err := apiGetBridgeWorkerFromSlug(workerEnvsArgs.slug, "*") // get all fields for now
 	if err != nil {
 		return err
+	}
+
+	if workerEnvsArgs.noExport {
+		tprint("CONFIGHUB_WORKER_ID=%s", worker.BridgeWorkerID.String())
+		tprint("CONFIGHUB_WORKER_SECRET=%s", worker.Secret)
+		return nil
 	}
 
 	// Detect shell from SHELL environment variable
