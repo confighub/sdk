@@ -31,6 +31,13 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 					DataType:      api.DataTypeString,
 					Example:       "{\"SimpleApp\": {...}}",
 				},
+				{
+					ParameterName: "ignore-required",
+					Required:      false,
+					Description:   "When true, strip the top-level `required` keyword from each schema in the map before validation. Useful when validating a subset of fields whose full schema describes a larger required contract (e.g., a ConfigMap that supplies some but not all of a workload's env vars, where the rest come from a Secret).",
+					DataType:      api.DataTypeBool,
+					Example:       "true",
+				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
@@ -60,10 +67,33 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 		return parsedData, api.ValidationResultFalse, errors.New("schema-map must be a string")
 	}
 
+	ignoreRequired := false
+	if len(args) > 1 {
+		if b, ok := args[1].Value.(bool); ok {
+			ignoreRequired = b
+		}
+	}
+
 	// Parse the schema map
 	var schemaMap map[string]interface{}
 	if err := json.Unmarshal([]byte(schemaMapJSON), &schemaMap); err != nil {
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to parse schema-map JSON")
+	}
+
+	// Strip the top-level `required` keyword from each schema entry when the
+	// caller opts in. Useful for partial-contract checks — e.g., when a
+	// workload's full env-var schema lists CONFIGHUB_WORKER_ID and
+	// CONFIGHUB_WORKER_SECRET as required but those values come from a Secret
+	// and only the non-secret subset is being validated here against a
+	// ConfigMap. Only the top-level required is removed; nested-object
+	// `required` keywords in sub-schemas are left in place.
+	if ignoreRequired {
+		for resourceType, schemaInterface := range schemaMap {
+			if schemaObj, ok := schemaInterface.(map[string]interface{}); ok {
+				delete(schemaObj, "required")
+				schemaMap[resourceType] = schemaObj
+			}
+		}
 	}
 
 	var multiErrs []error

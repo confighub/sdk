@@ -4,10 +4,10 @@ go 1.25.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/bridge-impl v0.1.43
-	github.com/confighub/sdk/core v0.1.43
-	github.com/confighub/sdk/function-impl v0.1.43
-	github.com/confighub/sdk/worker-function-impl v0.1.43
+	github.com/confighub/sdk/bridge-impl v0.0.0
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/worker-function-impl v0.0.0-00010101000000-000000000000
 	github.com/labstack/echo-contrib v0.17.4
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/sethvargo/go-envconfig v1.3.0
@@ -41,15 +41,15 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/envkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/k8skit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.1.43 // indirect
-	github.com/confighub/sdk/configkit/yqkit v0.1.43 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -214,6 +214,19 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
+	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
+	github.com/confighub/sdk/function-impl => ../../function-impl
+	github.com/confighub/sdk/worker-function-impl => ../../worker-function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

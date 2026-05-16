@@ -248,7 +248,20 @@ func ResolveAssociativePaths(
 				parameterName = strings.TrimPrefix(segment, "*@:")
 			}
 
-			// Enqueue all children
+			// Enqueue all children. Clamp the parent's ResolvedSegments to
+			// its current length so each iteration's `append` allocates a
+			// fresh backing array — otherwise sibling iterations write to
+			// the same slot (parent's len) within the shared underlying
+			// array, and the last index written wins for every newPos.
+			// The visible failure is that wildcard expansion over an
+			// array of length N produces N enqueued positions whose
+			// ResolvedSegments all end with the LAST index, which then
+			// makes the recorded resolved path point at the wrong array
+			// element (and miss any field unique to the earlier siblings,
+			// e.g. envFrom[0].configMapRef.name when envFrom[1] only has
+			// secretRef).
+			parentSegments := workList[0].ResolvedSegments
+			parentSegments = parentSegments[:len(parentSegments):len(parentSegments)]
 			children := workList[0].ParentNode.ChildrenMap()
 			if len(children) > 0 {
 				for key, child := range children {
@@ -273,7 +286,7 @@ func ResolveAssociativePaths(
 						continue
 					}
 					newPos := currentPosition{
-						ResolvedSegments:    append(workList[0].ResolvedSegments, EscapeDotsInPathSegment(key)),
+						ResolvedSegments:    append(parentSegments, EscapeDotsInPathSegment(key)),
 						CurrentSegmentIndex: workList[0].CurrentSegmentIndex + 1,
 						PathArguments:       workList[0].PathArguments,
 						ParentNode:          child,
@@ -313,7 +326,7 @@ func ResolveAssociativePaths(
 						continue
 					}
 					newPos := currentPosition{
-						ResolvedSegments:    append(workList[0].ResolvedSegments, indexString),
+						ResolvedSegments:    append(parentSegments, indexString),
 						CurrentSegmentIndex: workList[0].CurrentSegmentIndex + 1,
 						PathArguments:       workList[0].PathArguments,
 						ParentNode:          child,

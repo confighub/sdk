@@ -294,6 +294,69 @@ subjects:
 	assert.Equal(t, 0, len(results))
 }
 
+// TestResolveWildcard_SiblingDisjointChildren is the regression for a
+// slice-sharing bug in the `*` wildcard expansion. When the parent's
+// ResolvedSegments had spare capacity (cap > len), every for-loop iteration
+// over arrayChildren wrote its index string to the same backing-array slot,
+// so all enqueued positions ended up with the LAST index baked into their
+// path. The visible failure: for an envFrom array whose siblings have
+// disjoint child fields (envFrom[0].configMapRef vs envFrom[1].secretRef),
+// only the LAST sibling's path resolved cleanly — the wrong index made
+// the earlier sibling's full-path lookup miss in the live document.
+//
+// The fix clamps the parent slice's capacity to its length so each
+// `append` allocates a fresh backing array.
+//
+// The earlier TestResolveWildcard didn't catch this because its parent
+// ResolvedSegments had cap == len at the wildcard, so each iteration
+// forced a fresh allocation regardless.
+func TestResolveWildcard_SiblingDisjointChildren(t *testing.T) {
+	// Real-shaped fixture — the bug triggers at the second wildcard in
+	// `containers.*.envFrom.*.X`, where the parent ResolvedSegments
+	// already has spare capacity from the first wildcard's allocation.
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          envFrom:
+            - configMapRef:
+                name: cm-x
+            - secretRef:
+                name: secret-y
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// configMapRef.name lives at envFrom[0] only. Pre-fix, the resolution
+	// produced "envFrom.1.configMapRef.name" (wrong index), which then
+	// failed the live-doc lookup in VisitPathsDoc and got dropped.
+	results, err := ResolveAssociativePaths(docs[0],
+		api.UnresolvedPath("spec.template.spec.containers.*.envFrom.*.configMapRef.name"),
+		"", false, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results), "configMapRef resolution should return one path (envFrom[0])")
+	if len(results) == 1 {
+		assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.envFrom.0.configMapRef.name"), results[0].Path)
+	}
+
+	// secretRef.name lives at envFrom[1] only. This one used to resolve
+	// even pre-fix because the wrong-index happened to land on the
+	// secretRef sibling.
+	results, err = ResolveAssociativePaths(docs[0],
+		api.UnresolvedPath("spec.template.spec.containers.*.envFrom.*.secretRef.name"),
+		"", false, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results), "secretRef resolution should return one path (envFrom[1])")
+	if len(results) == 1 {
+		assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.envFrom.1.secretRef.name"), results[0].Path)
+	}
+}
+
 func TestResolveAssociation_NamedAssociation(t *testing.T) {
 	// YAML fixture with multiple containers
 	yamlFixture := `apiVersion: apps/v1
