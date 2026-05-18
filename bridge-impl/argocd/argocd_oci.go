@@ -70,8 +70,7 @@ func (w *ArgoCDOCIWorker) ID() api.BridgeWorkerID {
 //
 // DestinationNamespace is intentionally absent: the renderer bakes the
 // source Application's spec.destination.namespace into the rendered
-// manifests so the stored configuration is self-contained. See issue
-// #4222.
+// manifests so the stored configuration is self-contained.
 type ArgoCDOCIBridgeOptions struct {
 	KubeContext       string `json:",omitempty"`
 	ArgoCDNamespace   string `json:",omitempty"` // Namespace where ArgoCD Application will be created (default: "argocd")

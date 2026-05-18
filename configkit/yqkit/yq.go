@@ -10,6 +10,9 @@ import (
 
 func init() {
 	yqlogger.SetLevel(yqlogger.WARNING, "yq-lib")
+	yqlib.ConfiguredSecurityPreferences.DisableEnvOps = true
+	yqlib.ConfiguredSecurityPreferences.DisableFileOps = true
+	yqlib.ConfiguredSecurityPreferences.EnableSystemOps = false
 }
 
 // EvalYQExpression evaluates a yq expression against a YAML string and returns the result.

@@ -789,3 +789,145 @@ func TestFindHelmChartForRelease(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+// TestHelmReleaseCreatesNamespace pins the extraction of the
+// spec.install.createNamespace flag from a HelmRelease spec. Missing or
+// non-bool values default to false.
+func TestHelmReleaseCreatesNamespace(t *testing.T) {
+	tcs := []struct {
+		name string
+		spec map[string]interface{}
+		want bool
+	}{
+		{"no install block", map[string]interface{}{}, false},
+		{"install block, no createNamespace", map[string]interface{}{
+			"install": map[string]interface{}{"remediation": map[string]interface{}{}},
+		}, false},
+		{"createNamespace=true", map[string]interface{}{
+			"install": map[string]interface{}{"createNamespace": true},
+		}, true},
+		{"createNamespace=false", map[string]interface{}{
+			"install": map[string]interface{}{"createNamespace": false},
+		}, false},
+		{"createNamespace as string is ignored", map[string]interface{}{
+			"install": map[string]interface{}{"createNamespace": "true"},
+		}, false},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := helmReleaseCreatesNamespace(tc.spec); got != tc.want {
+				t.Fatalf("want %v, got %v", tc.want, got)
+			}
+		})
+	}
+}
+
+// TestBakeNamespaceIntoFile pins both the per-document bake behaviour
+// (namespaced resources get the namespace stamped, cluster-scoped and
+// already-namespaced resources are left alone) and the multi-document
+// preservation contract: gaby.ParseAll keeps each document's `# Source:`
+// marker through the round-trip.
+func TestBakeNamespaceIntoFile(t *testing.T) {
+	content := "" +
+		"# Source: chart/templates/cm.yaml\n" +
+		"apiVersion: v1\n" +
+		"kind: ConfigMap\n" +
+		"metadata:\n" +
+		"  name: cm\n" +
+		"---\n" +
+		"# Source: chart/templates/cm-explicit.yaml\n" +
+		"apiVersion: v1\n" +
+		"kind: ConfigMap\n" +
+		"metadata:\n" +
+		"  name: cm-explicit\n" +
+		"  namespace: explicit\n" +
+		"---\n" +
+		"# Source: chart/templates/cr.yaml\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
+		"kind: ClusterRole\n" +
+		"metadata:\n" +
+		"  name: cr\n"
+
+	out, err := bakeNamespaceIntoFile(content, "prod")
+	require.NoError(t, err)
+
+	// All three # Source: markers survive the gaby round-trip.
+	assert.Contains(t, out, "# Source: chart/templates/cm.yaml")
+	assert.Contains(t, out, "# Source: chart/templates/cm-explicit.yaml")
+	assert.Contains(t, out, "# Source: chart/templates/cr.yaml")
+
+	// The first ConfigMap (no explicit namespace) gets prod baked in.
+	cmDocStart := strings.Index(out, "name: cm\n")
+	require.True(t, cmDocStart > 0)
+	cmDocEnd := strings.Index(out[cmDocStart:], "---")
+	if cmDocEnd < 0 {
+		cmDocEnd = len(out) - cmDocStart
+	}
+	assert.Contains(t, out[cmDocStart:cmDocStart+cmDocEnd], "namespace: prod")
+
+	// The second ConfigMap keeps its explicit namespace; bake is not
+	// allowed to clobber it.
+	assert.Contains(t, out, "namespace: explicit")
+
+	// ClusterRole did not receive a namespace.
+	crStart := strings.Index(out, "kind: ClusterRole")
+	require.True(t, crStart > 0)
+	assert.NotContains(t, out[crStart:], "namespace:")
+}
+
+// TestBakeNamespaceIntoFile_NonYAMLLeavesContentUntouched confirms the
+// defensive fallback: if gaby cannot parse the content (Helm sometimes
+// emits comment-only files), the bake returns the content as-is.
+func TestBakeNamespaceIntoFile_NonYAMLLeavesContentUntouched(t *testing.T) {
+	// A stand-alone comment block is valid YAML to gaby, but is also a
+	// document we shouldn't touch; verify nothing is added.
+	content := "# only a comment\n"
+	out, err := bakeNamespaceIntoFile(content, "prod")
+	require.NoError(t, err)
+	assert.NotContains(t, out, "namespace: prod")
+}
+
+// TestBakeNamespaceIntoRenderedHelm pins the top-level contract that
+// drives the renderer: every chart file's resources get the destination
+// namespace baked in, and a Namespace document is added as a synthetic
+// file when CreateNamespace=true.
+func TestBakeNamespaceIntoRenderedHelm(t *testing.T) {
+	t.Run("bake only — no Namespace doc when createNamespace is false", func(t *testing.T) {
+		in := map[string]string{
+			"chart/templates/cm.yaml": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cm\n",
+		}
+		out, err := bakeNamespaceIntoRenderedHelm(in, "prod", false)
+		require.NoError(t, err)
+		assert.Contains(t, out["chart/templates/cm.yaml"], "namespace: prod")
+		_, hasNS := out["__confighub_namespace.yaml"]
+		assert.False(t, hasNS, "no synthetic Namespace doc expected")
+	})
+	t.Run("synthetic Namespace doc when createNamespace=true and namespace set", func(t *testing.T) {
+		in := map[string]string{
+			"chart/templates/cm.yaml": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cm\n",
+		}
+		out, err := bakeNamespaceIntoRenderedHelm(in, "prod", true)
+		require.NoError(t, err)
+		ns, hasNS := out["__confighub_namespace.yaml"]
+		require.True(t, hasNS)
+		assert.Contains(t, ns, "kind: Namespace")
+		assert.Contains(t, ns, "name: prod")
+	})
+	t.Run("no-op when namespace empty and createNamespace false", func(t *testing.T) {
+		in := map[string]string{
+			"chart/templates/cm.yaml": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cm\n",
+		}
+		out, err := bakeNamespaceIntoRenderedHelm(in, "", false)
+		require.NoError(t, err)
+		assert.Equal(t, in, out)
+	})
+	t.Run("createNamespace=true but empty namespace emits no Namespace doc", func(t *testing.T) {
+		in := map[string]string{
+			"chart/templates/cm.yaml": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: cm\n",
+		}
+		out, err := bakeNamespaceIntoRenderedHelm(in, "", true)
+		require.NoError(t, err)
+		_, hasNS := out["__confighub_namespace.yaml"]
+		assert.False(t, hasNS)
+	})
+}

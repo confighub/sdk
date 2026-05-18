@@ -65,11 +65,17 @@ func (w *FluxOCIWorker) ID() api.BridgeWorkerID {
 }
 
 // FluxOCIBridgeOptions contains the configuration parameters for the Flux OCI bridge worker.
+//
+// TargetNamespace is retained only for the Helm path: Flux HelmRelease's
+// spec.targetNamespace is an install-time directive that lives on the CR,
+// not in the chart's templates, so the bridge still needs a place to put
+// it. For Kustomization units, manifests carry their own
+// metadata.namespace and this field is unused.
 type FluxOCIBridgeOptions struct {
 	KubeContext      string // Kubernetes context name to use (defaults to current context)
 	WaitTimeout      string
 	FluxNamespace    string // Namespace where Flux CRs will be created (default: "flux-system")
-	TargetNamespace  string // Target namespace for deployed resources (default: "default")
+	TargetNamespace  string // Helm units only: spec.targetNamespace on the generated HelmRelease. Ignored for Kustomization units.
 	Interval         string // Flux reconcile interval (default: "10m")
 	OCIRepoURL       string // OCI registry URL - if empty, auto-constructed from OCIHost and unit info
 	OCIHost          string // OCI registry host - optional, inferred from server URL if not set
@@ -186,16 +192,20 @@ func generateFluxOCIRepository(args *fluxOCIArgs) ([]byte, error) {
 }
 
 func generateFluxKustomization(args *fluxOCIArgs) ([]byte, error) {
+	// spec.targetNamespace is intentionally omitted: the unit's rendered
+	// manifests carry their own metadata.namespace (baked in by the
+	// flux-renderer, by ensure-namespaces + links, or by the unit
+	// author). Flux Kustomization then applies each resource to the
+	// namespace it declares.
 	spec := map[string]interface{}{
 		"interval": args.Interval,
 		"sourceRef": map[string]interface{}{
 			"kind": fluxKindOCIRepository,
 			"name": args.Name,
 		},
-		"path":            args.OCIPath,
-		"prune":           args.Prune,
-		"targetNamespace": args.TargetNamespace,
-		"wait":            true,
+		"path":  args.OCIPath,
+		"prune": args.Prune,
+		"wait":  true,
 	}
 
 	ks := &unstructured.Unstructured{
@@ -534,7 +544,7 @@ func (w *FluxOCIWorker) Info(options api.InfoOptions) api.BridgeWorkerInfo {
 			},
 			api.BridgeOption{
 				Name:        "TargetNamespace",
-				Description: "Target namespace for resources deployed by Flux. Defaults to \"default\".",
+				Description: "Helm units only: spec.targetNamespace on the generated HelmRelease. Ignored for Kustomization units (their rendered manifests carry their own metadata.namespace). Defaults to \"default\" when used.",
 				Required:    false,
 				DataType:    funcApi.DataTypeString,
 				Example:     "default",
@@ -1158,15 +1168,19 @@ func computeManagedResourceState(ctx context.Context, k8sClient kubernetes.Kuber
 
 	// Namespace removal rule for LiveData:
 	//
-	// Flux applies the targetNamespace from the Kustomization CR at reconcile time,
-	// but the unit's original data (rendered manifests) may not include a namespace.
-	// If we keep the namespace in LiveData, it would appear as a diff against the
-	// original data, causing false drift on every Refresh.
+	// For the Kustomization path the Kustomization CR no longer sets
+	// spec.targetNamespace (see generateFluxKustomization), so original
+	// data and live data should agree on namespaces in normal flow. The
+	// rule below stays as a defensive measure for Helm units (whose
+	// HelmRelease still carries spec.targetNamespace at install time)
+	// and for legacy units whose original data lacked an explicit
+	// namespace.
 	//
-	// Rule: remove the namespace from a LiveData resource ONLY IF the original data
-	// did not explicitly set a namespace on that resource. If the user explicitly set
-	// a namespace in the unit data, we preserve it in LiveData so that any divergence
-	// from the intended namespace IS detected as drift.
+	// Rule: remove the namespace from a LiveData resource ONLY IF the
+	// original data did not explicitly set a namespace on that resource.
+	// If the user explicitly set a namespace in the unit data, we
+	// preserve it in LiveData so that any divergence from the intended
+	// namespace IS detected as drift.
 	originalNamespaces := kubernetes.BuildOriginalNamespaceMap(originalData)
 	for _, obj := range cleanedManagedResources {
 		if _, hasNS := originalNamespaces[kubernetes.OriginalNamespaceKey(obj)]; !hasNS {

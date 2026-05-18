@@ -193,7 +193,7 @@ func gitopsImportCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		drySuffix := "-dry"
-		drySlug := truncateWithHash(makeSlug(r.resourceName+"-"+r.kind), MaxSlugLength-len(drySuffix)) + drySuffix
+		drySlug := strings.ToLower(truncateWithHash(makeSlug(r.resourceName+"-"+r.kind), MaxSlugLength-len(drySuffix)) + drySuffix)
 		renderTargetID := renderTarget.TargetID
 
 		dryUnit := goclientnew.Unit{

@@ -2478,7 +2478,7 @@ func TestTransformToArgoCDOCIApplication_PartialHelmLabels_NotHelm(t *testing.T)
 
 // Regression: a Target with a stored TargetRevision (e.g. "head") must not
 // influence the generated Application — the bridge always pins the OCI tag to
-// the revision being applied. Closes #4222 (TargetRevision policy bypass).
+// the revision being applied (prevents policy-bypass via TargetRevision).
 func TestTransformToArgoCDOCIApplication_StoredTargetRevisionIgnored(t *testing.T) {
 	mockCtx := kubernetes.SetupMockContext(t)
 	mockCtx.On("GetServerURL").Return("https://app.confighub.com")

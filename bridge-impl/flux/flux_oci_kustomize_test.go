@@ -379,7 +379,7 @@ var testFluxOCITargetOptions = map[string]string{
 
 // Regression: a Target with a stored TargetRevision (e.g. "head") must not
 // influence the generated OCIRepository — the bridge always pins spec.ref.tag
-// to the revision being applied. Closes #4222 (TargetRevision policy bypass).
+// to the revision being applied (prevents policy-bypass via TargetRevision).
 func TestTransformToFluxOCI_StoredTargetRevisionIgnored(t *testing.T) {
 	mockCtx := setupMockContext(t)
 	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
@@ -829,8 +829,10 @@ func TestGenerateFluxKustomization_AllFields(t *testing.T) {
 	prune, _, _ := unstructured.NestedBool(obj.Object, "spec", "prune")
 	assert.True(t, prune)
 
-	targetNs, _, _ := unstructured.NestedString(obj.Object, "spec", "targetNamespace")
-	assert.Equal(t, "production", targetNs)
+	// spec.targetNamespace is intentionally NOT set on Kustomization
+	// units — unit manifests carry their own metadata.namespace.
+	_, hasTargetNs, _ := unstructured.NestedString(obj.Object, "spec", "targetNamespace")
+	assert.False(t, hasTargetNs, "Kustomization spec must not carry targetNamespace")
 
 	wait, _, _ := unstructured.NestedBool(obj.Object, "spec", "wait")
 	assert.True(t, wait)

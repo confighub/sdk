@@ -16,6 +16,10 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/bridge-impl/third_party/fluxcd/helm-controller/loader"
+	"github.com/confighub/sdk/configkit/k8skit"
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
 const (
@@ -134,6 +138,22 @@ func renderHelmReleaseFromParsed(ctx context.Context, hrDoc *unstructured.Unstru
 		return nil, fmt.Errorf("failed to render chart: %w", err)
 	}
 
+	// Bake namespace into namespaced resources that did not get one from
+	// the chart templates, and prepend a Namespace document when the
+	// source HelmRelease set spec.install.createNamespace=true. This
+	// makes the rendered output self-contained so downstream apply paths
+	// do not need to re-derive a destination namespace.
+	//
+	// Only the explicit spec.targetNamespace is baked. Falling back to
+	// the HelmRelease's metadata.namespace (typically "flux-system")
+	// would silently send workloads to the Flux control-plane namespace,
+	// which is almost never what the operator wants.
+	bakeNamespace, _ := spec["targetNamespace"].(string)
+	rendered, err = bakeNamespaceIntoRenderedHelm(rendered, bakeNamespace, helmReleaseCreatesNamespace(spec))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bake namespace into rendered manifests: %w", err)
+	}
+
 	// Combine rendered templates into YAML document list
 	manifests := combineRenderedTemplates(rendered, loadedChart.Name())
 
@@ -141,6 +161,124 @@ func renderHelmReleaseFromParsed(ctx context.Context, hrDoc *unstructured.Unstru
 		Manifests: []byte(manifests),
 		Revision:  loadedChart.Metadata.Version,
 	}, nil
+}
+
+// helmReleaseCreatesNamespace reports whether the HelmRelease's
+// spec.install.createNamespace is set to true. Flux uses this to ask
+// Helm to create the target namespace before installing; the renderer
+// mirrors it by prepending a Namespace document to the rendered output
+// so the stored configuration carries the namespace-creation intent.
+func helmReleaseCreatesNamespace(spec map[string]interface{}) bool {
+	install, ok := spec["install"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	create, _ := install["createNamespace"].(bool)
+	return create
+}
+
+// bakeNamespaceIntoRenderedHelm walks each rendered chart template and
+// sets metadata.namespace on namespaced resources that did not declare
+// one. Cluster-scoped resources are left alone. Comments (notably the
+// `# Source:` markers Helm emits) survive because gaby.ParseAll
+// preserves head comments per document.
+//
+// When createNamespace is true and namespace is non-empty, a Namespace
+// document is added as a synthetic chart file so it sorts first in the
+// final output (combineRenderedTemplates orders chunks by file name and
+// "__confighub_namespace.yaml" precedes the chart's own templates).
+func bakeNamespaceIntoRenderedHelm(rendered map[string]string, namespace string, createNamespace bool) (map[string]string, error) {
+	if namespace == "" && !createNamespace {
+		return rendered, nil
+	}
+
+	out := make(map[string]string, len(rendered)+1)
+	for name, content := range rendered {
+		baked, err := bakeNamespaceIntoFile(content, namespace)
+		if err != nil {
+			return nil, fmt.Errorf("bake namespace in %s: %w", name, err)
+		}
+		out[name] = baked
+	}
+
+	if createNamespace && namespace != "" {
+		nsDoc, err := marshalNamespaceDoc(namespace)
+		if err != nil {
+			return nil, err
+		}
+		// Use a leading "__" so this sorts before any chart template name
+		// in combineRenderedTemplates' deterministic ordering.
+		out["__confighub_namespace.yaml"] = nsDoc
+	}
+
+	return out, nil
+}
+
+// bakeNamespaceIntoFile parses a Helm-rendered template file (which may
+// contain multiple `---`-separated YAML documents) via gaby.ParseAll
+// and stamps the given namespace on every namespaced document that
+// does not already have a metadata.namespace set. Comments and
+// document ordering are preserved by gaby.
+func bakeNamespaceIntoFile(content, namespace string) (string, error) {
+	if namespace == "" {
+		return content, nil
+	}
+	container, err := gaby.ParseAll([]byte(content))
+	if err != nil {
+		// Not parseable YAML — Helm occasionally emits comment-only
+		// files. Leave the chunk untouched.
+		return content, nil
+	}
+	for _, doc := range container {
+		if err := bakeNamespaceIntoDoc(doc, namespace); err != nil {
+			return "", err
+		}
+	}
+	return string(container.Bytes()), nil
+}
+
+// bakeNamespaceIntoDoc stamps namespace on a single Kubernetes document
+// when the resource is namespaced and lacks one. Non-Kubernetes
+// documents (no apiVersion/kind) and cluster-scoped resources are left
+// alone.
+func bakeNamespaceIntoDoc(doc *gaby.YamlDoc, namespace string) error {
+	if doc.IsEmptyDoc() {
+		return nil
+	}
+	apiVersion, _, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath("apiVersion"), true)
+	if err != nil || apiVersion == "" {
+		return nil
+	}
+	kind, _, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath("kind"), true)
+	if err != nil || kind == "" {
+		return nil
+	}
+	if k8skit.IsClusterScoped(apiVersion, kind) {
+		return nil
+	}
+	existing, _, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath("metadata.namespace"), true)
+	if err != nil {
+		return err
+	}
+	if existing != "" {
+		return nil
+	}
+	_, err = doc.SetP(namespace, "metadata.namespace")
+	return err
+}
+
+// marshalNamespaceDoc renders a minimal Namespace document.
+func marshalNamespaceDoc(name string) (string, error) {
+	ns := map[string]interface{}{
+		"apiVersion": "v1",
+		"kind":       "Namespace",
+		"metadata":   map[string]interface{}{"name": name},
+	}
+	out, err := yaml.Marshal(ns)
+	if err != nil {
+		return "", fmt.Errorf("marshal Namespace doc: %w", err)
+	}
+	return string(out), nil
 }
 
 // findHelmChartForRelease finds the HelmChart referenced by a HelmRelease.
