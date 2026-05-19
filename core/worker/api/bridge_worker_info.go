@@ -62,7 +62,8 @@ func (sct *SupportedConfigType) Validate() error {
 	if !IsValidProviderType(sct.ProviderType) {
 		return errors.Errorf("invalid provider type %s", string(sct.ProviderType))
 	}
-	if !funcapi.IsSupportedToolchain(sct.ToolchainType) {
+	// TODO: Remove OpenTofu/HCL once all workers are updated
+	if !funcapi.IsSupportedToolchain(sct.ToolchainType) && sct.ToolchainType != "OpenTofu/HCL" {
 		return errors.Errorf("unsupported toolchain type %s", string(sct.ToolchainType))
 	}
 	// LiveStateType is optional
