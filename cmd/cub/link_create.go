@@ -207,7 +207,9 @@ func runSingleLinkCreate(args []string) error {
 	newLink.FromUnitID = fromUnitID
 	newLink.ToUnitID = toUnitID
 	newLink.ToSpaceID = uuid.MustParse(toSpaceID)
-	setLinkFieldsOnCreate(newLink)
+	if err := setLinkFieldsOnCreate(newLink); err != nil {
+		return err
+	}
 
 	// If --make-current is set, initialize revision numbers to current unit revisions
 	if linkMakeCurrent {

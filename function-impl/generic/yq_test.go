@@ -207,6 +207,106 @@ data:
 	assert.Contains(t, strings.TrimSpace(payload.Payload), "value1")
 }
 
+func TestBuildYQParamsPrefix(t *testing.T) {
+	t.Run("no params returns empty", func(t *testing.T) {
+		prefix, err := buildYQParamsPrefix([]api.FunctionArgument{{Value: ".foo"}}, 1)
+		require.NoError(t, err)
+		assert.Equal(t, "", prefix)
+	})
+
+	t.Run("single param", func(t *testing.T) {
+		prefix, err := buildYQParamsPrefix([]api.FunctionArgument{
+			{Value: ".foo"},
+			{Value: "foo=abc"},
+		}, 1)
+		require.NoError(t, err)
+		assert.Equal(t, `{"foo":"abc"} as $params | `, prefix)
+	})
+
+	t.Run("missing equals returns error", func(t *testing.T) {
+		_, err := buildYQParamsPrefix([]api.FunctionArgument{
+			{Value: ".foo"},
+			{Value: "bogus"},
+		}, 1)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "key=value")
+	})
+
+	t.Run("non-string value returns error", func(t *testing.T) {
+		_, err := buildYQParamsPrefix([]api.FunctionArgument{
+			{Value: ".foo"},
+			{Value: 42},
+		}, 1)
+		require.Error(t, err)
+	})
+
+	t.Run("value containing equals keeps trailing portion", func(t *testing.T) {
+		prefix, err := buildYQParamsPrefix([]api.FunctionArgument{
+			{Value: ".foo"},
+			{Value: "kv=a=b"},
+		}, 1)
+		require.NoError(t, err)
+		assert.Equal(t, `{"kv":"a=b"} as $params | `, prefix)
+	})
+
+	t.Run("value with quotes is JSON-escaped", func(t *testing.T) {
+		prefix, err := buildYQParamsPrefix([]api.FunctionArgument{
+			{Value: ".foo"},
+			{Value: `q="hi"`},
+		}, 1)
+		require.NoError(t, err)
+		assert.Equal(t, `{"q":"\"hi\""} as $params | `, prefix)
+	})
+}
+
+func TestYQMutating_WithParams(t *testing.T) {
+	rp := k8skit.NewK8sResourceProvider()
+	parsedData, err := gaby.ParseAll([]byte(multiDocK8sYAML))
+	require.NoError(t, err)
+
+	// Mutate Deployments using $params for both the namespace and image.
+	prefix, err := buildYQParamsPrefix([]api.FunctionArgument{
+		{Value: ""},
+		{Value: "ns=production"},
+		{Value: "img=nginx:1.99"},
+	}, 1)
+	require.NoError(t, err)
+	expr := prefix + `.metadata.namespace = $params.ns | .spec.template.spec.containers[0].image = $params.img`
+
+	result, _, err := genericFnYQMutating(rp, parsedData, expr, whereResourceType("apps/v1/Deployment"))
+	require.NoError(t, err)
+	require.Len(t, result, 3)
+
+	resultYAML := result.String()
+	// Both Deployments rewritten via $params.
+	assert.Equal(t, 2, strings.Count(resultYAML, "namespace: production"))
+	assert.Contains(t, resultYAML, "image: nginx:1.99")
+	// Service unchanged.
+	assert.Contains(t, resultYAML, "kind: Service")
+	assert.Contains(t, resultYAML, "namespace: default")
+}
+
+func TestYQQuery_WithParams(t *testing.T) {
+	rp := k8skit.NewK8sResourceProvider()
+	parsedData, err := gaby.ParseAll([]byte(multiDocK8sYAML))
+	require.NoError(t, err)
+
+	prefix, err := buildYQParamsPrefix([]api.FunctionArgument{
+		{Value: ""},
+		{Value: "minReplicas=3"},
+	}, 1)
+	require.NoError(t, err)
+	// String compare against the user-provided param value.
+	expr := prefix + `select(.spec.replicas == ($params.minReplicas | tonumber)) | .metadata.name`
+
+	_, output, err := genericFnYQQuery(rp, &api.FunctionContext{}, parsedData, expr, whereResourceType("apps/v1/Deployment"))
+	require.NoError(t, err)
+
+	payload := output.(api.YAMLPayload)
+	assert.Contains(t, payload.Payload, "web")
+	assert.NotContains(t, payload.Payload, "api")
+}
+
 func TestYQMutating_PreservesUnmatchedDocs(t *testing.T) {
 	rp := k8skit.NewK8sResourceProvider()
 	parsedData, err := gaby.ParseAll([]byte(multiDocK8sYAML))

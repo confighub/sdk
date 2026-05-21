@@ -1549,6 +1549,26 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		}
 	}
 
+	// Drop documents deleted above. A resource-level Delete marks the slot
+	// nil (see the visitor) rather than removing it, relying on
+	// Container.String() to omit nils on serialization. But PatchMutations
+	// also hands this container to callers that iterate it directly without
+	// re-serializing — notably the compute-mutations pass the function
+	// handler runs after every mutating function. ComputeMutations calls
+	// GetResourceInfo on each element, which fails on a nil doc
+	// ("apiVersion not found"), so a patch that deletes a resource (e.g.
+	// emptying a single-resource Unit via merge) would otherwise blow up the
+	// whole update. Compact the nils away so the returned container matches
+	// what String() would produce.
+	compacted := parsedData[:0]
+	for _, doc := range parsedData {
+		if doc == nil {
+			continue
+		}
+		compacted = append(compacted, doc)
+	}
+	parsedData = compacted
+
 	return parsedData, conflicts, errors.Join(errs...)
 }
 

@@ -821,6 +821,9 @@ type ExtendedLink struct {
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
 	ToUnit *Unit `json:"ToUnit,omitempty" yaml:"ToUnit,omitempty"`
+
+	// TransformInvocation Defines a function invocation.
+	TransformInvocation *Invocation `json:"TransformInvocation,omitempty" yaml:"TransformInvocation,omitempty"`
 }
 
 // ExtendedMutation defines model for ExtendedMutation.
@@ -1580,7 +1583,10 @@ type Link struct {
 	// ToUnitID Unique identifier of the upstream (producer) Unit.
 	ToUnitID openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
 
-	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, and UpgradeUnit. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync.
+	// TransformInvocationID Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is upserted into the downstream Unit. Only valid when UpdateType is Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must match the downstream Unit's toolchain (currently only Kubernetes/YAML / YAML output).
+	TransformInvocationID *openapi_types.UUID `json:"TransformInvocationID,omitempty" yaml:"TransformInvocationID,omitempty"`
+
+	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit.
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -5717,7 +5723,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -5758,7 +5764,7 @@ type BulkDeleteLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -5797,7 +5803,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5836,7 +5842,7 @@ type SearchListLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -5874,6 +5880,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	Slug                          *string             `json:"Slug" yaml:"Slug"`
 	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
 	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
@@ -5917,7 +5924,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -5958,7 +5965,7 @@ type BulkPatchLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -5989,6 +5996,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	Slug                          *string             `json:"Slug" yaml:"Slug"`
 	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
 	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
@@ -6032,7 +6040,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6086,7 +6094,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6124,7 +6132,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -7461,7 +7469,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7500,7 +7508,7 @@ type ListLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7528,7 +7536,7 @@ type GetLinkParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7566,6 +7574,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	Slug                          *string             `json:"Slug" yaml:"Slug"`
 	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
 	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
@@ -10718,7 +10727,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//

@@ -6,6 +6,7 @@ package appjson
 import (
 	"github.com/confighub/sdk/configkit/jsonkit"
 	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/function-impl/appconfig"
 )
 
 // RegisterFunctions registers all AppConfig JSON functions onto the provided FunctionHandler
@@ -13,4 +14,5 @@ import (
 func RegisterFunctions(rp *jsonkit.JSONResourceProviderType, fh handler.FunctionRegistry) {
 	initStandardFunctions(rp)
 	registerStandardFunctions(fh, rp)
+	appconfig.RegisterFunctions(rp, rp, fh)
 }

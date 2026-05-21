@@ -102,8 +102,8 @@ ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/getfuncs.js
 ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/mutatefuncs.json)" > ${DIR}/doseqmutate.txt
 ${FCTL} doseq --num-filters 1 --stop test-data/deployment.yaml "MyDeployment" "$(<test-data/filter.json)" > ${DIR}/doseqfilter3.txt
 ${FCTL} doseq --num-filters 1 --stop test-data/deployment10.yaml "MyDeployment" "$(<test-data/filter.json)" > ${DIR}/doseqfilter10.txt
-${FCTL} do test-data/deployment.yaml "MyDeployment" yq '.spec.replicas' > ${DIR}/yq-relicas.txt
-${FCTL} do test-data/deployment.yaml "MyDeployment" yq-i '.spec.replicas = 7' > ${DIR}/yq-i-relicas.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-yq '.spec.replicas' > ${DIR}/yq-relicas.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" set-yq '.spec.replicas = 7' > ${DIR}/yq-i-relicas.txt
 ${FCTL} do test-data/service.yaml "MyService" ensure-namespaces > ${DIR}/ensure-namespaces-insert.txt
 ${FCTL} do test-data/all-in-one.yaml "MyUnit" ensure-namespaces > ${DIR}/ensure-namespaces-skipclusterscoped.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" ensure-context true > ${DIR}/ensure-context-true.txt

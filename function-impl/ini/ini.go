@@ -6,6 +6,7 @@ package ini
 import (
 	"github.com/confighub/sdk/configkit/inikit"
 	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/function-impl/appconfig"
 )
 
 // RegisterFunctions registers all INI functions onto the provided FunctionHandler
@@ -13,4 +14,5 @@ import (
 func RegisterFunctions(rp *inikit.INIResourceProviderType, fh handler.FunctionRegistry) {
 	initStandardFunctions(rp)
 	registerStandardFunctions(fh, rp)
+	appconfig.RegisterFunctions(rp, rp, fh)
 }

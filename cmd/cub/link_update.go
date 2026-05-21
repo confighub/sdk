@@ -540,7 +540,9 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentLink.FromUnitID = fromUnitID
 	currentLink.ToUnitID = toUnitID
 	currentLink.ToSpaceID = uuid.MustParse(toSpaceID)
-	setLinkFieldsOnUpdate(currentLink, cmd)
+	if err := setLinkFieldsOnUpdate(currentLink, cmd); err != nil {
+		return err
+	}
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)
 	if cubapi.IsAPIError(err, linkRes) {

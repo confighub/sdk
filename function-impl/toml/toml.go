@@ -6,6 +6,7 @@ package toml
 import (
 	"github.com/confighub/sdk/configkit/tomlkit"
 	"github.com/confighub/sdk/core/function/handler"
+	"github.com/confighub/sdk/function-impl/appconfig"
 )
 
 // RegisterFunctions registers all TOML functions onto the provided FunctionHandler
@@ -13,4 +14,5 @@ import (
 func RegisterFunctions(rp *tomlkit.TOMLResourceProviderType, fh handler.FunctionRegistry) {
 	initStandardFunctions(rp)
 	registerStandardFunctions(fh, rp)
+	appconfig.RegisterFunctions(rp, rp, fh)
 }

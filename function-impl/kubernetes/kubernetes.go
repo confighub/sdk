@@ -61,4 +61,5 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerDefaultingFunctions(fh, rp)
 	registerK8sCELFunctions(fh, rp)
 	registerAccessFunctions(fh)
+	registerPruneConfigMaps(fh, rp)
 }

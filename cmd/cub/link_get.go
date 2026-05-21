@@ -121,6 +121,13 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.Bindings != nil && len(*linkDetails.Bindings) > 0 {
 		view.Append([]string{"Bindings", fmt.Sprintf("%d bindings", len(*linkDetails.Bindings))})
 	}
+	if linkDetails.TransformInvocationID != nil {
+		if extendedLink.TransformInvocation != nil {
+			view.Append([]string{"Transform Invocation", extendedLink.TransformInvocation.Slug})
+		} else {
+			view.Append([]string{"Transform Invocation ID", linkDetails.TransformInvocationID.String()})
+		}
+	}
 
 	view.Render()
 

@@ -9,6 +9,7 @@ import (
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/spf13/cobra"
 )
 
@@ -23,18 +24,19 @@ A guide for how to use links is at https://docs.confighub.com/guide/dependencies
 }
 
 var (
-	linkUpdateType     string
-	linkAutoUpdate     bool
-	linkNoAutoUpdate   bool
-	linkUseLiveState   bool
-	linkNoUseLiveState bool
-	linkWhereMutation  string
-	linkWhereResource  string
-	linkMakeCurrent    bool
+	linkUpdateType          string
+	linkAutoUpdate          bool
+	linkNoAutoUpdate        bool
+	linkUseLiveState        bool
+	linkNoUseLiveState      bool
+	linkWhereMutation       string
+	linkWhereResource       string
+	linkMakeCurrent         bool
+	linkTransformInvocation string
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, or UpgradeUnit)")
+	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, or Upsert)")
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates")
 	cmd.Flags().BoolVar(&linkUseLiveState, "use-live-state", false, "use LiveState of upstream unit instead of Data")
@@ -42,6 +44,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression to filter mutations during merge")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions (skips initial merge)")
+	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before upsert; only valid with --update-type Upsert")
 }
 
 func validateLinkFieldFlags() error {
@@ -51,14 +54,14 @@ func validateLinkFieldFlags() error {
 	if linkUseLiveState && linkNoUseLiveState {
 		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
 	}
-	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" {
-		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, or Insert, got %q", linkUpdateType)
+	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" {
+		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, or Upsert, got %q", linkUpdateType)
 	}
 	return nil
 }
 
 // setLinkFieldsOnCreate sets link-specific fields on a new Link for create operations.
-func setLinkFieldsOnCreate(link *goclientnew.Link) {
+func setLinkFieldsOnCreate(link *goclientnew.Link) error {
 	link.UpdateType = linkUpdateType
 	if linkAutoUpdate {
 		link.AutoUpdate = true
@@ -68,11 +71,20 @@ func setLinkFieldsOnCreate(link *goclientnew.Link) {
 	}
 	link.WhereMutation = linkWhereMutation
 	link.WhereResource = linkWhereResource
+	if linkTransformInvocation != "" {
+		id, err := parseInvocationSlug(linkTransformInvocation)
+		if err != nil {
+			return fmt.Errorf("--transform-invocation: %w", err)
+		}
+		uid := openapi_types.UUID(id)
+		link.TransformInvocationID = &uid
+	}
+	return nil
 }
 
 // setLinkFieldsOnUpdate sets link-specific fields on an existing Link for update operations.
 // Only sets fields that were explicitly changed via flags.
-func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) {
+func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 	if cmd.Flags().Changed("update-type") {
 		link.UpdateType = linkUpdateType
 	}
@@ -92,6 +104,19 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) {
 	if cmd.Flags().Changed("where-resource") {
 		link.WhereResource = linkWhereResource
 	}
+	if cmd.Flags().Changed("transform-invocation") {
+		if linkTransformInvocation == "" {
+			link.TransformInvocationID = nil
+		} else {
+			id, err := parseInvocationSlug(linkTransformInvocation)
+			if err != nil {
+				return fmt.Errorf("--transform-invocation: %w", err)
+			}
+			uid := openapi_types.UUID(id)
+			link.TransformInvocationID = &uid
+		}
+	}
+	return nil
 }
 
 // linkFieldsEnhancer creates a PatchEnhancer for link-specific fields in patch/bulk operations.
@@ -119,6 +144,13 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		if cmd.Flags().Changed("where-resource") {
 			patchMap["WhereResource"] = linkWhereResource
 		}
+		if cmd.Flags().Changed("transform-invocation") {
+			if linkTransformInvocation == "" {
+				patchMap["TransformInvocationID"] = nil
+			} else if id, err := parseInvocationSlug(linkTransformInvocation); err == nil {
+				patchMap["TransformInvocationID"] = id.String()
+			}
+		}
 	}
 }
 
@@ -126,7 +158,8 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 func hasLinkFieldFlags(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("update-type") || linkAutoUpdate || linkNoAutoUpdate ||
 		linkUseLiveState || linkNoUseLiveState ||
-		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource")
+		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
+		cmd.Flags().Changed("transform-invocation")
 }
 
 func buildWhereClauseFromLinks(linkIds []string) (string, error) {

@@ -716,6 +716,52 @@ metadata:
 	}
 }
 
+// TestPatchMutations_DeleteLastResourceCompactsNils is a regression test for
+// emptying a single-resource Unit (e.g. via merge-external-source with empty
+// content). A resource-level Delete marks the doc nil in place; PatchMutations
+// must compact those nils out of the returned container. It can't rely on
+// Container.String() dropping them, because the function handler runs
+// compute-mutations on the returned container directly (without
+// re-serializing) after every mutating function — and ComputeMutations calls
+// GetResourceInfo on each element, which fails on a nil doc with
+// "apiVersion not found". Before the fix this blew up the whole update.
+func TestPatchMutations_DeleteLastResourceCompactsNils(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	const namespaceYAML = `apiVersion: v1
+kind: Namespace
+metadata:
+  name: myns
+`
+
+	baseParsed, err := gaby.ParseAll([]byte(namespaceYAML))
+	require.NoError(t, err)
+	emptyParsed, err := gaby.ParseAll([]byte(""))
+	require.NoError(t, err)
+
+	// base -> empty yields a single resource-level Delete.
+	mutations, err := yamlkit.ComputeMutations(baseParsed, emptyParsed, 0, provider)
+	require.NoError(t, err)
+	require.Len(t, mutations, 1)
+	require.Equal(t, api.MutationTypeDelete, mutations[0].ResourceMutationInfo.MutationType)
+
+	targetParsed, err := gaby.ParseAll([]byte(namespaceYAML))
+	require.NoError(t, err)
+	result, _, err := yamlkit.PatchMutations(targetParsed, mutations, mutations, nil, provider, nil)
+	require.NoError(t, err)
+
+	// The deleted doc must be compacted out, not left as a nil slot.
+	require.Len(t, result, 0, "deleted resource should be removed from the container, not left nil")
+	for i, doc := range result {
+		require.NotNil(t, doc, "result doc %d must not be nil", i)
+	}
+	assert.Equal(t, "", result.String())
+
+	// The handler runs compute-mutations on the returned container after a
+	// mutating function; a leftover nil doc made this fail.
+	_, err = yamlkit.ComputeMutations(baseParsed, result, 0, provider)
+	require.NoError(t, err, "compute-mutations on the patched result must succeed")
+}
+
 func TestMergeScenario(t *testing.T) {
 	// This test simulates the merge scenario in mergeUnits:
 	// 1. Start with a base configuration

@@ -38,8 +38,12 @@ const (
 	DataTypeAttributeInfoList    = DataType("AttributeInfoList")
 	DataTypePatchMap             = DataType("PatchMap")
 	DataTypeResourceMutationList = DataType("ResourceMutationList")
+	DataTypeMutationConflictList = DataType("MutationConflictList")
 	DataTypeResourceList         = DataType("ResourceList")
+	DataTypeResourceInfoList     = DataType("ResourceInfoList")
 	DataTypeValueFilter          = DataType("ValueFilter")
+	DataTypeValidationResult     = DataType("ValidationResult")
+	DataTypeValidationResultList = DataType("ValidationResultList")
 
 	// Configuration format types
 	DataTypeJSON       = DataType("JSON")
@@ -51,25 +55,28 @@ const (
 	DataTypeText       = DataType("Text")
 	DataTypeHCL        = DataType("HCL")
 	DataTypeCEL        = DataType("CEL")
+
+	DataTypeOpaque = DataType("Opaque") // Bytes
 )
 
 // OutputType represents the type of output produced by a function. It is either a well
 // known structured type (e.g., AttributeValueList), a structured format (JSON), or
 // Opaque (unparsed).
-type OutputType string
+type OutputType DataType
 
+// TODO: Just use DataType instead of a distinct type
 const (
-	OutputTypeValidationResult     = OutputType("ValidationResult")
-	OutputTypeValidationResultList = OutputType("ValidationResultList")
-	OutputTypeAttributeValueList   = OutputType("AttributeValueList")
-	OutputTypeResourceInfoList     = OutputType("ResourceInfoList")
-	OutputTypeResourceList         = OutputType("ResourceList")
-	OutputTypePatchMap             = OutputType("PatchMap")
-	OutputTypeCustomJSON           = OutputType("JSON")
-	OutputTypeYAML                 = OutputType("YAML")
-	OutputTypeOpaque               = OutputType("Opaque")
-	OutputTypeResourceMutationList = OutputType("ResourceMutationList")
-	OutputTypeMutationConflictList = OutputType("MutationConflictList")
+	OutputTypeValidationResult     = OutputType(DataTypeValidationResult)
+	OutputTypeValidationResultList = OutputType(DataTypeValidationResultList)
+	OutputTypeAttributeValueList   = OutputType(DataTypeAttributeValueList)
+	OutputTypeResourceInfoList     = OutputType(DataTypeResourceInfoList)
+	OutputTypeResourceList         = OutputType(DataTypeResourceList)
+	OutputTypePatchMap             = OutputType(DataTypePatchMap)
+	OutputTypeJSON                 = OutputType(DataTypeJSON)
+	OutputTypeYAML                 = OutputType(DataTypeYAML)
+	OutputTypeOpaque               = OutputType(DataTypeOpaque)
+	OutputTypeResourceMutationList = OutputType(DataTypeResourceMutationList)
+	OutputTypeMutationConflictList = OutputType(DataTypeMutationConflictList)
 )
 
 const MaxDataTypeLength = 32
