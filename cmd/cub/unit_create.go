@@ -574,6 +574,18 @@ func runBulkUnitCreate() error {
 	}
 
 	// Call the bulk create API
+	responses, statusCode, err := bulkCreateUnits(params, patchJSON)
+	if err != nil {
+		return err
+	}
+
+	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+}
+
+// bulkCreateUnits calls the bulk-create-units API with the given parameters and
+// merge-patch body, returning the responses and the HTTP status code (200 or 207).
+// Shared by `unit create` bulk mode and `variant create`.
+func bulkCreateUnits(params *goclientnew.BulkCreateUnitsParams, patchJSON []byte) (*[]goclientnew.UnitCreateOrUpdateResponse, int, error) {
 	bulkRes, err := cubClientNew.BulkCreateUnitsWithBodyWithResponse(
 		ctx,
 		params,
@@ -581,22 +593,13 @@ func runBulkUnitCreate() error {
 		bytes.NewReader(patchJSON),
 	)
 	if cubapi.IsAPIError(err, bulkRes) {
-		return cubapi.InterpretErrorGeneric(err, bulkRes)
+		return nil, 0, cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
-
-	// Handle response based on status code
-	var responses *[]goclientnew.UnitCreateOrUpdateResponse
-	var statusCode int
 
 	if bulkRes.JSON200 != nil {
-		responses = bulkRes.JSON200
-		statusCode = 200
+		return bulkRes.JSON200, 200, nil
 	} else if bulkRes.JSON207 != nil {
-		responses = bulkRes.JSON207
-		statusCode = 207
-	} else {
-		return fmt.Errorf("unexpected response from bulk create API")
+		return bulkRes.JSON207, 207, nil
 	}
-
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+	return nil, 0, fmt.Errorf("unexpected response from bulk create API")
 }

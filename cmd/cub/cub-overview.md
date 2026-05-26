@@ -73,6 +73,8 @@ Other functional areas include:
 - `function`
 - `run`
 - `helm`
+- `k8s`
+- `variant`
 
 `cub --help` will list all of the supported entities/areas.
 
@@ -218,6 +220,18 @@ Apply a unit:
 
 ```
 cub unit apply --space $SPACE myunit
+```
+
+### Variants
+
+Clone a whole space and its units into a new downstream variant space in one step. The new space's
+`Variant` label is set to the variant name; other labels are inherited from the upstream space, and
+`--environment` and `--region` can add or change the `Environment` and `Region` labels. The slug is
+derived from `--space-name-pattern` (here, the `Component` label prefix and the `Variant` label
+suffix). The cloned units can be retargeted:
+
+```
+cub variant create test website-prod --space-name-pattern "template:{{.Labels.Component}}-{{.Labels.Variant}}" --target website-test/cluster
 ```
 
 ### Links
@@ -374,6 +388,26 @@ Get all resource types in all units within a space:
 ```
 cub function get --space $SPACE --quiet --show output -o jq='.Output[].ResourceType' get-resources
 ```
+
+### Kubernetes
+
+`cub k8s` commands talk to a Kubernetes cluster directly. The kubeconfig is loaded with the
+usual precedence (`--kubeconfig` flag, then `KUBECONFIG`, then `~/.kube/config`), and
+`--kube-context` selects the context.
+
+```
+# Trace a live resource back to its ConfigHub Unit
+cub k8s source deployment my-app --namespace my-namespace
+
+# Collect cluster facts (version, CRDs, storage/ingress classes) onto a Target
+cub k8s collect --space $SPACE --kube-context kind-kind my-target
+
+# Preview the facts without updating anything
+cub k8s collect --kube-context kind-kind --dry-run
+```
+
+`cub k8s collect` stores the facts in the Target's `Facts` map under `Cluster.*` keys, which
+can then be used in `where` queries and parameter expansion.
 
 ### Raw payload subcommands
 

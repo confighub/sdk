@@ -222,6 +222,20 @@ func ValidateLabelRemoval(labels []string, isPatch bool) error {
 	return nil
 }
 
+// ValidateFactRemoval checks if fact removal is being attempted without patch mode.
+// Returns an error if --fact Key=- is used without --patch.
+func ValidateFactRemoval(facts []string, isPatch bool) error {
+	if !isPatch {
+		for _, factString := range facts {
+			keyValue := strings.SplitN(factString, "=", 2)
+			if len(keyValue) == 2 && keyValue[1] == "-" {
+				return fmt.Errorf("fact removal (--fact %s) requires --patch flag", factString)
+			}
+		}
+	}
+	return nil
+}
+
 // ValidateDeleteGateRemoval checks if delete gate removal is being attempted without patch mode.
 // Returns an error if --delete-gate key=- is used without --patch.
 func ValidateDeleteGateRemoval(deleteGates []string, isPatch bool) error {

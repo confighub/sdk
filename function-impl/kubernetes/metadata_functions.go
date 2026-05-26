@@ -454,7 +454,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 	)
 
 	// Register cross-resource reference fields from CRDs.
-	for resourceType, refs := range CRDReferenceFields {
+	for resourceType, refs := range k8skit.CRDReferenceFields {
 		for _, ref := range refs {
 			path := api.UnresolvedPath(ref.Path)
 			refPathInfos := api.PathToVisitorInfoType{

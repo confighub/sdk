@@ -42,6 +42,7 @@ var annotation []string
 var label []string
 var deleteGate []string
 var option []string
+var fact []string
 var spaceIdentifiers []string
 var allowExists bool
 
@@ -51,6 +52,10 @@ func enableAnnotationFlag(cmd *cobra.Command) {
 
 func enableLabelFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&label, "label", []string{}, "labels in key=value format; can separate by commas and/or use multiple instances of the flag")
+}
+
+func enableFactFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&fact, "fact", []string{}, "facts in Key=Value format; use a separate --fact for each fact (values may contain commas, e.g. CRD lists); use Key=- with --patch to remove")
 }
 
 func enableAllowExistsFlag(cmd *cobra.Command) {
@@ -102,27 +107,44 @@ func setLabels(labelMap *map[string]string) error {
 	return nil
 }
 
+func setFacts(factMap *map[string]string) error {
+	err := setKeyValues(fact, factMap)
+	if err != nil {
+		return fmt.Errorf("invalid fact; %w", err)
+	}
+
+	return nil
+}
+
 func setDeleteGates(deleteGateMap *map[string]bool) error {
-	if deleteGate != nil && len(deleteGate) != 0 {
-		if *deleteGateMap == nil {
-			*deleteGateMap = map[string]bool{}
-		}
-		for _, deleteGateString := range deleteGate {
-			keyValue := strings.Split(deleteGateString, "=")
-			switch len(keyValue) {
-			case 1:
-				(*deleteGateMap)[keyValue[0]] = true
-			case 2:
-				// Note: For patch operations, value "-" indicates removal and is handled
-				// by BuildPatchData and EnhancePatchData functions. This function only
-				// handles non-patch (Put) operations where removal is not supported.
-				if keyValue[1] != "true" {
-					return fmt.Errorf("invalid delete-gate value; only 'true' is allowed: %s", deleteGateString)
-				}
-				(*deleteGateMap)[keyValue[0]] = true
-			default:
-				return fmt.Errorf("invalid delete-gate; expected key or key=true: %s", deleteGateString)
+	return setGatesFromSlice(deleteGate, deleteGateMap)
+}
+
+// setGatesFromSlice parses key[=true] gate strings into gateMap. Takes the
+// slice as a parameter (like setKeyValues) so callers with their own backing
+// vars — e.g. cub variant create's --unit-delete-gate / --unit-destroy-gate /
+// --space-delete-gate — reuse it instead of duplicating the parser. Only
+// "true" is a valid explicit value; the "-" removal form is handled for patch
+// operations by BuildPatchData / EnhancePatchData, not here.
+func setGatesFromSlice(gateStrings []string, gateMap *map[string]bool) error {
+	if len(gateStrings) == 0 {
+		return nil
+	}
+	if *gateMap == nil {
+		*gateMap = map[string]bool{}
+	}
+	for _, gateString := range gateStrings {
+		keyValue := strings.Split(gateString, "=")
+		switch len(keyValue) {
+		case 1:
+			(*gateMap)[keyValue[0]] = true
+		case 2:
+			if keyValue[1] != "true" {
+				return fmt.Errorf("invalid gate value; only 'true' is allowed: %s", gateString)
 			}
+			(*gateMap)[keyValue[0]] = true
+		default:
+			return fmt.Errorf("invalid gate; expected key or key=true: %s", gateString)
 		}
 	}
 	return nil

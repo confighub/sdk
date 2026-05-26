@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package kubernetes
+package k8skit
 
 import (
 	"github.com/confighub/sdk/core/function/api"
@@ -152,6 +152,21 @@ var CRDReferenceFields = map[api.ResourceType][]PathReference{
 		{Path: "spec.provider.kubernetes.auth.serviceAccount.name", Target: "v1/ServiceAccount"},
 	},
 	api.ResourceType("external-secrets.io/v1beta1/ClusterSecretStore"): {
+		{Path: "spec.provider.kubernetes.auth.serviceAccount.name", Target: "v1/ServiceAccount"},
+	},
+	// v1 is the current stable API; same reference paths as v1beta1.
+	api.ResourceType("external-secrets.io/v1/ExternalSecret"): {
+		{Path: "spec.secretStoreRef.name", Target: "external-secrets.io/v1/SecretStore"},
+		{Path: "spec.target.name", Target: "v1/Secret"},
+		{Path: "spec.data.*.sourceRef.storeRef.name", Target: "external-secrets.io/v1/SecretStore"},
+		{Path: "spec.dataFrom.*.sourceRef.storeRef.name", Target: "external-secrets.io/v1/SecretStore"},
+		{Path: "spec.target.template.templateFrom.*.configMap.name", Target: "v1/ConfigMap"},
+		{Path: "spec.target.template.templateFrom.*.secret.name", Target: "v1/Secret"},
+	},
+	api.ResourceType("external-secrets.io/v1/SecretStore"): {
+		{Path: "spec.provider.kubernetes.auth.serviceAccount.name", Target: "v1/ServiceAccount"},
+	},
+	api.ResourceType("external-secrets.io/v1/ClusterSecretStore"): {
 		{Path: "spec.provider.kubernetes.auth.serviceAccount.name", Target: "v1/ServiceAccount"},
 	},
 

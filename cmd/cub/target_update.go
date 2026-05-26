@@ -65,6 +65,7 @@ func init() {
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	enableOptionFlag(targetUpdateCmd)
+	enableFactFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type (use '-' to clear).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	targetCmd.AddCommand(targetUpdateCmd)
@@ -86,6 +87,10 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	// Validate delete gate removal only works with patch
 	if err := ValidateDeleteGateRemoval(deleteGate, targetPatch); err != nil {
+		return err
+	}
+	// Validate fact removal only works with patch
+	if err := ValidateFactRemoval(fact, targetPatch); err != nil {
 		return err
 	}
 
@@ -161,6 +166,10 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	err = setLabels(&currentTarget.Target.Labels)
+	if err != nil {
+		return err
+	}
+	err = setFacts(&currentTarget.Target.Facts)
 	if err != nil {
 		return err
 	}
@@ -252,6 +261,19 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["Options"] = optionMap
+		}
+		// Add Facts if provided
+		if len(fact) > 0 {
+			factMap := make(map[string]interface{})
+			if existingFacts, ok := patchMap["Facts"]; ok {
+				if factMapInterface, ok := existingFacts.(map[string]interface{}); ok {
+					for k, v := range factMapInterface {
+						factMap[k] = v
+					}
+				}
+			}
+			_ = patchKeyValues(factMap, fact)
+			patchMap["Facts"] = factMap
 		}
 		// Add LiveStateType if provided
 		if targetUpdateArgs.liveStateType == "-" {
@@ -347,6 +369,19 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["Options"] = optionMap
+		}
+		// Add Facts if provided
+		if len(fact) > 0 {
+			factMap := make(map[string]interface{})
+			if existingFacts, ok := patchMap["Facts"]; ok {
+				if factMapInterface, ok := existingFacts.(map[string]interface{}); ok {
+					for k, v := range factMapInterface {
+						factMap[k] = v
+					}
+				}
+			}
+			_ = patchKeyValues(factMap, fact)
+			patchMap["Facts"] = factMap
 		}
 		// Add LiveStateType if provided
 		if targetUpdateArgs.liveStateType == "-" {

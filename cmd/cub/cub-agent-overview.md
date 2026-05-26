@@ -326,6 +326,19 @@ cub unit apply --space SPACE_SLUG UNIT_SLUG
 cub unit approve --space SPACE_SLUG UNIT_SLUG
 ```
 
+#### Kubernetes
+
+```bash
+# Trace a live resource back to its ConfigHub Unit
+cub k8s source deployment APP --namespace NAMESPACE
+
+# Collect cluster facts onto a Target (stored under Cluster.* keys in the Target's Facts map)
+cub k8s collect --space SPACE_SLUG --kube-context KUBE_CONTEXT TARGET_SLUG
+
+# Preview the facts without updating any Target
+cub k8s collect --kube-context KUBE_CONTEXT --dry-run
+```
+
 #### Functions
 
 Functions can operate on configuration data stored in ConfigHub without retrieving it locally.

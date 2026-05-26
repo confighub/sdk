@@ -13022,7 +13022,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13459,6 +13459,13 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
+                Facts:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -18756,7 +18763,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -18919,7 +18926,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19076,7 +19083,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19185,6 +19192,13 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
+                Facts:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -27502,6 +27516,17 @@ components:
           description: The type of entity.
           readOnly: true
           type: string
+          x-go-type-skip-optional-pointer: true
+        Facts:
+          additionalProperties:
+            type: string
+          description: Facts are properties of the infrastructure this Target represents
+            (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected
+            facts use reserved key prefixes such as "Cluster." and are (re)written
+            by fact collection; all other keys are user-defined custom facts. Facts
+            can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion
+            = '1.31.2'.
+          type: object
           x-go-type-skip-optional-pointer: true
         Labels:
           additionalProperties:

@@ -318,6 +318,18 @@ func runBulkSpaceCreate() error {
 	}
 
 	// Call the bulk create API
+	responses, statusCode, err := bulkCreateSpaces(params, patchJSON)
+	if err != nil {
+		return err
+	}
+
+	return handleBulkSpaceCreateOrUpdateResponse(responses, statusCode, "create", "")
+}
+
+// bulkCreateSpaces calls the bulk-create-spaces API with the given parameters and
+// merge-patch body, returning the responses and the HTTP status code (200 or 207).
+// Shared by `space create` bulk mode and `variant create`.
+func bulkCreateSpaces(params *goclientnew.BulkCreateSpacesParams, patchJSON []byte) ([]goclientnew.SpaceCreateOrUpdateResponse, int, error) {
 	bulkRes, err := cubClientNew.BulkCreateSpacesWithBodyWithResponse(
 		ctx,
 		params,
@@ -325,24 +337,15 @@ func runBulkSpaceCreate() error {
 		bytes.NewReader(patchJSON),
 	)
 	if cubapi.IsAPIError(err, bulkRes) {
-		return cubapi.InterpretErrorGeneric(err, bulkRes)
+		return nil, 0, cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
-
-	// Handle response based on status code
-	var responses []goclientnew.SpaceCreateOrUpdateResponse
-	var statusCode int
 
 	if bulkRes.JSON200 != nil {
-		responses = *bulkRes.JSON200
-		statusCode = 200
+		return *bulkRes.JSON200, 200, nil
 	} else if bulkRes.JSON207 != nil {
-		responses = *bulkRes.JSON207
-		statusCode = 207
-	} else {
-		return fmt.Errorf("unexpected response from bulk create API")
+		return *bulkRes.JSON207, 207, nil
 	}
-
-	return handleBulkSpaceCreateOrUpdateResponse(responses, statusCode, "create", "")
+	return nil, 0, fmt.Errorf("unexpected response from bulk create API")
 }
 
 func handleBulkSpaceCreateOrUpdateResponse(responses []goclientnew.SpaceCreateOrUpdateResponse, statusCode int, operation, changeDescription string) error {
