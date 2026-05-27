@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -51,7 +52,13 @@ func main() {
 	var err error
 	// CUB_CONFIG is optional. If not set, the default path will be used.
 
-	contextManager, err = NewContextManagerWithPath(os.Getenv("CUB_CONFIG"))
+	configPath := os.Getenv("CUB_CONFIG")
+	if configPath != "" {
+		if info, err := os.Stat(configPath); err == nil && info.IsDir() {
+			configPath = filepath.Join(configPath, "config.yaml")
+		}
+	}
+	contextManager, err = NewContextManagerWithPath(configPath)
 	if err != nil {
 		failOnError(err)
 	}
