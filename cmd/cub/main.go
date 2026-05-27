@@ -82,13 +82,16 @@ func main() {
 
 	rootCmd.PersistentPreRunE = globalPreRun
 
-	// Include plugin names in shell tab-completion.
+	// Include plugin command names in shell tab-completion (canonical names only).
 	rootCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var completions []string
 		for _, p := range discoverPlugins() {
-			if len(p.Warnings) == 0 {
-				if strings.HasPrefix(p.Name, toComplete) {
-					completions = append(completions, p.Name)
+			for _, c := range p.Commands {
+				if c.Entrypoint == "" || c.Name == "" {
+					continue
+				}
+				if strings.HasPrefix(c.Name, toComplete) {
+					completions = append(completions, c.Name)
 				}
 			}
 		}
@@ -106,11 +109,13 @@ func main() {
 				}
 			}
 			pluginArgs := extractPluginArgs(os.Args[1:])
-			if pluginErr := handlePluginCommand(pluginArgs); pluginErr != nil {
-				// Plugin resolution failed too — show the original Cobra error.
-				failOnError(err)
+			found, pluginErr := handlePluginCommand(pluginArgs)
+			if found {
+				// The command resolved to a plugin but failed to exec — show why.
+				failOnError(pluginErr)
 			}
-			return
+			// No such plugin command — show the original Cobra error.
+			failOnError(err)
 		}
 		failOnError(err)
 	}

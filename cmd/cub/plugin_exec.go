@@ -4,46 +4,40 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
+
+	coreplugin "github.com/confighub/sdk/core/plugin"
 )
 
-// findPlugin resolves the first arg to a plugin by name.
-// It returns the resolved executable path and the remaining arguments to pass to the plugin.
+// pluginHookTimeout bounds how long an install/upgrade hook may run. Exceeding
+// it kills the hook; the install then proceeds with the default manifest.
+const pluginHookTimeout = 30 * time.Second
+
+// findPlugin resolves the first arg to a plugin command by name or alias.
+// It returns the resolved executable path and the arguments to pass to it
+// (the command's args prefix followed by the remaining user arguments).
 func findPlugin(args []string) (path string, remainingArgs []string, err error) {
 	if len(args) == 0 {
 		return "", nil, fmt.Errorf("no command specified")
 	}
 
-	dir := pluginDir()
-	name := args[0]
-
-	// Check for single-file plugin
-	filePath := filepath.Join(dir, name)
-	if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
-		if isExecutable(info) {
-			return filePath, args[1:], nil
-		}
+	token := args[0]
+	cmd, ok := resolvePluginCommand(token)
+	if !ok {
+		return "", nil, fmt.Errorf("unknown command %q for \"cub\"", token)
 	}
 
-	// Check for directory plugin with entry point from manifest or "main"
-	dirPath := filepath.Join(dir, name)
-	if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
-		ep, epErr := resolveEntrypoint(dirPath)
-		if epErr != nil {
-			return "", nil, epErr
-		}
-		epPath := filepath.Join(dirPath, ep)
-		if epInfo, err := os.Stat(epPath); err == nil && !epInfo.IsDir() {
-			if isExecutable(epInfo) {
-				return epPath, args[1:], nil
-			}
-		}
-	}
-
-	return "", nil, fmt.Errorf("unknown command %q for \"cub\"", name)
+	remaining := make([]string, 0, len(cmd.Args)+len(args)-1)
+	remaining = append(remaining, cmd.Args...)
+	remaining = append(remaining, args[1:]...)
+	return cmd.Entrypoint, remaining, nil
 }
 
 // pluginEnv constructs the CUB_* environment variables for a plugin process.
@@ -69,16 +63,49 @@ func pluginEnv() []string {
 	return env
 }
 
-// handlePluginCommand attempts to resolve and execute a plugin from the given args.
-// It is called from main() when Cobra reports an unknown command.
-func handlePluginCommand(args []string) error {
-	pluginPath, remainingArgs, err := findPlugin(args)
-	if err != nil {
-		return err
+// runHook invokes binPath as an install/upgrade hook in dir. It is best-effort:
+// the exit code is ignored (success is determined by whether a manifest results),
+// and a hook that hangs is killed after pluginHookTimeout. The hook's output is
+// surfaced on stderr but never parsed.
+//
+// A hook gets the same environment as a normal command invocation, plus the
+// hook-specific variables.
+func runHook(binPath, dir, phase, prevVersion string) {
+	ctx, cancel := context.WithTimeout(context.Background(), pluginHookTimeout)
+	defer cancel()
+
+	env := append(pluginEnv(),
+		coreplugin.EnvHook+"="+phase,
+		coreplugin.EnvDir+"="+dir,
+	)
+	if prevVersion != "" {
+		env = append(env, coreplugin.EnvPreviousVersion+"="+prevVersion)
+	}
+
+	cmd := exec.CommandContext(ctx, binPath)
+	cmd.Dir = dir
+	cmd.Env = env
+	cmd.Stdout = os.Stderr
+	cmd.Stderr = os.Stderr
+	_ = cmd.Run()
+}
+
+// handlePluginCommand attempts to resolve and execute a plugin from the given
+// args. The returned found flag distinguishes "no such command" (caller should
+// show the original error) from a command that resolved but failed to exec.
+func handlePluginCommand(args []string) (found bool, err error) {
+	pluginPath, remainingArgs, ferr := findPlugin(args)
+	if ferr != nil {
+		return false, ferr
 	}
 
 	env := pluginEnv()
-	return execPlugin(pluginPath, remainingArgs, env)
+	execErr := execPlugin(pluginPath, remainingArgs, env)
+	// execPlugin only returns when the exec itself failed.
+	if errors.Is(execErr, syscall.ENOEXEC) {
+		return true, fmt.Errorf("plugin command %q: its binary cannot execute on this platform (wrong architecture or not a valid executable)", args[0])
+	}
+	return true, fmt.Errorf("plugin command %q: %w", args[0], execErr)
 }
 
 // execPlugin replaces the current process with the plugin executable via syscall.Exec.

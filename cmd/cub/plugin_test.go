@@ -13,9 +13,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
+
+	coreplugin "github.com/confighub/sdk/core/plugin"
 )
 
 // setupPluginTest creates a temporary plugin directory and initializes a minimal
@@ -28,9 +31,20 @@ func setupPluginTest(t *testing.T) string {
 		t.Fatal(err)
 	}
 
-	// Set up a minimal context manager so pluginDir() works.
+	// Set up a minimal but valid context manager so pluginDir() and pluginEnv()
+	// work (the latter is used when running install/upgrade hooks).
 	contextManager = &ContextManager{
 		configPath: filepath.Join(tmpDir, "config.yaml"),
+		tokenDir:   filepath.Join(tmpDir, "tokens"),
+		config: &Config{
+			APIVersion:     "v1",
+			Kind:           "Config",
+			CurrentContext: "test-ctx",
+			Contexts: []*Context{{
+				Name:       "test-ctx",
+				Coordinate: Coordinate{ServerURL: "https://example.com"},
+			}},
+		},
 	}
 
 	// Reset the plugin cache for each test.
@@ -52,6 +66,32 @@ func createNonExecutableFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// firstEntrypoint returns the resolved entrypoint of a plugin's first command.
+func firstEntrypoint(p *Plugin) string {
+	if len(p.Commands) == 0 {
+		return ""
+	}
+	return p.Commands[0].Entrypoint
+}
+
+// hasWarning reports whether any of the plugin's warnings contains substr.
+func hasWarning(p *Plugin, substr string) bool {
+	for _, w := range p.Warnings {
+		if strings.Contains(w, substr) {
+			return true
+		}
+	}
+	return false
+}
+
+// resetPluginInstallArgs clears the shared install flags between tests.
+func resetPluginInstallArgs(t *testing.T) {
+	t.Helper()
+	pluginInstallArgs.name = ""
+	pluginInstallArgs.platform = ""
+	pluginInstallArgs.sourceRepo = false
 }
 
 func TestDiscoverSingleFilePlugin(t *testing.T) {
@@ -92,8 +132,11 @@ func TestDiscoverDirectoryPlugin(t *testing.T) {
 	if p.Name != "deploy" {
 		t.Errorf("expected name 'deploy', got %q", p.Name)
 	}
-	if p.Path != filepath.Join(dirPath, "main") {
+	if p.Path != dirPath {
 		t.Errorf("unexpected path: %s", p.Path)
+	}
+	if firstEntrypoint(p) != filepath.Join(dirPath, "main") {
+		t.Errorf("unexpected entrypoint: %s", firstEntrypoint(p))
 	}
 	if len(p.Warnings) != 0 {
 		t.Errorf("expected no warnings, got %v", p.Warnings)
@@ -117,13 +160,7 @@ func TestDiscoverDirectoryPluginMissingMain(t *testing.T) {
 	if len(p.Warnings) == 0 {
 		t.Fatal("expected warnings for missing main")
 	}
-	found := false
-	for _, w := range p.Warnings {
-		if w == `directory plugin missing executable "main"` {
-			found = true
-		}
-	}
-	if !found {
+	if !hasWarning(p, `missing executable "main"`) {
 		t.Errorf("expected 'missing main' warning, got %v", p.Warnings)
 	}
 }
@@ -141,13 +178,7 @@ func TestDiscoverNotExecutablePlugin(t *testing.T) {
 	if len(p.Warnings) == 0 {
 		t.Fatal("expected warnings for non-executable")
 	}
-	found := false
-	for _, w := range p.Warnings {
-		if w == "not executable" {
-			found = true
-		}
-	}
-	if !found {
+	if !hasWarning(p, "not executable") {
 		t.Errorf("expected 'not executable' warning, got %v", p.Warnings)
 	}
 }
@@ -163,13 +194,7 @@ func TestDiscoverShadowsBuiltinWarning(t *testing.T) {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
 	p := plugins[0]
-	found := false
-	for _, w := range p.Warnings {
-		if w == `shadows built-in command "version"` {
-			found = true
-		}
-	}
-	if !found {
+	if !hasWarning(p, `shadows built-in command "version"`) {
 		t.Errorf("expected shadow warning, got %v", p.Warnings)
 	}
 }
@@ -700,7 +725,7 @@ func TestPluginInstallBinary(t *testing.T) {
 	}))
 	defer server.Close()
 
-	err := downloadBinary(server.URL+"/my-plugin", filepath.Join(pluginsDir, "hello"))
+	err := downloadPluginBinary(server.URL+"/my-plugin", filepath.Join(pluginsDir, "hello"))
 	if err != nil {
 		t.Fatalf("downloadBinary failed: %v", err)
 	}
@@ -736,22 +761,21 @@ func TestPluginInstallTarGz(t *testing.T) {
 	}))
 	defer server.Close()
 
-	destPath := filepath.Join(pluginsDir, "myplugin")
-	err := downloadAndExtractTarGz(server.URL+"/plugin.tar.gz", destPath)
+	staged, err := stageTarGz(server.URL+"/plugin.tar.gz", pluginsDir)
 	if err != nil {
-		t.Fatalf("downloadAndExtractTarGz failed: %v", err)
+		t.Fatalf("stageTarGz failed: %v", err)
 	}
+	defer os.RemoveAll(staged)
 
-	// Verify directory structure
-	info, err := os.Stat(destPath)
+	info, err := os.Stat(staged)
 	if err != nil {
-		t.Fatalf("plugin dir not found: %v", err)
+		t.Fatalf("staged dir not found: %v", err)
 	}
 	if !info.IsDir() {
 		t.Error("expected directory")
 	}
 
-	mainPath := filepath.Join(destPath, "main")
+	mainPath := filepath.Join(staged, "main")
 	mainInfo, err := os.Stat(mainPath)
 	if err != nil {
 		t.Fatalf("main not found: %v", err)
@@ -760,65 +784,29 @@ func TestPluginInstallTarGz(t *testing.T) {
 		t.Error("expected main to be executable")
 	}
 
-	readmePath := filepath.Join(destPath, "README.md")
+	readmePath := filepath.Join(staged, "README.md")
 	if _, err := os.Stat(readmePath); err != nil {
 		t.Fatalf("README.md not found: %v", err)
 	}
 }
 
-func TestPluginInstallExistingNoForce(t *testing.T) {
+func TestPluginInstallExistingErrors(t *testing.T) {
 	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
 
-	// Create an existing plugin
+	// Create an existing plugin in the slot that the source would resolve to.
 	createExecutableFile(t, filepath.Join(pluginsDir, "existing"), "#!/bin/sh\necho old")
 
-	// Try to install over it without --force
-	destPath := filepath.Join(pluginsDir, "existing")
-	if _, err := os.Stat(destPath); err != nil {
-		t.Fatal("expected existing plugin to exist")
+	// Installing over it must fail before any network access.
+	err := pluginInstallCmdRun(nil, []string{"someorg/cub-existing"})
+	if err == nil {
+		t.Fatal("expected error installing over an existing plugin")
 	}
-
-	// Simulate the check that pluginInstallCmdRun does
-	if _, err := os.Stat(destPath); err == nil {
-		// Plugin exists and force is false — this should be an error
-		err = fmt.Errorf("plugin %q already exists; use --force to overwrite", "existing")
-		if err == nil {
-			t.Fatal("expected error for existing plugin without --force")
-		}
-		if !strings.Contains(err.Error(), "already exists") {
-			t.Errorf("unexpected error: %v", err)
-		}
+	if !strings.Contains(err.Error(), "already installed") {
+		t.Errorf("unexpected error: %v", err)
 	}
-}
-
-func TestPluginInstallExistingWithForce(t *testing.T) {
-	pluginsDir := setupPluginTest(t)
-
-	// Create an existing plugin
-	createExecutableFile(t, filepath.Join(pluginsDir, "existing"), "#!/bin/sh\necho old")
-
-	newContent := "#!/bin/sh\necho new"
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(newContent))
-	}))
-	defer server.Close()
-
-	destPath := filepath.Join(pluginsDir, "existing")
-
-	// Remove old and install new (simulating --force)
-	if err := os.RemoveAll(destPath); err != nil {
-		t.Fatal(err)
-	}
-	if err := downloadBinary(server.URL+"/existing", destPath); err != nil {
-		t.Fatalf("downloadBinary failed: %v", err)
-	}
-
-	content, err := os.ReadFile(destPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(content) != newContent {
-		t.Errorf("content = %q, want %q", string(content), newContent)
+	if !strings.Contains(err.Error(), "upgrade") {
+		t.Errorf("error should point to upgrade: %v", err)
 	}
 }
 
@@ -887,7 +875,7 @@ func TestPluginInstallGitHubAPI(t *testing.T) {
 
 	// Download the asset
 	destPath := filepath.Join(pluginsDir, "myplugin")
-	if err := downloadBinary(asset.BrowserDownloadURL, destPath); err != nil {
+	if err := downloadPluginBinary(asset.BrowserDownloadURL, destPath); err != nil {
 		t.Fatalf("downloadBinary failed: %v", err)
 	}
 
@@ -972,8 +960,8 @@ func TestDiscoverManifestEntrypoint(t *testing.T) {
 	if p.Name != "vmcluster" {
 		t.Errorf("expected name 'vmcluster', got %q", p.Name)
 	}
-	if p.Path != filepath.Join(dirPath, "vmctl") {
-		t.Errorf("expected path to vmctl, got %s", p.Path)
+	if firstEntrypoint(p) != filepath.Join(dirPath, "vmctl") {
+		t.Errorf("expected entrypoint to vmctl, got %s", firstEntrypoint(p))
 	}
 	if len(p.Warnings) != 0 {
 		t.Errorf("expected no warnings, got %v", p.Warnings)
@@ -1021,8 +1009,8 @@ func TestDiscoverManifestFallbackToMain(t *testing.T) {
 	if len(plugins) != 1 {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
-	if plugins[0].Path != filepath.Join(dirPath, "main") {
-		t.Errorf("expected path to main, got %s", plugins[0].Path)
+	if firstEntrypoint(plugins[0]) != filepath.Join(dirPath, "main") {
+		t.Errorf("expected entrypoint to main, got %s", firstEntrypoint(plugins[0]))
 	}
 	if len(plugins[0].Warnings) != 0 {
 		t.Errorf("expected no warnings, got %v", plugins[0].Warnings)
@@ -1091,12 +1079,17 @@ func TestFindPluginManifestMalformedYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// A malformed manifest yields a discovery warning, not a usable command, so
+	// the command does not resolve.
 	_, _, err := findPlugin([]string{"badyaml"})
 	if err == nil {
 		t.Fatal("expected error for malformed manifest")
 	}
-	if !strings.Contains(err.Error(), "invalid cub-plugin.yaml") {
-		t.Errorf("expected 'invalid cub-plugin.yaml' error, got: %v", err)
+
+	// The parse failure is surfaced as a warning during discovery.
+	plugins := discoverPlugins()
+	if len(plugins) != 1 || !hasWarning(plugins[0], "invalid cub-plugin.yaml") {
+		t.Errorf("expected 'invalid cub-plugin.yaml' warning, got: %v", plugins)
 	}
 }
 
@@ -1110,7 +1103,7 @@ func TestPluginInstallSourceRepo(t *testing.T) {
 		"cub-vmcluster-abc123/":                "",
 		"cub-vmcluster-abc123/vmctl":           "#!/bin/sh\necho vmctl",
 		"cub-vmcluster-abc123/cub-plugin.yaml": "entrypoint: vmctl\n",
-		"cub-vmcluster-abc123/README.md":        "# vmcluster",
+		"cub-vmcluster-abc123/README.md":       "# vmcluster",
 	})
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1132,14 +1125,14 @@ func TestPluginInstallSourceRepo(t *testing.T) {
 		pluginName: "vmcluster",
 	}
 
-	destPath := filepath.Join(pluginsDir, "vmcluster")
-	err := downloadRepoTarball(src, destPath)
+	staged, err := stageRepoTarball(src, pluginsDir)
 	if err != nil {
-		t.Fatalf("downloadRepoTarball failed: %v", err)
+		t.Fatalf("stageRepoTarball failed: %v", err)
 	}
+	defer os.RemoveAll(staged)
 
 	// Verify directory was extracted with top-level dir stripped
-	vmctlPath := filepath.Join(destPath, "vmctl")
+	vmctlPath := filepath.Join(staged, "vmctl")
 	info, err := os.Stat(vmctlPath)
 	if err != nil {
 		t.Fatalf("vmctl not found: %v", err)
@@ -1148,19 +1141,13 @@ func TestPluginInstallSourceRepo(t *testing.T) {
 		t.Error("expected vmctl to be executable")
 	}
 
-	// Verify manifest is present
-	manifestPath := filepath.Join(destPath, "cub-plugin.yaml")
-	if _, err := os.Stat(manifestPath); err != nil {
+	// Verify the committed manifest survived extraction.
+	data, err := os.ReadFile(filepath.Join(staged, "cub-plugin.yaml"))
+	if err != nil {
 		t.Fatalf("cub-plugin.yaml not found: %v", err)
 	}
-
-	// Verify the entrypoint resolves through the manifest
-	ep, err := resolveEntrypoint(destPath)
-	if err != nil {
-		t.Fatalf("resolveEntrypoint failed: %v", err)
-	}
-	if ep != "vmctl" {
-		t.Errorf("expected entrypoint 'vmctl', got %q", ep)
+	if !strings.Contains(string(data), "vmctl") {
+		t.Errorf("expected manifest to reference vmctl, got %q", string(data))
 	}
 }
 
@@ -1190,11 +1177,11 @@ func TestPluginInstallSourceRepoWithRef(t *testing.T) {
 		pluginName: "myplugin",
 	}
 
-	destPath := filepath.Join(pluginsDir, "myplugin")
-	err := downloadRepoTarball(src, destPath)
+	staged, err := stageRepoTarball(src, pluginsDir)
 	if err != nil {
-		t.Fatalf("downloadRepoTarball failed: %v", err)
+		t.Fatalf("stageRepoTarball failed: %v", err)
 	}
+	defer os.RemoveAll(staged)
 
 	// Verify the ref was included in the API URL
 	if !strings.HasSuffix(requestedPath, "/tarball/dev") {
@@ -1229,12 +1216,7 @@ func TestPluginInstallAutoFallbackToRepo(t *testing.T) {
 	defer func() { githubAPIBaseURL = origBaseURL }()
 
 	// Exercise the full pluginInstallCmdRun path
-	pluginInstallArgs = struct {
-		name       string
-		force      bool
-		platform   string
-		sourceRepo bool
-	}{name: "", force: false, platform: "", sourceRepo: false}
+	resetPluginInstallArgs(t)
 
 	err := pluginInstallCmdRun(nil, []string{"testorg/cub-myplugin"})
 	if err != nil {
@@ -1245,6 +1227,11 @@ func TestPluginInstallAutoFallbackToRepo(t *testing.T) {
 	mainPath := filepath.Join(pluginsDir, "myplugin", "main")
 	if _, err := os.Stat(mainPath); err != nil {
 		t.Fatalf("main not found after fallback install: %v", err)
+	}
+
+	// The install source should have been recorded for later upgrade.
+	if _, err := readInstallMetadata(filepath.Join(pluginsDir, "myplugin")); err != nil {
+		t.Errorf("expected install metadata to be recorded: %v", err)
 	}
 }
 
@@ -1294,20 +1281,327 @@ func TestExtractTarGzStripsSingleTopDir(t *testing.T) {
 	}))
 	defer server.Close()
 
-	destPath := filepath.Join(pluginsDir, "myplugin")
-	err := downloadAndExtractTarGz(server.URL+"/plugin.tar.gz", destPath)
+	staged, err := stageTarGz(server.URL+"/plugin.tar.gz", pluginsDir)
 	if err != nil {
-		t.Fatalf("downloadAndExtractTarGz failed: %v", err)
+		t.Fatalf("stageTarGz failed: %v", err)
 	}
+	defer os.RemoveAll(staged)
 
 	// The top-level "myrepo-v1.0.0" should have been stripped
-	mainPath := filepath.Join(destPath, "main")
+	mainPath := filepath.Join(staged, "main")
 	if _, err := os.Stat(mainPath); err != nil {
 		t.Fatalf("main not found after stripping top dir: %v", err)
 	}
 
-	readmePath := filepath.Join(destPath, "README.md")
+	readmePath := filepath.Join(staged, "README.md")
 	if _, err := os.Stat(readmePath); err != nil {
 		t.Fatalf("README.md not found after stripping top dir: %v", err)
+	}
+}
+
+// --- collision and hook tests ---
+
+func TestCheckCommandCollisions(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+
+	// An installed plugin "tools" that contributes commands "deploy" and "dep".
+	toolsDir := filepath.Join(pluginsDir, "tools")
+	if err := os.MkdirAll(toolsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(toolsDir, "tools"), "#!/bin/sh\n")
+	manifest := "commands:\n  - name: deploy\n    aliases: [dep]\n    entrypoint: tools\n"
+	if err := os.WriteFile(filepath.Join(toolsDir, "cub-plugin.yaml"), []byte(manifest), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name    string
+		exclude string
+		cmds    []struct{ name, alias string }
+		wantErr string
+	}{
+		{"builtin", "new", []struct{ name, alias string }{{"version", ""}}, "built-in"},
+		{"otherplugin", "new", []struct{ name, alias string }{{"deploy", ""}}, "already provided"},
+		{"otherplugin alias", "new", []struct{ name, alias string }{{"dep", ""}}, "already provided"},
+		{"duplicate within manifest", "new", []struct{ name, alias string }{{"a", "a"}}, "more than once"},
+		{"ok", "new", []struct{ name, alias string }{{"fresh", "f"}}, ""},
+		{"self excluded", "tools", []struct{ name, alias string }{{"deploy", "dep"}}, ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var cmds []coreplugin.Command
+			for _, c := range tc.cmds {
+				cc := coreplugin.Command{Name: c.name, Entrypoint: "x"}
+				if c.alias != "" {
+					cc.Aliases = []string{c.alias}
+				}
+				cmds = append(cmds, cc)
+			}
+			err := checkCommandCollisions(tc.exclude, cmds)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("expected error containing %q, got %v", tc.wantErr, err)
+			}
+		})
+	}
+}
+
+// TestPluginInstallRunsHookAndManifest installs a bare-binary plugin whose hook
+// writes a multi-command manifest, then verifies discovery and routing.
+func TestPluginInstallRunsHookAndManifest(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	// A "binary" that, when invoked as a hook, writes a manifest declaring two
+	// commands (with an alias) backed by itself, then exits. Otherwise it echoes.
+	hookScript := `#!/bin/sh
+if [ -n "$CUB_PLUGIN_HOOK" ]; then
+  cat > "$CUB_PLUGIN_DIR/cub-plugin.yaml" <<YAML
+name: demo
+version: 1.0.0
+commands:
+  - name: demo
+    aliases: [dmo]
+    entrypoint: demo
+  - name: demo-extra
+    entrypoint: demo
+    args: ["extra"]
+YAML
+  exit 0
+fi
+echo "ran: $@"
+`
+	assetName := fmt.Sprintf("demo-%s-%s", runtime.GOOS, runtime.GOARCH)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/releases/latest"):
+			release := ghRelease{
+				TagName: "v1.0.0",
+				Assets: []ghAsset{{
+					Name:               assetName,
+					BrowserDownloadURL: fmt.Sprintf("http://%s/download/%s", r.Host, assetName),
+				}},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(release)
+		case strings.HasPrefix(r.URL.Path, "/download/"):
+			w.Write([]byte(hookScript))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	if err := pluginInstallCmdRun(nil, []string{"someorg/cub-demo"}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+
+	// The manifest the hook wrote should drive discovery.
+	plugins := discoverPlugins()
+	if len(plugins) != 1 {
+		t.Fatalf("expected 1 plugin, got %d", len(plugins))
+	}
+	p := plugins[0]
+	if p.Name != "demo" {
+		t.Errorf("expected slot 'demo', got %q", p.Name)
+	}
+	if len(p.Warnings) != 0 {
+		t.Errorf("unexpected warnings: %v", p.Warnings)
+	}
+	if len(p.Commands) != 2 {
+		t.Fatalf("expected 2 commands, got %d: %+v", len(p.Commands), p.Commands)
+	}
+	if p.Version != "1.0.0" {
+		t.Errorf("expected version 1.0.0, got %q", p.Version)
+	}
+
+	// Routing: the alias resolves to the binary with no args prefix.
+	binPath := filepath.Join(pluginsDir, "demo", "demo")
+	path, remaining, err := findPlugin([]string{"dmo", "go"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != binPath {
+		t.Errorf("expected %s, got %s", binPath, path)
+	}
+	if len(remaining) != 1 || remaining[0] != "go" {
+		t.Errorf("expected [go], got %v", remaining)
+	}
+
+	// Routing: the second command prepends its args prefix.
+	_, remaining, err = findPlugin([]string{"demo-extra", "run"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(remaining) != 2 || remaining[0] != "extra" || remaining[1] != "run" {
+		t.Errorf("expected [extra run], got %v", remaining)
+	}
+
+	// Install metadata was recorded.
+	if _, err := readInstallMetadata(filepath.Join(pluginsDir, "demo")); err != nil {
+		t.Errorf("expected install metadata: %v", err)
+	}
+}
+
+// TestPluginUpgradePreservesStateAndRegenerates installs a bare-binary plugin,
+// then upgrades it, verifying user files are preserved, the upgrade hook runs
+// with the previous version, and the manifest is regenerated.
+func TestPluginUpgradePreservesStateAndRegenerates(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	version := "1.0.0"
+	assetName := fmt.Sprintf("demo-%s-%s", runtime.GOOS, runtime.GOARCH)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/releases/latest"):
+			release := ghRelease{
+				TagName: "v" + version,
+				Assets: []ghAsset{{
+					Name:               assetName,
+					BrowserDownloadURL: fmt.Sprintf("http://%s/download/%s", r.Host, assetName),
+				}},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(release)
+		case strings.HasPrefix(r.URL.Path, "/download/"):
+			// The hook records phase + previous version and regenerates the manifest.
+			script := fmt.Sprintf(`#!/bin/sh
+if [ -n "$CUB_PLUGIN_HOOK" ]; then
+  echo "$CUB_PLUGIN_HOOK $CUB_PLUGIN_PREVIOUS_VERSION" > "$CUB_PLUGIN_DIR/hookinfo"
+  cat > "$CUB_PLUGIN_DIR/cub-plugin.yaml" <<YAML
+name: demo
+version: %s
+commands:
+  - name: demo
+    entrypoint: demo
+YAML
+  exit 0
+fi
+`, version)
+			w.Write([]byte(script))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	// Install v1.0.0.
+	if err := pluginInstallCmdRun(nil, []string{"someorg/cub-demo"}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+	demoDir := filepath.Join(pluginsDir, "demo")
+
+	// Simulate a user-created config file in the plugin directory.
+	userFile := filepath.Join(demoDir, "config.txt")
+	if err := os.WriteFile(userFile, []byte("user data"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Bump the served version and upgrade.
+	version = "2.0.0"
+	pluginCache = nil
+	pluginCacheOnce = sync.Once{}
+	if err := upgradeOnePlugin(pluginsDir, "demo", ""); err != nil {
+		t.Fatalf("upgrade failed: %v", err)
+	}
+
+	// User file preserved.
+	if data, err := os.ReadFile(userFile); err != nil || string(data) != "user data" {
+		t.Errorf("user file not preserved: data=%q err=%v", string(data), err)
+	}
+
+	// Hook ran in upgrade mode with the previous version.
+	info, err := os.ReadFile(filepath.Join(demoDir, "hookinfo"))
+	if err != nil {
+		t.Fatalf("hookinfo not found: %v", err)
+	}
+	if strings.TrimSpace(string(info)) != "upgrade 1.0.0" {
+		t.Errorf("expected 'upgrade 1.0.0', got %q", strings.TrimSpace(string(info)))
+	}
+
+	// Manifest regenerated to the new version.
+	m, err := coreplugin.Read(demoDir)
+	if err != nil || m == nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+	if m.Version != "2.0.0" {
+		t.Errorf("expected version 2.0.0, got %q", m.Version)
+	}
+}
+
+// TestPluginInstallTarballNoManifestDefaultsToMain verifies that a tarball
+// release without a committed cub-plugin.yaml falls back to a single command
+// whose entrypoint is "main".
+func TestPluginInstallTarballNoManifestDefaultsToMain(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	archive := createTestTarGz(t, map[string]string{
+		"main":      "#!/bin/sh\necho hi",
+		"README.md": "# plugin",
+	})
+	assetName := fmt.Sprintf("myplugin-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/releases/latest"):
+			rel := ghRelease{
+				TagName: "v1.0.0",
+				Assets: []ghAsset{{
+					Name:               assetName,
+					BrowserDownloadURL: fmt.Sprintf("http://%s/download/%s", r.Host, assetName),
+				}},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(rel)
+		case strings.HasPrefix(r.URL.Path, "/download/"):
+			w.Write(archive)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	origBaseURL := githubAPIBaseURL
+	githubAPIBaseURL = server.URL
+	defer func() { githubAPIBaseURL = origBaseURL }()
+
+	if err := pluginInstallCmdRun(nil, []string{"someorg/cub-myplugin"}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+
+	m, err := coreplugin.Read(filepath.Join(pluginsDir, "myplugin"))
+	if err != nil || m == nil {
+		t.Fatalf("read manifest: %v", err)
+	}
+	if len(m.Commands) != 1 || m.Commands[0].Name != "myplugin" || m.Commands[0].Entrypoint != "main" {
+		t.Fatalf("expected single command myplugin->main, got %+v", m.Commands)
+	}
+
+	// The command resolves to the "main" executable.
+	path, _, err := findPlugin([]string{"myplugin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != filepath.Join(pluginsDir, "myplugin", "main") {
+		t.Errorf("expected entrypoint .../myplugin/main, got %s", path)
 	}
 }

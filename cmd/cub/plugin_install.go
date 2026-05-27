@@ -17,15 +17,51 @@ import (
 	"strings"
 	"time"
 
+	coreplugin "github.com/confighub/sdk/core/plugin"
 	"github.com/spf13/cobra"
 )
 
 // githubAPIBaseURL is the base URL for GitHub API calls. Tests override this.
 var githubAPIBaseURL = "https://api.github.com"
 
+// installMetadataFile records where a plugin came from so it can be upgraded
+// without re-specifying the source. It is cub-owned and kept separate from the
+// hook-regenerated cub-plugin.yaml.
+const installMetadataFile = ".cub-plugin-install.json"
+
+type installMetadata struct {
+	Source      string `json:"source"`
+	Tag         string `json:"tag,omitempty"`
+	InstalledAt string `json:"installedAt,omitempty"`
+}
+
+func writeInstallMetadata(dir, source, tag string) error {
+	m := installMetadata{
+		Source:      source,
+		Tag:         tag,
+		InstalledAt: time.Now().UTC().Format(time.RFC3339),
+	}
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, installMetadataFile), data, 0644)
+}
+
+func readInstallMetadata(dir string) (*installMetadata, error) {
+	data, err := os.ReadFile(filepath.Join(dir, installMetadataFile))
+	if err != nil {
+		return nil, err
+	}
+	var m installMetadata
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("invalid %s: %w", installMetadataFile, err)
+	}
+	return &m, nil
+}
+
 var pluginInstallArgs struct {
 	name       string
-	force      bool
 	platform   string
 	sourceRepo bool
 }
@@ -43,14 +79,16 @@ var pluginInstallCmd = &cobra.Command{
 For repositories without releases, the repo source is downloaded automatically.
 Use --source-repo to force this behavior even when releases exist:
   cub plugin install org/repo --source-repo
-  cub plugin install org/repo@branch --source-repo`),
+  cub plugin install org/repo@branch --source-repo
+
+If the plugin is already installed, install fails. Use 'cub plugin upgrade' to
+update it, or 'cub plugin uninstall' first to reinstall fresh.`),
 	Args: cobra.ExactArgs(1),
 	RunE: pluginInstallCmdRun,
 }
 
 func init() {
 	pluginInstallCmd.Flags().StringVar(&pluginInstallArgs.name, "name", "", "Override the plugin name")
-	pluginInstallCmd.Flags().BoolVar(&pluginInstallArgs.force, "force", false, "Overwrite an existing plugin")
 	pluginInstallCmd.Flags().StringVar(&pluginInstallArgs.platform, "platform", "", "Target platform (e.g. linux/amd64)")
 	pluginInstallCmd.Flags().BoolVar(&pluginInstallArgs.sourceRepo, "source-repo", false, "Force install from repository source even if releases exist")
 	pluginCmd.AddCommand(pluginInstallCmd)
@@ -257,77 +295,6 @@ func repoTarballURL(src *githubSource) string {
 	return fmt.Sprintf("%s/repos/%s/%s/tarball/%s", githubAPIBaseURL, src.owner, src.repo, ref)
 }
 
-// downloadRepoTarball downloads a repo tarball from the GitHub API.
-func downloadRepoTarball(src *githubSource, destPath string) error {
-	url := repoTarballURL(src)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("User-Agent", "cub-cli")
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	client := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		if src.tag == "" {
-			return fmt.Errorf("repository %s/%s not found", src.owner, src.repo)
-		}
-		return fmt.Errorf("repository %s/%s not found or ref %q does not exist", src.owner, src.repo, src.tag)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GitHub API returned %s", resp.Status)
-	}
-
-	// GitHub returns a tarball; extract it with single-dir stripping
-	dir := filepath.Dir(destPath)
-	tmpDir, err := os.MkdirTemp(dir, ".plugin-extract-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	if err := extractTarGz(resp.Body, tmpDir); err != nil {
-		return fmt.Errorf("extraction failed: %w", err)
-	}
-
-	// GitHub tarballs always have a single top-level directory
-	extractedDir := tmpDir
-	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		return err
-	}
-	if len(entries) == 1 && entries[0].IsDir() {
-		extractedDir = filepath.Join(tmpDir, entries[0].Name())
-	}
-
-	if err := os.Rename(extractedDir, destPath); err != nil {
-		return fmt.Errorf("failed to install plugin: %w", err)
-	}
-
-	// Ensure entry point is executable if present
-	ep, epErr := resolveEntrypoint(destPath)
-	if epErr != nil {
-		return epErr
-	}
-	epPath := filepath.Join(destPath, ep)
-	if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
-		if err := os.Chmod(epPath, 0755); err != nil {
-			return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
-		}
-	}
-
-	return nil
-}
-
 // matchAsset selects the best asset for the target platform.
 func matchAsset(assets []ghAsset, targetOS, targetArch string) (*ghAsset, error) {
 	osAliases := platformAliases(targetOS)
@@ -407,102 +374,135 @@ func containsWord(name, word string) bool {
 	return strings.Contains(name, word)
 }
 
-// downloadBinary downloads a URL to destPath atomically.
-func downloadBinary(url, destPath string) error {
-	client := &http.Client{Timeout: 5 * time.Minute}
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
+// derivePluginName determines the plugin name from the source and flags.
+func derivePluginName(src any) string {
+	switch s := src.(type) {
+	case *directURLSource:
+		return s.derivedName
+	case *githubSource:
+		return s.pluginName
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed: %s", resp.Status)
-	}
-
-	dir := filepath.Dir(destPath)
-	tmpFile, err := os.CreateTemp(dir, ".plugin-download-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
-	}
-	tmpPath := tmpFile.Name()
-	defer func() {
-		tmpFile.Close()
-		os.Remove(tmpPath)
-	}()
-
-	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
-		return fmt.Errorf("download failed: %w", err)
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
-
-	if err := os.Chmod(tmpPath, 0755); err != nil {
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
-
-	if err := os.Rename(tmpPath, destPath); err != nil {
-		return fmt.Errorf("failed to install plugin: %w", err)
-	}
-
-	return nil
+	return ""
 }
 
-// downloadAndExtractTarGz downloads a tar.gz URL and extracts it to destPath.
-func downloadAndExtractTarGz(url, destPath string) error {
-	client := &http.Client{Timeout: 5 * time.Minute}
+// --- download / extraction primitives -------------------------------------
 
+// httpGet performs a GET and returns the response body, erroring on non-200.
+func httpGet(url string) (*http.Response, error) {
+	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
+		return nil, fmt.Errorf("download failed: %w", err)
 	}
-	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed: %s", resp.Status)
+		resp.Body.Close()
+		return nil, fmt.Errorf("download failed: %s", resp.Status)
 	}
+	return resp, nil
+}
 
-	// Extract to a temp directory next to the final destination
-	dir := filepath.Dir(destPath)
-	tmpDir, err := os.MkdirTemp(dir, ".plugin-extract-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	if err := extractTarGz(resp.Body, tmpDir); err != nil {
-		return fmt.Errorf("extraction failed: %w", err)
-	}
-
-	// Check if there's a single top-level directory to strip
-	extractedDir := tmpDir
-	entries, err := os.ReadDir(tmpDir)
+// downloadPluginBinary downloads url to destPath and makes it executable.
+func downloadPluginBinary(url, destPath string) error {
+	resp, err := httpGet(url)
 	if err != nil {
 		return err
 	}
-	if len(entries) == 1 && entries[0].IsDir() {
-		extractedDir = filepath.Join(tmpDir, entries[0].Name())
+	defer resp.Body.Close()
+
+	f, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		return fmt.Errorf("download failed: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Chmod(destPath, 0755)
+}
+
+// strippedDir returns the inner directory if dir contains exactly one entry that
+// is a directory (the wrapper directory GitHub archives create), else dir.
+func strippedDir(dir string) string {
+	entries, err := os.ReadDir(dir)
+	if err == nil && len(entries) == 1 && entries[0].IsDir() {
+		return filepath.Join(dir, entries[0].Name())
+	}
+	return dir
+}
+
+// stageTarGz downloads and extracts a tar.gz from url into a new staging
+// directory under parentDir, stripping a single wrapper directory. The caller
+// owns the returned directory.
+func stageTarGz(url, parentDir string) (string, error) {
+	resp, err := httpGet(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	return stageTarGzReader(resp.Body, parentDir)
+}
+
+// stageTarGzReader extracts a gzipped tar from r into a new staging directory.
+func stageTarGzReader(r io.Reader, parentDir string) (string, error) {
+	wrapper, err := os.MkdirTemp(parentDir, ".plugin-extract-*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(wrapper)
+
+	if err := extractTarGz(r, wrapper); err != nil {
+		return "", fmt.Errorf("extraction failed: %w", err)
 	}
 
-	if err := os.Rename(extractedDir, destPath); err != nil {
-		return fmt.Errorf("failed to install plugin: %w", err)
+	src := strippedDir(wrapper)
+	staged, err := os.MkdirTemp(parentDir, ".plugin-install-*")
+	if err != nil {
+		return "", err
+	}
+	// MkdirTemp made an empty dir; replace it with the extracted content.
+	if err := os.RemoveAll(staged); err != nil {
+		return "", err
+	}
+	if err := os.Rename(src, staged); err != nil {
+		return "", fmt.Errorf("extraction failed: %w", err)
+	}
+	return staged, nil
+}
+
+// stageRepoTarball downloads a GitHub repo tarball and stages it.
+func stageRepoTarball(src *githubSource, parentDir string) (string, error) {
+	url := repoTarballURL(src)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "cub-cli")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	// Ensure entry point is executable if present
-	ep, epErr := resolveEntrypoint(destPath)
-	if epErr != nil {
-		return epErr
+	client := &http.Client{Timeout: 5 * time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("download failed: %w", err)
 	}
-	epPath := filepath.Join(destPath, ep)
-	if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
-		if err := os.Chmod(epPath, 0755); err != nil {
-			return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		if src.tag == "" {
+			return "", fmt.Errorf("repository %s/%s not found", src.owner, src.repo)
 		}
+		return "", fmt.Errorf("repository %s/%s not found or ref %q does not exist", src.owner, src.repo, src.tag)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GitHub API returned %s", resp.Status)
 	}
 
-	return nil
+	return stageTarGzReader(resp.Body, parentDir)
 }
 
 // extractTarGz extracts a gzipped tar archive from r into destDir.
@@ -559,15 +559,79 @@ func extractTarGz(r io.Reader, destDir string) error {
 	return nil
 }
 
-// derivePluginName determines the plugin name from the source and flags.
-func derivePluginName(src any) string {
-	switch s := src.(type) {
-	case *directURLSource:
-		return s.derivedName
-	case *githubSource:
-		return s.pluginName
+// --- staging finalization --------------------------------------------------
+
+// effectiveCommands returns the commands a manifest contributes, applying the
+// legacy single-command fallback for manifests with no commands list.
+func effectiveCommands(slot string, m *coreplugin.Manifest) []coreplugin.Command {
+	if m != nil && len(m.Commands) > 0 {
+		return m.Commands
 	}
-	return ""
+	ep := "main"
+	if m != nil && m.Entrypoint != "" {
+		ep = m.Entrypoint
+	}
+	return []coreplugin.Command{{Name: slot, Entrypoint: ep}}
+}
+
+// defaultEntrypoint chooses the entrypoint for the default manifest written when
+// a plugin ships no cub-plugin.yaml. A bare binary was saved by the installer
+// under a known filename, so use that; a tarball or repo source must contain an
+// executable named "main" (the conventional entry point).
+func defaultEntrypoint(binPath string) string {
+	if binPath != "" {
+		return filepath.Base(binPath)
+	}
+	return "main"
+}
+
+// finalizeStaging ensures the staged directory has a manifest, checks for
+// command collisions, records install metadata, makes entrypoints executable,
+// and atomically promotes it to destPath. excludeSlot is excluded from the
+// collision namespace (used on upgrade so a plugin doesn't collide with itself).
+func finalizeStaging(staged, destPath, slot, excludeSlot, source, tag string, defaultEntrypoint string) error {
+	m, err := coreplugin.Read(staged)
+	if err != nil {
+		return err
+	}
+	if m == nil {
+		// No manifest produced — write the default single-command manifest.
+		def := coreplugin.Manifest{Commands: []coreplugin.Command{{Name: slot, Entrypoint: defaultEntrypoint}}}
+		if err := coreplugin.Write(staged, def); err != nil {
+			return err
+		}
+		m = &def
+	}
+
+	cmds := effectiveCommands(slot, m)
+	if err := checkCommandCollisions(excludeSlot, cmds); err != nil {
+		return err
+	}
+
+	// Make declared entrypoints executable.
+	for _, c := range cmds {
+		ep := c.Entrypoint
+		if ep == "" {
+			ep = "main"
+		}
+		epPath := filepath.Join(staged, ep)
+		if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
+			if err := os.Chmod(epPath, 0755); err != nil {
+				return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
+			}
+		}
+	}
+
+	if source != "" {
+		if err := writeInstallMetadata(staged, source, tag); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Rename(staged, destPath); err != nil {
+		return fmt.Errorf("failed to install plugin: %w", err)
+	}
+	return nil
 }
 
 func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
@@ -594,42 +658,57 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create plugin directory: %w", err)
 	}
 
-	// 4. Check for existing plugin
+	// 4. Refuse to overwrite an existing plugin
 	destPath := filepath.Join(dir, name)
 	if _, err := os.Stat(destPath); err == nil {
-		if !pluginInstallArgs.force {
-			return fmt.Errorf("plugin %q already exists; use --force to overwrite", name)
-		}
-		if err := os.RemoveAll(destPath); err != nil {
-			return fmt.Errorf("failed to remove existing plugin: %w", err)
-		}
+		return fmt.Errorf("plugin %q is already installed; run 'cub plugin upgrade %s' to update it, or 'cub plugin uninstall %s' first to reinstall fresh", name, name, name)
 	}
 
-	// 5. Handle --source-repo: download repo tarball directly
+	// 5. Stage the plugin into a temp directory, run the install hook, finalize.
+	staged, tag, binPath, err := fetchPlugin(src, name, dir)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(staged)
+
+	if binPath != "" {
+		runHook(binPath, staged, coreplugin.HookInstall, "")
+	}
+
+	if err := finalizeStaging(staged, destPath, name, name, source, tag, defaultEntrypoint(binPath)); err != nil {
+		return err
+	}
+
+	tprint("Installed plugin %q to %s", name, destPath)
+	return nil
+}
+
+// fetchPlugin fetches the plugin into a staging directory. It returns the
+// staging dir, the resolved release tag (empty for non-release sources), and —
+// for a bare-binary source — the path to the downloaded binary so the caller can
+// run the appropriate hook (install or upgrade). binPath is empty for archive
+// and repo-source plugins, which carry their own committed manifest.
+func fetchPlugin(src any, name, parentDir string) (staged, tag, binPath string, err error) {
+	// --source-repo: download repo tarball directly.
 	if pluginInstallArgs.sourceRepo {
 		ghSrc, ok := src.(*githubSource)
 		if !ok {
-			return fmt.Errorf("--source-repo can only be used with GitHub sources (org/repo)")
+			return "", "", "", fmt.Errorf("--source-repo can only be used with GitHub sources (org/repo)")
 		}
 		ref := ghSrc.tag
 		if ref == "" {
 			ref = "default branch"
 		}
 		tprint("Downloading %s/%s (%s)...", ghSrc.owner, ghSrc.repo, ref)
-		if err := downloadRepoTarball(ghSrc, destPath); err != nil {
-			return err
-		}
-		tprint("Installed plugin %q to %s", name, destPath)
-		return nil
+		staged, err = stageRepoTarball(ghSrc, parentDir)
+		return staged, ghSrc.tag, "", err
 	}
 
-	// 6. Resolve platform for release asset matching
 	targetOS, targetArch, err := resolvePlatform(pluginInstallArgs.platform)
 	if err != nil {
-		return err
+		return "", "", "", err
 	}
 
-	// 7. Determine download URL and whether it's a tar.gz
 	var downloadURL string
 	var isTarGz bool
 
@@ -638,40 +717,42 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 		downloadURL = s.url
 		isTarGz = s.isTarGz
 	case *githubSource:
-		release, err := resolveGitHubRelease(s)
-		if err != nil {
-			if errors.Is(err, errNoReleases) {
+		release, rerr := resolveGitHubRelease(s)
+		if rerr != nil {
+			if errors.Is(rerr, errNoReleases) {
 				tprint("No releases found for %s/%s, installing from repository source...", s.owner, s.repo)
-				if err := downloadRepoTarball(s, destPath); err != nil {
-					return err
-				}
-				tprint("Installed plugin %q to %s", name, destPath)
-				return nil
+				staged, err = stageRepoTarball(s, parentDir)
+				return staged, s.tag, "", err
 			}
-			return err
+			return "", "", "", rerr
 		}
-		asset, err := matchAsset(release.Assets, targetOS, targetArch)
-		if err != nil {
-			return err
+		asset, aerr := matchAsset(release.Assets, targetOS, targetArch)
+		if aerr != nil {
+			return "", "", "", aerr
 		}
 		downloadURL = asset.BrowserDownloadURL
 		lower := strings.ToLower(asset.Name)
 		isTarGz = strings.HasSuffix(lower, ".tar.gz") || strings.HasSuffix(lower, ".tgz")
+		tag = release.TagName
 		tprint("Found release %s, asset %s", release.TagName, asset.Name)
 	}
 
-	// 8. Download and install
 	tprint("Downloading %s...", downloadURL)
 	if isTarGz {
-		if err := downloadAndExtractTarGz(downloadURL, destPath); err != nil {
-			return err
-		}
-	} else {
-		if err := downloadBinary(downloadURL, destPath); err != nil {
-			return err
-		}
+		staged, err = stageTarGz(downloadURL, parentDir)
+		return staged, tag, "", err
 	}
 
-	tprint("Installed plugin %q to %s", name, destPath)
-	return nil
+	// Bare binary: stage as a directory containing the binary. The caller runs
+	// the install/upgrade hook against the returned binPath.
+	staged, err = os.MkdirTemp(parentDir, ".plugin-install-*")
+	if err != nil {
+		return "", "", "", err
+	}
+	binPath = filepath.Join(staged, name)
+	if err := downloadPluginBinary(downloadURL, binPath); err != nil {
+		os.RemoveAll(staged)
+		return "", "", "", err
+	}
+	return staged, tag, binPath, nil
 }
