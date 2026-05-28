@@ -3,7 +3,7 @@ module github.com/confighub/sdk/cmd/fctl
 go 1.25.0
 
 require (
-	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/core v0.1.64
 	github.com/fatih/color v1.18.0
 	github.com/google/uuid v1.6.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -34,4 +34,3 @@ require (
 	golang.org/x/text v0.30.0 // indirect
 )
 
-replace github.com/confighub/sdk/core => ../../core
