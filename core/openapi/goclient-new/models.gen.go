@@ -398,13 +398,23 @@ type AttributeValueList = []AttributeValue
 
 // Binding defines model for Binding.
 type Binding struct {
-	AttributeName    string        `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
-	AutoUpdate       bool          `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
-	DataType         string        `json:"DataType,omitempty" yaml:"DataType,omitempty"`
-	Expression       string        `json:"Expression,omitempty" yaml:"Expression,omitempty"`
-	InLiveState      bool          `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
-	NeededPath       string        `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
-	NeededResource   *ResourceInfo `json:"NeededResource,omitempty" yaml:"NeededResource,omitempty"`
+	// AttributeName Shared attribute name that matched the need to the provide
+	AttributeName string `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
+
+	// AutoUpdate Whether this binding should be automatically updated when the provided value changes; if false, the binding is manual and will not be modified by automatic resolution
+	AutoUpdate bool `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
+
+	// DataType DataType of the bound value
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// InLiveState Whether the provided value comes from the upstream unit's LiveState rather than its Data
+	InLiveState bool `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
+
+	// NeededPath Resolved path within the needed resource
+	NeededPath     string        `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
+	NeededResource *ResourceInfo `json:"NeededResource,omitempty" yaml:"NeededResource,omitempty"`
+
+	// ProvidedPath Resolved path within the provided resource
 	ProvidedPath     string        `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
 	ProvidedResource *ResourceInfo `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
 }
@@ -1553,6 +1563,9 @@ type Link struct {
 	// DownstreamLastMergedRevisionNum The sequence number of the revision of the downstream unit created by the last merge.
 	DownstreamLastMergedRevisionNum int64 `json:"DownstreamLastMergedRevisionNum,omitempty" yaml:"DownstreamLastMergedRevisionNum,omitempty"`
 
+	// DownstreamPaths Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths.
+	DownstreamPaths []PathExpression `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
+
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
@@ -1586,7 +1599,7 @@ type Link struct {
 	// TransformInvocationID Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is upserted into the downstream Unit. Only valid when UpdateType is Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must match the downstream Unit's toolchain (currently only Kubernetes/YAML / YAML output).
 	TransformInvocationID *openapi_types.UUID `json:"TransformInvocationID,omitempty" yaml:"TransformInvocationID,omitempty"`
 
-	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit.
+	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths).
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -1600,6 +1613,9 @@ type Link struct {
 
 	// UpstreamOrganizationID Organization ID of the link this link was cloned from (if any).
 	UpstreamOrganizationID *openapi_types.UUID `json:"UpstreamOrganizationID,omitempty" yaml:"UpstreamOrganizationID,omitempty"`
+
+	// UpstreamPaths Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths.
+	UpstreamPaths []NamedPath `json:"UpstreamPaths,omitempty" yaml:"UpstreamPaths,omitempty"`
 
 	// UpstreamSpaceID Space ID of the link this link was cloned from (if any).
 	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
@@ -1743,6 +1759,16 @@ type MutationMap map[string]MutationInfo
 // MutationType defines model for MutationType.
 type MutationType string
 
+// NamedPath defines model for NamedPath.
+type NamedPath struct {
+	// Name Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// Path Resolved path within Resource to read via get-paths
+	Path     string        `json:"Path,omitempty" yaml:"Path,omitempty"`
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+}
+
 // Organization The top-level container for an organization using ConfigHub.
 type Organization struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1810,6 +1836,25 @@ type OrganizationMember struct {
 
 	// Username Unique username for a User. Must be unique for all of ConfigHub.
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
+}
+
+// PathExpression defines model for PathExpression.
+type PathExpression struct {
+	// DataType Data type of the resulting AttributeValue. Must be string for now.
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Evaluator Expression evaluator: "template" for Go templates or "cel" for CEL
+	Evaluator string `json:"Evaluator,omitempty" yaml:"Evaluator,omitempty"`
+
+	// Expression Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope.
+	Expression string `json:"Expression,omitempty" yaml:"Expression,omitempty"`
+
+	// Parameters Names of UpstreamPaths referenced by Expression. Each entry must be a legal identifier and must match an UpstreamPaths Name.
+	Parameters []string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+
+	// Path Unresolved path within Resource to write via set-attributes
+	Path     string        `json:"Path,omitempty" yaml:"Path,omitempty"`
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
 // PathToVisitorInfoType defines model for PathToVisitorInfoType.
@@ -5872,21 +5917,23 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
-	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
-	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug                          *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
-	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
-	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
-	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
-	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
+	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
+	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
+	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`
@@ -5988,21 +6035,23 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
-	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
-	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug                          *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
-	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
-	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
-	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
-	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
+	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
+	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
+	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`
@@ -7566,21 +7615,23 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName                     *string             `json:"DisplayName" yaml:"DisplayName"`
-	DownstreamLastMergedRevisionNum *int                `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
-	FromUnitID                      *openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
+	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
+	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug                          *string             `json:"Slug" yaml:"Slug"`
-	ToSpaceID                     *openapi_types.UUID `json:"ToSpaceID" yaml:"ToSpaceID"`
-	ToUnitID                      *openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
-	TransformInvocationID         *openapi_types.UUID `json:"TransformInvocationID" yaml:"TransformInvocationID"`
-	UpdateType                    *string             `json:"UpdateType" yaml:"UpdateType"`
-	UpstreamLastMergedRevisionNum *int                `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
-	UseLiveState                  *bool               `json:"UseLiveState" yaml:"UseLiveState"`
+	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
+	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
+	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
+	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
+	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
+	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`

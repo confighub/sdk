@@ -5918,6 +5918,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                DownstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -5959,6 +5966,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                UpstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 UseLiveState:
                   description: ""
                   nullable: true
@@ -6244,6 +6258,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                DownstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -6285,6 +6306,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                UpstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 UseLiveState:
                   description: ""
                   nullable: true
@@ -12180,6 +12208,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                DownstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 FromUnitID:
                   description: ""
                   format: uuid
@@ -12221,6 +12256,13 @@ paths:
                   description: ""
                   nullable: true
                   type: integer
+                UpstreamPaths:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 UseLiveState:
                   description: ""
                   nullable: true
@@ -24394,26 +24436,32 @@ components:
     Binding:
       properties:
         AttributeName:
+          description: Shared attribute name that matched the need to the provide
           type: string
           x-go-type-skip-optional-pointer: true
         AutoUpdate:
+          description: Whether this binding should be automatically updated when the
+            provided value changes; if false, the binding is manual and will not be
+            modified by automatic resolution
           type: boolean
           x-go-type-skip-optional-pointer: true
         DataType:
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Expression:
+          description: DataType of the bound value
           type: string
           x-go-type-skip-optional-pointer: true
         InLiveState:
+          description: Whether the provided value comes from the upstream unit's LiveState
+            rather than its Data
           type: boolean
           x-go-type-skip-optional-pointer: true
         NeededPath:
+          description: Resolved path within the needed resource
           type: string
           x-go-type-skip-optional-pointer: true
         NeededResource:
           $ref: '#/components/schemas/ResourceInfo'
         ProvidedPath:
+          description: Resolved path within the provided resource
           type: string
           x-go-type-skip-optional-pointer: true
         ProvidedResource:
@@ -25959,6 +26007,16 @@ components:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
+        DownstreamPaths:
+          description: Values to write to the downstream Unit when resolving a TransformPaths
+            Link. Each entry evaluates Expression (a Go template or CEL expression,
+            per Evaluator) with the named UpstreamPaths values and Space/Unit metadata
+            in scope, and writes the result via set-attributes. Only valid when UpdateType
+            is TransformPaths.
+          items:
+            $ref: '#/components/schemas/PathExpression'
+          type: array
+          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
@@ -26034,12 +26092,14 @@ components:
           type: string
         UpdateType:
           description: The ConfigHub operation performed using this Link. Valid values
-            are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert.
-            If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits
-            but also keeps the downstream unit's UpstreamRevision fields in sync.
-            Upsert pulls one or more resources produced by the upstream Unit (optionally
-            through a TransformInvocation) and inserts or replaces them in the downstream
-            Unit.
+            are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and
+            TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit
+            is like MergeUnits but also keeps the downstream unit's UpstreamRevision
+            fields in sync. Upsert pulls one or more resources produced by the upstream
+            Unit (optionally through a TransformInvocation) and inserts or replaces
+            them in the downstream Unit. TransformPaths reads values from the upstream
+            Unit (UpstreamPaths) and writes expression-derived values to the downstream
+            Unit (DownstreamPaths).
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -26071,6 +26131,14 @@ components:
           format: uuid
           readOnly: true
           type: string
+        UpstreamPaths:
+          description: Values to read from the upstream Unit when resolving a TransformPaths
+            Link. Each NamedPath is read via get-paths and made available to DownstreamPaths
+            expressions by its Name. Only valid when UpdateType is TransformPaths.
+          items:
+            $ref: '#/components/schemas/NamedPath'
+          type: array
+          x-go-type-skip-optional-pointer: true
         UpstreamSpaceID:
           description: Space ID of the link this link was cloned from (if any).
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -26322,6 +26390,20 @@ components:
       - Replace
       - None
       type: string
+    NamedPath:
+      properties:
+        Name:
+          description: Identifier used to reference the value from a DownstreamPath
+            Expression; must be a legal Go and CEL identifier
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: Resolved path within Resource to read via get-paths
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+      type: object
     Organization:
       description: The top-level container for an organization using ConfigHub.
       properties:
@@ -26456,6 +26538,37 @@ components:
           description: Unique username for a User. Must be unique for all of ConfigHub.
           type: string
           x-go-type-skip-optional-pointer: true
+      type: object
+    PathExpression:
+      properties:
+        DataType:
+          description: Data type of the resulting AttributeValue. Must be string for
+            now.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Evaluator:
+          description: 'Expression evaluator: "template" for Go templates or "cel"
+            for CEL'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Expression:
+          description: Go template or CEL expression that evaluates to the value to
+            write. Parameters and FunctionContext fields are in scope.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Parameters:
+          description: Names of UpstreamPaths referenced by Expression. Each entry
+            must be a legal identifier and must match an UpstreamPaths Name.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: Unresolved path within Resource to write via set-attributes
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
       type: object
     PathToVisitorInfoType:
       additionalProperties:

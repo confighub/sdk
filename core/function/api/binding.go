@@ -7,35 +7,21 @@ package api
 // It records which provided attribute satisfies which needed attribute,
 // and captures the original value at the time the binding was first created.
 type Binding struct {
-	// AttributeName is the shared attribute name that matched the need to the provide.
-	AttributeName AttributeName `json:",omitempty" swaggertype:"string"`
+	AttributeName AttributeName `json:",omitempty" swaggertype:"string" description:"Shared attribute name that matched the need to the provide"`
 
-	// DataType of the bound value.
-	DataType DataType `json:",omitempty" swaggertype:"string"`
+	DataType DataType `json:",omitempty" swaggertype:"string" description:"DataType of the bound value"`
 
-	// ProvidedResource identifies the resource in the upstream unit that provides the value.
-	ProvidedResource ResourceInfo
+	ProvidedResource ResourceInfo `description:"Resource in the upstream unit that provides the value"`
 
-	// ProvidedPath is the resolved path within the provided resource.
-	ProvidedPath ResolvedPath `json:",omitempty" swaggertype:"string"`
+	ProvidedPath ResolvedPath `json:",omitempty" swaggertype:"string" description:"Resolved path within the provided resource"`
 
-	// InLiveState indicates whether the provided value comes from the upstream unit's LiveState
-	// rather than its Data.
-	InLiveState bool `json:",omitempty"`
+	InLiveState bool `json:",omitempty" description:"Whether the provided value comes from the upstream unit's LiveState rather than its Data"`
 
-	// NeededResource identifies the resource in the downstream unit that needs the value.
-	NeededResource ResourceInfo
+	NeededResource ResourceInfo `description:"Resource in the downstream unit that needs the value"`
 
-	// NeededPath is the resolved path within the needed resource.
-	NeededPath ResolvedPath `json:",omitempty" swaggertype:"string"`
+	NeededPath ResolvedPath `json:",omitempty" swaggertype:"string" description:"Resolved path within the needed resource"`
 
-	// Expression is reserved for future use (e.g., CEL transformation expressions).
-	Expression string `json:",omitempty"`
-
-	// AutoUpdate indicates whether this binding should be automatically updated
-	// when the provided value changes. If false, the binding is manual and will
-	// not be modified by automatic resolution.
-	AutoUpdate bool
+	AutoUpdate bool `description:"Whether this binding should be automatically updated when the provided value changes; if false, the binding is manual and will not be modified by automatic resolution"`
 }
 
 // BindingList is a list of Binding entries stored on a Link.

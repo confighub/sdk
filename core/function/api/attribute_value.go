@@ -3,7 +3,12 @@
 
 package api
 
-import "github.com/google/uuid"
+import (
+	"fmt"
+	"regexp"
+
+	"github.com/google/uuid"
+)
 
 // ResolvedPath represents a concrete specific dot-separated path within a structured document (JSON, YAML document, etc.).
 // Array indices are represented as integers within the path. A Kubernetes example is:
@@ -43,6 +48,29 @@ type AttributeName string
 const AttributeNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
 
 const MaxAttributeNameLength = 128
+
+// MaxIdentifierLength caps the length of strings that must be legal Go and
+// CEL identifiers (see ValidateIdentifier).
+const MaxIdentifierLength = 64
+
+var identifierRegexp = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+// ValidateIdentifier returns nil if s is a legal Go and CEL identifier
+// (starts with a letter or underscore, followed by letters, digits, or
+// underscores) and is at most MaxIdentifierLength bytes. Used for fields
+// whose value is referenced from inside Go template or CEL expressions.
+func ValidateIdentifier(s string) error {
+	if s == "" {
+		return fmt.Errorf("identifier must not be empty")
+	}
+	if len(s) > MaxIdentifierLength {
+		return fmt.Errorf("identifier %q exceeds maximum length of %d", s, MaxIdentifierLength)
+	}
+	if !identifierRegexp.MatchString(s) {
+		return fmt.Errorf("identifier %q must match %s", s, identifierRegexp.String())
+	}
+	return nil
+}
 
 const (
 	// This is used to indicate that no path is registered in the path registry

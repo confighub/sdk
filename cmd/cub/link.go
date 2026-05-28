@@ -36,7 +36,7 @@ var (
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, or Upsert)")
+	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths)")
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates")
 	cmd.Flags().BoolVar(&linkUseLiveState, "use-live-state", false, "use LiveState of upstream unit instead of Data")
@@ -54,8 +54,8 @@ func validateLinkFieldFlags() error {
 	if linkUseLiveState && linkNoUseLiveState {
 		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
 	}
-	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" {
-		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, or Upsert, got %q", linkUpdateType)
+	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" && linkUpdateType != "TransformPaths" {
+		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths, got %q", linkUpdateType)
 	}
 	return nil
 }

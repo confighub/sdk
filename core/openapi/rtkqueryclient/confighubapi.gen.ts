@@ -4823,6 +4823,7 @@ export type BulkPatchLinksApiArg = {
     /** Friendly name for the entity. */
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
+    DownstreamPaths?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -4835,6 +4836,7 @@ export type BulkPatchLinksApiArg = {
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
     UpstreamLastMergedRevisionNum?: number | null;
+    UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -4987,6 +4989,7 @@ export type BulkCreateLinksApiArg = {
     /** Friendly name for the entity. */
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
+    DownstreamPaths?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -4999,6 +5002,7 @@ export type BulkCreateLinksApiArg = {
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
     UpstreamLastMergedRevisionNum?: number | null;
+    UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -6664,6 +6668,7 @@ export type PatchLinkApiArg = {
     /** Friendly name for the entity. */
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
+    DownstreamPaths?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -6676,6 +6681,7 @@ export type PatchLinkApiArg = {
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
     UpstreamLastMergedRevisionNum?: number | null;
+    UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
@@ -12728,17 +12734,42 @@ export type UnitRead = {
   Version?: number;
 };
 export type Binding = {
+  /** Shared attribute name that matched the need to the provide */
   AttributeName?: string;
+  /** Whether this binding should be automatically updated when the provided value changes; if false, the binding is manual and will not be modified by automatic resolution */
   AutoUpdate?: boolean;
+  /** DataType of the bound value */
   DataType?: string;
-  Expression?: string;
+  /** Whether the provided value comes from the upstream unit's LiveState rather than its Data */
   InLiveState?: boolean;
+  /** Resolved path within the needed resource */
   NeededPath?: string;
   NeededResource?: ResourceInfo;
+  /** Resolved path within the provided resource */
   ProvidedPath?: string;
   ProvidedResource?: ResourceInfo;
 };
 export type BindingList = Binding[];
+export type PathExpression = {
+  /** Data type of the resulting AttributeValue. Must be string for now. */
+  DataType?: string;
+  /** Expression evaluator: "template" for Go templates or "cel" for CEL */
+  Evaluator?: string;
+  /** Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope. */
+  Expression?: string;
+  /** Names of UpstreamPaths referenced by Expression. Each entry must be a legal identifier and must match an UpstreamPaths Name. */
+  Parameters?: string[];
+  /** Unresolved path within Resource to write via set-attributes */
+  Path?: string;
+  Resource?: ResourceInfo;
+};
+export type NamedPath = {
+  /** Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier */
+  Name?: string;
+  /** Resolved path within Resource to read via get-paths */
+  Path?: string;
+  Resource?: ResourceInfo;
+};
 export type Link = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -12755,6 +12786,8 @@ export type Link = {
   DisplayName?: string;
   /** The sequence number of the revision of the downstream unit created by the last merge. */
   DownstreamLastMergedRevisionNum?: number;
+  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths. */
+  DownstreamPaths?: PathExpression[];
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -12775,10 +12808,12 @@ export type Link = {
   ToUnitID: string;
   /** Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is upserted into the downstream Unit. Only valid when UpdateType is Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must match the downstream Unit's toolchain (currently only Kubernetes/YAML / YAML output). */
   TransformInvocationID?: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). */
   UpdateType?: string;
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
+  /** Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths. */
+  UpstreamPaths?: NamedPath[];
   /** Take data from the LiveState of the upstream Unit rather than from Data. */
   UseLiveState?: boolean;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -12808,6 +12843,8 @@ export type LinkRead = {
   DisplayName?: string;
   /** The sequence number of the revision of the downstream unit created by the last merge. */
   DownstreamLastMergedRevisionNum?: number;
+  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths. */
+  DownstreamPaths?: PathExpression[];
   /** The type of entity. */
   EntityType?: string;
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
@@ -12832,7 +12869,7 @@ export type LinkRead = {
   ToUnitID: string;
   /** Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is upserted into the downstream Unit. Only valid when UpdateType is Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must match the downstream Unit's toolchain (currently only Kubernetes/YAML / YAML output). */
   TransformInvocationID?: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). */
   UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
@@ -12842,6 +12879,8 @@ export type LinkRead = {
   UpstreamLinkID?: string;
   /** Organization ID of the link this link was cloned from (if any). */
   UpstreamOrganizationID?: string;
+  /** Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths. */
+  UpstreamPaths?: NamedPath[];
   /** Space ID of the link this link was cloned from (if any). */
   UpstreamSpaceID?: string;
   /** Take data from the LiveState of the upstream Unit rather than from Data. */

@@ -5720,6 +5720,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "DownstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "FromUnitID": {
                     "type": "string",
                     "description": "",
@@ -5765,6 +5774,15 @@
                   },
                   "UpstreamLastMergedRevisionNum": {
                     "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
                     "description": "",
                     "nullable": true
                   },
@@ -6004,6 +6022,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "DownstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "FromUnitID": {
                     "type": "string",
                     "description": "",
@@ -6049,6 +6076,15 @@
                   },
                   "UpstreamLastMergedRevisionNum": {
                     "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
                     "description": "",
                     "nullable": true
                   },
@@ -13631,6 +13667,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "DownstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "FromUnitID": {
                     "type": "string",
                     "description": "",
@@ -13676,6 +13721,15 @@
                   },
                   "UpstreamLastMergedRevisionNum": {
                     "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "UpstreamPaths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
                     "description": "",
                     "nullable": true
                   },
@@ -26909,26 +26963,27 @@
         "properties": {
           "AttributeName": {
             "type": "string",
+            "description": "Shared attribute name that matched the need to the provide",
             "x-go-type-skip-optional-pointer": true
           },
           "AutoUpdate": {
             "type": "boolean",
+            "description": "Whether this binding should be automatically updated when the provided value changes; if false, the binding is manual and will not be modified by automatic resolution",
             "x-go-type-skip-optional-pointer": true
           },
           "DataType": {
             "type": "string",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "Expression": {
-            "type": "string",
+            "description": "DataType of the bound value",
             "x-go-type-skip-optional-pointer": true
           },
           "InLiveState": {
             "type": "boolean",
+            "description": "Whether the provided value comes from the upstream unit's LiveState rather than its Data",
             "x-go-type-skip-optional-pointer": true
           },
           "NeededPath": {
             "type": "string",
+            "description": "Resolved path within the needed resource",
             "x-go-type-skip-optional-pointer": true
           },
           "NeededResource": {
@@ -26936,6 +26991,7 @@
           },
           "ProvidedPath": {
             "type": "string",
+            "description": "Resolved path within the provided resource",
             "x-go-type-skip-optional-pointer": true
           },
           "ProvidedResource": {
@@ -28825,6 +28881,14 @@
             "format": "int64",
             "x-go-type-skip-optional-pointer": true
           },
+          "DownstreamPaths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathExpression"
+            },
+            "description": "Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "EntityType": {
             "type": "string",
             "description": "The type of entity.",
@@ -28904,7 +28968,7 @@
           },
           "UpdateType": {
             "type": "string",
-            "description": "The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, and Upsert. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit.",
+            "description": "The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths).",
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {
@@ -28934,6 +28998,14 @@
             "format": "uuid",
             "readOnly": true,
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "UpstreamPaths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NamedPath"
+            },
+            "description": "Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths.",
+            "x-go-type-skip-optional-pointer": true
           },
           "UpstreamSpaceID": {
             "type": "string",
@@ -29219,6 +29291,24 @@
         ],
         "type": "string"
       },
+      "NamedPath": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "description": "Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Resolved path within Resource to read via get-paths",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          }
+        }
+      },
       "Organization": {
         "required": [
           "Slug"
@@ -29371,6 +29461,42 @@
           }
         },
         "description": "a User given membership on the Organization"
+      },
+      "PathExpression": {
+        "type": "object",
+        "properties": {
+          "DataType": {
+            "type": "string",
+            "description": "Data type of the resulting AttributeValue. Must be string for now.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Evaluator": {
+            "type": "string",
+            "description": "Expression evaluator: \"template\" for Go templates or \"cel\" for CEL",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Expression": {
+            "type": "string",
+            "description": "Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of UpstreamPaths referenced by Expression. Each entry must be a legal identifier and must match an UpstreamPaths Name.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Unresolved path within Resource to write via set-attributes",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          }
+        }
       },
       "PathToVisitorInfoType": {
         "type": "object",
