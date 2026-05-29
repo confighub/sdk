@@ -4408,6 +4408,8 @@ export type BulkPatchInvocationsApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+    WhereResource?: string | null;
   };
 };
 export type BulkCreateInvocationsApiResponse = /** status 200 OK */
@@ -4567,6 +4569,8 @@ export type BulkCreateInvocationsApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+    WhereResource?: string | null;
   };
 };
 export type BulkDeleteLinksApiResponse = /** status 200 OK */
@@ -4604,7 +4608,7 @@ export type BulkDeleteLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4680,7 +4684,7 @@ export type SearchListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4765,7 +4769,7 @@ export type BulkPatchLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4824,6 +4828,7 @@ export type BulkPatchLinksApiArg = {
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
     DownstreamPaths?: (object | null)[] | null;
+    DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -4835,6 +4840,7 @@ export type BulkPatchLinksApiArg = {
     ToUnitID?: string | null;
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
+    UpstreamGetters?: (object | null)[] | null;
     UpstreamLastMergedRevisionNum?: number | null;
     UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
@@ -4879,7 +4885,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to select source links to copy
     
@@ -4930,7 +4936,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
     
@@ -4967,7 +4973,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
     
@@ -4990,6 +4996,7 @@ export type BulkCreateLinksApiArg = {
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
     DownstreamPaths?: (object | null)[] | null;
+    DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -5001,6 +5008,7 @@ export type BulkCreateLinksApiArg = {
     ToUnitID?: string | null;
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
+    UpstreamGetters?: (object | null)[] | null;
     UpstreamLastMergedRevisionNum?: number | null;
     UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
@@ -6500,6 +6508,8 @@ export type PatchInvocationApiArg = {
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+    WhereResource?: string | null;
   };
 };
 export type UpdateInvocationApiResponse =
@@ -6546,7 +6556,7 @@ export type ListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6669,6 +6679,7 @@ export type PatchLinkApiArg = {
     DisplayName?: string | null;
     DownstreamLastMergedRevisionNum?: number | null;
     DownstreamPaths?: (object | null)[] | null;
+    DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -6680,6 +6691,7 @@ export type PatchLinkApiArg = {
     ToUnitID?: string | null;
     TransformInvocationID?: string | null;
     UpdateType?: string | null;
+    UpstreamGetters?: (object | null)[] | null;
     UpstreamLastMergedRevisionNum?: number | null;
     UpstreamPaths?: (object | null)[] | null;
     UseLiveState?: boolean | null;
@@ -7232,6 +7244,7 @@ export type PatchTriggerApiArg = {
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     Warn?: boolean | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
     WhereResource?: string | null;
     WhereUnit?: string | null;
   };
@@ -9258,6 +9271,7 @@ export type BulkPatchTriggersApiArg = {
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     Warn?: boolean | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
     WhereResource?: string | null;
     WhereUnit?: string | null;
   };
@@ -9423,6 +9437,7 @@ export type BulkCreateTriggersApiArg = {
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
     Warn?: boolean | null;
+    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
     WhereResource?: string | null;
     WhereUnit?: string | null;
   };
@@ -9955,7 +9970,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
     
@@ -11409,6 +11424,8 @@ export type FunctionInvocation = {
   Arguments?: FunctionArgument[] | null;
   /** Function name */
   FunctionName?: string;
+  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+  WhereResource?: string;
 };
 export type AttributeDetails = {
   /** ID of the Link that bound this needed path to a provided value */
@@ -12418,6 +12435,8 @@ export type Invocation = {
   ToolchainType: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+  WhereResource?: string;
 };
 export type InvocationRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -12465,6 +12484,8 @@ export type InvocationRead = {
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+  WhereResource?: string;
 };
 export type ExtendedInvocation = {
   BridgeWorker?: BridgeWorker;
@@ -12751,17 +12772,27 @@ export type Binding = {
 };
 export type BindingList = Binding[];
 export type PathExpression = {
-  /** Data type of the resulting AttributeValue. Must be string for now. */
+  /** Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type. */
   DataType?: string;
   /** Expression evaluator: "template" for Go templates or "cel" for CEL */
   Evaluator?: string;
   /** Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope. */
   Expression?: string;
-  /** Names of UpstreamPaths referenced by Expression. Each entry must be a legal identifier and must match an UpstreamPaths Name. */
+  /** Names of upstream values referenced by Expression. Each entry must be a legal identifier and must match a Name in UpstreamPaths or UpstreamGetters. */
   Parameters?: string[];
   /** Unresolved path within Resource to write via set-attributes */
   Path?: string;
   Resource?: ResourceInfo;
+};
+export type ParameterizedFunction = {
+  FunctionInvocation?: FunctionInvocation;
+  /** Names of upstream values whose values are exposed to string-argument template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters. */
+  Parameters?: string[];
+};
+export type NamedFunctionResult = {
+  FunctionInvocation?: FunctionInvocation;
+  /** Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters */
+  Name?: string;
 };
 export type NamedPath = {
   /** Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier */
@@ -12786,8 +12817,10 @@ export type Link = {
   DisplayName?: string;
   /** The sequence number of the revision of the downstream unit created by the last merge. */
   DownstreamLastMergedRevisionNum?: number;
-  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths. */
+  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named upstream values (UpstreamPaths and UpstreamGetters) and Space/Unit metadata in scope, coerces the result to DataType, and writes it via set-attributes. Only valid when UpdateType is TransformPaths. */
   DownstreamPaths?: PathExpression[];
+  /** Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Worker functions are not supported. Only valid when UpdateType is TransformPaths. */
+  DownstreamSetters?: ParameterizedFunction[];
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -12810,6 +12843,8 @@ export type Link = {
   TransformInvocationID?: string;
   /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). */
   UpdateType?: string;
+  /** Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths. */
+  UpstreamGetters?: NamedFunctionResult[];
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
   /** Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths. */
@@ -12843,12 +12878,16 @@ export type LinkRead = {
   DisplayName?: string;
   /** The sequence number of the revision of the downstream unit created by the last merge. */
   DownstreamLastMergedRevisionNum?: number;
-  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths. */
+  /** Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named upstream values (UpstreamPaths and UpstreamGetters) and Space/Unit metadata in scope, coerces the result to DataType, and writes it via set-attributes. Only valid when UpdateType is TransformPaths. */
   DownstreamPaths?: PathExpression[];
+  /** Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Worker functions are not supported. Only valid when UpdateType is TransformPaths. */
+  DownstreamSetters?: ParameterizedFunction[];
   /** The type of entity. */
   EntityType?: string;
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
+  /** SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution. */
+  Hash?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -12873,6 +12912,8 @@ export type LinkRead = {
   UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
+  /** Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths. */
+  UpstreamGetters?: NamedFunctionResult[];
   /** The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState. */
   UpstreamLastMergedRevisionNum?: number;
   /** Link ID of the link this link was cloned from (if any). */

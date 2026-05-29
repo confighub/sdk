@@ -1257,6 +1257,9 @@ type FunctionInvocation struct {
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
+	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
 
 // FunctionInvocationList defines model for FunctionInvocationList.
@@ -1516,6 +1519,9 @@ type Invocation struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
+	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
 
 // InvocationCreateOrUpdateResponse defines model for InvocationCreateOrUpdateResponse.
@@ -1563,14 +1569,20 @@ type Link struct {
 	// DownstreamLastMergedRevisionNum The sequence number of the revision of the downstream unit created by the last merge.
 	DownstreamLastMergedRevisionNum int64 `json:"DownstreamLastMergedRevisionNum,omitempty" yaml:"DownstreamLastMergedRevisionNum,omitempty"`
 
-	// DownstreamPaths Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named UpstreamPaths values and Space/Unit metadata in scope, and writes the result via set-attributes. Only valid when UpdateType is TransformPaths.
+	// DownstreamPaths Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named upstream values (UpstreamPaths and UpstreamGetters) and Space/Unit metadata in scope, coerces the result to DataType, and writes it via set-attributes. Only valid when UpdateType is TransformPaths.
 	DownstreamPaths []PathExpression `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
+
+	// DownstreamSetters Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
+	DownstreamSetters []ParameterizedFunction `json:"DownstreamSetters,omitempty" yaml:"DownstreamSetters,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
 	// FromUnitID Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.
 	FromUnitID openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+
+	// Hash SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution.
+	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
@@ -1604,6 +1616,9 @@ type Link struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UpstreamGetters Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
+	UpstreamGetters []NamedFunctionResult `json:"UpstreamGetters,omitempty" yaml:"UpstreamGetters,omitempty"`
 
 	// UpstreamLastMergedRevisionNum The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState.
 	UpstreamLastMergedRevisionNum int64 `json:"UpstreamLastMergedRevisionNum,omitempty" yaml:"UpstreamLastMergedRevisionNum,omitempty"`
@@ -1759,6 +1774,14 @@ type MutationMap map[string]MutationInfo
 // MutationType defines model for MutationType.
 type MutationType string
 
+// NamedFunctionResult defines model for NamedFunctionResult.
+type NamedFunctionResult struct {
+	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
+
+	// Name Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+}
+
 // NamedPath defines model for NamedPath.
 type NamedPath struct {
 	// Name Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier
@@ -1838,9 +1861,17 @@ type OrganizationMember struct {
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
 }
 
+// ParameterizedFunction defines model for ParameterizedFunction.
+type ParameterizedFunction struct {
+	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
+
+	// Parameters Names of upstream values whose values are exposed to string-argument template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters.
+	Parameters []string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+}
+
 // PathExpression defines model for PathExpression.
 type PathExpression struct {
-	// DataType Data type of the resulting AttributeValue. Must be string for now.
+	// DataType Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type.
 	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
 
 	// Evaluator Expression evaluator: "template" for Go templates or "cel" for CEL
@@ -1849,7 +1880,7 @@ type PathExpression struct {
 	// Expression Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope.
 	Expression string `json:"Expression,omitempty" yaml:"Expression,omitempty"`
 
-	// Parameters Names of UpstreamPaths referenced by Expression. Each entry must be a legal identifier and must match an UpstreamPaths Name.
+	// Parameters Names of upstream values referenced by Expression. Each entry must be a legal identifier and must match a Name in UpstreamPaths or UpstreamGetters.
 	Parameters []string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 
 	// Path Unresolved path within Resource to write via set-attributes
@@ -5488,6 +5519,9 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkPatchInvocationsParams defines parameters for BulkPatchInvocations.
@@ -5595,6 +5629,9 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkCreateInvocationsParams defines parameters for BulkCreateInvocations.
@@ -5771,7 +5808,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -5851,7 +5888,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5920,6 +5957,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
 	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
 	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -5931,6 +5969,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
 	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
@@ -5974,7 +6013,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -6038,6 +6077,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
 	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
 	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -6049,6 +6089,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
 	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
@@ -6092,7 +6133,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6146,7 +6187,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6184,7 +6225,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -7486,6 +7527,9 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
+	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // ListLinksParams defines parameters for ListLinks.
@@ -7521,7 +7565,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7618,6 +7662,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	DisplayName                     *string                   `json:"DisplayName" yaml:"DisplayName"`
 	DownstreamLastMergedRevisionNum *int                      `json:"DownstreamLastMergedRevisionNum" yaml:"DownstreamLastMergedRevisionNum"`
 	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
+	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -7629,6 +7674,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
 	UpdateType                    *string                   `json:"UpdateType" yaml:"UpdateType"`
+	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
 	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
@@ -8092,8 +8138,10 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version       *int    `json:"Version" yaml:"Version"`
-	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
 	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
@@ -9914,8 +9962,10 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version       *int    `json:"Version" yaml:"Version"`
-	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
 	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
@@ -10031,8 +10081,10 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	UnitFilterID  *openapi_types.UUID `json:"UnitFilterID" yaml:"UnitFilterID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version       *int    `json:"Version" yaml:"Version"`
-	Warn          *bool   `json:"Warn" yaml:"Warn"`
+	Version *int  `json:"Version" yaml:"Version"`
+	Warn    *bool `json:"Warn" yaml:"Warn"`
+
+	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
 	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
 }
@@ -10783,7 +10835,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//

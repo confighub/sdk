@@ -11,7 +11,6 @@ import (
 	"html/template"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"log/slog"
@@ -123,12 +122,18 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	}
 	serializedData := yamlData
 
-	// Parse and validate WhereResource filter if provided
-	functionOptions := api.NewFunctionOptions()
-	functionOptions.WhereResourceExpressions, err = api.ParseAndValidateWhereResource(functionInvocation.WhereResource)
+	// Parse and validate the request-level WhereResource filter. Per-invocation
+	// WhereResource is parsed lazily inside the loop and AND-combined with
+	// these expressions to form each function's FunctionOptions. Parsed
+	// per-invocation expressions are cached by string so repeated values do
+	// not pay the parse cost more than once per request.
+	requestWhereExpressions, err := api.ParseAndValidateWhereResource(functionInvocation.WhereResource)
 	if err != nil {
 		return nil, err
 	}
+	requestFunctionOptions := api.NewFunctionOptions()
+	requestFunctionOptions.WhereResourceExpressions = requestWhereExpressions
+	invocationWhereCache := map[string][]*api.VisitorRelationalExpression{}
 
 	// Pre-scan: verify functions exist and check if any need OtherData
 	needsOtherData := false
@@ -221,9 +226,37 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		if err != nil {
 			return nil, errors.Wrap(err, "configuration data parsing error")
 		}
+		// Combine request-level + per-invocation WhereResource (AND).
+		// Empty per-invocation falls through to the request-level options
+		// directly without a slice allocation.
+		invocationFunctionOptions := requestFunctionOptions
+		if invocation.WhereResource != "" {
+			invocationExpressions, cached := invocationWhereCache[invocation.WhereResource]
+			if !cached {
+				var parseErr error
+				invocationExpressions, parseErr = api.ParseAndValidateWhereResource(invocation.WhereResource)
+				if parseErr != nil {
+					invocationInfo += ": " + parseErr.Error()
+					slog.Info(invocationInfo)
+					messages = append(messages, parseErr.Error())
+					success = false
+					if functionInvocation.StopOnError {
+						break
+					}
+					continue
+				}
+				invocationWhereCache[invocation.WhereResource] = invocationExpressions
+			}
+			combined := make([]*api.VisitorRelationalExpression, 0, len(requestWhereExpressions)+len(invocationExpressions))
+			combined = append(combined, requestWhereExpressions...)
+			combined = append(combined, invocationExpressions...)
+			invocationFunctionOptions = api.NewFunctionOptions()
+			invocationFunctionOptions.WhereResourceExpressions = combined
+		}
+
 		newParsedData, functionOutput, err = f.Function(FunctionImplementationArguments{
 			FunctionContext: &functionContext,
-			Options:         functionOptions,
+			Options:         invocationFunctionOptions,
 			ParsedData:      newParsedData,
 			ParsedOtherData: parsedOtherData,
 			Arguments:       arguments,
@@ -526,20 +559,21 @@ func ValidateAndBuildArguments(resourceProvider yamlkit.ResourceProvider, functi
 			}
 			switch parameter.DataType {
 			case api.DataTypeInt:
-				intVal, err := strconv.Atoi(v)
+				converted, err := api.ConvertStringToDataType(v, api.DataTypeInt)
 				if err != nil {
-					return nil, fmt.Errorf("cannot convert argument %s value %s to int: %w", argumentName, v, err)
+					return nil, fmt.Errorf("argument %s: %w", argumentName, err)
 				}
+				intVal := converted.(int)
 				invocation.Arguments[i].Value = intVal
 				if !validateIntArg(intVal, parameter.ValueConstraints) {
 					return nil, fmt.Errorf("argument %s value %d is out of range %s", argumentName, intVal, intConstraintString(parameter.ValueConstraints))
 				}
 			case api.DataTypeBool:
-				boolVal, err := strconv.ParseBool(v)
+				converted, err := api.ConvertStringToDataType(v, api.DataTypeBool)
 				if err != nil {
-					return nil, fmt.Errorf("cannot convert argument %s value %s to bool: %w", argumentName, v, err)
+					return nil, fmt.Errorf("argument %s: %w", argumentName, err)
 				}
-				invocation.Arguments[i].Value = boolVal
+				invocation.Arguments[i].Value = converted.(bool)
 			default:
 				if !api.DataTypeIsSerializedAsString(parameter.DataType) {
 					return nil, fmt.Errorf("argument %s data type %s is not of a string type", argumentName, parameter.DataType)

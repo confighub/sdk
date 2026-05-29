@@ -12,10 +12,11 @@ import (
 )
 
 var testResourceProvider *k8skit.K8sResourceProviderType
+var testFunctionHandler *handler.FunctionHandler
 
 func TestMain(m *testing.M) {
 	testResourceProvider = k8skit.NewK8sResourceProvider()
-	kc := handler.NewFunctionHandler(testResourceProvider)
-	RegisterFunctions(testResourceProvider, kc)
+	testFunctionHandler = handler.NewFunctionHandler(testResourceProvider)
+	RegisterFunctions(testResourceProvider, testFunctionHandler)
 	os.Exit(m.Run())
 }

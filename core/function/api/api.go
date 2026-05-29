@@ -89,8 +89,9 @@ const (
 // to the function. The function name must uniquely identify the function within its resource/configuration
 // provider on its executor instance.
 type FunctionInvocation struct {
-	FunctionName string             `description:"Function name"`
-	Arguments    []FunctionArgument `description:"Function arguments"`
+	FunctionName  string             `description:"Function name"`
+	Arguments     []FunctionArgument `description:"Function arguments"`
+	WhereResource string             `json:",omitempty" description:"Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource)."`
 }
 
 type OtherDataSource string

@@ -59,6 +59,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerVetCEL(fh, converter, resourceProvider)
 	registerGetCEL(fh, converter, resourceProvider)
 	registerSetCEL(fh, converter, resourceProvider)
+	registerSetTemplate(fh, converter, resourceProvider)
 	registerVetMergeKeys(fh, converter, resourceProvider)
 	registerVetValues(fh, converter, resourceProvider)
 	registerVetFormat(fh, converter, resourceProvider)
