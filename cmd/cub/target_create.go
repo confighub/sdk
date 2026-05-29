@@ -106,15 +106,20 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// If set, flags override other data. First element sets the top-level fields,
 	// additional elements populate ConfigTypes.
-	if len(toolchainTypes) > 0 {
-		newTarget.ToolchainType = toolchainTypes[0]
-	} else if !hasDefaults {
-		newTarget.ToolchainType = "Kubernetes/YAML"
-	}
+	// Resolve the provider first so the toolchain default can depend on it.
 	if len(providerTypes) > 0 {
 		newTarget.ProviderType = providerTypes[0]
 	} else if !hasDefaults {
 		newTarget.ProviderType = "Kubernetes"
+	}
+	if len(toolchainTypes) > 0 {
+		newTarget.ToolchainType = toolchainTypes[0]
+	} else if newTarget.ProviderType == string(api.ProviderOCI) && newTarget.ToolchainType == "" {
+		// The OCI transport never routes by toolchain, so default to the ToolchainAny
+		// wildcard: the Target then accepts Units of any toolchain without enumeration.
+		newTarget.ToolchainType = string(workerapi.ToolchainAny)
+	} else if !hasDefaults {
+		newTarget.ToolchainType = "Kubernetes/YAML"
 	}
 	if len(liveStateTypes) > 0 {
 		newTarget.LiveStateType = liveStateTypes[0]
@@ -244,7 +249,11 @@ func validateToolchainAndProvider(toolchainType string, providerType string, liv
 	if toolchainType == "" || providerType == "" {
 		return errors.New("toolchain and provider must be specified")
 	}
-	if !funcapi.IsSupportedToolchain(workerapi.ToolchainType(toolchainType)) {
+	// ToolchainAny is a wildcard accepted on a Target (e.g. for the OCI transport,
+	// which never routes by toolchain). It is not a real serialization format, so it
+	// is intentionally absent from SupportedToolchains; allow it explicitly here.
+	if toolchainType != string(workerapi.ToolchainAny) &&
+		!funcapi.IsSupportedToolchain(workerapi.ToolchainType(toolchainType)) {
 		return errors.New("toolchain must be one of: " + funcapi.SupportedToolchainsToString())
 	}
 	if liveStateType != "" && !funcapi.IsSupportedToolchain(workerapi.ToolchainType(liveStateType)) {

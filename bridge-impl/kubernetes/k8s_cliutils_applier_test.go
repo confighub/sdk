@@ -46,6 +46,10 @@ func TestCadenceInvariants(t *testing.T) {
 		t.Fatalf("stuckThreshold (%s) must be < default progressingTimeout (%s)",
 			stuckThreshold, defaultProgressingTimeout)
 	}
+	if !(tickInterval <= heartbeatInterval) {
+		t.Fatalf("tickInterval (%s) must be <= heartbeatInterval (%s); otherwise the heartbeat would tick faster than the wait loop and the rate limit is meaningless",
+			tickInterval, heartbeatInterval)
+	}
 }
 
 // TestWaitTimeoutFromContext pins the deadline-reserve tiers used by Apply

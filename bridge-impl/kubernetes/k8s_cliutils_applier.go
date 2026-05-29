@@ -60,16 +60,22 @@ const (
 	InventoryPrefix      = "inventory"
 )
 
-// Wait-loop cadence. The three knobs must satisfy the ordering invariant
+// Wait-loop cadence. The four knobs must satisfy the ordering invariant
 // asserted in TestCadenceInvariants:
 //
-//	kstatusPollInterval <= tickInterval     so classifiers see fresh kstatus state.
-//	tickInterval        <  stuckThreshold   so time-based classifiers fire before the grace period ends.
-//	stuckThreshold      <  progressingTimeout (default = 5*stuckThreshold in statuspoller).
+//	kstatusPollInterval <= tickInterval         so classifiers see fresh kstatus state.
+//	tickInterval        <  stuckThreshold       so time-based classifiers fire before the grace period ends.
+//	stuckThreshold      <  progressingTimeout   (default = 5*stuckThreshold in statuspoller).
+//	tickInterval        <= heartbeatInterval    so the heartbeat ticks no more often than the wait loop.
+//
+// heartbeatInterval rate-limits unchanged-rollup emits so a long wait does
+// not turn one tick per 5s into one unit event per 5s on the server (see
+// the report closure in waitForResourcesReady).
 const (
 	kstatusPollInterval = 2 * time.Second
 	tickInterval        = 5 * time.Second
 	stuckThreshold      = 30 * time.Second
+	heartbeatInterval   = 60 * time.Second
 )
 
 var (
@@ -800,15 +806,22 @@ func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, emit progre
 		lastByID            = make(map[object.ObjMetadata]statuspoller.Event, len(objectsMeta))
 		lastReportedState   api.ResourceReadinessType
 		lastReportedMessage string
+		lastEmitTime        time.Time
 	)
 
 	// report consumes the current event cache, computes the rollup, and
 	// streams a Progressing update to the server when something changed
-	// (or on heartbeat). Ready/Failed are terminal — they cancel the wait
-	// loop, and the caller emits the final ActionResult after WaitForApply
-	// returns with the full LiveState/Error. With emit == nil (the Apply
-	// path's brief internal wait) the closure tracks rollup state for the
-	// terminal-cancel check but doesn't stream anything.
+	// (or on a slow liveness heartbeat). Ready/Failed are terminal — they
+	// cancel the wait loop, and the caller emits the final ActionResult
+	// after WaitForApply returns with the full LiveState/Error. With
+	// emit == nil (the Apply path's brief internal wait) the closure
+	// tracks rollup state for the terminal-cancel check but doesn't stream
+	// anything.
+	//
+	// Each emit becomes a new unit event row on the server (no server-side
+	// dedup), so we suppress identical Progressing rollups unless
+	// heartbeatInterval has elapsed since the last emit. This keeps a
+	// long-running wait from generating one unit event per tick.
 	report := func(heartbeat bool) {
 		rollup, message := aggregateReadiness(lastByID, len(objectsMeta))
 
@@ -819,13 +832,20 @@ func (a *CLIUtilsApplier) waitForResourcesReady(ctx context.Context, emit progre
 		if emit == nil {
 			return
 		}
-		if !heartbeat && rollup == lastReportedState && message == lastReportedMessage {
-			return
+		unchanged := rollup == lastReportedState && message == lastReportedMessage
+		if unchanged {
+			if !heartbeat {
+				return
+			}
+			if !lastEmitTime.IsZero() && time.Since(lastEmitTime) < heartbeatInterval {
+				return
+			}
 		}
 		lastReportedState = rollup
 		lastReportedMessage = message
+		lastEmitTime = time.Now()
 		_ = emit(progressActionResult(rollup, message,
-			buildResourceStatusMap(a.comps.RestMapper, lastByID, time.Now())))
+			buildResourceStatusMap(a.comps.RestMapper, lastByID, lastEmitTime)))
 		log.Log.Info("📣 Readiness report", "state", rollup, "msg", message)
 	}
 

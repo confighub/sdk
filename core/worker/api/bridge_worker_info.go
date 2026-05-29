@@ -62,8 +62,14 @@ func (sct *SupportedConfigType) Validate() error {
 	if !IsValidProviderType(sct.ProviderType) {
 		return errors.Errorf("invalid provider type %s", string(sct.ProviderType))
 	}
+	// ToolchainAny is a wildcard a bridge may advertise to mean "any toolchain" (e.g.
+	// the OCI transport, which never routes by toolchain). It is intentionally absent
+	// from SupportedToolchains — which is also the Unit toolchain allowlist — so it is
+	// allowed here explicitly, the same way OpenTofu/HCL is.
 	// TODO: Remove OpenTofu/HCL once all workers are updated
-	if !funcapi.IsSupportedToolchain(sct.ToolchainType) && sct.ToolchainType != "OpenTofu/HCL" {
+	if !funcapi.IsSupportedToolchain(sct.ToolchainType) &&
+		sct.ToolchainType != "OpenTofu/HCL" &&
+		sct.ToolchainType != workerapi.ToolchainAny {
 		return errors.Errorf("unsupported toolchain type %s", string(sct.ToolchainType))
 	}
 	// LiveStateType is optional
@@ -139,6 +145,11 @@ const (
 	ProviderArgoCDOCI         ProviderType = "ArgoCDOCI"
 	ProviderConfigMapRenderer ProviderType = "ConfigMapRenderer"
 	ProviderNoop              ProviderType = "Noop"
+	// ProviderOCI publishes Unit data verbatim to an OCI repository for a puller
+	// (e.g. Argo/Flux) to consume. Like Noop it performs no remote apply; the
+	// Target is the OCI repo and the worker is only a required placeholder. It
+	// does not route by toolchain, so its bridge advertises ToolchainAny.
+	ProviderOCI ProviderType = "OCI"
 )
 
 var SupportedProviders = map[ProviderType]bool{
@@ -150,6 +161,7 @@ var SupportedProviders = map[ProviderType]bool{
 	ProviderArgoCDOCI:         true,
 	ProviderConfigMapRenderer: true,
 	ProviderNoop:              true,
+	ProviderOCI:               true,
 }
 
 func IsSupportedProvider(provider ProviderType) bool {
