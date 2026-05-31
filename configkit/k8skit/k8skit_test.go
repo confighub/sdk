@@ -230,6 +230,35 @@ data:
 	assert.Contains(t, resultStr, "confighub.com/UnitSlug: unit")
 }
 
+// TestEnsureConfigHubContextOnData_NullAnnotations covers issue #4504: a unit
+// with `annotations:` present but null used to cause OCI bundle generation to
+// 500 because gaby's SetP couldn't descend into a null scalar to inject
+// confighub.com/UnitSlug. The fix coerces the null scalar into an empty map.
+func TestEnsureConfigHubContextOnData_NullAnnotations(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo
+  namespace: demo
+  annotations:
+data:
+  k: v
+`)
+	result, err := EnsureConfigHubContextOnData(data, "my-slug", "space-xyz", 3)
+	assert.NoError(t, err)
+
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.Len(t, container, 1)
+
+	val, _ := container[0].Path(K8sContextPath("UnitSlug")).Data().(string)
+	assert.Equal(t, "my-slug", val)
+	val, _ = container[0].Path(K8sContextPath("SpaceID")).Data().(string)
+	assert.Equal(t, "space-xyz", val)
+	val, _ = container[0].Path(K8sContextPath("RevisionNum")).Data().(string)
+	assert.Equal(t, "3", val)
+}
+
 func TestEnsureConfigHubContextOnData_EmptyData(t *testing.T) {
 	result, err := EnsureConfigHubContextOnData(nil, "unit", "space", 1)
 	assert.NoError(t, err)

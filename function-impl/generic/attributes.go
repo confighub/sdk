@@ -30,7 +30,15 @@ func registerGetAttribute(fh handler.FunctionRegistry, converter configkit.Confi
 					DataType:         api.DataTypeString,
 					ValueConstraints: api.ValueConstraints{Regexp: api.AttributeNamePrefixRegexpString + "$"},
 				},
+				{
+					ParameterName: "key",
+					Required:      false,
+					Description:   "Path parameters (keys) used to resolve the attribute's registered paths, in order. Required only for attributes whose paths contain associative selectors, such as the container name and env var name for the env-value attribute.",
+					DataType:      api.DataTypeString,
+					Example:       "main",
+				},
 			},
+			VarArgs: true,
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "attribute-list",
 				Description: "Specified attribute values",
@@ -60,7 +68,20 @@ func genericFnGetAttribute(resourceProvider yamlkit.ResourceProvider, _ *api.Fun
 	if len(attributePaths) == 0 {
 		return parsedData, nil, errors.New("attribute " + attributeName + " not registered")
 	}
-	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
+	// Remaining arguments are path parameters (keys) used to resolve associative
+	// selectors in the attribute's registered paths, e.g. the container name and
+	// env var name for the env-value attribute. These are matched as values, not
+	// map key path segments, so dots are not escaped.
+	keyArgs := args[1:]
+	keys := make([]any, len(keyArgs))
+	for i := range keyArgs {
+		key, ok := keyArgs[i].Value.(string)
+		if !ok {
+			return parsedData, nil, errors.New("invalid keys argument")
+		}
+		keys[i] = key
+	}
+	values, err := yamlkit.GetPathsAnyType(parsedData, attributePaths, keys, resourceProvider, api.DataTypeNone, false, false, options)
 	return parsedData, values, err
 }
 

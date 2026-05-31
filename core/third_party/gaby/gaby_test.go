@@ -356,6 +356,124 @@ metadata:
 	}
 }
 
+// TestSetIntoNullAnnotations verifies that descending into a null-scalar
+// field (e.g. `annotations:` with no value) coerces it into a mapping
+// instead of returning "unexpected node kind 8" (see issue #4504).
+func TestSetIntoNullAnnotations(t *testing.T) {
+	sample := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo
+  namespace: demo
+  annotations:
+data:
+  k: v
+`)
+	doc, err := ParseYAML(sample)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if _, err := doc.Set("my-slug", "metadata", "annotations", "confighub.com/UnitSlug"); err != nil {
+		t.Fatalf("Set failed: %v", err)
+	}
+	exp := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo
+  namespace: demo
+  annotations:
+    confighub.com/UnitSlug: my-slug
+data:
+  k: v
+`
+	if act := doc.String(); act != exp {
+		t.Errorf("Unexpected value:\nGot:\n%v\nWant:\n%v", act, exp)
+	}
+}
+
+// TestSetPIntoNullAnnotations is the SetP equivalent of TestSetIntoNullAnnotations.
+// This mirrors how EnsureConfigHubContextOnData invokes SetP in production.
+func TestSetPIntoNullAnnotations(t *testing.T) {
+	sample := []byte("metadata:\n  annotations:\n")
+	doc, err := ParseYAML(sample)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if _, err := doc.SetP("my-slug", `metadata.annotations.confighub~1com/UnitSlug`); err != nil {
+		t.Fatalf("SetP failed: %v", err)
+	}
+	exp := `metadata:
+  annotations:
+    confighub.com/UnitSlug: my-slug
+`
+	if act := doc.String(); act != exp {
+		t.Errorf("Unexpected value:\nGot:\n%v\nWant:\n%v", act, exp)
+	}
+}
+
+// TestSetExpandIntoNullSequence verifies that when the next path segment is
+// an integer, a null intermediate is coerced into a sequence (not a mapping).
+// Together with SetExpand this materializes a single-element list.
+func TestSetExpandIntoNullSequence(t *testing.T) {
+	sample := []byte(`spec:
+  template:
+    spec:
+      containers:
+`)
+	doc, err := ParseYAML(sample)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if _, err := doc.SetExpand("nginx", "spec", "template", "spec", "containers", "0", "image"); err != nil {
+		t.Fatalf("SetExpand failed: %v", err)
+	}
+	exp := `spec:
+  template:
+    spec:
+      containers:
+      - image: nginx
+`
+	if act := doc.String(); act != exp {
+		t.Errorf("Unexpected value:\nGot:\n%v\nWant:\n%v", act, exp)
+	}
+}
+
+// TestSetAppendIntoNullSequence verifies that "-" on a null intermediate
+// coerces it into a sequence and appends, without needing SetExpand.
+func TestSetAppendIntoNullSequence(t *testing.T) {
+	sample := []byte(`spec:
+  containers:
+`)
+	doc, err := ParseYAML(sample)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if _, err := doc.Set("nginx", "spec", "containers", "-", "image"); err != nil {
+		t.Fatalf("Set failed: %v", err)
+	}
+	exp := `spec:
+  containers:
+  - image: nginx
+`
+	if act := doc.String(); act != exp {
+		t.Errorf("Unexpected value:\nGot:\n%v\nWant:\n%v", act, exp)
+	}
+}
+
+// TestSetIntoNonNullScalarStillErrors verifies that descending into a
+// non-null scalar field (e.g. `annotations: foo`) still errors, since
+// that's a real type collision rather than an empty placeholder.
+func TestSetIntoNonNullScalarStillErrors(t *testing.T) {
+	sample := []byte("metadata:\n  annotations: foo\n")
+	doc, err := ParseYAML(sample)
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if _, err := doc.Set("my-slug", "metadata", "annotations", "confighub.com/UnitSlug"); err == nil {
+		t.Errorf("expected error setting into non-null scalar, got nil")
+	}
+}
+
 func TestExtractAndInjectCommentsToKeys(t *testing.T) {
 	tests := []struct {
 		name  string

@@ -453,6 +453,18 @@ func (c *YamlDoc) SetExpand(value interface{}, hierarchy ...string) (*YamlDoc, e
 	return c.setImpl(value, true, hierarchy...)
 }
 
+// looksLikeSequenceIndex reports whether a path segment would be interpreted
+// as a sequence index ("-" for append, or a non-negative integer for indexing)
+// by the SequenceNode case in setImpl/searchStrict. Used to decide whether to
+// coerce a null intermediate into a sequence or a mapping.
+func looksLikeSequenceIndex(s string) bool {
+	if s == "-" {
+		return true
+	}
+	n, err := strconv.Atoi(s)
+	return err == nil && n >= 0
+}
+
 func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...string) (*YamlDoc, error) {
 	if c == nil {
 		return nil, ErrInvalidInputObj
@@ -461,6 +473,25 @@ func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...str
 	for target := 0; target < len(hierarchy); target++ {
 		pathSeg := hierarchy[target]
 		kind := node.YNode().Kind
+		// Coerce a null scalar (e.g. `annotations:` with no value) into an
+		// empty container so we can descend into it. This mirrors yq/jq
+		// semantics where `.a.b = x` on `a: null` creates an intermediate.
+		// The current path segment decides the kind: a non-negative integer
+		// or "-" indicates sequence indexing; anything else is a map key.
+		// A non-null scalar still falls through to the default error case.
+		if kind == yaml.ScalarNode && node.YNode().Tag == yaml.NodeTagNull {
+			yn := node.YNode()
+			yn.Value = ""
+			if looksLikeSequenceIndex(pathSeg) {
+				yn.Kind = yaml.SequenceNode
+				yn.Tag = yaml.NodeTagSeq
+				kind = yaml.SequenceNode
+			} else {
+				yn.Kind = yaml.MappingNode
+				yn.Tag = yaml.NodeTagMap
+				kind = yaml.MappingNode
+			}
+		}
 		switch kind {
 		case yaml.MappingNode:
 			// Check if field exists
