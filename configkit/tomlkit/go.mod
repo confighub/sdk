@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/BurntSushi/toml v1.5.0
-	github.com/confighub/sdk/core v0.1.72
+	github.com/confighub/sdk/core v0.0.0
 	github.com/pelletier/go-toml/v2 v2.3.0
 )
 
@@ -45,6 +45,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
