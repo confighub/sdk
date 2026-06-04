@@ -90,6 +90,7 @@ Optional environment variables:
 
 - CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
+- CONFIGHUB_WORKER_TRANSPORT: Wire protocol used to talk to ConfigHub. "http2-stream" (default) keeps the v1 long-lived h2c stream. "long-poll" uses HTTP long-polling on the main API port and does not require a separate worker port.
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: When set, starts a local HTTP server on this port. Exposes /internal/metrics (Prometheus), /internal/pprof, /internal/ok (liveness), and /internal/ready (readiness). When unset, no HTTP server is started.
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
 
@@ -487,21 +488,32 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		// For now, let's proceed with the potentially malformed URL, assuming init handled basics
 	}
 
-	finalURL := rootArgs.ConfigHubURL // Default to original URL
+	// Two URLs:
+	//   - h2c stream transport needs the worker-port URL (separate h2c port)
+	//   - long-poll transport needs the main API URL (no port switch)
+	streamURL := rootArgs.ConfigHubURL
+	mainURL := rootArgs.ConfigHubURL
 
 	if err == nil { // Only proceed if parsing was successful
 		hostname := parsedURL.Hostname() // Get hostname without port
 		if hostname == "" {
 			log.FromContext(ctx).Info("Could not extract hostname from URL, not modifying port", "url", rootArgs.ConfigHubURL)
 		} else if parsedURL.Scheme == "" {
-			// Handle case where scheme is missing (though init tries to add https)
 			log.FromContext(ctx).Info("URL scheme is missing, cannot reliably reconstruct URL with new port", "url", rootArgs.ConfigHubURL)
 		} else {
-			// Always use the workerPort, replacing existing or appending
-			// Reconstruct the URL: scheme://hostname:workerPort
-			finalURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.WorkerPort)
+			streamURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.WorkerPort)
+			mainURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.MainPort)
 		}
-	} // Note: If err != nil, finalURL remains rootArgs.ConfigHubURL
+	}
+
+	transportType := lib.TransportType(rootArgs.WorkerTransport)
+	if transportType == "" {
+		transportType = lib.TransportHTTP2Stream
+	}
+	finalURL := streamURL
+	if transportType == lib.TransportLongPoll {
+		finalURL = mainURL
+	}
 
 	metricsProvider, err := lib.NewPrometheusProvider()
 	if err != nil {
@@ -510,12 +522,13 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	metricsMeter := metricsProvider.Meter("confighub-worker")
 
-	w := lib.New(finalURL, // Use the potentially modified URL
+	w := lib.New(finalURL,
 		rootArgs.WorkerID,
 		rootArgs.WorkerSecret).
 		WithBridgeWorker(bridgeDispatcher).
 		WithFunctionExecutor(newFunctionExecutor(providerTypes, workerFunctions)).
-		WithMetricsMeter(metricsMeter)
+		WithMetricsMeter(metricsMeter).
+		WithTransport(transportType)
 
 	var httpServer *echo.Echo
 	if rootArgs.HTTPServerPort != "" {

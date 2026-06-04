@@ -453,7 +453,9 @@ type BridgeWorker struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID  openapi_types.UUID  `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	ClaimTTLSeconds int                 `json:"ClaimTTLSeconds,omitempty" yaml:"ClaimTTLSeconds,omitempty"`
+	ClaimToken      *openapi_types.UUID `json:"ClaimToken,omitempty" yaml:"ClaimToken,omitempty"`
 
 	// Condition Condition represents the worker's readiness state (Ready, NotReady, Unresponsive, Disconnected).
 	Condition string `json:"Condition,omitempty" yaml:"Condition,omitempty"`

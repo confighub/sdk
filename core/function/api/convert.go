@@ -6,6 +6,8 @@ package api
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/cockroachdb/errors"
 )
 
 // ConvertStringToDataType coerces a string value to the Go value that
@@ -21,13 +23,13 @@ func ConvertStringToDataType(s string, dataType DataType) (any, error) {
 	case DataTypeInt:
 		intVal, err := strconv.Atoi(s)
 		if err != nil {
-			return nil, fmt.Errorf("cannot convert %q to int: %w", s, err)
+			return nil, errors.Wrapf(err, "cannot convert %q to int", s)
 		}
 		return intVal, nil
 	case DataTypeBool:
 		boolVal, err := strconv.ParseBool(s)
 		if err != nil {
-			return nil, fmt.Errorf("cannot convert %q to bool: %w", s, err)
+			return nil, errors.Wrapf(err, "cannot convert %q to bool", s)
 		}
 		return boolVal, nil
 	default:

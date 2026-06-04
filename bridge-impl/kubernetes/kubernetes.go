@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/confighub/sdk/bridge-impl/common"
+	"github.com/confighub/sdk/bridge-impl/kubernetes/cleanup"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -618,7 +619,7 @@ func (w *KubernetesBridgeWorker) WatchForApply(wctx api.BridgeWorkerContext, pay
 	}
 
 	// Cleanup objects for LiveData (remove managed fields, status, etc.)
-	cleanedObjects := CleanupObjects(waitResult.LiveObjects)
+	cleanedObjects := cleanup.CleanupObjects(waitResult.LiveObjects)
 	yamlDataForLiveData, err := ObjectsToYAML(cleanedObjects)
 	if err != nil {
 		log.Log.Error(err, "Failed to convert cleaned objects to YAML for LiveData")
@@ -723,7 +724,7 @@ func (w *KubernetesBridgeWorker) Refresh(wctx api.BridgeWorkerContext, payload a
 
 	// Apply extra cleanup (removes status, managed fields, internal annotations, etc.) for LiveData
 	// Note: extraCleanupObjects modifies objects in-place, so we do this after converting to YAML for LiveState
-	yamlData, err := ObjectsToYAML(ExtraCleanupObjects(retrievedObjects))
+	yamlData, err := ObjectsToYAML(cleanup.ExtraCleanupObjects(retrievedObjects))
 	if err != nil {
 		log.Log.Error(err, "Failed to convert cleaned objects to YAML for LiveData")
 		return lib.SafeSendStatus(wctx, common.NewActionResult(
@@ -936,7 +937,7 @@ func (w *KubernetesBridgeWorker) Import(wctx api.BridgeWorkerContext, payload ap
 	// Apply extra cleanup (removes status, managed fields, internal annotations, etc.)
 	// This makes objects suitable for being unit.Data
 	// Note: extraCleanupObjects modifies objects in-place
-	cleanedObjects := ExtraCleanupObjects(retrievedObjects)
+	cleanedObjects := cleanup.ExtraCleanupObjects(retrievedObjects)
 	yamlForData, err := ObjectsToYAML(cleanedObjects)
 	if err != nil {
 		log.Log.Error(err, "Failed to convert objects to YAML for Data")
@@ -1134,7 +1135,7 @@ func (w *KubernetesBridgeWorker) WatchForDestroy(wctx api.BridgeWorkerContext, p
 	// Build LiveData from remaining objects (if any)
 	var liveDataData []byte
 	if len(waitResult.LiveObjects) > 0 {
-		cleanedObjects := CleanupObjects(waitResult.LiveObjects)
+		cleanedObjects := cleanup.CleanupObjects(waitResult.LiveObjects)
 		yamlData, err := ObjectsToYAML(cleanedObjects)
 		if err != nil {
 			log.Log.Error(err, "Failed to convert remaining objects to YAML")

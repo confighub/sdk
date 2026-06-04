@@ -39,7 +39,7 @@ TEST_MODULES = ./function-impl ./bridge-impl ./worker-function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit
-CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl
+CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
 # All sibling modules that need prep (mod download/tidy)
 SIBLING_MODULES = $(TEST_MODULES) $(CMD_MODULES)
 
@@ -49,7 +49,7 @@ all-prep:
 	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && (cd $$mod && go mod download && go mod tidy) ; done
 
 .PHONY: all-local
-all-local: all-prep build-modules build-cli build-funcexec build-worker ## Builds all the things locally (no docker) without tests or lints
+all-local: all-prep build-modules build-cli build-funcexec build-worker build-k8s-mf ## Builds all the things locally (no docker) without tests or lints
 
 .PHONY: all
 all: all-local ## Builds all the things, without tests or lints
@@ -78,6 +78,17 @@ ifdef RELEASE
 	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
 else
 	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS) .
+endif
+
+K8S_MF_CMD?=./bin/k8s-mf
+K8S_MF_CMD_ABS=$(abspath $(K8S_MF_CMD))
+
+.PHONY: build-k8s-mf
+build-k8s-mf: ## Build the k8s-mf managed-fields tool
+ifdef RELEASE
+	cd ./cmd/k8s-mf && go build $(LDFLAGS) -v -o $(K8S_MF_CMD_ABS)-${OS}-${ARCH} .
+else
+	cd ./cmd/k8s-mf && go build $(LDFLAGS) -v -o $(K8S_MF_CMD_ABS) .
 endif
 
 .PHONY: test

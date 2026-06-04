@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2026-06-01T19:59:58Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:spec:
+        f:ports:
+          k:{"port":80,"protocol":"TCP"}:
+            .: {}
+            f:port: {}
+            f:protocol: {}
+            f:targetPort: {}
+        f:selector: {}
+        f:type: {}
+    manager: confighub-bridge-worker
+    operation: Apply
+    time: "2026-06-01T19:59:58Z"
+  name: my-service
+  namespace: example
+  resourceVersion: "11830"
+  uid: 2acccab8-d7db-4d01-b853-222b2d641c88
+spec:
+  clusterIP: 10.96.224.14
+  clusterIPs:
+  - 10.96.224.14
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: MyApp
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

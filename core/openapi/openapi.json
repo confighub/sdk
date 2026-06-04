@@ -27127,6 +27127,17 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "ClaimTTLSeconds": {
+            "type": "integer",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ClaimToken": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
           "Condition": {
             "type": "string",
             "description": "Condition represents the worker's readiness state (Ready, NotReady, Unresponsive, Disconnected).",

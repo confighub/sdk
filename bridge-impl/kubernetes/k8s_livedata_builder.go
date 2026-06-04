@@ -20,6 +20,8 @@ import (
 	"sigs.k8s.io/cli-utils/pkg/inventory"
 	"sigs.k8s.io/cli-utils/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/confighub/sdk/bridge-impl/kubernetes/cleanup"
 )
 
 // LiveDataBuilder optimally builds LiveData from tracked events
@@ -311,7 +313,7 @@ func (b *LiveDataBuilder) fetchSingleResource(
 	}
 
 	// Clean the object (remove managed fields, status, etc.)
-	Cleanup(obj)
+	cleanup.Cleanup(obj)
 
 	return obj
 }

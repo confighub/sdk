@@ -25,6 +25,7 @@ import (
 )
 
 var setImageHandler, setImageUriHandler, setImageReferenceHandler, setImageReferenceByUriHandler, setContainerFlagHandler handler.FunctionImplementation
+var setImageRegistryByRegistryHandler handler.FunctionImplementation
 
 // See:
 // https://github.com/kubernetes/apimachinery/blob/master/pkg/util/validation/validation.go
@@ -201,10 +202,10 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 				{
 					ParameterName:    "registry",
 					Required:         true,
-					Description:      "Image repository URI registry prefix whose registry prefix should be set",
+					Description:      "Existing image registry prefix to replace; an empty value matches images that have no registry and prepends new-registry to them",
 					DataType:         api.DataTypeString,
 					Example:          "quay.io",
-					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(imageURIRegexpString)},
+					ValueConstraints: api.ValueConstraints{Regexp: "^(?:" + imageURIRegexpString + ")?$"},
 				},
 				{
 					ParameterName:    "new-registry",
@@ -214,12 +215,20 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Example:          "mirror.registry.example.com",
 					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(imageURIRegexpString)},
 				},
+				{
+					ParameterName:    "container-name",
+					Required:         false,
+					Description:      "Optional container name to restrict the change to; '*' (the default) matches all containers",
+					DataType:         api.DataTypeString,
+					Example:          "server",
+					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
+				},
 			},
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Replace the specified image registry prefix with a new registry prefix",
+			Description:           "Replace the specified image registry prefix with a new registry prefix; an empty registry prepends the new registry to images that have none. Optionally restrict to a single container by name",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         api.AttributeNameContainerImage,
 			AffectedResourceTypes: resourceTypes,
@@ -228,6 +237,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
+	setImageRegistryByRegistryHandler = fh.GetHandlerImplementation("set-image-registry-by-registry") // for testing
 	minValue := 0
 	replicasParameters := []api.FunctionParameter{
 		{
@@ -1127,6 +1137,19 @@ func k8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType, parsedData 
 	return parsedData, nil, err
 }
 
+// imageHasRegistry reports whether an image reference begins with an explicit
+// registry host. Per the Docker convention, the first slash-separated component
+// is a registry only when it contains a "." or ":" (port) or equals "localhost";
+// bare names ("adservice") and docker.io-implied paths ("library/nginx") do not.
+func imageHasRegistry(image string) bool {
+	i := strings.IndexByte(image, '/')
+	if i < 0 {
+		return false
+	}
+	first := image[:i]
+	return first == "localhost" || strings.ContainsAny(first, ".:")
+}
+
 func makeK8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 		return k8sFnSetImageRegistryByRegistry(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
@@ -1137,15 +1160,29 @@ func k8sFnSetImageRegistryByRegistry(rp *k8skit.K8sResourceProviderType, parsedD
 	// The argument value types should be verified before this function is called
 	imageRegistry := args[0].Value.(string)
 	newRegistry := args[1].Value.(string)
+	containerName := "*"
+	if len(args) > 2 {
+		containerName = args[2].Value.(string)
+	}
 
 	resourceTypeToAllImagePaths := yamlkit.GetPathRegistryForAttributeName(rp, api.AttributeNameContainerImage)
 	updater := func(currentValue string) string {
+		// An empty registry matches images that have no explicit registry host
+		// (e.g. "adservice" or docker.io-implied "library/nginx") and prepends
+		// the new registry, inserting the "/" separator. Images that already
+		// carry a registry are left untouched.
+		if imageRegistry == "" {
+			if imageHasRegistry(currentValue) {
+				return currentValue
+			}
+			return newRegistry + "/" + currentValue
+		}
 		if !strings.HasPrefix(currentValue, imageRegistry) {
 			return currentValue
 		}
 		return newRegistry + strings.TrimPrefix(currentValue, imageRegistry)
 	}
-	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{"*"}, rp, updater, false, opts)
+	err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToAllImagePaths, []any{containerName}, rp, updater, false, opts)
 	return parsedData, nil, err
 }
 

@@ -19,6 +19,7 @@ import (
 	"github.com/confighub/sdk/bridge-impl/common"
 	"github.com/confighub/sdk/bridge-impl/helmutils"
 	"github.com/confighub/sdk/bridge-impl/kubernetes"
+	"github.com/confighub/sdk/bridge-impl/kubernetes/cleanup"
 	"github.com/confighub/sdk/bridge-impl/ociutils"
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -1164,7 +1165,7 @@ func computeManagedResourceState(ctx context.Context, k8sClient kubernetes.Kuber
 	}
 
 	// LiveData = cleaned version of the same objects (spec-only, no internal annotations)
-	cleanedManagedResources := kubernetes.ExtraCleanupObjects(liveManagedResources)
+	cleanedManagedResources := cleanup.ExtraCleanupObjects(liveManagedResources)
 
 	// Namespace removal rule for LiveData:
 	//

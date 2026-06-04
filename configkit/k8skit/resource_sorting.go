@@ -142,6 +142,14 @@ func (g *dependencyGraph) topologicalSort() ([]resourceDoc, error) {
 	return result, nil
 }
 
+// ResourcePriority returns the canonical install-order priority for a Kubernetes
+// resource type (lower applies first: CRDs, Namespaces, RBAC, config, workloads,
+// then post-deployment policies). Exported so callers outside k8skit (e.g. the
+// cub upload pipeline) can order resources by the same band map used internally.
+func ResourcePriority(resourceType api.ResourceType) int {
+	return getResourcePriority(resourceType)
+}
+
 // getResourcePriority returns the priority order for different Kubernetes resource kinds
 // Lower numbers have higher priority (will be applied first)
 func getResourcePriority(resourceType api.ResourceType) int {

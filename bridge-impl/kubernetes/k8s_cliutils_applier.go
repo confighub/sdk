@@ -42,6 +42,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/confighub/sdk/bridge-impl/kubernetes/cleanup"
+	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
 	"github.com/confighub/sdk/bridge-impl/kubernetes/statuspoller"
 )
 
@@ -1724,7 +1726,7 @@ func (a *CLIUtilsApplier) getLiveObjects(ctx context.Context, objects []*unstruc
 		}
 
 		if doCleanup {
-			Cleanup(u)
+			cleanup.Cleanup(u)
 		}
 		liveObjects[i] = u
 	}
@@ -2098,42 +2100,15 @@ func crdBackoffDelay(retryCount int) time.Duration {
 	}
 }
 
-var otherApplierManagers = map[string]bool{
-	// Note(Brian): I have not seen before-first-apply in current versions.
-	// kubectl create uses the manager "kubectl-create". Default fields don't
-	// appear in managedFields.
-	// https://github.com/kubernetes/kubernetes/issues/89954
-	// https://github.com/kubernetes/kubernetes/issues/131476
-	"before-first-apply": true, // Legacy default field manager
-
-	"helm":                 true, // Helm
-	"helm-controller":      true, // Flux HelmRelease
-	"kustomize-controller": true, // Flux Kustomization
-	"argocd-controller":    true, // ArgoCD's default: ArgoCDSSAManager
-	"tanka":                true, // Tanka
-}
-
 // shouldTakeOverManager checks if a field manager should be replaced by our manager.
-// We take over kubectl-* managers and old confighub managers to enable proper SSA field deletion.
-// We preserve managers from other controllers (HPA, VPA, etc.) to avoid conflicts.
+// We take over kubectl-* managers, old confighub managers, and other whole-resource
+// appliers (Helm, ArgoCD, Flux, Sveltos, Tanka, …) to enable proper SSA field
+// deletion, while preserving managers from controllers (HPA, VPA, etc.) to avoid
+// conflicts. The applier registry and this take-over policy live in mfclass so the
+// k8s-mf diagnostic tool mirrors the bridge's behavior exactly.
 // https://kubernetes.io/docs/reference/using-api/server-side-apply/#transferring-ownership
 func shouldTakeOverManager(manager string) bool {
-	if manager == FieldManager {
-		return false
-	}
-	// Take over kubectl managers (kubectl-client-side-apply, kubectl-edit, etc.)
-	if strings.HasPrefix(manager, "kubectl") {
-		return true
-	}
-	// Take over old confighub managers to consolidate ownership
-	if strings.HasPrefix(manager, "confighub") {
-		return true
-	}
-	// Take over other whole-resource appliers the user may be transitioning from
-	if otherApplierManagers[manager] {
-		return true
-	}
-	return false
+	return mfclass.ShouldTakeOver(manager, FieldManager)
 }
 
 // clearManagedFieldsForObjects removes kubectl and old confighub managers from resources before apply.

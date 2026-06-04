@@ -24586,6 +24586,15 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        ClaimTTLSeconds:
+          readOnly: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        ClaimToken:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         Condition:
           description: Condition represents the worker's readiness state (Ready, NotReady,
             Unresponsive, Disconnected).

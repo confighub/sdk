@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
@@ -66,6 +67,19 @@ type workerClient struct {
 	actionCounter  metric.Int64Counter
 	errorCounter   metric.Int64Counter
 
+	// transportType selects the wire protocol. Default TransportHTTP2Stream
+	// runs the SSE code in this file verbatim. TransportLongPoll delegates
+	// all wire concerns to longPoll (see transport_long_poll.go); the SSE
+	// fields above (client, workerSlug, done) and the SSE methods below are
+	// unused in that mode.
+	transportType TransportType
+	// longPoll is non-nil only when transportType == TransportLongPoll.
+	longPoll *longPollTransport
+	// dispatchedEvents counts events the long-poll transport has handed to
+	// DispatchEvent since process start. Used only for log correlation; the
+	// SSE path uses its own local eventCount and never touches this.
+	dispatchedEvents uint64
+
 	// eventStateMu guards lastEventHandledAt and serving, which are read by
 	// HTTP probe handlers concurrently with the event loop.
 	eventStateMu       sync.RWMutex
@@ -77,7 +91,30 @@ func newClient(
 	serverURL, workerID, workerSecret string,
 	bridgeWorker api.BridgeWorker, functionExecutor executor.FunctionExecutor,
 	metricsMeter metric.Meter,
+	transportType TransportType,
 ) *workerClient {
+	// Long-poll talks to the main API port over plain HTTP and owns its own
+	// http.Client, so it skips the h2c transport setup and the
+	// /api/info WorkerPort rewrite that the SSE path below performs.
+	if transportType == TransportLongPoll {
+		c := &workerClient{
+			serverURL:        serverURL,
+			workerID:         workerID,
+			workerSecret:     workerSecret,
+			bridgeWorker:     bridgeWorker,
+			functionExecutor: functionExecutor,
+			watcherManager:   NewWatcherManager(10, 50), // 10 workers, queue size 50
+			unitQueues:       NewUnitQueueManager(),
+			metricsMeter:     metricsMeter,
+			transportType:    transportType,
+		}
+		c.longPoll = newLongPollTransport(serverURL, workerID, workerSecret, bridgeWorker, functionExecutor, c)
+		if err := c.initializeEventCounters(); err != nil {
+			log.Printf("[WARN] Failed to initialize metric counters: %v", err)
+		}
+		return c
+	}
+
 	// Improved: Parse URL and select transport based on scheme
 	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
@@ -126,6 +163,7 @@ func newClient(
 		watcherManager: NewWatcherManager(10, 50), // 10 workers, queue size 50
 		unitQueues:     NewUnitQueueManager(),
 		metricsMeter:   metricsMeter,
+		transportType:  transportType,
 	}
 
 	// Fetch /api/info to get the WorkerPort and update serverURL
@@ -247,6 +285,10 @@ func (c *workerClient) fetchAndApplyWorkerPort() error {
 // Returns:
 //   - error: Returns ctx.Err() when context is cancelled, or initial setup errors
 func (c *workerClient) Start(ctx context.Context) error {
+	if c.transportType == TransportLongPoll {
+		return c.startLongPoll(ctx)
+	}
+
 	// Retrieve the unique slug identifier for this bridge worker from the server.
 	// This slug is used to identify this worker instance in subsequent API calls.
 	err := c.getBridgeWorkerSlug()
@@ -334,6 +376,43 @@ func (c *workerClient) Start(ctx context.Context) error {
 			attempt = 0
 		}
 	}
+}
+
+// startLongPoll runs the worker on the long-poll transport. It mirrors the
+// queue-manager / watcher lifecycle of the SSE Start above, then hands the
+// connection lifecycle (auth, claim, poll loop, reconnect/backoff) to the
+// long-poll transport. See transport_long_poll.go.
+func (c *workerClient) startLongPoll(ctx context.Context) error {
+	c.unitQueues.Start(ctx)
+	defer c.unitQueues.Stop()
+
+	defer func() {
+		log.Printf("🛑 Shutting down: stopping all active watchers")
+		c.watcherManager.StopAndWait()
+	}()
+
+	return c.longPoll.Run(ctx)
+}
+
+// DispatchEvent implements eventDispatcher. The long-poll transport calls this
+// once per inbound event after stripping wire framing; it funnels through
+// handleEventWithLogging so metrics, recover(), and "last event handled at"
+// bookkeeping apply exactly as they do on the SSE path. The SSE path does not
+// use this method — it calls handleEventWithLogging directly from startStream.
+func (c *workerClient) DispatchEvent(ctx context.Context, eventType string, data []byte) {
+	n := atomic.AddUint64(&c.dispatchedEvents, 1)
+	if err := c.handleEventWithLogging(ctx, eventType, data, int(n)); err != nil {
+		log.Printf("[ERROR] Failed to process event #%d: %v", n, err)
+	}
+}
+
+// SetServing implements eventDispatcher. The long-poll transport flips this
+// true while its poll loop is up and false when it tears down, so probe
+// handlers reading Worker.IsServing see the same semantics as the SSE path.
+func (c *workerClient) SetServing(serving bool) {
+	c.eventStateMu.Lock()
+	c.serving = serving
+	c.eventStateMu.Unlock()
 }
 
 func (c *workerClient) startStream(ctx context.Context) error {
@@ -915,6 +994,9 @@ func (c *workerClient) sendCancelledStatus(cancelled *runningOperation) {
 //
 // This ensures data consistency by persisting operation results even during backend crashes.
 func (c *workerClient) sendResult(result *api.ActionResult) error {
+	if c.transportType == TransportLongPoll {
+		return c.longPoll.SendResult(result)
+	}
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("failed to marshal result: %v", err)
@@ -1020,6 +1102,9 @@ func (c *workerClient) sendResult(result *api.ActionResult) error {
 // Used by status queue which handles its own infinite retry.
 // Returns error immediately for caller to handle retry.
 func (c *workerClient) sendResultOnce(result *api.ActionResult) error {
+	if c.transportType == TransportLongPoll {
+		return c.longPoll.SendResultOnce(result)
+	}
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("failed to marshal result: %v", err)
@@ -1065,6 +1150,14 @@ func (c *workerClient) WaitForPendingOperations() {
 	c.eventStateMu.Lock()
 	c.serving = false
 	c.eventStateMu.Unlock()
+
+	// Long-poll releases its claim eagerly, before draining, so the server
+	// marks the worker Disconnected without waiting on a long-running watcher.
+	// SSE relies on stream-close to do the equivalent, so this is a no-op there
+	// (longPoll is nil). See longPollTransport.BeginShutdown.
+	if c.longPoll != nil {
+		c.longPoll.BeginShutdown()
+	}
 
 	log.Printf("[INFO] Waiting for pending operations to complete...")
 	c.operationsWg.Wait()

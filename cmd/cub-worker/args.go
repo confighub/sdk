@@ -38,6 +38,8 @@ type ConfigHubWorkerArgs struct {
 	ConfigHubURL string `env:"CONFIGHUB_URL, default=https://hub.confighub.com" json:"CONFIGHUB_URL" description:"Base URL (scheme and host) of the ConfigHub API."`
 	WorkerPort   string `env:"CONFIGHUB_WORKER_PORT, default=443" json:"CONFIGHUB_WORKER_PORT" description:"Port for the worker's HTTP/2 connection to ConfigHub."`
 
+	WorkerTransport string `env:"CONFIGHUB_WORKER_TRANSPORT, default=http2-stream" json:"CONFIGHUB_WORKER_TRANSPORT,omitempty" description:"Wire protocol used to talk to ConfigHub. \"http2-stream\" (default) keeps the v1 long-lived h2c stream. \"long-poll\" uses HTTP long-polling on the main API port and does not require a separate worker port."`
+
 	HTTPServerPort                string `env:"CONFIGHUB_WORKER_HTTP_SERVER_PORT" json:"CONFIGHUB_WORKER_HTTP_SERVER_PORT,omitempty" description:"Port for the worker's local HTTP server (Prometheus metrics, pprof, /internal/ok and /internal/ready). When unset, the HTTP server is not started."`
 	ServerShutdownTimeoutSeconds  int    `env:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT, default=5" json:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT" description:"Number of seconds the local HTTP server is given to shut down gracefully."`
 	LivenessEventThresholdSeconds int    `env:"CONFIGHUB_WORKER_LIVENESS_EVENT_THRESHOLD, default=45" json:"CONFIGHUB_WORKER_LIVENESS_EVENT_THRESHOLD" description:"Maximum age in seconds of the most recent handled event before /internal/ok and /internal/ready report unhealthy. The backend sends heartbeats every 15s and keepalives every 30s, so the default of 45s tolerates one missed tick."`

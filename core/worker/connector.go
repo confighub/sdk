@@ -12,15 +12,24 @@ package worker
 // including bridge functionality.
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
-	"context"
-
-	"github.com/confighub/sdk/core/worker/api"
-	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/function/executor"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/worker/lib"
+)
+
+// TransportType re-exports lib.TransportType so custom-worker authors who
+// import this package don't also have to import core/worker/lib just to
+// pick a transport.
+type TransportType = lib.TransportType
+
+const (
+	TransportHTTP2Stream = lib.TransportHTTP2Stream
+	TransportLongPoll    = lib.TransportLongPoll
 )
 
 type ConfighubConnector struct {
@@ -29,6 +38,7 @@ type ConfighubConnector struct {
 	workerID         string
 	workerSecret     string
 	configHubURL     string
+	transport        TransportType
 }
 
 type ConnectorOptions struct {
@@ -37,40 +47,36 @@ type ConnectorOptions struct {
 	ConfigHubURL     string
 	FunctionExecutor executor.FunctionExecutor
 	BridgeDispatcher *BridgeDispatcher
+	// Transport selects the wire protocol. Defaults to TransportHTTP2Stream
+	// (the v1 long-lived h2c stream). Set to TransportLongPoll to use the
+	// HTTP long-polling transport, which talks to the main API port and does
+	// not require a separate worker port.
+	Transport TransportType
 }
 
 // NewConnector creates a new ConfighubConnector. WorkerID and WorkerSecret are required.
 // The rest of the configuration is loaded from ConfigHub after the worker connects.
 func NewConnector(opts ConnectorOptions) (*ConfighubConnector, error) {
+	transport := opts.Transport
+	if transport == "" {
+		transport = TransportHTTP2Stream
+	}
 	return &ConfighubConnector{
 		functionExecutor: opts.FunctionExecutor,
 		bridgeDispatcher: opts.BridgeDispatcher,
 		workerID:         opts.WorkerID,
 		workerSecret:     opts.WorkerSecret,
 		configHubURL:     opts.ConfigHubURL,
+		transport:        transport,
 	}, nil
 }
 
 // Start starts the worker. It opens a persistent connection to ConfigHub and starts performing work based on its configuration.
 func (c *ConfighubConnector) Start() error {
-
-	// get api info from confighub. First instantiate generated client using confighub url.
-	apiClient, err := goclientnew.NewClientWithResponses(c.configHubURL + "/api")
+	connectURL, err := c.resolveConnectURL()
 	if err != nil {
 		return err
 	}
-	apiInfo, err := apiClient.ApiInfoWithResponse(context.Background())
-	if err != nil {
-		return err
-	}
-	if apiInfo.JSON200 == nil {
-		return fmt.Errorf("failed to get api info: %v", apiInfo.Body)
-	}
-	url, err := url.Parse(c.configHubURL)
-	if err != nil {
-		return err
-	}
-	workerUrl := fmt.Sprintf("%s://%s:%s", url.Scheme, url.Hostname(), apiInfo.JSON200.WorkerPort)
 
 	var bw api.BridgeWorker // api.BridgeWorker is the interface.
 	if c.bridgeDispatcher != nil {
@@ -79,11 +85,42 @@ func (c *ConfighubConnector) Start() error {
 		bw = &NullBridgeWorker{}
 	}
 
-	worker := lib.New(workerUrl, c.workerID, c.workerSecret).
+	worker := lib.New(connectURL, c.workerID, c.workerSecret).
 		WithBridgeWorker(bw).
-		WithFunctionExecutor(c.functionExecutor)
+		WithFunctionExecutor(c.functionExecutor).
+		WithTransport(c.transport)
 
 	return worker.Start(context.Background())
+}
+
+// resolveConnectURL returns the URL the worker SDK should be initialized
+// with. For the SSE/h2c stream transport that's the WorkerPort variant
+// (advertised by /api/info); the long-poll transport stays on the main API
+// port so it doesn't need the dedicated h2c port at all.
+func (c *ConfighubConnector) resolveConnectURL() (string, error) {
+	if c.transport == TransportLongPoll {
+		// Long-poll endpoints (/api/space/.../lease, .../queued_operation/*)
+		// live on the main router only; switching to WorkerPort would 404.
+		// Use the configured URL as-is.
+		return c.configHubURL, nil
+	}
+
+	apiClient, err := goclientnew.NewClientWithResponses(c.configHubURL + "/api")
+	if err != nil {
+		return "", err
+	}
+	apiInfo, err := apiClient.ApiInfoWithResponse(context.Background())
+	if err != nil {
+		return "", err
+	}
+	if apiInfo.JSON200 == nil {
+		return "", fmt.Errorf("failed to get api info: %v", apiInfo.Body)
+	}
+	parsed, err := url.Parse(c.configHubURL)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s://%s:%s", parsed.Scheme, parsed.Hostname(), apiInfo.JSON200.WorkerPort), nil
 }
 
 type NullBridgeWorker struct{}

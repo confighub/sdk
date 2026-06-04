@@ -11805,6 +11805,8 @@ export type BridgeWorkerRead = {
   };
   /** Unique identifier for a Bridge Worker. */
   BridgeWorkerID?: string;
+  ClaimTTLSeconds?: number;
+  ClaimToken?: string;
   /** Condition represents the worker's readiness state (Ready, NotReady, Unresponsive, Disconnected). */
   Condition?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */

@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    confighub.com/key: something
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2026-06-01T19:59:57Z"
+  generation: 1
+  labels:
+    app: mydep
+  managedFields:
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:confighub.com/key: {}
+        f:labels:
+          f:app: {}
+      f:spec:
+        f:paused: {}
+        f:replicas: {}
+        f:selector: {}
+        f:strategy: {}
+        f:template:
+          f:metadata:
+            f:labels:
+              f:app: {}
+          f:spec:
+            f:containers:
+              k:{"name":"nginx"}:
+                .: {}
+                f:image: {}
+                f:name: {}
+                f:ports:
+                  k:{"containerPort":8080,"protocol":"TCP"}:
+                    .: {}
+                    f:containerPort: {}
+                f:resources: {}
+              k:{"name":"otel-sidecar"}:
+                .: {}
+                f:image: {}
+                f:name: {}
+                f:ports:
+                  k:{"containerPort":4318,"protocol":"TCP"}:
+                    .: {}
+                    f:containerPort: {}
+            f:dnsPolicy: {}
+    manager: confighub-bridge-worker
+    operation: Apply
+    time: "2026-06-01T19:59:57Z"
+  - apiVersion: apps/v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          f:deployment.kubernetes.io/revision: {}
+      f:status:
+        f:conditions:
+          .: {}
+          k:{"type":"Available"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+          k:{"type":"Progressing"}:
+            .: {}
+            f:lastTransitionTime: {}
+            f:lastUpdateTime: {}
+            f:message: {}
+            f:reason: {}
+            f:status: {}
+            f:type: {}
+        f:observedGeneration: {}
+        f:replicas: {}
+        f:unavailableReplicas: {}
+        f:updatedReplicas: {}
+    manager: kube-controller-manager
+    operation: Update
+    subresource: status
+    time: "2026-06-01T19:59:57Z"
+  name: mydep
+  namespace: example
+  resourceVersion: "11825"
+  uid: 6a4bc200-9f7b-4b2c-9e77-d8667a9d58b1
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: mydep
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mydep
+    spec:
+      containers:
+      - image: nginx:latest
+        imagePullPolicy: Always
+        name: nginx
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - image: otel/opentelemetry-collector:latest-amd64
+        imagePullPolicy: IfNotPresent
+        name: otel-sidecar
+        ports:
+        - containerPort: 4318
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  conditions:
+  - lastTransitionTime: "2026-06-01T19:59:57Z"
+    lastUpdateTime: "2026-06-01T19:59:57Z"
+    message: Deployment does not have minimum availability.
+    reason: MinimumReplicasUnavailable
+    status: "False"
+    type: Available
+  - lastTransitionTime: "2026-06-01T19:59:57Z"
+    lastUpdateTime: "2026-06-01T19:59:57Z"
+    message: ReplicaSet "mydep-7f759fccb" is progressing.
+    reason: ReplicaSetUpdated
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  replicas: 3
+  unavailableReplicas: 3
+  updatedReplicas: 3

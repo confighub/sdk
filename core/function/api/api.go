@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 )
@@ -171,7 +172,7 @@ func ParseAndValidateWhereResource(whereResource string) ([]*VisitorRelationalEx
 	}
 	whereExpressions, err := ParseAndValidateWhereFilter(whereResource)
 	if err != nil {
-		return nil, fmt.Errorf("invalid WhereResource filter: %w", err)
+		return nil, errors.Wrap(err, "invalid WhereResource filter")
 	}
 	for _, expr := range whereExpressions {
 		if strings.HasPrefix(expr.Path, "ConfigHub.") && !ValidWhereResourcePaths[expr.Path] {

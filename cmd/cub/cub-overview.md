@@ -227,11 +227,11 @@ cub unit apply --space $SPACE myunit
 Clone a whole space and its units into a new downstream variant space in one step. The new space's
 `Variant` label is set to the variant name; other labels are inherited from the upstream space, and
 `--environment` and `--region` can add or change the `Environment` and `Region` labels. The slug is
-derived from `--space-name-pattern` (here, the `Component` label prefix and the `Variant` label
+derived from `--space-pattern` (here, the `Component` label prefix and the `Variant` label
 suffix). The cloned units can be retargeted:
 
 ```
-cub variant create test website-prod --space-name-pattern "template:{{.Labels.Component}}-{{.Labels.Variant}}" --target website-test/cluster
+cub variant create test website-prod --space-pattern "template:{{.Labels.Component}}-{{.Labels.Variant}}" --target website-test/cluster
 ```
 
 ### Links

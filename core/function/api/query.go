@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 )
 
@@ -344,7 +345,7 @@ func ParseWhereFilterForImport(queryString string) ([]ImportFilter, ImportOption
 	// Parse using the existing RelationalExpression parser
 	expressions, err := ParseAndValidateWhereFilterForImport(queryString)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse where filter: %w", err)
+		return nil, nil, errors.Wrap(err, "failed to parse where filter")
 	}
 
 	var filters []ImportFilter
@@ -356,13 +357,13 @@ func ParseWhereFilterForImport(queryString string) ([]ImportFilter, ImportOption
 			// Handle import options
 			err := convertToImportOption(expr, options)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to handle import option '%s': %w", expr.Path, err)
+				return nil, nil, errors.Wrapf(err, "failed to handle import option '%s'", expr.Path)
 			}
 		} else {
 			// Handle regular filters
 			filter, err := convertToImportFilter(expr)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to convert filter for path '%s': %w", expr.Path, err)
+				return nil, nil, errors.Wrapf(err, "failed to convert filter for path '%s'", expr.Path)
 			}
 			filters = append(filters, filter)
 		}
@@ -399,7 +400,7 @@ func convertToImportOption(expr *VisitorRelationalExpression, options ImportOpti
 	// Convert literal value to appropriate type
 	value, err := convertLiteralToValue(expr.Literal, expr.DataType)
 	if err != nil {
-		return fmt.Errorf("failed to convert literal value '%s': %w", expr.Literal, err)
+		return errors.Wrapf(err, "failed to convert literal value '%s'", expr.Literal)
 	}
 
 	options[optionName] = value
@@ -488,7 +489,7 @@ func convertNumberToInt(value any) (int, error) {
 		// Handle string literals from parsed queries
 		parsed, err := strconv.Atoi(strValue)
 		if err != nil {
-			return 0, fmt.Errorf("internal error: failed to parse string as int: %w", err)
+			return 0, errors.Wrap(err, "internal error: failed to parse string as int")
 		}
 		return parsed, nil
 	} else {
@@ -566,7 +567,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 		} else {
 			rightIntValue, err = parseIntLiteral(expr.Literal)
 			if err != nil {
-				return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+				return false, errors.Wrap(err, "internal error: invalid number literal")
 			}
 		}
 		result := evaluateIntExpression(expr.Operator, leftIntValue, rightIntValue)
@@ -592,18 +593,26 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			return false, fmt.Errorf("internal error: expected uuid.UUID but got %T", leftValue)
 		}
 		var rightUUIDValue uuid.UUID
-		if rightValue != nil {
-			rightUUIDValue, ok = rightValue.(uuid.UUID)
-			if !ok {
-				return false, fmt.Errorf("internal error: expected uuid.UUID but got %T", rightValue)
-			}
-		} else {
+		switch rv := rightValue.(type) {
+		case nil:
+			// The right operand is a literal in expr.Literal.
 			var err error
-			literalStr := strings.Trim(expr.Literal, "'")
-			rightUUIDValue, err = uuid.Parse(literalStr)
+			rightUUIDValue, err = uuid.Parse(strings.Trim(expr.Literal, "'"))
 			if err != nil {
-				return false, fmt.Errorf("invalid UUID literal: %w", err)
+				return false, errors.Wrap(err, "invalid UUID literal")
 			}
+		case uuid.UUID:
+			rightUUIDValue = rv
+		case string:
+			// A cross-entity operand (or an IN element) may arrive as a string;
+			// parse it into a UUID.
+			var err error
+			rightUUIDValue, err = uuid.Parse(strings.Trim(rv, "'"))
+			if err != nil {
+				return false, errors.Wrap(err, "invalid UUID value")
+			}
+		default:
+			return false, errors.Errorf("internal error: expected uuid.UUID or string but got %T", rightValue)
 		}
 		return evaluateUUIDExpression(expr.Operator, leftUUIDValue, rightUUIDValue)
 	case DataTypeTime:
@@ -621,7 +630,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			var err error
 			rightTimeValue, err = parseTimeLiteral(expr.Literal)
 			if err != nil {
-				return false, fmt.Errorf("internal error: invalid time literal: %w", err)
+				return false, errors.Wrap(err, "internal error: invalid time literal")
 			}
 		}
 		return evaluateTimeExpression(expr.Operator, leftTimeValue, rightTimeValue)
@@ -645,7 +654,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			} else {
 				rightIntValue, err = parseIntLiteral(expr.Literal)
 				if err != nil {
-					return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+					return false, errors.Wrap(err, "internal error: invalid number literal")
 				}
 			}
 			return evaluateIntExpression(expr.Operator, len(uuidArrayValue), rightIntValue), nil
@@ -662,7 +671,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			literalStr := strings.Trim(expr.Literal, "'")
 			rightUUIDValue, err = uuid.Parse(literalStr)
 			if err != nil {
-				return false, fmt.Errorf("invalid UUID literal: %w", err)
+				return false, errors.Wrap(err, "invalid UUID literal")
 			}
 		}
 		return evaluateUUIDArrayExpression(expr.Operator, uuidArrayValue, rightUUIDValue)
@@ -683,7 +692,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			} else {
 				rightIntValue, err = parseIntLiteral(expr.Literal)
 				if err != nil {
-					return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+					return false, errors.Wrap(err, "internal error: invalid number literal")
 				}
 			}
 			return evaluateIntExpression(expr.Operator, len(stringBoolMapValue), rightIntValue), nil
@@ -715,7 +724,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			} else {
 				rightIntValue, err = parseIntLiteral(expr.Literal)
 				if err != nil {
-					return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+					return false, errors.Wrap(err, "internal error: invalid number literal")
 				}
 			}
 			return evaluateIntExpression(expr.Operator, len(stringMapValue), rightIntValue), nil
@@ -747,7 +756,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			} else {
 				rightIntValue, err = parseIntLiteral(expr.Literal)
 				if err != nil {
-					return false, fmt.Errorf("internal error: invalid number literal: %w", err)
+					return false, errors.Wrap(err, "internal error: invalid number literal")
 				}
 			}
 			return evaluateIntExpression(expr.Operator, len(uuidStringMapValue), rightIntValue), nil
@@ -764,7 +773,7 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			literalStr := strings.Trim(expr.Literal, "'")
 			rightUUIDValue, err = uuid.Parse(literalStr)
 			if err != nil {
-				return false, fmt.Errorf("invalid UUID literal: %w", err)
+				return false, errors.Wrap(err, "invalid UUID literal")
 			}
 		}
 		return evaluateUUIDStringMapExpression(expr.Operator, uuidStringMapValue, rightUUIDValue)
@@ -899,7 +908,7 @@ func evaluateLikeExpression(value, pattern string, caseInsensitive bool) (bool, 
 		regex, err = regexp.Compile(regexPattern)
 	}
 	if err != nil {
-		return false, fmt.Errorf("invalid LIKE pattern: %w", err)
+		return false, errors.Wrap(err, "invalid LIKE pattern")
 	}
 
 	return regex.MatchString(value), nil
@@ -940,7 +949,7 @@ func evaluateRegexExpression(value, pattern string, caseInsensitive bool) (bool,
 		regex, err = regexp.Compile(pattern)
 	}
 	if err != nil {
-		return false, fmt.Errorf("invalid regular expression: %w", err)
+		return false, errors.Wrap(err, "invalid regular expression")
 	}
 
 	return regex.MatchString(value), nil
@@ -969,6 +978,12 @@ func valueToString(value any) (string, error) {
 
 // valueToStringWithReflection uses reflection to handle type aliases and custom string types
 func valueToStringWithReflection(value any) (string, error) {
+	// uuid.UUID is an array under the hood, so reflection can't stringify it;
+	// compare it by its canonical string form.
+	if u, ok := value.(uuid.UUID); ok {
+		return u.String(), nil
+	}
+
 	// Use reflection to check if the underlying type is string
 	v := reflect.ValueOf(value)
 
@@ -1039,7 +1054,7 @@ func parseTimeLiteral(literal string) (time.Time, error) {
 	literalStr := strings.Trim(literal, "'")
 	literalTime, err := time.Parse(time.RFC3339, literalStr)
 	if err != nil {
-		return literalTime, fmt.Errorf("invalid time literal: %w", err)
+		return literalTime, errors.Wrap(err, "invalid time literal")
 	}
 	return literalTime, nil
 }
@@ -1179,7 +1194,7 @@ func EvaluatePermissionsExpression(operator string, leftValue PermissionsData, r
 		var err error
 		rightUUID, err = uuid.Parse(v)
 		if err != nil {
-			return false, fmt.Errorf("invalid UUID: %w", err)
+			return false, errors.Wrap(err, "invalid UUID")
 		}
 	default:
 		return false, fmt.Errorf("expected UUID for Permissions containment check, got %T", rightValue)

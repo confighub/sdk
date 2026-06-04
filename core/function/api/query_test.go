@@ -6,6 +6,7 @@ package api
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -74,6 +75,70 @@ func TestNotLikeOperator(t *testing.T) {
 			assert.Equal(t, tc.expected, result)
 		})
 	}
+}
+
+// TestEvaluateExpressionUUID covers the cross-entity filter cases that surface
+// during bulk operations (e.g. "cub variant promote"), where a UUID-valued field
+// is compared against a value supplied at runtime as a string rather than as a
+// quoted literal. Before the fix, the DataTypeUUID case rejected a string right
+// operand, and the DataTypeString case could not stringify a uuid.UUID left
+// operand, so a filter like "SpaceID = '<uuid>'" or "FromUnitID IN (...)" failed
+// in-memory with "internal error: expected ... but got uuid.UUID".
+func TestEvaluateExpressionUUID(t *testing.T) {
+	left := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+	same := "11111111-1111-1111-1111-111111111111"
+	other := "22222222-2222-2222-2222-222222222222"
+
+	t.Run("DataTypeUUID right value as string matches", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "FromUnitID", Operator: "=", DataType: DataTypeUUID}
+		result, err := EvaluateExpression(expr, left, same, nil)
+		require.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("DataTypeUUID right value as string not equal", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "FromUnitID", Operator: "!=", DataType: DataTypeUUID}
+		result, err := EvaluateExpression(expr, left, other, nil)
+		require.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("DataTypeUUID right value as uuid.UUID matches", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "FromUnitID", Operator: "=", DataType: DataTypeUUID}
+		result, err := EvaluateExpression(expr, left, uuid.MustParse(same), nil)
+		require.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("DataTypeUUID literal right value still works", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "FromUnitID", Operator: "=", Literal: "'" + same + "'", DataType: DataTypeUUID}
+		result, err := EvaluateExpression(expr, left, nil, nil)
+		require.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("DataTypeUUID invalid string right value errors", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "FromUnitID", Operator: "=", DataType: DataTypeUUID}
+		_, err := EvaluateExpression(expr, left, "not-a-uuid", nil)
+		require.Error(t, err)
+	})
+
+	// The original "cub variant promote" failure: a UUID-valued field compared as
+	// a string ("SpaceID = '<uuid>'"). The left value arrives as a uuid.UUID, and
+	// valueToStringWithReflection must stringify it rather than failing.
+	t.Run("DataTypeString left value as uuid.UUID matches literal", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "SpaceID", Operator: "=", Literal: "'" + same + "'", DataType: DataTypeString}
+		result, err := EvaluateExpression(expr, left, nil, nil)
+		require.NoError(t, err)
+		assert.True(t, result)
+	})
+
+	t.Run("DataTypeString left value as uuid.UUID not equal literal", func(t *testing.T) {
+		expr := &RelationalExpression{Path: "SpaceID", Operator: "=", Literal: "'" + other + "'", DataType: DataTypeString}
+		result, err := EvaluateExpression(expr, left, nil, nil)
+		require.NoError(t, err)
+		assert.False(t, result)
+	})
 }
 
 // TestImportParsingOperators validates import-specific operator support

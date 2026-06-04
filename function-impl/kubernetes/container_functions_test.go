@@ -411,6 +411,75 @@ spec:
 	assert.Contains(t, newYaml.String(), "nginx-plus:1.14.2")
 }
 
+func TestK8sFnSetImageRegistryByRegistry_EmptyPrepends(t *testing.T) {
+	// Three containers: a bare image (no registry), a docker.io-implied path
+	// (no registry host), and one that already carries a registry.
+	yamlFixture := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: bare
+        image: adservice
+      - name: implied
+        image: library/nginx:1.27
+      - name: hasreg
+        image: gcr.io/team/svc:v1
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	newYaml, _, err := setImageRegistryByRegistryHandler(handler.FunctionImplementationArguments{
+		FunctionContext: &fakeContext,
+		ParsedData:      docs,
+		Arguments:       stringArgsToFunctionArgs([]string{"", "us-central1-docker.pkg.dev/google-samples/microservices-demo"}),
+	})
+	assert.NoError(t, err)
+	out := newYaml.String()
+	// Registry prepended (with separator) to the images that had none.
+	assert.Contains(t, out, "image: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice")
+	assert.Contains(t, out, "image: us-central1-docker.pkg.dev/google-samples/microservices-demo/library/nginx:1.27")
+	// An image that already had a registry is left untouched.
+	assert.Contains(t, out, "image: gcr.io/team/svc:v1")
+	assert.NotContains(t, out, "microservices-demo/gcr.io")
+}
+
+func TestK8sFnSetImageRegistryByRegistry_ContainerScope(t *testing.T) {
+	// Two containers: only the named one should get the registry prepended.
+	yamlFixture := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cartservice
+spec:
+  template:
+    spec:
+      containers:
+      - name: server
+        image: cartservice
+      - name: redis
+        image: redis:alpine
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	newYaml, _, err := setImageRegistryByRegistryHandler(handler.FunctionImplementationArguments{
+		FunctionContext: &fakeContext,
+		ParsedData:      docs,
+		Arguments:       stringArgsToFunctionArgs([]string{"", "us-central1-docker.pkg.dev/google-samples/microservices-demo", "server"}),
+	})
+	assert.NoError(t, err)
+	out := newYaml.String()
+	assert.Contains(t, out, "image: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice")
+	// The non-"server" container (a third-party image) is untouched.
+	assert.Contains(t, out, "image: redis:alpine")
+	assert.NotContains(t, out, "microservices-demo/redis")
+}
+
 func TestK8sFnSetEnv(t *testing.T) {
 	yamlTestFixture := `
 apiVersion: v1
