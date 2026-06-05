@@ -15,8 +15,6 @@ import (
 	"github.com/yannh/kubeconform/pkg/resource"
 	"github.com/yannh/kubeconform/pkg/validator"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/kustomize/kyaml/resid"
-	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -25,7 +23,6 @@ import (
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/function-impl/generic"
-	kustomizeexcerpts "github.com/confighub/sdk/function-impl/third_party/kustomize"
 )
 
 func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
@@ -144,73 +141,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	}
 }
 
-var noncoreDefaultGroup = map[string]string{
-	"Deployment":              "apps",
-	"ReplicaSet":              "apps",
-	"StatefulSet":             "apps",
-	"DaemonSet":               "apps",
-	"Job":                     "batch",
-	"CronJob":                 "batch",
-	"HorizontalPodAutoscaler": "autoscaling",
-	"Role":                    "rbac.authorization.k8s.io",
-	"ClusterRole":             "rbac.authorization.k8s.io",
-	"RoleBinding":             "rbac.authorization.k8s.io",
-	"ClusterRoleBinding":      "rbac.authorization.k8s.io",
-	"Ingress":                 "networking.k8s.io",
-	"IngressClass":            "networking.k8s.io",
-}
-
-func gvkString(gvk resid.Gvk) api.ResourceType {
-	g := gvk.Group
-	v := gvk.Version
-	k := gvk.Kind
-	if g == "" {
-		g = noncoreDefaultGroup[k]
-	}
-	if v == "" {
-		if k == "HorizontalPodAutoscaler" {
-			v = "v2"
-		} else {
-			v = "v1"
-		}
-	}
-	if k == "" {
-		// This shouldn't happen
-		k = "NoKind"
-	}
-	if g == "" {
-		return api.ResourceType(v + "/" + k)
-	}
-	return api.ResourceType(g + "/" + v + "/" + k)
-}
-
-// Create a resource-type-specific attribute name that matches AttributeName character restrictions.
-func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {
-	return api.AttributeName(string(api.AttributeNameResourceName) + "-" + strings.ReplaceAll(string(resourceType), "/", "-"))
-}
-
-var segmentIsArray = map[string]struct{}{
-	"containers":       {},
-	"initContainers":   {},
-	"volumes":          {},
-	"env":              {},
-	"envFrom":          {},
-	"sources":          {},
-	"imagePullSecrets": {},
-	"parameters":       {},
-	"paths":            {},
-	"webhooks":         {},
-	"subjects":         {},
-	"apiGroups":        {},
-	"nonResourceURLs":  {},
-	"resources":        {},
-	"resourceNames":    {},
-	"verbs":            {},
-	"rules":            {}, // in both Roles/ClusterRoles and Ingress
-}
-
 const attributeNameAppLabel = api.AttributeName("app-label")
-const attributeNameDefaultNames = api.AttributeName("default-name")
 const attributeNameConfigMapHash = api.AttributeName("configmap-hash")
 
 var resourceTypeToLabelPrefixPaths = map[api.ResourceType][]string{
@@ -219,209 +150,14 @@ var resourceTypeToLabelPrefixPaths = map[api.ResourceType][]string{
 	api.ResourceType("apps/v1/DaemonSet"):   {"metadata.labels.", "spec.selector.matchLabels.", "spec.template.metadata.labels."},
 	api.ResourceType("apps/v1/StatefulSet"): {"metadata.labels.", "spec.selector.matchLabels.", "spec.template.metadata.labels."},
 	api.ResourceType("v1/Pod"):              {"metadata.labels."},
+	// A Service selects pods via spec.selector, which is a plain label map (not matchLabels).
+	api.ResourceType("v1/Service"): {"metadata.labels.", "spec.selector."},
 	// Do not set labels and selectors for Jobs and CronJobs
 }
 
-// configMapEnricher populates ProvidedProperties and NeededRequired/NeededPreferred
-// for ConfigMap needs/provides matching. For provided ConfigMaps (metadata.name), it extracts
-// ResourceNameStableCore, ConfigMapFormat, Namespace, and data keys. For needed ConfigMap
-// references, it extracts Namespace and envFrom format requirements.
-func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
-	// Only enrich ConfigMap resources (provided) or references to ConfigMaps (needed).
-	// GetPathVisitorInfo merges across all attribute names, so this enricher may be
-	// invoked for non-ConfigMap resources (e.g., Namespace metadata.name).
-	if isProvided && attr.ResourceType != "v1/ConfigMap" {
-		return nil
-	}
-	if attr.Details == nil {
-		attr.Details = &api.AttributeDetails{}
-	}
-	if isProvided {
-		if attr.Details.ProvidedProperties == nil {
-			attr.Details.ProvidedProperties = make(map[string]string)
-		}
-		// Provided Properties should be in the form expected by Needed Requirements and Preferences.
-
-		// Extract ResourceNameStableCore to match with Name keys
-		stableCorePath := k8skit.K8sContextPath(constants.ResourceNameStableCoreKeySuffix)
-		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(stableCorePath), true); found && v != "" {
-			attr.Details.ProvidedProperties["Name"] = v
-		}
-		// Extract ConfigMapFormat
-		formatPath := k8skit.K8sContextPath(constants.ConfigMapFormatKeySuffix)
-		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(formatPath), true); found && v != "" {
-			attr.Details.ProvidedProperties["ConfigMapFormat"] = v
-		}
-		// Extract Namespace
-		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
-			attr.Details.ProvidedProperties["Namespace"] = v
-		}
-		// Extract data keys for subPath matching
-		dataDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, "data", true)
-		if found && dataDoc != nil {
-			if dataMap, ok := dataDoc.Data().(map[string]any); ok {
-				for key := range dataMap {
-					// Add the keys for subPath matching
-					attr.Details.ProvidedProperties["SubPath-"+key] = "true"
-				}
-			}
-		}
-	} else {
-		// Needed ConfigMap references
-		if attr.Details.NeededRequired == nil {
-			attr.Details.NeededRequired = make(map[string]string)
-		}
-		// Extract Namespace (only require matching when non-placeholder)
-		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
-			attr.Details.NeededRequired["Namespace"] = v
-		}
-		// Detect envFrom references — these require key/value format
-		if strings.Contains(string(attr.Path), "envFrom") || strings.Contains(string(attr.Path), "configMapRef") {
-			attr.Details.NeededRequired["ConfigMapFormat"] = constants.ConfigMapFormatKeyValue
-			return nil
-		}
-		// For volume ConfigMap references, look up volumeMount subPaths that reference
-		// this volume name.
-		if doc == nil || !strings.Contains(string(attr.Path), "volumes") {
-			return nil
-		}
-		attr.Details.NeededRequired["ConfigMapFormat"] = constants.ConfigMapFormatFile
-		volumeNamePath := api.ResolvedPath(strings.TrimRight(string(attr.Path), "configMap.name") + ".name")
-		volumeNameDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, volumeNamePath, true)
-		if !found {
-			return nil
-		}
-		volumeNameData := volumeNameDoc.Data()
-		if volumeNameData == nil {
-			return nil
-		}
-		volumeName, ok := volumeNameData.(string)
-		if !ok {
-			return nil
-		}
-		if attr.Details.NeededPreferred == nil {
-			attr.Details.NeededPreferred = make(map[string]string)
-		}
-		attr.Details.NeededPreferred["Name"] = volumeName
-		containersPaths, ok := k8skit.ResourceTypeToContainersPaths[attr.ResourceType]
-		if !ok {
-			return nil
-		}
-		for _, containersPath := range containersPaths {
-			// Iterate over all containers in this path
-			containersDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(containersPath), true)
-			if !found || containersDoc == nil {
-				continue
-			}
-			containers := containersDoc.Children()
-			for ci := range containers {
-				// Check each volumeMount in this container
-				vmPath := fmt.Sprintf("%s.%d.volumeMounts", containersPath, ci)
-				vmDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(vmPath), true)
-				if !found || vmDoc == nil {
-					continue
-				}
-				mounts := vmDoc.Children()
-				for _, mount := range mounts {
-					mountName, found, _ := yamlkit.YamlSafePathGetValue[string](mount, "name", true)
-					if !found || mountName != volumeName {
-						continue
-					}
-					subPath, found, _ := yamlkit.YamlSafePathGetValue[string](mount, "subPath", true)
-					if found && subPath != "" {
-						attr.Details.NeededRequired["SubPath-"+subPath] = "true"
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
+// TODO: Should we set metadata.labels for all resource types?
 
 func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
-	namespaceNbrs := kustomizeexcerpts.NbrSlice{}
-	err := yaml.Unmarshal([]byte(kustomizeexcerpts.NameReferenceFieldSpecs), &namespaceNbrs)
-	if err != nil {
-		slog.Error("couldn't unmarshal NameReferenceFieldSpecs", "error", err)
-	} else {
-		// Split the backreferences by type and also invert the backreferences to references
-		for _, nbr := range namespaceNbrs {
-			nbrgvk := gvkString(nbr.Gvk)
-			attributeName := attributeNameForResourceType(nbrgvk)
-			pathInfos := api.PathToVisitorInfoType{
-				api.UnresolvedPath("metadata.name"): {
-					Path:          api.UnresolvedPath("metadata.name"),
-					AttributeName: api.AttributeNameResourceName,
-					DataType:      api.DataTypeString,
-				},
-			}
-			// Function to get the value.
-			getterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-resources-of-type",
-				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: nbrgvk}},
-			}
-			// Attach the ConfigMap enricher for ConfigMap resource types.
-			var enricher yamlkit.AttributeEnricher
-			if nbrgvk == "v1/ConfigMap" {
-				enricher = configMapEnricher
-			}
-			yamlkit.RegisterPathsByAttributeName(rp, attributeName, nbrgvk, pathInfos, &yamlkit.AttributeRegistrationDetails{
-				GetterInvocation: getterFunctionInvocation,
-				Enricher:         enricher,
-				AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
-					ProvidedProperties: map[string]string{"ResourceType": string(nbrgvk)},
-				},
-			}, false, true)
-			for _, field := range nbr.Referrers {
-				gvk := gvkString(field.Gvk)
-				// This is kind of hacky in lieu of actual schemas. Kustomize always searches arrays.
-				pathSegments := strings.Split(field.Path, "/")
-				for i, pathSegment := range pathSegments {
-					_, ok := segmentIsArray[pathSegment]
-					if ok {
-						pathSegments[i] = pathSegment + ".*"
-					}
-				}
-				// NOTE: We'd need to insert a path segment above in order to use yamlkit.JoinPathSegments.
-				// Kubernetes resources don't have fields with dots in their paths, fortunately.
-				path := api.UnresolvedPath(strings.Join(pathSegments, "."))
-				pathInfos = api.PathToVisitorInfoType{
-					path: {
-						Path:          path,
-						AttributeName: api.AttributeNameResourceName,
-						DataType:      api.DataTypeString,
-					},
-				}
-				// Function to set the value. The parameters are expected to match the corresponding
-				// get function's parameters plus its result.
-				setterFunctionInvocation := &api.FunctionInvocation{
-					FunctionName: "set-references-of-type",
-					Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: nbrgvk}},
-				}
-				// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
-				var neededEnricher yamlkit.AttributeEnricher
-				if nbrgvk == "v1/ConfigMap" {
-					neededEnricher = configMapEnricher
-				}
-				neededDetails := &yamlkit.AttributeRegistrationDetails{
-					SetterInvocation: setterFunctionInvocation,
-					Enricher:         neededEnricher,
-					AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
-						NeededRequired: map[string]string{"ResourceType": string(nbrgvk)},
-					},
-				}
-				yamlkit.RegisterPathsByAttributeName(
-					rp,
-					attributeName,
-					gvk,
-					pathInfos,
-					neededDetails,
-					true, false,
-				)
-			}
-		}
-	}
-
 	var defaultNames = api.ResourceTypeToPathToVisitorInfoType{
 		api.ResourceTypeAny: {
 			// In general we don't recommend changing names of resources since names are used for identifying
@@ -696,6 +432,12 @@ func initStandardFunctions(rp *k8skit.K8sResourceProviderType) {
 }
 
 func addDescriptionToPathInfos(resourceType api.ResourceType, pathInfos api.PathToVisitorInfoType) {
+	// Skip resource types without a bundled OpenAPI schema (CRDs, unknown types).
+	// LookupPath would otherwise fall back to a network fetch from the CRDs-catalog
+	// and log spurious "failed to find schema info" errors at registration time.
+	if !resourceTypeHasBundledSchema(string(resourceType)) {
+		return
+	}
 	for k := range pathInfos {
 		schemaInfo, err := LookupPath(string(resourceType), string(pathInfos[k].Path))
 		if err != nil {

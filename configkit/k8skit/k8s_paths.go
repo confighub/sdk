@@ -3,7 +3,27 @@
 
 package k8skit
 
-import "github.com/confighub/sdk/core/function/api"
+import (
+	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/function/api"
+)
+
+// ResourceTypeToNeededHostnamePaths maps Kubernetes resource types to the
+// dot-separated paths where they carry a DNS hostname. These drive the
+// get/set-hostname, get/set-hostname-subdomain, and get/set-hostname-domain
+// functions. Each path must address an individual hostname scalar (string-array
+// elements via a `*` wildcard are fine, e.g. spec.dnsNames.*); fields that pack
+// multiple hostnames into one string (e.g. a Traefik IngressRoute match
+// expression) are not handled here.
+var ResourceTypeToNeededHostnamePaths = map[api.ResourceType][]string{
+	api.ResourceType("networking.k8s.io/v1/Ingress"):            {"spec.rules.*.host", "spec.tls.*.hosts.*"},
+	api.ResourceType("v1/Service"):                              {"metadata.annotations." + yamlkit.EscapeDotsInPathSegment("external-dns.alpha.kubernetes.io/hostname")},
+	api.ResourceType("cert-manager.io/v1/Certificate"):          {"spec.commonName", "spec.dnsNames.*"},
+	api.ResourceType("gateway.networking.k8s.io/v1/Gateway"):    {"spec.listeners.*.hostname"},
+	api.ResourceType("gateway.networking.k8s.io/v1/HTTPRoute"):  {"spec.hostnames.*"},
+	api.ResourceType("gateway.networking.k8s.io/v1/GRPCRoute"):  {"spec.hostnames.*"},
+	api.ResourceType("externaldns.k8s.io/v1alpha1/DNSEndpoint"): {"spec.endpoints.*.dnsName"},
+}
 
 // ResourceTypeToPodSpecPaths maps Kubernetes resource types to the dot-separated
 // paths where their PodSpec lives.

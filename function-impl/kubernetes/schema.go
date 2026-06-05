@@ -16,10 +16,10 @@ import (
 	"github.com/confighub/sdk/core/third_party/gaby"
 	k8sschema "github.com/confighub/sdk/function-impl/third_party/kubernetes"
 	openapi_v2 "github.com/google/gnostic/openapiv2"
-	"log/slog"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kube-openapi/pkg/util/proto"
 	"k8s.io/kubectl/pkg/util/openapi"
+	"log/slog"
 )
 
 var (
@@ -67,6 +67,27 @@ func LookupPath(gvkString, fieldPath string) (*SchemaInfo, error) {
 		return nil, errors.New("no schemas loaded")
 	}
 	return schemaFinder.LookupPath(gvkString, fieldPath)
+}
+
+// resourceTypeHasBundledSchema reports whether the built-in OpenAPI schema set
+// includes the given resource type (group/version/kind string). It returns false
+// for CRDs and unknown types. Callers use this to avoid LookupPath for such types,
+// which would otherwise fall back to a network fetch from the CRDs-catalog.
+func resourceTypeHasBundledSchema(gvkString string) bool {
+	if schemaFinder == nil {
+		return false
+	}
+	gvkSlice := strings.Split(gvkString, "/")
+	var gvk schema.GroupVersionKind
+	switch len(gvkSlice) {
+	case 3:
+		gvk = schema.GroupVersionKind{Group: gvkSlice[0], Version: gvkSlice[1], Kind: gvkSlice[2]}
+	case 2:
+		gvk = schema.GroupVersionKind{Version: gvkSlice[0], Kind: gvkSlice[1]}
+	default:
+		return false
+	}
+	return schemaFinder.resources.LookupResource(gvk) != nil
 }
 
 func (e *SchemaFinder) LookupPath(gvkString, fieldPath string) (*SchemaInfo, error) {

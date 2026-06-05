@@ -612,11 +612,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-
-var resourceTypeToNeededHostnamePaths = map[api.ResourceType][]string{
-	api.ResourceType("networking.k8s.io/v1/Ingress"): {"spec.rules.*.host"},
-	api.ResourceType("v1/Service"):                   {"metadata.annotations." + yamlkit.EscapeDotsInPathSegment("external-dns.alpha.kubernetes.io/hostname")},
-}
+// Hostname-bearing paths are registered from k8skit.ResourceTypeToNeededHostnamePaths.
 
 // Image paths:
 // https://github.com/kubernetes-sigs/kustomize/blob/master/api/internal/konfig/builtinpluginconsts/images.go
@@ -692,7 +688,6 @@ const dnsMaxLength = 255
 
 var dnsSubdomainAccessor *yamlkit.RegexpAccessor
 var dnsSubdomainRegexp *regexp.Regexp
-
 
 const (
 	attributeNameEnvValue           = api.AttributeName("env-value")
@@ -1041,7 +1036,7 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 		// Arguments will be added during traversal
 	}
 
-	for resourceType, paths := range resourceTypeToNeededHostnamePaths {
+	for resourceType, paths := range k8skit.ResourceTypeToNeededHostnamePaths {
 		for _, attributePath := range paths {
 			pathInfos := api.PathToVisitorInfoType{
 				api.UnresolvedPath(attributePath): {

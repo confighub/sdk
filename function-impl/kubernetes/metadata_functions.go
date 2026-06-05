@@ -453,37 +453,8 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		false, false,
 	)
 
-	// Register cross-resource reference fields from CRDs.
-	for resourceType, refs := range k8skit.CRDReferenceFields {
-		for _, ref := range refs {
-			path := api.UnresolvedPath(ref.Path)
-			refPathInfos := api.PathToVisitorInfoType{
-				path: {
-					Path:          path,
-					AttributeName: api.AttributeNameResourceName,
-					DataType:      api.DataTypeString,
-				},
-			}
-			refSetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-references-of-type",
-				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(ref.Target)}},
-			}
-			attributeName := attributeNameForResourceType(ref.Target)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				attributeName,
-				resourceType,
-				refPathInfos,
-				&yamlkit.AttributeRegistrationDetails{
-					SetterInvocation: refSetterFunctionInvocation,
-					AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
-						NeededRequired: map[string]string{"ResourceType": string(ref.Target)},
-					},
-				},
-				true, false,
-			)
-		}
-	}
+	// Cross-resource reference fields (kustomize NameReferenceFieldSpecs and CRDs) are
+	// registered in initReferenceFunctions (reference_functions.go).
 }
 
 func makeK8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {

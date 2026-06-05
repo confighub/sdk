@@ -17,6 +17,7 @@ func initFunctions(rp *k8skit.K8sResourceProviderType) {
 	if err != nil {
 		slog.Error("error", "error", err)
 	}
+	initReferenceFunctions(rp)
 	initMetadataFunctions(rp)
 	initStandardFunctions(rp)
 	initContainerFunctions(rp)
