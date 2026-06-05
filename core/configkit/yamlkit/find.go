@@ -4,6 +4,7 @@
 package yamlkit
 
 import (
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,6 +12,46 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
+
+// ValueMatcher decides whether a scalar value found while traversing a YAML
+// structure should be collected by FindYAMLPathsByValue.
+type ValueMatcher interface {
+	// Matches reports whether the given scalar value (string, int, float64,
+	// bool, etc.) matches.
+	Matches(value any) bool
+}
+
+// ExactValueMatcher matches values that are equal to Value. It is used for
+// non-string values such as the integer placeholder, where substring or regular
+// expression matching does not apply.
+type ExactValueMatcher struct {
+	Value any
+}
+
+func (m ExactValueMatcher) Matches(value any) bool {
+	return value == m.Value
+}
+
+// StringContainsMatcher matches string values that contain Substring.
+type StringContainsMatcher struct {
+	Substring string
+}
+
+func (m StringContainsMatcher) Matches(value any) bool {
+	s, ok := value.(string)
+	return ok && strings.Contains(s, m.Substring)
+}
+
+// RegexpMatcher matches string values for which Regexp finds a match, providing
+// sed-like regular expression matching.
+type RegexpMatcher struct {
+	Regexp *regexp.Regexp
+}
+
+func (m RegexpMatcher) Matches(value any) bool {
+	s, ok := value.(string)
+	return ok && m.Regexp.MatchString(s)
+}
 
 func newAttributeValue(path api.ResolvedPath, resourceInfo *api.ResourceInfo, value any) api.AttributeValue {
 	// TODO: attributeName, dataType, Info.GetterInvocation, Info.SetterInvocations, Comment
@@ -51,12 +92,24 @@ func AttributeValueForPath(resourceProvider ResourceProvider, path api.ResolvedP
 	return attributeValue
 }
 
-// FindYAMLPathsByValue searches for all paths that match a specified value in a YAML structure
-// and returns an api.AttributeValueList.
-func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourceProvider, searchValue any, options *api.FunctionOptions) api.AttributeValueList {
+// FindYAMLPathsByValue searches for all paths whose scalar value is matched by
+// matcher in a YAML structure and returns an api.AttributeValueList. The matched
+// value stored in each AttributeValue is the actual value found at the path, so
+// callers (e.g. search-replace) can transform it.
+func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourceProvider, matcher ValueMatcher, options *api.FunctionOptions) api.AttributeValueList {
 	var paths api.AttributeValueList
 
-	searchStringValue, searchValueIsString := searchValue.(string)
+	// tryMatch appends an AttributeValue for the value at path if matcher matches
+	// it, and reports whether it matched so the caller can skip further traversal.
+	tryMatch := func(path string, doc *gaby.YamlDoc, resourceInfo *api.ResourceInfo) bool {
+		value := doc.Data()
+		if !matcher.Matches(value) {
+			return false
+		}
+		attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(path), resourceInfo, value)
+		paths = append(paths, attributeValue)
+		return true
+	}
 
 	// Recursive function to traverse YAML structure
 	// TODO: use a worklist instead of recursion so that we can't blow our stack
@@ -74,21 +127,10 @@ func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourcePr
 				} else {
 					currentPath = escapedKey
 				}
-				// TODO: factor this out into a function
-				// Check if the value of the current key matches the search value
-				if child.Data() == searchValue {
-					attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(currentPath), resourceInfo, searchValue)
-					paths = append(paths, attributeValue)
-					// Skip further traversal since the match is found
+				// Check if the value of the current key matches; if so, skip
+				// further traversal since the match is found.
+				if tryMatch(currentPath, child, resourceInfo) {
 					continue
-				} else if searchValueIsString {
-					stringVal, isString := child.Data().(string)
-					if isString && strings.Contains(stringVal, searchStringValue) {
-						attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(currentPath), resourceInfo, stringVal)
-						paths = append(paths, attributeValue)
-						// Skip further traversal since the match is found
-						continue
-					}
 				}
 				// Recursively traverse the YAML structure
 				traverse(currentPath, child, resourceInfo)
@@ -99,20 +141,10 @@ func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourcePr
 			// If the doc is an array, traverse its elements
 			for index, child := range arrayChildren {
 				currentPath := path + "." + strconv.Itoa(index)
-				// Check if the value of the current array element matches the search value
-				if child.Data() == searchValue {
-					attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(currentPath), resourceInfo, searchValue)
-					paths = append(paths, attributeValue)
-					// Skip further traversal since the match is found
+				// Check if the value of the current array element matches; if so,
+				// skip further traversal since the match is found.
+				if tryMatch(currentPath, child, resourceInfo) {
 					continue
-				} else if searchValueIsString {
-					stringVal, isString := child.Data().(string)
-					if isString && strings.Contains(stringVal, searchStringValue) {
-						attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(currentPath), resourceInfo, stringVal)
-						paths = append(paths, attributeValue)
-						// Skip further traversal since the match is found
-						continue
-					}
 				}
 				// Recursively traverse the YAML structure
 				traverse(currentPath, child, resourceInfo)
@@ -120,16 +152,7 @@ func FindYAMLPathsByValue(parsedData gaby.Container, resourceProvider ResourcePr
 		} else {
 			// If the doc is neither a map nor an array, it's a value; compare it
 			if path != "" {
-				if doc.Data() == searchValue {
-					attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(path), resourceInfo, searchValue)
-					paths = append(paths, attributeValue)
-				} else if searchValueIsString {
-					stringVal, isString := doc.Data().(string)
-					if isString && strings.Contains(stringVal, searchStringValue) {
-						attributeValue := AttributeValueForPath(resourceProvider, api.ResolvedPath(path), resourceInfo, stringVal)
-						paths = append(paths, attributeValue)
-					}
-				}
+				tryMatch(path, doc, resourceInfo)
 			}
 		}
 	}

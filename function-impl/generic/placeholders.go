@@ -40,8 +40,8 @@ func registerGetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 }
 
 func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString, options)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt, options)...)
+	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.StringContainsMatcher{Substring: yamlkit.PlaceHolderBlockApplyString}, options)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: yamlkit.PlaceHolderBlockApplyInt}, options)...)
 	return parsedData, paths, nil
 }
 
@@ -132,8 +132,8 @@ func genericFnGetPlaceholderMutations(resourceProvider yamlkit.ResourceProvider,
 }
 
 func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyString, options)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.PlaceHolderBlockApplyInt, options)...)
+	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.StringContainsMatcher{Substring: yamlkit.PlaceHolderBlockApplyString}, options)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: yamlkit.PlaceHolderBlockApplyInt}, options)...)
 	result := api.ValidationResult{
 		Passed:           len(paths) == 0,
 		FailedAttributes: paths,
