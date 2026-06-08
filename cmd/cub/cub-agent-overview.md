@@ -29,12 +29,22 @@ cub <entity/area> <verb> [flags] [arguments]
 # Login to ConfigHub
 cub auth login
 
+# Check authentication status (contacts the server to verify the token)
+cub auth status
+
 # Set default space context
 cub context set --space SPACE_SLUG
 
-# Get current context
+# Get current context (local only; does not contact the server)
 cub context get
 ```
+
+Before running commands that require authentication, verify the session with `cub auth status`.
+It contacts the server and exits non-zero if the token is missing or expired. If it reports the
+session is not authenticated, ask the user to run `cub auth login` — re-authentication is an
+interactive browser sign-in that an agent cannot complete on the user's behalf. `cub context get`
+shows a local "Token Status" but does not contact the server, so prefer `cub auth status` to
+confirm the token is actually accepted.
 
 ### Common Flags
 

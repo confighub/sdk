@@ -90,29 +90,6 @@ func (*TextResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string)
 	return err
 }
 
-// Deprecated: Use ResourceMergeIDGetter instead.
-func (rp *TextResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
-	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
-	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
-	if err != nil || !found {
-		return "", err
-	}
-	return id, nil
-}
-
-// Deprecated: Use SetResourceMergeID instead.
-func (rp *TextResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
-	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
-	_, err := doc.SetP(id, resourceIDPath)
-	return err
-}
-
-// Deprecated: Use DeleteResourceMergeID instead.
-func (rp *TextResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
-	resourceIDPath := rp.ContextPath(constants.ResourceIDKeySuffix)
-	return doc.DeleteP(resourceIDPath)
-}
-
 func (rp *TextResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error) {
 	resourceNameStableCorePath := rp.ContextPath(constants.ResourceNameStableCoreKeySuffix)
 	name, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceNameStableCorePath), true)
@@ -120,32 +97,6 @@ func (rp *TextResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlD
 		return "", err
 	}
 	return api.ResourceName(name), nil
-}
-
-func (rp *TextResourceProviderType) ResourceMergeIDGetter(doc *gaby.YamlDoc) (string, error) {
-	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
-	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceMergeIDPath), true)
-	if err != nil {
-		return "", err
-	}
-	if found {
-		return id, nil
-	}
-	// Fall back to legacy ResourceID path for backward compatibility.
-	return rp.ResourceIDGetter(doc)
-}
-
-func (rp *TextResourceProviderType) SetResourceMergeID(doc *gaby.YamlDoc, id string) error {
-	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
-	_, err := doc.SetP(id, resourceMergeIDPath)
-	return err
-}
-
-func (rp *TextResourceProviderType) DeleteResourceMergeID(doc *gaby.YamlDoc) error {
-	resourceMergeIDPath := rp.ContextPath(constants.ResourceMergeIDKeySuffix)
-	_ = doc.DeleteP(resourceMergeIDPath)
-	// Also delete legacy ResourceID path.
-	return rp.DeleteResourceID(doc)
 }
 
 func (*TextResourceProviderType) TypeDescription() string {

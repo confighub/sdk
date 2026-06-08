@@ -139,7 +139,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not string: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = stringValue
-				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
+				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -152,7 +152,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 			} else {
 				intValue := int(math.Round(floatValue))
 				setterArgs[2].Value = intValue
-				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
+				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -163,7 +163,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not bool: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = boolValue
-				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, false, options)
+				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}

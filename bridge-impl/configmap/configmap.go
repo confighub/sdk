@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/google/uuid"
 
 	"github.com/confighub/sdk/bridge-impl/common"
 	"github.com/confighub/sdk/configkit/envkit"
@@ -81,10 +80,8 @@ metadata:
     confighub.com/SpaceID: {{.SpaceID}}
     confighub.com/RevisionNum: "{{.RevisionNum}}"
     confighub.com/ResourceNameStableCore: {{.StableCore}}
-    confighub.com/ResourceMergeID: {{.ResourceMergeID}}
     confighub.com/ConfigMapFormat: {{.ConfigMapFormat}}
     confighub.com/Hash: "{{.Hash}}"
-    confighub.com/MutationOptions: MatchByIDOnly
     confighub.com/RenderRevision: Latest
 {{- if .Immutable}}
 immutable: true
@@ -106,7 +103,6 @@ type configMapMetadataArgs struct {
 	SpaceID         string
 	RevisionNum     string
 	StableCore      string
-	ResourceMergeID string
 	ConfigMapFormat string
 	Hash            string
 	Immutable       bool
@@ -390,7 +386,6 @@ func transformAppConfigToConfigMap(payload *api.BridgeWorkerPayload) error {
 		SpaceID:         payload.SpaceID.String(),
 		RevisionNum:     fmt.Sprintf("%d", payload.RevisionNum),
 		StableCore:      namePrefix,
-		ResourceMergeID: uuid.New().String(),
 		ConfigMapFormat: configMapFormat,
 		Hash:            nameSuffix,
 		Immutable:       !mutable,

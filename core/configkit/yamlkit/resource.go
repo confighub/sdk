@@ -4,11 +4,9 @@
 package yamlkit
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/workerapi"
@@ -50,26 +48,12 @@ type ResourceProvider interface {
 	ResourceCategoryGetter(doc *gaby.YamlDoc) (api.ResourceCategory, error)
 	ResourceTypeGetter(doc *gaby.YamlDoc) (api.ResourceType, error)
 	ResourceNameGetter(doc *gaby.YamlDoc) (api.ResourceName, error)
-	// ResourceMergeIDGetter returns the resource merge ID, checking the new ResourceMergeID
-	// path first and falling back to the legacy ResourceID path for backward compatibility.
-	ResourceMergeIDGetter(doc *gaby.YamlDoc) (string, error)
-	// Deprecated: Use ResourceMergeIDGetter instead.
-	ResourceIDGetter(doc *gaby.YamlDoc) (string, error)
 	// ResourceNameStableCoreGetter returns the stable core of the resource name, with
 	// generated prefixes and suffixes stripped. Returns empty string if not present.
 	ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error)
 	RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName
 	ScopelessResourceNamePath() api.ResolvedPath
 	SetResourceName(doc *gaby.YamlDoc, name string) error
-	// SetResourceMergeID sets the resource merge ID at the new ResourceMergeID path.
-	SetResourceMergeID(doc *gaby.YamlDoc, id string) error
-	// Deprecated: Use SetResourceMergeID instead.
-	SetResourceID(doc *gaby.YamlDoc, id string) error
-	// DeleteResourceMergeID deletes the resource merge ID from both the new ResourceMergeID
-	// path and the legacy ResourceID path.
-	DeleteResourceMergeID(doc *gaby.YamlDoc) error
-	// Deprecated: Use DeleteResourceMergeID instead.
-	DeleteResourceID(doc *gaby.YamlDoc) error
 	ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool
 	TypeDescription() string
 	NormalizeName(name string) string
@@ -118,7 +102,6 @@ func GetResourceInfo(doc *gaby.YamlDoc, resourceProvider ResourceProvider) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get resource name for config "+string(resourceCategory)+" type "+string(resourceType))
 	}
-	resourceMergeID, _ := resourceProvider.ResourceMergeIDGetter(doc)
 	resourceNameStableCore, _ := resourceProvider.ResourceNameStableCoreGetter(doc)
 	resourceInfo := &api.ResourceInfo{
 		ResourceName:             resourceName,
@@ -126,7 +109,6 @@ func GetResourceInfo(doc *gaby.YamlDoc, resourceProvider ResourceProvider) (*api
 		ResourceNameStableCore:   resourceNameStableCore,
 		ResourceType:             resourceType,
 		ResourceCategory:         resourceCategory,
-		ResourceMergeID:          resourceMergeID,
 	}
 	return resourceInfo, nil
 }
@@ -166,12 +148,9 @@ func ResourceAndCategoryTypeMaps(parsedData gaby.Container, resourceProvider Res
 
 // FindResourceDoc finds the document in parsedData that best matches the given target
 // ResourceInfo. It uses the same matching hierarchy as ComputeMutations:
-//  1. ResourceMergeID match (definite, if both are valid UUIDs)
-//  2. Exact ResourceName or ResourceNameWithoutScope match
-//  3. ResourceTypesAreSimilar as a prerequisite for any match
+//  1. Exact ResourceName or ResourceNameWithoutScope match
+//  2. ResourceTypesAreSimilar as a prerequisite for any match
 //
-// When the target has MatchByIDOnly MutationOption set (e.g., immutable ConfigMaps with
-// hash-suffixed names), only ResourceMergeID matching is used.
 // Returns the matching doc and its ResourceInfo, or (nil, nil) if no match is found.
 func FindResourceDoc(
 	parsedData gaby.Container,
@@ -183,21 +162,6 @@ func FindResourceDoc(
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, ri *api.ResourceInfo) (any, []error) {
 		if !resourceProvider.ResourceTypesAreSimilar(ri.ResourceType, target.ResourceType) {
-			return output, nil
-		}
-
-		// ResourceMergeID match — definite match
-		if api.IsUUID(target.ResourceMergeID) && api.IsUUID(ri.ResourceMergeID) &&
-			ri.ResourceMergeID == target.ResourceMergeID {
-			bestDoc = doc
-			bestInfo = ri
-			return output, nil
-		}
-
-		// If MatchByIDOnly, skip name-based matching
-		matchByIDOnly := api.IsUUID(ri.ResourceMergeID) &&
-			slices.Contains(GetMutationOptions(doc, resourceProvider), constants.MatchByIDOnly)
-		if matchByIDOnly {
 			return output, nil
 		}
 

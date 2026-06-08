@@ -60,7 +60,7 @@ The wildcard form also accepts an optional `=<value>` filter that restricts matc
 
 #### Strategic merge paths
 
-The mutation system (`ComputeMutations`, `PatchMutations`) uses strategic merge patch semantics for Kubernetes resources. When computing mutations for arrays that have a merge key (such as containers matched by `name`, env vars matched by `name`, ports matched by `containerPort`), elements are matched by merge key value rather than by positional index.
+The mutation system (`ComputeMutations`, `PatchMutations`) uses merge semantics similar to [strategic merge patch](https://itnext.io/kubernetes-strategic-merge-patch-4bdd19b48789) for Kubernetes resources. When computing mutations for arrays that have a merge key (such as containers matched by `name`, env vars matched by `name`, ports matched by `containerPort`), elements are matched by merge key value rather than by positional index.
 
 These paths are encoded with both the merge key value and the positional index using the syntax `.?<key>=<value>;@<index>`. For example:
 

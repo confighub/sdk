@@ -183,13 +183,14 @@ var (
 	isUpgrade           bool
 	isPatch             bool
 	changesetSlug       string
-	mergeSource         string
-	mergeBase           string
-	mergeEnd            string
-	mergeExternalSource string
-	whereMutation       string
-	filterMutation      string
-	tag                 string
+	mergeSource             string
+	mergeBase               string
+	mergeEnd                string
+	mergeExternalSource     string
+	mergeDisableSubtraction bool
+	whereMutation           string
+	filterMutation          string
+	tag                     string
 )
 
 func init() {
@@ -208,6 +209,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
+	unitUpdateCmd.Flags().BoolVar(&mergeDisableSubtraction, "merge-disable-subtraction", false, "disable the subtraction (override-preservation) step of --upgrade and --merge-source; overrides are then preserved only via stored mutation predicates (no effect on --merge-source Self)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
 	enableOptionFlag(unitUpdateCmd)
 	enableWhereFlag(unitUpdateCmd)
@@ -499,6 +501,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
+	}
+	if mergeDisableSubtraction {
+		newParams.MergeDisableSubtraction = &mergeDisableSubtraction
 	}
 
 	if restore != "" {
@@ -917,6 +922,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.MergeBase = updateParams.MergeBase
 	patchParams.MergeEnd = updateParams.MergeEnd
 	patchParams.MergeExternalSource = updateParams.MergeExternalSource
+	patchParams.MergeDisableSubtraction = updateParams.MergeDisableSubtraction
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag

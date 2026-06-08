@@ -1409,6 +1409,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
+            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1433,6 +1434,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
+            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1544,6 +1546,16 @@ const injectedRtkApi = api
         }),
         providesTags: ['Mutation'],
       }),
+      setUnitPredicates: build.mutation<SetUnitPredicatesApiResponse, SetUnitPredicatesApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/predicates`,
+            method: 'POST',
+            body: queryArg.unitPredicatesRequest,
+          }),
+          invalidatesTags: ['Unit'],
+        },
+      ),
       refreshUnit: build.mutation<RefreshUnitApiResponse, RefreshUnitApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/refresh`,
@@ -1903,6 +1915,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
+            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -4608,7 +4621,7 @@ export type BulkDeleteLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4684,7 +4697,7 @@ export type SearchListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4769,7 +4782,7 @@ export type BulkPatchLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4834,6 +4847,7 @@ export type BulkPatchLinksApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    MergeDisableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -4885,7 +4899,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to select source links to copy
     
@@ -4936,7 +4950,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
     
@@ -4973,7 +4987,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
     
@@ -5002,6 +5016,7 @@ export type BulkCreateLinksApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    MergeDisableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -6556,7 +6571,7 @@ export type ListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6685,6 +6700,7 @@ export type PatchLinkApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    MergeDisableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -7460,6 +7476,8 @@ export type PatchUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
+  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeDisableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7591,6 +7609,8 @@ export type UpdateUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
+  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeDisableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7844,6 +7864,14 @@ export type GetExtendedMutationApiArg = {
   select?: string;
   /** Unique identifier for a mutation_id */
   mutationId: string;
+};
+export type SetUnitPredicatesApiResponse = /** status 200 OK */ UnitPredicatesResponse;
+export type SetUnitPredicatesApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  unitPredicatesRequest: UnitPredicatesRequest;
 };
 export type RefreshUnitApiResponse =
   /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
@@ -9710,6 +9738,8 @@ export type BulkPatchUnitsApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
+  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeDisableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -9970,7 +10000,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
     
@@ -12304,8 +12334,6 @@ export type MutationMap = {
 export type ResourceInfo = {
   /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
-  ResourceMergeID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
   /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
@@ -12584,8 +12612,6 @@ export type AttributeValue = {
   Path?: string;
   /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
-  ResourceMergeID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
   /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
@@ -12611,8 +12637,6 @@ export type AttributeInfo = {
   Path?: string;
   /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
-  ResourceMergeID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
   /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
@@ -12831,6 +12855,8 @@ export type Link = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
+  /** Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links. */
+  MergeDisableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Unique URL-safe identifier for the entity. */
@@ -12896,6 +12922,8 @@ export type LinkRead = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
+  /** Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links. */
+  MergeDisableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Unique URL-safe identifier for the entity. */
@@ -13611,8 +13639,6 @@ export type ExtendedTriggerRead = {
 export type ResourceInfoType2 = {
   /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
   ResourceCategory?: string;
-  /** Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations */
-  ResourceMergeID?: string;
   /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
   ResourceName?: string;
   /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
@@ -14032,6 +14058,21 @@ export type ExtendedMutationRead = {
   Trigger?: TriggerRead;
   Unit?: UnitRead;
 };
+export type UnitPredicatesResponse = {
+  Error?: ResponseError;
+  MutationSources?: ResourceMutationList;
+};
+export type ResourcePredicates = {
+  /** Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override */
+  Predicates?: {
+    [key: string]: boolean;
+  } | null;
+  Resource?: ResourceInfo;
+};
+export type UnitPredicatesRequest = {
+  /** Per-resource Predicate edits to apply to the Unit's MutationSources */
+  ResourcePredicates?: ResourcePredicates[] | null;
+};
 export type UnitAction = {
   Action?: ActionType;
   BridgeState?: string;
@@ -14351,6 +14392,7 @@ export const {
   useLazyListExtendedMutationsQuery,
   useGetExtendedMutationQuery,
   useLazyGetExtendedMutationQuery,
+  useSetUnitPredicatesMutation,
   useRefreshUnitMutation,
   useListExtendedRevisionsQuery,
   useLazyListExtendedRevisionsQuery,

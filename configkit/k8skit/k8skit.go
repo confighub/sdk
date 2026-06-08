@@ -258,29 +258,6 @@ func (*K8sResourceProviderType) SetResourceName(doc *gaby.YamlDoc, name string) 
 	return err
 }
 
-// Deprecated: Use ResourceMergeIDGetter instead.
-func (*K8sResourceProviderType) ResourceIDGetter(doc *gaby.YamlDoc) (string, error) {
-	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
-	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceIDPath), true)
-	if err != nil || !found {
-		return "", err
-	}
-	return id, nil
-}
-
-// Deprecated: Use SetResourceMergeID instead.
-func (*K8sResourceProviderType) SetResourceID(doc *gaby.YamlDoc, id string) error {
-	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
-	_, err := doc.SetP(id, resourceIDPath)
-	return err
-}
-
-// Deprecated: Use DeleteResourceMergeID instead.
-func (*K8sResourceProviderType) DeleteResourceID(doc *gaby.YamlDoc) error {
-	resourceIDPath := K8sContextPath(constants.ResourceIDKeySuffix)
-	return doc.DeleteP(resourceIDPath)
-}
-
 func (rp *K8sResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error) {
 	resourceNameStableCorePath := K8sContextPath(constants.ResourceNameStableCoreKeySuffix)
 	name, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceNameStableCorePath), true)
@@ -288,32 +265,6 @@ func (rp *K8sResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDo
 		return "", err
 	}
 	return api.ResourceName(name), nil
-}
-
-func (rp *K8sResourceProviderType) ResourceMergeIDGetter(doc *gaby.YamlDoc) (string, error) {
-	resourceMergeIDPath := K8sContextPath(constants.ResourceMergeIDKeySuffix)
-	id, found, err := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(resourceMergeIDPath), true)
-	if err != nil {
-		return "", err
-	}
-	if found {
-		return id, nil
-	}
-	// Fall back to legacy ResourceID path for backward compatibility.
-	return rp.ResourceIDGetter(doc)
-}
-
-func (*K8sResourceProviderType) SetResourceMergeID(doc *gaby.YamlDoc, id string) error {
-	resourceMergeIDPath := K8sContextPath(constants.ResourceMergeIDKeySuffix)
-	_, err := doc.SetP(id, resourceMergeIDPath)
-	return err
-}
-
-func (rp *K8sResourceProviderType) DeleteResourceMergeID(doc *gaby.YamlDoc) error {
-	resourceMergeIDPath := K8sContextPath(constants.ResourceMergeIDKeySuffix)
-	_ = doc.DeleteP(resourceMergeIDPath)
-	// Also delete legacy ResourceID path.
-	return rp.DeleteResourceID(doc)
 }
 
 func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {

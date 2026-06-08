@@ -5,7 +5,9 @@ package generic
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/swaggest/jsonschema-go"
 
@@ -103,4 +105,74 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		return parsedData, nil, nil
 	}
 	return parsedData, conflicts, nil
+}
+
+func registerSetPredicates(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	if err := fh.RegisterFunction("set-predicates", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "set-predicates",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName:    "mutation-sources",
+					Required:         true,
+					Description:      "The unit's current MutationSources",
+					DataType:         api.DataTypeResourceMutationList,
+					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
+				},
+				{
+					ParameterName: "resource-predicates",
+					Required:      true,
+					Description:   "JSON-encoded list of per-resource path Predicate values to set ([]api.ResourcePredicates)",
+					DataType:      api.DataTypeString,
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "mutation-sources",
+				Description: "The updated MutationSources with the requested Predicate values set.",
+				OutputType:  api.OutputTypeResourceMutationList,
+				Schema:      &api.ResourceMutationListSchema,
+			},
+			Mutating:              false,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Set Predicate values on a unit's MutationSources for the given resource paths. Fails if any path does not exist in the unit's data.",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			return genericFnSetPredicates(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+		},
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
+}
+
+func genericFnSetPredicates(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	mutationSourcesString := args[0].Value.(string)
+	var mutationSources api.ResourceMutationList
+	if err := json.Unmarshal([]byte(mutationSourcesString), &mutationSources); err != nil {
+		return parsedData, nil, err
+	}
+	resourcePredicatesString := args[1].Value.(string)
+	var resourcePredicates []api.ResourcePredicates
+	if err := json.Unmarshal([]byte(resourcePredicatesString), &resourcePredicates); err != nil {
+		return parsedData, nil, err
+	}
+
+	var unresolved []api.ResolvedPath
+	for _, rp := range resourcePredicates {
+		var u []api.ResolvedPath
+		mutationSources, u = yamlkit.SetPredicates(parsedData, mutationSources, rp.Resource, rp.Predicates, resourceProvider)
+		unresolved = append(unresolved, u...)
+	}
+	if len(unresolved) > 0 {
+		strs := make([]string, len(unresolved))
+		for i, p := range unresolved {
+			strs[i] = string(p)
+		}
+		return parsedData, nil, fmt.Errorf("paths not found in unit data: %s", strings.Join(strs, ", "))
+	}
+	// Non-mutating: parsedData is returned unchanged; the updated MutationSources is the output.
+	return parsedData, mutationSources, nil
 }

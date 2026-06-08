@@ -319,9 +319,6 @@ type AttributeInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
 
-	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
-
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
 
@@ -370,9 +367,6 @@ type AttributeValue struct {
 
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
-
-	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
 
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
@@ -1592,6 +1586,9 @@ type Link struct {
 	// LinkID Unique identifier for a Link.
 	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
 
+	// MergeDisableSubtraction Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links.
+	MergeDisableSubtraction bool `json:"MergeDisableSubtraction,omitempty" yaml:"MergeDisableSubtraction,omitempty"`
+
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
@@ -2005,9 +2002,6 @@ type ResourceInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
 
-	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
-
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
 
@@ -2028,9 +2022,6 @@ type ResourceInfoList = []ResourceInfo
 type ResourceInfoType2 struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
 	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
-
-	// ResourceMergeID Stable identifier (UUID) for a resource stored with the resource data that is intended to remain consistent across resource name and scope changes and across variants, used to match resources between config data documents when computing and patching mutations
-	ResourceMergeID string `json:"ResourceMergeID,omitempty" yaml:"ResourceMergeID,omitempty"`
 
 	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
@@ -2058,6 +2049,13 @@ type ResourceMutation struct {
 
 // ResourceMutationList defines model for ResourceMutationList.
 type ResourceMutationList = []ResourceMutation
+
+// ResourcePredicates defines model for ResourcePredicates.
+type ResourcePredicates struct {
+	// Predicates Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override
+	Predicates map[string]bool `json:"Predicates" yaml:"Predicates"`
+	Resource   *ResourceInfo   `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+}
 
 // ResourceStatus defines model for ResourceStatus.
 type ResourceStatus struct {
@@ -3084,6 +3082,18 @@ type UnitExtended struct {
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
+}
+
+// UnitPredicatesRequest defines model for UnitPredicatesRequest.
+type UnitPredicatesRequest struct {
+	// ResourcePredicates Per-resource Predicate edits to apply to the Unit's MutationSources
+	ResourcePredicates []ResourcePredicates `json:"ResourcePredicates" yaml:"ResourcePredicates"`
+}
+
+// UnitPredicatesResponse defines model for UnitPredicatesResponse.
+type UnitPredicatesResponse struct {
+	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
 }
 
 // UnitStatus defines model for UnitStatus.
@@ -5810,7 +5820,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -5890,7 +5900,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5963,7 +5973,8 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -6015,7 +6026,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -6083,7 +6094,8 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -6135,7 +6147,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6189,7 +6201,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6227,7 +6239,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -7567,7 +7579,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7668,7 +7680,8 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -8365,6 +8378,9 @@ type PatchUnitParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
+	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
+
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -8454,6 +8470,9 @@ type UpdateUnitParams struct {
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
+
+	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -10560,6 +10579,9 @@ type BulkPatchUnitsParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
+	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
+
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -10837,7 +10859,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//
@@ -12153,6 +12175,9 @@ type UpdateUnitJSONRequestBody = Unit
 
 // ImportUnitJSONRequestBody defines body for ImportUnit for application/json ContentType.
 type ImportUnitJSONRequestBody = ImportRequest
+
+// SetUnitPredicatesJSONRequestBody defines body for SetUnitPredicates for application/json ContentType.
+type SetUnitPredicatesJSONRequestBody = UnitPredicatesRequest
 
 // CreateViewJSONRequestBody defines body for CreateView for application/json ContentType.
 type CreateViewJSONRequestBody = View

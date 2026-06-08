@@ -36,9 +36,7 @@ func (testResourceProvider) DefaultResourceCategory() api.ResourceCategory {
 func (testResourceProvider) ResourceCategoryGetter(_ *gaby.YamlDoc) (api.ResourceCategory, error) {
 	return api.ResourceCategoryResource, nil
 }
-func (testResourceProvider) ResourceMergeIDGetter(_ *gaby.YamlDoc) (string, error)            { return "", nil }
 func (testResourceProvider) ResourceNameStableCoreGetter(_ *gaby.YamlDoc) (api.ResourceName, error) { return "", nil }
-func (testResourceProvider) ResourceIDGetter(_ *gaby.YamlDoc) (string, error)     { return "", nil }
 func (testResourceProvider) RemoveScopeFromResourceName(name api.ResourceName) api.ResourceName {
 	return name
 }
@@ -49,10 +47,6 @@ func (testResourceProvider) SetResourceName(doc *gaby.YamlDoc, name string) erro
 	_, err := doc.SetP(name, "metadata.name")
 	return err
 }
-func (testResourceProvider) SetResourceMergeID(_ *gaby.YamlDoc, _ string) error { return nil }
-func (testResourceProvider) SetResourceID(_ *gaby.YamlDoc, _ string) error      { return nil }
-func (testResourceProvider) DeleteResourceMergeID(_ *gaby.YamlDoc) error                { return nil }
-func (testResourceProvider) DeleteResourceID(_ *gaby.YamlDoc) error             { return nil }
 func (testResourceProvider) ResourceTypesAreSimilar(a, b api.ResourceType) bool { return a == b }
 func (testResourceProvider) TypeDescription() string                          { return "Kind" }
 func (testResourceProvider) NormalizeName(name string) string                 { return name }

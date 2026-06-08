@@ -582,6 +582,11 @@ type ClientInterface interface {
 	// GetExtendedMutation request
 	GetExtendedMutation(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetUnitPredicatesWithBody request with any body
+	SetUnitPredicatesWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SetUnitPredicates(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RefreshUnit request
 	RefreshUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -2900,6 +2905,30 @@ func (c *Client) ListExtendedMutations(ctx context.Context, spaceId openapi_type
 
 func (c *Client) GetExtendedMutation(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetExtendedMutationRequest(c.Server, spaceId, unitId, mutationId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetUnitPredicatesWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitPredicatesRequestWithBody(c.Server, spaceId, unitId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetUnitPredicates(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitPredicatesRequest(c.Server, spaceId, unitId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -13714,6 +13743,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.MergeDisableSubtraction != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_mutation", runtime.ParamLocationQuery, *params.WhereMutation); err != nil {
@@ -13985,6 +14030,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.MergeExternalSource != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.MergeDisableSubtraction != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14761,6 +14822,60 @@ func NewGetExtendedMutationRequest(server string, spaceId openapi_types.UUID, un
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSetUnitPredicatesRequest calls the generic SetUnitPredicates builder with application/json body
+func NewSetUnitPredicatesRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetUnitPredicatesRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
+}
+
+// NewSetUnitPredicatesRequestWithBody generates requests for SetUnitPredicates with any type of body
+func NewSetUnitPredicatesRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/predicates", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -17695,6 +17810,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
+		if params.MergeDisableSubtraction != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereMutation != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_mutation", runtime.ParamLocationQuery, *params.WhereMutation); err != nil {
@@ -20039,6 +20170,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetExtendedMutationWithResponse request
 	GetExtendedMutationWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*GetExtendedMutationResponse, error)
+
+	// SetUnitPredicatesWithBodyWithResponse request with any body
+	SetUnitPredicatesWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error)
+
+	SetUnitPredicatesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error)
 
 	// RefreshUnitWithResponse request
 	RefreshUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *RefreshUnitParams, reqEditors ...RequestEditorFn) (*RefreshUnitResponse, error)
@@ -23865,6 +24001,35 @@ func (r GetExtendedMutationResponse) StatusCode() int {
 	return 0
 }
 
+type SetUnitPredicatesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnitPredicatesResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r SetUnitPredicatesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetUnitPredicatesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type RefreshUnitResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -26700,6 +26865,23 @@ func (c *ClientWithResponses) GetExtendedMutationWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseGetExtendedMutationResponse(rsp)
+}
+
+// SetUnitPredicatesWithBodyWithResponse request with arbitrary body returning *SetUnitPredicatesResponse
+func (c *ClientWithResponses) SetUnitPredicatesWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error) {
+	rsp, err := c.SetUnitPredicatesWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetUnitPredicatesResponse(rsp)
+}
+
+func (c *ClientWithResponses) SetUnitPredicatesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error) {
+	rsp, err := c.SetUnitPredicates(ctx, spaceId, unitId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetUnitPredicatesResponse(rsp)
 }
 
 // RefreshUnitWithResponse request returning *RefreshUnitResponse
@@ -36600,6 +36782,81 @@ func ParseGetExtendedMutationResponse(rsp *http.Response) (*GetExtendedMutationR
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetUnitPredicatesResponse parses an HTTP response from a SetUnitPredicatesWithResponse call
+func ParseSetUnitPredicatesResponse(rsp *http.Response) (*SetUnitPredicatesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetUnitPredicatesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitPredicatesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

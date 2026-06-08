@@ -24,7 +24,7 @@ import (
 //
 //   - Resource-level rename heuristic (the fuzzy-similarity branch in
 //     ComputeMutations) — name change with multiple candidates, namespace move,
-//     ResourceMergeID precedence, type change, no-rename baseline.
+//     type change, no-rename baseline.
 //   - Predicate filtering in PatchMutations — at the resource level, the path
 //     level, and via path ancestors.
 //   - Realistic Kubernetes upgrade scenarios — image bump + replica scale, port
@@ -173,53 +173,6 @@ data:
 	assert.Contains(t, renamed.AliasesWithoutScopes, api.ResourceName("renamed"))
 }
 
-// TestRename_MergeIDOverridesNameMismatch — when both sides have a matching
-// confighub.com/ResourceMergeID UUID, that match wins even with no name overlap
-// or content overlap.
-func TestRename_MergeIDOverridesNameMismatch(t *testing.T) {
-	previous := `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: alpha
-  namespace: default
-  annotations:
-    confighub.com/ResourceMergeID: 11111111-1111-1111-1111-111111111111
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: alpha
-  template:
-    spec:
-      containers:
-      - name: c
-        image: nginx:1.19
-`
-	modified := `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: omega
-  namespace: production
-  annotations:
-    confighub.com/ResourceMergeID: 11111111-1111-1111-1111-111111111111
-spec:
-  replicas: 99
-  selector:
-    matchLabels:
-      app: omega
-  template:
-    spec:
-      containers:
-      - name: c
-        image: redis:7
-`
-	mutations := computeMutationsHelper(t, previous, modified)
-	require.Len(t, mutations, 1)
-	m := mutations[0]
-	assert.Equal(t, api.MutationTypeUpdate, m.ResourceMutationInfo.MutationType)
-	assert.Equal(t, api.ResourceName("production/omega"), m.Resource.ResourceName)
-	assert.Contains(t, m.AliasesWithoutScopes, api.ResourceName("alpha"))
-}
 
 // TestRename_NamespaceChange_NotARename — moving a resource to a different
 // namespace while keeping the same name is matched by ResourceNameWithoutScope

@@ -144,7 +144,7 @@ func displayResourceMutationList(mutations *goclientnew.ResourceMutationList, in
 				header += " from " + newChangeDescription
 			}
 			tprintRaw(header + ":")
-			displayMutationEntries(mutations, indicesAreMutationNums, priorHeadMutationNum, nil, true, oldValues)
+			displayMutationEntries(mutations, indicesAreMutationNums, priorHeadMutationNum, nil, true, oldValues, nil)
 		}
 
 		// Then display prior changes (only with --verbose)
@@ -153,13 +153,31 @@ func displayResourceMutationList(mutations *goclientnew.ResourceMutationList, in
 				tprintRaw("")
 			}
 			tprintRaw("Prior changes:")
-			displayMutationEntries(mutations, indicesAreMutationNums, priorHeadMutationNum, mutationMap, false, nil)
+			displayMutationEntries(mutations, indicesAreMutationNums, priorHeadMutationNum, mutationMap, false, nil, nil)
 		}
 	} else if verbose || priorHeadMutationNum == 0 {
-		// No split - display everything together
-		// When priorHeadMutationNum > 0, this is the "no new changes" case;
-		// only show prior mutations with --verbose.
-		displayMutationEntries(mutations, indicesAreMutationNums, 0, mutationMap, false, nil)
+		// No split - display everything together.
+		// When the indices are real MutationNums, the stored Predicate flags are meaningful,
+		// so separate locally-overridden fields (preserved during merges) from fields
+		// eligible to be overwritten by an upstream merge.
+		if indicesAreMutationNums {
+			no, yes := false, true
+			shownOverrides := false
+			if anyMutationWithPredicate(mutations, false) {
+				tprintRaw("Locally overridden (preserved during merges):")
+				displayMutationEntries(mutations, indicesAreMutationNums, 0, mutationMap, false, nil, &no)
+				shownOverrides = true
+			}
+			if anyMutationWithPredicate(mutations, true) {
+				if shownOverrides {
+					tprintRaw("")
+				}
+				tprintRaw("Eligible for upstream merges:")
+				displayMutationEntries(mutations, indicesAreMutationNums, 0, mutationMap, false, nil, &yes)
+			}
+		} else {
+			displayMutationEntries(mutations, indicesAreMutationNums, 0, mutationMap, false, nil, nil)
+		}
 	}
 
 	// Display mutation summary table (only with --verbose)
@@ -170,11 +188,38 @@ func displayResourceMutationList(mutations *goclientnew.ResourceMutationList, in
 	}
 }
 
+// predicateMatches reports whether a mutation with the given Predicate should be shown for
+// the given filter. A nil filter matches everything; otherwise only entries whose Predicate
+// equals *filter are shown.
+func predicateMatches(filter *bool, predicate bool) bool {
+	return filter == nil || *filter == predicate
+}
+
+// anyMutationWithPredicate reports whether any non-None mutation (resource-level or path)
+// has the given Predicate value.
+func anyMutationWithPredicate(mutations *goclientnew.ResourceMutationList, want bool) bool {
+	for _, rm := range *mutations {
+		if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
+			*rm.ResourceMutationInfo.MutationType != goclientnew.None && rm.ResourceMutationInfo.Predicate == want {
+			return true
+		}
+		if rm.PathMutationMap != nil {
+			for _, mi := range *rm.PathMutationMap {
+				if mi.MutationType != nil && *mi.MutationType != goclientnew.None && mi.Predicate == want {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // displayMutationEntries renders the resource mutation entries. If showNewOnly is true,
 // only mutations with Index > priorHeadMutationNum are shown. If false, only mutations
 // with Index <= priorHeadMutationNum (or all if priorHeadMutationNum == 0) are shown.
 // oldValues, if non-nil, maps "resourceType/resourceName:path" to old values for display.
-func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indicesAreMutationNums bool, priorHeadMutationNum int64, mutationMap map[int64]*goclientnew.ExtendedMutation, showNewOnly bool, oldValues map[string]string) {
+// predicateFilter, if non-nil, restricts output to entries whose Predicate equals *predicateFilter.
+func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indicesAreMutationNums bool, priorHeadMutationNum int64, mutationMap map[int64]*goclientnew.ExtendedMutation, showNewOnly bool, oldValues map[string]string, predicateFilter *bool) {
 	first := true
 	for _, rm := range *mutations {
 		if rm.ResourceMutationInfo == nil || rm.ResourceMutationInfo.MutationType == nil {
@@ -186,7 +231,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indices
 		hasRelevant := false
 		if mutType != goclientnew.None {
 			isNew := priorHeadMutationNum > 0 && rm.ResourceMutationInfo.Index > priorHeadMutationNum
-			if showNewOnly == isNew || priorHeadMutationNum == 0 {
+			if (showNewOnly == isNew || priorHeadMutationNum == 0) && predicateMatches(predicateFilter, rm.ResourceMutationInfo.Predicate) {
 				hasRelevant = true
 			}
 		}
@@ -196,7 +241,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indices
 					continue
 				}
 				isNew := priorHeadMutationNum > 0 && mi.Index > priorHeadMutationNum
-				if showNewOnly == isNew || priorHeadMutationNum == 0 {
+				if (showNewOnly == isNew || priorHeadMutationNum == 0) && predicateMatches(predicateFilter, mi.Predicate) {
 					hasRelevant = true
 					break
 				}
@@ -223,7 +268,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indices
 		// Resource-level mutation
 		if mutType != goclientnew.None {
 			isNew := priorHeadMutationNum > 0 && rm.ResourceMutationInfo.Index > priorHeadMutationNum
-			if showNewOnly == isNew || priorHeadMutationNum == 0 {
+			if (showNewOnly == isNew || priorHeadMutationNum == 0) && predicateMatches(predicateFilter, rm.ResourceMutationInfo.Predicate) {
 				indexLabel := formatIndexLabel(rm.ResourceMutationInfo.Index, indicesAreMutationNums, 0, mutationMap)
 				tprintRaw(fmt.Sprintf("  %s %s", mutationTypeSymbol(mutType), indexLabel))
 				if rm.ResourceMutationInfo.Value != "" && verbose {
@@ -247,6 +292,9 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indices
 				}
 				isNew := priorHeadMutationNum > 0 && mi.Index > priorHeadMutationNum
 				if showNewOnly != isNew && priorHeadMutationNum > 0 {
+					continue
+				}
+				if !predicateMatches(predicateFilter, mi.Predicate) {
 					continue
 				}
 				indexLabel := formatIndexLabel(mi.Index, indicesAreMutationNums, 0, mutationMap)
@@ -873,7 +921,7 @@ func displayMutationsForRestore(previousData, restoredData string, unitSpaceID s
 	if newChangeDescription != "" {
 		tprintRaw("New changes from " + newChangeDescription + ":")
 	}
-	displayMutationEntries(mutations, false, 0, nil, false, oldValues)
+	displayMutationEntries(mutations, false, 0, nil, false, oldValues, nil)
 }
 
 // invokeComputeMutations runs the compute-mutations function on the unit

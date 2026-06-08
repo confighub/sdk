@@ -12,6 +12,14 @@ cub auth login
 
 And login using your browser.
 
+To check whether you are authenticated, use:
+
+```
+cub auth status
+```
+
+This contacts the server to verify the access token and exits non-zero if it is missing or expired, in which case run `cub auth login` again. (`cub context get` reports a local token status but does not contact the server.)
+
 To set the default space, where SPACE is set to the slug of a space you have access to within the organization you are logged into:
 
 ```

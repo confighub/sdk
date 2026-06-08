@@ -5499,7 +5499,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5664,7 +5664,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -5821,7 +5821,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5958,6 +5958,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                MergeDisableSubtraction:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -6117,7 +6121,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to select source links to copy
 
@@ -6183,7 +6187,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -6225,7 +6229,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -6312,6 +6316,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                MergeDisableSubtraction:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -11819,7 +11827,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -12282,6 +12290,10 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                MergeDisableSubtraction:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -15084,6 +15096,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: Disable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), a cross-unit merge subtracts the target's
+          local differences from the source patch so they survive; set true to apply
+          the source patch without subtraction, relying on stored Mutation Predicate
+          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+          where subtraction is always disabled.
+        in: query
+        name: merge_disable_subtraction
+        required: false
+        schema:
+          type: boolean
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -15437,6 +15460,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: Disable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), a cross-unit merge subtracts the target's
+          local differences from the source patch so they survive; set true to apply
+          the source patch without subtraction, relying on stored Mutation Predicate
+          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+          where subtraction is always disabled.
+        in: query
+        name: merge_disable_subtraction
+        required: false
+        schema:
+          type: boolean
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -16498,6 +16532,85 @@ paths:
       summary: Get ExtendedMutation
       tags:
       - Mutation
+  /space/{space_id}/unit/{unit_id}/predicates:
+    post:
+      description: Set Predicate values on the unit's MutationSources, controlling
+        which paths a merge may overwrite when subtraction is disabled or no WhereMutation
+        is supplied. Creates a new revision only if the predicates actually change.
+        Requires Edit permission.
+      operationId: SetUnitPredicates
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitPredicatesRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitPredicatesResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Set mutation predicates on a unit
+      tags:
+      - Unit
   /space/{space_id}/unit/{unit_id}/refresh:
     post:
       description: Triggers a refresh operation using the config data to a Bridge
@@ -20922,6 +21035,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: Disable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), a cross-unit merge subtracts the target's
+          local differences from the source patch so they survive; set true to apply
+          the source patch without subtraction, relying on stored Mutation Predicate
+          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+          where subtraction is always disabled.
+        in: query
+        name: merge_disable_subtraction
+        required: false
+        schema:
+          type: boolean
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -21389,7 +21513,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
@@ -24362,13 +24486,6 @@ components:
             files are of category AppConfig
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceMergeID:
-          description: Stable identifier (UUID) for a resource stored with the resource
-            data that is intended to remain consistent across resource name and scope
-            changes and across variants, used to match resources between config data
-            documents when computing and patching mutations
-          type: string
-          x-go-type-skip-optional-pointer: true
         ResourceName:
           description: Name of a resource in the system under management represented
             in the configuration data; Kubernetes resources are represented in the
@@ -24451,13 +24568,6 @@ components:
           description: Category of configuration element represented in the configuration
             data; Kubernetes resources are of category Resource, and application configuration
             files are of category AppConfig
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ResourceMergeID:
-          description: Stable identifier (UUID) for a resource stored with the resource
-            data that is intended to remain consistent across resource name and scope
-            changes and across variants, used to match resources between config data
-            documents when computing and patching mutations
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceName:
@@ -26146,6 +26256,16 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        MergeDisableSubtraction:
+          description: Disables the subtraction (override-preservation) step of the
+            merge performed when resolving this Link. When false (the default), the
+            merge subtracts the downstream Unit's local differences from the source
+            patch so they survive the merge. When true, the source patch is applied
+            without subtraction and downstream overrides are preserved only via stored
+            Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit
+            and MergeUnits Links.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -26917,13 +27037,6 @@ components:
             files are of category AppConfig
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceMergeID:
-          description: Stable identifier (UUID) for a resource stored with the resource
-            data that is intended to remain consistent across resource name and scope
-            changes and across variants, used to match resources between config data
-            documents when computing and patching mutations
-          type: string
-          x-go-type-skip-optional-pointer: true
         ResourceName:
           description: Name of a resource in the system under management represented
             in the configuration data; Kubernetes resources are represented in the
@@ -26962,13 +27075,6 @@ components:
           description: Category of configuration element represented in the configuration
             data; Kubernetes resources are of category Resource, and application configuration
             files are of category AppConfig
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ResourceMergeID:
-          description: Stable identifier (UUID) for a resource stored with the resource
-            data that is intended to remain consistent across resource name and scope
-            changes and across variants, used to match resources between config data
-            documents when computing and patching mutations
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceName:
@@ -27024,6 +27130,19 @@ components:
         $ref: '#/components/schemas/ResourceMutation'
       nullable: true
       type: array
+    ResourcePredicates:
+      properties:
+        Predicates:
+          additionalProperties:
+            type: boolean
+          description: 'Map of resolved path to its new Predicate value: true = eligible
+            to be overwritten by a merge, false = protected local override'
+          nullable: true
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+      type: object
     ResourceStatus:
       properties:
         Message:
@@ -28909,6 +29028,23 @@ components:
           x-go-type-skip-optional-pointer: true
         Unit:
           $ref: '#/components/schemas/Unit'
+      type: object
+    UnitPredicatesRequest:
+      properties:
+        ResourcePredicates:
+          description: Per-resource Predicate edits to apply to the Unit's MutationSources
+          items:
+            $ref: '#/components/schemas/ResourcePredicates'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UnitPredicatesResponse:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        MutationSources:
+          $ref: '#/components/schemas/ResourceMutationList'
       type: object
     UnitStatus:
       properties:

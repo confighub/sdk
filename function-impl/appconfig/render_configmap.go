@@ -21,7 +21,6 @@ import (
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/workerapi"
-	"github.com/google/uuid"
 )
 
 // render-configmap renders the AppConfig unit's data as a Kubernetes ConfigMap
@@ -143,7 +142,6 @@ func fnRenderConfigMap(
 		SpaceID:         functionContext.SpaceID.String(),
 		RevisionNum:     fmt.Sprintf("%d", functionContext.RevisionNum),
 		StableCore:      namePrefix,
-		ResourceMergeID: uuid.New().String(),
 		ConfigMapFormat: configMapFormat,
 		Hash:            hashSuffix,
 		Immutable:       immutable,
@@ -235,10 +233,8 @@ metadata:
     confighub.com/SpaceID: {{.SpaceID}}
     confighub.com/RevisionNum: "{{.RevisionNum}}"
     confighub.com/ResourceNameStableCore: {{.StableCore}}
-    confighub.com/ResourceMergeID: {{.ResourceMergeID}}
     confighub.com/ConfigMapFormat: {{.ConfigMapFormat}}
     confighub.com/Hash: "{{.Hash}}"
-    confighub.com/MutationOptions: MatchByIDOnly
     confighub.com/RenderRevision: Latest
 {{- if .Immutable}}
 immutable: true
@@ -260,7 +256,6 @@ type configMapMetadataArgs struct {
 	SpaceID         string
 	RevisionNum     string
 	StableCore      string
-	ResourceMergeID string
 	ConfigMapFormat string
 	Hash            string
 	Immutable       bool

@@ -44,6 +44,16 @@ type ResourceMutationList []ResourceMutation
 
 type MutationMap map[ResolvedPath]MutationInfo
 
+// ResourcePredicates specifies Predicate values to set on the path-level mutations of one
+// resource in a MutationSources list. Each entry in Predicates maps a resolved path to its
+// new Predicate value: true means the path is eligible to be overwritten by a merge, false
+// marks it a protected local override. Consumed by the set-predicates function via
+// yamlkit.SetPredicates.
+type ResourcePredicates struct {
+	Resource   ResourceInfo          `description:"Identifies the resource within the unit whose mutation predicates are being set"`
+	Predicates map[ResolvedPath]bool `description:"Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override"`
+}
+
 // ArrayOrderMap records, for each merge-keyed array path whose element set or
 // order changed in a ResourceMutation, the desired sequence of merge-key values
 // in source order. PatchMutations consumes this to reorder the target's array
@@ -295,27 +305,22 @@ func IsUUID(s string) bool {
 }
 
 // ResourceMutationIndex provides efficient lookup of resources in a ResourceMutationList
-// by ResourceID, ResourceTypeAndName, and AliasesWithoutScopes. It is used by AddMutations,
+// by ResourceTypeAndName and AliasesWithoutScopes. It is used by AddMutations,
 // SubtractMutations, PatchMutations, and FindMutationIndex to match resources consistently.
 type ResourceMutationIndex struct {
-	NameMap            map[ResourceTypeAndName]int
-	AliasNameMap       map[ResourceTypeAndName]int // from AliasesWithoutScopes of indexed mutations
-	ResourceMergeIDMap map[string]int
+	NameMap      map[ResourceTypeAndName]int
+	AliasNameMap map[ResourceTypeAndName]int // from AliasesWithoutScopes of indexed mutations
 }
 
 // NewResourceMutationIndex builds an index from a ResourceMutationList.
 // For duplicate keys, the last entry wins.
 func NewResourceMutationIndex(mutations ResourceMutationList) *ResourceMutationIndex {
 	idx := &ResourceMutationIndex{
-		NameMap:            make(map[ResourceTypeAndName]int, len(mutations)),
-		AliasNameMap:       make(map[ResourceTypeAndName]int, len(mutations)),
-		ResourceMergeIDMap: make(map[string]int, len(mutations)),
+		NameMap:      make(map[ResourceTypeAndName]int, len(mutations)),
+		AliasNameMap: make(map[ResourceTypeAndName]int, len(mutations)),
 	}
 	for i := range mutations {
 		resourceInfo := mutations[i].Resource
-		if IsUUID(resourceInfo.ResourceMergeID) {
-			idx.ResourceMergeIDMap[resourceInfo.ResourceMergeID] = i
-		}
 		if resourceInfo.ResourceNameWithoutScope == "" {
 			_, resourceNameWithoutScope, _ := strings.Cut(string(resourceInfo.ResourceName), "/")
 			resourceInfo.ResourceNameWithoutScope = ResourceName(resourceNameWithoutScope)
@@ -337,27 +342,20 @@ func NewResourceMutationIndex(mutations ResourceMutationList) *ResourceMutationI
 }
 
 // Find looks up a resource in the index using multiple strategies:
-//  1. ResourceMergeID match
-//  2. ResourceTypeAndName match
-//  3. callerAliases against indexed mutation names
-//  4. Indexed mutation aliases against the caller's name
+//  1. ResourceTypeAndName match
+//  2. callerAliases against indexed mutation names
+//  3. Indexed mutation aliases against the caller's name
 func (idx *ResourceMutationIndex) Find(resource ResourceInfo, callerAliases map[ResourceName]struct{}) (int, bool) {
 	if resource.ResourceNameWithoutScope == "" {
 		_, resourceNameWithoutScope, _ := strings.Cut(string(resource.ResourceName), "/")
 		resource.ResourceNameWithoutScope = ResourceName(resourceNameWithoutScope)
 	}
-	// 1. ResourceMergeID
-	if IsUUID(resource.ResourceMergeID) {
-		if i, ok := idx.ResourceMergeIDMap[resource.ResourceMergeID]; ok {
-			return i, true
-		}
-	}
-	// 2. ResourceTypeAndName
+	// 1. ResourceTypeAndName
 	key := ResourceTypeAndNameFromResourceInfo(resource)
 	if i, ok := idx.NameMap[key]; ok {
 		return i, true
 	}
-	// 3. Caller's aliases against indexed names
+	// 2. Caller's aliases against indexed names
 	for alias := range callerAliases {
 		aliasInfo := resource
 		aliasInfo.ResourceNameWithoutScope = alias
@@ -365,7 +363,7 @@ func (idx *ResourceMutationIndex) Find(resource ResourceInfo, callerAliases map[
 			return i, true
 		}
 	}
-	// 4. Indexed mutation aliases against caller's name
+	// 3. Indexed mutation aliases against caller's name
 	if i, ok := idx.AliasNameMap[key]; ok {
 		return i, true
 	}

@@ -61,8 +61,6 @@ func ResolveConfigHubPath(path string, resourceInfo *api.ResourceInfo) (any, err
 		return string(resourceInfo.ResourceCategory), nil
 	case "ConfigHub.ResourceNameStableCore":
 		return string(resourceInfo.ResourceNameStableCore), nil
-	case "ConfigHub.ResourceMergeID":
-		return resourceInfo.ResourceMergeID, nil
 	default:
 		return nil, fmt.Errorf("unsupported ConfigHub path: %s", path)
 	}

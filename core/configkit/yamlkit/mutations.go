@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -44,7 +43,7 @@ import (
 // Algorithm at a glance:
 //
 //  1. Resource matching (this function): for each modified doc, find the corresponding
-//     previous doc by ResourceMergeID, then by ResourceType+Name, then by fuzzy similarity
+//     previous doc by ResourceType+Name, then by fuzzy similarity
 //     score (path-mutation count / total lines, with a maxMatchScore threshold). Unmatched
 //     modified docs are Adds; unmatched previous docs are Deletes. Both old and new names
 //     are recorded in Aliases / AliasesWithoutScopes so subsequent operations can match
@@ -1056,14 +1055,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		modifiedResourceType := modifiedResourceInfo.ResourceType
 		modifiedResourceName := modifiedResourceInfo.ResourceName
 		modifiedResourceNameOnly := modifiedResourceInfo.ResourceNameWithoutScope
-		modifiedResourceMergeID := modifiedResourceInfo.ResourceMergeID
-
-		// When MatchByIDOnly is set and the resource has a ResourceMergeID, only match by
-		// ResourceMergeID, skipping name-based and fuzzy matching. This prevents immutable
-		// resources with hash-suffixed names (e.g., ConfigMaps) from being incorrectly
-		// matched to other versions of the same base resource.
-		matchByIDOnly := api.IsUUID(modifiedResourceMergeID) &&
-			slices.Contains(GetMutationOptions(modifiedDoc, resourceProvider), constants.MatchByIDOnly)
 
 		// Check whether the "next" resource obviously matches in the previous doc list.
 		// If not, we need to search for it. We could make maps of type and name to index,
@@ -1081,7 +1072,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		var pathMutationMap api.MutationMap
 		var arrayOrderMap api.ArrayOrderMap
 		var arrayElementAliasMap api.ArrayElementAliasMap
-		var previousResourceMergeID string
 		minMutationLength := math.MaxInt
 		aliases := map[api.ResourceName]struct{}{}
 		aliasesWithoutScopes := map[api.ResourceName]struct{}{}
@@ -1094,7 +1084,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			previousResourceCategory := previousResourceInfo.ResourceCategory
 			previousResourceType := previousResourceInfo.ResourceType
 			previousResourceName := previousResourceInfo.ResourceName
-			previousResourceMergeID = previousResourceInfo.ResourceMergeID
 			if previousResourceCategory != modifiedResourceCategory {
 				continue
 			}
@@ -1112,28 +1101,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				return resourceProvider.MergeKeyForPath(modifiedResourceType, path)
 			})
 			ComputeMutationsForDocs("", previousDoc, modifiedDoc, functionIndex, tmpMutationMap, mergeKeyLookup, tmpArrayOrders, tmpArrayElementAliases)
-
-			// ResourceMergeID match — if both have valid UUID ResourceMergeIDs and they match, it's a definite match.
-			if api.IsUUID(modifiedResourceMergeID) && api.IsUUID(previousResourceMergeID) && modifiedResourceMergeID == previousResourceMergeID {
-				previousResourceNameOnly := previousResourceInfo.ResourceNameWithoutScope
-				matchIndex = previousDocIndex
-				bestMatchScore = 0.0
-				pathMutationMap = tmpMutationMap
-				arrayOrderMap = tmpArrayOrders
-				arrayElementAliasMap = tmpArrayElementAliases
-				aliases = map[api.ResourceName]struct{}{
-					previousResourceName: {},
-				}
-				aliasesWithoutScopes = map[api.ResourceName]struct{}{
-					previousResourceNameOnly: {},
-				}
-				break
-			}
-
-			// When MatchByIDOnly is set, skip name-based and fuzzy matching.
-			if matchByIDOnly {
-				continue
-			}
 
 			// Exact name match
 			// If ResourceType and ResourceName match exactly, it's a definite match (score = 0).
@@ -1199,7 +1166,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 					ResourceName:             modifiedResourceName,
 					ResourceNameWithoutScope: modifiedResourceNameOnly,
 					ResourceCategory:         modifiedResourceCategory,
-					ResourceMergeID:          modifiedResourceMergeID,
 				},
 				ResourceMutationInfo: api.MutationInfo{
 					MutationType: api.MutationTypeAdd,
@@ -1224,14 +1190,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 		// Matched resource - record Update or None mutation
 		// A match for the resource was found. It possibly was changed.
 
-		// ComputeMutations is used in several ways, as described above.
-		// However, it's generally better to try to use the most accurate
-		// ResourceMergeID available.
-		resourceMergeID := modifiedResourceMergeID
-		if IsEmptyOrPlaceHolder(resourceMergeID) {
-			resourceMergeID = previousResourceMergeID
-		}
-
 		// Alias Tracking - add new aliases for the modified resource name
 		aliases[modifiedResourceName] = struct{}{}
 		aliasesWithoutScopes[modifiedResourceNameOnly] = struct{}{}
@@ -1241,7 +1199,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				ResourceName:             modifiedResourceName,
 				ResourceNameWithoutScope: modifiedResourceNameOnly,
 				ResourceCategory:         modifiedResourceCategory,
-				ResourceMergeID:          resourceMergeID,
 			},
 			ResourceMutationInfo: api.MutationInfo{
 				MutationType: api.MutationTypeUpdate, // assume changed
@@ -1303,7 +1260,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				ResourceName:             previousResourceName,
 				ResourceNameWithoutScope: previousResourceNameOnly,
 				ResourceCategory:         previousResourceInfo.ResourceCategory,
-				ResourceMergeID:          previousResourceInfo.ResourceMergeID,
 			},
 			ResourceMutationInfo: api.MutationInfo{
 				MutationType: api.MutationTypeDelete,
@@ -1349,7 +1305,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 // Algorithm:
 //
 //  1. Resource matching (per document in parsedData): look up the corresponding patch
-//     entry by ResourceMergeID, then ResourceTypeAndName, then by predicate aliases (so
+//     entry by ResourceTypeAndName, then by predicate aliases (so
 //     a renamed resource is still matched to its upstream patch entry).
 //
 //  2. Resource-level mutation:
@@ -1426,15 +1382,6 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			}
 		}
 		predicateIdx.NameMap[key] = i
-		if api.IsUUID(resourceInfo.ResourceMergeID) {
-			if existingIdx, exists := predicateIdx.ResourceMergeIDMap[resourceInfo.ResourceMergeID]; exists {
-				if mutationsPredicates[existingIdx].ResourceMutationInfo.Predicate &&
-					!mutationsPredicates[i].ResourceMutationInfo.Predicate {
-					continue
-				}
-			}
-			predicateIdx.ResourceMergeIDMap[resourceInfo.ResourceMergeID] = i
-		}
 	}
 
 	patchIdx := api.NewResourceMutationIndex(mutationsPatch)
@@ -1849,12 +1796,8 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 // the toolchain's placeholder marker (PlaceHolderBlockApplyString / PlaceHolderBlockApplyInt).
 // Used by the "reset" function to revert the leaves last touched by a chosen subset of
 // historical mutations to their unset state, leaving everything else alone.
-//
-// ResourceMergeID and the legacy ResourceID path are always preserved — they identify the
-// resource for cross-unit matching and must not be wiped.
 func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
 	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
-	resetResourceMergeIDMap := make(map[string]int)
 	for i := range mutationsPredicates {
 		resourceInfo := mutationsPredicates[i].Resource
 		if resourceInfo.ResourceNameWithoutScope == "" {
@@ -1862,28 +1805,12 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 		}
 		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
 		mutationPredicateMap[resourceInfoKey] = i
-		if api.IsUUID(resourceInfo.ResourceMergeID) {
-			resetResourceMergeIDMap[resourceInfo.ResourceMergeID] = i
-		}
 	}
-
-	// The ResourceMergeID field must not be reset to a placeholder — it is intended to be
-	// stable across the original unit and all clones, enabling cross-unit resource matching.
-	resourceMergeIDContextPath := resourceProvider.ContextPath(constants.ResourceMergeIDKeySuffix)
-	// Also protect the legacy ResourceID path from being reset.
-	legacyResourceIDContextPath := resourceProvider.ContextPath(constants.ResourceIDKeySuffix)
 
 	visitor := func(doc *gaby.YamlDoc, _ any, _ int, docResourceInfo *api.ResourceInfo) (any, []error) {
 		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)
 
-		// Try ResourceMergeID-based lookup first, fall back to name-based
-		mutationPredicateIndex, hasPredicate := 0, false
-		if api.IsUUID(docResourceInfo.ResourceMergeID) {
-			mutationPredicateIndex, hasPredicate = resetResourceMergeIDMap[docResourceInfo.ResourceMergeID]
-		}
-		if !hasPredicate {
-			mutationPredicateIndex, hasPredicate = mutationPredicateMap[resourceInfoKey]
-		}
+		mutationPredicateIndex, hasPredicate := mutationPredicateMap[resourceInfoKey]
 		if !hasPredicate {
 			// Nothing to reset
 			return nil, nil
@@ -1899,14 +1826,6 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 		for path, mutation := range mutationsPredicates[mutationPredicateIndex].PathMutationMap {
 			if !mutation.Predicate {
 				// Shouldn't be reset
-				continue
-			}
-			// Never reset the ResourceMergeID — it must remain stable across clones for matching.
-			if resourceMergeIDContextPath != "" && strings.HasSuffix(string(path), resourceMergeIDContextPath) {
-				continue
-			}
-			// Also protect the legacy ResourceID path from being reset.
-			if legacyResourceIDContextPath != "" && strings.HasSuffix(string(path), legacyResourceIDContextPath) {
 				continue
 			}
 			resolvedPathStr, pathResolved := ResolveAssociativeSegments(doc, string(path))
@@ -1951,7 +1870,7 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 //
 // Algorithm:
 //
-//  1. Resource matching: by current ResourceTypeAndName, then by ResourceMergeID, then by
+//  1. Resource matching: by current ResourceTypeAndName, then by
 //     AliasesWithoutScopes (handling renames). Unmatched new mutations are appended as
 //     new resource entries.
 //
@@ -2016,10 +1935,6 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 		// Update the resource name, which may have changed.
 		mutations[mi].Resource.ResourceName = newMutations[i].Resource.ResourceName
 		mutations[mi].Resource.ResourceNameWithoutScope = newMutations[i].Resource.ResourceNameWithoutScope
-		// Set the ResourceMergeID, but do not clear it.
-		if !IsEmptyOrPlaceHolder(newMutations[i].Resource.ResourceMergeID) {
-			mutations[mi].Resource.ResourceMergeID = newMutations[i].Resource.ResourceMergeID
-		}
 		if mutations[mi].Aliases == nil {
 			mutations[mi].Aliases = make(map[api.ResourceName]struct{})
 		}
@@ -2128,7 +2043,7 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 //
 // Algorithm:
 //
-//  1. Resource matching: by ResourceMergeID, ResourceTypeAndName, then AliasesWithoutScopes
+//  1. Resource matching: by ResourceTypeAndName, then AliasesWithoutScopes
 //     from either side (so renamed resources subtract correctly).
 //
 //  2. Resource-level subtraction:
@@ -2414,4 +2329,88 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 
 	// No path-level match; fall back to the resource-level index.
 	return rm.ResourceMutationInfo.Index, true
+}
+
+// SetPredicates sets the Predicate flag on path-level mutations of a single resource in
+// mutations (typically a Unit's accumulated MutationSources), returning the updated list
+// and the paths that could not be resolved.
+//
+// The Predicate flag records whether the path is eligible to be overwritten by a merge:
+// true means a merge may patch it, false marks it a protected local override.
+// SetMutationPredicates consumes these stored values when no WhereMutation filter is
+// supplied, so editing them changes what a subsequent upgrade/merge will overwrite.
+//
+// For each (path, value) in predicates:
+//
+//   - Exact match: the entry at path has its Predicate set to value; its other fields
+//     (including Value) are left intact.
+//   - No exact match: the closest ancestor present in the resource's PathMutationMap (or,
+//     failing that, the resource-level mutation) supplies the MutationType and Index, so the
+//     new, more-specific entry keeps the same provenance. The entry's Value is taken from the
+//     data at path (via YamlSafePathGetDoc) — NOT copied from the ancestor, whose Value is a
+//     broader block — and Patch is left empty (it is a line-diff that does not apply to a
+//     freshly-set value). Because predicate lookup during PatchMutations walks to the most
+//     specific ancestor, this scopes the predicate to path without disturbing the ancestor.
+//     This mirrors the parent-splitting in SubtractMutations' Case 3.
+//
+// A path is returned in unresolved (and left unchanged) when its resource is absent, when it
+// has neither an ancestor path nor a resource-level mutation to inherit from, or when it does
+// not exist in the resource's data (so no Value can be extracted). parsedData and
+// resourceProvider are used to locate the resource's document and read the value at each
+// path. mutations is modified in place and also returned for convenience.
+func SetPredicates(parsedData gaby.Container, mutations api.ResourceMutationList, resource api.ResourceInfo, predicates map[api.ResolvedPath]bool, resourceProvider ResourceProvider) (api.ResourceMutationList, []api.ResolvedPath) {
+	var unresolved []api.ResolvedPath
+	idx := api.NewResourceMutationIndex(mutations)
+	mi, found := idx.Find(resource, nil)
+	if !found {
+		for path := range predicates {
+			unresolved = append(unresolved, path)
+		}
+		return mutations, unresolved
+	}
+	rm := &mutations[mi]
+	if rm.PathMutationMap == nil {
+		rm.PathMutationMap = make(api.MutationMap)
+	}
+	doc, _ := FindResourceDoc(parsedData, resourceProvider, &resource)
+	for path, predicate := range predicates {
+		// Exact match: the entry's Value is already correct; just flip the flag.
+		if info, ok := rm.PathMutationMap[path]; ok {
+			info.Predicate = predicate
+			rm.PathMutationMap[path] = info
+			continue
+		}
+		// Split: inherit MutationType+Index from the closest ancestor (or the
+		// resource-level mutation), take Value from the data at path, leave Patch empty.
+		_, ancInfo, hasAncestor := api.FindAncestorPath(rm.PathMutationMap, path)
+		if !hasAncestor {
+			if rm.ResourceMutationInfo.MutationType == api.MutationTypeNone {
+				unresolved = append(unresolved, path)
+				continue
+			}
+			ancInfo = rm.ResourceMutationInfo
+		}
+		if doc == nil {
+			unresolved = append(unresolved, path)
+			continue
+		}
+		resolvedPath, ok := ResolveAssociativeSegments(doc, string(path))
+		if !ok {
+			unresolved = append(unresolved, path)
+			continue
+		}
+		valueDoc, valueFound, err := YamlSafePathGetDoc(doc, api.ResolvedPath(resolvedPath), true)
+		if err != nil || !valueFound || valueDoc == nil {
+			unresolved = append(unresolved, path)
+			continue
+		}
+		rm.PathMutationMap[path] = api.MutationInfo{
+			MutationType: ancInfo.MutationType,
+			Index:        ancInfo.Index,
+			Predicate:    predicate,
+			Value:        valueDoc.String(),
+			// Patch intentionally left empty for a freshly-extracted value.
+		}
+	}
+	return mutations, unresolved
 }

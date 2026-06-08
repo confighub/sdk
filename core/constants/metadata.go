@@ -12,7 +12,6 @@ const (
 	SpaceIDKeySuffix                = "SpaceID"
 	UnitSlugKeySuffix               = "UnitSlug"
 	RevisionNumKeySuffix            = "RevisionNum"
-	ResourceMergeIDKeySuffix        = "ResourceMergeID"
 	ResourceNameStableCoreKeySuffix = "ResourceNameStableCore"
 
 	// Other Metadata
@@ -23,19 +22,6 @@ const (
 	MutationOptionsKeySuffix = "MutationOptions"
 	RenderRevisionKeySuffix  = "RenderRevision"
 	VisitorOptionsKeySuffix  = "VisitorOptions"
-
-	// Deprecated: Use ResourceMergeIDKeySuffix instead. Retained for reading legacy data.
-	ResourceIDKeySuffix = "ResourceID"
-)
-
-// MutationOption values for the confighub.com/MutationOptions annotation (or equivalent
-// context path for non-Kubernetes toolchains).
-const (
-	// MatchByIDOnly instructs ComputeMutations to match this resource only by ResourceID,
-	// skipping name-based and fuzzy matching. This is used for immutable resources (e.g.,
-	// hash-suffixed ConfigMaps) where each version is a distinct resource that should not
-	// be confused with other versions of the same base resource.
-	MatchByIDOnly = "MatchByIDOnly"
 )
 
 const (

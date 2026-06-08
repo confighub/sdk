@@ -113,8 +113,6 @@ func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, options *api.
 		}
 		// TODO: This uniquifies the resource name, but not other attributes in the resource, if required.
 		_ = resourceProvider.SetResourceName(parsedReplicatedResource, fmt.Sprintf("%s%d", string(match.resourceName), j))
-		// Delete the resource merge ID so the replicated resource gets a new unique ID.
-		_ = resourceProvider.DeleteResourceMergeID(parsedReplicatedResource)
 		newParsedData[i+j] = parsedReplicatedResource
 	}
 	for j := i + 1; j < len(parsedData); j++ {

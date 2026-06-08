@@ -29,10 +29,12 @@ var (
 	linkNoAutoUpdate        bool
 	linkUseLiveState        bool
 	linkNoUseLiveState      bool
-	linkWhereMutation       string
-	linkWhereResource       string
-	linkMakeCurrent         bool
-	linkTransformInvocation string
+	linkWhereMutation             string
+	linkWhereResource             string
+	linkMergeDisableSubtraction   bool
+	linkNoMergeDisableSubtraction bool
+	linkMakeCurrent               bool
+	linkTransformInvocation       string
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
@@ -43,6 +45,8 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkNoUseLiveState, "no-use-live-state", false, "use Data of upstream unit instead of LiveState")
 	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression to filter mutations during merge")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
+	cmd.Flags().BoolVar(&linkMergeDisableSubtraction, "merge-disable-subtraction", false, "disable the subtraction (override-preservation) step when resolving this link; overrides are then preserved only via stored mutation predicates")
+	cmd.Flags().BoolVar(&linkNoMergeDisableSubtraction, "no-merge-disable-subtraction", false, "re-enable the subtraction step when resolving this link")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions (skips initial merge)")
 	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before upsert; only valid with --update-type Upsert")
 }
@@ -53,6 +57,9 @@ func validateLinkFieldFlags() error {
 	}
 	if linkUseLiveState && linkNoUseLiveState {
 		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
+	}
+	if linkMergeDisableSubtraction && linkNoMergeDisableSubtraction {
+		return fmt.Errorf("--merge-disable-subtraction and --no-merge-disable-subtraction are mutually exclusive")
 	}
 	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" && linkUpdateType != "TransformPaths" {
 		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths, got %q", linkUpdateType)
@@ -71,6 +78,9 @@ func setLinkFieldsOnCreate(link *goclientnew.Link) error {
 	}
 	link.WhereMutation = linkWhereMutation
 	link.WhereResource = linkWhereResource
+	if linkMergeDisableSubtraction {
+		link.MergeDisableSubtraction = true
+	}
 	if linkTransformInvocation != "" {
 		id, err := parseInvocationSlug(linkTransformInvocation)
 		if err != nil {
@@ -103,6 +113,11 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 	}
 	if cmd.Flags().Changed("where-resource") {
 		link.WhereResource = linkWhereResource
+	}
+	if linkMergeDisableSubtraction {
+		link.MergeDisableSubtraction = true
+	} else if linkNoMergeDisableSubtraction {
+		link.MergeDisableSubtraction = false
 	}
 	if cmd.Flags().Changed("transform-invocation") {
 		if linkTransformInvocation == "" {
@@ -144,6 +159,11 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		if cmd.Flags().Changed("where-resource") {
 			patchMap["WhereResource"] = linkWhereResource
 		}
+		if linkMergeDisableSubtraction {
+			patchMap["MergeDisableSubtraction"] = true
+		} else if linkNoMergeDisableSubtraction {
+			patchMap["MergeDisableSubtraction"] = false
+		}
 		if cmd.Flags().Changed("transform-invocation") {
 			if linkTransformInvocation == "" {
 				patchMap["TransformInvocationID"] = nil
@@ -159,6 +179,7 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("update-type") || linkAutoUpdate || linkNoAutoUpdate ||
 		linkUseLiveState || linkNoUseLiveState ||
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
+		linkMergeDisableSubtraction || linkNoMergeDisableSubtraction ||
 		cmd.Flags().Changed("transform-invocation")
 }
 

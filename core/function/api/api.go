@@ -155,7 +155,6 @@ var ValidWhereResourcePaths = map[string]bool{
 	"ConfigHub.ResourceNameWithoutScope": true,
 	"ConfigHub.ResourceType":             true,
 	"ConfigHub.ResourceCategory":         true,
-	"ConfigHub.ResourceMergeID":          true,
 	"ConfigHub.ResourceNameStableCore":   true,
 }
 
