@@ -13331,6 +13331,7 @@ export type ExtendedSpace = {
   UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
   UpgradableUnitCount?: number;
+  WarnedUnitCount?: number;
 };
 export type ExtendedSpaceRead = {
   AttributeFilter?: FilterRead;
@@ -13361,6 +13362,7 @@ export type ExtendedSpaceRead = {
   UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
   UpgradableUnitCount?: number;
+  WarnedUnitCount?: number;
 };
 export type BridgeWorkerStatus = {
   /** Unique identifier for the Bridge Worker. */

@@ -31,6 +31,104 @@ func TestStandardParsingOperators(t *testing.T) {
 	}
 }
 
+// TestINClauseRejectsSQLInjection is a regression test for a SQL injection that
+// was possible via the IN / NOT IN clause of the metadata `where` filter.
+//
+// Every other literal path forbids quotes and backslashes
+// (safeStringCharsRegexpString = [^'"\\]*), but the IN-clause path validated only
+// that there was no ')' inside. A value such as `x' OR 1=1` therefore survived the
+// quote-trim in ParseInClauseValues and was re-wrapped, unescaped, into the raw SQL
+// WHERE clause. inClauseRegexp now matches only a comma-separated list that is homogeneous in
+// kind -- all quoted strings, all ints, or all bools -- so any operator/comment/cast text between
+// values, or a mix of value kinds, fails to parse here. (Per-column-type validation, e.g. matching
+// the list's kind to the column, is added on top by ValidateInClauseValues in the entity filter
+// parser; see TestValidateInClauseValues.)
+//
+// Why the inputs below contain `OR`, comments, `;`, `||`: the filter grammar does NOT
+// support those. Expressions are `path operator value` joined only by `AND`; there is no
+// `OR`. These are ATTACKER strings, not valid filter syntax. The parser never inspected
+// the contents of `IN (...)`, so it forwarded them into SQL unchecked. Each case asserts
+// that such input is now rejected at parse, not passed through.
+func TestINClauseRejectsSQLInjection(t *testing.T) {
+	injections := []string{
+		"Slug IN ('x' OR 1=1 OR Slug = 'y')",
+		"Slug IN ('x'--comment)",
+		"Slug IN ('a'='a)",
+		"Slug NOT IN ('x' OR 1=1)",
+		"Slug IN ('x'; DROP TABLE units)",
+		"Slug IN ('a', 'b' OR '1'='1')",
+		// Mixed value kinds in one list are rejected by the homogeneous-list regex, even on this
+		// config-data path (which has no column type and does not call ValidateInClauseValues).
+		"Slug IN ('a', 1)",
+		"age IN (1, 'x')",
+		"flag IN (true, 1)",
+	}
+	for _, q := range injections {
+		t.Run("rejects/"+q, func(t *testing.T) {
+			_, err := ParseAndValidateWhereFilter(q)
+			assert.Error(t, err, "injection payload must be rejected: %s", q)
+		})
+	}
+
+	// Legitimate IN clauses contain ONLY what the grammar supports: a comma-separated list
+	// of plain literal values (strings, UUIDs, slugs with -, _, .). These must still parse.
+	valid := []string{
+		"Slug IN ('alpha', 'beta', 'gamma')",
+		"kind NOT IN ('Secret')",
+		"SpaceID IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')",
+		"name IN ('foo-bar', 'baz_qux', 'a.b.c')",
+	}
+	for _, q := range valid {
+		t.Run("valid/"+q, func(t *testing.T) {
+			_, err := ParseAndValidateWhereFilter(q)
+			assert.NoError(t, err, "legitimate IN clause must still parse: %s", q)
+		})
+	}
+}
+
+// TestValidateInClauseValues covers the per-column-type IN/NOT IN value validation that the
+// entity filter parser runs before SQL is generated. It validates each raw value token by kind, so
+// every value's type -- quoted string vs bare int vs bare bool -- must match the column type. That
+// rejects the security-critical case (a quoted value aimed at a numeric/bool column, which the SQL
+// generator would strip and emit bare) and also enforces a single consistent type across the list
+// (mixed-type lists, bare values on a string column, and quoted values on an int column all fail).
+func TestValidateInClauseValues(t *testing.T) {
+	cases := []struct {
+		literal  string
+		dataType DataType
+		valid    bool
+	}{
+		// string columns: every value must be a quoted string token
+		{"('alpha', 'beta')", DataTypeString, true},
+		{"('a-b', 'c.d_e')", DataTypeString, true},
+		{"(5)", DataTypeString, false},      // bare value for a string column
+		{"('a', 1)", DataTypeString, false}, // mixed types in one list
+		// int columns: every value must be a bare integer
+		{"(1, 2, 3)", DataTypeInt, true},
+		{"(0)", DataTypeInt, true},
+		{"('1 OR 1=1')", DataTypeInt, false}, // quoted value -> stripped -> would be bare -> must reject
+		{"('5')", DataTypeInt, false},        // quoted value for an int column
+		{"(1, 'x')", DataTypeInt, false},     // mixed types in one list
+		// bool columns / bool maps: every value must be a bare boolean
+		{"(true)", DataTypeBool, true},
+		{"(TRUE, false)", DataTypeStringBoolMap, true},
+		{"('true OR 1=1')", DataTypeStringBoolMap, false},
+		{"(true, 1)", DataTypeStringBoolMap, false}, // mixed types in one list
+		// unsupported type fails closed
+		{"('x')", DataTypeStringStringUUIDBoolMap, false},
+	}
+	for _, c := range cases {
+		t.Run(string(c.dataType)+"/"+c.literal, func(t *testing.T) {
+			err := ValidateInClauseValues(c.literal, c.dataType)
+			if c.valid {
+				assert.NoError(t, err, "%s on %v should be valid", c.literal, c.dataType)
+			} else {
+				assert.Error(t, err, "%s on %v should be rejected", c.literal, c.dataType)
+			}
+		})
+	}
+}
+
 // TestNotLikeOperator tests the NOT LIKE operator for config data where filters
 func TestNotLikeOperator(t *testing.T) {
 	// Test parsing

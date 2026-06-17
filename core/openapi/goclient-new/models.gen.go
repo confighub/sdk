@@ -965,6 +965,7 @@ type ExtendedSpace struct {
 	UnapprovedUnitCount int64     `json:"UnapprovedUnitCount,omitempty" yaml:"UnapprovedUnitCount,omitempty"`
 	UnlinkedUnitCount   int64     `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
 	UpgradableUnitCount int64     `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
+	WarnedUnitCount     int64     `json:"WarnedUnitCount,omitempty" yaml:"WarnedUnitCount,omitempty"`
 }
 
 // ExtendedTag defines model for ExtendedTag.

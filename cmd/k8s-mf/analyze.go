@@ -10,7 +10,7 @@ import (
 	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/structured-merge-diff/v4/fieldpath"
+	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"
 )
 
 // managerOwnership is one managedFields entry, classified and parsed.

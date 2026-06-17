@@ -15836,7 +15836,6 @@ paths:
           content:
             application/octet-stream:
               schema:
-                format: base64
                 type: string
           description: OK
         "400":
@@ -16153,7 +16152,6 @@ paths:
           content:
             application/octet-stream:
               schema:
-                format: base64
                 type: string
           description: OK
         "400":
@@ -16219,7 +16217,6 @@ paths:
           content:
             application/octet-stream:
               schema:
-                format: base64
                 type: string
           description: OK
         "400":
@@ -25346,6 +25343,10 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         UpgradableUnitCount:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        WarnedUnitCount:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true

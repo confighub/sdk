@@ -40,7 +40,25 @@ const (
 	integerLiteralRegexpString             = "^[0-9][0-9]{0,9}"
 	safeStringCharsRegexpString            = `[^'"\\]*`
 	stringLiteralRegexpString              = `^'` + safeStringCharsRegexpString + `'`
-	inClauseRegexpString                   = "^\\((?:[^)]+)\\)"
+
+	// A single IN/NOT IN value of each kind: a quoted safe string (no quote/backslash, so it
+	// cannot break out of '...'), a bare integer, or a bare boolean. The bare forms mirror
+	// integerLiteralRegexpString and booleanLiteralRegexpString.
+	inClauseStringValueRegexpString = `'` + safeStringCharsRegexpString + `'`
+	inClauseIntValueRegexpString    = `[0-9][0-9]{0,9}`
+	inClauseBoolValueRegexpString   = `(?:true|TRUE|false|FALSE)`
+	// Any single value token, regardless of kind (used to extract the values for per-type validation).
+	inClauseValueRegexpString = `(?:` + inClauseStringValueRegexpString + `|` + inClauseIntValueRegexpString + `|` + inClauseBoolValueRegexpString + `)`
+	// An IN/NOT IN list is a parenthesized, comma-separated list (optional surrounding whitespace)
+	// that is homogeneous in kind: all quoted strings, OR all integers, OR all booleans. Writing it
+	// this way rejects a mixed list (e.g. `('a', 1)`) at the lexical level, and -- being deliberately
+	// strict -- lets no operator, comment, cast, or other text reach the raw SQL WHERE clause.
+	// Matching the list's kind to the column type is done separately by ValidateInClauseValues.
+	inClauseRegexpString = `^\(\s*(?:` +
+		inClauseStringValueRegexpString + `(?:\s*,\s*` + inClauseStringValueRegexpString + `)*` + `|` +
+		inClauseIntValueRegexpString + `(?:\s*,\s*` + inClauseIntValueRegexpString + `)*` + `|` +
+		inClauseBoolValueRegexpString + `(?:\s*,\s*` + inClauseBoolValueRegexpString + `)*` +
+		`)\s*\)`
 )
 
 var (
@@ -56,6 +74,17 @@ var (
 	StringLiteralRegexp       = regexp.MustCompile(stringLiteralRegexpString)
 	// IN | NOT IN clause patterns
 	inClauseRegexp = regexp.MustCompile(inClauseRegexpString)
+	// inClauseListRegexp matches a whole, well-formed IN list (anchored at both ends);
+	// inClauseValueRegexp extracts the individual value tokens from it (quotes intact).
+	inClauseListRegexp  = regexp.MustCompile(inClauseRegexpString + "$")
+	inClauseValueRegexp = regexp.MustCompile(inClauseValueRegexpString)
+	// Per-kind validators for a single IN/NOT IN value token, anchored at both ends. ValidateInClauseValues
+	// requires every token in a list to match the one kind the column type expects, so the value's
+	// kind (quoted string vs bare int vs bare bool) -- not just its characters -- must match, and the
+	// list must be type-consistent. Anchoring matters: a prefix match would let `1 OR 1=1` pass as `1`.
+	inClauseStringTokenRegexp = regexp.MustCompile(stringLiteralRegexpString + "$")
+	inClauseIntValueRegexp    = regexp.MustCompile(integerLiteralRegexpString + "$")
+	inClauseBoolValueRegexp   = regexp.MustCompile(booleanLiteralRegexpString + "$")
 )
 
 func ParseLiteral(decodedQueryString string) (string, string, DataType, error) {
@@ -263,7 +292,53 @@ func ParseInClause(decodedQueryString string) (string, string, error) {
 	literal := decodedQueryString[pos[0]:pos[1]]
 	remaining := decodedQueryString[pos[1]:]
 
+	// inClauseRegexp enforces that the list contains only quoted-string/int/bool tokens, so no
+	// quote, operator, comment, or cast text can reach the generated SQL. Per-column-type
+	// validation is the caller's responsibility via ValidateInClauseValues (the data type is not
+	// known here).
 	return remaining, literal, nil
+}
+
+// ValidateInClauseValues checks that every value in a parsed IN/NOT IN literal is a well-formed
+// literal for the given column data type. The entity filter SQL generator concatenates IN values
+// directly into a raw SQL WHERE clause — string/UUID/time values quoted, int/bool values bare — so
+// this is the gate that stops SQL injection through IN/NOT IN, and it must run during parsing
+// (see FilterParser.parseOperand), before any SQL is generated. inClauseRegexp already guarantees
+// the list is structurally a set of quoted-string/int/bool tokens; this adds the per-type check a
+// single regex over the whole list cannot make — e.g. a quoted, non-numeric value targeting an
+// integer column, whose quotes the generator strips before emitting the value bare.
+func ValidateInClauseValues(literal string, dataType DataType) error {
+	// Pick the single value kind the column type requires. Validating the raw tokens (quotes
+	// intact) by kind -- not the quote-stripped content -- means a value's type, not just its
+	// characters, must match the column. Because every token must match this one kind, it also
+	// enforces a single consistent type across the list: `Slug IN ('a', 1)` (mixed),
+	// `HeadRevisionNum IN ('5')` (quoted value for an int column), and `Slug IN (5)` (bare value
+	// for a string column) are all rejected.
+	var want *regexp.Regexp
+	var kind string
+	switch dataType {
+	case DataTypeString, DataTypeUUID, DataTypeTime, DataTypeStringMap, DataTypeUUIDStringMap:
+		// Quoted token whose interior has no quote/backslash, so it cannot escape the '...'.
+		want, kind = inClauseStringTokenRegexp, "string"
+	case DataTypeInt:
+		want, kind = inClauseIntValueRegexp, "integer"
+	case DataTypeBool, DataTypeStringBoolMap:
+		want, kind = inClauseBoolValueRegexp, "boolean"
+	default:
+		// Fail closed: never accept a value for a type we do not strictly validate.
+		return fmt.Errorf("IN clause is not supported for column type %v", dataType)
+	}
+	// Require a structurally well-formed list so FindAllString reliably recovers every token
+	// (this holds whenever the literal came from ParseInClause, but does not depend on it).
+	if !inClauseListRegexp.MatchString(literal) {
+		return fmt.Errorf("invalid IN clause `%s`", literal)
+	}
+	for _, token := range inClauseValueRegexp.FindAllString(literal, -1) {
+		if !want.MatchString(token) {
+			return fmt.Errorf("invalid %s IN clause value `%s`", kind, token)
+		}
+	}
+	return nil
 }
 
 // Import-specific operator support

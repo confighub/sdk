@@ -1506,8 +1506,7 @@ func k8sFnSetContainerResources(rp *k8skit.K8sResourceProviderType, parsedData g
 	}
 
 	resourceTypeToResourcesPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNameContainerResources)
-	// TODO: consider setting upsert to true
-	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, false, opts)
+	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToResourcesPaths, []any{containerName}, rp, updater, true, opts)
 	return parsedData, nil, err
 }
 

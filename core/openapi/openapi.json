@@ -18165,8 +18165,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "type": "string",
-                  "format": "base64"
+                  "type": "string"
                 }
               }
             }
@@ -18649,8 +18648,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "type": "string",
-                  "format": "base64"
+                  "type": "string"
                 }
               }
             }
@@ -18754,8 +18752,7 @@
             "content": {
               "application/octet-stream": {
                 "schema": {
-                  "type": "string",
-                  "format": "base64"
+                  "type": "string"
                 }
               }
             }
@@ -28099,6 +28096,11 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UpgradableUnitCount": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "WarnedUnitCount": {
             "type": "integer",
             "format": "int64",
             "x-go-type-skip-optional-pointer": true

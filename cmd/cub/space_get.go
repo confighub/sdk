@@ -126,6 +126,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Unapplied Units", fmt.Sprintf("%d", extendedSpace.UnappliedUnitCount)})
 	view.Append([]string{"# Unapproved Units", fmt.Sprintf("%d", extendedSpace.UnapprovedUnitCount)})
 	view.Append([]string{"# Gated Units", fmt.Sprintf("%d", extendedSpace.GatedUnitCount)})
+	view.Append([]string{"# Warned Units", fmt.Sprintf("%d", extendedSpace.WarnedUnitCount)})
 	view.Append([]string{"# Upgradable Units", fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount)})
 	view.Append([]string{"# Unlinked Units", fmt.Sprintf("%d", extendedSpace.UnlinkedUnitCount)})
 	view.Append([]string{"# Incomplete Applies", fmt.Sprintf("%d", extendedSpace.IncompleteApplyUnitCount)})

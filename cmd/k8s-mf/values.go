@@ -10,7 +10,7 @@ import (
 	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/structured-merge-diff/v4/fieldpath"
+	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"
 )
 
 func newValuesCommand() *cobra.Command {
