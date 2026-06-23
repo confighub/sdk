@@ -420,7 +420,17 @@ func sortViewUnits(units []*goclientnew.ExtendedUnit, viewCols []goclientnew.Col
 }
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
-	extendedUnits, err := apiListExtendedUnits(spaceID, whereFilter, "", "", "", "", false, selectParam, "", "")
+	// A spaceID of "*" means search across all spaces. apiListExtendedUnits
+	// parses spaceID as a UUID, so route the org-wide case to apiSearchUnits
+	// instead (mirroring unitListCmdRun's "*" handling) rather than panicking
+	// in uuid.MustParse.
+	var extendedUnits []*goclientnew.ExtendedUnit
+	var err error
+	if spaceID == "*" {
+		extendedUnits, err = apiSearchUnits(whereFilter, "", "", "", "", false, selectParam, "", "")
+	} else {
+		extendedUnits, err = apiListExtendedUnits(spaceID, whereFilter, "", "", "", "", false, selectParam, "", "")
+	}
 	if err != nil {
 		return nil, err
 	}
