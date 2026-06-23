@@ -6,8 +6,8 @@ toolchain go1.25.11
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
-	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/configkit/k8skit v0.1.81
+	github.com/confighub/sdk/core v0.1.81
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -65,8 +65,6 @@ require (
 )
 
 replace (
-	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
-	github.com/confighub/sdk/core => ../core
 
 	// Disambiguate split genproto modules.
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb

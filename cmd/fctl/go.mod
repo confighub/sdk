@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/core v0.1.81
 	github.com/fatih/color v1.18.0
 	github.com/google/uuid v1.6.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -36,4 +36,3 @@ require (
 	golang.org/x/text v0.38.0 // indirect
 )
 
-replace github.com/confighub/sdk/core => ../../core
