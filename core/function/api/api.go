@@ -93,6 +93,12 @@ type FunctionInvocation struct {
 	FunctionName  string             `description:"Function name"`
 	Arguments     []FunctionArgument `description:"Function arguments"`
 	WhereResource string             `json:",omitempty" description:"Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource)."`
+	// Params carries caller-supplied values for a stored Invocation's declared
+	// parameters. They are the scope (.Params / params) against which templated
+	// argument Values (Evaluator template/cel) are expanded at execution time.
+	// Transient and per-invocation: not persisted on stored Invocations/Triggers
+	// (bun:"-"), and never part of an Invocation's identity hash.
+	Params map[string]any `json:",omitempty" bun:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
 }
 
 type OtherDataSource string

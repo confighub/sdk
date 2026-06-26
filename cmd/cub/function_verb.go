@@ -195,19 +195,25 @@ func flattenFunctionSignatures(cached functionsByEntity) map[string]goclientnew.
 	return out
 }
 
+// functionKindCommandLabel is the command prefix used in kind-mismatch error
+// messages. Defaults to the `cub function` verbs; `cub invocation invoke`
+// overrides it so its errors name the command the user actually ran.
+var functionKindCommandLabel = "cub function"
+
 func checkFunctionKind(mode FunctionKindMode, name string, sig goclientnew.FunctionSignature) error {
+	cmd := fmt.Sprintf("%s %s", functionKindCommandLabel, mode.verb())
 	switch mode {
 	case ModeValidating:
 		if !sig.Validating {
-			return fmt.Errorf("'cub function vet' only accepts validating functions; %q is not validating", name)
+			return fmt.Errorf("'%s' only accepts validating functions; %q is not validating", cmd, name)
 		}
 	case ModeNonMutating:
 		if sig.Mutating {
-			return fmt.Errorf("'cub function get' rejects mutating functions; %q is mutating", name)
+			return fmt.Errorf("'%s' rejects mutating functions; %q is mutating", cmd, name)
 		}
 	case ModeMutating:
 		if !sig.Mutating {
-			return fmt.Errorf("'cub function set' only accepts mutating functions; %q is not mutating", name)
+			return fmt.Errorf("'%s' only accepts mutating functions; %q is not mutating", cmd, name)
 		}
 	}
 	return nil

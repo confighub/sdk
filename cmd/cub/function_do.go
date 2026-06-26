@@ -152,6 +152,12 @@ var functionToolchainType string
 var functionLiveStateType string
 var functionOtherDataSource string
 
+// Set by `cub invocation get/set/vet` to execute a single parameterized
+// Invocation: the identifier of the Invocation and the values supplied for its
+// declared parameters. Empty for `cub function do`.
+var parameterizedInvocationIdentifier string
+var parameterizedInvocationParams map[string]any
+
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	enableShowFlag(functionDoCmd)
@@ -275,6 +281,31 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 		for i, id := range invocationUUIDs {
 			req.Invocations[i] = goclientnew.UUID(id)
 		}
+	}
+
+	// Resolve a single parameterized Invocation (cub invocation get/set/vet),
+	// attaching the supplied parameter values. Resolved into resolvedInvocations
+	// too, so verb-scoped kind validation sees its FunctionName.
+	if parameterizedInvocationIdentifier != "" {
+		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
+			[]string{parameterizedInvocationIdentifier},
+			EntityTypeInvocation,
+			"InvocationID,FunctionName",
+			apiGetInvocationFromSlugInSpace,
+			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
+		)
+		if err != nil {
+			failOnError(err)
+		}
+		resolvedInvocations = append(resolvedInvocations, invocations...)
+		refs := make([]goclientnew.ParameterizedInvocationRef, 0, len(invocations))
+		for i := range invocations {
+			refs = append(refs, goclientnew.ParameterizedInvocationRef{
+				InvocationID: invocations[i].InvocationID,
+				Parameters:   parameterizedInvocationParams,
+			})
+		}
+		req.ParameterizedInvocations = refs
 	}
 
 	return req
@@ -409,7 +440,7 @@ func initializeFunctionInvocationsRequest(cmdArgs []string) (*goclientnew.Functi
 		invocation := initializeFunctionInvocation(functionName, invokeArgs)
 		req.FunctionInvocations = &[]goclientnew.FunctionInvocation{*invocation}
 	}
-	if (req.FunctionInvocations == nil || len(*req.FunctionInvocations) == 0) && len(req.Triggers) == 0 && len(req.Invocations) == 0 {
+	if (req.FunctionInvocations == nil || len(*req.FunctionInvocations) == 0) && len(req.Triggers) == 0 && len(req.Invocations) == 0 && len(req.ParameterizedInvocations) == 0 {
 		return nil, fmt.Errorf("A function file and/or triggers and/or invocations must be specified")
 	}
 	return req, nil

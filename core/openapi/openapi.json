@@ -4935,6 +4935,20 @@
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
                     "nullable": true
                   },
+                  "Parameters": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -5215,6 +5229,20 @@
                       "nullable": true
                     },
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+                    "nullable": true
+                  },
+                  "Parameters": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
                     "nullable": true
                   },
                   "Slug": {
@@ -12906,6 +12934,20 @@
                     "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
                     "nullable": true
                   },
+                  "Parameters": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -16351,6 +16393,11 @@
                   "OtherDataSource": {
                     "type": "string",
                     "description": "",
+                    "nullable": true
+                  },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
                     "nullable": true
                   },
                   "Slug": {
@@ -22807,6 +22854,11 @@
                     "description": "",
                     "nullable": true
                   },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -23116,6 +23168,11 @@
                   "OtherDataSource": {
                     "type": "string",
                     "description": "",
+                    "nullable": true
+                  },
+                  "Params": {
+                    "type": "object",
+                    "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
                     "nullable": true
                   },
                   "Slug": {
@@ -28480,6 +28537,12 @@
             "description": "Function name",
             "x-go-type-skip-optional-pointer": true
           },
+          "Params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
+            "x-go-type-skip-optional-pointer": true
+          },
           "WhereResource": {
             "type": "string",
             "description": "Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).",
@@ -28527,6 +28590,13 @@
           "OnLiveState": {
             "type": "boolean",
             "description": "OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ParameterizedInvocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterizedInvocationRef"
+            },
             "x-go-type-skip-optional-pointer": true
           },
           "StopOnError": {
@@ -28988,6 +29058,19 @@
             "description": "Unique identifier for an organization.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FunctionParameter"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -29761,6 +29844,22 @@
               "type": "string"
             },
             "description": "Names of upstream values whose values are exposed to string-argument template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ParameterizedInvocationRef": {
+        "type": "object",
+        "properties": {
+          "InvocationID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Parameters": {
+            "type": "object",
+            "additionalProperties": {},
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -31244,6 +31343,12 @@
           "OtherDataSource": {
             "type": "string",
             "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {

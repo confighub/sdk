@@ -1255,6 +1255,9 @@ type FunctionInvocation struct {
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
 
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
+
 	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
 	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
@@ -1278,7 +1281,8 @@ type FunctionInvocationsRequest struct {
 	NumFilters int `json:"NumFilters,omitempty" yaml:"NumFilters,omitempty"`
 
 	// OnLiveState OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data.
-	OnLiveState bool `json:"OnLiveState,omitempty" yaml:"OnLiveState,omitempty"`
+	OnLiveState              bool                         `json:"OnLiveState,omitempty" yaml:"OnLiveState,omitempty"`
+	ParameterizedInvocations []ParameterizedInvocationRef `json:"ParameterizedInvocations,omitempty" yaml:"ParameterizedInvocations,omitempty"`
 
 	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
 	StopOnError bool `json:"StopOnError,omitempty" yaml:"StopOnError,omitempty"`
@@ -1496,7 +1500,11 @@ type Invocation struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1867,6 +1875,12 @@ type ParameterizedFunction struct {
 
 	// Parameters Names of upstream values whose values are exposed to string-argument template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters.
 	Parameters []string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+}
+
+// ParameterizedInvocationRef defines model for ParameterizedInvocationRef.
+type ParameterizedInvocationRef struct {
+	InvocationID openapi_types.UUID     `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	Parameters   map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 }
 
 // PathExpression defines model for PathExpression.
@@ -2670,6 +2684,9 @@ type Trigger struct {
 
 	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.
 	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -5524,7 +5541,11 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
+	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -5634,7 +5655,11 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
+	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -7534,7 +7559,11 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
+	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -8147,6 +8176,9 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -9978,6 +10010,9 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
+
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
 	ToolchainType *string             `json:"ToolchainType" yaml:"ToolchainType"`
@@ -10096,6 +10131,9 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
+
+	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
+	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`

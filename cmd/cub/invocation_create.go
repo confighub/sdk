@@ -109,9 +109,12 @@ var invocationCreateArgs struct {
 	namePattern     string
 }
 
+var invocationDeclaredParameterFlags []string
+
 func init() {
 	addStandardCreateFlags(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
+	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	enableWhereFlag(invocationCreateCmd)
 	enableFilterFlag(invocationCreateCmd)
 
@@ -249,6 +252,11 @@ func runSingleInvocationCreate(args []string) error {
 	invokeArgs := args[3:]
 	newArgs := parseFunctionArguments(invokeArgs)
 	newBody.Arguments = newArgs
+	declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
+	if err != nil {
+		return err
+	}
+	newBody.Parameters = declaredParams
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateInvocationParams{}
 	if allowExists {
@@ -264,6 +272,44 @@ func runSingleInvocationCreate(args []string) error {
 	invocationDetails := invocationRes.JSON200
 	displayCreateResults(invocationDetails, "invocation", args[0], invocationDetails.InvocationID.String(), displayInvocationDetails)
 	return nil
+}
+
+// parseDeclaredParameterFlags parses --parameter flags of the form
+// name[:datatype[:required]] into the Invocation's declared parameter namespace.
+// datatype defaults to "string"; required defaults to true.
+func parseDeclaredParameterFlags(flags []string) ([]goclientnew.FunctionParameter, error) {
+	if len(flags) == 0 {
+		return nil, nil
+	}
+	params := make([]goclientnew.FunctionParameter, 0, len(flags))
+	for _, spec := range flags {
+		parts := strings.Split(spec, ":")
+		name := strings.TrimSpace(parts[0])
+		if name == "" {
+			return nil, errors.Newf("--parameter %q: name is required", spec)
+		}
+		dataType := "string"
+		if len(parts) > 1 && parts[1] != "" {
+			dataType = parts[1]
+		}
+		required := true
+		if len(parts) > 2 && parts[2] != "" {
+			switch strings.ToLower(parts[2]) {
+			case "true", "required", "yes":
+				required = true
+			case "false", "optional", "no":
+				required = false
+			default:
+				return nil, errors.Newf("--parameter %q: required must be true or false, got %q", spec, parts[2])
+			}
+		}
+		params = append(params, goclientnew.FunctionParameter{
+			ParameterName: name,
+			DataType:      dataType,
+			Required:      required,
+		})
+	}
+	return params, nil
 }
 
 func runBulkInvocationCreate() error {

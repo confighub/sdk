@@ -4416,6 +4416,9 @@ export type BulkPatchInvocationsApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    Parameters?: (object | null)[] | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -4577,6 +4580,9 @@ export type BulkCreateInvocationsApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    Parameters?: (object | null)[] | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -6518,6 +6524,9 @@ export type PatchInvocationApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
+    Parameters?: (object | null)[] | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -7253,6 +7262,8 @@ export type PatchTriggerApiArg = {
       [key: string]: string | null;
     } | null;
     OtherDataSource?: string | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -9292,6 +9303,8 @@ export type BulkPatchTriggersApiArg = {
       [key: string]: string | null;
     } | null;
     OtherDataSource?: string | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -9458,6 +9471,8 @@ export type BulkCreateTriggersApiArg = {
       [key: string]: string | null;
     } | null;
     OtherDataSource?: string | null;
+    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
@@ -11454,6 +11469,10 @@ export type FunctionInvocation = {
   Arguments?: FunctionArgument[] | null;
   /** Function name */
   FunctionName?: string;
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
   /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
   WhereResource?: string;
 };
@@ -12388,6 +12407,12 @@ export type FunctionInvocationsResponse = {
   UnitSlug?: string;
 };
 export type FunctionInvocationList = FunctionInvocation[] | null;
+export type ParameterizedInvocationRef = {
+  InvocationID?: string;
+  Parameters?: {
+    [key: string]: any;
+  };
+};
 export type FunctionInvocationsRequest = {
   /** BridgeWorkerID is the identifier of the associated worker that will execute these functions. */
   BridgeWorkerID?: string;
@@ -12400,6 +12425,7 @@ export type FunctionInvocationsRequest = {
   NumFilters?: number;
   /** OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data. */
   OnLiveState?: boolean;
+  ParameterizedInvocations?: ParameterizedInvocationRef[];
   /** StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked. */
   StopOnError?: boolean;
   /** ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. If OnLiveState is false, it must match the ToolchainType of the Units. If OnLiveState is true, it must match the LiveStateType of the Targets of the Units. */
@@ -12456,6 +12482,11 @@ export type Invocation = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Parameters?: FunctionParameter[];
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -12501,6 +12532,11 @@ export type InvocationRead = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  Parameters?: FunctionParameter[];
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13209,6 +13245,10 @@ export type Trigger = {
   OrganizationID?: string;
   /** Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum. */
   OtherDataSource?: string;
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13273,6 +13313,10 @@ export type TriggerRead = {
   OrganizationID?: string;
   /** Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs LiveRevisionNum data). Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum. */
   OtherDataSource?: string;
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */

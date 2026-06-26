@@ -392,7 +392,16 @@ func intConstraintString(constraints api.ValueConstraints) string {
 	return fmt.Sprintf("[%s,%s]", min, max)
 }
 
-func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, valueTemplate string) (string, error) {
+// templateScope is the dual-injection scope for argument-value templates: the
+// per-Unit FunctionContext (promoted fields, e.g. {{.UnitSlug}}) plus a
+// caller-supplied params map ({{.Params.name}}). Mirrors the scope used for
+// TransformPaths links in internal/views/transform_paths.go.
+type templateScope struct {
+	*api.FunctionContext
+	Params map[string]any
+}
+
+func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, params map[string]any, valueTemplate string) (string, error) {
 	f := template.FuncMap{}
 	if resourceProvider != nil {
 		f["normalizeName"] = resourceProvider.NormalizeName
@@ -403,12 +412,15 @@ func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext
 	f["trimSpace"] = strings.TrimSpace
 	f["trimSuffix"] = strings.TrimSuffix
 	f["trimPrefix"] = strings.TrimPrefix
-	tmpl, err := template.New("value").Funcs(f).Parse(valueTemplate)
+	// missingkey=error makes a referenced-but-unsupplied parameter (.Params.x)
+	// a hard error rather than rendering "<no value>". FunctionContext fields are
+	// struct fields and are unaffected.
+	tmpl, err := template.New("value").Option("missingkey=error").Funcs(f).Parse(valueTemplate)
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("couldn't parse template %s", valueTemplate))
 	}
 	var out bytes.Buffer
-	err = tmpl.Execute(&out, functionContext)
+	err = tmpl.Execute(&out, templateScope{FunctionContext: functionContext, Params: params})
 	if err != nil {
 		return "", errors.Wrap(err, fmt.Sprintf("couldn't evaluate template %s", valueTemplate))
 	}
@@ -416,9 +428,10 @@ func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext
 }
 
 // TODO: Add built-in functions, as with templates
-func evaluateCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, valueExpression string) (string, error) {
+func evaluateCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, params map[string]any, valueExpression string) (string, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("functionContext", cel.DynType),
+		cel.Variable("params", cel.DynType),
 	)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create CEL environment")
@@ -445,6 +458,7 @@ func evaluateCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api
 	}
 	obj := map[string]any{
 		"functionContext": functionContextMap,
+		"params":          params,
 	}
 	val, _, err := program.Eval(obj)
 	if err != nil {
@@ -542,13 +556,13 @@ func ValidateAndBuildArguments(resourceProvider yamlkit.ResourceProvider, functi
 			if arg.Evaluator != "" {
 				switch arg.Evaluator {
 				case "template":
-					renderedValue, err := evaluateTemplate(resourceProvider, functionContext, v)
+					renderedValue, err := evaluateTemplate(resourceProvider, functionContext, invocation.Params, v)
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("cannot evaluate template for parameter %s", parameter.ParameterName))
 					}
 					v = renderedValue
 				case "cel":
-					renderedValue, err := evaluateCEL(resourceProvider, functionContext, v)
+					renderedValue, err := evaluateCEL(resourceProvider, functionContext, invocation.Params, v)
 					if err != nil {
 						return nil, errors.Wrap(err, fmt.Sprintf("cannot evaluate CEL for parameter %s", parameter.ParameterName))
 					}

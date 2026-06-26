@@ -5062,6 +5062,18 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Parameters:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -5378,6 +5390,18 @@ paths:
                   description: An optional map of Label key/value pairs to specify
                     identifying attributes of entities for the purpose of grouping
                     and filtering them.
+                  nullable: true
+                  type: object
+                Parameters:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
                   nullable: true
                   type: object
                 Slug:
@@ -11636,6 +11660,18 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Parameters:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -14294,6 +14330,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -20026,6 +20067,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -20366,6 +20412,11 @@ paths:
                   description: ""
                   nullable: true
                   type: string
+                Params:
+                  description: Caller-supplied parameter values for expanding templated
+                    argument Values; transient, not persisted
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -25634,6 +25685,12 @@ components:
           description: Function name
           type: string
           x-go-type-skip-optional-pointer: true
+        Params:
+          additionalProperties: {}
+          description: Caller-supplied parameter values for expanding templated argument
+            Values; transient, not persisted
+          type: object
+          x-go-type-skip-optional-pointer: true
         WhereResource:
           description: Per-invocation resource filter. AND-combined with the request-level
             WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
@@ -25684,6 +25741,11 @@ components:
           description: OnLiveState indicates that the functions should be invoked
             on the LiveState rather than the Data.
           type: boolean
+          x-go-type-skip-optional-pointer: true
+        ParameterizedInvocations:
+          items:
+            $ref: '#/components/schemas/ParameterizedInvocationRef'
+          type: array
           x-go-type-skip-optional-pointer: true
         StopOnError:
           description: StopOnError indicates whether to stop executing functions from
@@ -26076,6 +26138,17 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+          x-go-type-skip-optional-pointer: true
+        Parameters:
+          items:
+            $ref: '#/components/schemas/FunctionParameter'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Params:
+          additionalProperties: {}
+          description: Caller-supplied parameter values for expanding templated argument
+            Values; transient, not persisted
+          type: object
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
@@ -26791,6 +26864,18 @@ components:
           items:
             type: string
           type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ParameterizedInvocationRef:
+      properties:
+        InvocationID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Parameters:
+          additionalProperties: {}
+          type: object
           x-go-type-skip-optional-pointer: true
       type: object
     PathExpression:
@@ -28219,6 +28304,12 @@ components:
             to functions that need it (e.g., vet-immutable needs LiveRevisionNum data).
             Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.
           type: string
+          x-go-type-skip-optional-pointer: true
+        Params:
+          additionalProperties: {}
+          description: Caller-supplied parameter values for expanding templated argument
+            Values; transient, not persisted
+          type: object
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
