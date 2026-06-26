@@ -82,6 +82,18 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 
 	view.Append([]string{"Toolchain Type", invocationDetails.ToolchainType})
 	view.Append([]string{"Function Name", invocationDetails.FunctionName})
+	for i := range invocationDetails.Parameters {
+		p := invocationDetails.Parameters[i]
+		req := "optional"
+		if p.Required {
+			req = "required"
+		}
+		detail := req
+		if p.DataType != "" {
+			detail = fmt.Sprintf("%s, %s", p.DataType, req)
+		}
+		view.Append([]string{fmt.Sprintf("Parameter %d (%s)", i, p.ParameterName), detail})
+	}
 	for i := range invocationDetails.Arguments {
 		argLabel := fmt.Sprintf("Argument %d", i)
 		if invocationDetails.Arguments[i].ParameterName != nil {
