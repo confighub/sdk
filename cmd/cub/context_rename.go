@@ -52,7 +52,7 @@ func contextRenameCmdRun(_ *cobra.Command, args []string) error {
 	tprint("Successfully renamed context %q to %q", oldName, newName)
 
 	// If this was the current context, remind the user
-	if contextManager.config.CurrentContext == newName {
+	if contextManager.CurrentContextName() == newName {
 		fmt.Printf("Note: %q is now the current context\n", newName)
 	}
 

@@ -47,6 +47,12 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultTagColumns = []string{"Tag.Slug", "Space.Slug", "ChangeSet.Slug", "Tag.DisplayName", "Tag.CreatedAt"}
 
+// tagListInclude is the Include parameter for tag list queries.
+const tagListInclude = "SpaceID,ChangeSetID"
+
+// tagBaseSelectFields are the fields always returned by tag list queries.
+var tagBaseSelectFields = []string{"Slug", "TagID", "SpaceID", "OrganizationID"}
+
 // Tag-specific aliases
 var tagAliases = map[string]string{
 	"Name": "Tag.Slug",
@@ -62,24 +68,14 @@ func init() {
 }
 
 func tagListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedTags []*goclientnew.ExtendedTag
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedTags, err = apiSearchTags(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedTags, err = apiListTags(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedTags, err := apiListTags(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedTags, getTagSlug, displayTagList)
@@ -127,75 +123,24 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 	table.Render()
 }
 
+// apiListTags lists tags via the org-level endpoint, scoped to a single space by
+// a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListTags(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
-	newParams := &goclientnew.ListTagsParams{}
-	include := "SpaceID,ChangeSetID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TagID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Tag", nil, include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	tagsRes, err := cubClientNew.ListTagsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, tagsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, tagsRes)
-	}
-
-	tags := make([]*goclientnew.ExtendedTag, 0, len(*tagsRes.JSON200))
-	for _, tag := range *tagsRes.JSON200 {
-		tags = append(tags, &tag)
-	}
-
-	return tags, nil
+	return apiListAllTags(where, selectParam, filterParam)
 }
 
-func apiSearchTags(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
-	newParams := &goclientnew.ListAllTagsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-
-	include := "SpaceID,ChangeSetID"
-	newParams.Include = &include
-
+func apiListAllTags(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TagID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Tag", nil, include, defaultTagColumns, tagAliases, tagCustomColumnDependencies, baseFields)
+		return buildSelectList("Tag", nil, tagListInclude, defaultTagColumns, tagAliases, tagCustomColumnDependencies, tagBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllTags(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	tagsRes, err := goclientnew.ParseListAllTagsResponse(res)
-	if cubapi.IsAPIError(err, tagsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, tagsRes)
-	}
-
-	extendedTags := make([]*goclientnew.ExtendedTag, 0, len(*tagsRes.JSON200))
-	for _, tag := range *tagsRes.JSON200 {
-		extendedTags = append(extendedTags, &tag)
-	}
-
-	return extendedTags, nil
+	return cubapi.ListTags(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  tagListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

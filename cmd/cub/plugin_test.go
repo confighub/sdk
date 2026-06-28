@@ -21,6 +21,29 @@ import (
 	coreplugin "github.com/confighub/sdk/core/plugin"
 )
 
+// setTestContextManager installs a real ContextManager at configPath with a
+// current "test-ctx" context, for plugin tests that exercise pluginDir/pluginEnv.
+func setTestContextManager(t *testing.T, configPath, server, space, token string) {
+	t.Helper()
+	cm, err := NewContextManagerWithPath(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, err := cm.CreateContext("test-ctx", server, "", space)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cm.SetCurrentContext("test-ctx"); err != nil {
+		t.Fatal(err)
+	}
+	if token != "" {
+		if err := cm.SaveTokenData(ctx, &TokenData{AccessToken: token}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	contextManager = cm
+}
+
 // setupPluginTest creates a temporary plugin directory and initializes a minimal
 // context manager pointing at it. It resets the plugin discovery cache.
 func setupPluginTest(t *testing.T) string {
@@ -33,19 +56,7 @@ func setupPluginTest(t *testing.T) string {
 
 	// Set up a minimal but valid context manager so pluginDir() and pluginEnv()
 	// work (the latter is used when running install/upgrade hooks).
-	contextManager = &ContextManager{
-		configPath: filepath.Join(tmpDir, "config.yaml"),
-		tokenDir:   filepath.Join(tmpDir, "tokens"),
-		config: &Config{
-			APIVersion:     "v1",
-			Kind:           "Config",
-			CurrentContext: "test-ctx",
-			Contexts: []*Context{{
-				Name:       "test-ctx",
-				Coordinate: Coordinate{ServerURL: "https://example.com"},
-			}},
-		},
-	}
+	setTestContextManager(t, filepath.Join(tmpDir, "config.yaml"), "https://example.com", "", "")
 
 	// Reset the plugin cache for each test.
 	pluginCache = nil
@@ -262,41 +273,7 @@ func TestFindPluginNotFound(t *testing.T) {
 
 func TestPluginEnv(t *testing.T) {
 	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "config.yaml")
-	tokenDir := filepath.Join(tmpDir, "tokens")
-	if err := os.MkdirAll(tokenDir, 0700); err != nil {
-		t.Fatal(err)
-	}
-
-	contextManager = &ContextManager{
-		configPath: configPath,
-		tokenDir:   tokenDir,
-		config: &Config{
-			APIVersion:     "v1",
-			Kind:           "Config",
-			CurrentContext: "test-ctx",
-			Contexts: []*Context{
-				{
-					Name: "test-ctx",
-					Coordinate: Coordinate{
-						ServerURL: "https://example.com",
-					},
-					Settings: Settings{
-						DefaultSpace: "prod",
-					},
-					Metadata: Metadata{
-						TokenFile: filepath.Join(tokenDir, "test-ctx.json"),
-					},
-				},
-			},
-		},
-	}
-
-	// Write a token file
-	tokenContent := `{"accessToken":"test-token-123"}`
-	if err := os.WriteFile(filepath.Join(tokenDir, "test-ctx.json"), []byte(tokenContent), 0600); err != nil {
-		t.Fatal(err)
-	}
+	setTestContextManager(t, filepath.Join(tmpDir, "config.yaml"), "https://example.com", "prod", "test-token-123")
 
 	env := pluginEnv()
 

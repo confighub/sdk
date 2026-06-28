@@ -127,6 +127,15 @@ var viewSlug string
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
 var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "ResourceStatus", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
 
+// unitListInclude is the Include parameter for unit list queries (the related
+// entities expanded into each ExtendedUnit). UnitEventID is a pseudo-field used
+// only by Include, not a selectable field.
+const unitListInclude = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+
+// unitBaseSelectFields are the fields always returned by unit list queries,
+// regardless of the requested columns.
+var unitBaseSelectFields = []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
+
 // Unit-specific aliases
 var unitAliases = map[string]string{
 	"Name": "Unit.Slug",
@@ -245,7 +254,7 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 
 	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, whereTrigger, triggerFilter, triggersPassed, selectFields, filterID, viewID)
+		extendedUnits, err = apiListAllUnits(cubapi.NewWhere(where), resourceType, whereData, whereTrigger, triggerFilter, triggersPassed, selectFields, filterID, viewID)
 		if err != nil {
 			return err
 		}
@@ -421,13 +430,13 @@ func sortViewUnits(units []*goclientnew.ExtendedUnit, viewCols []goclientnew.Col
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
 	// A spaceID of "*" means search across all spaces. apiListExtendedUnits
-	// parses spaceID as a UUID, so route the org-wide case to apiSearchUnits
+	// parses spaceID as a UUID, so route the org-wide case to apiListAllUnits
 	// instead (mirroring unitListCmdRun's "*" handling) rather than panicking
 	// in uuid.MustParse.
 	var extendedUnits []*goclientnew.ExtendedUnit
 	var err error
 	if spaceID == "*" {
-		extendedUnits, err = apiSearchUnits(whereFilter, "", "", "", "", false, selectParam, "", "")
+		extendedUnits, err = apiListAllUnits(cubapi.NewWhere(whereFilter), "", "", "", "", false, selectParam, "", "")
 	} else {
 		extendedUnits, err = apiListExtendedUnits(spaceID, whereFilter, "", "", "", "", false, selectParam, "", "")
 	}
@@ -442,113 +451,42 @@ func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*go
 	return units, nil
 }
 
+// apiListExtendedUnits lists units in a single space by scoping the org-level
+// query with a SpaceID clause and delegating to apiListAllUnits.
 func apiListExtendedUnits(spaceID string, whereFilter string, resourceType string, whereData string, whereTrigger string, triggerFilter string, triggersPassed bool, selectParam string, filterParam string, viewParam string) ([]*goclientnew.ExtendedUnit, error) {
-	newParams := &goclientnew.ListUnitsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if resourceType != "" {
-		newParams.ResourceType = &resourceType
-	}
-	if whereData != "" {
-		newParams.WhereData = &whereData
-	}
-	if whereTrigger != "" {
-		newParams.WhereTrigger = &whereTrigger
-	}
-	if triggerFilter != "" {
-		newParams.TriggerFilter = &triggerFilter
-	}
-	if triggersPassed {
-		newParams.TriggersPassed = &triggersPassed
-	}
-	if viewParam != "" {
-		newParams.View = &viewParam
-	}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
-	newParams.Include = &include
-	// Handle select parameter
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
-		// UnitEventID is not a real field. Remove it.
-		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
-		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	unitsRes, err := cubClientNew.ListUnitsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, unitsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, unitsRes)
-	}
-
-	extendedUnits := make([]*goclientnew.ExtendedUnit, 0, len(*unitsRes.JSON200))
-	for _, extendedUnit := range *unitsRes.JSON200 {
-		extendedUnits = append(extendedUnits, &extendedUnit)
-	}
-	return extendedUnits, nil
+	where := cubapi.NewWhere(whereFilter).SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
+	return apiListAllUnits(where, resourceType, whereData, whereTrigger, triggerFilter, triggersPassed, selectParam, filterParam, viewParam)
 }
 
-func apiSearchUnits(whereFilter string, resourceType string, whereData string, whereTrigger string, triggerFilter string, triggersPassed bool, selectParam string, filterParam string, viewParam string) ([]*goclientnew.ExtendedUnit, error) {
-	newParams := &goclientnew.ListAllUnitsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-
-	if resourceType != "" {
-		newParams.ResourceType = &resourceType
-	}
-	if whereData != "" {
-		newParams.WhereData = &whereData
-	}
-	if whereTrigger != "" {
-		newParams.WhereTrigger = &whereTrigger
-	}
-	if triggerFilter != "" {
-		newParams.TriggerFilter = &triggerFilter
-	}
-	if triggersPassed {
-		newParams.TriggersPassed = &triggersPassed
-	}
-	if viewParam != "" {
-		newParams.View = &viewParam
-	}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
-	newParams.Include = &include
-
+func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, whereTrigger string, triggerFilter string, triggersPassed bool, selectParam string, filterParam string, viewParam string) ([]*goclientnew.ExtendedUnit, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "UnitID", "SpaceID", "OrganizationID"}
-		// UnitEventID is not a real field. Remove it.
-		selectInclude := strings.TrimPrefix(include, "UnitEventID,")
-		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, baseFields)
+		// UnitEventID is an Include-only pseudo-field, not selectable.
+		selectInclude := strings.TrimPrefix(unitListInclude, "UnitEventID,")
+		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	res, err := cubClientNew.ListAllUnits(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	unitsRes, err := goclientnew.ParseListAllUnitsResponse(res)
-	if cubapi.IsAPIError(err, unitsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, unitsRes)
-	}
-	extendedUnits := make([]*goclientnew.ExtendedUnit, 0, len(*unitsRes.JSON200))
-	for _, unit := range *unitsRes.JSON200 {
-		extendedUnits = append(extendedUnits, &unit)
-	}
-
-	return extendedUnits, nil
+	return cubapi.ListUnits(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  unitListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	}, func(p *goclientnew.ListAllUnitsParams) {
+		if resourceType != "" {
+			p.ResourceType = &resourceType
+		}
+		if whereData != "" {
+			p.WhereData = &whereData
+		}
+		if whereTrigger != "" {
+			p.WhereTrigger = &whereTrigger
+		}
+		if triggerFilter != "" {
+			p.TriggerFilter = &triggerFilter
+		}
+		if triggersPassed {
+			p.TriggersPassed = &triggersPassed
+		}
+		if viewParam != "" {
+			p.View = &viewParam
+		}
+	})
 }

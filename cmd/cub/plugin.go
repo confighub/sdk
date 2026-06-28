@@ -41,7 +41,7 @@ var (
 
 // pluginDir returns the plugin directory path derived from the context manager's config path.
 func pluginDir() string {
-	configDir := filepath.Dir(contextManager.configPath)
+	configDir := filepath.Dir(contextManager.ConfigPath())
 	return filepath.Join(configDir, "plugins")
 }
 

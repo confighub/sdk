@@ -41,6 +41,12 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultAttributeColumns = []string{"Attribute.Slug", "Space.Slug", "Attribute.ToolchainType", "Attribute.DataType", "Attribute.Description"}
 
+// attributeListInclude is the Include parameter for attribute list queries.
+const attributeListInclude = "SpaceID"
+
+// attributeBaseSelectFields are the fields always returned by attribute list queries.
+var attributeBaseSelectFields = []string{"Slug", "AttributeID", "SpaceID", "OrganizationID"}
+
 // Attribute-specific aliases
 var attributeAliases = map[string]string{
 	"Name": "Attribute.Slug",
@@ -56,24 +62,14 @@ func init() {
 }
 
 func attributeListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedAttributes []*goclientnew.ExtendedAttribute
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedAttributes, err = apiSearchAttributes(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedAttributes, err = apiListAttributes(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedAttributes, err := apiListAttributes(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedAttributes, getAttributeSlug, displayAttributeList)
@@ -116,75 +112,24 @@ func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
 	table.Render()
 }
 
+// apiListAttributes lists attributes via the org-level endpoint, scoped to a
+// single space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListAttributes(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedAttribute, error) {
-	newParams := &goclientnew.ListAttributesParams{}
-	include := "SpaceID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "AttributeID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Attribute", nil, include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	attrsRes, err := cubClientNew.ListAttributesWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, attrsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, attrsRes)
-	}
-
-	attrs := make([]*goclientnew.ExtendedAttribute, 0, len(*attrsRes.JSON200))
-	for _, attr := range *attrsRes.JSON200 {
-		attrs = append(attrs, &attr)
-	}
-
-	return attrs, nil
+	return apiListAllAttributes(where, selectParam, filterParam)
 }
 
-func apiSearchAttributes(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedAttribute, error) {
-	newParams := &goclientnew.ListAllAttributesParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-
-	include := "SpaceID"
-	newParams.Include = &include
-
+func apiListAllAttributes(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedAttribute, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "AttributeID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Attribute", nil, include, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, baseFields)
+		return buildSelectList("Attribute", nil, attributeListInclude, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, attributeBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllAttributes(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	attrsRes, err := goclientnew.ParseListAllAttributesResponse(res)
-	if cubapi.IsAPIError(err, attrsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, attrsRes)
-	}
-
-	extendedAttrs := make([]*goclientnew.ExtendedAttribute, 0, len(*attrsRes.JSON200))
-	for _, attr := range *attrsRes.JSON200 {
-		extendedAttrs = append(extendedAttrs, &attr)
-	}
-
-	return extendedAttrs, nil
+	return cubapi.ListAttributes(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  attributeListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

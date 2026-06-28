@@ -86,6 +86,10 @@ Next steps after listing spaces:
 // Default columns to display when no custom columns are specified
 var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
 
+// spaceBaseSelectFields are the fields always returned by space list queries,
+// regardless of the requested columns.
+var spaceBaseSelectFields = []string{"Slug", "SpaceID", "OrganizationID"}
+
 // Space-specific aliases
 var spaceAliases = map[string]string{
 	"Name": "Space.Slug",
@@ -114,7 +118,7 @@ func spaceListCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	extendedSpaces, err := apiListExtendedSpaces(where, selectFields, filterID)
+	extendedSpaces, err := apiListExtendedSpaces(where, selectFields, filterID, true)
 	if err != nil {
 		return err
 	}
@@ -157,68 +161,40 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	table.Render()
 }
 
-// TODO: Eliminate this function
+// apiListSpaces lists spaces and returns just their core records, delegating to
+// apiListExtendedSpaces.
 func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space, error) {
-	newParams := &goclientnew.ListSpacesParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	extendedSpaces, err := apiListExtendedSpaces(whereFilter, selectParam, "", false)
+	if err != nil {
+		return nil, err
 	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
-		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, spacesRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, spacesRes)
-	}
-
-	spaces := make([]*goclientnew.Space, 0, len(*spacesRes.JSON200))
-	for _, extendedSpace := range *spacesRes.JSON200 {
+	spaces := make([]*goclientnew.Space, 0, len(extendedSpaces))
+	for _, extendedSpace := range extendedSpaces {
 		if extendedSpace.Space != nil {
 			spaces = append(spaces, extendedSpace.Space)
 		}
 	}
-
 	return spaces, nil
 }
 
-func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedSpace, error) {
-	newParams := &goclientnew.ListSpacesParams{}
-	summary := true
-	newParams.Summary = &summary
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
+// apiListExtendedSpaces lists spaces. When summary is true the per-space counts
+// (units, links, targets, triggers, …) are computed and returned, as displayed
+// by the space list command; callers that only need the core Space records pass
+// false to avoid that work.
+func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam string, summary bool) ([]*goclientnew.ExtendedSpace, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "SpaceID", "OrganizationID"}
-		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, baseFields)
+		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, spaceBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
+	var with []func(*goclientnew.ListSpacesParams)
+	if summary {
+		with = append(with, func(p *goclientnew.ListSpacesParams) {
+			s := true
+			p.Summary = &s
+		})
 	}
-	spacesRes, err := cubClientNew.ListSpacesWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, spacesRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, spacesRes)
-	}
-
-	extendedSpaces := make([]*goclientnew.ExtendedSpace, 0, len(*spacesRes.JSON200))
-	for _, extendedSpace := range *spacesRes.JSON200 {
-		if extendedSpace.Space != nil {
-			extendedSpaces = append(extendedSpaces, &extendedSpace)
-		}
-	}
-
-	return extendedSpaces, nil
+	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(whereFilter), cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Filter:   filterParam,
+		Contains: contains,
+	}, with...)
 }

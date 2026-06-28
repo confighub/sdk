@@ -247,7 +247,7 @@ func runBulkLinkUpdateReverse(effectiveWhere, filterID string, patchJSON []byte)
 	// drive the two paths separately. The single search call avoids surfacing
 	// spurious "no links found" errors from the bulk-create endpoint when no
 	// cross-space links match.
-	extLinks, err := apiSearchLinks(effectiveWhere, "*", filterID)
+	extLinks, err := apiListAllLinks(cubapi.NewWhere(effectiveWhere), "*", filterID)
 	if err != nil {
 		return err
 	}
@@ -343,7 +343,7 @@ func runCrossSpaceLinkReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
 	// from-units that the delete will affect.
 	var fromUnits []linkFromUnit
 	if wait {
-		links, err := apiSearchLinks(delWhere, "*", "")
+		links, err := apiListAllLinks(cubapi.NewWhere(delWhere), "*", "")
 		if err != nil {
 			return err
 		}

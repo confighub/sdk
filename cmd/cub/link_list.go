@@ -53,6 +53,12 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UseLiveState", "Link.UpstreamLinkID"}
 
+// linkListInclude is the Include parameter for link list queries.
+const linkListInclude = "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
+
+// linkBaseSelectFields are the fields always returned by link list queries.
+var linkBaseSelectFields = []string{"Slug", "LinkID", "SpaceID", "OrganizationID"}
+
 // Link-specific aliases
 var linkAliases = map[string]string{
 	"Name": "Link.Slug",
@@ -68,24 +74,14 @@ func init() {
 }
 
 func linkListCmdRun(cmd *cobra.Command, args []string) error {
-	var links []*goclientnew.ExtendedLink
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		links, err = apiSearchLinks(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		links, err = apiListLinks(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	links, err := apiListLinks(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(links, getLinkSlug, displayLinkList)
@@ -152,78 +148,24 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	table.Render()
 }
 
-func apiSearchLinks(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
-	params := &goclientnew.SearchListLinksParams{}
-	if whereFilter != "" {
-		params.Where = &whereFilter
+// apiListLinks lists links via the org-level endpoint, scoped to a single space
+// by a SpaceID clause unless spaceID is "*" (list across all spaces).
+func apiListLinks(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		params.Filter = &filterParam
-	}
-	if contains != "" {
-		params.Contains = &contains
-	}
-
-	include := "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
-	params.Include = &include
-
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "LinkID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Link", nil, include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		params.Select = &selectValue
-	}
-
-	res, err := cubClientNew.SearchListLinks(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	linkRes, err := goclientnew.ParseSearchListLinksResponse(res)
-	if cubapi.IsAPIError(err, linkRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
-	}
-
-	extendedLinks := make([]*goclientnew.ExtendedLink, 0, len(*linkRes.JSON200))
-	for _, extendedLink := range *linkRes.JSON200 {
-		extendedLinks = append(extendedLinks, &extendedLink)
-	}
-
-	return extendedLinks, nil
+	return apiListAllLinks(where, selectParam, filterParam)
 }
 
-func apiListLinks(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
-	// TODO: update List APIs to allow where filter
-	newParams := &goclientnew.ListLinksParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	include := "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
-	newParams.Include = &include
+func apiListAllLinks(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "LinkID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Link", nil, include, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, baseFields)
+		return buildSelectList("Link", nil, linkListInclude, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, linkBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	linkRes, err := cubClientNew.ListLinksWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, linkRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
-	}
-
-	links := make([]*goclientnew.ExtendedLink, 0, len(*linkRes.JSON200))
-	for _, extendedLink := range *linkRes.JSON200 {
-		if extendedLink.Link == nil {
-			continue
-		}
-		links = append(links, &extendedLink)
-	}
-	return links, nil
+	return cubapi.ListLinks(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  linkListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

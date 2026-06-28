@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -186,7 +187,7 @@ func unitTreeCmdRun(cmd *cobra.Command, args []string) error {
 
 	var extendedUnits []*goclientnew.ExtendedUnit
 	if selectedSpaceID == "*" {
-		extendedUnits, err = apiSearchUnits(where, resourceType, whereData, "", "", false, selectFields, filterID, "")
+		extendedUnits, err = apiListAllUnits(cubapi.NewWhere(where), resourceType, whereData, "", "", false, selectFields, filterID, "")
 		if err != nil {
 			return err
 		}
@@ -319,7 +320,7 @@ func buildLinkTree(units []*goclientnew.ExtendedUnit) ([]*UnitTreeNode, error) {
 	var err error
 
 	if selectedSpaceID == "*" {
-		fromLinks, err = apiSearchLinks(fromWhereClause, "", "")
+		fromLinks, err = apiListAllLinks(cubapi.NewWhere(fromWhereClause), "", "")
 	} else {
 		fromLinks, err = apiListLinks(selectedSpaceID, fromWhereClause, "", "")
 	}
@@ -339,7 +340,7 @@ func buildLinkTree(units []*goclientnew.ExtendedUnit) ([]*UnitTreeNode, error) {
 	var toLinks []*goclientnew.ExtendedLink
 
 	if selectedSpaceID == "*" {
-		toLinks, err = apiSearchLinks(toWhereClause, "", "")
+		toLinks, err = apiListAllLinks(cubapi.NewWhere(toWhereClause), "", "")
 	} else {
 		toLinks, err = apiListLinks(selectedSpaceID, toWhereClause, "", "")
 	}

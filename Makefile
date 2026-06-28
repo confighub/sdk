@@ -38,7 +38,8 @@ CORE_MODULES = ./core
 TEST_MODULES = ./function-impl ./bridge-impl ./worker-function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
-	./configkit/jsonkit ./configkit/envkit ./configkit/textkit
+	./configkit/jsonkit ./configkit/envkit ./configkit/textkit \
+	./cliutil
 CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
 # All sibling modules that need prep (mod download/tidy)
 SIBLING_MODULES = $(TEST_MODULES) $(CMD_MODULES)

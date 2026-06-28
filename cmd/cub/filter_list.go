@@ -55,6 +55,14 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultFilterColumns = []string{"Filter.Slug", "Space.Slug", "Filter.From", "Filter.Where", "Filter.WhereData", "Filter.ResourceType", "FromSpace.Slug"}
 
+// filterListInclude is the Include parameter for filter list queries (the related
+// entities expanded into each ExtendedFilter).
+const filterListInclude = "SpaceID,FromSpaceID"
+
+// filterBaseSelectFields are the fields always returned by filter list queries,
+// regardless of the requested columns.
+var filterBaseSelectFields = []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
+
 // Filter-specific aliases
 var filterAliases = map[string]string{
 	"Name": "Filter.Slug",
@@ -85,19 +93,9 @@ func filterListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	var extendedFilters []*goclientnew.ExtendedFilter
-	var err error
-
-	if selectedSpaceID == "*" {
-		extendedFilters, err = apiSearchFilters(where, selectFields)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedFilters, err = apiListFilters(selectedSpaceID, where, selectFields)
-		if err != nil {
-			return err
-		}
+	extendedFilters, err := apiListFilters(selectedSpaceID, where, selectFields)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedFilters, getFilterSlug, displayFilterList)
@@ -155,92 +153,40 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 	table.Render()
 }
 
+// apiListFilters lists filters via the org-level endpoint, scoped to a single
+// space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListFilters(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.ExtendedFilter, error) {
-	newParams := &goclientnew.ListFiltersParams{}
-	include := "SpaceID,FromSpaceID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-
-	// Add entity parameters if specified
-	if entityType != "" && entityID != "" {
-		resolvedEntityType, resolvedEntityID, err := parseEntityIdentifierForFilter(entityID, entityType, "")
-		if err != nil {
-			return nil, err
-		}
-		newParams.Entity = &resolvedEntityType
-		newParams.Id = &resolvedEntityID
-	}
-
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Filter", nil, include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	filtersRes, err := cubClientNew.ListFiltersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, filtersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, filtersRes)
-	}
-
-	filters := make([]*goclientnew.ExtendedFilter, 0, len(*filtersRes.JSON200))
-	for _, filter := range *filtersRes.JSON200 {
-		filters = append(filters, &filter)
-	}
-
-	return filters, nil
+	return apiListAllFilters(where, selectParam)
 }
 
-func apiSearchFilters(whereFilter string, selectParam string) ([]*goclientnew.ExtendedFilter, error) {
-	newParams := &goclientnew.ListAllFiltersParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
+func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.ExtendedFilter, error) {
+	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
+		return buildSelectList("Filter", nil, filterListInclude, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, filterBaseSelectFields)
+	})
 
-	// Add entity parameters if specified
+	// Resolve the --entity-type/--entity-id options up front (resolution can
+	// fail); the mutator only assigns the resolved values onto the params.
+	var with []func(*goclientnew.ListAllFiltersParams)
 	if entityType != "" && entityID != "" {
 		resolvedEntityType, resolvedEntityID, err := parseEntityIdentifierForFilter(entityID, entityType, "")
 		if err != nil {
 			return nil, err
 		}
-		newParams.Entity = &resolvedEntityType
-		newParams.Id = &resolvedEntityID
+		with = append(with, func(p *goclientnew.ListAllFiltersParams) {
+			p.Entity = &resolvedEntityType
+			p.Id = &resolvedEntityID
+		})
 	}
 
-	include := "SpaceID,FromSpaceID"
-	newParams.Include = &include
-
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "FilterID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Filter", nil, include, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllFilters(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	filtersRes, err := goclientnew.ParseListAllFiltersResponse(res)
-	if cubapi.IsAPIError(err, filtersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, filtersRes)
-	}
-
-	extendedFilters := make([]*goclientnew.ExtendedFilter, 0, len(*filtersRes.JSON200))
-	for _, filter := range *filtersRes.JSON200 {
-		extendedFilters = append(extendedFilters, &filter)
-	}
-
-	return extendedFilters, nil
+	return cubapi.ListFilters(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  filterListInclude,
+		Contains: contains,
+	}, with...)
 }
 
 // validateEntityParameters validates that both or neither of entity-type and entity-id are specified
@@ -405,18 +351,17 @@ func parseEntityIdentifierForFilter(
 		}
 		return entityType, linkUUID.String(), nil
 
-	// Not implemented yet
-	// case "Set":
-	// 	setUUID, err := parseEntityIdentifierSingle[goclientnew.Set](
-	// 		identifier,
-	// 		EntityTypeSet,
-	// 		apiGetSetFromSlugInSpace,
-	// 		func(s *goclientnew.Set) string { return s.SetID.String() },
-	// 	)
-	// 	if err != nil {
-	// 		return "", "", fmt.Errorf("failed to resolve Set %s: %w", identifier, err)
-	// 	}
-	// 	return entityType, setUUID.String(), nil
+	case "Attribute":
+		attributeUUID, err := parseEntityIdentifierSingle[goclientnew.Attribute](
+			identifier,
+			EntityTypeAttribute,
+			apiGetAttributeFromSlugInSpaceCore,
+			func(l *goclientnew.Attribute) string { return l.AttributeID.String() },
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Attribute %s: %w", identifier, err)
+		}
+		return entityType, attributeUUID.String(), nil
 
 	default:
 		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)

@@ -373,7 +373,7 @@ func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam 
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	units, err := apiSearchUnits(where, "", "", "", "", false, selectParam, "", "")
+	units, err := apiListAllUnits(cubapi.NewWhere(where), "", "", "", "", false, selectParam, "", "")
 	if err != nil {
 		return nil, err
 	}

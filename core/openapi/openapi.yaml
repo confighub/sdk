@@ -1752,6 +1752,23 @@ paths:
         schema:
           type: string
       - description: |-
+          UUID of a Filter entity to apply to the BridgeWorker list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (BridgeWorker).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
           Free text search that approximately matches the specified string against string fields and map keys/values.
 
           The search is case-insensitive and uses pattern matching to find entities containing the text.
@@ -24223,6 +24240,10 @@ components:
     ApiInfo:
       description: Information provided to clients by the server.
       properties:
+        AuthIssuer:
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         AuthServer:
           readOnly: true
           type: string
@@ -24263,6 +24284,14 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         RedirectURI:
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TokenExchangeAudience:
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TokenExchangeEndpoint:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
@@ -27455,6 +27484,11 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+          x-go-type-skip-optional-pointer: true
+        Releases:
+          additionalProperties:
+            type: string
+          type: object
           x-go-type-skip-optional-pointer: true
         RevisionID:
           description: Unique identifier for a Revision.

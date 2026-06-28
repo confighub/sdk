@@ -108,7 +108,7 @@ func runBulkLinkDelete() error {
 	// to await triggers on after the delete completes.
 	var fromUnits []linkFromUnit
 	if wait {
-		links, err := apiSearchLinks(effectiveWhere, "*", filterID)
+		links, err := apiListAllLinks(cubapi.NewWhere(effectiveWhere), "*", filterID)
 		if err != nil {
 			return err
 		}

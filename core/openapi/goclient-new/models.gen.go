@@ -141,6 +141,7 @@ type ActionType string
 
 // ApiInfo Information provided to clients by the server.
 type ApiInfo struct {
+	AuthIssuer string `json:"AuthIssuer,omitempty" yaml:"AuthIssuer,omitempty"`
 	AuthServer string `json:"AuthServer,omitempty" yaml:"AuthServer,omitempty"`
 
 	// Build Build identifier for support cases.
@@ -158,8 +159,10 @@ type ApiInfo struct {
 	OCIHost string `json:"OCIHost,omitempty" yaml:"OCIHost,omitempty"`
 
 	// OCIPort OCI registry port for pulling configuration artifacts.
-	OCIPort     string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
-	RedirectURI string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
+	OCIPort               string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
+	RedirectURI           string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
+	TokenExchangeAudience string `json:"TokenExchangeAudience,omitempty" yaml:"TokenExchangeAudience,omitempty"`
+	TokenExchangeEndpoint string `json:"TokenExchangeEndpoint,omitempty" yaml:"TokenExchangeEndpoint,omitempty"`
 
 	// Version Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds.
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2202,6 +2205,7 @@ type Revision struct {
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Releases       map[string]string  `json:"Releases,omitempty" yaml:"Releases,omitempty"`
 
 	// RevisionID Unique identifier for a Revision.
 	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
@@ -4142,6 +4146,19 @@ type ListAllBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (BridgeWorker).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
 
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//

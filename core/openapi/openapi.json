@@ -1661,6 +1661,15 @@
             }
           },
           {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the BridgeWorker list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (BridgeWorker).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "contains",
             "in": "query",
             "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
@@ -26745,6 +26754,11 @@
       "ApiInfo": {
         "type": "object",
         "properties": {
+          "AuthIssuer": {
+            "type": "string",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "AuthServer": {
             "type": "string",
             "readOnly": true,
@@ -26792,6 +26806,16 @@
             "x-go-type-skip-optional-pointer": true
           },
           "RedirectURI": {
+            "type": "string",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TokenExchangeAudience": {
+            "type": "string",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TokenExchangeEndpoint": {
             "type": "string",
             "readOnly": true,
             "x-go-type-skip-optional-pointer": true
@@ -30517,6 +30541,13 @@
             "description": "Unique identifier for an Organization.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Releases": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
             "x-go-type-skip-optional-pointer": true
           },
           "RevisionID": {

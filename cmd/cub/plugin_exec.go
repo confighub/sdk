@@ -45,7 +45,7 @@ func pluginEnv() []string {
 	env := os.Environ()
 
 	env = append(env, "CUB_PLUGIN=1")
-	env = append(env, fmt.Sprintf("CUB_CONFIG=%s", filepath.Dir(contextManager.configPath)))
+	env = append(env, fmt.Sprintf("CUB_CONFIG=%s", filepath.Dir(contextManager.ConfigPath())))
 
 	activeCtx := contextManager.ActiveContext()
 	env = append(env, fmt.Sprintf("CUB_CONTEXT=%s", activeCtx.Name))

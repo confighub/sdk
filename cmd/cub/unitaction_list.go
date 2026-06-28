@@ -160,7 +160,7 @@ func fetchUnitsForActions(actions []*goclientnew.UnitAction) (map[uuid.UUID]*goc
 		quoted = append(quoted, fmt.Sprintf("'%s'", action.UnitID.String()))
 	}
 	whereClause := fmt.Sprintf("UnitID IN (%s)", strings.Join(quoted, ","))
-	extendedUnits, err := apiSearchUnits(whereClause, "", "", "", "", false, "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug", "", "")
+	extendedUnits, err := apiListAllUnits(cubapi.NewWhere(whereClause), "", "", "", "", false, "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug", "", "")
 	if err != nil {
 		return nil, err
 	}

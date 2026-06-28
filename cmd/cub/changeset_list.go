@@ -44,6 +44,12 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultChangeSetColumns = []string{"ChangeSet.Slug", "Space.Slug", "ChangeSet.State", "StartTag.Slug", "EndTag.Slug", "ChangeSet.Description"}
 
+// changesetListInclude is the Include parameter for change set list queries.
+const changesetListInclude = "SpaceID,StartTagID,EndTagID"
+
+// changesetBaseSelectFields are the fields always returned by change set list queries.
+var changesetBaseSelectFields = []string{"Slug", "ChangeSetID", "SpaceID", "OrganizationID"}
+
 // ChangeSet-specific aliases
 var changesetAliases = map[string]string{
 	"Name": "ChangeSet.Slug",
@@ -59,24 +65,14 @@ func init() {
 }
 
 func changesetListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedChangeSets []*goclientnew.ExtendedChangeSet
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedChangeSets, err = apiSearchChangeSets(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedChangeSets, err = apiListChangeSets(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedChangeSets, err := apiListChangeSets(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedChangeSets, getChangeSetSlug, displayChangeSetList)
@@ -133,75 +129,24 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 	table.Render()
 }
 
+// apiListChangeSets lists change sets via the org-level endpoint, scoped to a
+// single space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListChangeSets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
-	newParams := &goclientnew.ListChangeSetsParams{}
-	include := "SpaceID,StartTagID,EndTagID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "ChangeSetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("ChangeSet", nil, include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	changesetsRes, err := cubClientNew.ListChangeSetsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, changesetsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, changesetsRes)
-	}
-
-	changesets := make([]*goclientnew.ExtendedChangeSet, 0, len(*changesetsRes.JSON200))
-	for _, changeset := range *changesetsRes.JSON200 {
-		changesets = append(changesets, &changeset)
-	}
-
-	return changesets, nil
+	return apiListAllChangeSets(where, selectParam, filterParam)
 }
 
-func apiSearchChangeSets(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
-	newParams := &goclientnew.ListAllChangeSetsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-
-	include := "SpaceID,StartTagID,EndTagID"
-	newParams.Include = &include
-
+func apiListAllChangeSets(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "ChangeSetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("ChangeSet", nil, include, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, baseFields)
+		return buildSelectList("ChangeSet", nil, changesetListInclude, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, changesetBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllChangeSets(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	changesetsRes, err := goclientnew.ParseListAllChangeSetsResponse(res)
-	if cubapi.IsAPIError(err, changesetsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, changesetsRes)
-	}
-
-	extendedChangeSets := make([]*goclientnew.ExtendedChangeSet, 0, len(*changesetsRes.JSON200))
-	for _, changeset := range *changesetsRes.JSON200 {
-		extendedChangeSets = append(extendedChangeSets, &changeset)
-	}
-
-	return extendedChangeSets, nil
+	return cubapi.ListChangeSets(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  changesetListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

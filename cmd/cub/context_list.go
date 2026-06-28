@@ -34,7 +34,7 @@ func init() {
 }
 
 func contextListCmdRun(_ *cobra.Command, _ []string) error {
-	if contextManager == nil || contextManager.config == nil {
+	if contextManager == nil {
 		return fmt.Errorf("no contexts configured. Use 'cub context create' to create your first context")
 	}
 
@@ -55,7 +55,7 @@ func displayContextList(ctxs []*Context) {
 
 	for _, ctx := range ctxs {
 		current := ""
-		if ctx.Name == contextManager.config.CurrentContext {
+		if ctx.Name == contextManager.CurrentContextName() {
 			current = "*"
 		}
 

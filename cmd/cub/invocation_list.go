@@ -49,6 +49,14 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Invocation.ToolchainType", "Invocation.FunctionName", "Invocation.Arguments"}
 
+// invocationListInclude is the Include parameter for invocation list queries (the
+// related entities expanded into each ExtendedInvocation).
+const invocationListInclude = "SpaceID,BridgeWorkerID"
+
+// invocationBaseSelectFields are the fields always returned by invocation list
+// queries, regardless of the requested columns.
+var invocationBaseSelectFields = []string{"Slug", "InvocationID", "SpaceID", "OrganizationID"}
+
 // Invocation-specific aliases
 var invocationAliases = map[string]string{
 	"Name": "Invocation.Slug",
@@ -64,24 +72,14 @@ func init() {
 }
 
 func invocationListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedInvocations []*goclientnew.ExtendedInvocation
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedInvocations, err = apiSearchInvocations(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedInvocations, err = apiListInvocations(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedInvocations, err := apiListInvocations(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedInvocations, getInvocationSlug, displayInvocationList)
@@ -125,75 +123,24 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	table.Render()
 }
 
+// apiListInvocations lists invocations via the org-level endpoint, scoped to a
+// single space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListInvocations(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
-	newParams := &goclientnew.ListInvocationsParams{}
-	include := "SpaceID,BridgeWorkerID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "InvocationID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Invocation", nil, include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	invocationsRes, err := cubClientNew.ListInvocationsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, invocationsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, invocationsRes)
-	}
-
-	invocations := make([]*goclientnew.ExtendedInvocation, 0, len(*invocationsRes.JSON200))
-	for _, invocation := range *invocationsRes.JSON200 {
-		invocations = append(invocations, &invocation)
-	}
-
-	return invocations, nil
+	return apiListAllInvocations(where, selectParam, filterParam)
 }
 
-func apiSearchInvocations(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
-	newParams := &goclientnew.ListAllInvocationsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-
-	include := "SpaceID,BridgeWorkerID"
-	newParams.Include = &include
-
+func apiListAllInvocations(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "InvocationID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Invocation", nil, include, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, baseFields)
+		return buildSelectList("Invocation", nil, invocationListInclude, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, invocationBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllInvocations(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	invocationsRes, err := goclientnew.ParseListAllInvocationsResponse(res)
-	if cubapi.IsAPIError(err, invocationsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, invocationsRes)
-	}
-
-	extendedInvocations := make([]*goclientnew.ExtendedInvocation, 0, len(*invocationsRes.JSON200))
-	for _, invocation := range *invocationsRes.JSON200 {
-		extendedInvocations = append(extendedInvocations, &invocation)
-	}
-
-	return extendedInvocations, nil
+	return cubapi.ListInvocations(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  invocationListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

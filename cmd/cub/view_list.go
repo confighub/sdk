@@ -50,6 +50,12 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultViewColumns = []string{"View.Slug", "Space.Slug", "Filter.Slug", "View.Columns", "View.GroupBy", "View.OrderBy"}
 
+// viewListInclude is the Include parameter for view list queries.
+const viewListInclude = "SpaceID,FilterID"
+
+// viewBaseSelectFields are the fields always returned by view list queries.
+var viewBaseSelectFields = []string{"Slug", "ViewID", "SpaceID", "OrganizationID"}
+
 // View-specific aliases
 var viewAliases = map[string]string{
 	"Name": "View.Slug",
@@ -65,24 +71,14 @@ func init() {
 }
 
 func viewListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedViews []*goclientnew.ExtendedView
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedViews, err = apiSearchViews(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedViews, err = apiListViews(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedViews, err := apiListViews(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedViews, getViewSlug, displayViewList)
@@ -152,75 +148,24 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 	table.Render()
 }
 
+// apiListViews lists views via the org-level endpoint, scoped to a single space
+// by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListViews(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
-	newParams := &goclientnew.ListViewsParams{}
-	include := "SpaceID,FilterID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "ViewID", "SpaceID", "OrganizationID"}
-		return buildSelectList("View", nil, include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	viewsRes, err := cubClientNew.ListViewsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, viewsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, viewsRes)
-	}
-
-	views := make([]*goclientnew.ExtendedView, 0, len(*viewsRes.JSON200))
-	for _, view := range *viewsRes.JSON200 {
-		views = append(views, &view)
-	}
-
-	return views, nil
+	return apiListAllViews(where, selectParam, filterParam)
 }
 
-func apiSearchViews(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
-	newParams := &goclientnew.ListAllViewsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-
-	include := "SpaceID,FilterID"
-	newParams.Include = &include
-
+func apiListAllViews(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "ViewID", "SpaceID", "OrganizationID"}
-		return buildSelectList("View", nil, include, defaultViewColumns, viewAliases, viewCustomColumnDependencies, baseFields)
+		return buildSelectList("View", nil, viewListInclude, defaultViewColumns, viewAliases, viewCustomColumnDependencies, viewBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllViews(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	viewsRes, err := goclientnew.ParseListAllViewsResponse(res)
-	if cubapi.IsAPIError(err, viewsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, viewsRes)
-	}
-
-	extendedViews := make([]*goclientnew.ExtendedView, 0, len(*viewsRes.JSON200))
-	for _, view := range *viewsRes.JSON200 {
-		extendedViews = append(extendedViews, &view)
-	}
-
-	return extendedViews, nil
+	return cubapi.ListViews(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  viewListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

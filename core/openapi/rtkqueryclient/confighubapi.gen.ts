@@ -173,6 +173,7 @@ const injectedRtkApi = api
           url: `/bridge_worker`,
           params: {
             where: queryArg.where,
+            filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
             select: queryArg.select,
@@ -2958,6 +2959,18 @@ export type ListAllBridgeWorkersApiArg = {
     
     The whole string must be query-encoded. */
   where?: string;
+  /** UUID of a Filter entity to apply to the BridgeWorker list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (BridgeWorker).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
   /** Free text search that approximately matches the specified string against string fields and map keys/values.
     
     The search is case-insensitive and uses pattern matching to find entities containing the text.
@@ -12438,6 +12451,7 @@ export type FunctionInvocationsRequest = {
 };
 export type ApiInfo = {};
 export type ApiInfoRead = {
+  AuthIssuer?: string;
   AuthServer?: string;
   /** Build identifier for support cases. */
   Build?: string;
@@ -12452,6 +12466,8 @@ export type ApiInfoRead = {
   /** OCI registry port for pulling configuration artifacts. */
   OCIPort?: string;
   RedirectURI?: string;
+  TokenExchangeAudience?: string;
+  TokenExchangeEndpoint?: string;
   /** Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds. */
   Version?: string;
   /** Port number for the worker to connect to the server. */
@@ -13071,6 +13087,9 @@ export type Revision = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  Releases?: {
+    [key: string]: string;
+  };
   /** Unique identifier for a Revision. */
   RevisionID?: string;
   /** Sequence number for a Revision. */
@@ -13124,6 +13143,9 @@ export type RevisionRead = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  Releases?: {
+    [key: string]: string;
+  };
   /** Unique identifier for a Revision. */
   RevisionID?: string;
   /** Sequence number for a Revision. */

@@ -21,6 +21,12 @@ var workerListCmd = &cobra.Command{
 // Default columns to display when no custom columns are specified
 var defaultWorkerColumns = []string{"BridgeWorker.Slug", "BridgeWorker.Condition", "Space.Slug", "BridgeWorker.LastSeenAt"}
 
+// workerListInclude is the Include parameter for worker list queries.
+const workerListInclude = "SpaceID"
+
+// workerBaseSelectFields are the fields always returned by worker list queries.
+var workerBaseSelectFields = []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
+
 // Worker-specific aliases
 var workerAliases = map[string]string{
 	"Name": "BridgeWorker.Slug",
@@ -43,93 +49,39 @@ func workerListCmdRun(_ *cobra.Command, _ []string) error {
 		return openWebUI(url)
 	}
 
-	var workers []*goclientnew.ExtendedBridgeWorker
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		// Cross-space listing
-		workers, err = apiListAllBridgeWorkers(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Single space listing
-		workers, err = apiListBridgeworkers(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	workers, err := apiListBridgeworkers(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 	displayListResults(workers, getExtendedWorkerSlug, displayExtendedWorkerList)
 	return nil
 }
 
+// apiListBridgeworkers lists bridge workers via the org-level endpoint, scoped to
+// a single space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
-	newParams := &goclientnew.ListBridgeWorkersParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	include := "SpaceID"
-	newParams.Include = &include
-	// Handle select parameter
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
-		return buildSelectList("BridgeWorker", nil, include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	workersRes, err := cubClientNew.ListBridgeWorkersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, workersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, workersRes)
-	}
-
-	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))
-	for _, worker := range *workersRes.JSON200 {
-		workers = append(workers, &worker)
-	}
-	return workers, nil
+	return apiListAllBridgeWorkers(where, selectParam, filterParam)
 }
 
-func apiListAllBridgeWorkers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
-	newParams := &goclientnew.ListAllBridgeWorkersParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	// Note: ListAllBridgeWorkersParams doesn't support Filter parameter yet
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	include := "SpaceID"
-	newParams.Include = &include
-	// Handle select parameter
+func apiListAllBridgeWorkers(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "BridgeWorkerID", "SpaceID", "OrganizationID", "Secret"}
-		return buildSelectList("BridgeWorker", nil, include, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, baseFields)
+		return buildSelectList("BridgeWorker", nil, workerListInclude, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, workerBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	workersRes, err := cubClientNew.ListAllBridgeWorkersWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, workersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, workersRes)
-	}
-
-	workers := make([]*goclientnew.ExtendedBridgeWorker, 0, len(*workersRes.JSON200))
-	for _, worker := range *workersRes.JSON200 {
-		workers = append(workers, &worker)
-	}
-	return workers, nil
+	return cubapi.ListBridgeWorkers(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  workerListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }
 
 func getExtendedWorkerSlug(worker *goclientnew.ExtendedBridgeWorker) string {

@@ -56,6 +56,14 @@ Examples:
 // Default columns to display when no custom columns are specified
 var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
+// triggerListInclude is the Include parameter for trigger list queries (the
+// related entities expanded into each ExtendedTrigger).
+const triggerListInclude = "SpaceID,BridgeWorkerID,InvocationID"
+
+// triggerBaseSelectFields are the fields always returned by trigger list queries,
+// regardless of the requested columns.
+var triggerBaseSelectFields = []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
+
 // Trigger-specific aliases
 var triggerAliases = map[string]string{
 	"Name": "Trigger.Slug",
@@ -71,24 +79,14 @@ func init() {
 }
 
 func triggerListCmdRun(cmd *cobra.Command, args []string) error {
-	var extendedTriggers []*goclientnew.ExtendedTrigger
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		extendedTriggers, err = apiSearchTriggers(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		extendedTriggers, err = apiListTriggers(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	extendedTriggers, err := apiListTriggers(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 
 	displayListResults(extendedTriggers, getTriggerSlug, displayTriggerList)
@@ -141,75 +139,24 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	table.Render()
 }
 
+// apiListTriggers lists triggers via the org-level endpoint, scoped to a single
+// space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListTriggers(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
-	newParams := &goclientnew.ListTriggersParams{}
-	include := "SpaceID,BridgeWorkerID,InvocationID"
-	newParams.Include = &include
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Trigger", nil, include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	triggersRes, err := cubClientNew.ListTriggersWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, triggersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, triggersRes)
-	}
-
-	triggers := make([]*goclientnew.ExtendedTrigger, 0, len(*triggersRes.JSON200))
-	for _, trigger := range *triggersRes.JSON200 {
-		triggers = append(triggers, &trigger)
-	}
-
-	return triggers, nil
+	return apiListAllTriggers(where, selectParam, filterParam)
 }
 
-func apiSearchTriggers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
-	newParams := &goclientnew.ListAllTriggersParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-
-	include := "SpaceID,BridgeWorkerID,InvocationID"
-	newParams.Include = &include
-
+func apiListAllTriggers(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TriggerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Trigger", nil, include, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, baseFields)
+		return buildSelectList("Trigger", nil, triggerListInclude, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, triggerBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-
-	res, err := cubClientNew.ListAllTriggers(ctx, newParams)
-	if err != nil {
-		return nil, err
-	}
-	triggersRes, err := goclientnew.ParseListAllTriggersResponse(res)
-	if cubapi.IsAPIError(err, triggersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, triggersRes)
-	}
-
-	extendedTriggers := make([]*goclientnew.ExtendedTrigger, 0, len(*triggersRes.JSON200))
-	for _, trigger := range *triggersRes.JSON200 {
-		extendedTriggers = append(extendedTriggers, &trigger)
-	}
-
-	return extendedTriggers, nil
+	return cubapi.ListTriggers(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  triggerListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }

@@ -22,6 +22,14 @@ var targetListCmd = &cobra.Command{
 // Default columns to display when no custom columns are specified
 var defaultTargetColumns = []string{"Target.Slug", "BridgeWorker.Slug", "Target.ProviderType", "Target.Parameters", "Space.Slug"}
 
+// targetListInclude is the Include parameter for target list queries (the related
+// entities expanded into each ExtendedTarget).
+const targetListInclude = "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
+
+// targetBaseSelectFields are the fields always returned by target list queries,
+// regardless of the requested columns.
+var targetBaseSelectFields = []string{"Slug", "TargetID", "BridgeWorkerID", "SpaceID", "OrganizationID"}
+
 // Target-specific aliases
 var targetAliases = map[string]string{
 	"Name": "Target.Slug",
@@ -44,37 +52,21 @@ func targetListCmdRun(cmd *cobra.Command, args []string) error {
 		return openWebUI(url)
 	}
 
-	var targets []*goclientnew.ExtendedTarget
-	var err error
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	if selectedSpaceID == "*" {
-		// Cross-space listing
-		targets, err = apiListAllTargets(where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Single space listing
-		targets, err = apiListTargets(selectedSpaceID, where, selectFields, filterID)
-		if err != nil {
-			return err
-		}
+	targets, err := apiListTargets(selectedSpaceID, where, selectFields, filterID)
+	if err != nil {
+		return err
 	}
 	displayListResults(targets, getTargetSlug, displayTargetList)
 	return nil
 }
 
 func getTargetSlug(exTarget *goclientnew.ExtendedTarget) string {
-	space := ""
-	if exTarget.Space != nil {
-		space = exTarget.Space.Slug
-	}
-	return prefixedSlug(space, exTarget.Target.Slug)
+	return prefixedSlug(exTarget.Target.SpaceSlug, exTarget.Target.Slug)
 }
 
 func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
@@ -87,83 +79,35 @@ func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
 		if exTarget.BridgeWorker != nil {
 			workerSlug = exTarget.BridgeWorker.Slug
 		}
-		spaceSlug := ""
-		if exTarget.Space != nil {
-			spaceSlug = exTarget.Space.Slug
-		}
 		table.Append([]string{
 			exTarget.Target.Slug,
 			workerSlug,
 			exTarget.Target.ProviderType,
 			exTarget.Target.Parameters,
-			spaceSlug,
+			exTarget.Target.SpaceSlug,
 		})
 	}
 	table.Render()
 }
 
+// apiListTargets lists targets via the org-level endpoint, scoped to a single
+// space by a SpaceID clause unless spaceID is "*" (list across all spaces).
 func apiListTargets(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
-	newParams := &goclientnew.ListTargetsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
+	where := cubapi.NewWhere(whereFilter)
+	if spaceID != "*" {
+		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
-	newParams.Include = &include
-	// Handle select parameter
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TargetID", "BridgeWorkerID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Target", nil, include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	targetsRes, err := cubClientNew.ListTargetsWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, targetsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, targetsRes)
-	}
-
-	targets := make([]*goclientnew.ExtendedTarget, 0, len(*targetsRes.JSON200))
-	for _, target := range *targetsRes.JSON200 {
-		targets = append(targets, &target)
-	}
-	return targets, nil
+	return apiListAllTargets(where, selectParam, filterParam)
 }
 
-func apiListAllTargets(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
-	newParams := &goclientnew.ListAllTargetsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
-	newParams.Include = &include
-	// Handle select parameter
+func apiListAllTargets(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "TargetID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Target", nil, include, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, baseFields)
+		return buildSelectList("Target", nil, targetListInclude, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, targetBaseSelectFields)
 	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	targetsRes, err := cubClientNew.ListAllTargetsWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, targetsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, targetsRes)
-	}
-
-	targets := make([]*goclientnew.ExtendedTarget, 0, len(*targetsRes.JSON200))
-	for _, target := range *targetsRes.JSON200 {
-		targets = append(targets, &target)
-	}
-	return targets, nil
+	return cubapi.ListTargets(ctx, cubClient, where, cubapi.ListOpts{
+		Select:   cubapi.SelectFields(selectValue),
+		Include:  targetListInclude,
+		Filter:   filterParam,
+		Contains: contains,
+	})
 }
