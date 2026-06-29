@@ -7585,7 +7585,7 @@ export type PatchUnitApiArg = {
     ProviderType?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
-    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
     /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
     TargetOptions?: {
@@ -9851,7 +9851,7 @@ export type BulkPatchUnitsApiArg = {
     ProviderType?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
-    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
     /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
     TargetOptions?: {
@@ -10062,7 +10062,7 @@ export type BulkCreateUnitsApiArg = {
     ProviderType?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
-    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+    /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
     TargetID?: string | null;
     /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
     TargetOptions?: {
@@ -12414,6 +12414,8 @@ export type FunctionInvocationsResponse = {
   SpaceSlug?: string;
   /** True if all functions executed successfully */
   Success?: boolean;
+  /** ID of the Unit's Target; optional */
+  TargetID?: string;
   /** ID of the Unit the configuration data is associated with */
   UnitID?: string;
   /** Slug of the Unit */
@@ -12625,7 +12627,7 @@ export type Unit = {
   Slug: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
   TargetID?: string;
   /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
   TargetOptions?: {
@@ -12801,7 +12803,7 @@ export type UnitRead = {
   SpaceID?: string;
   /** Slug of the Space this entity belongs to. (readonly) */
   SpaceSlug?: string;
-  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
+  /** TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed. */
   TargetID?: string;
   /** Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker. */
   TargetOptions?: {

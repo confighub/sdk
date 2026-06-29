@@ -50,7 +50,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). Params are accessible via 'params'.",
+					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
 					DataType:      api.DataTypeCEL,
 					Example:       `object.kind != 'Deployment' || object.spec.template.spec.containers.all(c, quantity(c.resources.limits['memory']).isGreaterThan(quantity('64Mi')))`,
 				},
@@ -77,7 +77,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnVetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
+			return generic.GenericFnVetCEL(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -95,7 +95,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression that extracts values from a Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available. Must return a list of maps with fields: ResourceName, ResourceType, Path, Value, and optionally AttributeName, DataType. Params are accessible via 'params'.",
+					Description:   "CEL expression that extracts values from a Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available. Must return a list of maps with fields: ResourceName, ResourceType, Path, Value, and optionally AttributeName, DataType. Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
 					DataType:      api.DataTypeCEL,
 					Example:       `object.kind == 'Deployment' ? [{"ResourceName": object.metadata.namespace + "/" + object.metadata.name, "ResourceType": object.apiVersion + "/" + object.kind, "Path": "spec.replicas", "Value": object.spec.replicas}] : []`,
 				},
@@ -121,7 +121,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnGetCEL(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
+			return generic.GenericFnGetCEL(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -139,7 +139,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression that returns a partial Kubernetes resource as a map. Only the fields present in the result are modified; all other fields are preserved. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available. Params are accessible via 'params'.",
+					Description:   "CEL expression that returns a partial Kubernetes resource as a map. Only the fields present in the result are modified; all other fields are preserved. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available. Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
 					DataType:      api.DataTypeCEL,
 					Example:       `{"spec": {"replicas": int(params.replicas)}}`,
 				},
@@ -159,7 +159,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnSetCEL(rp, fArgs.ParsedData, fArgs.Arguments, fArgs.Options, k8sOpts...)
+			return generic.GenericFnSetCEL(rp, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options, k8sOpts...)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)

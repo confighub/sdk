@@ -42,8 +42,9 @@ func parseParams(args []api.FunctionArgument, startIndex int) (*starlark.Dict, e
 
 // starlarkPredeclared builds the common predeclared variables for Starlark execution.
 // The rDict is set as both "r" and "object" (same pointer, so mutations through either name
-// affect the same dict).
-func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict) starlark.StringDict {
+// affect the same dict). functionContext exposes the ConfigHub FunctionContext metadata
+// (e.g. functionContext["TargetID"]).
+func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict, functionContext *starlark.Dict) starlark.StringDict {
 	predeclared := starlark.StringDict{
 		"r":      rDict,
 		"object": rDict,
@@ -55,7 +56,27 @@ func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict) starlark.S
 	} else {
 		predeclared["params"] = starlark.NewDict(0)
 	}
+	if functionContext != nil {
+		predeclared["functionContext"] = functionContext
+	} else {
+		predeclared["functionContext"] = starlark.NewDict(0)
+	}
 	return predeclared
+}
+
+// functionContextToStarlarkDict converts a FunctionContext into a Starlark dict
+// keyed by the JSON field names (e.g. "TargetID", "UnitSlug"), for exposure to
+// Starlark programs. Returns an empty dict if functionContext is nil.
+func functionContextToStarlarkDict(functionContext *api.FunctionContext) (*starlark.Dict, error) {
+	fcMap, err := functionContextToMap(functionContext)
+	if err != nil {
+		return nil, err
+	}
+	val, err := goToStarlark(fcMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert function context to starlark value: %w", err)
+	}
+	return val.(*starlark.Dict), nil
 }
 
 var starlarkFileOpts = syntax.FileOptions{
@@ -68,7 +89,7 @@ var starlarkFileOpts = syntax.FileOptions{
 // runStarlarkForResource executes a Starlark program with a single resource as input.
 // The resource is available as 'r' and 'object' (both point to the same dict).
 // Returns the globals and the effective value of r after execution (which may have been reassigned).
-func runStarlarkForResource(programName, program string, resource map[string]any, params *starlark.Dict) (starlark.StringDict, starlark.Value, error) {
+func runStarlarkForResource(programName, program string, resource map[string]any, params *starlark.Dict, functionContext *starlark.Dict) (starlark.StringDict, starlark.Value, error) {
 	thread := &starlark.Thread{Name: programName}
 
 	rDict, err := goToStarlark(resource)
@@ -76,7 +97,7 @@ func runStarlarkForResource(programName, program string, resource map[string]any
 		return nil, nil, fmt.Errorf("failed to convert resource to starlark value: %w", err)
 	}
 
-	predeclared := starlarkPredeclared(rDict.(*starlark.Dict), params)
+	predeclared := starlarkPredeclared(rDict.(*starlark.Dict), params, functionContext)
 
 	globals, err := starlark.ExecFileOptions(&starlarkFileOpts, thread, programName, program, predeclared)
 	if err != nil {
@@ -96,11 +117,11 @@ func runStarlarkForResource(programName, program string, resource map[string]any
 // compileStarlarkProgram executes a Starlark program once with an empty resource dict
 // to obtain function definitions (validate, extract, etc.). The returned globals contain
 // the defined functions which can then be called per-resource.
-func compileStarlarkProgram(programName, program string, params *starlark.Dict) (starlark.StringDict, error) {
+func compileStarlarkProgram(programName, program string, params *starlark.Dict, functionContext *starlark.Dict) (starlark.StringDict, error) {
 	thread := &starlark.Thread{Name: programName}
 
 	emptyDict := starlark.NewDict(0)
-	predeclared := starlarkPredeclared(emptyDict, params)
+	predeclared := starlarkPredeclared(emptyDict, params, functionContext)
 
 	globals, err := starlark.ExecFileOptions(&starlarkFileOpts, thread, programName, program, predeclared)
 	if err != nil {
@@ -252,7 +273,7 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that mutates a resource. The variable 'r' (alias 'object') is a dict representing the current resource. Modify r in place. The program is executed once per resource. The 'json', 're' modules and 'params' dict are also available.",
+					Description:   "Starlark program that mutates a resource. The variable 'r' (alias 'object') is a dict representing the current resource. Modify r in place. The program is executed once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are also available.",
 					DataType:      api.DataTypeString,
 				},
 				{
@@ -271,17 +292,22 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSetStarlark(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	functionContextDict, err := functionContextToStarlarkDict(functionContext)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -299,7 +325,7 @@ func genericFnSetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
 			}
 
-			_, rVal, err := runStarlarkForResource("set-starlark", program, dataMap, params)
+			_, rVal, err := runStarlarkForResource("set-starlark", program, dataMap, params, functionContextDict)
 			if err != nil {
 				return output, []error{err}
 			}
@@ -351,7 +377,7 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules and 'params' dict are available.",
+					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available.",
 					DataType:      api.DataTypeString,
 					Example: `def validate(r):
   if r.get("kind") == "Deployment":
@@ -384,14 +410,14 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -399,8 +425,13 @@ func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 		return parsedData, api.ValidationResultFalse, err
 	}
 
+	functionContextDict, err := functionContextToStarlarkDict(functionContext)
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
+	}
+
 	// Compile the program once to get the validate function definition
-	globals, err := compileStarlarkProgram("vet-starlark", program, params)
+	globals, err := compileStarlarkProgram("vet-starlark", program, params, functionContextDict)
 	if err != nil {
 		failedResult := api.ValidationResultFalse
 		failedResult.Details = []string{err.Error()}
@@ -526,7 +557,7 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that extracts values from resources. Must define an 'extract(r)' function that takes a resource dict and returns a list of dicts, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The function is called once per resource. The 'json', 're' modules and 'params' dict are available.",
+					Description:   "Starlark program that extracts values from resources. Must define an 'extract(r)' function that takes a resource dict and returns a list of dicts, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available.",
 					DataType:      api.DataTypeString,
 					Example: `def extract(r):
   values = []
@@ -562,14 +593,14 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetStarlark(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnGetStarlark(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -577,8 +608,13 @@ func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 		return parsedData, nil, err
 	}
 
+	functionContextDict, err := functionContextToStarlarkDict(functionContext)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
 	// Compile the program once to get the extract function definition
-	globals, err := compileStarlarkProgram("get-starlark", program, params)
+	globals, err := compileStarlarkProgram("get-starlark", program, params, functionContextDict)
 	if err != nil {
 		return parsedData, nil, err
 	}

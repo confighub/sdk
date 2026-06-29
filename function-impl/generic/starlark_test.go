@@ -6,6 +6,7 @@ package generic
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -52,9 +53,51 @@ func TestSetStarlark_SetReplicas(t *testing.T) {
 		`r["spec"]["replicas"] = 5`,
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 	assert.Contains(t, newDocs.String(), "replicas: 5")
+}
+
+func TestSetStarlark_FunctionContextTargetID(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(deploymentFixture))
+	require.NoError(t, err)
+
+	targetID := uuid.New()
+	functionContext := &api.FunctionContext{TargetID: targetID}
+
+	// Write the TargetID from the function context into an annotation.
+	args := stringArgsToFunctionArgs([]string{
+		`r.setdefault("metadata", {}).setdefault("annotations", {})["target-id"] = functionContext["TargetID"]`,
+	})
+
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, functionContext, docs, args)
+	require.NoError(t, err)
+	assert.Contains(t, newDocs.String(), "target-id: "+targetID.String())
+}
+
+func TestGetStarlark_FunctionContextTargetID(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(deploymentFixture))
+	require.NoError(t, err)
+
+	targetID := uuid.New()
+	functionContext := &api.FunctionContext{TargetID: targetID}
+
+	args := stringArgsToFunctionArgs([]string{
+		`def extract(r):
+  return [{
+    "ResourceName": r["metadata"]["name"],
+    "Path": "targetID",
+    "Value": functionContext["TargetID"],
+  }]`,
+	})
+
+	_, output, err := genericFnGetStarlark(testResourceProvider, nil, functionContext, docs, args)
+	require.NoError(t, err)
+
+	attrValues, ok := output.(api.AttributeValueList)
+	require.True(t, ok)
+	require.Len(t, attrValues, 1)
+	assert.Equal(t, targetID.String(), attrValues[0].Value)
 }
 
 func TestSetStarlark_SetReplicasWithParams(t *testing.T) {
@@ -66,7 +109,7 @@ func TestSetStarlark_SetReplicasWithParams(t *testing.T) {
 		"replicas=7",
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 	assert.Contains(t, newDocs.String(), "replicas: 7")
 }
@@ -79,7 +122,7 @@ func TestSetStarlark_ObjectAlias(t *testing.T) {
 		`object["spec"]["replicas"] = 10`,
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 	assert.Contains(t, newDocs.String(), "replicas: 10")
 }
@@ -98,7 +141,7 @@ func TestGetStarlark_GetReplicas(t *testing.T) {
   }]`,
 	})
 
-	_, output, err := genericFnGetStarlark(testResourceProvider, nil, docs, args)
+	_, output, err := genericFnGetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -139,7 +182,7 @@ spec:
 		`r["spec"]["replicas"] = 5`,
 	})
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -172,7 +215,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("passes when replicas matches param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=3"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, nil, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -185,7 +228,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("fails when replicas does not match param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=5"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, nil, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -244,7 +287,7 @@ func TestSetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	})
 
 	// First verify that without filtering it fails on the Service
-	_, _, err = genericFnSetStarlark(testResourceProvider, nil, docs, args)
+	_, _, err = genericFnSetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.Error(t, err, "should fail without WhereResource filter because Service has no spec.template")
 
 	// Now filter to only Deployments
@@ -252,7 +295,7 @@ func TestSetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
-	newDocs, _, err := genericFnSetStarlark(testResourceProvider, options, docs, args)
+	newDocs, _, err := genericFnSetStarlark(testResourceProvider, options, nil, docs, args)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -276,7 +319,7 @@ func TestVetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	args := stringArgsToFunctionArgs([]string{vetProgram})
 
 	// Without filtering, Service has no replicas so it would fail validation
-	_, output, err := genericFnVetStarlark(testResourceProvider, nil, docs, args)
+	_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 	vr := output.(api.ValidationResult)
 	assert.False(t, vr.Passed, "should fail without filter because Service has no replicas")
@@ -286,7 +329,7 @@ func TestVetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
-	_, output, err = genericFnVetStarlark(testResourceProvider, options, docs, args)
+	_, output, err = genericFnVetStarlark(testResourceProvider, options, nil, docs, args)
 	require.NoError(t, err)
 	vr = output.(api.ValidationResult)
 	assert.True(t, vr.Passed, "should pass with filter targeting only Deployment")
@@ -307,7 +350,7 @@ func TestGetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	args := stringArgsToFunctionArgs([]string{extractProgram})
 
 	// Without filtering, Service would cause a key error
-	_, _, err = genericFnGetStarlark(testResourceProvider, nil, docs, args)
+	_, _, err = genericFnGetStarlark(testResourceProvider, nil, nil, docs, args)
 	require.Error(t, err, "should fail without WhereResource filter because Service has no spec.replicas")
 
 	// With filter, only Deployment is processed
@@ -315,7 +358,7 @@ func TestGetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
-	_, output, err := genericFnGetStarlark(testResourceProvider, options, docs, args)
+	_, output, err := genericFnGetStarlark(testResourceProvider, options, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)

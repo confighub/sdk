@@ -337,6 +337,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	resp.UnitID = functionInvocation.FunctionContext.UnitID
 	resp.UnitSlug = functionInvocation.FunctionContext.UnitSlug
 	resp.RevisionID = functionInvocation.FunctionContext.RevisionID
+	resp.TargetID = functionInvocation.FunctionContext.TargetID
 
 	// Convert from YAML back to the original format
 	nativeData, err := fh.GetConverter().YAMLToNative(serializedData)

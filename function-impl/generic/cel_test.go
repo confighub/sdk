@@ -6,6 +6,7 @@ package generic
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -21,7 +22,7 @@ func TestVetCEL_BoolPass(t *testing.T) {
 		`r.spec.replicas == 3`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -37,7 +38,7 @@ func TestVetCEL_BoolFail(t *testing.T) {
 		`r.spec.replicas == 5`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -53,7 +54,7 @@ func TestVetCEL_MapResult(t *testing.T) {
 		`r.spec.replicas > 5 ? {"passed": true} : {"passed": false, "details": [r.metadata.name + " has too few replicas"]}`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -73,7 +74,7 @@ func TestVetCEL_WithParams(t *testing.T) {
 			"replicas=3",
 		})
 
-		_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+		_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -87,7 +88,7 @@ func TestVetCEL_WithParams(t *testing.T) {
 			"replicas=5",
 		})
 
-		_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+		_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -104,7 +105,7 @@ func TestVetCEL_CompileError(t *testing.T) {
 		`r.spec.replicas ===`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err) // compile errors are returned as failed validation, not errors
 
 	vr, ok := output.(api.ValidationResult)
@@ -121,7 +122,7 @@ func TestGetCEL_ExtractReplicas(t *testing.T) {
 		`[{"ResourceName": r.metadata.namespace + "/" + r.metadata.name, "ResourceType": r.apiVersion + "/" + r.kind, "Path": "spec.replicas", "Value": r.spec.replicas}]`,
 	})
 
-	_, output, err := GenericFnGetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnGetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -133,6 +134,45 @@ func TestGetCEL_ExtractReplicas(t *testing.T) {
 	assert.EqualValues(t, int64(3), attrValues[0].Value)
 }
 
+func TestGetCEL_FunctionContextTargetID(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(deploymentFixture))
+	require.NoError(t, err)
+
+	targetID := uuid.New()
+	functionContext := &api.FunctionContext{TargetID: targetID}
+
+	args := stringArgsToFunctionArgs([]string{
+		`[{"ResourceName": r.metadata.name, "Path": "targetID", "Value": functionContext.TargetID}]`,
+	})
+
+	_, output, err := GenericFnGetCEL(testResourceProvider, nil, functionContext, docs, args)
+	require.NoError(t, err)
+
+	attrValues, ok := output.(api.AttributeValueList)
+	require.True(t, ok)
+	require.Len(t, attrValues, 1)
+	assert.Equal(t, targetID.String(), attrValues[0].Value)
+}
+
+func TestVetCEL_FunctionContextTargetID(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(deploymentFixture))
+	require.NoError(t, err)
+
+	targetID := uuid.New()
+	functionContext := &api.FunctionContext{TargetID: targetID}
+
+	args := stringArgsToFunctionArgs([]string{
+		`functionContext.TargetID == "` + targetID.String() + `"`,
+	})
+
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, functionContext, docs, args)
+	require.NoError(t, err)
+
+	vr, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	assert.True(t, vr.Passed)
+}
+
 func TestGetCEL_ConditionalExtract(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(deploymentFixture))
 	require.NoError(t, err)
@@ -141,7 +181,7 @@ func TestGetCEL_ConditionalExtract(t *testing.T) {
 		`r.kind == "Service" ? [{"ResourceName": r.metadata.name, "Path": "spec.type", "Value": r.spec.type}] : []`,
 	})
 
-	_, output, err := GenericFnGetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnGetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	attrValues, ok := output.(api.AttributeValueList)
@@ -158,7 +198,7 @@ func TestSetCEL_SetReplicas(t *testing.T) {
 		`{"spec": {"replicas": 5}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, nil, docs, args, nil)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 5")
@@ -177,7 +217,7 @@ func TestSetCEL_WithParams(t *testing.T) {
 		"replicas=7",
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, nil, docs, args, nil)
 	require.NoError(t, err)
 	output := newDocs.String()
 	assert.Contains(t, output, "replicas: 7")
@@ -213,7 +253,7 @@ spec:
 		`{"spec": {"replicas": 5}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, nil, docs, args, nil)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -231,7 +271,7 @@ func TestSetCEL_MergePreservesUnspecifiedFields(t *testing.T) {
 		`{"spec": {"replicas": 10}}`,
 	})
 
-	newDocs, _, err := GenericFnSetCEL(testResourceProvider, docs, args, nil)
+	newDocs, _, err := GenericFnSetCEL(testResourceProvider, nil, docs, args, nil)
 	require.NoError(t, err)
 
 	output := newDocs.String()
@@ -252,7 +292,7 @@ func TestVetCEL_SkipsNonMatchingResources(t *testing.T) {
 		`r.kind != "Deployment" || r.spec.replicas >= 1`,
 	})
 
-	_, output, err := GenericFnVetCEL(testResourceProvider, nil, docs, args)
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)

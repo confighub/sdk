@@ -1332,6 +1332,9 @@ type FunctionInvocationsResponse struct {
 	// Success True if all functions executed successfully
 	Success bool `json:"Success,omitempty" yaml:"Success,omitempty"`
 
+	// TargetID ID of the Unit's Target; optional
+	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+
 	// UnitID ID of the Unit the configuration data is associated with
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
@@ -2874,7 +2877,7 @@ type Unit struct {
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// TargetOptions Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker.
@@ -8386,7 +8389,7 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// TargetOptions Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker.
@@ -10519,7 +10522,7 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// TargetOptions Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker.
@@ -10729,7 +10732,7 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target within the same Space before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
 	TargetID *openapi_types.UUID `json:"TargetID" yaml:"TargetID"`
 
 	// TargetOptions Bridge option values set per-Unit, merged with the Target's Options when sending to the bridge worker (Target's Options take precedence on overlap). The options must be predefined by the ConfigType in the BridgeWorker.

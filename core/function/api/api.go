@@ -27,7 +27,7 @@ type FunctionContext struct {
 	SpaceLabels         map[string]string       `description:"Labels of the Space of the configuration Unit"`
 	SpaceAnnotations    map[string]string       `description:"Annotations of the Space of the configuration Unit"`
 	OrganizationID      uuid.UUID               `description:"ID of the Organization of the configuration Unit"`
-	TargetID            uuid.UUID               `json:",omitempty" description:"ID of the Target where the function is executed; optional"`
+	TargetID            uuid.UUID               `json:",omitempty" description:"ID of the Unit's Target; optional"`
 	BridgeWorkerID      uuid.UUID               `json:",omitempty" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
 	TargetFacts         map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
 	RevisionID          uuid.UUID               `description:"Unique ID of the configuration Revision"`
@@ -195,6 +195,7 @@ type FunctionIDs struct {
 	UnitID         uuid.UUID `description:"ID of the Unit the configuration data is associated with"`
 	UnitSlug       string    `json:",omitempty" description:"Slug of the Unit"`
 	RevisionID     uuid.UUID `description:"ID of the Revision the configuration data is associated with"`
+	TargetID       uuid.UUID `json:",omitempty" description:"ID of the Unit's Target; optional"`
 }
 
 // FunctionInvocationSuccessResponse contains the data returned from a successful function invocation.

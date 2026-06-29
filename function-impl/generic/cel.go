@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -19,6 +20,25 @@ import (
 	"github.com/google/cel-go/ext"
 	"sigs.k8s.io/yaml"
 )
+
+// functionContextToMap converts a FunctionContext into a generic map keyed by
+// the JSON field names (e.g. "TargetID", "UnitSlug") so that ConfigHub metadata
+// can be exposed to interpreted function languages (Starlark, CEL). It returns
+// an empty map when functionContext is nil.
+func functionContextToMap(functionContext *api.FunctionContext) (map[string]any, error) {
+	if functionContext == nil {
+		return map[string]any{}, nil
+	}
+	data, err := json.Marshal(functionContext)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal function context: %w", err)
+	}
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal function context: %w", err)
+	}
+	return m, nil
+}
 
 // NewCELEnv creates a CEL environment with the given variables and optional extra options.
 // This provides the base CEL environment used by all generic CEL functions.
@@ -129,21 +149,26 @@ func registerCELValidate(fh handler.FunctionRegistry, converter configkit.Config
 	}
 }
 
-// CELVarOpts returns the standard CEL variable options for r, object, and params.
+// CELVarOpts returns the standard CEL variable options for r, object, params,
+// and functionContext (the ConfigHub FunctionContext metadata).
 func CELVarOpts() []cel.EnvOption {
 	return []cel.EnvOption{
 		cel.Variable("r", cel.DynType),
 		cel.Variable("object", cel.DynType),
 		cel.Variable("params", cel.DynType),
+		cel.Variable("functionContext", cel.DynType),
 	}
 }
 
-// CELActivation builds the activation map for a resource with params.
-func CELActivation(dataMap map[string]any, params map[string]any) map[string]any {
+// CELActivation builds the activation map for a resource with params and the
+// FunctionContext metadata, which exposes fields such as
+// functionContext.TargetID and functionContext.UnitSlug.
+func CELActivation(dataMap map[string]any, params map[string]any, functionContext map[string]any) map[string]any {
 	return map[string]any{
-		"r":      dataMap,
-		"object": dataMap,
-		"params": params,
+		"r":               dataMap,
+		"object":          dataMap,
+		"params":          params,
+		"functionContext": functionContext,
 	}
 }
 
@@ -156,7 +181,7 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). The 'params' dict is also available.",
+					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
 					DataType:      api.DataTypeCEL,
 					Example:       `r.kind != 'Deployment' || r.spec.replicas <= 10`,
 				},
@@ -183,7 +208,7 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnVetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnVetCEL(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -192,10 +217,15 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 
 // GenericFnVetCEL implements vet-cel validation. Extra CEL env options can be passed
 // by toolchain-specific overrides (e.g., Kubernetes admission policy libraries).
-func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
+	}
+
+	functionContextMap, err := functionContextToMap(functionContext)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
@@ -225,7 +255,7 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 			return output, []error{err}
 		}
 
-		activation := CELActivation(dataMap, params)
+		activation := CELActivation(dataMap, params, functionContextMap)
 		val, _, err := program.Eval(activation)
 		if err != nil {
 			overallResult.Passed = false
@@ -332,7 +362,7 @@ func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression that extracts values from a resource. The current resource is available as 'r' (alias 'object'). Must return a list of maps, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The 'params' dict is also available.",
+					Description:   "CEL expression that extracts values from a resource. The current resource is available as 'r' (alias 'object'). Must return a list of maps, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
 					DataType:      api.DataTypeCEL,
 					Example:       `r.kind == 'Deployment' ? [{"ResourceName": r.metadata.?namespace.orValue("") + "/" + r.metadata.name, "ResourceType": r.apiVersion + "/" + r.kind, "Path": "spec.replicas", "Value": r.spec.replicas}] : []`,
 				},
@@ -358,7 +388,7 @@ func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnGetCEL(resourceProvider, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+			return GenericFnGetCEL(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -367,10 +397,15 @@ func registerGetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 
 // GenericFnGetCEL implements get-cel extraction. Extra CEL env options can be passed
 // by toolchain-specific overrides.
-func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	functionContextMap, err := functionContextToMap(functionContext)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -398,7 +433,7 @@ func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 			return output, []error{err}
 		}
 
-		activation := CELActivation(dataMap, params)
+		activation := CELActivation(dataMap, params, functionContextMap)
 		val, _, err := program.Eval(activation)
 		if err != nil {
 			return output, []error{fmt.Errorf("CEL evaluation error on resource %s: %v", resourceInfo.ResourceName, err)}
@@ -486,7 +521,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression that returns a partial resource as a map. Only the fields present in the result are modified; all other fields are preserved. The current resource is available as 'r' (alias 'object'). The 'params' dict is also available.",
+					Description:   "CEL expression that returns a partial resource as a map. Only the fields present in the result are modified; all other fields are preserved. The current resource is available as 'r' (alias 'object'). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
 					DataType:      api.DataTypeCEL,
 					Example:       `{"spec": {"replicas": int(params.replicas)}}`,
 				},
@@ -506,7 +541,7 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnSetCEL(resourceProvider, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
+			return GenericFnSetCEL(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -518,10 +553,15 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 // strategic merge (similar to Kubernetes ApplyConfiguration). Only the fields
 // present in the CEL result are modified; all other fields are preserved.
 // Extra CEL env options can be passed by toolchain-specific overrides.
-func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	functionContextMap, err := functionContextToMap(functionContext)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -550,7 +590,7 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, parsedData gaby.
 				return output, []error{fmt.Errorf("failed to unmarshal resource %d: %w", index, err)}
 			}
 
-			activation := CELActivation(dataMap, params)
+			activation := CELActivation(dataMap, params, functionContextMap)
 			val, _, err := program.Eval(activation)
 			if err != nil {
 				return output, []error{fmt.Errorf("CEL evaluation error on resource %d: %v", index, err)}
