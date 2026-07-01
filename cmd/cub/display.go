@@ -337,6 +337,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedUnit |
 		goclientnew.Attribute |
 		goclientnew.ExtendedAttribute |
+		goclientnew.Release |
+		goclientnew.ExtendedRelease |
 		Context
 }
 

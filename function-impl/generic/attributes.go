@@ -168,6 +168,20 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 					multiErrs = append(multiErrs, err)
 				}
 			}
+		case api.DataTypeYAML:
+			// A whole document (sub-tree) value. The converted format is YAML, so
+			// JSON is accepted as a subset. Replaces all fields at the path; a
+			// terminal ?key=value segment find-or-appends a merge-keyed element.
+			yamlValue, ok := attribute.Value.(string)
+			if !ok {
+				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not a YAML string: %v", attribute.AttributeName, attribute.Value))
+			} else {
+				setterArgs[2].Value = yamlValue
+				parsedData, _, err = GenericFnSetPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
+				if err != nil {
+					multiErrs = append(multiErrs, err)
+				}
+			}
 		default:
 			multiErrs = append(multiErrs, fmt.Errorf("unsupported data type %s", attribute.DataType))
 		}

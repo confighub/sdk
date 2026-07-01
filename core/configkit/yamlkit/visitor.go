@@ -393,7 +393,10 @@ func UpdatePathsFunctionDoc(
 		newDoc := updater(currentDoc, context)
 		var err error
 		if upsert || (originalDoc != nil && newDoc.String() != originalDoc.String()) {
-			_, err = doc.SetDocP(newDoc, string(context.Path))
+			// SetDocExpandP (not SetDocP) so an appended array index — resolved to
+			// len(array) for a terminal ?key=value that matched nothing under upsert
+			// (find-or-append) — expands the array instead of failing.
+			_, err = doc.SetDocExpandP(newDoc, string(context.Path))
 		}
 		return output, err
 	}

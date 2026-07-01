@@ -450,6 +450,50 @@ spec:
 	assert.Equal(t, 0, len(results))
 }
 
+// TestResolveAssociativePaths_TerminalAssociativeAppend covers find-or-append for
+// a whole-element set: a terminal ?key=value segment that matches nothing, under
+// upsert, resolves to a new index at the end of the array (append). Non-terminal
+// associative paths (field edits) must NOT append — they require the element to
+// exist (via "|") or they no-op.
+func TestResolveAssociativePaths_TerminalAssociativeAppend(t *testing.T) {
+	yamlFixture := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+`
+	docs, err := gaby.ParseAll([]byte(yamlFixture))
+	assert.NoError(t, err)
+
+	// Terminal associative, key not found, upsert: append at the end of the array.
+	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=otel-collector"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1"), results[0].Path)
+
+	// Terminal associative, key found: resolve to the existing index (no append).
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0"), results[0].Path)
+
+	// Terminal associative, not found, NON-upsert: no append.
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=otel-collector"), "", false, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+
+	// Non-terminal associative, not found, upsert: NO append (a field edit must not
+	// synthesize a partial element).
+	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=otel-collector.image"), "", true, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(results))
+}
+
 func TestResolveAssociativePaths_PrecedingPathExistenceCheck(t *testing.T) {
 	// YAML fixture with existing securityContext
 	yamlFixture := `apiVersion: apps/v1

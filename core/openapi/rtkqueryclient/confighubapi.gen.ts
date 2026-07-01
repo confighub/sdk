@@ -16,6 +16,7 @@ export const addTagTypes = [
   'UserInfo',
   'Organization',
   'OrganizationMember',
+  'Release',
   'Revision',
   'BridgeWorkerStatus',
   'Tag',
@@ -666,6 +667,19 @@ const injectedRtkApi = api
         }),
         providesTags: ['OrganizationMember'],
       }),
+      listAllReleases: build.query<ListAllReleasesApiResponse, ListAllReleasesApiArg>({
+        query: (queryArg) => ({
+          url: `/release`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+          },
+        }),
+        providesTags: ['Release'],
+      }),
       listAllRevisions: build.query<ListAllRevisionsApiResponse, ListAllRevisionsApiArg>({
         query: (queryArg) => ({
           url: `/revision`,
@@ -1168,6 +1182,49 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Link'],
       }),
+      listExtendedReleases: build.query<
+        ListExtendedReleasesApiResponse,
+        ListExtendedReleasesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/release`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+          },
+        }),
+        providesTags: ['Release'],
+      }),
+      publishRelease: build.mutation<PublishReleaseApiResponse, PublishReleaseApiArg>({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/release`,
+          method: 'POST',
+          body: queryArg.releasePublishRequest,
+        }),
+        invalidatesTags: ['Release'],
+      }),
+      withdrawRelease: build.mutation<WithdrawReleaseApiResponse, WithdrawReleaseApiArg>({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}`,
+          method: 'DELETE',
+        }),
+        invalidatesTags: [],
+      }),
+      getExtendedRelease: build.query<GetExtendedReleaseApiResponse, GetExtendedReleaseApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}`,
+            params: {
+              include: queryArg.include,
+              select: queryArg.select,
+            },
+          }),
+          providesTags: ['Release'],
+        },
+      ),
       listTags: build.query<ListTagsApiResponse, ListTagsApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/tag`,
@@ -5272,6 +5329,89 @@ export type GetOrganizationMemberApiArg = {
   /** Unique identifier for a organization_member_id */
   organizationMemberId: string;
 };
+export type ListAllReleasesApiResponse = /** status 200 OK */ ExtendedReleaseRead[];
+export type ListAllReleasesApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Releases returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Release list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Release).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Release include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+};
 export type ListAllRevisionsApiResponse = /** status 200 OK */ ExtendedRevisionRead[];
 export type ListAllRevisionsApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -6751,6 +6891,131 @@ export type UpdateLinkApiArg = {
   /** Unique identifier for a link_id */
   linkId: string;
   link: Link;
+};
+export type ListExtendedReleasesApiResponse = /** status 200 OK */ ExtendedReleaseRead[];
+export type ListExtendedReleasesApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** The specified string is an expression for the purpose of filtering
+    the list of Releases returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Release list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Release).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Release include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+};
+export type PublishReleaseApiResponse =
+  /** status 200 Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target. */ ReleaseRead;
+export type PublishReleaseApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  releasePublishRequest: ReleasePublishRequest;
+};
+export type WithdrawReleaseApiResponse =
+  /** status 200 Response for successful delete operation */ DeleteResponse;
+export type WithdrawReleaseApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a release_id */
+  releaseId: string;
+};
+export type GetExtendedReleaseApiResponse =
+  /** status 200 Release with additional related entities expanded based on the request's include parameter. */ ExtendedReleaseRead;
+export type GetExtendedReleaseApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Include clause for expanding related entities in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Release.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Unique identifier for a release_id */
+  releaseId: string;
 };
 export type ListTagsApiResponse = /** status 200 OK */ ExtendedTagRead[];
 export type ListTagsApiArg = {
@@ -13063,6 +13328,280 @@ export type OrganizationMember = {
   /** Unique username for a User. Must be unique for all of ConfigHub. */
   Username?: string;
 };
+export type Release = {
+  /** Base filename used for the Release's stored bundle, without the .tar.gz suffix. */
+  BundleBaseName?: string;
+  /** The stored tar.gz bundle of the released Units' configuration. */
+  Data?: string;
+  /** OCI content digest (sha256:...) of the Release's stored tar.gz bundle. */
+  Digest?: string;
+  /** OCI digest (sha256:...) of the Release's OCI image manifest. */
+  ManifestDigest?: string;
+  OrganizationID?: string;
+  /** Unique identifier for a Release. */
+  ReleaseID?: string;
+  /** Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target. */
+  ReleaseNum?: number;
+  SpaceID?: string;
+  /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
+  TagID?: string;
+  /** Unique identifier of the Target that consumes this Release's bundle. */
+  TargetID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type ReleaseRead = {
+  /** Base filename used for the Release's stored bundle, without the .tar.gz suffix. */
+  BundleBaseName?: string;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** The stored tar.gz bundle of the released Units' configuration. */
+  Data?: string;
+  /** OCI content digest (sha256:...) of the Release's stored tar.gz bundle. */
+  Digest?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** OCI digest (sha256:...) of the Release's OCI image manifest. */
+  ManifestDigest?: string;
+  OrganizationID?: string;
+  /** Unique identifier for a Release. */
+  ReleaseID?: string;
+  /** Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target. */
+  ReleaseNum?: number;
+  SpaceID?: string;
+  /** Slug of the Space this entity belongs to. */
+  SpaceSlug?: string;
+  /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
+  TagID?: string;
+  /** Unique identifier of the Target that consumes this Release's bundle. */
+  TargetID?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type TargetConfigType = {
+  /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
+  LiveStateType?: string;
+  Options?: {
+    [key: string]: string;
+  };
+  /** Type identifying a bridge implementation supported by the worker */
+  ProviderType?: string;
+  /** Configuration toolchain and format implemented by this bridge of the worker */
+  ToolchainType?: string;
+};
+export type Target = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates. */
+  BridgeHandle?: string;
+  /** Unique identifier for a Bridge Worker associated with the Target. */
+  BridgeWorkerID: string;
+  /** ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target. */
+  ConfigTypes?: TargetConfigType[];
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as "Cluster." and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'. */
+  Facts?: {
+    [key: string]: string;
+  };
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** LiveStateType specifies the first/default configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
+  LiveStateType?: string;
+  /** Bridge option values for the first ProviderType. The options must be predefined by the ConfigType in the BridgeWorker. */
+  Options?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
+    
+    For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
+    The Parameters object may contain the following fields:
+    - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
+     */
+  Parameters?: string;
+  Permissions?: Permissions;
+  /** ProviderType specifies the first/default cloud or infrastructure provider for this target, such as "Kubernetes". */
+  ProviderType: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** Unique identifier for a Target. */
+  TargetID?: string;
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
+  ToolchainType: string;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
+    the list of Triggers returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    
+    The whole string must be query-encoded. */
+  WhereTrigger?: string;
+};
+export type TargetRead = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates. */
+  BridgeHandle?: string;
+  /** Unique identifier for a Bridge Worker associated with the Target. */
+  BridgeWorkerID: string;
+  /** ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target. */
+  ConfigTypes?: TargetConfigType[];
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as "Cluster." and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'. */
+  Facts?: {
+    [key: string]: string;
+  };
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** LiveStateType specifies the first/default configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
+  LiveStateType?: string;
+  /** Bridge option values for the first ProviderType. The options must be predefined by the ConfigType in the BridgeWorker. */
+  Options?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
+    
+    For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
+    The Parameters object may contain the following fields:
+    - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
+     */
+  Parameters?: string;
+  Permissions?: Permissions;
+  /** ProviderType specifies the first/default cloud or infrastructure provider for this target, such as "Kubernetes". */
+  ProviderType: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
+  /** Unique identifier for a Target. */
+  TargetID?: string;
+  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
+  ToolchainType: string;
+  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
+  TriggerFilterID?: string;
+  TriggerHash?: string;
+  /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
+  TriggerIDs?: Uuid[];
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
+    the list of Triggers returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+    
+    The whole string must be query-encoded. */
+  WhereTrigger?: string;
+};
+export type ExtendedRelease = {
+  Organization?: Organization;
+  Release?: Release;
+  Space?: Space;
+  Tag?: Tag;
+  Target?: Target;
+};
+export type ExtendedReleaseRead = {
+  Organization?: OrganizationRead;
+  Release?: ReleaseRead;
+  Space?: SpaceRead;
+  Tag?: TagRead;
+  Target?: TargetRead;
+};
 export type Revision = {
   /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
   ApplyGates?: {
@@ -13387,6 +13926,7 @@ export type ExtendedSpace = {
   TotalFilterCount?: number;
   TotalInvocationCount?: number;
   TotalLinkCount?: number;
+  TotalReleaseCount?: number;
   TotalTagCount?: number;
   TotalUnitCount?: number;
   TotalViewCount?: number;
@@ -13418,6 +13958,7 @@ export type ExtendedSpaceRead = {
   TotalFilterCount?: number;
   TotalInvocationCount?: number;
   TotalLinkCount?: number;
+  TotalReleaseCount?: number;
   TotalTagCount?: number;
   TotalUnitCount?: number;
   TotalViewCount?: number;
@@ -13450,6 +13991,14 @@ export type BridgeWorkerStatus = {
   /** Status indicates the current status of the bridge worker. Possible values include Connected, Disconnected, ActionSent, ActionResultReceived. */
   Status?: string;
 };
+export type ReleasePublishRequest = {
+  /** Optional override of the name of the Release's tar.gz bundle. */
+  BundleBaseName?: string;
+  /** Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Target, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. */
+  TagID?: string;
+  /** ID of the Target that will consume the Release's bundle. */
+  TargetID?: string;
+};
 export type ExtendedTag = {
   ChangeSet?: ChangeSet;
   Error?: ResponseError;
@@ -13463,212 +14012,6 @@ export type ExtendedTagRead = {
   Organization?: OrganizationRead;
   Space?: SpaceRead;
   Tag?: TagRead;
-};
-export type TargetConfigType = {
-  /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
-  LiveStateType?: string;
-  Options?: {
-    [key: string]: string;
-  };
-  /** Type identifying a bridge implementation supported by the worker */
-  ProviderType?: string;
-  /** Configuration toolchain and format implemented by this bridge of the worker */
-  ToolchainType?: string;
-};
-export type Target = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates. */
-  BridgeHandle?: string;
-  /** Unique identifier for a Bridge Worker associated with the Target. */
-  BridgeWorkerID: string;
-  /** ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target. */
-  ConfigTypes?: TargetConfigType[];
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as "Cluster." and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'. */
-  Facts?: {
-    [key: string]: string;
-  };
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** LiveStateType specifies the first/default configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
-  LiveStateType?: string;
-  /** Bridge option values for the first ProviderType. The options must be predefined by the ConfigType in the BridgeWorker. */
-  Options?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
-    
-    For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
-    The Parameters object may contain the following fields:
-    - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
-     */
-  Parameters?: string;
-  Permissions?: Permissions;
-  /** ProviderType specifies the first/default cloud or infrastructure provider for this target, such as "Kubernetes". */
-  ProviderType: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** Unique identifier for a Target. */
-  TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
-  ToolchainType: string;
-  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
-  TriggerFilterID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
-    the list of Triggers returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
-    
-    The whole string must be query-encoded. */
-  WhereTrigger?: string;
-};
-export type TargetRead = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Identifier used by the Bridge to refer to discovered/enabled Target credentials and coordinates. */
-  BridgeHandle?: string;
-  /** Unique identifier for a Bridge Worker associated with the Target. */
-  BridgeWorkerID: string;
-  /** ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target. */
-  ConfigTypes?: TargetConfigType[];
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as "Cluster." and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'. */
-  Facts?: {
-    [key: string]: string;
-  };
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** LiveStateType specifies the first/default configuration toolchain and format of the LiveState for the bridge corresponding to this Target. Possible values include "Kubernetes/YAML" and "ConfigHub/YAML". */
-  LiveStateType?: string;
-  /** Bridge option values for the first ProviderType. The options must be predefined by the ConfigType in the BridgeWorker. */
-  Options?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
-    
-    For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
-    The Parameters object may contain the following fields:
-    - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
-     */
-  Parameters?: string;
-  Permissions?: Permissions;
-  /** ProviderType specifies the first/default cloud or infrastructure provider for this target, such as "Kubernetes". */
-  ProviderType: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** Slug of the Space this entity belongs to. (readonly) */
-  SpaceSlug?: string;
-  /** Unique identifier for a Target. */
-  TargetID?: string;
-  /** ToolchainType specifies the type of the first/default toolchain supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text". */
-  ToolchainType: string;
-  /** Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'. */
-  TriggerFilterID?: string;
-  TriggerHash?: string;
-  /** List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly) */
-  TriggerIDs?: Uuid[];
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-  /** Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering
-    the list of Triggers returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
-    
-    The whole string must be query-encoded. */
-  WhereTrigger?: string;
 };
 export type ExtendedTarget = {
   BridgeWorker?: BridgeWorker;
@@ -14347,6 +14690,8 @@ export const {
   useDeleteOrganizationMemberMutation,
   useGetOrganizationMemberQuery,
   useLazyGetOrganizationMemberQuery,
+  useListAllReleasesQuery,
+  useLazyListAllReleasesQuery,
   useListAllRevisionsQuery,
   useLazyListAllRevisionsQuery,
   useListSpacesQuery,
@@ -14414,6 +14759,12 @@ export const {
   useLazyGetLinkQuery,
   usePatchLinkMutation,
   useUpdateLinkMutation,
+  useListExtendedReleasesQuery,
+  useLazyListExtendedReleasesQuery,
+  usePublishReleaseMutation,
+  useWithdrawReleaseMutation,
+  useGetExtendedReleaseQuery,
+  useLazyGetExtendedReleaseQuery,
   useListTagsQuery,
   useLazyListTagsQuery,
   useCreateTagMutation,

@@ -4,13 +4,16 @@
 package generic
 
 import (
+	"fmt"
+	"log/slog"
+	"strings"
+
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"log/slog"
 )
 
 func registerGetPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
@@ -55,6 +58,104 @@ func GenericFnGetPath(resourceProvider yamlkit.ResourceProvider, _ *api.Function
 	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceTypeAny, api.UnresolvedPath(unresolvedPath))
 	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
 	return parsedData, values, err
+}
+
+// registerSetPath registers set-path, the untyped counterpart to get-path: it sets
+// the document (a YAML value) at a path, replacing all fields at that path
+// ("upsert" semantics). Combined with an associative path segment
+// (?key=value), it find-or-appends an element in a merge-keyed list — e.g.
+// injecting a sidecar container into spec.template.spec.containers.?name=otel.
+func registerSetPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	if err := fh.RegisterFunction("set-path", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "set-path",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName:    "path",
+					Required:         true,
+					Description:      "Dot-separated configuration path at which to set the document. A terminal associative segment (?key=value) find-or-appends an element in a merge-keyed list. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for path syntax.",
+					DataType:         api.DataTypeString,
+					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
+				},
+				{
+					ParameterName: "value",
+					Required:      true,
+					Description:   "YAML document to set at the path. Replaces all fields at that path (not a merge). JSON is accepted as a subset of YAML.",
+					DataType:      api.DataTypeYAML,
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Set the YAML document at the specified path, replacing all fields there; a terminal ?key=value segment find-or-appends a merge-keyed list element",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			// Prepend ResourceTypeAny so GenericFnSetPath shares the
+			// (resource-type, path, value) arg layout of the typed setters.
+			setterArgs := []api.FunctionArgument{
+				{Value: string(api.ResourceTypeAny)},
+				fArgs.Arguments[0],
+				fArgs.Arguments[1],
+			}
+			return GenericFnSetPath(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, setterArgs, true, fArgs.Options)
+		},
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
+}
+
+// GenericFnSetPath sets a YAML document value at args[1] (path) for resource type
+// args[0], with args[2] the YAML value. It replaces all fields at the path; with
+// a terminal associative segment it find-or-appends a merge-keyed list element,
+// injecting the merge key into the value when the value omits it. Also used by
+// set-attributes for DataTypeYAML attributes.
+func GenericFnSetPath(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, upsert bool, options *api.FunctionOptions) (gaby.Container, any, error) {
+	resourceType := args[0].Value.(string)
+	unresolvedPath := args[1].Value.(string)
+	valueYAML, ok := args[2].Value.(string)
+	if !ok {
+		return parsedData, nil, fmt.Errorf("set-path value must be a YAML string, got %T", args[2].Value)
+	}
+
+	valueDoc, err := gaby.ParseYAML([]byte(valueYAML))
+	if err != nil {
+		return parsedData, nil, errors.Wrapf(err, "parsing YAML value for path %s", unresolvedPath)
+	}
+
+	// Inject the terminal merge key so a replaced or appended element carries its
+	// key even when the value omits it (e.g. set-path ...containers.?name=otel
+	// value='{image: x}' yields {name: otel, image: x}). Only when the path ends
+	// at an associative segment (a whole-element set), not for field edits.
+	segments := gaby.DotPathToSlice(unresolvedPath)
+	if len(segments) > 0 && strings.HasPrefix(segments[len(segments)-1], "?") {
+		mergeKeys := yamlkit.ExtractMergeKeysFromPath(unresolvedPath)
+		if len(mergeKeys) > 0 {
+			mk := mergeKeys[len(mergeKeys)-1]
+			if valueDoc.S(mk.Key) == nil {
+				if _, err := valueDoc.SetP(mk.Value, mk.Key); err != nil {
+					return parsedData, nil, errors.Wrapf(err, "injecting merge key %s at path %s", mk.Key, unresolvedPath)
+				}
+			}
+		}
+	}
+
+	// Serialize the (possibly key-injected) value once and re-parse per matched
+	// path so multiple matches (e.g. a wildcard) don't share the same YAML node.
+	injectedYAML := valueDoc.String()
+	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(unresolvedPath))
+	err = yamlkit.UpdatePathsFunctionDoc(parsedData, resourceTypeToPaths, []any{}, resourceProvider,
+		func(_ *gaby.YamlDoc, _ yamlkit.VisitorContext) *gaby.YamlDoc {
+			d, parseErr := gaby.ParseYAML([]byte(injectedYAML))
+			if parseErr != nil {
+				return valueDoc
+			}
+			return d
+		},
+		upsert, options)
+	return parsedData, nil, err
 }
 
 func registerGetStringPath(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {

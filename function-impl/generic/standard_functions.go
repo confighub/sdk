@@ -21,6 +21,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerVetPlaceholders(fh, converter, resourceProvider)
 	registerSearchReplace(fh, converter, resourceProvider)
 	registerGetPath(fh, converter, resourceProvider)
+	registerSetPath(fh, converter, resourceProvider)
 	registerGetStringPath(fh, converter, resourceProvider)
 	registerSetStringPath(fh, converter, resourceProvider)
 	registerGetIntPath(fh, converter, resourceProvider)

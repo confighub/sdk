@@ -432,6 +432,23 @@ func ResolveAssociativePaths(
 					found = true
 				}
 			}
+			// Terminal associative segment, key not found, upsert: append a new
+			// element at the end of the array (find-or-append for a whole-element
+			// set). Only the terminal segment appends — a non-terminal associative
+			// segment (a field edit) must not synthesize a partial element; those
+			// require the element to exist (see the "|" existence marker). The merge
+			// key is set on the value by the caller (e.g. via ExtractMergeKeysFromPath).
+			if !found && upsert && workList[0].CurrentSegmentIndex == len(segments)-1 {
+				appendIndex := strconv.Itoa(len(elements))
+				workList[0].ResolvedSegments = append(workList[0].ResolvedSegments, appendIndex)
+				if parameterName != "" {
+					workList[0].PathArguments = append(workList[0].PathArguments, api.FunctionArgument{ParameterName: parameterName, Value: value})
+				}
+				workList[0].ParentNode = nil
+				workList[0].CurrentSegmentIndex++
+				found = true
+			}
+
 			if !found {
 				// Not found
 				// Dequeue and continue
