@@ -6389,6 +6389,394 @@
         }
       }
     },
+    "/oauth_client": {
+      "get": {
+        "tags": [
+          "OAuthClient"
+        ],
+        "summary": "List OAuth clients",
+        "description": "List the OAuth clients owned by the caller's organization.",
+        "operationId": "ListOAuthClients",
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthClient"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OAuthClient request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OAuthClient not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing OAuthClient.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OAuthClient"
+        ],
+        "summary": "Register an OAuth client",
+        "description": "Register a per-app OAuth public client for the caller's organization (RFC 7591).",
+        "operationId": "CreateOAuthClient",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthClient"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClient"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OAuthClient request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OAuthClient not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OAuthClient data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing OAuthClient.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth_client/{oauth_client}": {
+      "delete": {
+        "tags": [
+          "OAuthClient"
+        ],
+        "summary": "Delete an OAuth client",
+        "description": "Delete an OAuth client owned by the caller's organization.",
+        "operationId": "DeleteOAuthClient",
+        "parameters": [
+          {
+            "name": "oauth_client",
+            "in": "path",
+            "description": "The OAuth client_id addressing a single registered app.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Response for successful delete operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OAuthClient request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OAuthClient not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "OAuthClient data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "OAuthClient could not be deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing OAuthClient.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "OAuthClient"
+        ],
+        "summary": "Get an OAuth client",
+        "description": "Get a single OAuth client owned by the caller's organization.",
+        "operationId": "GetOAuthClient",
+        "parameters": [
+          {
+            "name": "oauth_client",
+            "in": "path",
+            "description": "The OAuth client_id addressing a single registered app.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthClient"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OAuthClient request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OAuthClient not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing OAuthClient.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organization": {
       "get": {
         "tags": [
@@ -30281,6 +30669,43 @@
             "$ref": "#/components/schemas/ResourceInfo"
           }
         }
+      },
+      "OAuthClient": {
+        "type": "object",
+        "properties": {
+          "AllowAllOrgs": {
+            "type": "boolean",
+            "description": "Allow members of any organization to use the app (each gets their own org's session) instead of only the owning org. Permitted only for trusted organizations.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ClientID": {
+            "type": "string",
+            "description": "Generated OAuth client_id used at login and to address this client in the API.",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "Human-friendly name for the app.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "OrganizationID": {
+            "type": "string",
+            "description": "External identifier of the owning organization.",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RedirectURIs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Exact redirect URIs permitted for the app's login (no wildcards).",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          }
+        },
+        "description": "A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API."
       },
       "Organization": {
         "required": [

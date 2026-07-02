@@ -1825,6 +1825,24 @@ type NamedPath struct {
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
+// OAuthClient A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API.
+type OAuthClient struct {
+	// AllowAllOrgs Allow members of any organization to use the app (each gets their own org's session) instead of only the owning org. Permitted only for trusted organizations.
+	AllowAllOrgs bool `json:"AllowAllOrgs,omitempty" yaml:"AllowAllOrgs,omitempty"`
+
+	// ClientID Generated OAuth client_id used at login and to address this client in the API.
+	ClientID string `json:"ClientID,omitempty" yaml:"ClientID,omitempty"`
+
+	// Name Human-friendly name for the app.
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// OrganizationID External identifier of the owning organization.
+	OrganizationID string `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// RedirectURIs Exact redirect URIs permitted for the app's login (no wildcards).
+	RedirectURIs []string `json:"RedirectURIs" yaml:"RedirectURIs"`
+}
+
 // Organization The top-level container for an organization using ConfigHub.
 type Organization struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -12396,6 +12414,9 @@ type BulkPatchLinksApplicationMergePatchPlusJSONRequestBody BulkPatchLinksApplic
 
 // BulkCreateLinksApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateLinks for application/merge-patch+json ContentType.
 type BulkCreateLinksApplicationMergePatchPlusJSONRequestBody BulkCreateLinksApplicationMergePatchPlusJSONBody
+
+// CreateOAuthClientJSONRequestBody defines body for CreateOAuthClient for application/json ContentType.
+type CreateOAuthClientJSONRequestBody = OAuthClient
 
 // CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
 type CreateOrganizationJSONRequestBody = Organization

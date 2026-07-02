@@ -14,6 +14,7 @@ export const addTagTypes = [
   'Invocation',
   'Link',
   'UserInfo',
+  'OAuthClient',
   'Organization',
   'OrganizationMember',
   'Release',
@@ -564,6 +565,33 @@ const injectedRtkApi = api
       getMe: build.query<GetMeApiResponse, GetMeApiArg>({
         query: () => ({ url: `/me` }),
         providesTags: ['UserInfo'],
+      }),
+      listOAuthClients: build.query<ListOAuthClientsApiResponse, ListOAuthClientsApiArg>({
+        query: () => ({ url: `/oauth_client` }),
+        providesTags: ['OAuthClient'],
+      }),
+      createOAuthClient: build.mutation<CreateOAuthClientApiResponse, CreateOAuthClientApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/oauth_client`,
+            method: 'POST',
+            body: queryArg.oAuthClient,
+          }),
+          invalidatesTags: ['OAuthClient'],
+        },
+      ),
+      deleteOAuthClient: build.mutation<DeleteOAuthClientApiResponse, DeleteOAuthClientApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/oauth_client/${queryArg.oauthClient}`,
+            method: 'DELETE',
+          }),
+          invalidatesTags: ['OAuthClient'],
+        },
+      ),
+      getOAuthClient: build.query<GetOAuthClientApiResponse, GetOAuthClientApiArg>({
+        query: (queryArg) => ({ url: `/oauth_client/${queryArg.oauthClient}` }),
+        providesTags: ['OAuthClient'],
       }),
       listOrganizations: build.query<ListOrganizationsApiResponse, ListOrganizationsApiArg>({
         query: (queryArg) => ({
@@ -5112,6 +5140,25 @@ export type BulkCreateLinksApiArg = {
 export type GetMeApiResponse =
   /** status 200 a User given membership on the Organization */ OrganizationMember;
 export type GetMeApiArg = void;
+export type ListOAuthClientsApiResponse = /** status 200 OK */ OAuthClientRead[];
+export type ListOAuthClientsApiArg = void;
+export type CreateOAuthClientApiResponse =
+  /** status 200 A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API. */ OAuthClientRead;
+export type CreateOAuthClientApiArg = {
+  oAuthClient: OAuthClient;
+};
+export type DeleteOAuthClientApiResponse =
+  /** status 200 Response for successful delete operation */ DeleteResponse;
+export type DeleteOAuthClientApiArg = {
+  /** The OAuth client_id addressing a single registered app. */
+  oauthClient: string;
+};
+export type GetOAuthClientApiResponse =
+  /** status 200 A per-app OAuth public client used by a browser app to authenticate against the ConfigHub API. */ OAuthClientRead;
+export type GetOAuthClientApiArg = {
+  /** The OAuth client_id addressing a single registered app. */
+  oauthClient: string;
+};
 export type ListOrganizationsApiResponse = /** status 200 OK */ OrganizationRead[];
 export type ListOrganizationsApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -13328,6 +13375,26 @@ export type OrganizationMember = {
   /** Unique username for a User. Must be unique for all of ConfigHub. */
   Username?: string;
 };
+export type OAuthClient = {
+  /** Allow members of any organization to use the app (each gets their own org's session) instead of only the owning org. Permitted only for trusted organizations. */
+  AllowAllOrgs?: boolean;
+  /** Human-friendly name for the app. */
+  Name?: string;
+  /** Exact redirect URIs permitted for the app's login (no wildcards). */
+  RedirectURIs?: string[] | null;
+};
+export type OAuthClientRead = {
+  /** Allow members of any organization to use the app (each gets their own org's session) instead of only the owning org. Permitted only for trusted organizations. */
+  AllowAllOrgs?: boolean;
+  /** Generated OAuth client_id used at login and to address this client in the API. */
+  ClientID?: string;
+  /** Human-friendly name for the app. */
+  Name?: string;
+  /** External identifier of the owning organization. */
+  OrganizationID?: string;
+  /** Exact redirect URIs permitted for the app's login (no wildcards). */
+  RedirectURIs?: string[] | null;
+};
 export type Release = {
   /** Base filename used for the Release's stored bundle, without the .tar.gz suffix. */
   BundleBaseName?: string;
@@ -14677,6 +14744,12 @@ export const {
   useBulkCreateLinksMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useListOAuthClientsQuery,
+  useLazyListOAuthClientsQuery,
+  useCreateOAuthClientMutation,
+  useDeleteOAuthClientMutation,
+  useGetOAuthClientQuery,
+  useLazyGetOAuthClientQuery,
   useListOrganizationsQuery,
   useLazyListOrganizationsQuery,
   useCreateOrganizationMutation,

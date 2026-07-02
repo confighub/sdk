@@ -339,6 +339,7 @@ type ModelConstraint interface {
 		goclientnew.ExtendedAttribute |
 		goclientnew.Release |
 		goclientnew.ExtendedRelease |
+		goclientnew.OAuthClient |
 		Context
 }
 

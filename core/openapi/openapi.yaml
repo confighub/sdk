@@ -6532,6 +6532,246 @@ paths:
       summary: Get the current user's information
       tags:
       - UserInfo
+  /oauth_client:
+    get:
+      description: List the OAuth clients owned by the caller's organization.
+      operationId: ListOAuthClients
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/OAuthClient'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing OAuthClient.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List OAuth clients
+      tags:
+      - OAuthClient
+    post:
+      description: Register a per-app OAuth public client for the caller's organization
+        (RFC 7591).
+      operationId: CreateOAuthClient
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthClient'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+          description: A per-app OAuth public client used by a browser app to authenticate
+            against the ConfigHub API.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing OAuthClient.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Register an OAuth client
+      tags:
+      - OAuthClient
+  /oauth_client/{oauth_client}:
+    delete:
+      description: Delete an OAuth client owned by the caller's organization.
+      operationId: DeleteOAuthClient
+      parameters:
+      - description: The OAuth client_id addressing a single registered app.
+        in: path
+        name: oauth_client
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing OAuthClient.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete an OAuth client
+      tags:
+      - OAuthClient
+    get:
+      description: Get a single OAuth client owned by the caller's organization.
+      operationId: GetOAuthClient
+      parameters:
+      - description: The OAuth client_id addressing a single registered app.
+        in: path
+        name: oauth_client
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+          description: A per-app OAuth public client used by a browser app to authenticate
+            against the ConfigHub API.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: OAuthClient not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing OAuthClient.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get an OAuth client
+      tags:
+      - OAuthClient
   /organization:
     get:
       description: List Organizations
@@ -27289,6 +27529,39 @@ components:
           x-go-type-skip-optional-pointer: true
         Resource:
           $ref: '#/components/schemas/ResourceInfo'
+      type: object
+    OAuthClient:
+      description: A per-app OAuth public client used by a browser app to authenticate
+        against the ConfigHub API.
+      properties:
+        AllowAllOrgs:
+          description: Allow members of any organization to use the app (each gets
+            their own org's session) instead of only the owning org. Permitted only
+            for trusted organizations.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        ClientID:
+          description: Generated OAuth client_id used at login and to address this
+            client in the API.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Name:
+          description: Human-friendly name for the app.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: External identifier of the owning organization.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RedirectURIs:
+          description: Exact redirect URIs permitted for the app's login (no wildcards).
+          items:
+            type: string
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
       type: object
     Organization:
       description: The top-level container for an organization using ConfigHub.
