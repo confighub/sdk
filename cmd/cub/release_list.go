@@ -32,7 +32,7 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
-var defaultReleaseColumns = []string{"Release.ReleaseID", "Target.Slug", "Release.ManifestDigest", "Release.CreatedAt"}
+var defaultReleaseColumns = []string{"Release.ReleaseID", "Release.ManifestDigest", "Release.CreatedAt"}
 
 var releaseAliases = map[string]string{
 	"ID": "ReleaseID",
@@ -79,16 +79,10 @@ func getReleaseSlug(release *goclientnew.ExtendedRelease) string {
 func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Release-ID", "Target", "Manifest-Digest", "Created"})
+		table.SetHeader([]string{"Release-ID", "Manifest-Digest", "Created"})
 	}
 	for _, er := range releases {
 		rel := er.Release
-		target := ""
-		if er.Target != nil {
-			target = er.Target.Slug
-		} else if rel != nil && rel.TargetID != uuid.Nil {
-			target = rel.TargetID.String()
-		}
 		manifestDigest := ""
 		created := ""
 		releaseID := ""
@@ -97,14 +91,14 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 			created = rel.CreatedAt.String()
 			releaseID = rel.ReleaseID.String()
 		}
-		table.Append([]string{releaseID, target, manifestDigest, created})
+		table.Append([]string{releaseID, manifestDigest, created})
 	}
 	table.Render()
 }
 
 func releaseSelectValue(selectParam, include string) string {
 	return handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"ReleaseID", "SpaceID", "OrganizationID", "TargetID"}
+		baseFields := []string{"ReleaseID", "SpaceID", "OrganizationID"}
 		return buildSelectList("Release", nil, include, defaultReleaseColumns, releaseAliases, releaseCustomColumnDependencies, baseFields)
 	})
 }
@@ -120,9 +114,7 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "TargetID"
-	newParams.Include = &include
-	if selectValue := releaseSelectValue(selectParam, include); selectValue != "" && selectValue != "*" {
+	if selectValue := releaseSelectValue(selectParam, ""); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
 	relRes, err := cubClientNew.ListExtendedReleasesWithResponse(ctx,
@@ -146,9 +138,7 @@ func apiSearchListReleases(whereFilter string, selectParam string, filterParam s
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "TargetID"
-	newParams.Include = &include
-	if selectValue := releaseSelectValue(selectParam, include); selectValue != "" && selectValue != "*" {
+	if selectValue := releaseSelectValue(selectParam, ""); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
 	relRes, err := cubClientNew.ListAllReleasesWithResponse(ctx, newParams)

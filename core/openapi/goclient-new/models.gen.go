@@ -914,9 +914,6 @@ type ExtendedRelease struct {
 
 	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
-
-	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
-	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 }
 
 // ExtendedRevision defines model for ExtendedRevision.
@@ -964,6 +961,9 @@ type ExtendedSpace struct {
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// ReleaseTarget Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	ReleaseTarget *Target `json:"ReleaseTarget,omitempty" yaml:"ReleaseTarget,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space                      *Space         `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2057,6 +2057,8 @@ type QueuedOperationStatus string
 
 // Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 type Release struct {
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+
 	// BundleBaseName Base filename used for the Release's stored bundle, without the .tar.gz suffix.
 	BundleBaseName string `json:"BundleBaseName,omitempty" yaml:"BundleBaseName,omitempty"`
 
@@ -2092,9 +2094,6 @@ type Release struct {
 	// TagID Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 
-	// TargetID Unique identifier of the Target that consumes this Release's bundle.
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
@@ -2107,11 +2106,8 @@ type ReleasePublishRequest struct {
 	// BundleBaseName Optional override of the name of the Release's tar.gz bundle.
 	BundleBaseName string `json:"BundleBaseName,omitempty" yaml:"BundleBaseName,omitempty"`
 
-	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Target, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision.
+	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
-
-	// TargetID ID of the Target that will consume the Release's bundle.
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 }
 
 // ResourceInfo defines model for ResourceInfo.
@@ -2378,6 +2374,12 @@ type Space struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// ReleaseTargetID Reference to a Target used as the default Target for all Units in this Space.
+	ReleaseTargetID *openapi_types.UUID `json:"ReleaseTargetID,omitempty" yaml:"ReleaseTargetID,omitempty"`
+
+	// ReleaseURL URL at which Releases for this Space are available, when ReleaseTargetID is set to a Target of ProviderType ProviderOCI. (readonly)
+	ReleaseURL string `json:"ReleaseURL,omitempty" yaml:"ReleaseURL,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -3425,7 +3427,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3464,7 +3466,7 @@ type BulkDeleteSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -3489,8 +3491,9 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReleaseTargetID *openapi_types.UUID                 `json:"ReleaseTargetID" yaml:"ReleaseTargetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug" yaml:"Slug"`
@@ -3535,7 +3538,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3574,7 +3577,7 @@ type BulkPatchSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -3596,8 +3599,9 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReleaseTargetID *openapi_types.UUID                 `json:"ReleaseTargetID" yaml:"ReleaseTargetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug" yaml:"Slug"`
@@ -3642,7 +3646,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3681,7 +3685,7 @@ type BulkCreateSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4106,7 +4110,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -4876,7 +4880,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -5319,7 +5323,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -5905,7 +5909,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -6610,7 +6614,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6649,7 +6653,7 @@ type ListAllReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6788,7 +6792,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6827,7 +6831,7 @@ type ListSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6867,7 +6871,7 @@ type GetSpaceParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6899,8 +6903,9 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReleaseTargetID *openapi_types.UUID                 `json:"ReleaseTargetID" yaml:"ReleaseTargetID"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug" yaml:"Slug"`
@@ -7973,7 +7978,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8012,7 +8017,7 @@ type ListExtendedReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8034,7 +8039,7 @@ type GetExtendedReleaseParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9827,7 +9832,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -10574,7 +10579,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -11158,7 +11163,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -12343,7 +12348,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning views
 	//

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"os"
 	"strings"
 
 	"github.com/confighub/sdk/bridge-impl/helmutils"
@@ -25,7 +26,7 @@ import (
 var gitopsImportCmd = &cobra.Command{
 	Use:   "import <target-slug> [render-target-slug]",
 	Short: "Import GitOps resources from a Kubernetes target",
-	Long: getCommandHelp(`Import discovered GitOps resources (ArgoCD Applications, Flux HelmReleases,
+	Long: getCommandHelp(`[EXPERIMENTAL] Import discovered GitOps resources (ArgoCD Applications, Flux HelmReleases,
 Flux Kustomizations) from a Kubernetes target, render them using a render target,
 and create the corresponding ConfigHub units and links.
 
@@ -43,10 +44,12 @@ Examples:
 }
 
 func init() {
-	gitopsImportCmd.Flags().StringVar(&whereResource, "where-resource", "", "Additional resource filter expression")
-	addStandardDisplayFlags(gitopsImportCmd)
-	enableActionWaitFlag(gitopsImportCmd)
-	gitopsCmd.AddCommand(gitopsImportCmd)
+	if os.Getenv("CONFIGHUB_EXPERIMENTAL") != "" {
+		gitopsImportCmd.Flags().StringVar(&whereResource, "where-resource", "", "Additional resource filter expression")
+		addStandardDisplayFlags(gitopsImportCmd)
+		enableActionWaitFlag(gitopsImportCmd)
+		gitopsCmd.AddCommand(gitopsImportCmd)
+	}
 }
 
 // discoverResourceInfo holds information about a discovered GitOps resource.

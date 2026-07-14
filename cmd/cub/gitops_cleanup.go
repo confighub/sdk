@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -15,7 +16,7 @@ import (
 var gitopsCleanupCmd = &cobra.Command{
 	Use:   "cleanup <target-slug>",
 	Short: "Clean up the discover unit for a target",
-	Long: getCommandHelp(`Clean up the discover unit created by the gitops discover command for a target.
+	Long: getCommandHelp(`[EXPERIMENTAL] Clean up the discover unit created by the gitops discover command for a target.
 
 Examples:
 `+"```"+`
@@ -27,8 +28,10 @@ Examples:
 }
 
 func init() {
-	addStandardDisplayFlags(gitopsCleanupCmd)
-	gitopsCmd.AddCommand(gitopsCleanupCmd)
+	if os.Getenv("CONFIGHUB_EXPERIMENTAL") != "" {
+		addStandardDisplayFlags(gitopsCleanupCmd)
+		gitopsCmd.AddCommand(gitopsCleanupCmd)
+	}
 }
 
 func gitopsCleanupCmdRun(cmd *cobra.Command, args []string) error {

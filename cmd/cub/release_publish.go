@@ -10,16 +10,14 @@ import (
 )
 
 var releasePublishCmd = &cobra.Command{
-	Use:   "publish <space-slug> <target-space>/<target-slug>",
+	Use:   "publish <space-slug>",
 	Short: "Publish a release",
-	Args:  cobra.ExactArgs(2),
-	Long: getCommandHelp(`Publish a Release for a consuming Target, bundling the Units in <space-slug> that are assigned to that Target.
+	Args:  cobra.ExactArgs(1),
+	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <space-slug> that are assigned to that Target.
 
 <space-slug> is the Space whose Units are bundled (and becomes the Release's
-Space); a Space ID is also accepted. The consuming Target is addressed as
-<target-space>/<target-slug> (a bare <target-slug> resolves in the selected or
-default Space, and a Target ID is also accepted); it may live in a different
-Space than the bundled Units.
+Space); a Space ID is also accepted. The consuming Target is the Space's
+ReleaseTargetID, set via `+"`cub space create/update --release-target`"+`.
 
 By default each bundled Unit is captured at its head Revision. Pass --revision
 to instead pin each Unit to the highest-numbered Revision carrying that Tag; a
@@ -28,10 +26,10 @@ revision Tag slug is resolved within the bundled Units' Space (<space-slug>).
 
 Examples:
 `+"```"+`
-  cub release publish my-space target-space/my-target
+  cub release publish my-space
 
   # Bundle each Unit at the Revision tagged "v1.2.0"
-  cub release publish --revision v1.2.0 my-space target-space/my-target
+  cub release publish --revision v1.2.0 my-space
 `+"```"+`
 `, ""),
 	RunE: releasePublishCmdRun,
@@ -47,25 +45,14 @@ func init() {
 
 func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 	// args[0] is a Space slug (a Space ID is also accepted); resolve it to the
-	// Space whose Units are bundled.
+	// Space whose Units are bundled. The consuming Target is the Space's
+	// ReleaseTargetID, resolved server-side.
 	space, err := apiGetSpaceFromSlug(args[0], "SpaceID")
 	if err != nil {
 		return err
 	}
-	// The consuming Target may live in any Space, so it is addressed as
-	// <target-space>/<target-slug> (a bare <target-slug> resolves in the
-	// selected/default Space, and a Target UUID is also accepted).
-	targetID, err := parseEntityIdentifierSingle[goclientnew.Target](
-		args[1],
-		EntityTypeTarget,
-		apiGetTargetFromSlugInSpaceCore,
-		func(t *goclientnew.Target) string { return t.TargetID.String() },
-	)
-	if err != nil {
-		return err
-	}
 
-	body := goclientnew.PublishReleaseJSONRequestBody{TargetID: targetID}
+	body := goclientnew.PublishReleaseJSONRequestBody{}
 
 	// Resolve the revision Tag slug to its ID within the bundled Units' Space (args[0]).
 	if releasePublishRevision != "" {

@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/confighub/sdk/core/cubapi"
 	api "github.com/confighub/sdk/core/function/api"
@@ -19,7 +20,7 @@ import (
 var gitopsDiscoverCmd = &cobra.Command{
 	Use:   "discover <target-slug>",
 	Short: "Discover GitOps resources on a Kubernetes target",
-	Long: getCommandHelp(`Discover ArgoCD Applications, Flux HelmReleases, and Flux Kustomizations
+	Long: getCommandHelp(`[EXPERIMENTAL] Discover ArgoCD Applications, Flux HelmReleases, and Flux Kustomizations
 on a Kubernetes target.
 
 Examples:
@@ -33,9 +34,11 @@ Examples:
 }
 
 func init() {
-	gitopsDiscoverCmd.Flags().StringVar(&whereResource, "where-resource", "", "Additional resource filter expression")
-	addStandardDisplayFlags(gitopsDiscoverCmd)
-	gitopsCmd.AddCommand(gitopsDiscoverCmd)
+	if os.Getenv("CONFIGHUB_EXPERIMENTAL") != "" {
+		gitopsDiscoverCmd.Flags().StringVar(&whereResource, "where-resource", "", "Additional resource filter expression")
+		addStandardDisplayFlags(gitopsDiscoverCmd)
+		gitopsCmd.AddCommand(gitopsDiscoverCmd)
+	}
 }
 
 // runDiscover performs the discover operation and returns the LiveState bytes.

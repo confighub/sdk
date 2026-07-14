@@ -54,7 +54,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -105,7 +105,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -233,7 +233,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -284,7 +284,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -347,6 +347,11 @@ paths:
                   description: ""
                   nullable: true
                   type: object
+                ReleaseTargetID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -469,7 +474,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -520,7 +525,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -604,6 +609,11 @@ paths:
                   description: ""
                   nullable: true
                   type: object
+                ReleaseTargetID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -1375,7 +1385,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning attributes
 
@@ -3215,7 +3225,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning changesets
 
@@ -4068,7 +4078,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning filters
 
@@ -5323,7 +5333,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning invocations
 
@@ -7606,7 +7616,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -7657,7 +7667,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+          Supported attributes for Release are OrganizationID, SpaceID, TagID.
 
           The whole string must be query-encoded.
         in: query
@@ -7925,7 +7935,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -7976,7 +7986,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -8216,7 +8226,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -8363,6 +8373,11 @@ paths:
                   description: ""
                   nullable: true
                   type: object
+                ReleaseTargetID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -12985,7 +13000,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13036,7 +13051,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+          Supported attributes for Release are OrganizationID, SpaceID, TagID.
 
           The whole string must be query-encoded.
         in: query
@@ -13165,6 +13180,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Release data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: A Unit to be bundled has outstanding apply gates
         "500":
           content:
             application/json:
@@ -13207,7 +13228,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeleteResponse'
           description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Release.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
       summary: Withdraw the selected Release
+      tags:
+      - Release
     get:
       description: Get ExtendedRelease
       operationId: GetExtendedRelease
@@ -13224,7 +13295,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+          Supported attributes for Release are OrganizationID, SpaceID, TagID.
 
           The whole string must be query-encoded.
         in: query
@@ -19613,7 +19684,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning tags
 
@@ -21075,7 +21146,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning triggers
 
@@ -22269,7 +22340,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning units
 
@@ -24713,7 +24784,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           Where expression to select destination spaces for cloning views
 
@@ -26079,8 +26150,6 @@ components:
           $ref: '#/components/schemas/Space'
         Tag:
           $ref: '#/components/schemas/Tag'
-        Target:
-          $ref: '#/components/schemas/Target'
       type: object
     ExtendedRevision:
       properties:
@@ -26125,6 +26194,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Organization:
           $ref: '#/components/schemas/Organization'
+        ReleaseTarget:
+          $ref: '#/components/schemas/Target'
         Space:
           $ref: '#/components/schemas/Space'
         TargetCountByToolchainType:
@@ -27966,6 +28037,11 @@ components:
         OCI image (a tar.gz layer plus manifest) so it can be served to and consumed
         by the Target.
       properties:
+        BridgeWorkerID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
         BundleBaseName:
           description: Base filename used for the Release's stored bundle, without
             the .tar.gz suffix.
@@ -28039,13 +28115,6 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
-        TargetID:
-          description: Unique identifier of the Target that consumes this Release's
-            bundle.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -28070,18 +28139,13 @@ components:
           x-go-type-skip-optional-pointer: true
         TagID:
           description: Optional Tag ID identifying the tagged Revision to bundle.
-            For each Unit assigned to the Target, the highest-numbered Revision carrying
-            this Tag is bundled at that Revision instead of the Unit's head Revision.
-            A Unit with no matching tagged Revision falls back to its head Revision.
+            For each Unit assigned to the Space's ReleaseTarget, the highest-numbered
+            Revision carrying this Tag is bundled at that Revision instead of the
+            Unit's head Revision. A Unit with no matching tagged Revision falls back
+            to its head Revision.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
-        TargetID:
-          description: ID of the Target that will consume the Release's bundle.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
       type: object
     ResourceInfo:
       properties:
@@ -28577,6 +28641,18 @@ components:
           x-go-type-skip-optional-pointer: true
         Permissions:
           $ref: '#/components/schemas/Permissions'
+        ReleaseTargetID:
+          description: Reference to a Target used as the default Target for all Units
+            in this Space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        ReleaseURL:
+          description: URL at which Releases for this Space are available, when ReleaseTargetID
+            is set to a Target of ProviderType ProviderOCI. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128

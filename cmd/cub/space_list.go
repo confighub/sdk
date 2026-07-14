@@ -19,12 +19,15 @@ var spaceListCmd = &cobra.Command{
 }
 
 func getSpaceListHelp() string {
-	baseHelp := `List spaces you have access to in this organization. The output includes slugs, environment labels, and summary counts for units, workers, targets, and triggers.
+	baseHelp := `List spaces you have access to in this organization. The output includes slugs, the standard space labels, and the number of units. Use --output=wide to also show the counts of links, tags, changesets, filters, views, invocations, triggers, workers, targets, and attributes.
 
 Examples:
 ` + "```" + `
   # List all spaces with headers
   cub space list
+
+  # List spaces with all summary counts
+  cub space list --output=wide
 
   # List spaces without headers for scripting
   cub space list --no-headers
@@ -65,11 +68,13 @@ Environment-specific operations:
 
 Key information provided:
 - Space slugs: Used for --space flag and context setting
-- Summary counts: Numbers of units, workers, targets, and triggers in each space
+- Standard labels: Component, Owner, Variant, Environment, Region, Layer
+- Unit count: Number of units in each space; -o wide adds the remaining summary counts
 - Organization context: Which org these spaces belong to
 
 Important flags for agents:
 - -o name: Get just space identifiers for automation
+- -o wide: Show all summary counts (links, tags, changesets, filters, views, invocations, triggers, workers, targets, attributes)
 - -o jq=<expr>: Extract specific fields for further processing
 - -o json: Full JSON payload
 - --where: Filter spaces by display name or other attributes
@@ -96,10 +101,18 @@ var spaceAliases = map[string]string{
 	"ID":   "Space.SpaceID",
 }
 
-// Space custom column dependencies (Environment comes from Labels.Environment)
-var spaceCustomColumnDependencies = map[string][]string{
-	"Environment": {"Labels"},
-}
+// spaceLabelColumns are the standard space labels, in the order they are
+// displayed as columns by the space list command.
+var spaceLabelColumns = []string{"Component", "Owner", "Variant", "Environment", "Region", "Layer"}
+
+// Space custom column dependencies (e.g. Environment comes from Labels.Environment)
+var spaceCustomColumnDependencies = func() map[string][]string {
+	deps := make(map[string][]string, len(spaceLabelColumns))
+	for _, label := range spaceLabelColumns {
+		deps[label] = []string{"Labels"}
+	}
+	return deps
+}()
 
 func init() {
 	addStandardListFlags(spaceListCmd)
@@ -130,33 +143,46 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 	return extendedSpace.Space.Slug
 }
 
+// wideSpaceCountColumns are the count columns shown only with --output=wide.
+// #Units is always shown, so it isn't listed here.
+var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"}
+
+func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
+	return []string{
+		fmt.Sprintf("%d", extendedSpace.TotalLinkCount),
+		fmt.Sprintf("%d", extendedSpace.TotalTagCount),
+		fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount),
+		fmt.Sprintf("%d", extendedSpace.TotalFilterCount),
+		fmt.Sprintf("%d", extendedSpace.TotalViewCount),
+		fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),
+		fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
+		fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
+		fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
+		fmt.Sprintf("%d", extendedSpace.TotalAttributeCount),
+	}
+}
+
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
+	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Environment", "#Units", "#Links", "#Tags", "#ChangeSets", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"})
+		header := append([]string{"Name"}, spaceLabelColumns...)
+		header = append(header, "#Units")
+		if wide {
+			header = append(header, wideSpaceCountColumns...)
+		}
+		table.SetHeader(header)
 	}
 	for _, extendedSpace := range extendedSpaces {
-		environment := ""
-		if extendedSpace.Space.Labels != nil {
-			if env, exists := extendedSpace.Space.Labels["Environment"]; exists {
-				environment = env
-			}
+		row := []string{extendedSpace.Space.Slug}
+		for _, label := range spaceLabelColumns {
+			row = append(row, extendedSpace.Space.Labels[label])
 		}
-		table.Append([]string{
-			extendedSpace.Space.Slug,
-			environment,
-			fmt.Sprintf("%d", extendedSpace.TotalUnitCount),
-			fmt.Sprintf("%d", extendedSpace.TotalLinkCount),
-			fmt.Sprintf("%d", extendedSpace.TotalTagCount),
-			fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount),
-			fmt.Sprintf("%d", extendedSpace.TotalFilterCount),
-			fmt.Sprintf("%d", extendedSpace.TotalViewCount),
-			fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),
-			fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
-			fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
-			fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
-			fmt.Sprintf("%d", extendedSpace.TotalAttributeCount),
-		})
+		row = append(row, fmt.Sprintf("%d", extendedSpace.TotalUnitCount))
+		if wide {
+			row = append(row, wideSpaceCounts(extendedSpace)...)
+		}
+		table.Append(row)
 	}
 	table.Render()
 }

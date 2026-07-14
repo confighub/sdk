@@ -150,6 +150,9 @@ const (
 	// Target is the OCI repo and the worker is only a required placeholder. It
 	// does not route by toolchain, so its bridge advertises ToolchainAny.
 	ProviderOCI ProviderType = "OCI"
+	// ProviderNone is used to express the Unit is not in use in a Release
+	// or to be applied
+	ProviderNone ProviderType = "None"
 )
 
 var SupportedProviders = map[ProviderType]bool{

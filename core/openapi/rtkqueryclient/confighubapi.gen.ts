@@ -1239,7 +1239,7 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}`,
           method: 'DELETE',
         }),
-        invalidatesTags: [],
+        invalidatesTags: ['Release'],
       }),
       getExtendedRelease: build.query<GetExtendedReleaseApiResponse, GetExtendedReleaseApiArg>(
         {
@@ -2256,7 +2256,7 @@ export type BulkDeleteSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2292,7 +2292,7 @@ export type BulkDeleteSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -2336,7 +2336,7 @@ export type BulkPatchSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2372,7 +2372,7 @@ export type BulkPatchSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -2397,6 +2397,7 @@ export type BulkPatchSpacesApiArg = {
     Permissions?: {
       [key: string]: object | null;
     } | null;
+    ReleaseTargetID?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     TriggerFilterID?: string | null;
@@ -2441,7 +2442,7 @@ export type BulkCreateSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2477,7 +2478,7 @@ export type BulkCreateSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -2508,6 +2509,7 @@ export type BulkCreateSpacesApiArg = {
     Permissions?: {
       [key: string]: object | null;
     } | null;
+    ReleaseTargetID?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     TriggerFilterID?: string | null;
@@ -2885,7 +2887,7 @@ export type BulkCreateAttributesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning attributes
     
@@ -3672,7 +3674,7 @@ export type BulkCreateChangeSetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning changesets
     
@@ -4090,7 +4092,7 @@ export type BulkCreateFiltersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning filters
     
@@ -4638,7 +4640,7 @@ export type BulkCreateInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning invocations
     
@@ -5409,7 +5411,7 @@ export type ListAllReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5445,7 +5447,7 @@ export type ListAllReleasesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    Supported attributes for Release are OrganizationID, SpaceID, TagID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -5577,7 +5579,7 @@ export type ListSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5613,7 +5615,7 @@ export type ListSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -5652,7 +5654,7 @@ export type GetSpaceApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -5696,6 +5698,7 @@ export type PatchSpaceApiArg = {
     Permissions?: {
       [key: string]: object | null;
     } | null;
+    ReleaseTargetID?: string | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     TriggerFilterID?: string | null;
@@ -6974,7 +6977,7 @@ export type ListExtendedReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, OrganizationID, ReleaseID, SpaceID, TagID, TargetID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7010,7 +7013,7 @@ export type ListExtendedReleasesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    Supported attributes for Release are OrganizationID, SpaceID, TagID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -7048,7 +7051,7 @@ export type GetExtendedReleaseApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Release are OrganizationID, SpaceID, TagID, TargetID.
+    Supported attributes for Release are OrganizationID, SpaceID, TagID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -9052,7 +9055,7 @@ export type BulkCreateTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning tags
     
@@ -9750,7 +9753,7 @@ export type BulkCreateTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning triggers
     
@@ -10289,7 +10292,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning units
     
@@ -11445,7 +11448,7 @@ export type BulkCreateViewsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning views
     
@@ -11560,6 +11563,8 @@ export type Space = {
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Permissions?: Permissions;
+  /** Reference to a Target used as the default Target for all Units in this Space. */
+  ReleaseTargetID?: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -11670,6 +11675,10 @@ export type SpaceRead = {
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Permissions?: Permissions;
+  /** Reference to a Target used as the default Target for all Units in this Space. */
+  ReleaseTargetID?: string;
+  /** URL at which Releases for this Space are available, when ReleaseTargetID is set to a Target of ProviderType ProviderOCI. (readonly) */
+  ReleaseURL?: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13396,6 +13405,7 @@ export type OAuthClientRead = {
   RedirectURIs?: string[] | null;
 };
 export type Release = {
+  BridgeWorkerID?: string;
   /** Base filename used for the Release's stored bundle, without the .tar.gz suffix. */
   BundleBaseName?: string;
   /** The stored tar.gz bundle of the released Units' configuration. */
@@ -13412,12 +13422,11 @@ export type Release = {
   SpaceID?: string;
   /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
   TagID?: string;
-  /** Unique identifier of the Target that consumes this Release's bundle. */
-  TargetID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
 export type ReleaseRead = {
+  BridgeWorkerID?: string;
   /** Base filename used for the Release's stored bundle, without the .tar.gz suffix. */
   BundleBaseName?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -13442,12 +13451,192 @@ export type ReleaseRead = {
   SpaceSlug?: string;
   /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
   TagID?: string;
-  /** Unique identifier of the Target that consumes this Release's bundle. */
-  TargetID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
+};
+export type ExtendedRelease = {
+  Organization?: Organization;
+  Release?: Release;
+  Space?: Space;
+  Tag?: Tag;
+};
+export type ExtendedReleaseRead = {
+  Organization?: OrganizationRead;
+  Release?: ReleaseRead;
+  Space?: SpaceRead;
+  Tag?: TagRead;
+};
+export type Revision = {
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
+  ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
+    [key: string]: boolean;
+  };
+  /** the users that have approved the latest version of the config data for the Unit. */
+  ApprovedBy?: Uuid[];
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
+  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
+  ContentHash?: number;
+  /** The full configuration data for this unit at this revision. */
+  Data?: string;
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  DataHash?: string;
+  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
+  Description?: string;
+  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
+  LiveAt?: string;
+  MutationSources?: ResourceMutationList;
+  /** Unique identifier for an Organization. */
+  OrganizationID?: string;
+  Releases?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Revision. */
+  RevisionID?: string;
+  /** Sequence number for a Revision. */
+  RevisionNum?: number;
+  /** ConfigHub operation that created this revision. */
+  Source?: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
+  Tags?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Unit. */
+  UnitID?: string;
+  /** User-Agent string if created by an API call. Optional. */
+  UserAgent?: string;
+  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type RevisionRead = {
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
+  ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
+    [key: string]: boolean;
+  };
+  /** the users that have approved the latest version of the config data for the Unit. */
+  ApprovedBy?: Uuid[];
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
+  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
+  ContentHash?: number;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** The full configuration data for this unit at this revision. */
+  Data?: string;
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  DataHash?: string;
+  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
+  Description?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
+  LiveAt?: string;
+  MutationSources?: ResourceMutationList;
+  /** Unique identifier for an Organization. */
+  OrganizationID?: string;
+  Releases?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Revision. */
+  RevisionID?: string;
+  /** Sequence number for a Revision. */
+  RevisionNum?: number;
+  /** ConfigHub operation that created this revision. */
+  Source?: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
+  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
+  Tags?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Unit. */
+  UnitID?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** User-Agent string if created by an API call. Optional. */
+  UserAgent?: string;
+  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type User = {
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Unique identifier for the External Identity Provider record matching this User. */
+  ExternalID?: string;
+  /** The URL to get the profile avatar picture of the User. */
+  ProfilePictureURL?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a User. */
+  UserID?: string;
+  /** Unique username for a User. Must be unique for all of Confighub. */
+  Username?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type UserRead = {
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Unique identifier for the External Identity Provider record matching this User. */
+  ExternalID?: string;
+  /** The URL to get the profile avatar picture of the User. */
+  ProfilePictureURL?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** Unique identifier for a User. */
+  UserID?: string;
+  /** Unique username for a User. Must be unique for all of Confighub. */
+  Username?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type ExtendedRevision = {
+  ChangeSet?: ChangeSet;
+  Error?: ResponseError;
+  Organization?: Organization;
+  Revision?: Revision;
+  Space?: Space;
+  Tags?: Tag[];
+  Unit?: Unit;
+  User?: User;
+};
+export type ExtendedRevisionRead = {
+  ChangeSet?: ChangeSetRead;
+  Error?: ResponseError;
+  Organization?: OrganizationRead;
+  Revision?: RevisionRead;
+  Space?: SpaceRead;
+  Tags?: TagRead[];
+  Unit?: UnitRead;
+  User?: UserRead;
 };
 export type TargetConfigType = {
   /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
@@ -13655,190 +13844,6 @@ export type TargetRead = {
     The whole string must be query-encoded. */
   WhereTrigger?: string;
 };
-export type ExtendedRelease = {
-  Organization?: Organization;
-  Release?: Release;
-  Space?: Space;
-  Tag?: Tag;
-  Target?: Target;
-};
-export type ExtendedReleaseRead = {
-  Organization?: OrganizationRead;
-  Release?: ReleaseRead;
-  Space?: SpaceRead;
-  Tag?: TagRead;
-  Target?: TargetRead;
-};
-export type Revision = {
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
-  ApplyGates?: {
-    [key: string]: boolean;
-  };
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
-  ApplyWarnings?: {
-    [key: string]: boolean;
-  };
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
-  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
-  ChangeSetID?: string;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
-  DataHash?: string;
-  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
-  Description?: string;
-  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
-  LiveAt?: string;
-  MutationSources?: ResourceMutationList;
-  /** Unique identifier for an Organization. */
-  OrganizationID?: string;
-  Releases?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Revision. */
-  RevisionID?: string;
-  /** Sequence number for a Revision. */
-  RevisionNum?: number;
-  /** ConfigHub operation that created this revision. */
-  Source?: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
-  Tags?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Unit. */
-  UnitID?: string;
-  /** User-Agent string if created by an API call. Optional. */
-  UserAgent?: string;
-  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
-  UserID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type RevisionRead = {
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
-  ApplyGates?: {
-    [key: string]: boolean;
-  };
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
-  ApplyWarnings?: {
-    [key: string]: boolean;
-  };
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
-  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
-  ChangeSetID?: string;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
-  DataHash?: string;
-  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
-  Description?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
-  LiveAt?: string;
-  MutationSources?: ResourceMutationList;
-  /** Unique identifier for an Organization. */
-  OrganizationID?: string;
-  Releases?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Revision. */
-  RevisionID?: string;
-  /** Sequence number for a Revision. */
-  RevisionNum?: number;
-  /** ConfigHub operation that created this revision. */
-  Source?: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** Slug of the Space this entity belongs to. (readonly) */
-  SpaceSlug?: string;
-  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
-  Tags?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Unit. */
-  UnitID?: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** User-Agent string if created by an API call. Optional. */
-  UserAgent?: string;
-  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
-  UserID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type User = {
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Unique identifier for the External Identity Provider record matching this User. */
-  ExternalID?: string;
-  /** The URL to get the profile avatar picture of the User. */
-  ProfilePictureURL?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a User. */
-  UserID?: string;
-  /** Unique username for a User. Must be unique for all of Confighub. */
-  Username?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type UserRead = {
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Unique identifier for the External Identity Provider record matching this User. */
-  ExternalID?: string;
-  /** The URL to get the profile avatar picture of the User. */
-  ProfilePictureURL?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** Unique identifier for a User. */
-  UserID?: string;
-  /** Unique username for a User. Must be unique for all of Confighub. */
-  Username?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type ExtendedRevision = {
-  ChangeSet?: ChangeSet;
-  Error?: ResponseError;
-  Organization?: Organization;
-  Revision?: Revision;
-  Space?: Space;
-  Tags?: Tag[];
-  Unit?: Unit;
-  User?: User;
-};
-export type ExtendedRevisionRead = {
-  ChangeSet?: ChangeSetRead;
-  Error?: ResponseError;
-  Organization?: OrganizationRead;
-  Revision?: RevisionRead;
-  Space?: SpaceRead;
-  Tags?: TagRead[];
-  Unit?: UnitRead;
-  User?: UserRead;
-};
 export type Trigger = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -13983,6 +13988,7 @@ export type ExtendedSpace = {
   GatedUnitCount?: number;
   IncompleteApplyUnitCount?: number;
   Organization?: Organization;
+  ReleaseTarget?: Target;
   Space?: Space;
   TargetCountByToolchainType?: {
     [key: string]: number;
@@ -14015,6 +14021,7 @@ export type ExtendedSpaceRead = {
   GatedUnitCount?: number;
   IncompleteApplyUnitCount?: number;
   Organization?: OrganizationRead;
+  ReleaseTarget?: TargetRead;
   Space?: SpaceRead;
   TargetCountByToolchainType?: {
     [key: string]: number;
@@ -14061,10 +14068,8 @@ export type BridgeWorkerStatus = {
 export type ReleasePublishRequest = {
   /** Optional override of the name of the Release's tar.gz bundle. */
   BundleBaseName?: string;
-  /** Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Target, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. */
+  /** Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. */
   TagID?: string;
-  /** ID of the Target that will consume the Release's bundle. */
-  TargetID?: string;
 };
 export type ExtendedTag = {
   ChangeSet?: ChangeSet;

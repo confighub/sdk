@@ -4,13 +4,15 @@
 package main
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
 var gitopsCmd = &cobra.Command{
 	Use:   "gitops",
 	Short: "GitOps commands",
-	Long: getCommandHelp(`The gitops subcommands automate the process of discovering GitOps resources
+	Long: getCommandHelp(`[EXPERIMENTAL] The gitops subcommands automate the process of discovering GitOps resources
 (ArgoCD Applications, Flux HelmReleases/Kustomizations) from a Kubernetes target, rendering
 them, and creating the corresponding ConfigHub units and links.
 
@@ -39,8 +41,10 @@ const (
 )
 
 func init() {
-	addSpaceFlags(gitopsCmd)
-	rootCmd.AddCommand(gitopsCmd)
+	if os.Getenv("CONFIGHUB_EXPERIMENTAL") != "" {
+		addSpaceFlags(gitopsCmd)
+		rootCmd.AddCommand(gitopsCmd)
+	}
 }
 
 // discoverUnitSlug generates the slug for a discover unit based on the target slug and space ID.

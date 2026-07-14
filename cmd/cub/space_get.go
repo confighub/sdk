@@ -64,6 +64,11 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions)})
 	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
+	// ReleaseURL is only populated for a Space whose ReleaseTarget is an OCI
+	// provider, so only show the row when one is set.
+	if spaceDetails.ReleaseURL != "" {
+		view.Append([]string{"Release URL", spaceDetails.ReleaseURL})
+	}
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
 }
 

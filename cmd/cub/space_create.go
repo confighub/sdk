@@ -21,6 +21,7 @@ var spaceCreateArgs struct {
 	namePrefixes  []string
 	whereTrigger  string
 	triggerFilter string
+	releaseTarget string
 	setContext    bool
 	permissions   []string
 	variantLabels []string
@@ -65,6 +66,7 @@ func init() {
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the selected or default Space; a Target ID is also accepted)")
 	spaceCreateCmd.Flags().BoolVar(&spaceCreateArgs.setContext, "set-context", false, "set the newly created space as the default in the current context")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
@@ -193,6 +195,22 @@ func runSingleSpaceCreate(args []string) error {
 		newBody.TriggerFilterID = &triggerFilterUUID
 	}
 
+	// Set ReleaseTargetID if provided. The Target may live in any Space, so it is
+	// addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the
+	// selected/default Space, and a Target UUID is also accepted).
+	if spaceCreateArgs.releaseTarget != "" {
+		releaseTargetID, err := parseEntityIdentifierSingle[goclientnew.Target](
+			spaceCreateArgs.releaseTarget,
+			EntityTypeTarget,
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
+		if err != nil {
+			return err
+		}
+		newBody.ReleaseTargetID = &releaseTargetID
+	}
+
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateSpaceParams{}
 	if allowExists {
@@ -237,6 +255,21 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 		triggerFilterUUID = &parsed
 	}
 
+	// Resolve ReleaseTargetID if provided, addressed as <target-space>/<target-slug>.
+	var releaseTargetUUID *uuid.UUID
+	if spaceCreateArgs.releaseTarget != "" {
+		releaseTargetID, err := parseEntityIdentifierSingle[goclientnew.Target](
+			spaceCreateArgs.releaseTarget,
+			EntityTypeTarget,
+			apiGetTargetFromSlugInSpaceCore,
+			func(t *goclientnew.Target) string { return t.TargetID.String() },
+		)
+		if err != nil {
+			return nil, err
+		}
+		releaseTargetUUID = &releaseTargetID
+	}
+
 	// Build patch data with space enhancer
 	spaceEnhancer := func(patchMap map[string]interface{}) {
 		// Add WhereTrigger if provided
@@ -250,6 +283,10 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 			patchMap["TriggerFilterID"] = nil
 		} else if triggerFilterUUID != nil {
 			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
+		}
+		// Add ReleaseTargetID if provided
+		if releaseTargetUUID != nil {
+			patchMap["ReleaseTargetID"] = releaseTargetUUID.String()
 		}
 	}
 

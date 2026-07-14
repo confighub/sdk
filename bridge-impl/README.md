@@ -1,5 +1,9 @@
 # Bridge Workers
 
+IMPORTANT: Bridges are experimental and the protocol is expected to change. It is currently recommended that you configure ArgoCD, Flux, Sveltos, or other GitOps Operator to pull configuration directly using the OCI endpoint: oci://oci.hub.confighub.com:443. See [the documentation](https://docs.confighub.com) for more details.
+
+---
+
 Bridge Workers are specialized components designed to handle configuration management and deployment automation tasks. These workers interact with ConfigHub to perform operations such as applying configurations, refreshing states, importing resources, and destroying configurations. They support multiple toolchains and providers, including Kubernetes.
 
 ## Documentation
