@@ -7,10 +7,10 @@ toolchain go1.25.11
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/envkit v0.1.92
-	github.com/confighub/sdk/configkit/k8skit v0.1.92
-	github.com/confighub/sdk/core v0.1.92
-	github.com/confighub/sdk/function-impl v0.1.92
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0-00010101000000-000000000000
 	github.com/drone/envsubst/v2 v2.0.0-20210730161058-179042472c46
 	github.com/fluxcd/cli-utils v0.36.0-flux.12
 	github.com/fluxcd/pkg/kustomize v1.15.0
@@ -57,13 +57,13 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.1.92 // indirect
-	github.com/confighub/sdk/configkit/yqkit v0.1.92 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
@@ -215,6 +215,17 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
+	github.com/confighub/sdk/function-impl => ../function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
