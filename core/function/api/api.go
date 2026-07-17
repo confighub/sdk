@@ -131,6 +131,14 @@ type FunctionInvocationOptions struct {
 type FunctionOptions struct {
 	WhereResourceExpressions []*VisitorRelationalExpression
 
+	// ResourceIndexes, when non-nil, restricts functions to the resources at these indexes
+	// in the parsed configuration data, AND-ed with WhereResourceExpressions. A non-nil but
+	// empty slice matches no resources. Indexes identify a resource independently of its
+	// content, so a selection resolved before a mutation still designates the same resource
+	// after it; set-attributes relies on that to scope an attribute to the resource it names
+	// even when an earlier attribute in the same list renames that resource.
+	ResourceIndexes []int
+
 	// If true, include full details in function output. For now this is a per-function property
 	// that is passed to the visitor implementation.
 	IncludeDetails bool
@@ -145,6 +153,15 @@ func GetWhereResourceExpressions(options *FunctionOptions) []*VisitorRelationalE
 		return nil
 	}
 	return options.WhereResourceExpressions
+}
+
+// GetResourceIndexes returns the resource index restriction in options, or nil if there
+// is none. A nil return means all resources; an empty non-nil slice means none.
+func GetResourceIndexes(options *FunctionOptions) []int {
+	if options == nil {
+		return nil
+	}
+	return options.ResourceIndexes
 }
 
 func GetIncludeDetails(options *FunctionOptions) bool {

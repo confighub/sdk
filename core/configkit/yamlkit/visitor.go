@@ -103,20 +103,27 @@ func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.Resour
 }
 
 // VisitResourcesFiltered iterates over resources, skipping those that don't match the
-// WhereResourceExpressions in options. When options has no WhereResourceExpressions,
-// it behaves identically to VisitResources.
+// WhereResourceExpressions in options or that fall outside its ResourceIndexes. The two
+// restrictions are AND-ed. When options has neither, it behaves identically to
+// VisitResources.
 func VisitResourcesFiltered(parsedData gaby.Container, output any, resourceProvider ResourceProvider, options *api.FunctionOptions, visitor ResourceVisitorFunc) (any, error) {
 	whereExpressions := api.GetWhereResourceExpressions(options)
-	if len(whereExpressions) == 0 {
+	resourceIndexes := api.GetResourceIndexes(options)
+	if len(whereExpressions) == 0 && resourceIndexes == nil {
 		return VisitResources(parsedData, output, resourceProvider, visitor)
 	}
 	filteredVisitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		matched, err := MatchesWhereResourceExpressions(doc, resourceInfo, whereExpressions)
-		if err != nil {
-			return output, []error{err}
-		}
-		if !matched {
+		if resourceIndexes != nil && !slices.Contains(resourceIndexes, index) {
 			return output, nil
+		}
+		if len(whereExpressions) != 0 {
+			matched, err := MatchesWhereResourceExpressions(doc, resourceInfo, whereExpressions)
+			if err != nil {
+				return output, []error{err}
+			}
+			if !matched {
+				return output, nil
+			}
 		}
 		return visitor(doc, output, index, resourceInfo)
 	}

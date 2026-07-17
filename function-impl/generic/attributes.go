@@ -102,7 +102,7 @@ func registerSetAttributes(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set specified attributes to the specified values. This function is intended to be used for read-modify-write operations in combination with any (typically `get-`) functions returning output of the type " + string(api.DataTypeAttributeValueList) + ".",
+			Description:           "Set specified attributes to the specified values. Each attribute is set on the resource named by its ResourceName; an attribute with no ResourceName is set on every resource of its ResourceType. This function is intended to be used for read-modify-write operations in combination with any (typically `get-`) functions returning output of the type " + string(api.DataTypeAttributeValueList) + ".",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -124,14 +124,73 @@ func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionC
 	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, options)
 }
 
+// indexedResource is a resource's position in the parsed data together with its type,
+// which tells apart resources that share a name — a Deployment and a Service both named
+// default/web, say.
+type indexedResource struct {
+	Index        int
+	ResourceType api.ResourceType
+}
+
+// resourceIndexesByName maps each resource's name to the resources carrying that name.
+//
+// The map is built from the data as it stands before any attribute is applied, and indexes
+// stay valid across the setters, which mutate resources in place without reordering them.
+// Resolving names to indexes up front is what lets an attribute reach the resource it names
+// even after an earlier attribute in the same list renamed that resource — as search-replace
+// does whenever the value it rewrites also appears in a resource's name.
+func resourceIndexesByName(parsedData gaby.Container, resourceProvider yamlkit.ResourceProvider) map[api.ResourceName][]indexedResource {
+	indexes := map[api.ResourceName][]indexedResource{}
+	_, _ = yamlkit.VisitResources(parsedData, nil, resourceProvider,
+		func(_ *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+			if resourceInfo.ResourceName != "" {
+				indexes[resourceInfo.ResourceName] = append(indexes[resourceInfo.ResourceName],
+					indexedResource{Index: index, ResourceType: resourceInfo.ResourceType})
+			}
+			return output, nil
+		})
+	return indexes
+}
+
+// scopeOptionsToResource returns options restricted to the resource an attribute names,
+// so that the attribute is set only on that resource rather than on every resource of its
+// type. Returns options unchanged when the attribute names no resource.
+//
+// resourceType is matched as well as the name, so an attribute typed for one of two
+// same-named resources doesn't select the other. The setters apply their own resource-type
+// filter, which would mask an over-broad selection here; scoping on both keeps the index
+// set meaningful on its own. An attribute typed ResourceTypeAny names a resource of any
+// type, so it selects every resource carrying the name.
+//
+// An attribute naming a resource that isn't in the data is scoped to no resources rather
+// than to all of them: the caller named a resource this Unit doesn't have, so the safe
+// reading is that nothing should be written.
+func scopeOptionsToResource(options *api.FunctionOptions, indexesByName map[api.ResourceName][]indexedResource, resourceType api.ResourceType, resourceName api.ResourceName) *api.FunctionOptions {
+	if resourceName == "" {
+		return options
+	}
+	scoped := api.FunctionOptions{}
+	if options != nil {
+		scoped = *options
+	}
+	scoped.ResourceIndexes = []int{}
+	for _, resource := range indexesByName[resourceName] {
+		if resourceType == api.ResourceTypeAny || resource.ResourceType == resourceType {
+			scoped.ResourceIndexes = append(scoped.ResourceIndexes, resource.Index)
+		}
+	}
+	return &scoped
+}
+
 func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, options *api.FunctionOptions) (gaby.Container, any, error) {
 	var multiErrs []error
+	indexesByName := resourceIndexesByName(parsedData, resourceProvider)
 	for _, attribute := range attributeList {
 		var err error
 		setterArgs := make([]api.FunctionArgument, 3)
-		// TODO: match resourceName if set?
 		setterArgs[0].Value = string(attribute.ResourceType)
 		setterArgs[1].Value = string(attribute.Path)
+		attributeOptions := scopeOptionsToResource(options, indexesByName, attribute.ResourceType, attribute.ResourceName)
 		switch attribute.DataType {
 		case api.DataTypeString:
 			stringValue, ok := attribute.Value.(string)
@@ -139,7 +198,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not string: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = stringValue
-				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
+				parsedData, _, err = GenericFnSetStringPath(resourceProvider, functionContext, parsedData, setterArgs, true, attributeOptions)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -152,7 +211,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 			} else {
 				intValue := int(math.Round(floatValue))
 				setterArgs[2].Value = intValue
-				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
+				parsedData, _, err = GenericFnSetIntPath(resourceProvider, functionContext, parsedData, setterArgs, true, attributeOptions)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -163,7 +222,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not bool: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = boolValue
-				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
+				parsedData, _, err = GenericFnSetBoolPath(resourceProvider, functionContext, parsedData, setterArgs, true, attributeOptions)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
@@ -177,7 +236,7 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 				multiErrs = append(multiErrs, fmt.Errorf("value of attribute %s is not a YAML string: %v", attribute.AttributeName, attribute.Value))
 			} else {
 				setterArgs[2].Value = yamlValue
-				parsedData, _, err = GenericFnSetPath(resourceProvider, functionContext, parsedData, setterArgs, true, options)
+				parsedData, _, err = GenericFnSetPath(resourceProvider, functionContext, parsedData, setterArgs, true, attributeOptions)
 				if err != nil {
 					multiErrs = append(multiErrs, err)
 				}
