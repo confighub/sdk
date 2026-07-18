@@ -16,6 +16,11 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
+// EventHandler receives one event-log fact from the event log. It is used by
+// EventConsumer, the standalone event-log reader — event delivery is not part
+// of the bridge/function worker connection.
+type EventHandler = func(ctx context.Context, entry api.EventLogEntry)
+
 type Worker struct {
 	confighubURL     string
 	workerId         string

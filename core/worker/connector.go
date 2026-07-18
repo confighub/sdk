@@ -32,6 +32,24 @@ const (
 	TransportLongPoll    = lib.TransportLongPoll
 )
 
+// EventHandler re-exports lib.EventHandler so bot authors importing this package
+// don't also have to import core/worker/lib to register an event callback.
+type EventHandler = lib.EventHandler
+
+// EventConsumer re-exports lib.EventConsumer, the standalone event-log reader.
+// It is separate from the bridge/function worker connection: an event consumer
+// authenticates as a worker identity but holds no lease and dequeues no
+// operations.
+type EventConsumer = lib.EventConsumer
+
+// NewEventConsumer creates a standalone event-log consumer for the given worker
+// identity and one subscription (its Name is the cursor name). handler is invoked
+// for each delivered fact. Call Run to start consuming; it blocks until its
+// context is canceled. Run several consumers for several cursors.
+func NewEventConsumer(serverURL, workerID, workerSecret string, subscription api.EventSubscription, handler EventHandler) *EventConsumer {
+	return lib.NewEventConsumer(serverURL, workerID, workerSecret, subscription, handler)
+}
+
 type ConfighubConnector struct {
 	functionExecutor executor.FunctionExecutor
 	bridgeDispatcher *BridgeDispatcher

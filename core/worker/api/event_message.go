@@ -13,6 +13,11 @@ const (
 
 	// EventFunctionWorker is the event type for function worker-level events.
 	EventFunctionWorker = "FunctionWorkerEvent"
+
+	// EventLog is the message type carrying one EventLogEntry: a fact delivered
+	// from ConfigHub's event log to a subscribed worker. Its Data is an
+	// EventLogEntry.
+	EventLog = "EventLog"
 )
 
 // This currently matches the HTTP2 server-sent events protocol.

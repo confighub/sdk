@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/function/executor"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 	"github.com/shirou/gopsutil/v3/mem"
 	"go.opentelemetry.io/otel/attribute"
@@ -51,21 +51,21 @@ const (
 )
 
 type workerClient struct {
-	serverURL      string
-	workerID       string
-	workerSecret   string
-	workerSlug     string
-	client         *http.Client
-	done           chan struct{}
+	serverURL        string
+	workerID         string
+	workerSecret     string
+	workerSlug       string
+	client           *http.Client
+	done             chan struct{}
 	bridgeWorker     api.BridgeWorker
 	functionExecutor executor.FunctionExecutor
-	watcherManager *WatcherManager // Manages watcher lifecycle and execution
-	unitQueues     *UnitQueueManager
-	operationsWg   sync.WaitGroup // Track in-flight operations (Apply/Destroy/etc)
-	metricsMeter   metric.Meter
-	eventCounter   metric.Int64Counter
-	actionCounter  metric.Int64Counter
-	errorCounter   metric.Int64Counter
+	watcherManager   *WatcherManager // Manages watcher lifecycle and execution
+	unitQueues       *UnitQueueManager
+	operationsWg     sync.WaitGroup // Track in-flight operations (Apply/Destroy/etc)
+	metricsMeter     metric.Meter
+	eventCounter     metric.Int64Counter
+	actionCounter    metric.Int64Counter
+	errorCounter     metric.Int64Counter
 
 	// transportType selects the wire protocol. Default TransportHTTP2Stream
 	// runs the SSE code in this file verbatim. TransportLongPoll delegates
@@ -153,17 +153,17 @@ func newClient(
 	}
 
 	client := &workerClient{
-		serverURL:      serverURL,
-		workerID:       workerID,
-		workerSecret:   workerSecret,
-		client:         &http.Client{Transport: transport},
-		done:           make(chan struct{}),
-		bridgeWorker:   bridgeWorker,
+		serverURL:        serverURL,
+		workerID:         workerID,
+		workerSecret:     workerSecret,
+		client:           &http.Client{Transport: transport},
+		done:             make(chan struct{}),
+		bridgeWorker:     bridgeWorker,
 		functionExecutor: functionExecutor,
-		watcherManager: NewWatcherManager(10, 50), // 10 workers, queue size 50
-		unitQueues:     NewUnitQueueManager(),
-		metricsMeter:   metricsMeter,
-		transportType:  transportType,
+		watcherManager:   NewWatcherManager(10, 50), // 10 workers, queue size 50
+		unitQueues:       NewUnitQueueManager(),
+		metricsMeter:     metricsMeter,
+		transportType:    transportType,
 	}
 
 	// Fetch /api/info to get the WorkerPort and update serverURL
