@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/core v0.1.96
+	github.com/confighub/sdk/core v0.0.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
 
@@ -44,3 +44,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core
