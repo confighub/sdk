@@ -3,7 +3,11 @@
 
 package k8skit
 
-import "github.com/confighub/sdk/core/function/api"
+import (
+	"strings"
+
+	"github.com/confighub/sdk/core/function/api"
+)
 
 // kustomize keeps a list of namespaced resource types, which we may want to consider using:
 // https://github.com/kubernetes-sigs/kustomize/blob/65567a37331715052d98e9b538d6bdb5089da8cc/kyaml/openapi/openapi.go#L94
@@ -109,9 +113,51 @@ var K8sClusterScopedResourceTypes = map[api.ResourceType]struct{}{
 	api.ResourceType("services.k8s.aws/v1alpha1/IAMRoleSelector"): {},
 }
 
+// Crossplane encodes scope in the API group rather than per type, which is the only tractable way
+// to classify it: a provider family ships thousands of managed resource types and adds more with
+// each release, so enumerating them in K8sClusterScopedResourceTypes would dwarf the hand-curated
+// map above and go stale immediately.
+//
+// Managed resources under *.upbound.io and *.crossplane.io are cluster-scoped, except the
+// Crossplane v2 namespaced variants, which carry a ".m." infix (eks.aws.m.upbound.io). This is a
+// generalization of data already in the map — every Crossplane control-plane type enumerated there
+// (Composition, Provider, …) is cluster-scoped and matches the rule.
+//
+// It does not classify user-defined composite resources, whose API groups are arbitrary; those
+// still need an explicit registration or a where-expression.
+const (
+	crossplaneUpboundSuffix   = ".upbound.io"
+	crossplaneCoreSuffix      = ".crossplane.io"
+	crossplaneNamespacedInfix = ".m."
+)
+
+// IsCrossplaneClusterScopedGroup reports whether a Crossplane API group is cluster-scoped by the
+// group-suffix rule.
+func IsCrossplaneClusterScopedGroup(group string) bool {
+	if !strings.HasSuffix(group, crossplaneUpboundSuffix) && !strings.HasSuffix(group, crossplaneCoreSuffix) {
+		return false
+	}
+	return !strings.Contains(group, crossplaneNamespacedInfix)
+}
+
+// IsResourceTypeClusterScoped reports whether a resource type is cluster-scoped: either it is in
+// the curated K8sClusterScopedResourceTypes map, or its API group matches the Crossplane
+// group-suffix rule (see IsCrossplaneClusterScopedGroup).
 func IsResourceTypeClusterScoped(rt api.ResourceType) bool {
-	_, ok := K8sClusterScopedResourceTypes[rt]
-	return ok
+	if _, ok := K8sClusterScopedResourceTypes[rt]; ok {
+		return true
+	}
+	return IsCrossplaneClusterScopedGroup(apiGroupOf(rt))
+}
+
+// apiGroupOf extracts the API group from a "[group/]version/Kind" resource type. A core type
+// ("v1/Pod") has no group and yields "".
+func apiGroupOf(rt api.ResourceType) string {
+	parts := strings.Split(string(rt), "/")
+	if len(parts) < 3 {
+		return ""
+	}
+	return parts[0]
 }
 
 // IsClusterScoped returns true if the given apiVersion and kind represent a cluster-scoped resource.

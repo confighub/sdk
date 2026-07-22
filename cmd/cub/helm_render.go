@@ -9,34 +9,29 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/confighub/sdk/bridge-impl/helmutils"
 )
 
-// helmTemplateCmd renders a Helm chart's templates locally without requiring a server.
+// helmTemplateCmd renders a Helm chart locally, previewing what
+// 'cub helm install' would generate, without a server connection.
 var helmTemplateCmd = &cobra.Command{
-	Use:   "template <release-name> <repo>/<chartname>",
-	Short: "Render a Helm chart's templates locally",
-	Long: getCommandHelp(`Render a Helm chart's templates to stdout or to a local directory.
-This command does not require a ConfigHub server connection.
+	Use:   "template <release-name> <chart-ref>",
+	Short: "Render a Helm chart locally, previewing the generated units",
+	Long: getCommandHelp(`Render a Helm chart client-side and show the units 'cub helm install'
+would generate, without requiring a ConfigHub server connection.
 
-It loads a chart from configured Helm repositories, renders templates with
-the provided values, splits CRDs from regular resources, and outputs the result.
-
-By default, rendered YAML is written to stdout. Use --output-dir to write
-separate files for CRDs and resources.
+By default the rendered units are written to stdout, each preceded by a
+"# Unit: <slug>" comment. Use --output-dir to write one <slug>.yaml file per
+unit instead.
 
 Examples:
 `+"```"+`
-  # Render nginx chart to stdout
-  cub helm template my-nginx bitnami/nginx --version 15.5.2
+  # Preview to stdout
+  cub helm template cubbychat oci://ghcr.io/confighub/charts/cubbychat
 
-  # Render with custom values to stdout
-  cub helm template my-nginx bitnami/nginx --version 15.5.2 -f values.yaml --set image.tag=latest
-
-  # Render to a directory (creates my-nginx.yaml and my-nginx-crds.yaml)
-  cub helm template my-nginx bitnami/nginx --version 15.5.2 --output-dir ./out
-
-  # Render cert-manager with namespace
-  cub helm template cert-manager jetstack/cert-manager --version v1.17.1 --namespace cert-manager --output-dir ./out
+  # Write one file per unit
+  cub helm template cubbychat ./charts/cubbychat --output-dir ./out
 `+"```"+`
 `, ""),
 	Args:          cobra.ExactArgs(2),
@@ -48,93 +43,97 @@ Examples:
 }
 
 var helmTemplateArgs struct {
-	valuesFiles    []string
-	set            []string
-	version        string
-	repo           string
-	namespace      string
-	usePlaceholder bool
-	skipCRDs       bool
-	outputDir      string
+	prefix          string
+	namespace       string
+	createNamespace bool
+	valuesFiles     []string
+	set             []string
+	version         string
+	repo            string
+	includeHooks    bool
+	skipCRDs        bool
+	outputDir       string
 }
 
 func init() {
-	helmTemplateCmd.Flags().StringArrayVarP(&helmTemplateArgs.valuesFiles, "values", "f", []string{}, "specify values in a YAML file or a URL (can specify multiple)")
+	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.prefix, "prefix", "", "prefix for generated unit slugs")
+	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.namespace, "namespace", "", "release namespace; when omitted the placeholder namespace is rendered")
+	helmTemplateCmd.Flags().BoolVar(&helmTemplateArgs.createNamespace, "create-namespace", false, "synthesize a Namespace unit for the release namespace")
+	helmTemplateCmd.Flags().StringArrayVarP(&helmTemplateArgs.valuesFiles, "values", "f", []string{}, "specify values in a YAML file (can specify multiple)")
 	helmTemplateCmd.Flags().StringArrayVar(&helmTemplateArgs.set, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.version, "version", "", "specify a version constraint for the chart version to use. This constraint can be a specific tag (e.g. 1.1.1) or range (e.g. ^2.0.0)")
-	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.repo, "repo", "", "specify the chart repository URL where to locate the requested chart")
-	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.namespace, "namespace", "default", "namespace for the release (used during template rendering)")
-	helmTemplateCmd.Flags().BoolVar(&helmTemplateArgs.usePlaceholder, "use-placeholder", false, "use confighubplaceholder placeholder for rendering")
-	helmTemplateCmd.Flags().BoolVar(&helmTemplateArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be rendered (does not affect templated CRDs)")
-	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.outputDir, "output-dir", "", "write rendered YAML files to this directory instead of stdout")
+	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.version, "version", "", "chart version constraint: a specific version (e.g. 1.1.1) or a range (e.g. ^2.0.0)")
+	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.repo, "repo", "", "chart repository URL to resolve a bare chart name against")
+	helmTemplateCmd.Flags().BoolVar(&helmTemplateArgs.includeHooks, "include-hooks", false, "keep helm.sh/hook manifests as plain resources instead of dropping them")
+	helmTemplateCmd.Flags().BoolVar(&helmTemplateArgs.skipCRDs, "skip-crds", false, "do not generate units from the chart's crds/ directories")
+	helmTemplateCmd.Flags().StringVar(&helmTemplateArgs.outputDir, "output-dir", "", "write one <slug>.yaml file per unit to this directory instead of stdout")
 
 	helmCmd.AddCommand(helmTemplateCmd)
 }
 
 func helmTemplateCmdRun(cmd *cobra.Command, args []string) error {
 	releaseName := args[0]
-	chartName := args[1]
+	chartRef := args[1]
 
-	result, err := renderHelmChart(helmRenderInput{
-		releaseName:    releaseName,
-		chartName:      chartName,
-		valuesFiles:    helmTemplateArgs.valuesFiles,
-		set:            helmTemplateArgs.set,
-		version:        helmTemplateArgs.version,
-		repo:           helmTemplateArgs.repo,
-		namespace:      helmTemplateArgs.namespace,
-		usePlaceholder: helmTemplateArgs.usePlaceholder,
-		skipCRDs:       helmTemplateArgs.skipCRDs,
-	})
+	values, err := helmutils.MergeValues(helmTemplateArgs.valuesFiles, helmTemplateArgs.set)
 	if err != nil {
 		return err
 	}
 
-	// Prepend namespace resource to regular resources if needed
-	resources := prependNamespaceResource(result.Resources, helmTemplateArgs.namespace)
+	src := &helmutils.HelmSource{
+		APIVersion: helmutils.HelmSourceAPIVersion,
+		Kind:       helmutils.HelmSourceKind,
+		Metadata:   helmutils.HelmSourceMetadata{Name: releaseName},
+		Spec: helmutils.HelmSourceSpec{
+			Chart: helmutils.HelmSourceChart{
+				Ref:     chartRef,
+				Repo:    helmTemplateArgs.repo,
+				Version: helmTemplateArgs.version,
+			},
+			Release: helmutils.HelmSourceRelease{
+				Name:      releaseName,
+				Namespace: helmTemplateArgs.namespace,
+			},
+			CreateNamespace: helmTemplateArgs.createNamespace,
+			UnitPrefix:      helmTemplateArgs.prefix,
+			IncludeHooks:    helmTemplateArgs.includeHooks,
+			SkipCRDs:        helmTemplateArgs.skipCRDs,
+			Values:          values,
+		},
+	}
+
+	chrt, err := helmutils.LoadChart(src)
+	if err != nil {
+		return err
+	}
+	result, err := helmutils.Generate(chrt, src, makeSlug(releaseName))
+	if err != nil {
+		return err
+	}
+
+	for _, dropped := range result.DroppedHooks {
+		fmt.Fprintf(os.Stderr, "Dropped hook manifest: %s\n", dropped)
+	}
 
 	if helmTemplateArgs.outputDir != "" {
-		return writeTemplateOutput(helmTemplateArgs.outputDir, releaseName, result.CRDs, resources)
+		if err := os.MkdirAll(helmTemplateArgs.outputDir, 0o755); err != nil {
+			return fmt.Errorf("failed to create output directory %s: %w", helmTemplateArgs.outputDir, err)
+		}
+		for _, u := range result.Units {
+			path := filepath.Join(helmTemplateArgs.outputDir, u.Slug+".yaml")
+			if err := os.WriteFile(path, []byte(u.Content), 0o644); err != nil {
+				return fmt.Errorf("failed to write %s: %w", path, err)
+			}
+			fmt.Fprintf(os.Stderr, "Wrote %s\n", path)
+		}
+		return nil
 	}
 
-	return writeTemplateStdout(result.CRDs, resources)
-}
-
-// writeTemplateStdout writes rendered YAML to stdout (CRDs first, then resources).
-func writeTemplateStdout(crds, resources string) error {
-	if crds != "" {
-		fmt.Print(crds)
-		if resources != "" {
+	for i, u := range result.Units {
+		if i > 0 {
 			fmt.Print("---\n")
 		}
+		fmt.Printf("# Unit: %s\n", u.Slug)
+		fmt.Print(u.Content)
 	}
-	if resources != "" {
-		fmt.Print(resources)
-	}
-	return nil
-}
-
-// writeTemplateOutput writes rendered YAML to separate files in the output directory.
-func writeTemplateOutput(outputDir, releaseName, crds, resources string) error {
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
-	}
-
-	if crds != "" {
-		crdPath := filepath.Join(outputDir, releaseName+"-crds.yaml")
-		if err := os.WriteFile(crdPath, []byte(crds), 0o644); err != nil {
-			return fmt.Errorf("failed to write CRDs file %s: %w", crdPath, err)
-		}
-		fmt.Fprintf(os.Stderr, "Wrote %s\n", crdPath)
-	}
-
-	if resources != "" {
-		resourcePath := filepath.Join(outputDir, releaseName+".yaml")
-		if err := os.WriteFile(resourcePath, []byte(resources), 0o644); err != nil {
-			return fmt.Errorf("failed to write resources file %s: %w", resourcePath, err)
-		}
-		fmt.Fprintf(os.Stderr, "Wrote %s\n", resourcePath)
-	}
-
 	return nil
 }

@@ -7616,7 +7616,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -7775,7 +7775,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -13000,7 +13000,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13147,9 +13147,10 @@ paths:
                 $ref: '#/components/schemas/Release'
           description: Release is an immutable, published bundle of the configuration
             of the Units in a Space that are assigned to a Target. It is created by
-            publishing and removed by withdrawing; it is never updated. The bundle
-            is stored as an OCI image (a tar.gz layer plus manifest) so it can be
-            served to and consumed by the Target.
+            publishing, taken out of service by withdrawing, and removed by deleting;
+            its bundled content is never updated. The bundle is stored as an OCI image
+            (a tar.gz layer plus manifest) so it can be served to and consumed by
+            the Target.
         "400":
           content:
             application/json:
@@ -13203,9 +13204,8 @@ paths:
       - Release
   /space/{space_id}/release/{release_id}:
     delete:
-      description: Withdraw the selected Release, deleting its bundle and making it
-        no longer availabe for download
-      operationId: WithdrawRelease
+      description: Delete the selected Release, removing it and its stored bundle
+      operationId: DeleteRelease
       parameters:
       - description: Unique identifier for a space_id
         in: path
@@ -13276,7 +13276,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Withdraw the selected Release
+      summary: Delete the selected Release
       tags:
       - Release
     get:
@@ -13369,6 +13369,90 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Get ExtendedRelease
+      tags:
+      - Release
+  /space/{space_id}/release/{release_id}/withdraw:
+    post:
+      description: Withdraw the selected Release, clearing its Published flag so it
+        is no longer available for download. The Release itself is retained; delete
+        it to remove it entirely.
+      operationId: WithdrawRelease
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a release_id
+        in: path
+        name: release_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Release'
+          description: Release is an immutable, published bundle of the configuration
+            of the Units in a Space that are assigned to a Target. It is created by
+            publishing, taken out of service by withdrawing, and removed by deleting;
+            its bundled content is never updated. The bundle is stored as an OCI image
+            (a tar.gz layer plus manifest) so it can be served to and consumed by
+            the Target.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: A Unit in the Release's bundle has outstanding destroy gates
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Release.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Withdraw the selected Release
       tags:
       - Release
   /space/{space_id}/tag:
@@ -17643,7 +17727,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -28032,10 +28116,10 @@ components:
       type: object
     Release:
       description: Release is an immutable, published bundle of the configuration
-        of the Units in a Space that are assigned to a Target. It is created by publishing
-        and removed by withdrawing; it is never updated. The bundle is stored as an
-        OCI image (a tar.gz layer plus manifest) so it can be served to and consumed
-        by the Target.
+        of the Units in a Space that are assigned to a Target. It is created by publishing,
+        taken out of service by withdrawing, and removed by deleting; its bundled
+        content is never updated. The bundle is stored as an OCI image (a tar.gz layer
+        plus manifest) so it can be served to and consumed by the Target.
       properties:
         BridgeWorkerID:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -28085,6 +28169,12 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        Published:
+          description: Whether the Release is currently served to its consuming Target.
+            Set when the Release is published and cleared when it is withdrawn; a
+            withdrawn Release is retained until deleted.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         ReleaseID:
           description: Unique identifier for a Release.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -28109,9 +28199,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         TagID:
-          description: Optional Tag identifying the tagged Revision that the bundled
-            Units were pinned to at publish time. Unset when each Unit was bundled
-            at its head Revision.
+          description: Tag identifying the bundled Revision of each Unit in the Release.
+            When publishing supplied a TagID, this is that Tag. Otherwise publishing
+            creates a Tag named release-<ReleaseNum> in the Release's Space, applies
+            it to each bundled Revision, and sets it here.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -28142,7 +28233,9 @@ components:
             For each Unit assigned to the Space's ReleaseTarget, the highest-numbered
             Revision carrying this Tag is bundled at that Revision instead of the
             Unit's head Revision. A Unit with no matching tagged Revision falls back
-            to its head Revision.
+            to its head Revision. When omitted, each Unit is bundled at its head Revision
+            and publishing creates a Tag named release-<ReleaseNum>, applies it to
+            each bundled Revision, and sets it as the Release's TagID.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -28491,6 +28584,8 @@ components:
         Releases:
           additionalProperties:
             type: string
+          description: A set (map) of ReleaseIDs of any Releases that have bundled
+            this Revision. The string values have no particular meaning for now.
           type: object
           x-go-type-skip-optional-pointer: true
         RevisionID:

@@ -7839,7 +7839,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Releases returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Releases returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -7971,7 +7971,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Revisions returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.\n\nTo list tagged Revisions use `Tags ? '\u003ctag-id\u003e'`.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Revisions returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.\n\nTo list tagged Revisions use `Tags ? '\u003ctag-id\u003e'`.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -14659,7 +14659,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Releases returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Releases returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -14818,7 +14818,7 @@
             }
           },
           "200": {
-            "description": "Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.",
+            "description": "Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14905,9 +14905,9 @@
         "tags": [
           "Release"
         ],
-        "summary": "Withdraw the selected Release",
-        "description": "Withdraw the selected Release, deleting its bundle and making it no longer availabe for download",
-        "operationId": "WithdrawRelease",
+        "summary": "Delete the selected Release",
+        "description": "Delete the selected Release, removing it and its stored bundle",
+        "operationId": "DeleteRelease",
         "parameters": [
           {
             "name": "space_id",
@@ -15133,6 +15133,130 @@
           },
           "500": {
             "description": "Something went wrong while processing ExtendedRelease.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/release/{release_id}/withdraw": {
+      "post": {
+        "tags": [
+          "Release"
+        ],
+        "summary": "Withdraw the selected Release",
+        "description": "Withdraw the selected Release, clearing its Published flag so it is no longer available for download. The Release itself is retained; delete it to remove it entirely.",
+        "operationId": "WithdrawRelease",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "release_id",
+            "in": "path",
+            "description": "Unique identifier for a release_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Release"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Release request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Release data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A Unit in the Release's bundle has outstanding destroy gates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Release.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20492,7 +20616,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Revisions returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.\n\nTo list a tagged Revision use `Tags ? '\u003ctag-id\u003e'`.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Revisions returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(ApprovedBy) \u003e 0`.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.\n\nTo list a tagged Revision use `Tags ? '\u003ctag-id\u003e'`.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -31322,6 +31446,11 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "Published": {
+            "type": "boolean",
+            "description": "Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "ReleaseID": {
             "type": "string",
             "description": "Unique identifier for a Release.",
@@ -31349,7 +31478,7 @@
           },
           "TagID": {
             "type": "string",
-            "description": "Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision.",
+            "description": "Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-\u003cReleaseNum\u003e in the Release's Space, applies it to each bundled Revision, and sets it here.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
@@ -31369,7 +31498,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target."
+        "description": "Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target."
       },
       "ReleasePublishRequest": {
         "type": "object",
@@ -31381,7 +31510,7 @@
           },
           "TagID": {
             "type": "string",
-            "description": "Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision.",
+            "description": "Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-\u003cReleaseNum\u003e, applies it to each bundled Revision, and sets it as the Release's TagID.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           }
@@ -31785,6 +31914,7 @@
             "additionalProperties": {
               "type": "string"
             },
+            "description": "A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now.",
             "x-go-type-skip-optional-pointer": true
           },
           "RevisionID": {

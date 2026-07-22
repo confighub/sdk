@@ -4,336 +4,160 @@
 package main
 
 import (
-	"context"
-	"encoding/base64"
-	"fmt"
-
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
-	"github.com/confighub/sdk/core/cubapi"
-	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/bridge-impl/helmutils"
 )
 
-const (
-	// Link suffix for namespace links
-	linkSuffixNamespace = "ns"
-	// Link suffix for CRD links
-	linkSuffixCRDs = "crds"
-)
-
-// helmInstallCmd installs a Helm chart (a convenience wrapper around `helm install`).
+// helmInstallCmd installs a Helm chart as (part of) a ConfigHub component.
 var helmInstallCmd = &cobra.Command{
-	Use:   "install <release-name> <repo>/<chartname>",
-	Short: "Render a Helm chart's templates and install to ConfigHub",
-	Long: getCommandHelp(`Render a Helm chart's templates and install them as ConfigHub units.
-This command loads a chart (e.g., <repo>/<chartname>) from configured Helm repositories.
-It processes values from files and --set flags.
-CRDs are always rendered and splitted if exist.
+	Use:   "install <release-name> <chart-ref>",
+	Short: "Install a Helm chart as a ConfigHub component",
+	Long: getCommandHelp(`Render a Helm chart client-side and install it as a ConfigHub component.
+
+The chart reference may be an oci:// reference, a local chart directory, or a
+chart name resolved against --repo.
+
+Install creates two spaces (if missing): the base variant space
+<component>-base holding the rendered units, and the helm source space
+<component>-helm holding one HelmSource unit per release with the chart
+reference, values, and options. The component defaults to the release name.
+
+Rendered output becomes one unit per chart template file, named from the
+chart's file layout: templates/backend.yaml becomes unit "backend",
+templates/rbac/role.yaml becomes "rbac-role", crds/foo.yaml becomes
+"crds-foo", and subchart files are prefixed with the subchart name. When a
+component contains multiple releases, each release's units are namespaced
+with --prefix (defaulted to the release name for the second and later
+releases).
+
+The base is untargeted. If --namespace is not given, the release renders with
+the confighubplaceholder namespace, which each deployment fills:
+
+  cub variant create <variant> <component>-base --target <space>/<target> --namespace <ns>
+
+Hook manifests are dropped by default because Helm's hook lifecycle cannot run
+without Helm; --include-hooks keeps them as plain resources. The lookup
+template function returns nothing and capabilities are Helm's defaults —
+charts that depend on cluster access are out of scope.
 
 Examples:
 `+"```"+`
-  # Render nginx chart (ensure 'bitnami' repo is added via 'helm repo add')
-  # This command would create:
-  # 1. my-nginx containing nginx Namespace definition + nginx resources
-  # 2. my-nginx-crds containing CRDs (if any)
-  #
+  # Install a chart as component "cubbychat" (spaces cubbychat-helm and cubbychat-base)
+  cub helm install cubbychat oci://ghcr.io/confighub/charts/cubbychat
 
-  cub helm install --namespace nginx my-nginx bitnami/nginx --version 15.5.2 --set image.tag=latest
+  # Add a second chart to the same component; its units are prefixed "pg-"
+  cub helm install --component cubbychat --prefix pg pg oci://registry-1.docker.io/bitnamicharts/postgresql
 
-  # Render the cert-manager chart
-  # This creates 2 units:
-  # 1. cert-manager-crds: Custom Resource Definitions
-  # 2. cert-manager: Namespace definition + Main resources (rendered directly from Helm)
-  #
-
-  cub helm install \
-    --namespace cert-manager \
-	  cert-manager \
-	  jetstack/cert-manager \
-	  --version v1.17.1
+  # Explicit namespace and a synthesized Namespace unit
+  cub helm install --namespace cert-manager --create-namespace cert-manager jetstack/cert-manager --version v1.17.1
 `+"```"+`
 `, ""),
-	Args:          cobra.MinimumNArgs(2),
+	Args:          cobra.ExactArgs(2),
 	RunE:          helmInstallCmdRun,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
 
 var helmInstallArgs struct {
-	valuesFiles    []string
-	set            []string
-	version        string
-	repo           string
-	namespace      string // This will be used for k8s namespace object for the release
-	chartName      string
-	releaseName    string
-	usePlaceholder bool // Use confighubplaceholder placeholder for rendering
-	skipCRDs       bool // Skip CRDs from crds/ directory only (mirrors helm install --skip-crds)
-	targetSlug     string
+	component       string
+	prefix          string
+	namespace       string
+	createNamespace bool
+	valuesFiles     []string
+	set             []string
+	version         string
+	repo            string
+	includeHooks    bool
+	skipCRDs        bool
 }
 
 func init() {
-	// Add flags to the install command
-	helmInstallCmd.Flags().StringArrayVarP(&helmInstallArgs.valuesFiles, "values", "f", []string{}, "specify values in a YAML file or a URL (can specify multiple)")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.component, "component", "", "component to install into (defaults to the release name); spaces <component>-helm and <component>-base are created if missing")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.prefix, "prefix", "", "prefix for generated unit slugs; required to be unique per release within a component, and empty for at most one release")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.namespace, "namespace", "", "release namespace, recorded and rendered literally; when omitted the placeholder namespace is used and deployments set it via 'cub variant create --namespace'")
+	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.createNamespace, "create-namespace", false, "synthesize a Namespace unit for the release namespace (skipped when the chart renders one itself)")
+	helmInstallCmd.Flags().StringArrayVarP(&helmInstallArgs.valuesFiles, "values", "f", []string{}, "specify values in a YAML file (can specify multiple)")
 	helmInstallCmd.Flags().StringArrayVar(&helmInstallArgs.set, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	helmInstallCmd.Flags().StringVar(&helmInstallArgs.version, "version", "", "specify a version constraint for the chart version to use. This constraint can be a specific tag (e.g. 1.1.1) or range (e.g. ^2.0.0)")
-	helmInstallCmd.Flags().StringVar(&helmInstallArgs.repo, "repo", "", "specify the chart repository URL where to locate the requested chart")
-	helmInstallCmd.Flags().StringVar(&helmInstallArgs.namespace, "namespace", "default", "namespace to install the release into (only used for metadata if not actually installing)")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.version, "version", "", "chart version constraint: a specific version (e.g. 1.1.1) or a range (e.g. ^2.0.0)")
+	helmInstallCmd.Flags().StringVar(&helmInstallArgs.repo, "repo", "", "chart repository URL to resolve a bare chart name against")
+	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.includeHooks, "include-hooks", false, "keep helm.sh/hook manifests as plain resources instead of dropping them")
+	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.skipCRDs, "skip-crds", false, "do not generate units from the chart's crds/ directories (mirrors 'helm install --skip-crds')")
 
-	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.usePlaceholder, "use-placeholder", false, "use confighubplaceholder placeholder")
-	helmInstallCmd.Flags().BoolVar(&helmInstallArgs.skipCRDs, "skip-crds", false, "if set, no CRDs from the chart's crds/ directory will be installed (does not affect templated CRDs). Mirrors 'helm install --skip-crds'")
-	helmInstallCmd.Flags().StringVar(&helmInstallArgs.targetSlug, "target", "", "target for the units")
-
-	// Enable wait flag for this command
 	enableWaitFlag(helmInstallCmd)
-
-	// Enable quiet flag for this command
 	enableQuietFlag(helmInstallCmd)
 
-	// Compose command hierarchy
-	helmCmd.AddCommand(helmInstallCmd) // helmCmd here refers to the package-level variable
-}
-
-// createNamespaceUnit creates a new unit representing a Kubernetes namespace.
-func createNamespaceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, namespaceName string, releaseNameForSlug string, unitLabels map[string]string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
-	namespaceResource := fmt.Sprintf(`apiVersion: v1
-kind: Namespace
-metadata:
-  name: %s
-`, namespaceName)
-
-	unitSlug := releaseNameForSlug + "-ns"
-	toolchainType := "Kubernetes/YAML"
-
-	parsedSpaceID, err := uuid.Parse(spaceIDStr)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: selected space ID '%s' is not a valid UUID: %w", spaceIDStr, err)
-	}
-
-	apiUnit := goclientnew.Unit{
-		SpaceID:       parsedSpaceID,
-		Slug:          unitSlug,
-		ToolchainType: toolchainType,
-		Data:          base64.StdEncoding.EncodeToString([]byte(namespaceResource)),
-		Labels:        unitLabels,
-		TargetID:      targetID,
-	}
-
-	// For a new unit without cloning, params can be an empty struct.
-	createParams := goclientnew.CreateUnitParams{}
-
-	// API Call to create the unit
-	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if cubapi.IsAPIError(err, unitRes) { // Use the standard error handling
-		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
-	}
-
-	createdUnit := unitRes.JSON200
-	if createdUnit == nil {
-		// This case should ideally be caught by IsAPIError or cubapi.InterpretErrorGeneric
-		return nil, fmt.Errorf("failed to create unit '%s', API response was not successful. Status: %s. Body: %s", unitSlug, unitRes.Status(), string(unitRes.Body))
-	}
-	return createdUnit, nil
-}
-
-// createCRDsUnit creates a new unit representing the CRDs from a Helm chart.
-func createCRDsUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, crdYAMLContent string, releaseName string, unitLabels map[string]string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
-	unitSlug := releaseName + "-crds"
-	toolchainType := "Kubernetes/YAML"
-
-	parsedSpaceID, err := uuid.Parse(spaceIDStr)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: selected space ID '%s' is not a valid UUID: %w", spaceIDStr, err)
-	}
-
-	apiUnit := goclientnew.Unit{
-		SpaceID:       parsedSpaceID,
-		Slug:          unitSlug,
-		ToolchainType: toolchainType,
-		Data:          base64.StdEncoding.EncodeToString([]byte(crdYAMLContent)),
-		Labels:        unitLabels,
-		TargetID:      targetID,
-	}
-
-	createParams := goclientnew.CreateUnitParams{}
-
-	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if cubapi.IsAPIError(err, unitRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
-	}
-
-	createdUnit := unitRes.JSON200
-	if createdUnit == nil {
-		return nil, fmt.Errorf("failed to create CRDs unit '%s', API response was not successful. Status: %s. Body: %s", unitSlug, unitRes.Status(), string(unitRes.Body))
-	}
-	return createdUnit, nil
-}
-
-// createResourceUnit creates a new unit representing the regular resources from a Helm chart.
-func createResourceUnit(ctx context.Context, client *goclientnew.ClientWithResponses, spaceIDStr string, resourceYAMLContent string, releaseName string, unitLabels map[string]string, namespace string, targetID *uuid.UUID) (*goclientnew.Unit, error) {
-	unitSlug := releaseName
-	toolchainType := "Kubernetes/YAML"
-
-	parsedSpaceID, err := uuid.Parse(spaceIDStr)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: selected space ID '%s' is not a valid UUID: %w", spaceIDStr, err)
-	}
-
-	finalYAMLContent := prependNamespaceResource(resourceYAMLContent, namespace)
-
-	apiUnit := goclientnew.Unit{
-		SpaceID:       parsedSpaceID,
-		Slug:          unitSlug,
-		ToolchainType: toolchainType,
-		Data:          base64.StdEncoding.EncodeToString([]byte(finalYAMLContent)),
-		Labels:        unitLabels,
-		TargetID:      targetID,
-	}
-
-	createParams := goclientnew.CreateUnitParams{}
-
-	unitRes, err := client.CreateUnitWithResponse(ctx, parsedSpaceID, &createParams, apiUnit)
-	if cubapi.IsAPIError(err, unitRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
-	}
-
-	createdUnit := unitRes.JSON200
-	if createdUnit == nil {
-		return nil, fmt.Errorf("failed to create resources unit '%s', API response was not successful. Status: %s. Body: %s", unitSlug, unitRes.Status(), string(unitRes.Body))
-	}
-	return createdUnit, nil
-}
-
-// createUnitLink creates a link between two units with proper error handling
-func createUnitLink(ctx context.Context, client *goclientnew.ClientWithResponses, fromUnit, toUnit *goclientnew.Unit, linkSuffix string, spaceID uuid.UUID) error {
-	if toUnit == nil || toUnit.UnitID == uuid.Nil {
-		// Silently skip if target unit is not available
-		return nil
-	}
-
-	linkSlug := fmt.Sprintf("%s-to-%s", fromUnit.Slug, linkSuffix)
-
-	linkToCreate := goclientnew.Link{
-		SpaceID:    spaceID,
-		Slug:       makeSlug(linkSlug),
-		FromUnitID: fromUnit.UnitID,
-		ToUnitID:   toUnit.UnitID,
-		ToSpaceID:  toUnit.SpaceID,
-	}
-
-	linkRes, linkErr := client.CreateLinkWithResponse(ctx, spaceID, nil, linkToCreate)
-
-	if cubapi.IsAPIError(linkErr, linkRes) {
-		return cubapi.InterpretErrorGeneric(linkErr, linkRes)
-	}
-
-	if linkRes.JSON200 != nil {
-		linkDetails := linkRes.JSON200
-		displayCreateResults(linkDetails, "link", linkDetails.Slug, linkDetails.LinkID.String(), displayLinkDetails)
-		if wait { // global wait flag
-			// Since we most likely re-use the create result, the awaiting triggers gate should be set and will cause the await loop
-			// to wait and re-fetch the unit to check the apply gate again.
-			if err := awaitTriggersRemoval(fromUnit); err != nil {
-				return fmt.Errorf("failed to wait for triggers on unit '%s': %w", fromUnit.Slug, err)
-			}
-		}
-		return nil
-	}
-
-	// Handle unexpected response
-	if linkErr != nil {
-		return fmt.Errorf("client error during link creation: %w", linkErr)
-	}
-	if linkRes != nil {
-		return fmt.Errorf("unexpected response status during link creation: %s", linkRes.Status())
-	}
-	return fmt.Errorf("unknown error during link creation")
+	helmCmd.AddCommand(helmInstallCmd)
 }
 
 func helmInstallCmdRun(cmd *cobra.Command, args []string) error {
-	helmInstallArgs.releaseName = args[0]
-	helmInstallArgs.chartName = args[1]
+	releaseName := args[0]
+	chartRef := args[1]
 
-	// Render the Helm chart using the shared rendering pipeline
-	renderResult, err := renderHelmChart(helmRenderInput{
-		releaseName:    helmInstallArgs.releaseName,
-		chartName:      helmInstallArgs.chartName,
-		valuesFiles:    helmInstallArgs.valuesFiles,
-		set:            helmInstallArgs.set,
-		version:        helmInstallArgs.version,
-		repo:           helmInstallArgs.repo,
-		namespace:      helmInstallArgs.namespace,
-		usePlaceholder: helmInstallArgs.usePlaceholder,
-		skipCRDs:       helmInstallArgs.skipCRDs,
-	})
+	component := helmInstallArgs.component
+	if component == "" {
+		component = makeSlug(releaseName)
+	} else {
+		component = makeSlug(component)
+	}
+
+	values, err := helmutils.MergeValues(helmInstallArgs.valuesFiles, helmInstallArgs.set)
 	if err != nil {
 		return err
 	}
 
-	unitLabels := renderResult.UnitLabels
-
-	// Resolve target if specified
-	var targetID *uuid.UUID
-	if helmInstallArgs.targetSlug != "" {
-		id, err := parseEntityIdentifierSingle[goclientnew.Target](
-			helmInstallArgs.targetSlug,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
-		if err != nil {
-			return err
-		}
-		targetID = &id
+	spaces, err := ensureComponentSpaces(component)
+	if err != nil {
+		return err
 	}
 
-	// Create a unit for CRDs if any were found
-	var crdUnit *goclientnew.Unit
-	if len(renderResult.CRDs) > 0 {
-		createdCRDsUnit, err := createCRDsUnit(ctx, cubClientNew, selectedSpaceID, renderResult.CRDs, helmInstallArgs.releaseName, unitLabels, targetID)
-		if err != nil {
-			return fmt.Errorf("failed to create CRDs unit: %w", err)
-		}
-		crdUnit = createdCRDsUnit
-		if wait {
-			if err := awaitTriggersRemoval(crdUnit); err != nil {
-				return err
-			}
-		}
-		displayCreateResults(crdUnit, "unit", crdUnit.Slug, crdUnit.UnitID.String(), displayUnitDetails)
-	} else {
-		if !quiet {
-			tprint("No CRDs found in chart '%s', skipping creation of CRDs unit.", helmInstallArgs.chartName)
-		}
+	others, err := listHelmSources(spaces.source.SpaceID)
+	if err != nil {
+		return err
 	}
 
-	// Create a unit for regular resources if any were found
-	if len(renderResult.Resources) > 0 {
-		createdResourceUnit, err := createResourceUnit(ctx, cubClientNew, selectedSpaceID, renderResult.Resources, helmInstallArgs.releaseName, unitLabels, helmInstallArgs.namespace, targetID)
-		if err != nil {
-			return fmt.Errorf("failed to create resources unit: %w", err)
-		}
-		if wait {
-			if err := awaitTriggersRemoval(createdResourceUnit); err != nil {
-				return fmt.Errorf("failed to wait for base unit triggers: %w", err)
-			}
-		}
-		displayCreateResults(createdResourceUnit, "unit", createdResourceUnit.Slug, createdResourceUnit.UnitID.String(), displayUnitDetails)
-
-		// Link the main unit to the CRDs unit
-		spaceID, parseErr := uuid.Parse(selectedSpaceID)
-		if parseErr != nil {
-			return fmt.Errorf("failed to parse space ID '%s' for linking: %w", selectedSpaceID, parseErr)
-		}
-		if err := createUnitLink(ctx, cubClientNew, createdResourceUnit, crdUnit, linkSuffixCRDs, spaceID); err != nil {
-			return err
-		}
-	} else {
-		if !quiet {
-			tprint("No regular resources found in chart '%s', skipping creation of resources unit.", helmInstallArgs.chartName)
-		}
+	// The prefix defaults to empty for the component's first release and to
+	// the release name for subsequent releases.
+	prefix := helmInstallArgs.prefix
+	if !cmd.Flags().Changed("prefix") && countOtherReleases(others, releaseName) > 0 {
+		prefix = makeSlug(releaseName)
+	}
+	if err := checkPrefixConflict(others, releaseName, prefix); err != nil {
+		return err
 	}
 
-	return nil
+	src := &helmutils.HelmSource{
+		APIVersion: helmutils.HelmSourceAPIVersion,
+		Kind:       helmutils.HelmSourceKind,
+		Metadata:   helmutils.HelmSourceMetadata{Name: releaseName},
+		Spec: helmutils.HelmSourceSpec{
+			Chart: helmutils.HelmSourceChart{
+				Ref:     chartRef,
+				Repo:    helmInstallArgs.repo,
+				Version: helmInstallArgs.version,
+			},
+			Release: helmutils.HelmSourceRelease{
+				Name:      releaseName,
+				Namespace: helmInstallArgs.namespace,
+			},
+			CreateNamespace: helmInstallArgs.createNamespace,
+			UnitPrefix:      prefix,
+			IncludeHooks:    helmInstallArgs.includeHooks,
+			SkipCRDs:        helmInstallArgs.skipCRDs,
+			Values:          values,
+		},
+	}
+
+	return applyHelmSource(src, component, spaces)
+}
+
+// countOtherReleases counts HelmSources other than the given release.
+func countOtherReleases(sources []helmSourceUnit, releaseName string) int {
+	count := 0
+	for _, s := range sources {
+		if s.unit.Slug != makeSlug(releaseName) {
+			count++
+		}
+	}
+	return count
 }

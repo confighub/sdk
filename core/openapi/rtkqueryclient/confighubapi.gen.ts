@@ -1234,7 +1234,7 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Release'],
       }),
-      withdrawRelease: build.mutation<WithdrawReleaseApiResponse, WithdrawReleaseApiArg>({
+      deleteRelease: build.mutation<DeleteReleaseApiResponse, DeleteReleaseApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}`,
           method: 'DELETE',
@@ -1253,6 +1253,13 @@ const injectedRtkApi = api
           providesTags: ['Release'],
         },
       ),
+      withdrawRelease: build.mutation<WithdrawReleaseApiResponse, WithdrawReleaseApiArg>({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}/withdraw`,
+          method: 'POST',
+        }),
+        invalidatesTags: ['Release'],
+      }),
       listTags: build.query<ListTagsApiResponse, ListTagsApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/tag`,
@@ -5411,7 +5418,7 @@ export type ListAllReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5494,7 +5501,7 @@ export type ListAllRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -6977,7 +6984,7 @@ export type ListExtendedReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7028,15 +7035,15 @@ export type ListExtendedReleasesApiArg = {
   select?: string;
 };
 export type PublishReleaseApiResponse =
-  /** status 200 Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target. */ ReleaseRead;
+  /** status 200 Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target. */ ReleaseRead;
 export type PublishReleaseApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
   releasePublishRequest: ReleasePublishRequest;
 };
-export type WithdrawReleaseApiResponse =
+export type DeleteReleaseApiResponse =
   /** status 200 Response for successful delete operation */ DeleteResponse;
-export type WithdrawReleaseApiArg = {
+export type DeleteReleaseApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
   /** Unique identifier for a release_id */
@@ -7064,6 +7071,14 @@ export type GetExtendedReleaseApiArg = {
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
+  /** Unique identifier for a release_id */
+  releaseId: string;
+};
+export type WithdrawReleaseApiResponse =
+  /** status 200 Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target. */ ReleaseRead;
+export type WithdrawReleaseApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
   /** Unique identifier for a release_id */
   releaseId: string;
 };
@@ -8265,7 +8280,7 @@ export type ListExtendedRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list a tagged Revision use `Tags ? '<tag-id>'`.
     
@@ -13415,12 +13430,14 @@ export type Release = {
   /** OCI digest (sha256:...) of the Release's OCI image manifest. */
   ManifestDigest?: string;
   OrganizationID?: string;
+  /** Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted. */
+  Published?: boolean;
   /** Unique identifier for a Release. */
   ReleaseID?: string;
   /** Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target. */
   ReleaseNum?: number;
   SpaceID?: string;
-  /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
+  /** Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here. */
   TagID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
@@ -13442,6 +13459,8 @@ export type ReleaseRead = {
   /** OCI digest (sha256:...) of the Release's OCI image manifest. */
   ManifestDigest?: string;
   OrganizationID?: string;
+  /** Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted. */
+  Published?: boolean;
   /** Unique identifier for a Release. */
   ReleaseID?: string;
   /** Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target. */
@@ -13449,7 +13468,7 @@ export type ReleaseRead = {
   SpaceID?: string;
   /** Slug of the Space this entity belongs to. */
   SpaceSlug?: string;
-  /** Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision. */
+  /** Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here. */
   TagID?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
@@ -13494,6 +13513,7 @@ export type Revision = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
   Releases?: {
     [key: string]: string;
   };
@@ -13550,6 +13570,7 @@ export type RevisionRead = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
   Releases?: {
     [key: string]: string;
   };
@@ -14068,7 +14089,7 @@ export type BridgeWorkerStatus = {
 export type ReleasePublishRequest = {
   /** Optional override of the name of the Release's tar.gz bundle. */
   BundleBaseName?: string;
-  /** Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. */
+  /** Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID. */
   TagID?: string;
 };
 export type ExtendedTag = {
@@ -14840,9 +14861,10 @@ export const {
   useListExtendedReleasesQuery,
   useLazyListExtendedReleasesQuery,
   usePublishReleaseMutation,
-  useWithdrawReleaseMutation,
+  useDeleteReleaseMutation,
   useGetExtendedReleaseQuery,
   useLazyGetExtendedReleaseQuery,
+  useWithdrawReleaseMutation,
   useListTagsQuery,
   useLazyListTagsQuery,
   useCreateTagMutation,

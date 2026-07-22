@@ -46,6 +46,17 @@ func contextListCmdRun(_ *cobra.Command, _ []string) error {
 	}
 
 	displayListResults(contexts, func(ctx *Context) string { return ctx.Name }, displayContextList)
+
+	// The CURRENT column marks the persisted current context. When an override
+	// (--context flag or $CUB_CONTEXT) is in effect, that marker is not the
+	// context commands actually run against, so spell out the active one.
+	if activeContextOverrideSource != "" {
+		active := contextManager.ActiveContext().Name
+		if active != contextManager.CurrentContextName() {
+			tprint(fmt.Sprintf("\nActive context is %q, selected by %s (overriding the current context above).",
+				active, activeContextOverrideSource))
+		}
+	}
 	return nil
 }
 

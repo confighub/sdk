@@ -906,7 +906,7 @@ type ExtendedRelease struct {
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
@@ -2055,7 +2055,7 @@ type QueuedOperation struct {
 // QueuedOperationStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 type QueuedOperationStatus string
 
-// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing and removed by withdrawing; it is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 type Release struct {
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
@@ -2081,6 +2081,9 @@ type Release struct {
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
+	// Published Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted.
+	Published bool `json:"Published,omitempty" yaml:"Published,omitempty"`
+
 	// ReleaseID Unique identifier for a Release.
 	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
 
@@ -2091,7 +2094,7 @@ type Release struct {
 	// SpaceSlug Slug of the Space this entity belongs to.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// TagID Optional Tag identifying the tagged Revision that the bundled Units were pinned to at publish time. Unset when each Unit was bundled at its head Revision.
+	// TagID Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -2106,7 +2109,7 @@ type ReleasePublishRequest struct {
 	// BundleBaseName Optional override of the name of the Release's tar.gz bundle.
 	BundleBaseName string `json:"BundleBaseName,omitempty" yaml:"BundleBaseName,omitempty"`
 
-	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision.
+	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 }
 
@@ -2300,7 +2303,9 @@ type Revision struct {
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Releases       map[string]string  `json:"Releases,omitempty" yaml:"Releases,omitempty"`
+
+	// Releases A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now.
+	Releases map[string]string `json:"Releases,omitempty" yaml:"Releases,omitempty"`
 
 	// RevisionID Unique identifier for a Revision.
 	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
@@ -6614,7 +6619,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6702,7 +6707,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -7978,7 +7983,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, ReleaseID, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9069,7 +9074,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//

@@ -4,6 +4,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -32,7 +34,7 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
-var defaultReleaseColumns = []string{"Release.ReleaseID", "Release.ManifestDigest", "Release.CreatedAt"}
+var defaultReleaseColumns = []string{"Release.ReleaseID", "Release.Published", "Release.ManifestDigest", "Release.CreatedAt"}
 
 var releaseAliases = map[string]string{
 	"ID": "ReleaseID",
@@ -79,19 +81,23 @@ func getReleaseSlug(release *goclientnew.ExtendedRelease) string {
 func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Release-ID", "Manifest-Digest", "Created"})
+		table.SetHeader([]string{"Release-ID", "Published", "Manifest-Digest", "Created"})
 	}
 	for _, er := range releases {
 		rel := er.Release
 		manifestDigest := ""
 		created := ""
 		releaseID := ""
+		published := ""
 		if rel != nil {
 			manifestDigest = rel.ManifestDigest
 			created = rel.CreatedAt.String()
 			releaseID = rel.ReleaseID.String()
+			// Withdrawn Releases are retained and still listed, so print the flag
+			// for both values rather than leaving the false case blank.
+			published = strconv.FormatBool(rel.Published)
 		}
-		table.Append([]string{releaseID, manifestDigest, created})
+		table.Append([]string{releaseID, published, manifestDigest, created})
 	}
 	table.Render()
 }

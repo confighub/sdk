@@ -84,6 +84,13 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			Description:   "Old namespace to look for in pod-spec command/args/env Service DNS names. If empty, each resource's existing metadata.namespace is used.",
 			DataType:      api.DataTypeString,
 		},
+		{
+			ParameterName: "cluster-scoped-types",
+			Required:      false,
+			Description:   "Additional Kubernetes resource types to treat as cluster-scoped (and therefore leave without a namespace), as a comma-separated list of apiVersion/Kind (e.g. \"example.com/v1/Foo,example.com/v1/Bar\")",
+			DataType:      api.DataTypeStringArray,
+			Example:       "example.com/v1/Foo,example.com/v1/Bar",
+		},
 	}
 	setNamespaceResourceTypes := yamlkit.ResourceTypesForAttribute(AttributeNameNamespaceNameReference, rp)
 	if err := fh.RegisterFunction("set-namespace", &handler.FunctionRegistration{
@@ -300,10 +307,15 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		},
 		api.ResourceType(api.ResourceTypeAny): {
 			api.UnresolvedPath("metadata.namespace"): {
-				Path:           api.UnresolvedPath("metadata.namespace"),
-				AttributeName:  api.AttributeNameResourceName,
-				DataType:       api.DataTypeString,
-				TypeExceptions: k8skit.K8sClusterScopedResourceTypes,
+				Path:          api.UnresolvedPath("metadata.namespace"),
+				AttributeName: api.AttributeNameResourceName,
+				DataType:      api.DataTypeString,
+				// The curated map covers the types we enumerate; the predicate covers rules that
+				// cannot be enumerated, such as Crossplane's group-suffix convention. Without the
+				// predicate, set-namespace would write metadata.namespace into cluster-scoped
+				// managed resources — the map alone cannot express a family of thousands of types.
+				TypeExceptions:    k8skit.K8sClusterScopedResourceTypes,
+				TypeExceptionFunc: api.TypeExceptionPredicate(k8skit.IsResourceTypeClusterScoped),
 			},
 		},
 		api.ResourceType("rbac.authorization.k8s.io/v1/RoleBinding"): {
@@ -549,6 +561,7 @@ const dnsSvcSuffixPattern = `(\.svc(?:[.:/]|$))`
 //     the snapshot taken in step 1.
 func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	var newNamespace, explicitOldNamespace string
+	var extraClusterScoped map[api.ResourceType]bool
 	for _, arg := range args {
 		switch arg.ParameterName {
 		case "namespace-name", "":
@@ -560,6 +573,17 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 		case "old-namespace":
 			if s, ok := arg.Value.(string); ok {
 				explicitOldNamespace = s
+			}
+		case "cluster-scoped-types":
+			types, err := api.ParseStringArrayCSV(arg.Value)
+			if err != nil {
+				return parsedData, nil, errors.Wrap(err, "set-namespace: cluster-scoped-types")
+			}
+			if len(types) > 0 {
+				extraClusterScoped = make(map[api.ResourceType]bool, len(types))
+				for _, t := range types {
+					extraClusterScoped[api.ResourceType(t)] = true
+				}
 			}
 		}
 	}
@@ -581,6 +605,9 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 	}
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameNamespaceNameReference)
+	if len(extraClusterScoped) > 0 {
+		resourceTypeToPaths = overlayClusterScopedExceptions(resourceTypeToPaths, extraClusterScoped)
+	}
 	if err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, rp, newNamespace, true, options); err != nil {
 		return parsedData, nil, err
 	}
@@ -603,6 +630,39 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 		return parsedData, nil, errors.WithStack(errors.Join(dnsErrs...))
 	}
 	return parsedData, nil, nil
+}
+
+// overlayClusterScopedExceptions returns a copy of the namespace path registry in which the
+// ResourceTypeAny entry additionally skips the caller-supplied cluster-scoped types. The global
+// registry is never mutated: it is shared process-wide, so a per-invocation parameter must not
+// leak into other calls.
+//
+// Only the ResourceTypeAny entry is rewritten. Explicit per-type entries (v1/Namespace's
+// metadata.name, a ClusterRoleBinding's subject namespaces) are registered deliberately for types
+// that are themselves cluster-scoped, so they must keep applying.
+func overlayClusterScopedExceptions(
+	registry api.ResourceTypeToPathToVisitorInfoType,
+	extra map[api.ResourceType]bool,
+) api.ResourceTypeToPathToVisitorInfoType {
+	anyPaths, ok := registry[api.ResourceType(api.ResourceTypeAny)]
+	if !ok {
+		return registry
+	}
+	out := make(api.ResourceTypeToPathToVisitorInfoType, len(registry))
+	for rt, paths := range registry {
+		out[rt] = paths
+	}
+	overlaid := make(api.PathToVisitorInfoType, len(anyPaths))
+	for path, info := range anyPaths {
+		clone := *info
+		base := info
+		clone.TypeExceptionFunc = api.TypeExceptionPredicate(func(rt api.ResourceType) bool {
+			return extra[rt] || base.SkipsResourceType(rt)
+		})
+		overlaid[path] = &clone
+	}
+	out[api.ResourceType(api.ResourceTypeAny)] = overlaid
+	return out
 }
 
 // rewriteContainerDNS scans container `command`, `args`, and `env[].value`

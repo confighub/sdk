@@ -62,6 +62,11 @@ func displayContextDetails(ctx *Context) {
 	view.Append([]string{"Server URL", ctx.Coordinate.ServerURL})
 	view.Append([]string{"Default Space", ctx.Settings.DefaultSpace})
 	view.Append([]string{"Token Status", localTokenStatus(ctx)})
+	// When an override (--context flag or $CUB_CONTEXT) selected this context for
+	// the invocation, attribute it so the active context is never a surprise.
+	if activeContextOverrideSource != "" && ctx.Name == contextManager.ActiveContext().Name {
+		view.Append([]string{"Selected By", activeContextOverrideSource})
+	}
 	view.Render()
 }
 

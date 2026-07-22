@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,6 +14,7 @@ import (
 	"text/template"
 
 	"github.com/confighub/sdk/cmd/cub/upload"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/spf13/cobra"
 )
 
@@ -37,18 +39,28 @@ type variantUploadOptions struct {
 var variantUploadArgs variantUploadOptions
 
 var variantUploadCmd = &cobra.Command{
-	Use:   "upload [flags] <file|dir|-> [<file|dir> ...]",
+	Use:   "upload [flags] <file|dir|oci://ref|-> [<file|dir|oci://ref> ...]",
 	Short: "Upload rendered Kubernetes resources into a Space as Units",
 	Long: getCommandHelp(`Upload already-rendered Kubernetes manifests into a ConfigHub Space.
 
 The input is a stream of rendered resources — from the installer, "kustomize build",
-or "helm template" — supplied as files, directories (walked for .yaml/.yml), or "-" for
-stdin. This command does not render anything; it ingests what you give it.
+or "helm template" — supplied as files, directories (walked for .yaml/.yml), "-" for
+stdin, or an "oci://" reference to a manifest bundle. This command does not render
+anything; it ingests what you give it.
 
-Resources become Units in one of two granularities (--granularity):
+An oci:// input is pulled and its YAML extracted before ingestion. The bundle is a
+standard OCI image artifact (a tar or tar+gzip layer of YAML, as "cub release publish"
+and Flux produce, or individual file layers as "oras push" produces); registry
+credentials are reused from your Docker config. The source reference is recorded on the
+Space as an "ExternalSource" annotation, and the resolved digest as "ExternalSourceDigest".
+
+Resources become Units in one of three granularities (--granularity):
   minimal       one Unit for everything, with CRDs split into their own Unit and each
                 AppConfig file split into its own Unit set (the default).
   per-resource  one Unit per resource.
+  per-file      one Unit per source file, named from the file's stem — so the input's
+                file layout defines the Unit set (matches how "cub helm" groups a
+                chart's template files). Useful with an oci:// bundle of named files.
 
 In minimal mode the resources in the combined Unit are ordered by install priority
 (Namespaces, RBAC, config, then workloads) and by their references to one another. A
@@ -80,6 +92,10 @@ Examples:
   # Helm output, ensuring a namespace and a regional label.
   helm template myapp ./chart | cub variant upload --component myapp --variant prod \
     --environment Prod --region us-east1 --namespace myapp -
+
+  # Seed a base from a published OCI manifest bundle, one Unit per bundled file.
+  cub variant upload --component cubbychat --variant base --granularity per-file \
+    oci://ghcr.io/confighub/configs/cubbychat
 `+"```"+`
 `, ""),
 	Args: cobra.MinimumNArgs(1),
@@ -95,7 +111,7 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.owner, "owner", "", "value for the well-known \"Owner\" Space label (e.g. Engineering)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.spacePattern, "space-pattern", "template:{{.Labels.Component}}-{{.Labels.Variant}}", "Go template (prefix 'template:') for the Space slug, evaluated over .Labels")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.space, "space", "", "explicit Space slug; overrides --space-pattern")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.granularity, "granularity", string(upload.Minimal), "how resources map to Units: minimal or per-resource")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.granularity, "granularity", string(upload.Minimal), "how resources map to Units: minimal, per-resource, or per-file")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "ensure a Namespace resource with this name exists (unless \"default\")")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "target for the created Units, in <target-slug> or <space-slug>/<target-slug> form")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "label", nil, "label key=value to set on every created Unit (repeatable)")
@@ -114,8 +130,8 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--variant is required")
 	}
 	gran := upload.Granularity(a.granularity)
-	if gran != upload.Minimal && gran != upload.PerResource {
-		return fmt.Errorf("--granularity must be %q or %q", upload.Minimal, upload.PerResource)
+	if gran != upload.Minimal && gran != upload.PerResource && gran != upload.PerFile {
+		return fmt.Errorf("--granularity must be %q, %q, or %q", upload.Minimal, upload.PerResource, upload.PerFile)
 	}
 
 	labels := map[string]string{
@@ -148,7 +164,33 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("computed Space slug is empty; set --space")
 	}
 
-	resources, err := upload.Parse(args)
+	// Resolve any oci:// inputs to local directories of extracted manifests, so
+	// the rest of the pipeline treats them like any other input path. The source
+	// references and resolved digests are recorded on the Space below as
+	// ExternalSource and ExternalSourceDigest annotations.
+	parseInputs := make([]string, len(args))
+	var ociSources, ociDigests []string
+	for i, in := range args {
+		if !isOCIRef(in) {
+			parseInputs[i] = in
+			continue
+		}
+		dir, err := os.MkdirTemp("", "cub-oci-*")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(dir)
+		digest, err := pullOCIManifests(ctx, in, dir)
+		if err != nil {
+			return err
+		}
+		tprint("Pulled %s (%s)", in, digest)
+		parseInputs[i] = dir
+		ociSources = append(ociSources, in)
+		ociDigests = append(ociDigests, digest)
+	}
+
+	resources, err := upload.Parse(parseInputs)
 	if err != nil {
 		return err
 	}
@@ -170,9 +212,24 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		spaceMeta = append(spaceMeta, "--label", k+"="+v)
 	}
 	if a.target != "" {
-		if id, err := resolveUploadTargetID(spaceSlug, a.target); err == nil && id != "" {
+		if id, providerType, qualifiedRef, err := resolveUploadTarget(spaceSlug, a.target); err == nil && id != "" {
 			spaceMeta = append(spaceMeta, "--annotation", "TargetID="+id)
+			// For an OCI target, also set the Space's ReleaseTargetID: releases are
+			// published per Space ("cub release publish <space>") and publish requires it.
+			// Pass the qualified ref rather than the UUID: space update resolves a bare
+			// Target ID against the selected space, which may not be set here.
+			if providerType == string(api.ProviderOCI) {
+				spaceMeta = append(spaceMeta, "--release-target", qualifiedRef)
+			}
 		}
+	}
+	if len(ociSources) > 0 {
+		// ExternalSource carries the reference(s) as given (tag included);
+		// ExternalSourceDigest carries the resolved immutable digest(s) in the
+		// same order, so the exact bundle installed is auditable and a later
+		// refresh can detect when a moving tag points somewhere new.
+		spaceMeta = append(spaceMeta, "--annotation", "ExternalSource="+strings.Join(ociSources, ","))
+		spaceMeta = append(spaceMeta, "--annotation", "ExternalSourceDigest="+strings.Join(ociDigests, ","))
 	}
 	spaceMeta = append(spaceMeta, spaceSlug)
 	if err := runCub(spaceMeta...); err != nil {
@@ -376,25 +433,35 @@ func renderSpacePattern(pattern string, labels map[string]string) (string, error
 	return strings.TrimSpace(b.String()), nil
 }
 
-// resolveUploadTargetID resolves a --target ref to its TargetID UUID by shelling
-// out to cub, so it can be recorded as the Space's TargetID annotation.
-func resolveUploadTargetID(unitSpace, targetRef string) (string, error) {
+// resolveUploadTarget resolves a --target ref by shelling out to cub, returning
+// the TargetID UUID (recorded as the Space's TargetID annotation), the target's
+// ProviderType (an OCI target is also set as the Space's release target), and
+// the fully qualified <space>/<slug> ref for passing to other cub commands.
+func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifiedRef string, err error) {
 	lookupSpace, slug := unitSpace, targetRef
 	if i := strings.IndexByte(targetRef, '/'); i >= 0 {
 		lookupSpace, slug = targetRef[:i], targetRef[i+1:]
 	}
 	var stdout, stderr bytes.Buffer
-	c := exec.Command("cub", "target", "get", "--space", lookupSpace, "-o", "jq=.Target.TargetID", slug)
+	c := exec.Command("cub", "target", "get", "--space", lookupSpace, "-o", "json", slug)
 	c.Stdout = &stdout
 	c.Stderr = &stderr
 	if err := c.Run(); err != nil {
-		return "", err
+		return "", "", "", err
 	}
-	id := strings.Trim(strings.TrimSpace(stdout.String()), "\"")
-	if id == "" || id == "null" {
-		return "", fmt.Errorf("target %q has no TargetID", slug)
+	var extended struct {
+		Target struct {
+			TargetID     string `json:"TargetID"`
+			ProviderType string `json:"ProviderType"`
+		} `json:"Target"`
 	}
-	return id, nil
+	if err := json.Unmarshal(stdout.Bytes(), &extended); err != nil {
+		return "", "", "", err
+	}
+	if extended.Target.TargetID == "" {
+		return "", "", "", fmt.Errorf("target %q has no TargetID", slug)
+	}
+	return extended.Target.TargetID, extended.Target.ProviderType, lookupSpace + "/" + slug, nil
 }
 
 // runCub executes the cub binary (this same CLI) as a subprocess, streaming its

@@ -17,6 +17,9 @@ var releaseWithdrawCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Withdraw a release, identified by its globally-unique release ID.
 
+Withdrawal takes the release out of service: it is no longer published for download,
+but the release itself is retained. Use `+"`cub release delete`"+` to remove it.
+
 The release is located by its ID regardless of which Space it lives in, so --space
 is not required (a Release lives in its bundled Units' Space, which need not be the
 caller's default).
@@ -33,7 +36,7 @@ Examples:
 }
 
 func init() {
-	addStandardDeleteFlags(releaseWithdrawCmd)
+	addStandardDisplayFlags(releaseWithdrawCmd)
 	releaseCmd.AddCommand(releaseWithdrawCmd)
 }
 
@@ -43,7 +46,7 @@ func releaseWithdrawCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid release id %q: %w", args[0], err)
 	}
 
-	// A Release's ID is org-unique, but the delete endpoint is space-scoped — and a
+	// A Release's ID is org-unique, but the withdraw endpoint is space-scoped — and a
 	// Release lives in its bundled Units' Space, which need not be the caller's
 	// --space. Resolve the Release's actual Space org-wide so withdrawal targets the
 	// right row instead of silently no-op'ing against the wrong Space.
@@ -52,15 +55,16 @@ func releaseWithdrawCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	deleteRes, err := cubClientNew.WithdrawReleaseWithResponse(ctx,
+	withdrawRes, err := cubClientNew.WithdrawReleaseWithResponse(ctx,
 		releaseSpaceID,
 		releaseID,
 	)
-	if cubapi.IsAPIError(err, deleteRes) {
-		return cubapi.InterpretErrorGeneric(err, deleteRes)
+	if cubapi.IsAPIError(err, withdrawRes) {
+		return cubapi.InterpretErrorGeneric(err, withdrawRes)
 	}
 
-	displayDeleteResults("release", args[0], releaseID.String(), deleteRes)
+	release := withdrawRes.JSON200
+	displayUpdateResults(release, "release", args[0], release.ReleaseID.String(), displayReleaseDetails)
 	return nil
 }
 

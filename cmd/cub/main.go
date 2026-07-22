@@ -21,6 +21,42 @@ var rootCmd = &cobra.Command{
 // Global context flag
 var globalContextFlag string
 
+// activeContextOverrideSource describes how the active context was overridden for
+// this invocation (e.g. by the --context flag or $CUB_CONTEXT), or is empty when
+// the persisted current context is in effect. Set by applyContextOverride and
+// read by the context display commands so the override is never invisible.
+var activeContextOverrideSource string
+
+// resolveContextOverride determines the context override for this invocation and a
+// human description of its source. Precedence, highest first: the --context flag,
+// then the $CUB_CONTEXT environment variable. An empty name means no override (the
+// persisted current context is used).
+func resolveContextOverride() (name, source string) {
+	if globalContextFlag != "" {
+		return globalContextFlag, "--context flag"
+	}
+	if env := os.Getenv("CUB_CONTEXT"); env != "" {
+		return env, "CUB_CONTEXT environment variable"
+	}
+	return "", ""
+}
+
+// applyContextOverride applies the resolved context override (if any) to the
+// context manager, recording its source for display. A named-but-missing context
+// is a hard error rather than a silent fallback, so commands never run against an
+// unexpected context.
+func applyContextOverride() error {
+	name, source := resolveContextOverride()
+	if name == "" {
+		return nil
+	}
+	if err := contextManager.OverrideCurrentContext(name); err != nil {
+		return fmt.Errorf("%s: %w", source, err)
+	}
+	activeContextOverrideSource = source
+	return nil
+}
+
 func globalPreRun(cmd *cobra.Command, args []string) error {
 	if debug {
 		err := os.Setenv("CONFIGHUB_DEBUG", "1")
@@ -32,14 +68,11 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("cub Debug mode enabled. version: %s, buildDate: %s\n", BuildTag, BuildDate)
 		debug = true
 	}
-	var err error
-	if globalContextFlag != "" {
-		err = contextManager.OverrideCurrentContext(globalContextFlag)
-		if err != nil {
-			return err
-		}
+	if err := applyContextOverride(); err != nil {
+		return err
 	}
 
+	var err error
 	cubClientNew, err = InitializeClient(contextManager.ActiveContext())
 	if err != nil {
 		return err
@@ -110,10 +143,8 @@ func main() {
 		// If the error is "unknown command" at the root level, try plugin resolution.
 		if cmd == rootCmd && isUnknownCommandError(err) {
 			// Apply context override manually since PersistentPreRunE may not have run.
-			if globalContextFlag != "" {
-				if overrideErr := contextManager.OverrideCurrentContext(globalContextFlag); overrideErr != nil {
-					failOnError(overrideErr)
-				}
+			if overrideErr := applyContextOverride(); overrideErr != nil {
+				failOnError(overrideErr)
 			}
 			pluginArgs := extractPluginArgs(os.Args[1:])
 			found, pluginErr := handlePluginCommand(pluginArgs)

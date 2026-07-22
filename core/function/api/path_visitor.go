@@ -16,6 +16,41 @@ type PathVisitorInfo struct {
 	EmbeddedAccessorType   EmbeddedAccessorType      `json:",omitempty" swaggertype:"string" description:"Embedded accessor to use, if any"`
 	EmbeddedAccessorConfig string                    `json:",omitempty" description:"Configuration of the embedded accessor, if any"`
 	Enricher               any                       `json:"-" description:"AttributeEnricher function pointer for populating properties; not serialized"`
+	// TypeExceptionFunc is a TypeExceptionPredicate deciding, per resource type, whether to skip
+	// the path. It complements TypeExceptions for exceptions that are open-ended rather than a
+	// fixed set — a rule over the API group, say, rather than an enumeration of every type it
+	// matches. Enumeration does not scale to CRD families that ship thousands of types and add
+	// more each release.
+	//
+	// Held as any and not serialized, following Enricher: it is only set by in-process path
+	// registrations, so paths that arrive over the API (from an Attribute) carry TypeExceptions
+	// alone.
+	TypeExceptionFunc any `json:"-" description:"TypeExceptionPredicate deciding additional resource types to skip; not serialized"`
+}
+
+// TypeExceptionPredicate reports whether a path registered for ResourceTypeAny should be skipped
+// for the given resource type. See PathVisitorInfo.TypeExceptionFunc.
+type TypeExceptionPredicate func(ResourceType) bool
+
+// SkipsResourceType reports whether the path is excepted for the given resource type, by either
+// the fixed TypeExceptions set or the open-ended TypeExceptionFunc.
+func (p *PathVisitorInfo) SkipsResourceType(resourceType ResourceType) bool {
+	if p == nil {
+		return false
+	}
+	if p.TypeExceptions != nil {
+		if _, excepted := p.TypeExceptions[resourceType]; excepted {
+			return true
+		}
+	}
+	if fn, ok := p.TypeExceptionFunc.(TypeExceptionPredicate); ok && fn != nil {
+		return fn(resourceType)
+	}
+	// Also accept a bare func literal, so callers need not convert explicitly.
+	if fn, ok := p.TypeExceptionFunc.(func(ResourceType) bool); ok && fn != nil {
+		return fn(resourceType)
+	}
+	return false
 }
 
 // PathToVisitorInfoType associates attribute metadata with a resource path.

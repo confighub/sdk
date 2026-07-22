@@ -180,16 +180,29 @@ func apiGetTargetFromSlugInSpaceCore(slug string, spaceID string, selectParam st
 	return extendedTarget.Target, nil
 }
 
+// apiGetTargetFromSlugInSpace resolves a Target by slug or by UUID.
+//
+// Both forms go through the org-level list endpoint. A UUID must not be resolved
+// via apiGetTarget: that path is scoped to the global selectedSpaceID rather than
+// to spaceID, and space create/update do not run spacePreRunE, so selectedSpaceID
+// is typically empty and uuid.MustParse panics on it. An empty spaceID is treated
+// as "search every Space", which is what callers holding only a UUID want: a UUID
+// already identifies a Target uniquely, and its Space need not be the selected one.
 func apiGetTargetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetTarget(id.String(), selectParam)
-	}
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	targets, err := apiListTargets(spaceID, "Slug = '"+slug+"'", selectParam, "")
+	if spaceID == "" {
+		spaceID = "*"
+	}
+
+	whereField := "Slug"
+	if _, err := uuid.Parse(slug); err == nil {
+		whereField = "TargetID"
+	}
+
+	targets, err := apiListTargets(spaceID, whereField+" = '"+slug+"'", selectParam, "")
 	if err != nil {
 		return nil, err
 	}

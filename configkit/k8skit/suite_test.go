@@ -419,53 +419,6 @@ func createMixedResources(t *testing.T, namespace, appName string) map[string]st
 	return resources
 }
 
-// Helper functions for creating test ResourceDocuments
-
-func createTestResourceDocument(t *testing.T, resourceType api.ResourceType, name, namespace string, labels map[string]string, ownerRefs []OwnerReference) ResourceDocument {
-	t.Helper()
-	resourceName := api.ResourceName(name)
-	if namespace != "" {
-		resourceName = api.ResourceName(namespace + "/" + name)
-	} else {
-		resourceName = api.ResourceName("/" + name)
-	}
-
-	return ResourceDocument{
-		ResourceType: resourceType,
-		ResourceName: resourceName,
-		Namespace:    namespace,
-		Name:         name,
-		Content:      fmt.Sprintf("# Test content for %s", name),
-		Source:       fmt.Sprintf("# Source: test/%s", name),
-		Labels:       labels,
-		OwnerRefs:    ownerRefs,
-	}
-}
-
-func createTestWorkloadDocument(t *testing.T, name, namespace, app string) ResourceDocument {
-	t.Helper()
-	labels := map[string]string{"app": app}
-	return createTestResourceDocument(t, "apps/v1/Deployment", name, namespace, labels, nil)
-}
-
-func createTestServiceDocument(t *testing.T, name, namespace, app string) ResourceDocument {
-	t.Helper()
-	labels := map[string]string{"app": app}
-	return createTestResourceDocument(t, "v1/Service", name, namespace, labels, nil)
-}
-
-func createTestNamespaceDocument(t *testing.T, name string) ResourceDocument {
-	t.Helper()
-	return createTestResourceDocument(t, "v1/Namespace", name, "", nil, nil)
-}
-
-func createTestConfigMapDocument(t *testing.T, name, namespace, content string) ResourceDocument {
-	t.Helper()
-	doc := createTestResourceDocument(t, "v1/ConfigMap", name, namespace, nil, nil)
-	doc.Content = content
-	return doc
-}
-
 // Utility helper functions
 
 func joinYAMLDocs(docs ...string) string {

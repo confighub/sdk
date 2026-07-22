@@ -77,6 +77,19 @@ func clusterDownRun(out io.Writer, name string, force bool) error {
 	}
 
 	if match != nil {
+		// The space's own release target reference blocks the recursive delete
+		// (spaces_release_target_id_fkey is ON DELETE RESTRICT), so clear it
+		// first when set. TODO: remove once the server's recursive delete
+		// clears the reference itself (#4782).
+		if space, err := apiGetSpaceFromSlug(match.SpaceSlug, "*"); err != nil {
+			fmt.Fprintf(out, "  warning: look up space %q: %v\n", match.SpaceSlug, err)
+		} else if space.ReleaseTargetID != nil {
+			fmt.Fprintf(out, "Clearing release target on Space %q...\n", match.SpaceSlug)
+			if err := clusterClearReleaseTarget(space.SpaceID); err != nil {
+				fmt.Fprintf(out, "  warning: %v\n", err)
+			}
+		}
+
 		fmt.Fprintf(out, "Deleting Space %q (recursive: cascades to Unit, Target, Worker)...\n", match.SpaceSlug)
 		if err := clusterRetryDelete(30*time.Second, func() error {
 			return clusterDeleteSpace(match.SpaceSlug, true)

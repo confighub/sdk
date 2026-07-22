@@ -153,6 +153,60 @@ func TestBuildPlan_PerResourceInfersConfigMapLink(t *testing.T) {
 	}
 }
 
+func TestBuildPlan_PerFileGroupsBySourceFile(t *testing.T) {
+	// A bundle of named files, mirroring an OCI manifest bundle: backend.yaml
+	// carries a Deployment + Service, namespace.yaml carries the Namespace.
+	dir := t.TempDir()
+	files := map[string]string{
+		"backend.yaml": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: backend\n  namespace: web\nspec:\n  selector:\n    matchLabels:\n      app: backend\n  template:\n    metadata:\n      labels:\n        app: backend\n    spec:\n      containers:\n        - name: backend\n          image: nginx:1.27\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: backend\n  namespace: web\nspec:\n  selector:\n    app: backend\n",
+		"namespace.yaml": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: web\n",
+	}
+	var inputs []string
+	for name, body := range files {
+		p := filepath.Join(dir, name)
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		inputs = append(inputs, p)
+	}
+	resources, err := Parse(inputs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := BuildPlan(resources, PerFile, "web", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// One Unit per source file, named from the file stem.
+	backend := unitBySlug(plan, "backend")
+	namespace := unitBySlug(plan, "namespace")
+	if backend == nil || namespace == nil {
+		t.Fatalf("expected Units backend and namespace, got %v", unitSlugs(plan))
+	}
+	if len(plan.Units) != 2 {
+		t.Fatalf("expected exactly 2 Units, got %d: %v", len(plan.Units), unitSlugs(plan))
+	}
+	// backend.yaml's two resources stay together in the backend Unit.
+	if !strings.Contains(backend.Content, "kind: Deployment") || !strings.Contains(backend.Content, "kind: Service") {
+		t.Fatalf("backend Unit should hold both the Deployment and Service: %q", backend.Content)
+	}
+	if !strings.Contains(namespace.Content, "kind: Namespace") {
+		t.Fatalf("namespace Unit should hold the Namespace: %q", namespace.Content)
+	}
+	// The workload's namespace ownership becomes a Unit link backend -> namespace.
+	found := false
+	for _, l := range plan.Links {
+		if l.FromUnit == "backend" && l.ToUnit == "namespace" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected link backend -> namespace, got %v", plan.Links)
+	}
+}
+
 func TestBuildPlan_EnsuresNamespace(t *testing.T) {
 	// Manifests without a Namespace resource; --namespace should synthesize one.
 	res, err := Parse(nil)

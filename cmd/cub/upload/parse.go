@@ -158,7 +158,14 @@ func Parse(inputs []string) ([]Resource, error) {
 				if err != nil {
 					return err
 				}
-				return add(path, data)
+				// Record the origin relative to the walked directory so the
+				// Source comment reads "backend.yaml" rather than the absolute
+				// path (which, for an oci:// input, is a temp directory).
+				origin := path
+				if rel, relErr := filepath.Rel(in, path); relErr == nil {
+					origin = rel
+				}
+				return add(origin, data)
 			})
 			if err != nil {
 				return nil, err

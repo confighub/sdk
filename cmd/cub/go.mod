@@ -6,11 +6,11 @@ toolchain go1.25.11
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/bridge-impl v0.1.97
-	github.com/confighub/sdk/configkit/k8skit v0.1.97
-	github.com/confighub/sdk/configkit/yqkit v0.1.97
-	github.com/confighub/sdk/core v0.1.97
-	github.com/confighub/sdk/function-impl v0.1.97
+	github.com/confighub/sdk/bridge-impl v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0
 	github.com/fatih/color v1.19.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/uuid v1.6.0
@@ -18,14 +18,15 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/crypto v0.53.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.20.2
 	k8s.io/apimachinery v0.35.1
 	k8s.io/client-go v0.35.1
+	oras.land/oras-go/v2 v2.6.0
 )
 
 require (
@@ -53,13 +54,13 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/envkit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.1.97 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.1.97 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/containerd/containerd v1.7.32 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -134,7 +135,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -193,6 +193,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
+	helm.sh/helm/v3 v3.20.2 // indirect
 	k8s.io/api v0.35.1 // indirect
 	k8s.io/apiextensions-apiserver v0.35.1 // indirect
 	k8s.io/apiserver v0.35.1 // indirect
@@ -202,7 +203,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/kubectl v0.35.1 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
-	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
@@ -212,6 +212,18 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/bridge-impl => ../../bridge-impl
+	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
+	github.com/confighub/sdk/function-impl => ../../function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

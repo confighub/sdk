@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -207,39 +208,85 @@ func clusterCreateRootUnit(spaceID, targetID uuid.UUID, slug, displayName string
 	return res.JSON200.UnitID, nil
 }
 
-// clusterApplyUnit triggers a `cub unit apply` server-side: for OCI targets it
-// publishes the Unit data verbatim to the OCI repository (no cluster I/O) and
-// advances LiveRev = HeadRev, so the unit ends up in the served OCI artifact
-// that Argo pulls.
+// clusterSetReleaseTarget sets the Space's ReleaseTargetID to the OCI target.
+// Releases are published per Space ("cub release publish <space>") and consume
+// the Space's release Target; the OCI registry serves the Space's Releases at
+// /space/<slug> only when it is set. The server validates that the Target's
+// provider is OCI and computes the Space's ReleaseURL.
+func clusterSetReleaseTarget(spaceID, targetID uuid.UUID) error {
+	patchData, err := json.Marshal(map[string]interface{}{
+		"ReleaseTargetID": targetID.String(),
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(spaceID, patchData); err != nil {
+		return fmt.Errorf("set release target on space: %w", err)
+	}
+	return nil
+}
+
+// clusterClearReleaseTarget clears the Space's ReleaseTargetID. Used by
+// cluster down before recursive space deletion: the space's own release
+// target reference blocks deleting the target it points at
+// (spaces_release_target_id_fkey is ON DELETE RESTRICT), and for cluster
+// spaces that target lives in the space being deleted.
 //
-// Org-wide Triggers run asynchronously on every Mutation and may attach an
-// `awaiting/triggers` ApplyGate that blocks the apply until evaluation
-// finishes. We retry on that specific gate for up to 30s; any other gate or
-// error fails immediately.
-func clusterApplyUnit(spaceID, unitID uuid.UUID) error {
+// TODO: remove once the server's recursive space delete clears the
+// reference itself (#4782).
+func clusterClearReleaseTarget(spaceID uuid.UUID) error {
+	patchData, err := json.Marshal(map[string]interface{}{
+		"ReleaseTargetID": nil,
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(spaceID, patchData); err != nil {
+		return fmt.Errorf("clear release target on space: %w", err)
+	}
+	return nil
+}
+
+// clusterWaitUnitTriggers waits for org-wide Triggers, which run asynchronously
+// on every Mutation, to finish evaluating the unit: while evaluation is pending
+// the unit carries an `awaiting/triggers` ApplyGate. Publishing a Release
+// bundles the unit's head Revision without consulting gates, so wait for the
+// gate to clear (up to 30s) to avoid bundling a pre-trigger revision. Any other
+// gate is left to the server to enforce.
+func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 	deadline := time.Now().Add(30 * time.Second)
 	backoff := 1 * time.Second
 	for {
-		res, err := cubClientNew.ApplyUnitWithResponse(ctx, spaceID, unitID, &goclientnew.ApplyUnitParams{})
+		unit, err := apiGetUnitInSpace(unitID.String(), spaceID.String(), "ApplyGates")
 		if err != nil {
 			return err
 		}
-		if res.StatusCode() >= 200 && res.StatusCode() < 300 {
+		if _, pending := unit.ApplyGates["awaiting/triggers"]; !pending {
 			return nil
 		}
-		if strings.Contains(string(res.Body), "awaiting/triggers") && time.Now().Before(deadline) {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(backoff):
-			}
-			if backoff < 5*time.Second {
-				backoff *= 2
-			}
-			continue
+		if time.Now().After(deadline) {
+			return fmt.Errorf("unit %s still awaiting trigger evaluation after 30s", unitID)
 		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(backoff):
+		}
+		if backoff < 5*time.Second {
+			backoff *= 2
+		}
+	}
+}
+
+// clusterPublishRelease publishes a Release for the Space: an immutable bundle
+// of the Space's Units that are assigned to its release Target, served to Argo
+// at /space/<slug> with tag "latest".
+func clusterPublishRelease(spaceID uuid.UUID) error {
+	res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})
+	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
+	return nil
 }
 
 // clusterDeleteSpace deletes a space by slug. If recursive is true, the server

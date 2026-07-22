@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/core v0.1.97
+	github.com/confighub/sdk/core v0.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/text v0.38.0
@@ -48,3 +48,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

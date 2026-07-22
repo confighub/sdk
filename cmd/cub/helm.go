@@ -4,242 +4,438 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"os"
+	"maps"
 	"strings"
 
-	"github.com/confighub/sdk/configkit/k8skit"
-	"github.com/confighub/sdk/bridge-impl/helmutils"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/engine"
-	"helm.sh/helm/v3/pkg/registry"
-	"helm.sh/helm/v3/pkg/strvals"
+
+	"github.com/confighub/sdk/bridge-impl/helmutils"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
-// helmCmd is the top-level command group for Helm-related operations.
-var helmCmd = &cobra.Command{
-	Use:               "helm",
-	Short:             "Helm commands",
-	Long:              getCommandHelp("Interact with Helm charts from the ConfigHub CLI.", ""),
-	PersistentPreRunE: spacePreRunE, // Re-use the space selection mechanism used elsewhere
-}
+// AnnotationGeneratesSpaceID is the Space annotation stamped on a helm source
+// space, recording the UUID of the base variant space its HelmSource units
+// generate. It stands in for a future generator link type.
+const AnnotationGeneratesSpaceID = "GeneratesSpaceID"
 
-// Helm label constants
 const (
-	HelmChartLabel   = "HelmChart"
-	HelmReleaseLabel = "HelmRelease"
+	helmSourceSpaceSuffix = "-helm"
+	baseSpaceSuffix       = "-base"
+	variantLabelBase      = "base"
+	variantLabelHelm      = "helm-source"
+
+	toolchainKubernetesYAML = "Kubernetes/YAML"
+	toolchainConfigHubYAML  = "ConfigHub/YAML"
 )
+
+// helmCmd is the top-level command group for Helm-related operations. Helm
+// commands operate on a component's source and base spaces derived from
+// --component, not on the default space context, so like variantCmd they use
+// only globalPreRun.
+var helmCmd = &cobra.Command{
+	Use:   "helm",
+	Short: "Helm commands",
+	Long: getCommandHelp(`Install Helm charts as ConfigHub components.
+
+A chart is rendered entirely client-side and its output becomes units in the
+component's base variant space (<component>-base). The chart reference, values,
+and options are recorded as a HelmSource unit in the component's helm source
+space (<component>-helm), which is the source of truth for upgrades.
+
+Rendering never contacts a cluster: hooks are dropped unless --include-hooks is
+set, the lookup template function returns nothing, and capabilities are Helm's
+defaults. Charts that depend on those are out of scope; charts that render
+cleanly client-side work fully.
+
+Deployments are created from the base with 'cub variant create' and updated
+with 'cub variant promote'; helm commands never touch them.`, ""),
+	PersistentPreRunE: globalPreRun,
+}
 
 func init() {
-	addSpaceFlags(helmCmd)
-	rootCmd.AddCommand(helmCmd) // helmCmd here refers to the package-level variable
+	rootCmd.AddCommand(helmCmd)
 }
 
-// splitHelmResources separates rendered Helm resources into CRDs and regular resources
-func splitHelmResources(renderedResources map[string]string, chartName string) (*k8skit.SplitResourcesResult, error) {
-	return k8skit.SplitResources(renderedResources, chartName)
+// helmComponentSpaces holds the two spaces of a helm-installed component.
+type helmComponentSpaces struct {
+	source *goclientnew.Space
+	base   *goclientnew.Space
 }
 
-// loadHelmValues loads and merges Helm values from files and --set flags.
-// The function processes values in the correct order:
-// 1. Values from files are loaded in order (later files override earlier ones)
-// 2. Values from --set flags override file values
-// This ensures proper precedence: defaults < file1 < file2 < ... < --set flags
-func loadHelmValues(valuesFiles []string, setValues []string) (map[string]interface{}, error) {
-	mergedValues := map[string]interface{}{}
+// getSpaceBySlug returns the space with the given slug, or nil if it does not exist.
+func getSpaceBySlug(slug string) (*goclientnew.Space, error) {
+	spaces, err := apiListSpaces("Slug = '"+slug+"'", "*")
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range spaces {
+		if s.Slug == slug {
+			return s, nil
+		}
+	}
+	return nil, nil
+}
 
-	// Process values files in order
-	// Later files override earlier ones
-	for _, filePath := range valuesFiles {
-		fileValues := map[string]interface{}{}
-		data, err := os.ReadFile(filePath)
+// createHelmSpace creates a space with the given metadata.
+func createHelmSpace(slug string, labels, annotations map[string]string) (*goclientnew.Space, error) {
+	space := goclientnew.Space{
+		Slug:        slug,
+		Labels:      labels,
+		Annotations: annotations,
+	}
+	res, err := cubClientNew.CreateSpaceWithResponse(ctx, &goclientnew.CreateSpaceParams{}, space)
+	if cubapi.IsAPIError(err, res) {
+		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	created := res.JSON200
+	if created == nil {
+		return nil, fmt.Errorf("failed to create space %q: %s", slug, res.Status())
+	}
+	tprint("Created space %s", slug)
+	return created, nil
+}
+
+// ensureComponentSpaces gets or creates the component's base variant space and
+// helm source space, stamping the component labels and the generator annotation.
+func ensureComponentSpaces(component string) (*helmComponentSpaces, error) {
+	baseSlug := component + baseSpaceSuffix
+	sourceSlug := component + helmSourceSpaceSuffix
+
+	base, err := getSpaceBySlug(baseSlug)
+	if err != nil {
+		return nil, err
+	}
+	if base == nil {
+		base, err = createHelmSpace(baseSlug, map[string]string{
+			"Component": component,
+			"Variant":   variantLabelBase,
+		}, nil)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read values file %s: %w", filePath, err)
-		}
-		if err := yaml.Unmarshal(data, &fileValues); err != nil {
-			return nil, fmt.Errorf("cannot parse values file %s: %w", filePath, err)
-		}
-		// Merge with proper precedence: new values override old ones
-		mergedValues = chartutil.CoalesceTables(fileValues, mergedValues)
-	}
-
-	// Process --set flags (these have highest precedence)
-	for _, val := range setValues {
-		if err := strvals.ParseInto(val, mergedValues); err != nil {
-			return nil, fmt.Errorf("failed to parse --set value %q: %w", val, err)
+			return nil, err
 		}
 	}
 
-	return mergedValues, nil
-}
-
-// helmRenderInput holds the inputs for rendering a Helm chart.
-type helmRenderInput struct {
-	releaseName    string
-	chartName      string
-	valuesFiles    []string
-	set            []string
-	version        string
-	repo           string
-	namespace      string
-	usePlaceholder bool
-	skipCRDs       bool
-	isUpgrade      bool
-}
-
-// helmRenderResult holds the output of rendering a Helm chart.
-type helmRenderResult struct {
-	CRDs       string
-	Resources  string
-	UnitLabels map[string]string
-}
-
-// renderHelmChart performs the full Helm rendering pipeline: locates and loads the chart,
-// merges values, renders templates, extracts CRDs, and splits resources.
-func renderHelmChart(args helmRenderInput) (*helmRenderResult, error) {
-	// Determine the namespace used during rendering
-	renderNamespace := args.namespace
-	if args.usePlaceholder {
-		renderNamespace = "confighubplaceholder"
-	}
-
-	// Initialize Helm SDK
-	settings := cli.New()
-	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(nil, renderNamespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
-		fmt.Printf(format+"\n", v...)
-	}); err != nil {
-		return nil, fmt.Errorf("failed to initialize Helm action configuration: %w", err)
-	}
-
-	// Initialize OCI registry client for oci:// chart support
-	registryClient, err := registry.NewClient()
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize OCI registry client: %w", err)
-	}
-	actionConfig.RegistryClient = registryClient
-
-	// Use action.NewInstall to get a properly wired ChartPathOptions
-	// (it copies the registry client from actionConfig into the unexported field)
-	installAction := action.NewInstall(actionConfig)
-	installAction.ChartPathOptions.Version = args.version
-	installAction.ChartPathOptions.RepoURL = args.repo
-
-	// Locate the chart
-	cp, err := installAction.ChartPathOptions.LocateChart(args.chartName, settings)
-	if err != nil {
-		return nil, fmt.Errorf("failed to locate chart %s (version: %s, repo: %s): %w", args.chartName, args.version, args.repo, err)
-	}
-
-	// Load the chart
-	chrt, err := loader.Load(cp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load chart from %s: %w", cp, err)
-	}
-
-	// Collect and merge values
-	userSuppliedValues, err := loadHelmValues(args.valuesFiles, args.set)
+	source, err := getSpaceBySlug(sourceSlug)
 	if err != nil {
 		return nil, err
 	}
-
-	// Process dependencies (filters out disabled subcharts)
-	if err := chartutil.ProcessDependencies(chrt, userSuppliedValues); err != nil {
-		return nil, fmt.Errorf("failed to process chart dependencies: %w", err)
-	}
-
-	// Build unit labels from chart metadata
-	unitLabels := map[string]string{
-		helmutils.HelmReleaseLabel: args.releaseName,
-	}
-	if chrt.Metadata != nil {
-		if chrt.Metadata.Name != "" {
-			unitLabels[helmutils.HelmChartLabel] = chrt.Metadata.Name
+	if source == nil {
+		source, err = createHelmSpace(sourceSlug, map[string]string{
+			"Component": component,
+			"Variant":   variantLabelHelm,
+		}, map[string]string{
+			AnnotationGeneratesSpaceID: base.SpaceID.String(),
+		})
+		if err != nil {
+			return nil, err
 		}
-		if chrt.Metadata.APIVersion != "" {
-			unitLabels[helmutils.HelmChartAPIVersionLabel] = chrt.Metadata.APIVersion
-		}
-		if chrt.Metadata.Version != "" {
-			unitLabels[helmutils.HelmChartVersionLabel] = chrt.Metadata.Version
-		}
-		if chrt.Metadata.AppVersion != "" {
-			unitLabels[helmutils.HelmAppVersionLabel] = chrt.Metadata.AppVersion
+	} else if source.Annotations[AnnotationGeneratesSpaceID] != base.SpaceID.String() {
+		if err := patchHelmSpaceGeneratesAnnotation(source.SpaceID, base.SpaceID); err != nil {
+			return nil, err
 		}
 	}
 
-	// Render templates
-	releaseOptions := chartutil.ReleaseOptions{
-		Name:      args.releaseName,
-		Namespace: renderNamespace,
-		Revision:  1,
-		IsInstall: !args.isUpgrade,
-		IsUpgrade: args.isUpgrade,
-	}
-	valuesToRender, err := chartutil.ToRenderValues(chrt, userSuppliedValues, releaseOptions, chartutil.DefaultCapabilities)
+	return &helmComponentSpaces{source: source, base: base}, nil
+}
+
+// getComponentSpaces returns the component's spaces without creating anything,
+// for commands that require a prior install.
+func getComponentSpaces(component string) (*helmComponentSpaces, error) {
+	base, err := getSpaceBySlug(component + baseSpaceSuffix)
 	if err != nil {
-		return nil, fmt.Errorf("failed to prepare render values: %w", err)
+		return nil, err
 	}
-
-	renderingEngine := engine.Engine{}
-	renderedResources, err := renderingEngine.Render(chrt, valuesToRender)
+	source, err := getSpaceBySlug(component + helmSourceSpaceSuffix)
 	if err != nil {
-		return nil, fmt.Errorf("template render failed: %w", err)
+		return nil, err
 	}
+	if source == nil || base == nil {
+		return nil, fmt.Errorf("component %q has no helm source space; run 'cub helm install' first (or pass --component)", component)
+	}
+	return &helmComponentSpaces{source: source, base: base}, nil
+}
 
-	// Extract CRDs from the chart's crds/ directory
-	var crdContent strings.Builder
-	if !args.skipCRDs {
-		crdFiles := chrt.CRDObjects()
-		for _, crdFile := range crdFiles {
-			if crdContent.Len() > 0 {
-				crdContent.WriteString("---\n")
+// patchHelmSpaceGeneratesAnnotation sets the GeneratesSpaceID annotation on the
+// helm source space.
+func patchHelmSpaceGeneratesAnnotation(sourceSpaceID, baseSpaceID uuid.UUID) error {
+	patchMap := map[string]any{
+		"Annotations": map[string]any{
+			AnnotationGeneratesSpaceID: baseSpaceID.String(),
+		},
+	}
+	patchData, err := json.Marshal(patchMap)
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(sourceSpaceID, patchData); err != nil {
+		return fmt.Errorf("failed to set %s annotation on helm source space: %w", AnnotationGeneratesSpaceID, err)
+	}
+	return nil
+}
+
+// helmSourceUnit pairs a source-space unit with its parsed HelmSource document.
+type helmSourceUnit struct {
+	unit   *goclientnew.Unit
+	source *helmutils.HelmSource
+}
+
+// listHelmSources returns the parsed HelmSource units in the source space.
+// Units that do not parse are skipped with a warning.
+func listHelmSources(sourceSpaceID uuid.UUID) ([]helmSourceUnit, error) {
+	units, err := apiListUnits(sourceSpaceID.String(), "", "*")
+	if err != nil {
+		return nil, err
+	}
+	sources := make([]helmSourceUnit, 0, len(units))
+	for _, u := range units {
+		data, err := base64.StdEncoding.DecodeString(u.Data)
+		if err != nil {
+			continue
+		}
+		src, err := helmutils.ParseHelmSource(data)
+		if err != nil {
+			tprint("Warning: unit %s in the helm source space is not a valid HelmSource: %v", u.Slug, err)
+			continue
+		}
+		sources = append(sources, helmSourceUnit{unit: u, source: src})
+	}
+	return sources, nil
+}
+
+// checkPrefixConflict enforces that no two HelmSources in a component share a
+// unit prefix. In particular at most one may have an empty prefix.
+func checkPrefixConflict(others []helmSourceUnit, release, prefix string) error {
+	for _, other := range others {
+		if other.unit.Slug == makeSlug(release) {
+			continue
+		}
+		if other.source.Spec.UnitPrefix == prefix {
+			if prefix == "" {
+				return fmt.Errorf("release %q already uses an empty unit prefix in this component; pass --prefix", other.source.Spec.Release.Name)
 			}
-			crdContent.WriteString(fmt.Sprintf("# Source: %s/crds/%s\n", chrt.Name(), crdFile.Name))
-			crdContent.WriteString(string(crdFile.File.Data))
-			crdContent.WriteString("\n")
+			return fmt.Errorf("release %q already uses unit prefix %q in this component; pass a different --prefix", other.source.Spec.Release.Name, prefix)
 		}
-	} else if len(chrt.CRDObjects()) > 0 {
-		tprint("Skipping %d CRDs from %s/crds/ directory due to --skip-crds flag", len(chrt.CRDObjects()), chrt.Name())
+	}
+	return nil
+}
+
+// applyHelmSource renders the HelmSource and reconciles both the source unit
+// and the generated units in the base space. It is the shared core of install
+// and upgrade.
+func applyHelmSource(src *helmutils.HelmSource, component string, spaces *helmComponentSpaces) error {
+	chrt, err := helmutils.LoadChart(src)
+	if err != nil {
+		return err
 	}
 
-	// Split resources into CRDs and regular resources
-	splitResult, err := splitHelmResources(renderedResources, chrt.Name())
+	result, err := helmutils.Generate(chrt, src, component)
+	if err != nil {
+		return err
+	}
+
+	for _, dropped := range result.DroppedHooks {
+		tprint("Dropped hook manifest: %s (use --include-hooks to keep hook manifests as plain resources)", dropped)
+	}
+	if len(result.SkippedCRDFiles) > 0 {
+		tprint("Skipped %d CRD file(s) due to --skip-crds", len(result.SkippedCRDFiles))
+	}
+	if src.Spec.IncludeHooks && chartDeclaresHooks(result) {
+		tprint("Note: hook manifests are included as plain resources; Helm hook lifecycle (weights, deletion policies) does not apply")
+	}
+
+	src.Status.ResolvedVersion = result.ResolvedVersion
+	src.Status.AppVersion = result.AppVersion
+
+	if err := upsertHelmSourceUnit(spaces.source.SpaceID, src, result.UnitLabels); err != nil {
+		return err
+	}
+
+	return reconcileHelmUnits(spaces.base.SpaceID, src, result)
+}
+
+// chartDeclaresHooks reports whether the render produced any hook manifests.
+// When hooks are included they are not in DroppedHooks, so detect them by
+// scanning the generated content for the annotation.
+func chartDeclaresHooks(result *helmutils.GenerateResult) bool {
+	if len(result.DroppedHooks) > 0 {
+		return true
+	}
+	for _, u := range result.Units {
+		if containsHelmHookAnnotation(u.Content) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsHelmHookAnnotation(content string) bool {
+	return strings.Contains(content, "helm.sh/hook:") || strings.Contains(content, `"helm.sh/hook"`)
+}
+
+// upsertHelmSourceUnit creates or updates the HelmSource unit in the source space.
+func upsertHelmSourceUnit(sourceSpaceID uuid.UUID, src *helmutils.HelmSource, labels map[string]string) error {
+	data, err := src.Marshal()
+	if err != nil {
+		return err
+	}
+	slug := makeSlug(src.Spec.Release.Name)
+
+	existing, err := getUnitBySlug(sourceSpaceID, slug)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		_, err := createUnitInSpace(sourceSpaceID, slug, toolchainConfigHubYAML, string(data), labels)
+		if err != nil {
+			return fmt.Errorf("failed to create HelmSource unit %q: %w", slug, err)
+		}
+		tprint("Created HelmSource unit %s", slug)
+		return nil
+	}
+
+	existing.Data = base64.StdEncoding.EncodeToString(data)
+	mergeLabels(existing, labels)
+	updated, err := updateUnit(existing.SpaceID, existing, &goclientnew.UpdateUnitParams{})
+	if err != nil {
+		return fmt.Errorf("failed to update HelmSource unit %q: %w", slug, err)
+	}
+	tprint("Updated HelmSource unit %s", updated.Slug)
+	return nil
+}
+
+// reconcileHelmUnits makes the base space's units for this release match the
+// generated set: changed units are updated, new ones created, and units whose
+// source file disappeared are deleted.
+func reconcileHelmUnits(baseSpaceID uuid.UUID, src *helmutils.HelmSource, result *helmutils.GenerateResult) error {
+	release := src.Spec.Release.Name
+	existing, err := apiListUnits(baseSpaceID.String(), fmt.Sprintf("Labels.%s = '%s'", helmutils.HelmReleaseLabel, release), "*")
+	if err != nil {
+		return err
+	}
+	existingBySlug := map[string]*goclientnew.Unit{}
+	for _, u := range existing {
+		existingBySlug[u.Slug] = u
+	}
+
+	desired := map[string]bool{}
+	for _, gen := range result.Units {
+		desired[gen.Slug] = true
+		if ex, ok := existingBySlug[gen.Slug]; ok {
+			current, decodeErr := base64.StdEncoding.DecodeString(ex.Data)
+			if decodeErr == nil && string(current) == gen.Content && labelsMatch(ex.Labels, result.UnitLabels) {
+				continue
+			}
+			ex.Data = base64.StdEncoding.EncodeToString([]byte(gen.Content))
+			mergeLabels(ex, result.UnitLabels)
+			updated, err := updateUnit(ex.SpaceID, ex, &goclientnew.UpdateUnitParams{})
+			if err != nil {
+				return fmt.Errorf("failed to update unit %q: %w", gen.Slug, err)
+			}
+			if wait {
+				if err := awaitTriggersRemoval(updated); err != nil {
+					return err
+				}
+			}
+			displayUpdateResults(updated, "unit", updated.Slug, updated.UnitID.String(), displayUnitDetails)
+			continue
+		}
+
+		// A synthesized Namespace unit (Source == "") may already exist,
+		// created by another release sharing the namespace; leave it alone.
+		if gen.Source == "" {
+			other, err := getUnitBySlug(baseSpaceID, gen.Slug)
+			if err != nil {
+				return err
+			}
+			if other != nil {
+				if !quiet {
+					tprint("Namespace unit %s already exists (shared); leaving it unchanged", gen.Slug)
+				}
+				continue
+			}
+		}
+
+		created, err := createUnitInSpace(baseSpaceID, gen.Slug, toolchainKubernetesYAML, gen.Content, result.UnitLabels)
+		if err != nil {
+			return fmt.Errorf("failed to create unit %q: %w", gen.Slug, err)
+		}
+		if wait {
+			if err := awaitTriggersRemoval(created); err != nil {
+				return err
+			}
+		}
+		displayCreateResults(created, "unit", created.Slug, created.UnitID.String(), displayUnitDetails)
+	}
+
+	for slug, ex := range existingBySlug {
+		if desired[slug] {
+			continue
+		}
+		deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, baseSpaceID, ex.UnitID)
+		if cubapi.IsAPIError(err, deleteRes) {
+			return fmt.Errorf("failed to delete unit %q (its source file was removed from the chart): %w",
+				slug, cubapi.InterpretErrorGeneric(err, deleteRes))
+		}
+		tprint("Deleted unit %s (its source file was removed from the chart)", slug)
+	}
+
+	return nil
+}
+
+// getUnitBySlug returns the unit with the given slug in the space, or nil if
+// it does not exist.
+func getUnitBySlug(spaceID uuid.UUID, slug string) (*goclientnew.Unit, error) {
+	units, err := apiListUnits(spaceID.String(), "Slug = '"+slug+"'", "*")
 	if err != nil {
 		return nil, err
 	}
-
-	// Combine CRDs from crds/ directory with any CRDs from templates
-	if crdContent.Len() > 0 {
-		if splitResult.CRDs != "" {
-			splitResult.CRDs = crdContent.String() + "---\n" + splitResult.CRDs
-		} else {
-			splitResult.CRDs = crdContent.String()
+	for _, u := range units {
+		if u.Slug == slug {
+			return u, nil
 		}
 	}
-
-	return &helmRenderResult{
-		CRDs:       splitResult.CRDs,
-		Resources:  splitResult.Resources,
-		UnitLabels: unitLabels,
-	}, nil
+	return nil, nil
 }
 
-// prependNamespaceResource prepends a Kubernetes Namespace resource to YAML content
-// if the namespace is specified and not "default".
-func prependNamespaceResource(yamlContent string, namespace string) string {
-	if namespace != "" && namespace != "default" {
-		namespaceResource := fmt.Sprintf(`apiVersion: v1
-kind: Namespace
-metadata:
-  name: %s
----
-`, namespace)
-		return namespaceResource + yamlContent
+// createUnitInSpace creates a unit with the given content and labels.
+func createUnitInSpace(spaceID uuid.UUID, slug, toolchainType, content string, labels map[string]string) (*goclientnew.Unit, error) {
+	apiUnit := goclientnew.Unit{
+		SpaceID:       spaceID,
+		Slug:          slug,
+		ToolchainType: toolchainType,
+		Data:          base64.StdEncoding.EncodeToString([]byte(content)),
+		Labels:        labels,
 	}
-	return yamlContent
+	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{}, apiUnit)
+	if cubapi.IsAPIError(err, unitRes) {
+		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
+	}
+	created := unitRes.JSON200
+	if created == nil {
+		return nil, fmt.Errorf("unexpected response status %s", unitRes.Status())
+	}
+	return created, nil
+}
+
+// mergeLabels sets the given labels on the unit, preserving unrelated ones.
+func mergeLabels(unit *goclientnew.Unit, labels map[string]string) {
+	if unit.Labels == nil {
+		unit.Labels = map[string]string{}
+	}
+	maps.Copy(unit.Labels, labels)
+}
+
+// labelsMatch reports whether every wanted label is present with the same value.
+func labelsMatch(have, want map[string]string) bool {
+	for k, v := range want {
+		if have[k] != v {
+			return false
+		}
+	}
+	return true
 }

@@ -128,9 +128,10 @@ stringData:
 }
 
 // clusterArgoRootAppManifest returns the YAML for the root "app-of-apps"
-// Application. It self-references the same Space's bundle, so adding new
-// Application Units to the Space causes Argo to create the corresponding Apps
-// on its next sync.
+// Application. It self-references the same Space's Release bundle, so adding
+// new Application Units to the Space and publishing a new Release causes Argo
+// to create the corresponding Apps on its next sync. A Release bundle is flat —
+// one <unit-slug>.yaml per bundled Unit at the bundle root — so path is ".".
 func clusterArgoRootAppManifest(spaceSlug, ociRepoURL string) []byte {
 	return fmt.Appendf(nil, `apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -144,7 +145,7 @@ spec:
   source:
     repoURL: %s
     targetRevision: latest
-    path: ./%s
+    path: .
   destination:
     server: https://kubernetes.default.svc
     namespace: %s
@@ -156,7 +157,7 @@ spec:
       - ServerSideApply.ForceConflicts=true
       - RespectIgnoreDifferences=true
       - CreateNamespace=false
-`, spaceSlug, clusterArgoNamespace, ociRepoURL, spaceSlug, clusterArgoNamespace)
+`, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace)
 }
 
 // clusterArgoWaitAdminPassword polls until the argocd-initial-admin-secret

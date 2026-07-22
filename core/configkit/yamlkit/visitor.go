@@ -244,11 +244,7 @@ func VisitPathsDoc(
 		formatPaths, ok = resourceTypeToPaths[api.ResourceTypeAny]
 		if ok {
 			for k, pathInfo := range formatPaths {
-				exception := false
-				if pathInfo.TypeExceptions != nil {
-					_, exception = pathInfo.TypeExceptions[resourceInfo.ResourceType]
-				}
-				if !exception {
+				if !pathInfo.SkipsResourceType(resourceInfo.ResourceType) {
 					unresolvedPaths[k] = pathInfo
 				}
 			}

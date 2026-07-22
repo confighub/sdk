@@ -5,6 +5,7 @@ package upload
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -19,6 +20,10 @@ type Granularity string
 const (
 	// PerResource creates one Unit per resource.
 	PerResource Granularity = "per-resource"
+	// PerFile creates one Unit per source file, named from the file's stem, so
+	// the input's file layout defines the Unit set (matching how `cub helm`
+	// groups a chart's template files).
+	PerFile Granularity = "per-file"
 	// Minimal creates the fewest Units possible: one for everything, with CRDs
 	// and each AppConfig file split into their own Units.
 	Minimal Granularity = "minimal"
@@ -281,6 +286,42 @@ func groupUnits(resources []Resource, gran Granularity, baseSlug string) ([]unit
 			}
 			groups = append(groups, unitGroup{slug: slug, kind: kind, resIdxs: []int{i}})
 		}
+	case PerFile:
+		// One Unit per originating file, named from the file's stem, in
+		// first-seen (lexical walk) order. A synthesized Namespace has no file
+		// and gets its own Unit.
+		var fileKeys []string
+		byFile := map[string][]int{}
+		var synthIdxs []int
+		for i, r := range resources {
+			if r.AppConfig != nil {
+				continue
+			}
+			if r.Synthesized {
+				synthIdxs = append(synthIdxs, i)
+				continue
+			}
+			key := r.Source
+			if _, seen := byFile[key]; !seen {
+				fileKeys = append(fileKeys, key)
+			}
+			byFile[key] = append(byFile[key], i)
+		}
+		for _, key := range fileKeys {
+			idxs := byFile[key]
+			slug := uniqueSlug(fileStem(key))
+			for _, i := range idxs {
+				linkUnitSlug[i] = slug
+			}
+			groups = append(groups, unitGroup{slug: slug, kind: UnitNormal, resIdxs: idxs})
+		}
+		if len(synthIdxs) > 0 {
+			slug := uniqueSlug(baseSlug + "-namespaces")
+			for _, i := range synthIdxs {
+				linkUnitSlug[i] = slug
+			}
+			groups = append(groups, unitGroup{slug: slug, kind: UnitNormal, resIdxs: synthIdxs})
+		}
 	default: // Minimal
 		// Split infrastructure with its own lifecycle into separate Units:
 		// Namespaces, CRDs, and plain (rendered) ConfigMaps each get their own
@@ -344,6 +385,18 @@ func resourceSlug(r Resource) string {
 		parts = append(parts, r.Name)
 	}
 	return strings.Join(parts, "-")
+}
+
+// fileStem derives a Unit slug stem from a resource's Source comment
+// ("# Source: <origin>\n"): the origin's base name with its extension removed.
+// For example "# Source: /tmp/x/backend.yaml\n" yields "backend".
+func fileStem(source string) string {
+	s := strings.TrimSuffix(strings.TrimPrefix(source, "# Source: "), "\n")
+	s = filepath.Base(strings.TrimSpace(s))
+	if i := strings.LastIndex(s, "."); i > 0 {
+		s = s[:i]
+	}
+	return s
 }
 
 func kindOf(rt fapi.ResourceType) string {

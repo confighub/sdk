@@ -4,6 +4,7 @@
 package kubernetes
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -955,4 +956,116 @@ spec:
 	_, _, err = k8sFnSetWorkloadLabels(testResourceProvider, nil, parsed,
 		stringArgsToFunctionArgs([]string{"noequalssign", "=novalue"}))
 	require.Error(t, err)
+}
+
+// Crossplane managed resources are cluster-scoped, but there are thousands of them across a
+// provider family, so they are recognized by the group-suffix rule rather than enumerated. Before
+// that rule existed, set-namespace wrote metadata.namespace into every one of them.
+func TestK8sFnSetNamespace_CrossplaneClusterScoped(t *testing.T) {
+	input := `
+apiVersion: eks.aws.upbound.io/v1beta2
+kind: Cluster
+metadata:
+  name: prod
+spec:
+  forProvider:
+    region: us-east-1
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: prod-private-a
+spec:
+  forProvider:
+    region: us-east-1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: main
+          image: nginx
+`
+	parsed, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+
+	out, _, err := k8sFnSetNamespace(testResourceProvider, nil,
+		parsed, []api.FunctionArgument{{ParameterName: "namespace-name", Value: "new-ns"}})
+	require.NoError(t, err)
+
+	got := out.String()
+	// The workload is namespaced and must be updated.
+	assert.Contains(t, got, "namespace: new-ns")
+	// Exactly one resource may carry a namespace: the Deployment.
+	assert.Equal(t, 1, strings.Count(got, "namespace: new-ns"),
+		"a namespace was written into a cluster-scoped Crossplane managed resource:\n%s", got)
+}
+
+// The Crossplane v2 namespaced variants carry a ".m." infix and ARE namespaced, so the rule must
+// not sweep them up along with their cluster-scoped twins.
+func TestK8sFnSetNamespace_CrossplaneNamespacedVariant(t *testing.T) {
+	input := `
+apiVersion: eks.aws.m.upbound.io/v1beta1
+kind: Cluster
+metadata:
+  name: prod
+spec:
+  forProvider:
+    region: us-east-1
+`
+	parsed, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+
+	out, _, err := k8sFnSetNamespace(testResourceProvider, nil,
+		parsed, []api.FunctionArgument{{ParameterName: "namespace-name", Value: "new-ns"}})
+	require.NoError(t, err)
+	assert.Contains(t, out.String(), "namespace: new-ns",
+		"the namespaced (.m.) Crossplane variant should have received a namespace")
+}
+
+// cluster-scoped-types is the escape hatch for CRDs no rule covers — user-defined composite
+// resources, whose API groups are arbitrary.
+func TestK8sFnSetNamespace_ClusterScopedTypesParameter(t *testing.T) {
+	input := `
+apiVersion: platform.acme.io/v1alpha1
+kind: XCluster
+metadata:
+  name: xc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: main
+          image: nginx
+`
+	parsed, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+
+	// Without the parameter the composite resource looks namespaced.
+	out, _, err := k8sFnSetNamespace(testResourceProvider, nil,
+		parsed, []api.FunctionArgument{{ParameterName: "namespace-name", Value: "new-ns"}})
+	require.NoError(t, err)
+	assert.Equal(t, 2, strings.Count(out.String(), "namespace: new-ns"))
+
+	// With it, the composite resource is left alone.
+	parsed, err = gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+	out, _, err = k8sFnSetNamespace(testResourceProvider, nil, parsed, []api.FunctionArgument{
+		{ParameterName: "namespace-name", Value: "new-ns"},
+		{ParameterName: "cluster-scoped-types", Value: "platform.acme.io/v1alpha1/XCluster"},
+	})
+	require.NoError(t, err)
+	got := out.String()
+	assert.Equal(t, 1, strings.Count(got, "namespace: new-ns"),
+		"cluster-scoped-types did not exclude the composite resource:\n%s", got)
+	assert.Contains(t, got, "kind: XCluster")
 }

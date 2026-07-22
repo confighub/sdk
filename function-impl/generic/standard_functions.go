@@ -65,5 +65,6 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerVetValues(fh, converter, resourceProvider)
 	registerVetFormat(fh, converter, resourceProvider)
 	registerVetImmutable(fh, converter, resourceProvider)
+	registerVetDisruption(fh, converter, resourceProvider)
 	registerSetHash(fh, converter, resourceProvider)
 }

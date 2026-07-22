@@ -479,11 +479,14 @@ type ClientInterface interface {
 
 	PublishRelease(ctx context.Context, spaceId openapi_types.UUID, body PublishReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// WithdrawRelease request
-	WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteRelease request
+	DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetExtendedRelease request
 	GetExtendedRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WithdrawRelease request
+	WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTags request
 	ListTags(ctx context.Context, spaceId openapi_types.UUID, params *ListTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2490,8 +2493,8 @@ func (c *Client) PublishRelease(ctx context.Context, spaceId openapi_types.UUID,
 	return c.Client.Do(req)
 }
 
-func (c *Client) WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewWithdrawReleaseRequest(c.Server, spaceId, releaseId)
+func (c *Client) DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteReleaseRequest(c.Server, spaceId, releaseId)
 	if err != nil {
 		return nil, err
 	}
@@ -2504,6 +2507,18 @@ func (c *Client) WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID
 
 func (c *Client) GetExtendedRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetExtendedReleaseRequest(c.Server, spaceId, releaseId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWithdrawReleaseRequest(c.Server, spaceId, releaseId)
 	if err != nil {
 		return nil, err
 	}
@@ -12398,8 +12413,8 @@ func NewPublishReleaseRequestWithBody(server string, spaceId openapi_types.UUID,
 	return req, nil
 }
 
-// NewWithdrawReleaseRequest generates requests for WithdrawRelease
-func NewWithdrawReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID) (*http.Request, error) {
+// NewDeleteReleaseRequest generates requests for DeleteRelease
+func NewDeleteReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12511,6 +12526,47 @@ func NewGetExtendedReleaseRequest(server string, spaceId openapi_types.UUID, rel
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewWithdrawReleaseRequest generates requests for WithdrawRelease
+func NewWithdrawReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "release_id", runtime.ParamLocationPath, releaseId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/release/%s/withdraw", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -20782,11 +20838,14 @@ type ClientWithResponsesInterface interface {
 
 	PublishReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, body PublishReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*PublishReleaseResponse, error)
 
-	// WithdrawReleaseWithResponse request
-	WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error)
+	// DeleteReleaseWithResponse request
+	DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error)
 
 	// GetExtendedReleaseWithResponse request
 	GetExtendedReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*GetExtendedReleaseResponse, error)
+
+	// WithdrawReleaseWithResponse request
+	WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error)
 
 	// ListTagsWithResponse request
 	ListTagsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTagsParams, reqEditors ...RequestEditorFn) (*ListTagsResponse, error)
@@ -23967,7 +24026,7 @@ func (r PublishReleaseResponse) StatusCode() int {
 	return 0
 }
 
-type WithdrawReleaseResponse struct {
+type DeleteReleaseResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *DeleteResponse
@@ -23982,7 +24041,7 @@ type WithdrawReleaseResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r WithdrawReleaseResponse) Status() string {
+func (r DeleteReleaseResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -23990,7 +24049,7 @@ func (r WithdrawReleaseResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r WithdrawReleaseResponse) StatusCode() int {
+func (r DeleteReleaseResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -24019,6 +24078,36 @@ func (r GetExtendedReleaseResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetExtendedReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type WithdrawReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Release
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r WithdrawReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WithdrawReleaseResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -27540,13 +27629,13 @@ func (c *ClientWithResponses) PublishReleaseWithResponse(ctx context.Context, sp
 	return ParsePublishReleaseResponse(rsp)
 }
 
-// WithdrawReleaseWithResponse request returning *WithdrawReleaseResponse
-func (c *ClientWithResponses) WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error) {
-	rsp, err := c.WithdrawRelease(ctx, spaceId, releaseId, reqEditors...)
+// DeleteReleaseWithResponse request returning *DeleteReleaseResponse
+func (c *ClientWithResponses) DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error) {
+	rsp, err := c.DeleteRelease(ctx, spaceId, releaseId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseWithdrawReleaseResponse(rsp)
+	return ParseDeleteReleaseResponse(rsp)
 }
 
 // GetExtendedReleaseWithResponse request returning *GetExtendedReleaseResponse
@@ -27556,6 +27645,15 @@ func (c *ClientWithResponses) GetExtendedReleaseWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseGetExtendedReleaseResponse(rsp)
+}
+
+// WithdrawReleaseWithResponse request returning *WithdrawReleaseResponse
+func (c *ClientWithResponses) WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error) {
+	rsp, err := c.WithdrawRelease(ctx, spaceId, releaseId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWithdrawReleaseResponse(rsp)
 }
 
 // ListTagsWithResponse request returning *ListTagsResponse
@@ -35906,15 +36004,15 @@ func ParsePublishReleaseResponse(rsp *http.Response) (*PublishReleaseResponse, e
 	return response, nil
 }
 
-// ParseWithdrawReleaseResponse parses an HTTP response from a WithdrawReleaseWithResponse call
-func ParseWithdrawReleaseResponse(rsp *http.Response) (*WithdrawReleaseResponse, error) {
+// ParseDeleteReleaseResponse parses an HTTP response from a DeleteReleaseWithResponse call
+func ParseDeleteReleaseResponse(rsp *http.Response) (*DeleteReleaseResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &WithdrawReleaseResponse{
+	response := &DeleteReleaseResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -36036,6 +36134,88 @@ func ParseGetExtendedReleaseResponse(rsp *http.Response) (*GetExtendedReleaseRes
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseWithdrawReleaseResponse parses an HTTP response from a WithdrawReleaseWithResponse call
+func ParseWithdrawReleaseResponse(rsp *http.Response) (*WithdrawReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WithdrawReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

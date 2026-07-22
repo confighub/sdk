@@ -26,9 +26,11 @@ var clusterUpCmd = &cobra.Command{
 	Short: "Bring up a kind cluster wired to ConfigHub via Argo CD",
 	Long: `Creates a kind cluster, installs Argo CD into it, and provisions the
 ConfigHub side: a Space containing a server-hosted OCI worker, an OCI
-target owned by that worker, and a self-referencing root "app of
-apps" Application Unit. The root Application is bootstrapped once via
-kubectl apply; from then on, adding a new Application Unit to the Space
+target owned by that worker and set as the Space's release target, and
+a self-referencing root "app of apps" Application Unit, delivered by
+publishing a Release of the Space. The root Application is bootstrapped
+once via kubectl apply; from then on, adding a new Application Unit to
+the Space and publishing a new Release ("cub release publish <space>")
 causes Argo to create the corresponding app on its next sync.
 
 Argo CD is reachable at http://localhost:<argo-port> (server.insecure=true);
@@ -237,6 +239,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
+	fmt.Fprintf(out, "Setting the space's release target to %q...\n", clusterOCITargetSlug)
+	if err := clusterSetReleaseTarget(spaceID, targetID); err != nil {
+		return err
+	}
+
 	// OCI URL for Argo (running inside kind) — rewritten to
 	// host.docker.internal for loopback cub servers.
 	ociURLForArgo, err := clusterOCIEndpointFromContainer(clusterServerURL())
@@ -244,8 +251,9 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 	// OCI URL recorded inside the root Application's source.repoURL — Argo
-	// pulls from this, so it must be the in-cluster-reachable form.
-	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/target/" + opts.spaceSlug + "/" + clusterOCITargetSlug
+	// pulls from this, so it must be the in-cluster-reachable form. Releases
+	// for the space are served at /space/<slug>, tag "latest".
+	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + opts.spaceSlug
 
 	// Auto-detect plain-HTTP OCI from the cub server URL scheme. http:// API
 	// → http:// OCI (the local-dev case). https:// API → TLS OCI.
@@ -266,8 +274,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
-	fmt.Fprintln(out, "Applying root Unit (cub unit apply — publishes to OCI; populates the OCI bundle)...")
-	if err := clusterApplyUnit(spaceID, rootUnitID); err != nil {
+	fmt.Fprintln(out, "Publishing the space's first release (populates the OCI bundle Argo pulls)...")
+	if err := clusterWaitUnitTriggers(spaceID, rootUnitID); err != nil {
+		return err
+	}
+	if err := clusterPublishRelease(spaceID); err != nil {
 		return err
 	}
 
@@ -299,7 +310,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		}
 	}
 	fmt.Fprintf(out, "\nLoad the cluster + Argo creds into your shell:\n  source %s\n", envFilePath)
-	fmt.Fprintf(out, "\nAdd a new Argo app:\n  1. Author an Application CR YAML, source.path: ./<workload-space>\n  2. cub unit create --space %s <slug> <file> --target %s/%s\n  3. cub unit apply --space %s <slug>\n  4. Argo's root sync picks it up on its next reconcile.\n",
+	fmt.Fprintf(out, "\nAdd a new Argo app:\n  1. Author an Application CR YAML: source.repoURL: <oci-endpoint>/space/<workload-space>,\n     targetRevision: latest, path: \".\" — the workload space needs a release\n     target and a published release.\n  2. cub unit create --space %s <slug> <file> --target %s/%s\n  3. cub release publish %s\n  4. Argo's root sync picks it up on its next reconcile.\n",
 		opts.spaceSlug, opts.spaceSlug, clusterOCITargetSlug, opts.spaceSlug)
 	return nil
 }

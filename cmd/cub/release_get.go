@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -151,16 +152,18 @@ func apiGetExtendedReleaseByWhere(spaceID, where, describe string) (*goclientnew
 	return latest, nil
 }
 
-// apiGetLatestRelease returns the newest Release (highest ReleaseNum) in spaceID:
-// the Release served at the "latest" tag. A Space has a single release Target, so
-// its newest Release is that Target's latest.
+// apiGetLatestRelease returns the newest published Release (highest ReleaseNum) in
+// spaceID: the Release served at the "latest" tag. A Space has a single release
+// Target, so its newest Release is that Target's latest. Withdrawn Releases are
+// retained but no longer served, so they are filtered out server-side — a
+// client-side check would miss them whenever --select omits Published.
 func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 	// The default for get is "*" (all fields) rather than auto-selected list columns.
 	selectParam := selectFields
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	releases, err := apiListReleases(spaceID, "", selectParam, "")
+	releases, err := apiListReleases(spaceID, "Published = true", selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +184,10 @@ func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 
 func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tablewriter.Table) {
 	view.Append([]string{"ID", releaseDetails.ReleaseID.String()})
+	// Published is omitempty in the generated client, so a withdrawn Release
+	// decodes as false rather than being reported as absent; format it explicitly
+	// so withdrawal is visible here instead of showing an empty cell.
+	view.Append([]string{"Published", strconv.FormatBool(releaseDetails.Published)})
 	view.Append([]string{"Digest", releaseDetails.Digest})
 	view.Append([]string{"Manifest Digest", releaseDetails.ManifestDigest})
 	view.Append([]string{"Organization ID", releaseDetails.OrganizationID.String()})

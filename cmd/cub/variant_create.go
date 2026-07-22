@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -51,10 +52,12 @@ The new space's labels are inherited from the upstream space, with "Variant" ove
 labels, since some values (like Region) commonly differ between variants. The other well-known labels
 (Component, Layer, Owner) are inherited and can be overridden with --variant-labels.
 
-The new space's slug is derived from --space-pattern, a Go template evaluated over the cloned
-space's labels (and .SourceEntitySlug for the upstream slug). For example, using the Component label
-as a prefix and the Variant label as a suffix: "template:{{.Labels.Component}}-{{.Labels.Variant}}".
-If --space-pattern is omitted, the server derives the slug from the variant labels.
+The new space's slug defaults to <component>-<variant>, derived from the cloned space's Component
+and Variant labels — the same convention as "cub variant upload" and "cub helm install". When the
+cloned space would have no Component label, the server instead derives the slug from the upstream
+space's slug and the variant name. Use --space-pattern to override: a Go template evaluated over
+the cloned space's labels (and .SourceEntitySlug for the upstream slug), for example
+"template:{{.Labels.Component}}-{{.Labels.Variant}}".
 
 The following are copied from the upstream space to the new space: WhereTrigger, TriggerFilterID,
 Permissions, and DeleteGates.
@@ -79,14 +82,15 @@ run during the clone. Trigger arguments can reference space metadata in Go templ
 Examples:
 `+"```"+`
   # Clone a space into a "test" variant. With Component=website inherited and Variant overridden to
-  # "test", the name pattern produces the slug "website-test".
-  cub variant create test website-prod \
-    --space-pattern "template:{{.Labels.Component}}-{{.Labels.Variant}}"
+  # "test", the default slug is "website-test".
+  cub variant create test website-prod
 
   # Clone into a regional staging variant, overriding the Environment and Region labels.
   cub variant create staging website-prod --environment Staging --region us-east2
 
   # Point the cloned units at a target and stamp the new space's TargetID annotation.
+  # For an OCI target, this also sets the new space's release target, so the variant
+  # can be published with "cub release publish" without further setup.
   cub variant create test website-prod --target website-test/cluster
 
   # Set a space annotation a PostClone trigger reads, and protect the prod clones with a delete gate.
@@ -101,8 +105,8 @@ Examples:
 func init() {
 	addStandardDisplayFlags(variantCreateCmd)
 	enableAllowExistsFlag(variantCreateCmd)
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug and .Labels for the cloned space's labels, example: 'template:{{.Labels.Component}}-{{.Labels.Variant}}'")
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug and .Labels for the cloned space's labels; defaults to 'template:{{.Labels.Component}}-{{.Labels.Variant}}' when the cloned space has a Component label")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space, and for an OCI target the new space's ReleaseTargetID (required by 'cub release publish')")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.environment, "environment", "", "set the \"Environment\" label on the new space (example: \"Prod\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.region, "region", "", "set the \"Region\" label on the new space (example: \"us-east2\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.namespace, "namespace", "", "run set-namespace with this value on the cloned Kubernetes/YAML units, replacing the placeholder namespace from the upstream (e.g. a base uploaded with --namespace confighubplaceholder)")
@@ -129,7 +133,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Step 1: clone the upstream space. WhereTrigger, TriggerFilterID, Permissions, and DeleteGates
 	// are copied from the upstream space by the clone (we pass an empty patch so nothing is overridden).
-	newSpace, err := cloneVariantSpace(variantName, upstreamSpaceID)
+	newSpace, err := cloneVariantSpace(variantName, upstreamSpace)
 	if err != nil {
 		return err
 	}
@@ -139,20 +143,24 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Step 2: resolve the target (if specified) and stamp the new space's TargetID annotation.
 	// Resolved after the space exists so that <new-space-slug>/<target-slug> can be used.
+	// For an OCI target, also set the new space's ReleaseTargetID: releases are published
+	// per space ("cub release publish <space>"), and publish requires it.
 	var targetID *uuid.UUID
 	if variantCreateArgs.target != "" {
-		id, err := parseEntityIdentifierSingle[goclientnew.Target](
+		target, err := parseEntityIdentifierSingleAsEntity[goclientnew.Target](
 			variantCreateArgs.target,
 			EntityTypeTarget,
+			"*",
 			apiGetTargetFromSlugInSpaceCore,
 			func(t *goclientnew.Target) string { return t.TargetID.String() },
 		)
 		if err != nil {
 			return err
 		}
-		targetID = &id
+		targetID = &target.TargetID
 
-		if err := patchVariantSpaceTargetAnnotation(newSpace.SpaceID, id); err != nil {
+		isOCI := target.ProviderType == string(api.ProviderOCI)
+		if err := patchVariantSpaceTarget(newSpace.SpaceID, target.TargetID, isOCI); err != nil {
 			return err
 		}
 	}
@@ -179,9 +187,28 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
 }
 
+// componentVariantPattern is the default slug pattern for a variant space,
+// matching the convention used by "cub variant upload" and "cub helm install".
+const componentVariantPattern = "template:{{.Labels.Component}}-{{.Labels.Variant}}"
+
+// effectiveComponent returns the Component label the cloned space will have: a
+// Component override from --variant-labels (applied last, so it wins) or the
+// inherited upstream label.
+func effectiveComponent(upstreamSpace *goclientnew.Space) string {
+	component := upstreamSpace.Labels["Component"]
+	for _, kv := range variantCreateArgs.variantLabels {
+		if k, v, ok := strings.Cut(kv, "="); ok && k == "Component" {
+			component = v
+		}
+	}
+	return component
+}
+
 // cloneVariantSpace clones the upstream space, setting the new space's Variant label to variantName
-// (plus any extra --variant-labels) and applying the optional --space-pattern.
-func cloneVariantSpace(variantName string, upstreamSpaceID uuid.UUID) (*goclientnew.Space, error) {
+// (plus any extra --variant-labels) and applying the --space-pattern, defaulted to
+// <component>-<variant> when the cloned space has a Component label.
+func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*goclientnew.Space, error) {
+	upstreamSpaceID := upstreamSpace.SpaceID
 	// The Variant label is always set from the variant name. --environment and --region set the
 	// well-known Environment and Region labels. Any --variant-labels are applied last so they win.
 	variantLabels := []string{"Variant=" + variantName}
@@ -201,8 +228,12 @@ func cloneVariantSpace(variantName string, upstreamSpaceID uuid.UUID) (*goclient
 		Include:       &include,
 		VariantLabels: &variantLabelsStr,
 	}
-	if variantCreateArgs.spacePattern != "" {
-		params.NamePattern = &variantCreateArgs.spacePattern
+	spacePattern := variantCreateArgs.spacePattern
+	if spacePattern == "" && effectiveComponent(upstreamSpace) != "" {
+		spacePattern = componentVariantPattern
+	}
+	if spacePattern != "" {
+		params.NamePattern = &spacePattern
 	}
 	if allowExists {
 		allowExistsStr := "true"
@@ -253,20 +284,24 @@ func cloneVariantSpace(variantName string, upstreamSpaceID uuid.UUID) (*goclient
 	return newSpace, nil
 }
 
-// patchVariantSpaceTargetAnnotation sets the "TargetID" annotation on the new space to the
-// resolved target UUID, mirroring the convention used by upstream spaces.
-func patchVariantSpaceTargetAnnotation(spaceID uuid.UUID, targetID uuid.UUID) error {
+// patchVariantSpaceTarget sets the "TargetID" annotation on the new space to the resolved
+// target UUID, mirroring the convention used by upstream spaces. For an OCI target it also
+// sets the space's ReleaseTargetID, which "cub release publish" requires.
+func patchVariantSpaceTarget(spaceID uuid.UUID, targetID uuid.UUID, releaseTarget bool) error {
 	patchMap := map[string]interface{}{
 		"Annotations": map[string]interface{}{
 			"TargetID": targetID.String(),
 		},
+	}
+	if releaseTarget {
+		patchMap["ReleaseTargetID"] = targetID.String()
 	}
 	patchData, err := json.Marshal(patchMap)
 	if err != nil {
 		return err
 	}
 	if _, err := patchSpace(spaceID, patchData); err != nil {
-		return fmt.Errorf("failed to set TargetID annotation on variant space: %w", err)
+		return fmt.Errorf("failed to set target on variant space: %w", err)
 	}
 	return nil
 }
