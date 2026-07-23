@@ -556,6 +556,14 @@ func performLogout(logoutURL string, accessToken string) error {
 func setSpaceContext() error {
 	ctx := contextManager.ActiveContext()
 
+	// A wildcard ("*") or empty default space selects cross-space (org-level)
+	// operations by default; there is no space to resolve, so honor it directly.
+	if ctx.Settings.DefaultSpace == "*" || ctx.Settings.DefaultSpace == "" {
+		selectedSpaceID = ctx.Settings.DefaultSpace
+		selectedSpaceSlug = ctx.Settings.DefaultSpace
+		return nil
+	}
+
 	currentSpace, err := apiGetSpaceFromSlug(ctx.Settings.DefaultSpace, "")
 	if err != nil {
 		spaceList, err := apiListSpaces("", "")

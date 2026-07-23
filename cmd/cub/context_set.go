@@ -65,8 +65,16 @@ func contextSetCmdRun(_ *cobra.Command, args []string) error {
 		isAuthenticated = true
 	}
 
-	// Only try to verify the space exists if we're authenticated
-	if isAuthenticated {
+	// A wildcard ("*") or empty default space selects cross-space (org-level)
+	// operations by default; there is no space to look up, so set it directly.
+	if setSpace == "*" || setSpace == "" {
+		ctx.Settings.DefaultSpace = setSpace
+		if ctx.Name == contextManager.ActiveContext().Name {
+			selectedSpaceID = setSpace
+			selectedSpaceSlug = setSpace
+		}
+	} else if isAuthenticated {
+		// Only try to verify the space exists if we're authenticated
 		space, err := apiGetSpaceFromSlug(setSpace, "")
 		if err != nil {
 			// Even though we're authenticated, the space might not exist

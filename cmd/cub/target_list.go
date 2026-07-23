@@ -20,7 +20,7 @@ var targetListCmd = &cobra.Command{
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTargetColumns = []string{"Target.Slug", "BridgeWorker.Slug", "Target.ProviderType", "Target.Parameters", "Space.Slug"}
+var defaultTargetColumns = []string{"Target.Slug", "BridgeWorker.Slug", "Target.ProviderType", "Target.Parameters", "Target.SpaceSlug"}
 
 // targetListInclude is the Include parameter for target list queries (the related
 // entities expanded into each ExtendedTarget).

@@ -52,6 +52,18 @@ func addSpaceFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&spaceFlag, "space", "", "space ID to perform command on")
 }
 
+// allowWildcardSpace sets the selected space to the wildcard "*" for cross-space
+// operations when the command is annotated as OrgLevel (i.e. it supports operating
+// across all spaces). It reports whether the wildcard was permitted.
+func allowWildcardSpace(cmd *cobra.Command) bool {
+	if _, orgLevel := cmd.Annotations["OrgLevel"]; orgLevel {
+		selectedSpaceID = "*"
+		selectedSpaceSlug = "*"
+		return true
+	}
+	return false
+}
+
 // to be used by sub-commands that requires space ID
 func spacePreRunE(cmd *cobra.Command, args []string) error {
 	if err := globalPreRun(cmd, args); err != nil {
@@ -60,10 +72,7 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 
 	if spaceFlag != "" {
 		if spaceFlag == "*" {
-			_, orgLevel := cmd.Annotations["OrgLevel"]
-			if orgLevel {
-				selectedSpaceID = "*"
-				selectedSpaceSlug = "*"
+			if allowWildcardSpace(cmd) {
 				return nil
 			}
 			return fmt.Errorf("space wildcard * not permitted for command %s", cmd.Name())
@@ -81,7 +90,13 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	if ctx == nil {
 		return fmt.Errorf("no context available")
 	}
-	if ctx.Settings.DefaultSpace == "" {
+	// An empty or wildcard default space means cross-space (org-level) operations
+	// by default. Honor it only for commands that support it (OrgLevel); otherwise
+	// the user must supply a specific space via --space.
+	if ctx.Settings.DefaultSpace == "" || ctx.Settings.DefaultSpace == "*" {
+		if allowWildcardSpace(cmd) {
+			return nil
+		}
 		return fmt.Errorf("space is required. Set with --space option or set in context with the context sub-command")
 	}
 	if selectedSpaceID == "" {

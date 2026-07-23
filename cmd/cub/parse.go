@@ -250,8 +250,8 @@ func parseEntityIdentifiersAsEntities[T EntityInSpace](
 			} else {
 				// Fall back to default space from context
 				cubContext := contextManager.CurrentContext()
-				if cubContext == nil || cubContext.Settings.DefaultSpace == "" {
-					return nil, fmt.Errorf("no space for %s selected, specified, or in current context", entityType)
+				if cubContext == nil || cubContext.Settings.DefaultSpace == "" || cubContext.Settings.DefaultSpace == "*" {
+					return nil, fmt.Errorf("no space for %s selected, specified, or in current context; qualify the identifier as space/%s or set --space", entityType, entityType)
 				}
 				// Look up space (handles both UUIDs and slugs)
 				space, err := apiGetSpaceFromSlug(cubContext.Settings.DefaultSpace, "SpaceID")
