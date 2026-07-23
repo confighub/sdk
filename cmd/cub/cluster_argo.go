@@ -160,6 +160,41 @@ spec:
 `, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace)
 }
 
+// clusterArgoChildAppManifest returns the YAML for a child Argo CD Application
+// created alongside the root app-of-apps — one per deployed component. It pulls
+// the component's own Release bundle (flat, so path "."), and its destination
+// namespace is where the component's resources land. The root app-of-apps
+// bundles this Unit, so publishing the cluster Space's Release causes Argo to
+// create the child app on its next sync. The Application name equals the source
+// Space slug, matching argobot's app-name == space-slug resolution convention.
+func clusterArgoChildAppManifest(appName, ociRepoURL, destNamespace string) []byte {
+	return fmt.Appendf(nil, `apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: %s
+  namespace: %s
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: %s
+    targetRevision: latest
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: %s
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - ServerSideApply.ForceConflicts=true
+      - RespectIgnoreDifferences=true
+      - CreateNamespace=false
+`, appName, clusterArgoNamespace, ociRepoURL, destNamespace)
+}
+
 // clusterArgoWaitAdminPassword polls until the argocd-initial-admin-secret
 // exists (created by argocd-server after first start), then base64-decodes the
 // password field.

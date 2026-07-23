@@ -60,6 +60,30 @@ func clusterOCIEndpointFromContainer(apiURL string) (string, error) {
 	return ext, nil
 }
 
+// clusterAPIEndpointFromContainer returns the ConfigHub API URL as seen from
+// inside a container running on the same host (e.g. argobot in a kind node).
+// A loopback host is rewritten to host.docker.internal (preserving scheme,
+// port, and path); a non-loopback host is returned unchanged.
+func clusterAPIEndpointFromContainer(apiURL string) (string, error) {
+	u, err := url.Parse(apiURL)
+	if err != nil {
+		return "", fmt.Errorf("parse %q: %w", apiURL, err)
+	}
+	host := u.Hostname()
+	if host == "" {
+		return "", fmt.Errorf("no host in %q", apiURL)
+	}
+	if clusterIsLoopback(host) {
+		if port := u.Port(); port != "" {
+			u.Host = "host.docker.internal:" + port
+		} else {
+			u.Host = "host.docker.internal"
+		}
+		return strings.TrimRight(u.String(), "/"), nil
+	}
+	return strings.TrimRight(apiURL, "/"), nil
+}
+
 // clusterOCIInsecure reports whether the OCI registry derived from apiURL
 // should be accessed over plain HTTP. An http:// API URL implies an http://
 // OCI endpoint (the local-dev case); anything else (https://) uses TLS.

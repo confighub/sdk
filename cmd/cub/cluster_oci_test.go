@@ -70,3 +70,28 @@ func TestClusterOCIEndpointFromContainer(t *testing.T) {
 		}
 	}
 }
+
+func TestClusterAPIEndpointFromContainer(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		// Loopback hosts are rewritten to host.docker.internal, scheme/port/path kept.
+		{"http://localhost:9090", "http://host.docker.internal:9090"},
+		{"http://127.0.0.1:9090", "http://host.docker.internal:9090"},
+		{"http://localhost", "http://host.docker.internal"},
+		// Non-loopback hosts pass through (trailing slash trimmed).
+		{"https://hub.confighub.com", "https://hub.confighub.com"},
+		{"https://hub.confighub.com/", "https://hub.confighub.com"},
+		{"https://pr-3415.testhub.confighub.net", "https://pr-3415.testhub.confighub.net"},
+	}
+	for _, c := range cases {
+		got, err := clusterAPIEndpointFromContainer(c.in)
+		if err != nil {
+			t.Errorf("%s: %v", c.in, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("clusterAPIEndpointFromContainer(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}

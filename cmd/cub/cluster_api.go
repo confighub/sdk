@@ -190,9 +190,10 @@ func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName strin
 	return res.JSON200.TargetID, nil
 }
 
-// clusterCreateRootUnit creates the Kubernetes/YAML root Application Unit with
-// the given manifest bytes, bound to the OCI target.
-func clusterCreateRootUnit(spaceID, targetID uuid.UUID, slug, displayName string, manifest []byte) (uuid.UUID, error) {
+// clusterCreateK8sYAMLUnit creates a Kubernetes/YAML Unit with the given
+// manifest bytes, bound to the OCI target. Used for the root app-of-apps Unit
+// and for each child Argo Application Unit in the cluster Space.
+func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName string, manifest []byte) (uuid.UUID, error) {
 	body := goclientnew.Unit{
 		SpaceID:       spaceID,
 		Slug:          slug,
@@ -226,11 +227,12 @@ func clusterSetReleaseTarget(spaceID, targetID uuid.UUID) error {
 	return nil
 }
 
-// clusterClearReleaseTarget clears the Space's ReleaseTargetID. Used by
-// cluster down before recursive space deletion: the space's own release
-// target reference blocks deleting the target it points at
-// (spaces_release_target_id_fkey is ON DELETE RESTRICT), and for cluster
-// spaces that target lives in the space being deleted.
+// clusterClearReleaseTarget clears the Space's ReleaseTargetID. Used by the
+// `cub cluster up` rollback before recursively deleting a Space it just
+// created: the Space's own release-target reference blocks deleting the OCI
+// target it points at (spaces_release_target_id_fkey is ON DELETE RESTRICT) —
+// for the cluster Space that target lives in the Space being deleted, and for
+// the argobot variant it lives cross-space in the cluster Space.
 //
 // TODO: remove once the server's recursive space delete clears the
 // reference itself (#4782).

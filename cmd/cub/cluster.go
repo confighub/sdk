@@ -22,9 +22,18 @@ const (
 	// sets it on the OCI target so a Unit links straight to its Argo CD
 	// Application.
 	clusterAnnotationTargetUI = "URL-TargetUI"
+
+	// clusterAnnotationArgoAppsSpace is stamped on the OCI target and names the
+	// Space that holds the cluster's Argo CD Application Units (the app-of-apps
+	// and every child app). API clients resolve that Space from the target
+	// through this annotation. `cub cluster up` keeps those Units in the cluster
+	// Space itself, so the value is the cluster Space slug — the annotation
+	// stays a stable contract even if the Units move to a dedicated Space later.
+	clusterAnnotationArgoAppsSpace = "confighub.com/argo-apps-space"
 )
 
 // Slugs of the ConfigHub entities `cub cluster up` creates in each Space.
+// (argobot-specific constants live in cluster_argobot.go.)
 const (
 	clusterOCIWorkerSlug = "oci-worker"
 	clusterOCITargetSlug = "oci"
