@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -15,8 +14,12 @@ import (
 // the event log and force-syncs the corresponding Argo CD Application the moment
 // a deploy happens, closing Argo's reconcile-interval gap. It is delivered like
 // any other component: a shared base installed from its published OCI config
-// bundle, a per-cluster downstream variant, and a child Argo Application in the
-// cluster Space that the root app-of-apps picks up.
+// bundle and a per-cluster downstream variant. The child Argo Application that
+// makes argobot live is created by `cub variant create --target` itself — the
+// cluster's OCI target carries the confighub.com/argo-apps-space annotation, so
+// creating the argobot variant against it auto-creates the Application Unit in
+// the apps Space (see createVariantArgoApp). argobot is just the first user
+// of that path.
 //
 // Everything argobot-specific lives in this file; the rest of the cluster
 // package is generic (kind, Argo CD, ConfigHub Spaces/Workers/Targets). The one
@@ -51,25 +54,25 @@ const (
 
 // clusterArgobotDeps carries the cluster-derived values the argobot install
 // needs from clusterUpRun — the pieces of a freshly created cluster argobot
-// binds to.
+// binds to. The child Argo Application is created by `cub variant create` from
+// the OCI target's argo-apps-space annotation, so the install itself only needs
+// the worker credentials (for the out-of-band Secret) and the kubeconfig.
 type clusterArgobotDeps struct {
-	spaceID        uuid.UUID // the cluster Space (holds the Argo Application Units)
-	targetID       uuid.UUID // the cluster's OCI target
 	workerID       uuid.UUID // the cluster's oci-worker (argobot reuses it as its identity)
 	workerSecret   string    // the oci-worker secret (goes into the out-of-band Secret)
-	ociURLForArgo  string    // OCI endpoint as Argo (in-cluster) reaches it
 	kubeconfigPath string
 }
 
 // clusterInstallArgobotStep is the single argobot seam into `cub cluster up`.
-// It is a no-op returning uuid.Nil when --no-argobot is set; otherwise it
-// registers the argobot variant Space for rollback (via registerRollback),
-// derives argobot's in-cluster ConfigHub URL, and runs the install, returning
-// the child Argo Application Unit ID the caller adds to the cluster Space's
-// Release.
-func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep clusterArgobotDeps, registerRollback func(func())) (uuid.UUID, error) {
+// It is a no-op when --no-argobot is set; otherwise it registers the argobot
+// variant Space for rollback (via registerRollback), derives argobot's
+// in-cluster ConfigHub URL, and runs the install. The child Argo Application
+// Unit lands in the apps Space as a side effect of `cub variant create
+// --target` (auto-created from the OCI target's argo-apps-space annotation), so
+// there is nothing for the caller to add to the apps Space's Release.
+func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep clusterArgobotDeps, registerRollback func(func())) error {
 	if opts.noArgobot {
-		return uuid.Nil, nil
+		return nil
 	}
 
 	// Register the per-cluster argobot variant Space for rollback before the
@@ -92,19 +95,15 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep cluster
 	// to host.docker.internal.
 	apiURLForContainer, err := clusterAPIEndpointFromContainer(clusterServerURL())
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
 	fmt.Fprintln(out, "\nInstalling argobot (event-driven Argo CD sync)...")
 	return clusterInstallArgobot(out, clusterArgobotOptions{
 		clusterName:        opts.name,
-		clusterSpaceSlug:   opts.spaceSlug,
-		appsSpaceID:        dep.spaceID,
-		ociTargetRef:       opts.spaceSlug + "/" + clusterOCITargetSlug,
-		ociTargetID:        dep.targetID,
+		ociTargetRef:       opts.spaceSlug + "/" + clusterTargetSlug,
 		workerID:           dep.workerID.String(),
 		workerSecret:       dep.workerSecret,
-		ociURLForArgo:      dep.ociURLForArgo,
 		apiURLForContainer: apiURLForContainer,
 		ociRef:             opts.argobotOCIRef,
 		kubeconfigPath:     dep.kubeconfigPath,
@@ -137,16 +136,12 @@ stringData:
 // clusterArgobotOptions carries everything the argobot install needs from the
 // surrounding `cub cluster up` run.
 type clusterArgobotOptions struct {
-	clusterName        string    // cluster name; also the argobot variant name
-	clusterSpaceSlug   string    // the cluster Space slug
-	appsSpaceID        uuid.UUID // the Space that holds the Argo Application Units (the cluster Space)
-	ociTargetRef       string    // "<clusterSpaceSlug>/oci" — argobot's release + event target
-	ociTargetID        uuid.UUID // the OCI target's ID
-	workerID           string    // the cluster's oci-worker (argobot's identity)
-	workerSecret       string    // the oci-worker secret (goes into the out-of-band Secret)
-	ociURLForArgo      string    // OCI endpoint as Argo (in-cluster) reaches it
-	apiURLForContainer string    // ConfigHub API URL as argobot (in-cluster) reaches it
-	ociRef             string    // argobot config-bundle OCI reference
+	clusterName        string // cluster name; also the argobot variant name
+	ociTargetRef       string // "<prefix>/target" — argobot's release + event target
+	workerID           string // the cluster's oci-worker (argobot's identity)
+	workerSecret       string // the oci-worker secret (goes into the out-of-band Secret)
+	apiURLForContainer string // ConfigHub API URL as argobot (in-cluster) reaches it
+	ociRef             string // argobot config-bundle OCI reference
 	kubeconfigPath     string
 }
 
@@ -157,11 +152,13 @@ type clusterArgobotOptions struct {
 // sync mode — it patches an Application's refresh annotation via the in-cluster
 // ServiceAccount, needing no Argo CD API token.
 //
-// It creates argobot's units and publishes argobot's own variant Release, then
-// returns the ID of the child Argo Application Unit it created in the cluster
-// Space. The caller publishes the cluster Space's Release once, after this
+// It creates argobot's units and publishes argobot's own variant Release. The
+// child Argo Application Unit that makes argobot live is created in the apps
+// Space by `cub variant create --target` (step 2), auto-derived from the OCI
+// target's argo-apps-space annotation — the same path any deployment variant
+// uses. The caller publishes the apps Space's Release once, after this
 // returns, so that the root app-of-apps' first sync already includes argobot.
-func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) (uuid.UUID, error) {
+func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
 
 	// 1. Ensure the shared base component exists, installed from argobot's
@@ -175,7 +172,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) (uuid.UUID, e
 		"--granularity", "per-file",
 		"--allow-exists",
 		o.ociRef); err != nil {
-		return uuid.Nil, fmt.Errorf("install argobot base component: %w", err)
+		return fmt.Errorf("install argobot base component: %w", err)
 	}
 
 	// 2. Per-cluster downstream variant, cloned from the base and bound to this
@@ -183,17 +180,26 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) (uuid.UUID, e
 	// target). No --namespace: argobot's manifests already place resources in
 	// the argobot and argocd namespaces, and set-namespace is space-wide (it
 	// would wrongly move the argocd-namespace RBAC).
+	//
+	// Because the OCI target carries the confighub.com/argo-apps-space
+	// annotation, this also auto-creates argobot's child Argo Application Unit
+	// in the apps Space and republishes it — argobot rides the same path as
+	// any deployment variant instead of hand-rolling its own Application.
+	//
+	// No --allow-exists: `cub variant create` is fail-fast on a pre-existing
+	// variant, and clusterUpRun guarantees a fresh argobot Space via its
+	// precondition check, so a lingering argobot-<name> is surfaced rather than
+	// silently reused.
 	fmt.Fprintf(out, "Creating per-cluster argobot variant %q...\n", argobotSpace)
 	if err := runCub("variant", "create",
-		"--allow-exists",
 		"--target", o.ociTargetRef,
 		o.clusterName, clusterArgobotBaseSpace); err != nil {
-		return uuid.Nil, fmt.Errorf("create argobot variant: %w", err)
+		return fmt.Errorf("create argobot variant: %w", err)
 	}
 
 	space, err := apiGetSpaceFromSlug(argobotSpace, "SpaceID")
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("resolve argobot variant space %q: %w", argobotSpace, err)
+		return fmt.Errorf("resolve argobot variant space %q: %w", argobotSpace, err)
 	}
 
 	// 3. Point argobot at this ConfigHub. Its event subscription needs no
@@ -206,20 +212,20 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) (uuid.UUID, e
 		"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
 		"set-env", clusterArgobotContainer,
 		"CONFIGHUB_URL="+o.apiURLForContainer); err != nil {
-		return uuid.Nil, fmt.Errorf("configure argobot env: %w", err)
+		return fmt.Errorf("configure argobot env: %w", err)
 	}
 
 	// 4. Publish the variant's Release; Argo pulls argobot's workload from here.
 	unit, err := apiGetUnitFromSlugInSpace(clusterArgobotUnitSlug, space.SpaceID.String(), "UnitID")
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("resolve argobot unit: %w", err)
+		return fmt.Errorf("resolve argobot unit: %w", err)
 	}
 	if err := clusterWaitUnitTriggers(space.SpaceID, unit.UnitID); err != nil {
-		return uuid.Nil, err
+		return err
 	}
 	fmt.Fprintf(out, "Publishing argobot variant Release (%s)...\n", argobotSpace)
 	if err := clusterPublishRelease(space.SpaceID); err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
 	// 5. Apply the out-of-band worker-credential Secret (and its Namespace) so
@@ -227,22 +233,10 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) (uuid.UUID, e
 	fmt.Fprintf(out, "Applying argobot worker-credential Secret to the %q namespace...\n", clusterArgobotNamespace)
 	if err := clusterKubectlApply(ctx, o.kubeconfigPath,
 		clusterArgobotSecretManifest(o.workerID, o.workerSecret), out); err != nil {
-		return uuid.Nil, fmt.Errorf("apply argobot secret: %w", err)
-	}
-
-	// 6. Child Argo Application Unit in the cluster Space (alongside root),
-	// pulling argobot's variant Release. The caller publishes the cluster
-	// Space's Release once, so this Unit lands in the first bundle the root
-	// app-of-apps pulls.
-	fmt.Fprintf(out, "Creating argobot Argo Application Unit in %q...\n", o.clusterSpaceSlug)
-	childRepoURL := strings.TrimRight(o.ociURLForArgo, "/") + "/space/" + argobotSpace
-	childManifest := clusterArgoChildAppManifest(argobotSpace, childRepoURL, clusterArgobotNamespace)
-	childUnitID, err := clusterCreateK8sYAMLUnit(o.appsSpaceID, o.ociTargetID, argobotSpace, argobotSpace, childManifest)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("create argobot Argo Application unit: %w", err)
+		return fmt.Errorf("apply argobot secret: %w", err)
 	}
 
 	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q (kubernetes sync mode)\n",
 		argobotSpace, argobotSpace)
-	return childUnitID, nil
+	return nil
 }

@@ -192,7 +192,9 @@ func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName strin
 
 // clusterCreateK8sYAMLUnit creates a Kubernetes/YAML Unit with the given
 // manifest bytes, bound to the OCI target. Used for the root app-of-apps Unit
-// and for each child Argo Application Unit in the cluster Space.
+// and for each child Argo Application Unit in the apps Space; the target it
+// binds to lives in the cluster (target-prefix) Space, so the binding is
+// cross-Space.
 func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName string, manifest []byte) (uuid.UUID, error) {
 	body := goclientnew.Unit{
 		SpaceID:       spaceID,
@@ -229,10 +231,11 @@ func clusterSetReleaseTarget(spaceID, targetID uuid.UUID) error {
 
 // clusterClearReleaseTarget clears the Space's ReleaseTargetID. Used by the
 // `cub cluster up` rollback before recursively deleting a Space it just
-// created: the Space's own release-target reference blocks deleting the OCI
-// target it points at (spaces_release_target_id_fkey is ON DELETE RESTRICT) —
-// for the cluster Space that target lives in the Space being deleted, and for
-// the argobot variant it lives cross-space in the cluster Space.
+// created: the Space's release-target reference blocks deleting the OCI target
+// it points at (spaces_release_target_id_fkey is ON DELETE RESTRICT). Both the
+// apps Space and the argobot variant point their release target cross-Space at
+// the OCI target in the cluster Space, so clearing that reference lets their
+// deletion proceed before the cluster Space (holding the target) is deleted.
 //
 // TODO: remove once the server's recursive space delete clears the
 // reference itself (#4782).
@@ -289,6 +292,32 @@ func clusterPublishRelease(spaceID uuid.UUID) error {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 	return nil
+}
+
+// clusterDependentSpaceSlugs returns the slugs of the Spaces whose release
+// target is the OCI target in the given cluster Space — the apps Space, the
+// argobot variant Space, and any deployment variant Spaces. They reference the
+// target cross-Space (spaces_release_target_id_fkey is ON DELETE RESTRICT), so
+// they must be deleted before the cluster Space that holds the target. The
+// cluster Space itself is excluded (its own release target is nil). A cluster
+// Space whose target is already gone returns an empty list: with ON DELETE
+// RESTRICT the target could not have been deleted while anything referenced it.
+func clusterDependentSpaceSlugs(clusterSpaceID uuid.UUID) ([]string, error) {
+	target, err := apiGetTargetFromSlugInSpaceCore(clusterTargetSlug, clusterSpaceID.String(), "TargetID")
+	if err != nil || target == nil {
+		return nil, nil
+	}
+	spaces, err := apiListSpaces("Space.ReleaseTargetID = '"+target.TargetID.String()+"'", "SpaceID,Slug")
+	if err != nil {
+		return nil, fmt.Errorf("list spaces referencing the cluster target: %w", err)
+	}
+	var slugs []string
+	for _, s := range spaces {
+		if s.SpaceID != clusterSpaceID {
+			slugs = append(slugs, s.Slug)
+		}
+	}
+	return slugs, nil
 }
 
 // clusterDeleteSpace deletes a space by slug. If recursive is true, the server

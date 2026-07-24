@@ -91,7 +91,7 @@ func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
 	}
 	for _, a := range attrs {
 		attr := a.Attribute
-		spaceSlug := attr.AttributeID.String()
+		spaceSlug := attr.SpaceID.String()
 		if a.Space != nil {
 			spaceSlug = a.Space.Slug
 		} else if selectedSpaceID != "*" {

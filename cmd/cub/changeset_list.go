@@ -94,7 +94,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 	}
 	for _, cs := range changesets {
 		changeset := cs.ChangeSet
-		spaceSlug := cs.ChangeSet.ChangeSetID.String()
+		spaceSlug := cs.ChangeSet.SpaceID.String()
 		if cs.Space != nil {
 			spaceSlug = cs.Space.Slug
 		} else if selectedSpaceID != "*" {

@@ -97,7 +97,7 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 	}
 	for _, t := range tags {
 		tag := t.Tag
-		spaceSlug := t.Tag.TagID.String()
+		spaceSlug := t.Tag.SpaceID.String()
 		if t.Space != nil {
 			spaceSlug = t.Space.Slug
 		} else if selectedSpaceID != "*" {

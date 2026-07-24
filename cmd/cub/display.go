@@ -16,7 +16,7 @@ import (
 	"github.com/itchyny/gojq"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/olekukonko/tablewriter"
-	"gopkg.in/yaml.v3"
+	sigsyaml "sigs.k8s.io/yaml"
 )
 
 // Do not call this directly from a command for error responses from API requests.
@@ -171,8 +171,18 @@ func renderPayload(payload any) bool {
 	return false
 }
 
+// marshalYAML renders entity as YAML by marshaling to JSON first, so that
+// custom json.Marshaler implementations are honored. Several generated union
+// types (e.g. FunctionArgument_Value) hold their payload in an unexported
+// field and implement MarshalJSON but not MarshalYAML; gopkg.in/yaml.v3 would
+// ignore MarshalJSON and emit an empty value. sigs.k8s.io/yaml marshals via
+// JSON and then converts to YAML, keeping YAML output consistent with JSON.
+func marshalYAML(entity any) ([]byte, error) {
+	return sigsyaml.Marshal(entity)
+}
+
 func displayYQWith(entity any, expr string) {
-	outBytes, err := yaml.Marshal(entity)
+	outBytes, err := marshalYAML(entity)
 	failOnError(err)
 	yqBytes, err := yqkit.EvalYQExpression(expr, string(outBytes))
 	failOnError(err)
@@ -219,13 +229,9 @@ func displayJQ(entity any) {
 }
 
 func displayYAML(entity any) {
-	outBytes, err := yaml.Marshal(entity)
+	outBytes, err := marshalYAML(entity)
 	failOnError(err)
 	tprintRaw(string(outBytes))
-}
-
-func displayYQ(entity any) {
-	displayYQWith(entity, yq)
 }
 
 // displayResponseErrorDetails displays detailed information for a single ResponseError

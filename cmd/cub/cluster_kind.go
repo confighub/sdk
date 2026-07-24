@@ -126,12 +126,21 @@ func clusterKindDelete(ctx context.Context, name, kubeconfigPath string, out io.
 }
 
 // clusterKindList returns the names of all kind clusters on the host (any
-// source — cub-managed or not).
+// source — cub-managed or not). kind's stderr (which carries the real cause,
+// e.g. "Cannot connect to the Docker daemon") is folded into the returned
+// error so the user sees why it failed rather than a bare exit code.
 func clusterKindList(ctx context.Context) ([]string, error) {
-	out, err := exec.CommandContext(ctx, "kind", "get", "clusters").Output()
-	if err != nil {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "kind", "get", "clusters")
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			return nil, fmt.Errorf("kind get clusters: %w\n%s", err, msg)
+		}
 		return nil, fmt.Errorf("kind get clusters: %w", err)
 	}
+	out := stdout.Bytes()
 	var names []string
 	for line := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		l := strings.TrimSpace(line)

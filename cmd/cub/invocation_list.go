@@ -105,7 +105,7 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 		if i.BridgeWorker != nil {
 			workerSlug = i.BridgeWorker.Slug
 		}
-		spaceSlug := i.Invocation.InvocationID.String()
+		spaceSlug := i.Invocation.SpaceID.String()
 		if i.Space != nil {
 			spaceSlug = i.Space.Slug
 		} else if selectedSpaceID != "*" {

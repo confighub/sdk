@@ -26,6 +26,7 @@ var variantCreateArgs struct {
 	spaceDeleteGates []string
 	unitDeleteGates  []string
 	unitDestroyGates []string
+	noArgoApp        bool
 }
 
 var variantCreateCmd = &cobra.Command{
@@ -79,6 +80,14 @@ run during the clone. Trigger arguments can reference space metadata in Go templ
 "template:{{.SpaceLabels.Region}}" or "template:{{.SpaceAnnotations.host}}" — set the latter with
 --space-annotation. Any other changes can be made after the clone completes.
 
+When --target points at a cub-cluster Argo target (an OCI target carrying the
+confighub.com/argo-apps-space annotation that "cub cluster up" stamps), this command also creates the
+Argo CD Application that makes the new deployment live: a Kubernetes/YAML unit named after the new
+space, added to the cluster's apps space and pulling the new space's OCI Release. The apps space's
+Release is republished so the cluster's root app-of-apps picks it up on its next sync. This is a
+no-op for ordinary targets; use --no-argo-app to skip it. Publish the deployment's own release
+("cub release publish <new-space>") to make its configuration go live.
+
 Examples:
 `+"```"+`
   # Clone a space into a "test" variant. With Component=website inherited and Variant overridden to
@@ -92,6 +101,10 @@ Examples:
   # For an OCI target, this also sets the new space's release target, so the variant
   # can be published with "cub release publish" without further setup.
   cub variant create test website-prod --target website-test/cluster
+
+  # Deploy to a "cub cluster up" cluster: clones the base, retargets it, and creates
+  # the Argo CD Application so the cluster picks up the deployment (skip with --no-argo-app).
+  cub variant create dev cubbychat-base --target dev/target --namespace cubbychat
 
   # Set a space annotation a PostClone trigger reads, and protect the prod clones with a delete gate.
   cub variant create prod website-base \
@@ -116,6 +129,7 @@ func init() {
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.spaceDeleteGates, "space-delete-gate", []string{}, "delete gate key[=true] to set on the new space (repeatable); merged onto the delete gates copied from the upstream space")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDeleteGates, "unit-delete-gate", []string{}, "delete gate key[=true] to set on every cloned unit (repeatable); e.g. --unit-delete-gate critical to protect a prod variant")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDestroyGates, "unit-destroy-gate", []string{}, "destroy gate key[=true] to set on every cloned unit (repeatable); destroy gates are unit-only (spaces have no destroy gates)")
+	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application when --target is a cub-cluster Argo target")
 	enableWaitFlag(variantCreateCmd)
 	variantCmd.AddCommand(variantCreateCmd)
 }
@@ -146,8 +160,9 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	// For an OCI target, also set the new space's ReleaseTargetID: releases are published
 	// per space ("cub release publish <space>"), and publish requires it.
 	var targetID *uuid.UUID
+	var target *goclientnew.Target
 	if variantCreateArgs.target != "" {
-		target, err := parseEntityIdentifierSingleAsEntity[goclientnew.Target](
+		target, err = parseEntityIdentifierSingleAsEntity[goclientnew.Target](
 			variantCreateArgs.target,
 			EntityTypeTarget,
 			"*",
@@ -181,6 +196,18 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		if !jsonOutput {
 			tprint("Set namespace %q on the cloned units in %s", variantCreateArgs.namespace, newSpace.Slug)
+		}
+	}
+
+	// Step 5: if the target is a cub-cluster Argo target (carries the
+	// confighub.com/argo-apps-space annotation), auto-create the Argo CD
+	// Application Unit for this deployment and republish the cluster's apps
+	// Space so Argo becomes aware of it — folding the manual "tell the cluster
+	// about the deployment" step into this command. A no-op for ordinary
+	// targets; skip explicitly with --no-argo-app.
+	if target != nil && !variantCreateArgs.noArgoApp {
+		if _, err := createVariantArgoApp(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
+			return err
 		}
 	}
 

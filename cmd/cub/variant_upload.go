@@ -51,8 +51,9 @@ anything; it ingests what you give it.
 An oci:// input is pulled and its YAML extracted before ingestion. The bundle is a
 standard OCI image artifact (a tar or tar+gzip layer of YAML, as "cub release publish"
 and Flux produce, or individual file layers as "oras push" produces); registry
-credentials are reused from your Docker config. The source reference is recorded on the
-Space as an "ExternalSource" annotation, and the resolved digest as "ExternalSourceDigest".
+credentials are reused from your Docker config. The source reference and resolved digest
+are recorded on the Space as a "confighub.com/external-source" annotation (a JSON array),
+so the exact bundle installed is auditable and a later refresh can reproduce the upload.
 
 Resources become Units in one of three granularities (--granularity):
   minimal       one Unit for everything, with CRDs split into their own Unit and each
@@ -166,8 +167,8 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Resolve any oci:// inputs to local directories of extracted manifests, so
 	// the rest of the pipeline treats them like any other input path. The source
-	// references and resolved digests are recorded on the Space below as
-	// ExternalSource and ExternalSourceDigest annotations.
+	// references and resolved digests are recorded on the Space below as the
+	// confighub.com/external-source annotation.
 	parseInputs := make([]string, len(args))
 	var ociSources, ociDigests []string
 	for i, in := range args {
@@ -223,17 +224,20 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	if len(ociSources) > 0 {
-		// ExternalSource carries the reference(s) as given (tag included);
-		// ExternalSourceDigest carries the resolved immutable digest(s) in the
-		// same order, so the exact bundle installed is auditable and a later
-		// refresh can detect when a moving tag points somewhere new.
-		spaceMeta = append(spaceMeta, "--annotation", "ExternalSource="+strings.Join(ociSources, ","))
-		spaceMeta = append(spaceMeta, "--annotation", "ExternalSourceDigest="+strings.Join(ociDigests, ","))
-	}
 	spaceMeta = append(spaceMeta, spaceSlug)
 	if err := runCub(spaceMeta...); err != nil {
 		return err
+	}
+
+	// Record the oci:// source(s) on the Space so a later refresh can reproduce
+	// the pull and plan. Component/variant/etc. are already Space labels and the
+	// target is the Space's TargetID annotation, so the record carries only the
+	// source ref, resolved digest, and the options that govern how bytes map to
+	// Units (--granularity, --namespace).
+	if len(ociSources) > 0 {
+		if err := recordExternalSource(spaceSlug, ociSources, ociDigests, string(gran), a.namespace); err != nil {
+			return err
+		}
 	}
 
 	// Create Units in plan order.
@@ -462,6 +466,56 @@ func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifi
 		return "", "", "", fmt.Errorf("target %q has no TargetID", slug)
 	}
 	return extended.Target.TargetID, extended.Target.ProviderType, lookupSpace + "/" + slug, nil
+}
+
+// externalSourceAnnotation is the well-known Space annotation recording the
+// oci:// source(s) the Space was seeded from, as a JSON array of
+// externalSourceRecord. It lets a later "variant upload" refresh reproduce the
+// pull and plan from the Space alone.
+const externalSourceAnnotation = "confighub.com/external-source"
+
+// externalSourceRecord captures one oci:// input and the options that govern how
+// its bytes map to Units. Component/variant/etc. live in the Space labels and the
+// target in the Space's TargetID annotation, so they are not repeated here.
+type externalSourceRecord struct {
+	Ref         string `json:"ref"`
+	Digest      string `json:"digest"`
+	Granularity string `json:"granularity"`
+	Namespace   string `json:"namespace,omitempty"`
+}
+
+// recordExternalSource stamps the external-source annotation on the Space via a
+// direct merge-patch. The "space update --annotation" flag comma-splits its value
+// (CSV parsing), which would corrupt the JSON, so this bypasses it. Merge-patch
+// merges into the existing annotation map, preserving TargetID and any others.
+func recordExternalSource(spaceSlug string, refs, digests []string, granularity, namespace string) error {
+	records := make([]externalSourceRecord, len(refs))
+	for i := range refs {
+		records[i] = externalSourceRecord{
+			Ref:         refs[i],
+			Digest:      digests[i],
+			Granularity: granularity,
+			Namespace:   namespace,
+		}
+	}
+	encoded, err := json.Marshal(records)
+	if err != nil {
+		return err
+	}
+	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug")
+	if err != nil {
+		return err
+	}
+	patchData, err := json.Marshal(map[string]map[string]string{
+		"Annotations": {externalSourceAnnotation: string(encoded)},
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(space.SpaceID, patchData); err != nil {
+		return err
+	}
+	return nil
 }
 
 // runCub executes the cub binary (this same CLI) as a subprocess, streaming its

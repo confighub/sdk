@@ -117,7 +117,7 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 	}
 	for _, f := range filters {
 		filter := f.Filter
-		spaceSlug := f.Filter.FilterID.String()
+		spaceSlug := f.Filter.SpaceID.String()
 		if f.Space != nil {
 			spaceSlug = f.Space.Slug
 		} else if selectedSpaceID != "*" {

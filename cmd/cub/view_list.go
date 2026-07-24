@@ -117,7 +117,7 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 	}
 	for _, v := range views {
 		view := v.View
-		spaceSlug := v.View.ViewID.String()
+		spaceSlug := v.View.SpaceID.String()
 		if v.Space != nil {
 			spaceSlug = v.Space.Slug
 		} else if selectedSpaceID != "*" {

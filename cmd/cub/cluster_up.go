@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -28,23 +27,30 @@ var clusterUpCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Bring up a kind cluster wired to ConfigHub via Argo CD",
 	Long: `Creates a kind cluster, installs Argo CD into it, and provisions the
-ConfigHub side in a single Space, <name>-cluster, holding: a server-hosted
-OCI worker, an OCI target owned by that worker (the Space's release target),
-a self-referencing root "app of apps" Application Unit, and every child Argo
-Application Unit.
+ConfigHub side across two Spaces:
+
+  <name>              the cluster (target-prefix) Space: a server-hosted OCI
+                      worker and an OCI target owned by that worker. This Space
+                      is a pure namespace — it holds no config bundle.
+  <name>-argo-apps    the apps Space: the root "app of apps" Application Unit
+                      and every child Argo Application Unit. Its release target
+                      is the OCI target in the cluster Space (a cross-Space
+                      reference), so the apps Space is the config bundle Argo
+                      pulls, and neither Space's release target points at a
+                      target inside itself.
 
 The root Application is bootstrapped once via kubectl apply; from then on,
-adding an Application Unit to the Space and publishing a new Release
-("cub release publish <name>-cluster") causes Argo to create the corresponding
+adding an Application Unit to the apps Space and publishing a new Release
+("cub release publish <name>-argo-apps") causes Argo to create the corresponding
 app on its next sync. The OCI target carries a confighub.com/argo-apps-space
-annotation (pointing at the cluster Space) so API clients can resolve the Space
+annotation (pointing at the apps Space) so API clients can resolve the Space
 holding the Argo Application Units from the target.
 
 Unless --no-argobot is given, argobot is installed: a ConfigHub bot that watches
 the event log and force-syncs the matching Argo CD Application the moment a
 deploy happens. It is delivered as a component (a shared "argobot-base" installed
 from its OCI config bundle, plus a per-cluster "argobot-<name>" variant), reuses
-the cluster's oci-worker as its identity, and runs in the default kubernetes sync
+the cluster's worker as its identity, and runs in the default kubernetes sync
 mode (no Argo CD token needed).
 
 Argo CD is reachable at http://localhost:<argo-port> (server.insecure=true);
@@ -58,7 +64,7 @@ into the cluster node.`,
 
 func init() {
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.name, "name", "", "cluster name (auto-generated if empty)")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug (defaults to <name>-cluster)")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's worker and target (the \"target prefix\"); the Argo apps space is this slug + \"-argo-apps\" (defaults to <name>)")
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the Argo NodePort; skip the user-app NodePort window")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync bot)")
@@ -145,17 +151,32 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		}
 	}
 	if opts.spaceSlug == "" {
-		opts.spaceSlug = opts.name + "-cluster"
+		opts.spaceSlug = opts.name
 	}
+	appsSlug := opts.spaceSlug + clusterArgoAppsSuffix
 
 	if _, err := os.Stat(clusterKubeconfigPath(opts.name)); err == nil {
 		return fmt.Errorf("kubeconfig %s already exists; cluster %q may already be cub-managed", clusterKubeconfigPath(opts.name), opts.name)
 	}
 
-	if exists, err := clusterSpaceExists(opts.spaceSlug); err != nil {
-		return err
-	} else if exists {
-		return fmt.Errorf("ConfigHub space %q already exists", opts.spaceSlug)
+	for _, slug := range []string{opts.spaceSlug, appsSlug} {
+		if exists, err := clusterSpaceExists(slug); err != nil {
+			return err
+		} else if exists {
+			return fmt.Errorf("ConfigHub space %q already exists", slug)
+		}
+	}
+
+	// argobot's per-cluster variant Space is created (fail-fast, no --allow-exists)
+	// during the install, so surface a leftover one here before building the kind
+	// cluster rather than failing mid-run. Skipped with --no-argobot.
+	if !opts.noArgobot {
+		argobotSlug := clusterArgobotComponent + "-" + opts.name
+		if exists, err := clusterSpaceExists(argobotSlug); err != nil {
+			return err
+		} else if exists {
+			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-argobot)", argobotSlug, argobotSlug)
+		}
 	}
 
 	if exists, err := clusterKindExists(ctx, opts.name); err != nil {
@@ -223,7 +244,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
-	fmt.Fprintf(out, "Creating ConfigHub space %q...\n", opts.spaceSlug)
+	// The cluster (target-prefix) Space holds the worker and target. It carries
+	// the cluster label + confighub.com/cluster-* annotations so `cub cluster
+	// list`/`down` find the cluster from it; the apps Space below is derived and
+	// left unlabeled so the cluster lists once.
+	fmt.Fprintf(out, "Creating ConfigHub space %q (worker + target)...\n", opts.spaceSlug)
 	hostname, _ := os.Hostname()
 	annotations := map[string]string{
 		clusterAnnotationName:      opts.name,
@@ -238,35 +263,53 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}
 	rollback = append(rollback, func() {
 		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", opts.spaceSlug)
-		// Clear the space's own release-target reference first (ON DELETE
-		// RESTRICT blocks deleting the OCI target it points at).
-		_ = clusterClearReleaseTarget(spaceID)
+		// This Space has no release target of its own; the apps Space's rollback
+		// (registered later, so it runs first) clears its cross-Space reference
+		// and deletes the Units bound to this target before we delete it here.
 		_ = clusterDeleteSpace(opts.spaceSlug, true)
 	})
 
-	fmt.Fprintf(out, "Creating server-hosted OCI worker %q (OrgRole=none)...\n", clusterOCIWorkerSlug)
-	workerID, workerSecret, err := clusterCreateOCIWorker(spaceID, clusterOCIWorkerSlug, clusterOCIWorkerSlug)
+	fmt.Fprintf(out, "Creating server-hosted OCI worker %q (OrgRole=none)...\n", clusterWorkerSlug)
+	workerID, workerSecret, err := clusterCreateOCIWorker(spaceID, clusterWorkerSlug, clusterWorkerSlug)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(out, "Creating OCI target %q owned by worker %q...\n", clusterOCITargetSlug, clusterOCIWorkerSlug)
+	fmt.Fprintf(out, "Creating OCI target %q owned by worker %q...\n", clusterTargetSlug, clusterWorkerSlug)
 	// URL-TargetUI deep link: the ConfigHub UI substitutes "{slug}" with the
 	// Space slug at render time, linking a Unit straight to its Argo CD
 	// Application UI on the locally-forwarded argocd-server NodePort.
 	// argo-apps-space lets API clients resolve the Space holding the cluster's
-	// Argo Application Units from the target; that Space is the cluster Space.
+	// Argo Application Units from the target; that Space is the apps Space.
 	targetAnnotations := map[string]string{
 		clusterAnnotationTargetUI:      fmt.Sprintf("http://localhost:%d/applications/argocd/{slug}", argoPort),
-		clusterAnnotationArgoAppsSpace: opts.spaceSlug,
+		clusterAnnotationArgoAppsSpace: appsSlug,
 	}
-	targetID, err := clusterCreateOCITarget(spaceID, workerID, clusterOCITargetSlug, clusterOCITargetSlug, targetAnnotations)
+	targetID, err := clusterCreateOCITarget(spaceID, workerID, clusterTargetSlug, clusterTargetSlug, targetAnnotations)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(out, "Setting the cluster space's release target to %q...\n", clusterOCITargetSlug)
-	if err := clusterSetReleaseTarget(spaceID, targetID); err != nil {
+	// The apps Space holds the root app-of-apps and every child Argo Application
+	// Unit. Its release target is the OCI target in the cluster Space above — a
+	// cross-Space reference, so the apps Space (the config bundle) never points
+	// its release target at a target inside itself.
+	fmt.Fprintf(out, "Creating ConfigHub space %q (Argo Application Units)...\n", appsSlug)
+	appsSpaceID, err := clusterCreateSpace(appsSlug, appsSlug, nil, nil)
+	if err != nil {
+		return err
+	}
+	rollback = append(rollback, func() {
+		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", appsSlug)
+		// Clear the cross-Space release-target reference first (ON DELETE
+		// RESTRICT blocks deleting the OCI target it points at, which lives in
+		// the cluster Space).
+		_ = clusterClearReleaseTarget(appsSpaceID)
+		_ = clusterDeleteSpace(appsSlug, true)
+	})
+
+	fmt.Fprintf(out, "Setting the apps space's release target to %q...\n", opts.spaceSlug+"/"+clusterTargetSlug)
+	if err := clusterSetReleaseTarget(appsSpaceID, targetID); err != nil {
 		return err
 	}
 
@@ -278,9 +321,9 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}
 	// OCI URL recorded inside the root Application's source.repoURL — Argo
 	// pulls from this, so it must be the in-cluster-reachable form. The root
-	// app-of-apps self-references the cluster Space's Release, served at
-	// /space/<cluster-slug>, tag "latest".
-	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + opts.spaceSlug
+	// app-of-apps references the apps Space's Release, served at
+	// /space/<apps-slug>, tag "latest".
+	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + appsSlug
 
 	// Auto-detect plain-HTTP OCI from the cub server URL scheme. http:// API
 	// → http:// OCI (the local-dev case). https:// API → TLS OCI.
@@ -294,44 +337,39 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
-	fmt.Fprintf(out, "Creating root Application Unit %q in cluster space %q...\n", clusterRootUnitSlug, opts.spaceSlug)
-	rootManifest := clusterArgoRootAppManifest(opts.spaceSlug, rootRepoURL)
-	rootUnitID, err := clusterCreateK8sYAMLUnit(spaceID, targetID, clusterRootUnitSlug, clusterRootUnitSlug, rootManifest)
+	fmt.Fprintf(out, "Creating root Application Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
+	rootManifest := clusterArgoRootAppManifest(appsSlug, rootRepoURL)
+	rootUnitID, err := clusterCreateK8sYAMLUnit(appsSpaceID, targetID, clusterRootUnitSlug, clusterRootUnitSlug, rootManifest)
 	if err != nil {
 		return err
 	}
 
-	// Install argobot (unless --no-argobot) BEFORE publishing the cluster Space's
-	// Release and bootstrapping root, so its child Application Unit is already in
-	// the first bundle Argo pulls — the root app-of-apps then creates it on its
-	// initial sync rather than only on a later reconcile. The step publishes
-	// argobot's own variant Release but leaves the single cluster-Space publish
-	// (below) to us; it returns uuid.Nil when argobot is skipped. appUnitIDs are
-	// the Units whose triggers must settle before that publish. All argobot
-	// specifics live in cluster_argobot.go.
-	appUnitIDs := []uuid.UUID{rootUnitID}
-	childUnitID, err := clusterInstallArgobotStep(out, opts, clusterArgobotDeps{
-		spaceID:        spaceID,
-		targetID:       targetID,
+	// Install argobot (unless --no-argobot) BEFORE the final apps-Space publish
+	// and root bootstrap, so its child Application Unit is already in the first
+	// bundle Argo pulls — the root app-of-apps then creates it on its initial
+	// sync rather than only on a later reconcile. The step creates that child
+	// Unit via `cub variant create --target` (auto-derived from the OCI target's
+	// argo-apps-space annotation, the same path any deployment uses) and
+	// publishes argobot's own variant Release; the child Unit is left in the apps
+	// Space for the single authoritative publish below. All argobot specifics
+	// live in cluster_argobot.go.
+	if err := clusterInstallArgobotStep(out, opts, clusterArgobotDeps{
 		workerID:       workerID,
 		workerSecret:   workerSecret,
-		ociURLForArgo:  ociURLForArgo,
 		kubeconfigPath: kubeconfigPath,
-	}, func(f func()) { rollback = append(rollback, f) })
-	if err != nil {
+	}, func(f func()) { rollback = append(rollback, f) }); err != nil {
 		return fmt.Errorf("install argobot: %w", err)
 	}
-	if childUnitID != uuid.Nil {
-		appUnitIDs = append(appUnitIDs, childUnitID)
-	}
 
-	fmt.Fprintln(out, "\nPublishing the cluster space's release (populates the OCI bundle Argo pulls)...")
-	for _, id := range appUnitIDs {
-		if err := clusterWaitUnitTriggers(spaceID, id); err != nil {
-			return err
-		}
+	// Publish the apps Space's Release once, after root's triggers settle, so
+	// the bundle carries root's post-trigger revision plus any Application Units
+	// argobot's install added to the Space (already trigger-settled by variant
+	// create). This is the bundle the root app-of-apps pulls on its first sync.
+	fmt.Fprintln(out, "\nPublishing the apps space's release (populates the OCI bundle Argo pulls)...")
+	if err := clusterWaitUnitTriggers(appsSpaceID, rootUnitID); err != nil {
+		return err
 	}
-	if err := clusterPublishRelease(spaceID); err != nil {
+	if err := clusterPublishRelease(appsSpaceID); err != nil {
 		return err
 	}
 
@@ -346,12 +384,13 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}
 
 	commit = true
-	fmt.Fprintf(out, "\nDone.\n  cluster:    %s\n  kubeconfig: %s\n  env file:   %s\n  space:      %s\n  worker:     %s/%s\n  target:     %s/%s\n  root app:   %s/%s\n",
+	fmt.Fprintf(out, "\nDone.\n  cluster:    %s\n  kubeconfig: %s\n  env file:   %s\n  space:      %s\n  apps space: %s\n  worker:     %s/%s\n  target:     %s/%s\n  root app:   %s/%s\n",
 		opts.name, kubeconfigPath, envFilePath,
 		opts.spaceSlug,
-		opts.spaceSlug, clusterOCIWorkerSlug,
-		opts.spaceSlug, clusterOCITargetSlug,
-		opts.spaceSlug, clusterRootUnitSlug)
+		appsSlug,
+		opts.spaceSlug, clusterWorkerSlug,
+		opts.spaceSlug, clusterTargetSlug,
+		appsSlug, clusterRootUnitSlug)
 	if !opts.noArgobot {
 		fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode)\n", clusterArgobotComponent, opts.name)
 	}
@@ -366,8 +405,8 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		}
 	}
 	fmt.Fprintf(out, "\nLoad the cluster + Argo creds into your shell:\n  source %s\n", envFilePath)
-	fmt.Fprintf(out, "\nAdd a new Argo app:\n  1. Author an Application CR YAML: source.repoURL: <oci-endpoint>/space/<workload-space>,\n     targetRevision: latest, path: \".\" — the workload space needs a release\n     target and a published release.\n  2. cub unit create --space %s <slug> <file> --target %s/%s\n  3. cub release publish %s\n  4. Argo's root sync picks it up on its next reconcile.\n",
-		opts.spaceSlug, opts.spaceSlug, clusterOCITargetSlug, opts.spaceSlug)
+	fmt.Fprintf(out, "\nDeploy an app to this cluster:\n  1. cub variant create <name> <base-space> --target %s/%s [--namespace <ns>]\n  2. cub release publish <name>\nStep 1 clones <base-space> into a deployment space bound to the cluster's\ntarget and auto-creates its Argo CD Application in the apps space %q\n(republishing it so Argo picks it up); step 2 makes the deployment's config\ngo live. See \"cub variant create --help\".\n",
+		opts.spaceSlug, clusterTargetSlug, appsSlug)
 	return nil
 }
 

@@ -112,7 +112,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 		if t.BridgeWorker != nil {
 			workerSlug = t.BridgeWorker.Slug
 		}
-		spaceSlug := t.Trigger.TriggerID.String()
+		spaceSlug := t.Trigger.SpaceID.String()
 		if t.Space != nil {
 			spaceSlug = t.Space.Slug
 		} else if selectedSpaceID != "*" {
