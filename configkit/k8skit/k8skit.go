@@ -5,6 +5,7 @@
 package k8skit
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -327,7 +328,27 @@ const (
 	SpaceIDAnnotation     = ContextKeyPrefix + constants.SpaceIDKeySuffix
 	UnitSlugAnnotation    = ContextKeyPrefix + constants.UnitSlugKeySuffix
 	RevisionNumAnnotation = ContextKeyPrefix + constants.RevisionNumKeySuffix
+
+	// OriginAnnotation carries the combined ConfigHub source identity of a resource
+	// as a JSON Origin value. It supersedes the discrete SpaceID/UnitSlug/RevisionNum
+	// annotations for resources bundled in a published Space release.
+	OriginAnnotation = ContextKeyPrefix + "origin"
 )
+
+// Origin identifies the ConfigHub source of a resource bundled in a published
+// Space release. It is stamped as the JSON value of the confighub.com/origin
+// annotation on every Kubernetes resource in the bundle, giving a per-resource
+// reverse lookup back to the owning Space, Unit, and Revision. Both id and slug
+// are carried for Space and Unit: ids are stable and drive UI deep-links, slugs
+// are human-readable and stable across variant clones. Release identity is
+// deliberately absent — it lives on the OCI manifest, not in the content.
+type Origin struct {
+	SpaceID     string `json:"spaceId"`
+	SpaceSlug   string `json:"spaceSlug"`
+	UnitID      string `json:"unitId"`
+	UnitSlug    string `json:"unitSlug"`
+	RevisionNum int64  `json:"revisionNum"`
+}
 
 // EnsureConfigHubContextOnData sets ConfigHub context annotations (UnitSlug, SpaceID,
 // RevisionNum) on every resource in the given multi-document YAML data. Uses gaby's
@@ -364,6 +385,43 @@ func EnsureConfigHubContextOnData(data []byte, unitSlug, spaceID string, revisio
 		}
 		if _, err := doc.SetP(revStr, K8sContextPath(constants.RevisionNumKeySuffix)); err != nil {
 			return data, fmt.Errorf("failed to set RevisionNum annotation: %w", err)
+		}
+	}
+
+	return container.Bytes(), nil
+}
+
+// EnsureOriginOnData sets the confighub.com/origin annotation, carrying the JSON
+// encoding of origin, on every resource in the given multi-document YAML data.
+// Like EnsureConfigHubContextOnData it uses gaby's in-place SetP to preserve
+// comments and key ordering, returns empty data unchanged, and returns the
+// original data with the error on failure. Callers should only invoke this for
+// Kubernetes/YAML units; other toolchains have no metadata.annotations to stamp.
+func EnsureOriginOnData(data []byte, origin Origin) ([]byte, error) {
+	if len(data) == 0 {
+		return data, nil
+	}
+
+	encoded, err := json.Marshal(origin)
+	if err != nil {
+		return data, fmt.Errorf("failed to marshal origin annotation: %w", err)
+	}
+
+	container, err := gaby.ParseAll(data)
+	if err != nil {
+		return data, fmt.Errorf("failed to parse YAML for annotation injection: %w", err)
+	}
+	if len(container) == 0 {
+		return data, nil
+	}
+
+	// See the mutation-safety note on EnsureConfigHubContextOnData: SetP mutates
+	// in-place, but we discard the container on error so the returned bytes are
+	// always the untouched original.
+	path := K8sContextPath("origin")
+	for _, doc := range container {
+		if _, err := doc.SetP(string(encoded), path); err != nil {
+			return data, fmt.Errorf("failed to set origin annotation: %w", err)
 		}
 	}
 

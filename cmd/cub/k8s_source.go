@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -31,8 +32,9 @@ This command gets a Kubernetes resource and uses ConfigHub annotations to determ
 which unit manages the resource. It then opens a browser window to view the unit
 in the ConfigHub UI.
 
-The resource must have ConfigHub annotations (confighub.com/UnitSlug and confighub.com/SpaceID)
-to be traced back to its source.
+The resource must carry the ConfigHub origin annotation (confighub.com/origin), or the
+legacy confighub.com/SpaceID and confighub.com/UnitSlug annotations, to be traced back
+to its source.
 
 The kubeconfig file is loaded with the following precedence:
 
@@ -133,31 +135,28 @@ func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("resource %s/%s has no annotations", kind, name)
 	}
 
-	// Get the annotation paths for UnitSlug and SpaceID
-	unitSlugAnnotation := getAnnotationKey("UnitSlug")
-	spaceIDAnnotation := getAnnotationKey("SpaceID")
-
-	unitSlug, hasUnitSlug := annotations[unitSlugAnnotation]
-	spaceID, hasSpaceID := annotations[spaceIDAnnotation]
-
-	if !hasUnitSlug || !hasSpaceID {
-		return fmt.Errorf("resource %s/%s is not managed by ConfigHub (missing required annotations: %s and %s)",
-			kind, name, unitSlugAnnotation, spaceIDAnnotation)
+	spaceID, unitSlug, unitID, err := resolveConfigHubOrigin(annotations)
+	if err != nil {
+		return fmt.Errorf("resource %s/%s: %w", kind, name, err)
 	}
 
 	tprint("Resource: %s/%s", kind, name)
 	tprint("ConfigHub Unit: %s", unitSlug)
 	tprint("ConfigHub Space: %s", spaceID)
 
-	// Get the unit details
-	unit, err := apiGetUnitFromSlugInSpace(unitSlug, spaceID, "UnitID")
-	if err != nil {
-		return fmt.Errorf("failed to get unit %s in space %s: %w", unitSlug, spaceID, err)
+	// The combined origin annotation carries the UnitID directly; the legacy
+	// discrete annotations do not, so fall back to a lookup by slug in that case.
+	if unitID == "" {
+		unit, unitErr := apiGetUnitFromSlugInSpace(unitSlug, spaceID, "UnitID")
+		if unitErr != nil {
+			return fmt.Errorf("failed to get unit %s in space %s: %w", unitSlug, spaceID, unitErr)
+		}
+		unitID = unit.UnitID.String()
 	}
 
 	// Build the unit URL
 	serverURL := strings.TrimSuffix(contextManager.ActiveContext().Coordinate.ServerURL, "/")
-	unitURL := fmt.Sprintf("%s/units/%s/%s", serverURL, spaceID, unit.UnitID.String())
+	unitURL := fmt.Sprintf("%s/units/%s/%s", serverURL, spaceID, unitID)
 
 	tprint("Opening browser to: %s", unitURL)
 
@@ -167,6 +166,36 @@ func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// resolveConfigHubOrigin extracts the ConfigHub Space id, Unit slug, and (when
+// available) Unit id from a resource's annotations. It prefers the combined
+// confighub.com/origin JSON annotation stamped on published Space releases and
+// falls back to the legacy discrete confighub.com/SpaceID + confighub.com/UnitSlug
+// annotations. The returned unitID is empty when only the legacy annotations are
+// present, since those do not carry it.
+func resolveConfigHubOrigin(annotations map[string]string) (spaceID, unitSlug, unitID string, err error) {
+	if raw, ok := annotations[k8skit.OriginAnnotation]; ok && raw != "" {
+		var origin k8skit.Origin
+		if jerr := json.Unmarshal([]byte(raw), &origin); jerr != nil {
+			return "", "", "", fmt.Errorf("invalid %s annotation: %w", k8skit.OriginAnnotation, jerr)
+		}
+		if origin.SpaceID == "" || origin.UnitSlug == "" {
+			return "", "", "", fmt.Errorf("%s annotation is missing spaceId or unitSlug", k8skit.OriginAnnotation)
+		}
+		return origin.SpaceID, origin.UnitSlug, origin.UnitID, nil
+	}
+
+	// Legacy discrete annotations from pre-origin bundles and the direct apply path.
+	spaceIDKey := getAnnotationKey("SpaceID")
+	unitSlugKey := getAnnotationKey("UnitSlug")
+	legacySpaceID, hasSpaceID := annotations[spaceIDKey]
+	legacyUnitSlug, hasUnitSlug := annotations[unitSlugKey]
+	if !hasSpaceID || !hasUnitSlug {
+		return "", "", "", fmt.Errorf("not managed by ConfigHub (missing %s, or both %s and %s)",
+			k8skit.OriginAnnotation, spaceIDKey, unitSlugKey)
+	}
+	return legacySpaceID, legacyUnitSlug, "", nil
 }
 
 // getAnnotationKey converts a context field to its annotation key

@@ -201,6 +201,7 @@ var clusterArgoIgnoreDifferencesPatch = func() string {
 		"data": map[string]any{
 			"resource.customizations.ignoreDifferences.argoproj.io_Application": `jqPathExpressions:
 - '.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration"'
+- '.metadata.annotations."confighub.com/origin"'
 - '.metadata.annotations."confighub.com/RevisionNum"'
 - '.metadata.annotations."confighub.com/SpaceID"'
 - '.metadata.annotations."confighub.com/UnitSlug"'

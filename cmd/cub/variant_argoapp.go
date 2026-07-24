@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/confighub/sdk/core/livestatus"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
@@ -32,12 +33,19 @@ import (
 // Release, auto-synced with self-heal. allowEmpty lets Argo sync the Application
 // before the variant's first Release is published (the OCI endpoint serves an
 // empty bundle until then) instead of erroring on a resource-less sync.
-func variantArgoAppManifest(appName, ociRepoURL string) []byte {
+//
+// The Application carries the deployment Space's identity as labels so a client
+// watching Applications (e.g. argobot) can map it back to its Space and report
+// live status there. spaceID is the immutable handle; spaceSlug the convenience.
+func variantArgoAppManifest(appName, ociRepoURL, spaceID, spaceSlug string) []byte {
 	return fmt.Appendf(nil, `apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: %s
   namespace: %s
+  labels:
+    %s: %s
+    %s: %s
 spec:
   project: default
   source:
@@ -50,7 +58,10 @@ spec:
     automated:
       selfHeal: true
       allowEmpty: true
-`, appName, clusterArgoNamespace, ociRepoURL)
+`, appName, clusterArgoNamespace,
+		livestatus.LabelSpaceID, spaceID,
+		livestatus.LabelSpaceSlug, spaceSlug,
+		ociRepoURL)
 }
 
 // createVariantArgoApp auto-creates the Argo CD Application Unit for a deployment
@@ -100,7 +111,7 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 	if !jsonOutput {
 		fmt.Fprintf(out, "Creating Argo CD Application Unit %q in apps space %q...\n", variantSpace.Slug, appsSpaceSlug)
 	}
-	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL)
+	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL, variantSpace.SpaceID.String(), variantSpace.Slug)
 	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug, manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Argo Application unit: %w", err)

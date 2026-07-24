@@ -4,6 +4,7 @@
 package k8skit
 
 import (
+	"encoding/json"
 	"slices"
 	"testing"
 
@@ -345,4 +346,85 @@ data:
 	assert.Equal(t, "new-space", val)
 	val, _ = container[0].Path(K8sContextPath("RevisionNum")).Data().(string)
 	assert.Equal(t, "99", val)
+}
+
+// originFromResult parses the confighub.com/origin annotation off the first
+// document in result and returns the decoded Origin.
+func originFromResult(t *testing.T, result []byte) Origin {
+	t.Helper()
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, container)
+	raw, ok := container[0].Path(K8sContextPath("origin")).Data().(string)
+	assert.True(t, ok, "origin annotation should be a string")
+	var origin Origin
+	assert.NoError(t, json.Unmarshal([]byte(raw), &origin))
+	return origin
+}
+
+func TestEnsureOriginOnData_RoundTrip(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm
+  namespace: default
+data:
+  key: value
+`)
+	want := Origin{
+		SpaceID:     "space-abc",
+		SpaceSlug:   "orders-prod",
+		UnitID:      "unit-123",
+		UnitSlug:    "api",
+		RevisionNum: 42,
+	}
+	result, err := EnsureOriginOnData(data, want)
+	assert.NoError(t, err)
+
+	assert.Equal(t, want, originFromResult(t, result))
+	// The annotation key uses the kebab-case "origin" segment.
+	assert.Contains(t, string(result), "confighub.com/origin")
+}
+
+func TestEnsureOriginOnData_MultipleObjectsAndPreservesExisting(t *testing.T) {
+	data := []byte(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm1
+  namespace: default
+  annotations:
+    custom.io/owner: alice
+data:
+  key: value
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy1
+  namespace: default
+spec:
+  replicas: 1
+`)
+	origin := Origin{SpaceID: "sid", SpaceSlug: "sslug", UnitID: "uid", UnitSlug: "uslug", RevisionNum: 7}
+	result, err := EnsureOriginOnData(data, origin)
+	assert.NoError(t, err)
+
+	container, err := gaby.ParseAll(result)
+	assert.NoError(t, err)
+	assert.Len(t, container, 2)
+	for _, doc := range container {
+		raw, ok := doc.Path(K8sContextPath("origin")).Data().(string)
+		assert.True(t, ok)
+		var got Origin
+		assert.NoError(t, json.Unmarshal([]byte(raw), &got))
+		assert.Equal(t, origin, got)
+	}
+	// An unrelated annotation on the first doc is left intact.
+	assert.Contains(t, string(result), "custom.io/owner: alice")
+}
+
+func TestEnsureOriginOnData_EmptyData(t *testing.T) {
+	result, err := EnsureOriginOnData([]byte{}, Origin{SpaceID: "s"})
+	assert.NoError(t, err)
+	assert.Empty(t, result)
 }

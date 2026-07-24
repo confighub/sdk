@@ -2263,7 +2263,7 @@ export type BulkDeleteSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2343,7 +2343,7 @@ export type BulkPatchSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2449,7 +2449,7 @@ export type BulkCreateSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -2894,7 +2894,7 @@ export type BulkCreateAttributesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning attributes
     
@@ -3681,7 +3681,7 @@ export type BulkCreateChangeSetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning changesets
     
@@ -4099,7 +4099,7 @@ export type BulkCreateFiltersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning filters
     
@@ -4647,7 +4647,7 @@ export type BulkCreateInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning invocations
     
@@ -5586,7 +5586,7 @@ export type ListSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9070,7 +9070,7 @@ export type BulkCreateTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning tags
     
@@ -9768,7 +9768,7 @@ export type BulkCreateTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning triggers
     
@@ -10307,7 +10307,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning units
     
@@ -11463,7 +11463,7 @@ export type BulkCreateViewsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning views
     
@@ -11690,6 +11690,8 @@ export type SpaceRead = {
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Permissions?: Permissions;
+  /** Reference to the BridgeWorker of this Space's ReleaseTarget, materialized from the Target's BridgeWorkerID when ReleaseTargetID is set. That Worker is automatically authorized for the Space so it can serve the Space's Releases. (readonly) */
+  ReleaseBridgeWorkerID?: string;
   /** Reference to a Target used as the default Target for all Units in this Space. */
   ReleaseTargetID?: string;
   /** URL at which Releases for this Space are available, when ReleaseTargetID is set to a Target of ProviderType ProviderOCI. (readonly) */

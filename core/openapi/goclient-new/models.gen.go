@@ -2380,6 +2380,9 @@ type Space struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
+	// ReleaseBridgeWorkerID Reference to the BridgeWorker of this Space's ReleaseTarget, materialized from the Target's BridgeWorkerID when ReleaseTargetID is set. That Worker is automatically authorized for the Space so it can serve the Space's Releases. (readonly)
+	ReleaseBridgeWorkerID *openapi_types.UUID `json:"ReleaseBridgeWorkerID,omitempty" yaml:"ReleaseBridgeWorkerID,omitempty"`
+
 	// ReleaseTargetID Reference to a Target used as the default Target for all Units in this Space.
 	ReleaseTargetID *openapi_types.UUID `json:"ReleaseTargetID,omitempty" yaml:"ReleaseTargetID,omitempty"`
 
@@ -3432,7 +3435,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3543,7 +3546,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -3651,7 +3654,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4115,7 +4118,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -4885,7 +4888,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -5328,7 +5331,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -5914,7 +5917,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -6797,7 +6800,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9837,7 +9840,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -10584,7 +10587,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -11168,7 +11171,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -12353,7 +12356,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, ReleaseURL, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning views
 	//

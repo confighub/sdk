@@ -71,6 +71,12 @@ func NewOCIURLBuilderFromAPIHost(apiHost string) *OCIURLBuilder {
 // UnitURL generates an OCI URL for a specific unit.
 // Format: oci://{host}/unit/{spaceSlug}/{unitSlug}:{reference}
 //
+// DEAD ENDPOINT. The ConfigHub OCI server no longer serves /v2/unit/... — that
+// path was removed with the on-the-fly bundle generation it depended on (see
+// docs/specs/bridge-sunset-plan.md, stage 0). URLs built here resolve to 400.
+// The only remaining callers are the ArgoCD and Flux OCI bridges, which are
+// deleted in stage 2; this builder goes with them.
+//
 // Parameters:
 //   - spaceSlug: The space slug (e.g., "production")
 //   - unitSlug: The unit slug (e.g., "my-deployment")
@@ -83,6 +89,8 @@ func (b *OCIURLBuilder) UnitURL(spaceSlug, unitSlug, reference string) string {
 
 // TargetURL generates an OCI URL for a target bundle.
 // Format: oci://{host}/target/{spaceSlug}/{targetSlug}:{reference}
+//
+// DEAD ENDPOINT. See UnitURL — /v2/target/... was removed alongside it.
 //
 // Parameters:
 //   - spaceSlug: The space slug (e.g., "production")
