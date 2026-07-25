@@ -18,6 +18,10 @@ var flagReplace = false
 var flagFilename = ""
 var where = ""
 var filter = ""
+
+// whereResource filters which resources within a Unit a function operates on.
+// Shared by `run` and the function subcommands.
+var whereResource string
 var contains = ""
 var verbose = false
 var quiet = false
@@ -31,7 +35,6 @@ var debug = false
 var noheader = false
 var webFlag = false
 var wait = true
-var actionWait = false
 var getWait = false
 var timeout string
 
@@ -301,13 +304,6 @@ func enableWaitFlagWithDefault(cmd *cobra.Command, defaultValue bool) {
 // enableWaitFlag is for trigger commands (default=true)
 func enableWaitFlag(cmd *cobra.Command) {
 	enableWaitFlagWithDefault(cmd, true)
-}
-
-// enableActionWaitFlag is for worker action commands (default=false)
-// Uses separate actionWait variable to avoid conflicts with trigger commands
-func enableActionWaitFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&actionWait, "wait", false, "wait for completion")
-	cmd.Flags().StringVar(&timeout, "timeout", DefaultTimeoutDuration.String(), "completion timeout as a duration with units, such as 10s or 2m")
 }
 
 // enableGetWaitFlag is for get commands that may need to wait for resource creation

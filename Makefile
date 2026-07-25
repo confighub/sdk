@@ -44,7 +44,11 @@ CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-
 # All sibling modules that need prep (mod download/tidy)
 SIBLING_MODULES = $(TEST_MODULES) $(CMD_MODULES)
 
+# Skip the public checksum DB / proxy for SDK sibling modules so that release
+# prep (which rewrites go.mod to freshly-tagged @vX.Y.Z sibling versions and
+# then resolves go.sum) does not race with sum.golang.org indexing.
 .PHONY: all-prep
+all-prep: export GOPRIVATE = github.com/confighub/sdk
 all-prep:
 	@for mod in $(CORE_MODULES); do echo "=== Prep $$mod ===" && (cd $$mod && go mod download && go mod tidy) ; done
 	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && (cd $$mod && go mod download && go mod tidy) ; done

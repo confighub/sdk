@@ -5418,7 +5418,7 @@ export type ListAllReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6984,7 +6984,7 @@ export type ListExtendedReleasesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -13441,6 +13441,8 @@ export type Release = {
   SpaceID?: string;
   /** Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here. */
   TagID?: string;
+  /** Number of Units bundled in the Release, captured at publish time. */
+  UnitCount?: number;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
@@ -13472,6 +13474,8 @@ export type ReleaseRead = {
   SpaceSlug?: string;
   /** Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here. */
   TagID?: string;
+  /** Number of Units bundled in the Release, captured at publish time. */
+  UnitCount?: number;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */

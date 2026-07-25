@@ -574,6 +574,14 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 }
 
 // handleBulkUnitActionResponse handles responses from bulk unit action operations (apply, destroy, refresh)
+// actionStatus dereferences an optional ActionStatusType for display.
+func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatusType {
+	if status == nil {
+		return "None"
+	}
+	return *status
+}
+
 func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, action string, isDryRun bool) error {
 	if results == nil || len(*results) == 0 {
 		if !quiet && !isAlternativeOutput() {
@@ -585,7 +593,6 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 
 	// Count successes and failures
 	var successCount, failureCount int
-	var queuedOps []*goclientnew.QueuedOperation
 	var hasErrors bool
 
 	for _, result := range *results {
@@ -612,8 +619,7 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			}
 		} else if result.Action != nil {
 			successCount++
-			queuedOps = append(queuedOps, result.Action)
-			if !quiet && !actionWait {
+			if !quiet {
 				// Fetch unit details to get the slug
 				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
 				unitSlug := result.Action.UnitID.String()
@@ -622,21 +628,6 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 				}
 				tprint("%s queued for %s (operation: %s)",
 					strings.Title(action), unitSlug, result.Action.QueuedOperationID)
-			}
-		}
-	}
-
-	// Handle wait flag by awaiting operations (skip if dry run)
-	if actionWait && len(queuedOps) > 0 && !isDryRun {
-		if !quiet {
-			tprint("Awaiting %d %s operations...", len(queuedOps), action)
-		}
-		// Poll all operations in a single loop instead of sequentially
-		// This prevents false failures when later operations complete before earlier ones
-		results := awaitBulkCompletion(action, queuedOps)
-		for _, err := range results {
-			if err != nil {
-				hasErrors = true
 			}
 		}
 	}
@@ -657,24 +648,13 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			}
 			tprint("Total units processed: %d", successCount+failureCount)
 		} else {
-			if actionWait {
-				// Operations were waited for, report completion status
-				if successCount > 0 && failureCount > 0 {
-					tprint("Bulk %s completed with partial success: %d succeeded, %d failed", action, successCount, failureCount)
-				} else if successCount > 0 {
-					tprint("Bulk %s completed successfully: %d units", action, successCount)
-				} else if failureCount > 0 {
-					tprint("Bulk %s failed: %d units", action, failureCount)
-				}
-			} else {
-				// Operations were queued but not waited for
-				if successCount > 0 && failureCount > 0 {
-					tprint("Bulk %s queued with partial success: %d queued, %d failed to queue", action, successCount, failureCount)
-				} else if successCount > 0 {
-					tprint("Bulk %s queued successfully: %d units", action, successCount)
-				} else if failureCount > 0 {
-					tprint("Bulk %s failed to queue: %d units", action, failureCount)
-				}
+			// Operations are queued; nothing waits on them.
+			if successCount > 0 && failureCount > 0 {
+				tprint("Bulk %s queued with partial success: %d queued, %d failed to queue", action, successCount, failureCount)
+			} else if successCount > 0 {
+				tprint("Bulk %s queued successfully: %d units", action, successCount)
+			} else if failureCount > 0 {
+				tprint("Bulk %s failed to queue: %d units", action, failureCount)
 			}
 		}
 	}

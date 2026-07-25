@@ -85,9 +85,9 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unit %q is not associated with target %q; use 'cub unit set-target' first", unitSlug, targetSlug)
 	}
 
-	// Check the unit has been applied.
+	// Check the unit has been published in a Release.
 	if unit.LastAppliedRevisionNum == 0 {
-		return fmt.Errorf("unit %q has not been applied yet; run 'cub unit apply --space %s %s' first", unitSlug, selectedSpaceID, unitSlug)
+		return fmt.Errorf("unit %q has not been published yet; run 'cub release publish %s' first", unitSlug, selectedSpaceID)
 	}
 
 	// Generate ephemeral X25519 keypair.

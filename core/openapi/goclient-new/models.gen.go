@@ -2097,6 +2097,9 @@ type Release struct {
 	// TagID Tag identifying the bundled Revision of each Unit in the Release. When publishing supplied a TagID, this is that Tag. Otherwise publishing creates a Tag named release-<ReleaseNum> in the Release's Space, applies it to each bundled Revision, and sets it here.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 
+	// UnitCount Number of Units bundled in the Release, captured at publish time.
+	UnitCount int64 `json:"UnitCount,omitempty" yaml:"UnitCount,omitempty"`
+
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
@@ -6622,7 +6625,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7986,7 +7989,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`

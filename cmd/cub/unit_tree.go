@@ -57,7 +57,7 @@ By default, shows a simple tree structure. When --columns is specified, displays
 tree + tabular view with the tree on the left, complementary info in the second column,
 and specified columns on the right.
 
-Default columns for hybrid view: Status, UpgradeNeeded, UnappliedChanges, ApplyGates
+Default columns for hybrid view: Status, UpgradeNeeded, UnreleasedChanges, ApplyGates
 
 Examples:
 ` + "```" + `
@@ -533,7 +533,7 @@ func displayTreeNode(node *UnitTreeNode, prefix string, isLast bool, withColumns
 // getTreeColumns returns the columns to display for tree view
 func getTreeColumns() []string {
 	// Default columns for tree view (using same as unit list)
-	defaultTreeColumns := []string{"UnitStatus.Status", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates"}
+	defaultTreeColumns := []string{"UnitStatus.Status", "UpgradeNeeded", "UnreleasedChanges", "Unit.ApplyGates"}
 
 	if cols := effectiveColumns(); len(cols) > 0 {
 		custom := make([]string, len(cols))

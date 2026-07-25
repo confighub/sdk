@@ -90,8 +90,8 @@ Agent discovery workflow:
 Key filtering patterns for agents:
 
 Configuration state:
-- Find units with pending changes: --where 'HeadRevisionNum > LiveRevisionNum' 
-- Find unapplied units: --where 'LiveRevisionNum = 0'
+- Find units with unreleased changes: --where 'HeadRevisionNum > LastAppliedRevisionNum'
+- Find never-released units: --where 'LastAppliedRevisionNum = 0'
 - Find units with placeholders: Use 'function do get-placeholders' instead
 
 Approval workflow:
@@ -125,7 +125,7 @@ var viewSlug string
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
-var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UnitStatus.Status", "UnitStatus.LastAction", "ResourceStatus", "UpgradeNeeded", "UnappliedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UpgradeNeeded", "UnreleasedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
 
 // unitListInclude is the Include parameter for unit list queries (the related
 // entities expanded into each ExtendedUnit). UnitEventID is a pseudo-field used
@@ -167,15 +167,13 @@ var unitCustomColumns = map[string]func(interface{}) string{
 		}
 		return ""
 	},
-	"UnappliedChanges": func(obj interface{}) string {
-		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
-			unit := extendedUnit.Unit
-			if unit.HeadRevisionNum > unit.LiveRevisionNum && (unit.TargetID != nil && *unit.TargetID != uuid.Nil) {
-				return "Yes"
-			}
-		}
-		return ""
-	},
+	"UnreleasedChanges": unreleasedChangesColumn,
+	// UnappliedChanges is the pre-Release name for the same idea, kept so saved
+	// Views and scripts that reference it keep working. It computes the new
+	// semantics: unreleased, not unapplied. Custom columns are resolved before
+	// aliases (see dynamic_columns.go), so this has to be a second entry rather
+	// than an entry in unitAliases.
+	"UnappliedChanges": unreleasedChangesColumn,
 	"ResourceStatus": func(obj interface{}) string {
 		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
 			if extendedUnit.UnitStatus != nil && extendedUnit.UnitStatus.ResourceStatusSummary != nil {
@@ -192,12 +190,26 @@ var unitCustomColumns = map[string]func(interface{}) string{
 	},
 }
 
+// unreleasedChangesColumn reports whether a Unit has changes that have not been
+// published in a Release. LastAppliedRevisionNum is advanced by `release publish`
+// (see internal/views/release_core.go), which is the apply point now.
+func unreleasedChangesColumn(obj interface{}) string {
+	if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
+		unit := extendedUnit.Unit
+		if unit.HeadRevisionNum > unit.LastAppliedRevisionNum && (unit.TargetID != nil && *unit.TargetID != uuid.Nil) {
+			return "Yes"
+		}
+	}
+	return ""
+}
+
 // Fields required by custom columns
 var unitCustomColumnDependencies = map[string][]string{
-	"DataBytes":        {"Data"},
-	"UpgradeNeeded":    {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
-	"UnappliedChanges": {"HeadRevisionNum", "LiveRevisionNum"},
-	"ResourceStatus":   {"UnitStatus.ResourceStatusSummary"},
+	"DataBytes":         {"Data"},
+	"UpgradeNeeded":     {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
+	"UnreleasedChanges": {"HeadRevisionNum", "LastAppliedRevisionNum"},
+	"UnappliedChanges":  {"HeadRevisionNum", "LastAppliedRevisionNum"},
+	"ResourceStatus":    {"UnitStatus.ResourceStatusSummary"},
 }
 
 func init() {

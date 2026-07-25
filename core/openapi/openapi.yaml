@@ -7616,7 +7616,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -13000,7 +13000,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -28206,6 +28206,12 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+        UnitCount:
+          description: Number of Units bundled in the Release, captured at publish
+            time.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.

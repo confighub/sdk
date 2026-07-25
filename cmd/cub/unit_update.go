@@ -169,7 +169,7 @@ Post-update workflow:
 1. Use 'function do get-placeholders' to check for placeholder values
 2. Use 'function do' commands to modify configuration as needed
 3. Use 'unit approve' if approval is required
-4. Use 'unit apply' to deploy to live infrastructure
+4. Use 'release publish' to publish the space, which Argo CD / Flux pull
 
 Important: Only one of config-file, --restore, --upgrade, or --merge-source (with --merge-base and --merge-end) should be specified per update operation.`
 

@@ -7,27 +7,15 @@
 // The feedback lands as the confighub.com/live-status annotation on a deployment
 // Space, carrying a JSON-encoded Status. It is best-effort and describes observed
 // reality, not intent: a missed or stale report costs freshness, never
-// correctness. To let such a client find which Space an Argo CD Application maps
-// to, ConfigHub stamps the LabelSpaceID / LabelSpaceSlug labels on the
-// Application CR it creates for a deployment Space; a client watches Applications
-// by those labels and writes Status back to the identified Space.
+// correctness. A client maps a live object back to its Space by the Space slug
+// the object already carries — for argobot, an Argo CD Application's OCI source
+// (.../space/<slug>) names the deployment Space — and writes Status back to it.
 package livestatus
 
 // Annotation is the well-known deployment-Space annotation key whose value is a
 // JSON-encoded Status. Space annotation values are capped at 1024 bytes, so
 // Status is intentionally small.
 const Annotation = "confighub.com/live-status"
-
-const (
-	// LabelSpaceID and LabelSpaceSlug are stamped on the Argo CD Application CR
-	// ConfigHub creates for a deployment Space, so a client watching Applications
-	// can map one back to its Space. LabelSpaceID is the immutable handle a client
-	// keys on when writing Status back; LabelSpaceSlug is the human-readable
-	// convenience and can be selected on. Both are valid Kubernetes label values
-	// (a UUID and a slug, each within the 63-character limit).
-	LabelSpaceID   = "confighub.com/space-id"
-	LabelSpaceSlug = "confighub.com/space-slug"
-)
 
 // Status is a concise projection of the live state of the infrastructure a
 // deployment Space is deployed to. Fields mirror the vocabulary of the reporting
