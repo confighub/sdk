@@ -40,7 +40,7 @@ func New(url, id, secret string) *Worker {
 		workerId:      id,
 		workerSecret:  secret,
 		metricsMeter:  noop.Meter{},
-		transportType: TransportHTTP2Stream,
+		transportType: TransportLongPoll,
 	}
 }
 
@@ -60,11 +60,12 @@ func (b *Worker) WithMetricsMeter(meter metric.Meter) *Worker {
 }
 
 // WithTransport selects the wire protocol used to talk to the ConfigHub
-// server. Default is TransportHTTP2Stream. Pass TransportLongPoll to use HTTP
-// long-polling on the main API port.
+// server. Default is TransportLongPoll, which uses HTTP long-polling on the
+// main API port. TransportHTTP2Stream selects the deprecated h2c stream; the
+// server will stop accepting it.
 func (b *Worker) WithTransport(kind TransportType) *Worker {
 	if kind == "" {
-		kind = TransportHTTP2Stream
+		kind = TransportLongPoll
 	}
 	b.transportType = kind
 	return b

@@ -90,7 +90,7 @@ Optional environment variables:
 
 - CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
 - CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
-- CONFIGHUB_WORKER_TRANSPORT: Wire protocol used to talk to ConfigHub. "http2-stream" (default) keeps the v1 long-lived h2c stream. "long-poll" uses HTTP long-polling on the main API port and does not require a separate worker port.
+- CONFIGHUB_WORKER_TRANSPORT: Wire protocol used to talk to ConfigHub. "long-poll" (default) uses HTTP long-polling on the main API port and needs no separate worker port. "http2-stream" is the deprecated h2c stream; the server will stop accepting it.
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: When set, starts a local HTTP server on this port. Exposes /internal/metrics (Prometheus), /internal/pprof, /internal/ok (liveness), and /internal/ready (readiness). When unset, no HTTP server is started.
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
 
@@ -508,7 +508,10 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	transportType := lib.TransportType(rootArgs.WorkerTransport)
 	if transportType == "" {
-		transportType = lib.TransportHTTP2Stream
+		// Belt and braces: the args default covers an unset variable, this covers
+		// one set to the empty string (e.g. an env passthrough that always writes
+		// the key). Long-poll is the only transport the server will keep serving.
+		transportType = lib.TransportLongPoll
 	}
 	finalURL := streamURL
 	if transportType == lib.TransportLongPoll {

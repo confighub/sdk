@@ -286,9 +286,23 @@ func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 // clusterPublishRelease publishes a Release for the Space: an immutable bundle
 // of the Space's Units that are assigned to its release Target, served to Argo
 // at /space/<slug> with tag "latest".
+// clusterNoChangesRepublishMsg is the server's message when a release publish is
+// a no-op because the Space is unchanged since :latest.
+const clusterNoChangesRepublishMsg = "no changes were made since :latest bundle"
+
+// clusterPublishRelease publishes the Space's release. It tolerates a no-op
+// re-publish: in the cluster orchestration a Space may already be published at
+// its latest content — e.g. `cub variant create` publishes the apps Space when
+// it auto-creates an Application, so `cub cluster up`'s own final publish then
+// has nothing new. The server reports that as a 400; a re-publish of unchanged
+// content is idempotent here, so treat that specific 400 as success rather than
+// failing (which would roll back the whole cluster).
 func clusterPublishRelease(spaceID uuid.UUID) error {
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})
 	if cubapi.IsAPIError(err, res) {
+		if res != nil && res.JSON400 != nil && strings.Contains(res.JSON400.Message, clusterNoChangesRepublishMsg) {
+			return nil
+		}
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 	return nil

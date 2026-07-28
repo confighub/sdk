@@ -315,7 +315,7 @@ func TestTransformToArgoCDOCIApplication_MissingOCIConfig(t *testing.T) {
 func TestTransformToArgoCDOCIApplication_InferredOCIHost(t *testing.T) {
 	t.Skip("auto-constructed repoURLs point at /v2/unit/, an endpoint removed " +
 		"in stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md). The " +
-		"asserted URL no longer resolves; deleted with this bridge in stage 2.")
+		"asserted URL no longer resolves; deleted with this bridge in stage 3.")
 	mockCtx := kubernetes.SetupMockContext(t)
 	mockCtx.On("GetServerURL").Return("https://hub.confighub.com")
 
@@ -345,7 +345,7 @@ func TestTransformToArgoCDOCIApplication_InferredOCIHost(t *testing.T) {
 func TestTransformToArgoCDOCIApplication_AutoConstructOCIURL(t *testing.T) {
 	t.Skip("auto-constructed repoURLs point at /v2/unit/, an endpoint removed " +
 		"in stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md). The " +
-		"asserted URL no longer resolves; deleted with this bridge in stage 2.")
+		"asserted URL no longer resolves; deleted with this bridge in stage 3.")
 	mockCtx := kubernetes.SetupMockContext(t)
 	mockCtx.On("GetServerURL").Return("https://app.confighub.com")
 

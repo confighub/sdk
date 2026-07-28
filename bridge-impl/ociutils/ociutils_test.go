@@ -70,7 +70,7 @@ func TestOCIURLBuilder_UnitURL(t *testing.T) {
 	t.Skip("the /v2/unit/ and /v2/target/ OCI endpoints were removed in " +
 		"stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md); this " +
 		"asserts a URL shape the server no longer serves. Deleted with the " +
-		"ArgoCD/Flux OCI bridges in stage 2.")
+		"ArgoCD/Flux OCI bridges in stage 3.")
 	builder := NewOCIURLBuilder("oci.confighub.com")
 
 	tests := []struct {
@@ -129,7 +129,7 @@ func TestOCIURLBuilder_TargetURL(t *testing.T) {
 	t.Skip("the /v2/unit/ and /v2/target/ OCI endpoints were removed in " +
 		"stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md); this " +
 		"asserts a URL shape the server no longer serves. Deleted with the " +
-		"ArgoCD/Flux OCI bridges in stage 2.")
+		"ArgoCD/Flux OCI bridges in stage 3.")
 	builder := NewOCIURLBuilder("oci.confighub.com")
 
 	tests := []struct {
@@ -216,7 +216,7 @@ func TestOCIURLBuilder_UnitURLFromInfo(t *testing.T) {
 	t.Skip("the /v2/unit/ and /v2/target/ OCI endpoints were removed in " +
 		"stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md); this " +
 		"asserts a URL shape the server no longer serves. Deleted with the " +
-		"ArgoCD/Flux OCI bridges in stage 2.")
+		"ArgoCD/Flux OCI bridges in stage 3.")
 	builder := NewOCIURLBuilder("oci.confighub.com")
 
 	info := UnitOCIInfo{
@@ -231,7 +231,7 @@ func TestOCIURLBuilder_TargetURLFromInfo(t *testing.T) {
 	t.Skip("the /v2/unit/ and /v2/target/ OCI endpoints were removed in " +
 		"stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md); this " +
 		"asserts a URL shape the server no longer serves. Deleted with the " +
-		"ArgoCD/Flux OCI bridges in stage 2.")
+		"ArgoCD/Flux OCI bridges in stage 3.")
 	builder := NewOCIURLBuilder("oci.confighub.com")
 
 	info := TargetOCIInfo{
@@ -354,7 +354,7 @@ func TestRoundTrip(t *testing.T) {
 	t.Skip("the /v2/unit/ and /v2/target/ OCI endpoints were removed in " +
 		"stage 0 of the bridge sunset (docs/specs/bridge-sunset-plan.md); this " +
 		"asserts a URL shape the server no longer serves. Deleted with the " +
-		"ArgoCD/Flux OCI bridges in stage 2.")
+		"ArgoCD/Flux OCI bridges in stage 3.")
 	builder := NewOCIURLBuilder("oci.confighub.com")
 
 	// Generate URL

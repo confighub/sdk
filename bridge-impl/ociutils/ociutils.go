@@ -75,7 +75,7 @@ func NewOCIURLBuilderFromAPIHost(apiHost string) *OCIURLBuilder {
 // path was removed with the on-the-fly bundle generation it depended on (see
 // docs/specs/bridge-sunset-plan.md, stage 0). URLs built here resolve to 400.
 // The only remaining callers are the ArgoCD and Flux OCI bridges, which are
-// deleted in stage 2; this builder goes with them.
+// deleted in stage 3; this builder goes with them.
 //
 // Parameters:
 //   - spaceSlug: The space slug (e.g., "production")

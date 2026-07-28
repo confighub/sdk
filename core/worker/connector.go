@@ -65,10 +65,10 @@ type ConnectorOptions struct {
 	ConfigHubURL     string
 	FunctionExecutor executor.FunctionExecutor
 	BridgeDispatcher *BridgeDispatcher
-	// Transport selects the wire protocol. Defaults to TransportHTTP2Stream
-	// (the v1 long-lived h2c stream). Set to TransportLongPoll to use the
-	// HTTP long-polling transport, which talks to the main API port and does
-	// not require a separate worker port.
+	// Transport selects the wire protocol. Defaults to TransportLongPoll,
+	// which talks to the main API port and needs no separate worker port.
+	// TransportHTTP2Stream selects the deprecated h2c stream; the server will
+	// stop accepting it.
 	Transport TransportType
 }
 
@@ -77,7 +77,7 @@ type ConnectorOptions struct {
 func NewConnector(opts ConnectorOptions) (*ConfighubConnector, error) {
 	transport := opts.Transport
 	if transport == "" {
-		transport = TransportHTTP2Stream
+		transport = TransportLongPoll
 	}
 	return &ConfighubConnector{
 		functionExecutor: opts.FunctionExecutor,
