@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -105,8 +106,19 @@ func RegisterFunctionsAsCobraCommands() {
 
 	commands := map[string]*cobra.Command{}
 
-	// Iterate through categories and commands
-	for toolchain, cmds := range functions {
+	// Iterate toolchains in sorted order. Ranging over the map directly made two
+	// things vary run to run: the order of the "Supported toolchains" list, and
+	// which ToolchainType's definition won when the same function is registered
+	// for several. Both are baked into the generated CLI reference, so every
+	// `cub docgen` run produced a spurious ~60-file diff that buried real changes.
+	toolchains := make([]string, 0, len(functions))
+	for toolchain := range functions {
+		toolchains = append(toolchains, toolchain)
+	}
+	sort.Strings(toolchains)
+
+	for _, toolchain := range toolchains {
+		cmds := functions[toolchain]
 
 		for _, cmdDef := range cmds {
 			// Deduplicate identical functions across ToolchainTypes
