@@ -142,6 +142,19 @@ func isAlternativeOutput() bool {
 	return k != OutputDefault && k != OutputWide && k != OutputCustomColumns
 }
 
+// isSerializedOutput returns true if the effective output serializes the whole
+// entity (json, yaml) or lets the user address arbitrary fields of it (jq, yq).
+// These formats aren't limited to the displayed columns, so field auto-selection
+// should be skipped and all fields requested from the API.
+func isSerializedOutput() bool {
+	switch effectiveOutput().Kind {
+	case OutputJSON, OutputYAML, OutputJQ, OutputYQ:
+		return true
+	default:
+		return false
+	}
+}
+
 // prefixedSlug returns "<spaceSlug>/<slug>" when spaceSlug is non-empty,
 // else just slug. Used by -o name for space-resident entities.
 func prefixedSlug(spaceSlug, slug string) string {

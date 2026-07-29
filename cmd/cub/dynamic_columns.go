@@ -479,6 +479,12 @@ func handleSelectParameter(selectParam string, globalSelectFields string, autoSe
 		return globalSelectFields
 	}
 
+	// Serialized output formats aren't limited to the displayed columns, so
+	// return all fields rather than auto-selecting.
+	if isSerializedOutput() {
+		return ""
+	}
+
 	// Auto-select fields if no select parameter is specified and not in special output mode
 	if autoSelectFunc != nil {
 		return autoSelectFunc()

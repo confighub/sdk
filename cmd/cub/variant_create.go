@@ -315,11 +315,7 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 // target UUID, mirroring the convention used by upstream spaces. For an OCI target it also
 // sets the space's ReleaseTargetID, which "cub release publish" requires.
 func patchVariantSpaceTarget(spaceID uuid.UUID, targetID uuid.UUID, releaseTarget bool) error {
-	patchMap := map[string]interface{}{
-		"Annotations": map[string]interface{}{
-			"TargetID": targetID.String(),
-		},
-	}
+	patchMap := map[string]interface{}{}
 	if releaseTarget {
 		patchMap["ReleaseTargetID"] = targetID.String()
 	}

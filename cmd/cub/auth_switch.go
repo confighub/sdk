@@ -89,17 +89,30 @@ func switchToOrganization(searchTerm string) error {
 		User:           ctx.Coordinate.User,
 	}
 
-	ctx, err = contextManager.FindContextByCoordinate(newCoordinate)
-	if err != nil {
-		ctx = contextManager.NewContext()
+	// An explicit override (--context or $CUB_CONTEXT) names the context to
+	// operate on, so switch it in place rather than handing off to (or creating)
+	// another context, and leave the persisted current context alone.
+	if activeContextOverrideSource != "" {
 		ctx.Coordinate = newCoordinate
-		tokenData = &TokenData{}
+	} else {
+		ctx, err = contextManager.FindContextByCoordinate(newCoordinate)
+		if err != nil {
+			ctx = contextManager.NewContext()
+			ctx.Coordinate = newCoordinate
+			tokenData = &TokenData{}
+		}
+		if err := contextManager.SetCurrentContext(ctx.Name); err != nil {
+			return err
+		}
+		// Make the handed-off context the active one so setSpaceContext below
+		// updates the context that just received the new tokens.
+		if err := contextManager.OverrideCurrentContext(ctx.Name); err != nil {
+			return err
+		}
 	}
 	// We set this even if it might already been set.
 	// It could have been changed on the server or failed to set previously.
 	ctx.Metadata.OrganizationName = matchedOrg.DisplayName
-
-	contextManager.SetCurrentContext(ctx.Name)
 
 	tokenData.AccessToken = newTokens.AccessToken
 	tokenData.RefreshToken = newTokens.RefreshToken

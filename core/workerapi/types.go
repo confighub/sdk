@@ -29,3 +29,22 @@ const (
 )
 
 const MaxToolchainTypeLength = 128
+
+// AppConfigToolchains is the set of toolchains that carry application configuration
+// files rather than infrastructure resources. Units of these toolchains are not
+// deployed by ConfigHub: they hold config data that other Units consume, so they are
+// forced to ProviderNone and never carry a Target or BridgeWorker.
+var AppConfigToolchains = map[ToolchainType]bool{
+	ToolchainAppConfigProperties: true,
+	ToolchainAppConfigYAML:       true,
+	ToolchainAppConfigTOML:       true,
+	ToolchainAppConfigINI:        true,
+	ToolchainAppConfigJSON:       true,
+	ToolchainAppConfigEnv:        true,
+	ToolchainAppConfigText:       true,
+}
+
+// IsAppConfigToolchain reports whether the toolchain is an AppConfig format.
+func IsAppConfigToolchain(toolchain ToolchainType) bool {
+	return AppConfigToolchains[toolchain]
+}

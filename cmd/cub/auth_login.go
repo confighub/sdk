@@ -34,6 +34,12 @@ var authLoginCmd = &cobra.Command{
 	Short: "Log into ConfigHub",
 	Long: getCommandHelp(`Authenticate the CLI to ConfigHub via Browser Login
 
+By default the credentials are stored in the context matching what you logged
+into, which may be a different context than the current one (or a new one) if you
+authenticated as another user or organization. When a context is named explicitly
+with --context or CUB_CONTEXT, that context is the one updated and it does not
+become the current context.
+
 Examples:
 `+"```"+`
   # Login (creates or updates current context)
@@ -69,8 +75,16 @@ func init() {
 }
 
 func authLoginCmdRun(cmd *cobra.Command, args []string) error {
+	if newContext && globalContextFlag != "" {
+		return fmt.Errorf("cannot use both --new-context and --context: --new-context creates a context, --context selects an existing one")
+	}
+
 	coordinate := Coordinate{}
-	coordinate.OrganizationID = contextManager.ActiveContext().Coordinate.OrganizationID
+	// A brand-new context has no organization to preserve, so don't seed one from
+	// the context that happens to be active; the login lands wherever it lands.
+	if !newContext {
+		coordinate.OrganizationID = contextManager.ActiveContext().Coordinate.OrganizationID
+	}
 	// check against this after login to see if we need to switch organization
 	// Strictly speaking we can just use coordinate.OrganizationID here because
 	// we pass a copy of it to the updateContextFromSession function and this one is not updated
@@ -195,13 +209,31 @@ func performWorkerAuth(coordinate Coordinate) (*cubapi.AuthSession, error) {
 	return session, nil
 }
 
-func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession) error {
-	coordinate.User = session.User.Email
-	coordinate.OrganizationID = session.OrganizationID
+// loginTargetContext returns the context a successful login must be written to.
+//
+// An explicit override (--context or $CUB_CONTEXT) names the context to log
+// into, so it is used verbatim: silently re-targeting a different context would
+// leave the named one without the new token, which is precisely what the user
+// asked for. The persisted current context is left alone in that case, because
+// an override is not supposed to mutate shared config.
+//
+// Without an override, login follows the coordinate: an already-authenticated
+// context whose coordinate no longer matches hands off to the context for the
+// new coordinate (creating one if none exists), and that context becomes
+// current. --new-context always logs into a freshly created context; being an
+// explicit flag it outranks $CUB_CONTEXT, and combining it with --context is
+// rejected up front rather than silently ignoring one of the two.
+func loginTargetContext(coordinate Coordinate) (*Context, error) {
+	if activeContextOverrideSource != "" && !newContext {
+		return contextManager.ActiveContext(), nil
+	}
 
 	ctx := contextManager.ActiveContext()
+	switch {
+	case newContext:
+		ctx = contextManager.NewContext()
 	// Only consider other contexts if active context doesn't have a user and org.
-	if !(ctx.Coordinate.User == "" && ctx.Coordinate.OrganizationID == "") {
+	case ctx.Coordinate.User != "" || ctx.Coordinate.OrganizationID != "":
 		// Did the user log in to a different coordinate?
 		if !ctx.Coordinate.Equals(coordinate) {
 			// Check if we have a context for this coordinate and then use it.
@@ -213,8 +245,28 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 			}
 		}
 	}
+	if err := contextManager.SetCurrentContext(ctx.Name); err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
+func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession) error {
+	coordinate.User = session.User.Email
+	coordinate.OrganizationID = session.OrganizationID
+
+	ctx, err := loginTargetContext(coordinate)
+	if err != nil {
+		return err
+	}
 	ctx.Coordinate = coordinate
-	contextManager.SetCurrentContext(ctx.Name)
+	// Point the active context at the login target so the rest of the flow
+	// (setSpaceContext, the org switch-back in authLoginCmdRun, the summary we
+	// print) reads and writes the context that just received the token, whether
+	// that context came from an override or from coordinate matching.
+	if err := contextManager.OverrideCurrentContext(ctx.Name); err != nil {
+		return err
+	}
 
 	// Save tokens
 	token := &TokenData{
@@ -227,7 +279,6 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 	}
 
 	// Reinitialize the API client in case any API calls are made after this point
-	var err error
 	cubClientNew, err = InitializeClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error initializing client: %w", err)

@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -35,10 +36,17 @@ func clusterOCIEndpoint(apiURL string) (string, error) {
 	return "oci://oci." + host + ":443", nil
 }
 
+// The addresses below are the ones a container in the cluster reaches ConfigHub
+// by, which is not the address cub itself uses. That is a property of the
+// cluster's networking rather than of the ConfigHub server — the server has no
+// idea what cluster exists on this machine — so `cub cluster` answers it from
+// the docker runtime it just built the cluster on. See clusterHostFromContainer.
+//
+// A non-loopback ConfigHub URL means the server is remote and already reachable
+// by the same name from inside the cluster, so those pass through untouched.
+
 // clusterOCIEndpointFromContainer returns the OCI URL as seen from inside a
-// docker container on the same host (e.g. a kind node, or Argo running in
-// kind). For loopback endpoints this rewrites to host.docker.internal; for
-// remote endpoints it's identical to clusterOCIEndpoint.
+// container in the cluster (Argo's repo-server pulling a Release).
 func clusterOCIEndpointFromContainer(apiURL string) (string, error) {
 	ext, err := clusterOCIEndpoint(apiURL)
 	if err != nil {
@@ -48,22 +56,15 @@ func clusterOCIEndpointFromContainer(apiURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if clusterIsLoopback(u.Hostname()) {
-		port := u.Port()
-		if port != "" {
-			u.Host = "host.docker.internal:" + port
-		} else {
-			u.Host = "host.docker.internal"
-		}
-		return u.String(), nil
+	if !clusterIsLoopback(u.Hostname()) {
+		return ext, nil
 	}
-	return ext, nil
+	u.Host = clusterJoinHostPort(clusterHostFromContainer(ctx), u.Port())
+	return u.String(), nil
 }
 
 // clusterAPIEndpointFromContainer returns the ConfigHub API URL as seen from
-// inside a container running on the same host (e.g. argobot in a kind node).
-// A loopback host is rewritten to host.docker.internal (preserving scheme,
-// port, and path); a non-loopback host is returned unchanged.
+// inside a container in the cluster (argobot's CONFIGHUB_URL).
 func clusterAPIEndpointFromContainer(apiURL string) (string, error) {
 	u, err := url.Parse(apiURL)
 	if err != nil {
@@ -73,15 +74,19 @@ func clusterAPIEndpointFromContainer(apiURL string) (string, error) {
 	if host == "" {
 		return "", fmt.Errorf("no host in %q", apiURL)
 	}
-	if clusterIsLoopback(host) {
-		if port := u.Port(); port != "" {
-			u.Host = "host.docker.internal:" + port
-		} else {
-			u.Host = "host.docker.internal"
-		}
-		return strings.TrimRight(u.String(), "/"), nil
+	if !clusterIsLoopback(host) {
+		return strings.TrimRight(apiURL, "/"), nil
 	}
-	return strings.TrimRight(apiURL, "/"), nil
+	u.Host = clusterJoinHostPort(clusterHostFromContainer(ctx), u.Port())
+	return strings.TrimRight(u.String(), "/"), nil
+}
+
+// clusterJoinHostPort keeps the port when there is one.
+func clusterJoinHostPort(host, port string) string {
+	if port == "" {
+		return host
+	}
+	return net.JoinHostPort(host, port)
 }
 
 // clusterOCIInsecure reports whether the OCI registry derived from apiURL

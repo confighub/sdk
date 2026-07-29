@@ -55,6 +55,24 @@ Examples:
   # Update specific links by slug
   echo '{"Labels": {"updated": "true"}}' | cub link update --patch --link my-link,another-link --from-stdin
 `+"```"+`
+
+Resetting merged-revision pointers with --make-current:
+
+--make-current sets a link's UpstreamLastMergedRevisionNum and
+DownstreamLastMergedRevisionNum to the current head revisions of the units it
+connects, declaring the link caught up without merging anything. Use it to repair
+a link whose pointers name a revision that no longer exists, which otherwise fails
+every write to that link. Because the values come from each link's own units, a
+bulk --make-current patches the matched links one at a time.
+
+Examples:
+`+"```"+`
+  # Repair one link
+  cub link update upgrade-my-unit --space my-space --patch --make-current
+
+  # Repair every UpgradeUnit link in a space
+  cub link update --patch --space my-space --where "UpdateType = 'UpgradeUnit'" --make-current
+`+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        linkUpdateCmdRun,
@@ -167,6 +185,13 @@ func checkLinkConflictingArgs(args []string) bool {
 		failOnError(errors.New("--reverse requires --patch"))
 	}
 
+	// --reverse swaps the From and To units, which swaps which unit each merged-revision
+	// pointer refers to. --make-current computes those pointers from the current
+	// direction, so the combination is ambiguous.
+	if linkReverse && linkMakeCurrent {
+		failOnError(errors.New("--reverse and --make-current are mutually exclusive"))
+	}
+
 	if err := validateLinkFieldFlags(); err != nil {
 		failOnError(err)
 	}
@@ -213,6 +238,10 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		return runBulkLinkUpdateReverse(effectiveWhere, filterID, patchJSON)
 	}
 
+	if linkMakeCurrent {
+		return runBulkLinkMakeCurrent(cmd, effectiveWhere, filterID)
+	}
+
 	// Build bulk patch parameters
 	include := "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
 	params := &goclientnew.BulkPatchLinksParams{
@@ -236,6 +265,79 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 
 	// Handle the response
 	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", effectiveWhere)
+}
+
+// runBulkLinkMakeCurrent applies --make-current across every matched link.
+// The pointers depend on the Units each link connects, so a single merge patch
+// cannot express them; each link is patched individually and the results are
+// reported together, the same way the bulk paths report theirs.
+func runBulkLinkMakeCurrent(cmd *cobra.Command, effectiveWhere, filterID string) error {
+	extLinks, err := apiListAllLinks(cubapi.NewWhere(effectiveWhere), "*", filterID)
+	if err != nil {
+		return err
+	}
+
+	responses := make([]goclientnew.LinkCreateOrUpdateResponse, 0, len(extLinks))
+	anyFailed := false
+	for _, el := range extLinks {
+		if el.Link == nil {
+			continue
+		}
+		link := el.Link
+
+		// The list join supplies both Units. Fall back to fetching them if the
+		// server did not expand one.
+		var upstream, downstream int64
+		if el.FromUnit != nil && el.ToUnit != nil {
+			upstream, downstream = makeCurrentPointers(el.FromUnit, el.ToUnit, link.UseLiveState)
+		} else {
+			var resolveErr error
+			upstream, downstream, resolveErr = resolveMakeCurrentPointers(link)
+			if resolveErr != nil {
+				responses = append(responses, goclientnew.LinkCreateOrUpdateResponse{
+					Link:  link,
+					Error: &goclientnew.ResponseError{Message: resolveErr.Error()},
+				})
+				anyFailed = true
+				continue
+			}
+		}
+
+		patchData, err := BuildPatchData(withMakeCurrentPointers(linkFieldsEnhancer(cmd), upstream, downstream))
+		if err != nil {
+			return err
+		}
+
+		res, err := cubClientNew.PatchLinkWithBodyWithResponse(
+			ctx,
+			link.SpaceID,
+			link.LinkID,
+			&goclientnew.PatchLinkParams{},
+			"application/merge-patch+json",
+			bytes.NewReader(patchData),
+		)
+		if cubapi.IsAPIError(err, res) {
+			responses = append(responses, goclientnew.LinkCreateOrUpdateResponse{
+				Link:  link,
+				Error: &goclientnew.ResponseError{Message: cubapi.InterpretErrorGeneric(err, res).Error()},
+			})
+			anyFailed = true
+			continue
+		}
+		responses = append(responses, goclientnew.LinkCreateOrUpdateResponse{Link: res.JSON200})
+	}
+
+	if len(responses) == 0 {
+		if !quiet && !isAlternativeOutput() {
+			tprint("No links matched")
+		}
+		return nil
+	}
+
+	if anyFailed {
+		return handleBulkLinkUpdateResponse(nil, &responses, 207, "update", effectiveWhere)
+	}
+	return handleBulkLinkUpdateResponse(&responses, nil, 200, "update", effectiveWhere)
 }
 
 // runBulkLinkUpdateReverse handles bulk --reverse for both same-space and
@@ -406,7 +508,15 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	linkID := currentLink.LinkID
 
 	// Build patch data using consolidated function with link-specific field enhancer
-	patchData, err := BuildPatchData(linkFieldsEnhancer(cmd))
+	enhancer := linkFieldsEnhancer(cmd)
+	if linkMakeCurrent {
+		upstream, downstream, err := resolveMakeCurrentPointers(currentLink)
+		if err != nil {
+			return err
+		}
+		enhancer = withMakeCurrentPointers(enhancer, upstream, downstream)
+	}
+	patchData, err := BuildPatchData(enhancer)
 	if err != nil {
 		return err
 	}
@@ -542,6 +652,13 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentLink.ToSpaceID = uuid.MustParse(toSpaceID)
 	if err := setLinkFieldsOnUpdate(currentLink, cmd); err != nil {
 		return err
+	}
+
+	// Applied after setLinkFieldsOnUpdate so that a --use-live-state/--no-use-live-state
+	// in the same command decides which upstream counter is read.
+	if linkMakeCurrent {
+		currentLink.UpstreamLastMergedRevisionNum, currentLink.DownstreamLastMergedRevisionNum =
+			makeCurrentPointers(fromUnit, toUnit, currentLink.UseLiveState)
 	}
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)

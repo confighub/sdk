@@ -62,6 +62,11 @@ func (sct *SupportedConfigType) Validate() error {
 	if !IsValidProviderType(sct.ProviderType) {
 		return errors.Errorf("invalid provider type %s", string(sct.ProviderType))
 	}
+
+	if sct.ProviderType == ProviderNone {
+		return errors.WithStack(errors.New("BridgeWorkers do not support ProviderTypeNone"))
+	}
+
 	// ToolchainAny is a wildcard a bridge may advertise to mean "any toolchain" (e.g.
 	// the OCI transport, which never routes by toolchain). It is intentionally absent
 	// from SupportedToolchains — which is also the Unit toolchain allowlist — so it is
@@ -165,6 +170,7 @@ var SupportedProviders = map[ProviderType]bool{
 	ProviderConfigMapRenderer: true,
 	ProviderNoop:              true,
 	ProviderOCI:               true,
+	ProviderNone:              true,
 }
 
 func IsSupportedProvider(provider ProviderType) bool {

@@ -47,7 +47,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMergeDisableSubtraction, "merge-disable-subtraction", false, "disable the subtraction (override-preservation) step when resolving this link; overrides are then preserved only via stored mutation predicates")
 	cmd.Flags().BoolVar(&linkNoMergeDisableSubtraction, "no-merge-disable-subtraction", false, "re-enable the subtraction step when resolving this link")
-	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions (skips initial merge)")
+	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
 	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before upsert; only valid with --update-type Upsert")
 }
 
@@ -65,6 +65,52 @@ func validateLinkFieldFlags() error {
 		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths, got %q", linkUpdateType)
 	}
 	return nil
+}
+
+// makeCurrentPointers returns the merged-revision pointers that mark a link as
+// caught up with the two Units it connects: the downstream (From) Unit's head
+// revision, and the upstream (To) Unit's head revision — or its head Apply action
+// number when the link merges LiveState, which is what
+// UpstreamLastMergedRevisionNum tracks in that mode.
+//
+// On a new link this skips the initial merge. On an existing link it re-points
+// the link at what the Units actually hold, which repairs a link whose pointers
+// name a revision that does not exist.
+func makeCurrentPointers(fromUnit, toUnit *goclientnew.Unit, useLiveState bool) (upstream, downstream int64) {
+	if useLiveState {
+		upstream = toUnit.HeadUnitActionNum
+	} else {
+		upstream = toUnit.HeadRevisionNum
+	}
+	return upstream, fromUnit.HeadRevisionNum
+}
+
+// resolveMakeCurrentPointers fetches an existing link's two Units and returns the
+// pointers that would make it current.
+func resolveMakeCurrentPointers(link *goclientnew.Link) (upstream, downstream int64, err error) {
+	fromUnit, err := apiGetUnitInSpace(link.FromUnitID.String(), link.SpaceID.String(), "*")
+	if err != nil {
+		return 0, 0, err
+	}
+	toUnit, err := apiGetUnitInSpace(link.ToUnitID.String(), link.ToSpaceID.String(), "*")
+	if err != nil {
+		return 0, 0, err
+	}
+	upstream, downstream = makeCurrentPointers(fromUnit, toUnit, link.UseLiveState)
+	return upstream, downstream, nil
+}
+
+// withMakeCurrentPointers wraps base so the patch also carries the make-current
+// pointers for one specific link. The values are per-link, so unlike the other
+// link field flags they cannot be folded into linkFieldsEnhancer.
+func withMakeCurrentPointers(base PatchEnhancer, upstream, downstream int64) PatchEnhancer {
+	return func(patchMap map[string]interface{}) {
+		if base != nil {
+			base(patchMap)
+		}
+		patchMap["UpstreamLastMergedRevisionNum"] = upstream
+		patchMap["DownstreamLastMergedRevisionNum"] = downstream
+	}
 }
 
 // setLinkFieldsOnCreate sets link-specific fields on a new Link for create operations.
@@ -175,11 +221,15 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 }
 
 // hasLinkFieldFlags returns true if any link-specific field flags were explicitly set.
+// linkMakeCurrent is included so that --make-current alone satisfies the "requires
+// one of" guard on the patch paths, even though its per-link values are applied
+// outside linkFieldsEnhancer.
 func hasLinkFieldFlags(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("update-type") || linkAutoUpdate || linkNoAutoUpdate ||
 		linkUseLiveState || linkNoUseLiveState ||
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
 		linkMergeDisableSubtraction || linkNoMergeDisableSubtraction ||
+		linkMakeCurrent ||
 		cmd.Flags().Changed("transform-invocation")
 }
 

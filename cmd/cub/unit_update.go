@@ -183,6 +183,7 @@ var (
 	isUpgrade           bool
 	isPatch             bool
 	changesetSlug       string
+	providerType        string
 	mergeSource             string
 	mergeBase               string
 	mergeEnd                string
@@ -198,6 +199,7 @@ func init() {
 	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
+	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve non-automatically resolved links: Link:* for all, Link:<uuid> or Link:<slug> for a specific link, or just <slug> (e.g., space/link-name)")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
@@ -411,6 +413,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 				patchMap["TargetOptions"] = optionMap
 			}
+			if providerType != "" {
+				patchMap["ProviderType"] = providerType
+			}
 			if changeDescription != "" {
 				patchMap["LastChangeDescription"] = changeDescription
 			}
@@ -474,6 +479,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		err = setOptions(&currentUnit.TargetOptions)
 		if err != nil {
 			return err
+		}
+		if providerType != "" {
+			currentUnit.ProviderType = providerType
 		}
 		// For non-patch operations, handle change description in the traditional way
 		if changeDescription != "" {
@@ -738,6 +746,9 @@ func runBulkUnitUpdate() error {
 			}
 			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["TargetOptions"] = optionMap
+		}
+		if providerType != "" {
+			patchMap["ProviderType"] = providerType
 		}
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription

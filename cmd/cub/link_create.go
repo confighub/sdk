@@ -213,13 +213,8 @@ func runSingleLinkCreate(args []string) error {
 
 	// If --make-current is set, initialize revision numbers to current unit revisions
 	if linkMakeCurrent {
-		if newLink.UseLiveState {
-			// When UseLiveState is true, UpstreamLastMergedRevisionNum stores a UnitActionNum
-			newLink.UpstreamLastMergedRevisionNum = toUnit.HeadUnitActionNum
-		} else {
-			newLink.UpstreamLastMergedRevisionNum = toUnit.HeadRevisionNum
-		}
-		newLink.DownstreamLastMergedRevisionNum = fromUnit.HeadRevisionNum
+		newLink.UpstreamLastMergedRevisionNum, newLink.DownstreamLastMergedRevisionNum =
+			makeCurrentPointers(fromUnit, toUnit, newLink.UseLiveState)
 	}
 
 	// Create params with AllowExists if needed

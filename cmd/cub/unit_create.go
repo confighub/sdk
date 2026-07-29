@@ -16,6 +16,7 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
@@ -133,6 +134,7 @@ var unitCreateArgs struct {
 	upstreamSpaceSlug   string
 	importUnitSlug      string
 	toolchainType       string
+	providerType        string
 	targetSlug          string
 	changesetSlug       string
 	changeDescription   string
@@ -161,6 +163,7 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.mergeExternalSource, "merge-external-source", "", "external source identifier (sets source type to MergeExternal)")
 	enableOptionFlag(unitCreateCmd)
@@ -242,6 +245,10 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 		if len(args) > 1 && args[1] == "-" && flagPopulateModelFromStdin {
 			return false, errors.New("can't read both entity attributes and config data from stdin")
 		}
+	}
+
+	if unitCreateArgs.providerType == string(api.ProviderNone) && unitCreateArgs.targetSlug != "" {
+		return isBulkCreateMode, errors.New("cannot use '--provider None' and '--target' together")
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
@@ -402,6 +409,9 @@ func runSingleUnitCreate(args []string) error {
 	newUnit.SpaceID = spaceID
 	newUnit.Slug = makeSlug(args[0])
 	newUnit.ToolchainType = unitCreateArgs.toolchainType
+	if unitCreateArgs.providerType != "" {
+		newUnit.ProviderType = unitCreateArgs.providerType
+	}
 
 	if unitCreateArgs.upstreamUnitSlug != "" {
 		newParams.UpstreamSpaceId = &upstreamSpaceID
@@ -441,6 +451,10 @@ func createBulkCreatePatch() ([]byte, error) {
 			optionMap := make(map[string]interface{})
 			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
 			patchMap["TargetOptions"] = optionMap
+		}
+		// Add provider type if specified
+		if unitCreateArgs.providerType != "" {
+			patchMap["ProviderType"] = unitCreateArgs.providerType
 		}
 		// Add target if specified
 		if unitCreateArgs.targetSlug != "" {

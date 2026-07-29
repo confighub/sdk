@@ -215,7 +215,7 @@ func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName str
 // Releases are published per Space ("cub release publish <space>") and consume
 // the Space's release Target; the OCI registry serves the Space's Releases at
 // /space/<slug> only when it is set. The server validates that the Target's
-// provider is OCI and computes the Space's ReleaseURL.
+// provider is OCI.
 func clusterSetReleaseTarget(spaceID, targetID uuid.UUID) error {
 	patchData, err := json.Marshal(map[string]interface{}{
 		"ReleaseTargetID": targetID.String(),
