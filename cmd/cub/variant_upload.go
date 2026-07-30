@@ -34,6 +34,9 @@ type variantUploadOptions struct {
 	annotations  []string
 	changeDesc   string
 	allowExists  bool
+	// sourceDesc is not a flag: it is the inputs as given on the command line,
+	// stamped on each created Unit as its external source.
+	sourceDesc string
 }
 
 var variantUploadArgs variantUploadOptions
@@ -80,6 +83,10 @@ The Space is created if missing and stamped with the well-known labels from --co
 --variant, --environment, --region, --layer, and --owner. --component and --variant are
 required. The Space slug comes from --space-pattern (a Go template over .Labels), or from
 --space to set it explicitly.
+
+Each created Unit records the input it came from — the oci:// ref, file, or directory
+as named on the command line — as its external source, so its change description reads
+"from oci://ghcr.io/org/bundle". Use --change-desc to prefix your own description.
 
 Examples:
 `+"```"+`
@@ -164,6 +171,12 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	if spaceSlug == "" {
 		return fmt.Errorf("computed Space slug is empty; set --space")
 	}
+
+	// Describe the inputs as the user named them, before oci:// refs are resolved
+	// to temp directories and Unit bodies are staged in temp files. Each Unit is
+	// created with this as its external source, so its change description reads
+	// "from oci://ghcr.io/org/bundle" rather than the temp path cub handed itself.
+	a.sourceDesc = uploadSourceDescription(args)
 
 	// Resolve any oci:// inputs to local directories of extracted manifests, so
 	// the rest of the pipeline treats them like any other input path. The source
@@ -272,6 +285,30 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// maxUploadSourceDescription bounds the source string stamped on every Unit so a
+// long input list can't push the resulting change description past the server's
+// LastChangeDescription limit.
+const maxUploadSourceDescription = 512
+
+// uploadSourceDescription renders the upload's inputs the way the user named them
+// — an oci:// ref rather than the temp directory it is extracted into, "stdin" for
+// "-" (matching what "unit create" records for stdin input).
+func uploadSourceDescription(inputs []string) string {
+	parts := make([]string, 0, len(inputs))
+	for _, in := range inputs {
+		if in == "-" {
+			in = "stdin"
+		}
+		parts = append(parts, in)
+	}
+	desc := strings.Join(parts, ", ")
+	if len(desc) > maxUploadSourceDescription {
+		// ToValidUTF8 drops a rune the cut landed in the middle of.
+		desc = strings.ToValidUTF8(desc[:maxUploadSourceDescription-3], "") + "..."
+	}
+	return desc
+}
+
 // createPlainUnit writes the Unit body to a temp file and runs cub unit create.
 func createPlainUnit(spaceSlug string, u upload.Unit, a *variantUploadOptions, targeted bool) error {
 	tmp, err := os.CreateTemp("", "cub-upload-*.yaml")
@@ -295,6 +332,10 @@ func createPlainUnit(spaceSlug string, u upload.Unit, a *variantUploadOptions, t
 	}
 	if a.changeDesc != "" {
 		cubArgs = append(cubArgs, "--change-desc", a.changeDesc)
+	}
+	// Otherwise "unit create" defaults the external source to the temp file below.
+	if a.sourceDesc != "" {
+		cubArgs = append(cubArgs, "--merge-external-source", a.sourceDesc)
 	}
 	for _, l := range a.labels {
 		cubArgs = append(cubArgs, "--label", l)
@@ -339,6 +380,9 @@ func uploadAppConfigUnit(spaceSlug string, u upload.Unit, a *variantUploadOption
 		dataArgs = append(dataArgs, "--allow-exists")
 	}
 	dataArgs = append(dataArgs, "--space", spaceSlug, "--toolchain", ac.Toolchain)
+	if a.sourceDesc != "" {
+		dataArgs = append(dataArgs, "--merge-external-source", a.sourceDesc)
+	}
 	for _, l := range a.labels {
 		dataArgs = append(dataArgs, "--label", l)
 	}

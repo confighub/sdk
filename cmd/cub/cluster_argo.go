@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -160,6 +161,32 @@ spec:
 `, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace)
 }
 
+// clusterArgoAdminPassword reads the argocd-initial-admin-secret from the
+// cluster and base64-decodes its password field. Errors when the Secret is
+// absent: argocd-server creates it on first start, and Argo's own docs tell
+// admins to delete it once they have changed the password.
+func clusterArgoAdminPassword(ctx context.Context, kubeconfigPath string) (string, error) {
+	raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "secret", "argocd-initial-admin-secret", "-n", clusterArgoNamespace,
+		"-o", "jsonpath={.data.password}")
+	if err != nil {
+		return "", err
+	}
+	if len(raw) == 0 {
+		return "", fmt.Errorf("secret %s/argocd-initial-admin-secret has no password", clusterArgoNamespace)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(string(raw))
+	if err != nil {
+		return "", fmt.Errorf("decode admin password: %w: %w", clusterArgoErrPasswordDecode, err)
+	}
+	return string(decoded), nil
+}
+
+// clusterArgoErrPasswordDecode marks a password that is present but not
+// decodable. Unlike a Secret that has not appeared yet, that is terminal, so
+// clusterArgoWaitAdminPassword stops polling instead of burning its budget.
+var clusterArgoErrPasswordDecode = errors.New("not valid base64")
+
 // clusterArgoWaitAdminPassword polls until the argocd-initial-admin-secret
 // exists (created by argocd-server after first start), then base64-decodes the
 // password field.
@@ -167,15 +194,12 @@ func clusterArgoWaitAdminPassword(ctx context.Context, kubeconfigPath string, bu
 	deadline := time.Now().Add(budget)
 	var lastErr error
 	for {
-		raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
-			"get", "secret", "argocd-initial-admin-secret", "-n", clusterArgoNamespace,
-			"-o", "jsonpath={.data.password}")
-		if err == nil && len(raw) > 0 {
-			decoded, derr := base64.StdEncoding.DecodeString(string(raw))
-			if derr != nil {
-				return "", fmt.Errorf("decode admin password: %w", derr)
-			}
-			return string(decoded), nil
+		password, err := clusterArgoAdminPassword(ctx, kubeconfigPath)
+		if err == nil {
+			return password, nil
+		}
+		if errors.Is(err, clusterArgoErrPasswordDecode) {
+			return "", err
 		}
 		lastErr = err
 		if time.Now().After(deadline) {

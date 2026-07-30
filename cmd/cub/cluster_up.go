@@ -395,6 +395,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode)\n", clusterArgobotComponent, opts.name)
 	}
 	fmt.Fprintf(out, "\nArgo CD: http://localhost:%d  (admin / %s)\n", argoPort, adminPassword)
+	fmt.Fprintf(out, "Reopen it later with the password on your clipboard:\n  cub cluster open %s\n", opts.name)
 	if len(ports) > 1 {
 		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (argo uses %d; rest are open)\n", startPort, startPort+windowSize-1, argoPort)
 	}

@@ -63,10 +63,10 @@ func readAll(t *testing.T, dir string) map[string]string {
 func TestWriteYAMLFromLayer_TarGzip(t *testing.T) {
 	dir := t.TempDir()
 	blob := tarGzip(t, map[string]string{
-		"backend.yaml":   sampleDeployment,
-		"rbac/role.yaml": sampleService,
-		"README.md":      "not yaml",
-		"chart.tgz":      "binary-ish",
+		"backend.yaml":       sampleDeployment,
+		"rbac/role.yaml":     sampleService,
+		"README.md":          "not yaml",
+		"chart.tgz":          "binary-ish",
 	})
 	desc := ocispec.Descriptor{MediaType: ocispec.MediaTypeImageLayerGzip}
 
@@ -132,21 +132,6 @@ func TestWriteYAMLFromLayer_SingleFileNoTitle(t *testing.T) {
 	}
 	if n != 1 || readAll(t, dir)["layer-5.yaml"] != sampleService {
 		t.Fatalf("untitled single file not written: files=%v", readAll(t, dir))
-	}
-}
-
-func TestWriteYAMLFromLayer_SkipsTitledCompanionRecord(t *testing.T) {
-	dir := t.TempDir()
-	desc := ocispec.Descriptor{
-		MediaType:   "application/vnd.confighub.check-results.v1+json",
-		Annotations: map[string]string{ocispec.AnnotationTitle: "records/checks.json"},
-	}
-	n, err := writeYAMLFromLayer(dir, 6, desc, []byte(`{"result":"pass"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 0 || len(readAll(t, dir)) != 0 {
-		t.Fatalf("companion record written as YAML: n=%d files=%v", n, readAll(t, dir))
 	}
 }
 
