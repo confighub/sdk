@@ -6765,6 +6765,25 @@ type ListAllRevisionsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
 }
 
 // ListSpacesParams defines parameters for ListSpaces.
@@ -9132,6 +9151,25 @@ type ListExtendedRevisionsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
 }
 
 // GetExtendedRevisionParams defines parameters for GetExtendedRevision.
@@ -9154,6 +9192,25 @@ type GetExtendedRevisionParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
 }
 
 // ListUnitActionsParams defines parameters for ListUnitActions.
@@ -9292,6 +9349,47 @@ type ListUnitEventsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+}
+
+// GetUnitEventParams defines parameters for GetUnitEvent.
+type GetUnitEventParams struct {
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
 }
 
 // ListViewsParams defines parameters for ListViews.
@@ -11870,6 +11968,25 @@ type ListAllUnitEventsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
 }
 
 // ListUsersParams defines parameters for ListUsers.

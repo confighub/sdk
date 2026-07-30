@@ -20,7 +20,7 @@ var upgradeVersion string
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade cub to the latest version",
-	Long:  getCommandHelp(`Download and install the latest version of cub and cub-worker-run binaries`, ""),
+	Long:  getCommandHelp(`Download and install the latest version of the cub binary`, ""),
 	RunE:  upgradeCmdRun,
 }
 
@@ -52,7 +52,6 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 
 	binDir := filepath.Join(homeDir, CONFIGHUB_DIR, "bin")
 	cubPath := filepath.Join(binDir, "cub")
-	cubWorkerPath := filepath.Join(binDir, "cub-worker-run")
 
 	// Check if binaries exist
 	if _, err := os.Stat(cubPath); os.IsNotExist(err) {
@@ -67,7 +66,6 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 		baseURL = "https://github.com/confighub/sdk/releases/latest/download"
 	}
 	cubURL := fmt.Sprintf("%s/cub-%s-%s", baseURL, osName, arch)
-	cubWorkerURL := fmt.Sprintf("%s/cub-worker-run-%s-%s", baseURL, osName, arch)
 
 	// Download binaries to temp files
 	tprint("Downloading cub binary...")
@@ -77,23 +75,13 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	defer os.Remove(cubTempPath)
 
-	tprint("Downloading cub-worker-run binary...")
-	cubWorkerTempPath := filepath.Join(binDir, ".cub-worker-run.tmp")
-	if err := downloadFile(cubWorkerTempPath, cubWorkerURL); err != nil {
-		return fmt.Errorf("failed to download cub-worker-run binary: %w", err)
-	}
-	defer os.Remove(cubWorkerTempPath)
-
 	// Set executable permissions on temp files
 	if err := os.Chmod(cubTempPath, 0755); err != nil {
 		return fmt.Errorf("failed to set permissions on cub binary: %w", err)
 	}
-	if err := os.Chmod(cubWorkerTempPath, 0755); err != nil {
-		return fmt.Errorf("failed to set permissions on cub-worker-run binary: %w", err)
-	}
 
 	// Atomic replacement of binaries
-	tprint("Installing new binaries...")
+	tprint("Installing new binary...")
 
 	// Replace cub binary
 	cubBackupPath := cubPath + ".old"
@@ -115,30 +103,6 @@ func upgradeCmdRun(cmd *cobra.Command, args []string) error {
 			os.Rename(cubBackupPath, cubPath)
 		}
 		return fmt.Errorf("failed to install new cub binary: %w", err)
-	}
-
-	// Replace cub-worker-run binary
-	cubWorkerBackupPath := cubWorkerPath + ".old"
-	if err := os.Rename(cubWorkerPath, cubWorkerBackupPath); err != nil {
-		// If rename fails, binary might not exist (which is okay for cub-worker-run)
-		if !os.IsNotExist(err) {
-			// Only log warning, don't fail the upgrade
-			tprint("Warning: could not backup cub-worker-run: %v", err)
-		}
-	} else {
-		defer func() {
-			// Clean up backup on success
-			os.Remove(cubWorkerBackupPath)
-		}()
-	}
-
-	if err := os.Rename(cubWorkerTempPath, cubWorkerPath); err != nil {
-		// Try to restore backup if rename fails
-		if _, err2 := os.Stat(cubWorkerBackupPath); err2 == nil {
-			os.Rename(cubWorkerBackupPath, cubWorkerPath)
-		}
-		// Don't fail if cub-worker-run fails, just warn
-		tprint("Warning: failed to install new cub-worker-run binary: %v", err)
 	}
 
 	tprint("Successfully upgraded cub")

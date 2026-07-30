@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +32,6 @@ var names = false
 var selectFields = ""
 var debug = false
 var noheader = false
-var webFlag = false
 var wait = true
 var getWait = false
 var timeout string
@@ -269,18 +267,6 @@ func enableColumnsFlag(cmd *cobra.Command) {
 
 func enableSelectFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&selectFields, "select", "", "Comma-separated list of fields to retrieve and display. Entity IDs and Slug are always included. Example: \"DisplayName,CreatedAt,Labels\"")
-}
-
-func enableWebFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&webFlag, "web", false, "Open in web UI instead of executing")
-}
-
-func openWebUI(url string) error {
-	if err := open.Start(url); err != nil {
-		return fmt.Errorf("failed to open browser: %w", err)
-	}
-	tprint("Opened in web UI: %s", url)
-	return nil
 }
 
 func enableWhereFlag(cmd *cobra.Command) {

@@ -34,7 +34,6 @@ Examples:
 
 func init() {
 	addStandardGetFlags(spaceGetCmd)
-	enableWebFlag(spaceGetCmd)
 	spaceCmd.AddCommand(spaceGetCmd)
 }
 
@@ -42,12 +41,6 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 	extendedSpace, err := apiGetExtendedSpaceFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
-	}
-
-	if webFlag {
-		ctx := contextManager.ActiveContext()
-		url := cubapi.GetSpaceDetailURL(ctx.Coordinate.ServerURL, extendedSpace.Space.SpaceID.String())
-		return openWebUI(url)
 	}
 
 	displayGetResults(extendedSpace, displayExtendedSpaceDetails)

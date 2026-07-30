@@ -70,7 +70,6 @@ var (
 
 func init() {
 	addStandardListFlags(revisionListCmd)
-	enableWebFlag(revisionListCmd)
 	revisionListCmd.Flags().StringVar(&revisionTagSlug, "tag", "", "filter revisions by tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by changeset start tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeSetEndTag, "changeset-endtag", "", "filter revisions by changeset end tag slug or UUID")
@@ -111,12 +110,6 @@ func revisionListCmdRun(cmd *cobra.Command, args []string) error {
 	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
-	}
-
-	if webFlag {
-		ctx := contextManager.ActiveContext()
-		url := cubapi.GetUnitRevisionsURL(ctx.Coordinate.ServerURL, unit.SpaceID.String(), unit.UnitID.String())
-		return openWebUI(url)
 	}
 
 	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), effectiveWhere, selectFields, filterID)

@@ -717,6 +717,9 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
           },
         }),
         providesTags: ['Revision'],
@@ -1672,6 +1675,9 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
           },
         }),
         providesTags: ['Revision'],
@@ -1685,6 +1691,9 @@ const injectedRtkApi = api
           params: {
             include: queryArg.include,
             select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
           },
         }),
         providesTags: ['Revision'],
@@ -1722,6 +1731,9 @@ const injectedRtkApi = api
             where: queryArg.where,
             filter: queryArg.filter,
             contains: queryArg.contains,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
           },
         }),
         providesTags: ['UnitEvent'],
@@ -1729,6 +1741,11 @@ const injectedRtkApi = api
       getUnitEvent: build.query<GetUnitEventApiResponse, GetUnitEventApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/unit_event/${queryArg.unitEventId}`,
+          params: {
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
+          },
         }),
         providesTags: ['UnitEvent'],
       }),
@@ -2145,6 +2162,9 @@ const injectedRtkApi = api
             where: queryArg.where,
             filter: queryArg.filter,
             contains: queryArg.contains,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
           },
         }),
         providesTags: ['UnitEvent'],
@@ -5552,6 +5572,22 @@ export type ListAllRevisionsApiArg = {
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
 };
 export type ListSpacesApiResponse = /** status 200 OK */ ExtendedSpaceRead[];
 export type ListSpacesApiArg = {
@@ -8331,6 +8367,22 @@ export type ListExtendedRevisionsApiArg = {
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
 };
 export type GetExtendedRevisionApiResponse = /** status 200 OK */ ExtendedRevisionRead;
 export type GetExtendedRevisionApiArg = {
@@ -8355,6 +8407,22 @@ export type GetExtendedRevisionApiArg = {
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
   /** Unique identifier for a revision_id */
   revisionId: string;
 };
@@ -8520,6 +8588,22 @@ export type ListUnitEventsApiArg = {
     
     The whole string must be query-encoded. */
   contains?: string;
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
 };
 export type GetUnitEventApiResponse =
   /** status 200 UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
@@ -8534,6 +8618,22 @@ export type GetUnitEventApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
   /** Unique identifier for a unit_event_id */
   unitEventId: string;
 };
@@ -11018,6 +11118,22 @@ export type ListAllUnitEventsApiArg = {
     
     The whole string must be query-encoded. */
   contains?: string;
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
 };
 export type ListUsersApiResponse = /** status 200 OK */ UserRead[];
 export type ListUsersApiArg = {

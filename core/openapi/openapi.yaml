@@ -7850,6 +7850,40 @@ paths:
         required: false
         schema:
           type: string
+      - description: Maximum number of Revision entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Revision entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -17802,6 +17836,40 @@ paths:
         required: false
         schema:
           type: string
+      - description: Maximum number of Revision entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Revision entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -17893,6 +17961,40 @@ paths:
           The whole string must be query-encoded.
         in: query
         name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Revision entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Revision entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
         required: false
         schema:
           type: string
@@ -18341,6 +18443,40 @@ paths:
         required: false
         schema:
           type: string
+      - description: Maximum number of UnitEvent entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of UnitEvent entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -18407,6 +18543,40 @@ paths:
         required: true
         schema:
           format: uuid
+          type: string
+      - description: Maximum number of UnitEvent entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of UnitEvent entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
           type: string
       - description: Unique identifier for a unit_event_id
         in: path
@@ -23927,6 +24097,40 @@ paths:
           The whole string must be query-encoded.
         in: query
         name: contains
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of UnitEvent entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of UnitEvent entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
         required: false
         schema:
           type: string

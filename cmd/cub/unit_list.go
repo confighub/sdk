@@ -214,7 +214,6 @@ var unitCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(unitListCmd)
-	enableWebFlag(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	unitListCmd.Flags().StringVar(&whereTrigger, "where-trigger", "", "where expression to match triggers for validation filtering")
@@ -225,12 +224,6 @@ func init() {
 }
 
 func unitListCmdRun(cmd *cobra.Command, args []string) error {
-	if webFlag {
-		ctx := contextManager.ActiveContext()
-		url := cubapi.GetUnitListURL(ctx.Coordinate.ServerURL)
-		return openWebUI(url)
-	}
-
 	var err error
 
 	// Resolve view slug/UUID to a UUID before space promotion, since the view

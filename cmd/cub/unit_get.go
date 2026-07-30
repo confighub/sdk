@@ -81,7 +81,6 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 
 func init() {
 	addStandardGetFlags(unitGetCmd)
-	enableWebFlag(unitGetCmd)
 	enableDisplayMutationsFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	_ = unitGetCmd.Flags().MarkDeprecated("data-only", "use 'cub unit data <unit>'")
@@ -94,12 +93,6 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 	unitDetails, err := apiGetExtendedUnitFromSlug(args[0], selectFields)
 	if err != nil {
 		return err
-	}
-
-	if webFlag {
-		ctx := contextManager.ActiveContext()
-		url := cubapi.GetUnitDetailURL(ctx.Coordinate.ServerURL, selectedSpaceID, unitDetails.Unit.UnitID.String())
-		return openWebUI(url)
 	}
 
 	// -o mutations replaces the default summary with the mutations diff for

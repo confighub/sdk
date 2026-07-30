@@ -73,8 +73,7 @@ func apiGetUnitEventFromNum(spaceID uuid.UUID, unitID uuid.UUID, num int64) (*go
 }
 
 func apiGetUnitEvent(spaceID uuid.UUID, unitID uuid.UUID, eventID uuid.UUID) (*goclientnew.UnitEvent, error) {
-	// No params yet
-	eventRes, err := cubClientNew.GetUnitEventWithResponse(ctx, spaceID, unitID, eventID)
+	eventRes, err := cubClientNew.GetUnitEventWithResponse(ctx, spaceID, unitID, eventID, nil)
 	if cubapi.IsAPIError(err, eventRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, eventRes)
 	}

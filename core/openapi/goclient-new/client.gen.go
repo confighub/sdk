@@ -643,7 +643,7 @@ type ClientInterface interface {
 	ListUnitEvents(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetUnitEvent request
-	GetUnitEvent(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetUnitEvent(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, params *GetUnitEventParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListViews request
 	ListViews(ctx context.Context, spaceId openapi_types.UUID, params *ListViewsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3201,8 +3201,8 @@ func (c *Client) ListUnitEvents(ctx context.Context, spaceId openapi_types.UUID,
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetUnitEvent(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetUnitEventRequest(c.Server, spaceId, unitId, unitEventId)
+func (c *Client) GetUnitEvent(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, params *GetUnitEventParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUnitEventRequest(c.Server, spaceId, unitId, unitEventId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -8682,6 +8682,54 @@ func NewListAllRevisionsRequest(server string, params *ListAllRevisionsParams) (
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15845,6 +15893,54 @@ func NewListExtendedRevisionsRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -15918,6 +16014,54 @@ func NewGetExtendedRevisionRequest(server string, spaceId openapi_types.UUID, un
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16217,6 +16361,54 @@ func NewListUnitEventsRequest(server string, spaceId openapi_types.UUID, unitId 
 
 		}
 
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -16229,7 +16421,7 @@ func NewListUnitEventsRequest(server string, spaceId openapi_types.UUID, unitId 
 }
 
 // NewGetUnitEventRequest generates requests for GetUnitEvent
-func NewGetUnitEventRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID) (*http.Request, error) {
+func NewGetUnitEventRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, params *GetUnitEventParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16266,6 +16458,60 @@ func NewGetUnitEventRequest(server string, spaceId openapi_types.UUID, unitId op
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -19757,6 +20003,54 @@ func NewListAllUnitEventsRequest(server string, params *ListAllUnitEventsParams)
 
 		}
 
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Orderby != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -21002,7 +21296,7 @@ type ClientWithResponsesInterface interface {
 	ListUnitEventsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListUnitEventsParams, reqEditors ...RequestEditorFn) (*ListUnitEventsResponse, error)
 
 	// GetUnitEventWithResponse request
-	GetUnitEventWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitEventResponse, error)
+	GetUnitEventWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, params *GetUnitEventParams, reqEditors ...RequestEditorFn) (*GetUnitEventResponse, error)
 
 	// ListViewsWithResponse request
 	ListViewsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListViewsParams, reqEditors ...RequestEditorFn) (*ListViewsResponse, error)
@@ -28147,8 +28441,8 @@ func (c *ClientWithResponses) ListUnitEventsWithResponse(ctx context.Context, sp
 }
 
 // GetUnitEventWithResponse request returning *GetUnitEventResponse
-func (c *ClientWithResponses) GetUnitEventWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitEventResponse, error) {
-	rsp, err := c.GetUnitEvent(ctx, spaceId, unitId, unitEventId, reqEditors...)
+func (c *ClientWithResponses) GetUnitEventWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, unitEventId openapi_types.UUID, params *GetUnitEventParams, reqEditors ...RequestEditorFn) (*GetUnitEventResponse, error) {
+	rsp, err := c.GetUnitEvent(ctx, spaceId, unitId, unitEventId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

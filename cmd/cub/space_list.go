@@ -116,17 +116,10 @@ var spaceCustomColumnDependencies = func() map[string][]string {
 
 func init() {
 	addStandardListFlags(spaceListCmd)
-	enableWebFlag(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
 }
 
 func spaceListCmdRun(cmd *cobra.Command, args []string) error {
-	if webFlag {
-		ctx := contextManager.ActiveContext()
-		url := cubapi.GetSpaceListURL(ctx.Coordinate.ServerURL)
-		return openWebUI(url)
-	}
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err

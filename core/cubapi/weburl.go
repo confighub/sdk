@@ -5,6 +5,7 @@ package cubapi
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -51,6 +52,54 @@ func GetTargetListURL(serverURL string) string {
 // GetWorkerListURL returns the web UI URL for the bridge workers list page
 func GetWorkerListURL(serverURL string) string {
 	return fmt.Sprintf("%s/bridge-workers", cleanServerURL(serverURL))
+}
+
+// GetComponentListURL returns the web UI URL for the component view with no
+// component selected, i.e. the component overview.
+func GetComponentListURL(serverURL string) string {
+	return fmt.Sprintf("%s/components", cleanServerURL(serverURL))
+}
+
+// GetComponentURL returns the web UI URL for a specific component. The component
+// is identified by the value of the well-known "Component" Space label, not by an
+// entity ID: a component is the set of spaces sharing that label.
+//
+// When spaceID is non-empty the UI additionally preselects that space's node in
+// the component's deployment graph.
+func GetComponentURL(serverURL, component, spaceID string) string {
+	query := url.Values{"app": []string{component}}
+	if spaceID != "" {
+		query.Set("space", spaceID)
+	}
+	return fmt.Sprintf("%s/components?%s", cleanServerURL(serverURL), query.Encode())
+}
+
+// WithOrganization adds the "org" query parameter to a web UI URL, naming the
+// organization the URL should be viewed in. Without it the UI renders whichever
+// organization the browser session last selected, which for anyone in more than
+// one org silently shows the wrong data — or nothing at all, since the spaces
+// and units in the path belong to a different org.
+//
+// externalOrgID must be the organization's ExternalID (the identity provider's
+// ID), not its ConfigHub OrganizationID: the UI compares it against the current
+// session's external org ID and hands it to /auth/switch-organization, which
+// verifies membership against the identity provider. An empty externalOrgID, or
+// a URL that already names an org, is left alone.
+func WithOrganization(webURL, externalOrgID string) string {
+	if externalOrgID == "" {
+		return webURL
+	}
+	parsed, err := url.Parse(webURL)
+	if err != nil {
+		return webURL
+	}
+	query := parsed.Query()
+	if query.Has("org") {
+		return webURL
+	}
+	query.Set("org", externalOrgID)
+	parsed.RawQuery = query.Encode()
+	return parsed.String()
 }
 
 // cleanServerURL removes trailing slashes from the server URL
