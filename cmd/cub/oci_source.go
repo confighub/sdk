@@ -120,10 +120,13 @@ func writeYAMLFromLayer(destDir string, index int, layer ocispec.Descriptor, blo
 		return writeYAMLFromTar(destDir, blob)
 	}
 
-	// A single, non-archived file. Use its title annotation if it names a YAML
-	// file; otherwise synthesize a name and let the parser skip non-manifests.
+	// A titled non-YAML layer is companion data, not a Kubernetes manifest.
+	// Leave it in the OCI artifact, but do not pass it to the YAML parser.
 	name := layer.Annotations[ocispec.AnnotationTitle]
-	if !isYAMLName(name) {
+	if name != "" && !isYAMLName(name) {
+		return 0, nil
+	}
+	if name == "" {
 		name = fmt.Sprintf("layer-%d.yaml", index)
 	}
 	if err := writeManifestFile(destDir, name, blob); err != nil {
