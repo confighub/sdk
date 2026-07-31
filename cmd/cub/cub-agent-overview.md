@@ -338,6 +338,29 @@ cub unit approve --space SPACE_SLUG UNIT_SLUG
 
 #### Kubernetes
 
+`cub k8s get` and `cub k8s types` read the Kubernetes resources inside Units — configuration,
+not live cluster state — using kubectl's names for resource types.
+
+```bash
+# Survey what resource types exist before querying them
+cub k8s types --space "*"
+
+# List resources of a type; "all" means every type except CustomResourceDefinition
+cub k8s get deploy --space SPACE_SLUG
+cub k8s get all --target SPACE_SLUG/TARGET_SLUG
+
+# Describe a resource, or print the YAML as stored
+cub k8s get deploy APP --space SPACE_SLUG --show detail
+cub k8s get deploy APP --space SPACE_SLUG --show data --quiet
+
+# Filter on resource content and on Unit metadata independently
+cub k8s get deploy --space "*" --where-resource "spec.replicas > 1" --where "Labels.Tier = 'Backend'"
+```
+
+Narrow with `--space`, `--target`, or `--where`: those bound how many Units are read, which
+is what determines how long a query takes. Naming a `--target` searches all spaces by default,
+since a target's Units usually live elsewhere.
+
 ```bash
 # Trace a live resource back to its ConfigHub Unit
 cub k8s source deployment APP --namespace NAMESPACE

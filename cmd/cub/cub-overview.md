@@ -391,17 +391,41 @@ Get the IDs of all units with more than one replica in a space:
 cub function vet --space $SPACE where-filter apps/v1/Deployment 'spec.replicas > 1' --quiet --show output -o jq='. as $e | .Output[] | select(.Passed == true) | {space: $e.SpaceSlug, unit: $e.UnitSlug}'
 ```
 
-Get all resource types in all units within a space:
-
-```
-cub function get --space $SPACE --quiet --show output -o jq='.Output[].ResourceType' get-resources
-```
-
 ### Kubernetes
 
-`cub k8s` commands talk to a Kubernetes cluster directly. The kubeconfig is loaded with the
-usual precedence (`--kubeconfig` flag, then `KUBECONFIG`, then `~/.kube/config`), and
-`--kube-context` selects the context.
+`cub k8s get` and `cub k8s types` read the Kubernetes resources held in Units, naming
+resource types the way kubectl does. They report configuration, not live cluster state.
+
+```
+# List resources of a type, in a space or across the fleet
+cub k8s get deploy --space $SPACE
+cub k8s get netpol --target prod-use2/prod-use2-oci
+cub k8s get deploy,sts --space "*"
+
+# Everything except CustomResourceDefinitions
+cub k8s get all --space $SPACE
+
+# Describe resources, like "kubectl describe"
+cub k8s get deploy my-app --space $SPACE --show detail
+
+# Print the stored YAML
+cub k8s get cm my-config --space $SPACE --show data --quiet
+
+# Which resource types exist, and how widely they are used
+cub k8s types --space "*"
+```
+
+Resource-level conditions go in `--where-resource`, Unit-level ones in `--where`; the two
+are independent and combine:
+
+```
+cub k8s get deploy --space "*" --where-resource "spec.replicas > 1" --where "Labels.Tier = 'Backend'"
+```
+
+`cub k8s source` and `cub k8s collect` are the other half of the group: they talk to a
+Kubernetes cluster directly. The kubeconfig is loaded with the usual precedence
+(`--kubeconfig` flag, then `KUBECONFIG`, then `~/.kube/config`), and `--kube-context`
+selects the context.
 
 ```
 # Trace a live resource back to its ConfigHub Unit

@@ -10,7 +10,12 @@ import (
 var k8sCmd = &cobra.Command{
 	Use:   "k8s",
 	Short: "Kubernetes commands",
-	Long:  getCommandHelp(`The k8s subcommands are used to interact with Kubernetes resources and trace them back to ConfigHub`, ""),
+	Long: getCommandHelp(`The k8s subcommands work with Kubernetes resources.
+
+"get" and "types" read the resources held in ConfigHub Units, naming resource types the way
+kubectl does; they show configuration, not live cluster state. "source" and "collect" reach
+out to a cluster, to trace a live resource back to its Unit and to record cluster facts on a
+Target.`, ""),
 }
 
 func init() {

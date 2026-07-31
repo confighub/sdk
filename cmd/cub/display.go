@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -29,7 +30,13 @@ func failOnError(err error) {
 }
 
 func tableView() *tablewriter.Table {
-	table := tablewriter.NewWriter(os.Stdout)
+	return tableViewTo(os.Stdout)
+}
+
+// tableViewTo is tableView writing somewhere other than stdout, for callers
+// that need the rendered table as text (e.g. to indent it).
+func tableViewTo(w io.Writer) *tablewriter.Table {
+	table := tablewriter.NewWriter(w)
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
