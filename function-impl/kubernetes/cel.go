@@ -17,10 +17,14 @@ import (
 	k8scel "k8s.io/apiserver/pkg/cel/library"
 )
 
-// k8sCELEnvOpts returns the additional CEL environment options that provide
+// K8sCELEnvOpts returns the additional CEL environment options that provide
 // Kubernetes-specific CEL libraries matching the admission policy environment.
 // This includes quantity(), url(), ip(), cidr(), regex(), and format() functions.
-func k8sCELEnvOpts() []cel.EnvOption {
+//
+// It is exported so that callers evaluating CEL against Kubernetes configuration
+// outside the function executor -- such as a server-side View column read from
+// stored JSON -- get the same environment the get-cel function provides.
+func K8sCELEnvOpts() []cel.EnvOption {
 	return []cel.EnvOption{
 		k8scel.Quantity(),
 		k8scel.URLs(),
@@ -36,7 +40,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 	reflector := jsonschema.Reflector{}
 	validationSchema, _ := reflector.Reflect(api.ValidationResultList{})
 	attributeSchema, _ := reflector.Reflect(api.AttributeValueList{})
-	k8sOpts := k8sCELEnvOpts()
+	k8sOpts := K8sCELEnvOpts()
 
 	// Override vet-cel with K8s CEL libraries
 	err := fh.RegisterFunction("vet-cel", nil)

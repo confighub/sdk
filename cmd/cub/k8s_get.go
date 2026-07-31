@@ -73,7 +73,10 @@ Examples:
   cub k8s get cm -n kube-system --space "*" --show data
 
   # Everything except CRDs in one unit
-  cub k8s get all --space my-space --where "Slug = 'my-unit'"
+  cub k8s get all --space my-space --where "Unit.Slug = 'my-unit'"
+
+  # Everything in the production spaces whose unit name ends in -backend
+  cub k8s get all --space "*" --where "Unit.Slug LIKE '%-backend' AND Space.Labels.Environment = 'prod'"
 
   # Deployments with more than one replica
   cub k8s get deploy --space "*" --where-resource "spec.replicas > 1"
@@ -88,11 +91,17 @@ Examples:
 
 Filtering combines four independent scopes, all ANDed:
 
-  --space / --target / --where   which Units to read
-  <type> / <name> / --namespace  which resources within those Units
-  --where-resource               any additional resource-level condition
+  --space / --target             where the resources live
+  <type> / <name> / --namespace  which resources
+  --where                        any condition on the resource or the entities
+                                 containing it, with a prefix: Unit.Slug,
+                                 Unit.Labels.App, Space.Labels.Environment,
+                                 Target.Slug
+  --where-resource               a condition on the resource's configuration,
+                                 e.g. "spec.replicas > 1"
 
-Units that contain no matching resource produce no output.`
+Both --where and --where-resource are evaluated by the server against the stored
+resources, so a fleet-wide sweep does not read every unit's configuration.`
 
 	agentContext := `Reads Kubernetes configuration across the fleet without cloning repos or listing units first.
 
@@ -149,7 +158,7 @@ func k8sGetCmdRun(_ *cobra.Command, args []string) error {
 	needUnits := k8sGetShow == k8sShowDetail || spec.Kind == OutputWide || isSerializedOutput()
 	var units map[uuid.UUID]*k8sUnit
 	if needUnits && len(resources) > 0 {
-		units, err = loadK8sUnits()
+		units, err = loadK8sUnits(resources)
 		if err != nil {
 			return err
 		}

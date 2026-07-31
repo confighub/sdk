@@ -916,6 +916,44 @@ type ExtendedRelease struct {
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
 }
 
+// ExtendedResource defines model for ExtendedResource.
+type ExtendedResource struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// RawData The resource's configuration in its original toolchain-native form, present only when requested with the raw_data query parameter.
+	RawData string `json:"RawData,omitempty" yaml:"RawData,omitempty"`
+
+	// Resource Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only.
+	Resource *Resource `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
+
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
+	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
+	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
+	// the underlying configuration / deployment tool. The resources must belong to a single
+	// infrastructure provider and the actuation mechanism must be able to resolve references and
+	// ordering dependencies among the resources within the document. For example, if one resource
+	// needs to be fully provisioned to provide input to another resource, then the actuation code is
+	// responsible for handling this. Revisions store historical copies of the configuration data.
+	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
+	// new variants of a configuration.
+	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
+
+	// View Defines an entity view.
+	View        *View        `json:"View,omitempty" yaml:"View,omitempty"`
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
+}
+
 // ExtendedRevision defines model for ExtendedRevision.
 type ExtendedRevision struct {
 	// ChangeSet Defines an entity changeset.
@@ -1328,7 +1366,7 @@ type FunctionInvocationsResponse struct {
 
 	// HasNewMutations Functions produced new mutations (of type other than None)
 	HasNewMutations bool                  `json:"HasNewMutations,omitempty" yaml:"HasNewMutations,omitempty"`
-	Mutations       *ResourceMutationList `json:"Mutations" yaml:"Mutations"`
+	Mutations       *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
 	// Mutators List of function invocation indices that resulted in mutations
 	Mutators []int `json:"Mutators" yaml:"Mutators"`
@@ -1757,6 +1795,9 @@ type Mutation struct {
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
+	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
@@ -2116,6 +2157,60 @@ type ReleasePublishRequest struct {
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 }
 
+// Resource Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only.
+type Resource struct {
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
+
+	// Data Configuration data of the resource, represented as JSON.
+	Data map[string]interface{} `json:"Data,omitempty" yaml:"Data,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// OrganizationID Unique identifier for an Organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// ResourceID Unique identifier for a Resource.
+	ResourceID openapi_types.UUID `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+
+	// ResourceIndex Distinguishes resources within a Unit that share a ResourceType and ResourceName, as AppConfig documents that declare no configHub.configName do. 0 when the name is unique within the Unit.
+	ResourceIndex int64 `json:"ResourceIndex,omitempty" yaml:"ResourceIndex,omitempty"`
+
+	// ResourceName Name of the resource; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>.
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceType Type of the resource; Kubernetes resources are represented in the form <apiVersion>/<kind>.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// TargetID Identifier of the Target the Unit containing this resource is associated with, which defines where the configuration will be applied. Mirrors the Unit's TargetID. (optional)
+	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+
+	// ToolchainType ToolchainType of the Unit the resource was extracted from.
+	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+
+	// UnitID Unique identifier for a Unit.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
 // ResourceInfo defines model for ResourceInfo.
 type ResourceInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
@@ -2302,7 +2397,7 @@ type Revision struct {
 
 	// LiveAt Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z".
 	LiveAt          time.Time             `json:"LiveAt,omitempty" yaml:"LiveAt,omitempty"`
-	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2330,6 +2425,9 @@ type Revision struct {
 
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
@@ -2884,7 +2982,7 @@ type Unit struct {
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy" yaml:"ApprovedBy"`
+	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
 
 	// BridgeState Additional state used by the Bridge; content is ProviderType-specific.
 	BridgeState string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
@@ -2926,7 +3024,7 @@ type Unit struct {
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
 	// FromLinkID IDs of Links originating from this Unit.
-	FromLinkID []UUID `json:"FromLinkID" yaml:"FromLinkID"`
+	FromLinkID []UUID `json:"FromLinkID,omitempty" yaml:"FromLinkID,omitempty"`
 
 	// HeadMutationNum Sequence number the head Mutation.
 	HeadMutationNum int64 `json:"HeadMutationNum,omitempty" yaml:"HeadMutationNum,omitempty"`
@@ -2957,7 +3055,7 @@ type Unit struct {
 
 	// LiveState The live state as of the most recent non-dry-run action; content is ProviderType-specific.
 	LiveState       string                `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
-	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
@@ -3179,6 +3277,9 @@ type UnitEvent struct {
 	// UnitID Unique identifier for a Unit.
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
+	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
 
@@ -3224,7 +3325,7 @@ type UnitPredicatesRequest struct {
 // UnitPredicatesResponse defines model for UnitPredicatesResponse.
 type UnitPredicatesResponse struct {
 	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
-	MutationSources *ResourceMutationList `json:"MutationSources" yaml:"MutationSources"`
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 }
 
 // UnitStatus defines model for UnitStatus.
@@ -6677,6 +6778,121 @@ type ListAllReleasesParams struct {
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
+// ListAllResourcesParams defines parameters for ListAllResources.
+type ListAllResourcesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Resources returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	//
+	// Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Resource list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Resource).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+
+	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
+	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
+	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
+}
+
 // ListAllRevisionsParams defines parameters for ListAllRevisions.
 type ListAllRevisionsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -9061,6 +9277,168 @@ type RefreshUnitParams struct {
 
 	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
 	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
+}
+
+// ListExtendedResourcesParams defines parameters for ListExtendedResources.
+type ListExtendedResourcesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Resources returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	//
+	// Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Resource list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Resource).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+
+	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
+	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
+	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
+}
+
+// GetExtendedResourceParams defines parameters for GetExtendedResource.
+type GetExtendedResourceParams struct {
+	// Include Include clause for expanding related entities in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Resource.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	//
+	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	//
+	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+
+	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
+	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
+	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 }
 
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.

@@ -334,6 +334,13 @@ func (f *resourceTypeFilter) whereResourceExpression() string {
 	return "ConfigHub.ResourceType ~* '^(" + strings.Join(alternatives, "|") + ")$'"
 }
 
+// resourceWhereExpression is whereResourceExpression written against the Resource entity, whose
+// ResourceType is a column rather than the ConfigHub.ResourceType path of a WhereResource clause.
+// The regular expression is identical; only the operand it applies to differs.
+func (f *resourceTypeFilter) resourceWhereExpression() string {
+	return strings.TrimPrefix(f.whereResourceExpression(), "ConfigHub.")
+}
+
 // pattern renders one selector as a regular-expression alternative, without
 // anchors.
 func (s resourceSelector) pattern() string {

@@ -18,6 +18,7 @@ export const addTagTypes = [
   'Organization',
   'OrganizationMember',
   'Release',
+  'Resource',
   'Revision',
   'BridgeWorkerStatus',
   'Tag',
@@ -707,6 +708,24 @@ const injectedRtkApi = api
           },
         }),
         providesTags: ['Release'],
+      }),
+      listAllResources: build.query<ListAllResourcesApiResponse, ListAllResourcesApiArg>({
+        query: (queryArg) => ({
+          url: `/resource`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
+            view: queryArg.view,
+            raw_data: queryArg.rawData,
+          },
+        }),
+        providesTags: ['Resource'],
       }),
       listAllRevisions: build.query<ListAllRevisionsApiResponse, ListAllRevisionsApiArg>({
         query: (queryArg) => ({
@@ -1662,6 +1681,45 @@ const injectedRtkApi = api
           },
         }),
         invalidatesTags: ['Unit'],
+      }),
+      listExtendedResources: build.query<
+        ListExtendedResourcesApiResponse,
+        ListExtendedResourcesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/resource`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
+            view: queryArg.view,
+            raw_data: queryArg.rawData,
+          },
+        }),
+        providesTags: ['Resource'],
+      }),
+      getExtendedResource: build.query<
+        GetExtendedResourceApiResponse,
+        GetExtendedResourceApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/resource/${queryArg.resourceId}`,
+          params: {
+            include: queryArg.include,
+            select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            orderby: queryArg.orderby,
+            view: queryArg.view,
+            raw_data: queryArg.rawData,
+          },
+        }),
+        providesTags: ['Resource'],
       }),
       listExtendedRevisions: build.query<
         ListExtendedRevisionsApiResponse,
@@ -5488,6 +5546,111 @@ export type ListAllReleasesApiArg = {
     The whole string must be query-encoded. */
   select?: string;
 };
+export type ListAllResourcesApiResponse = /** status 200 OK */ ExtendedResourceRead[];
+export type ListAllResourcesApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Resources returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+    
+    Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Resource list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Resource).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
+  /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
+  view?: string;
+  /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
+  rawData?: boolean;
+};
 export type ListAllRevisionsApiResponse = /** status 200 OK */ ExtendedRevisionRead[];
 export type ListAllRevisionsApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -8278,6 +8441,161 @@ export type RefreshUnitApiArg = {
   dryRun?: boolean;
   /** Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used. */
   driftMode?: string;
+};
+export type ListExtendedResourcesApiResponse = /** status 200 OK */ ExtendedResourceRead[];
+export type ListExtendedResourcesApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  /** The specified string is an expression for the purpose of filtering
+    the list of Resources returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+    
+    Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Resource list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Resource).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
+  /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
+  view?: string;
+  /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
+  rawData?: boolean;
+};
+export type GetExtendedResourceApiResponse = /** status 200 OK */ ExtendedResourceRead;
+export type GetExtendedResourceApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  /** Include clause for expanding related entities in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Resource.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  limit?: number;
+  /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    
+    Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+    
+    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderby?: string;
+  /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
+  view?: string;
+  /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
+  rawData?: boolean;
+  /** Unique identifier for a resource_id */
+  resourceId: string;
 };
 export type ListExtendedRevisionsApiResponse = /** status 200 OK */ ExtendedRevisionRead[];
 export type ListExtendedRevisionsApiArg = {
@@ -12842,7 +13160,7 @@ export type ResourceMutation = {
   Resource?: ResourceInfo;
   ResourceMutationInfo?: MutationInfo;
 };
-export type ResourceMutationList = ResourceMutation[] | null;
+export type ResourceMutationList = ResourceMutation[];
 export type FunctionInvocationsResponse = {
   /** The resulting configuration data, potentially mutated */
   ConfigData?: string;
@@ -13183,7 +13501,7 @@ export type UnitRead = {
     [key: string]: boolean;
   };
   /** The users that have approved the latest revision of the config data for the Unit. */
-  ApprovedBy?: Uuid[] | null;
+  ApprovedBy?: Uuid[];
   /** Additional state used by the Bridge; content is ProviderType-specific. */
   BridgeState?: string;
   /** ID of the BridgeWorker from the Target assigned to this Unit. */
@@ -13215,7 +13533,7 @@ export type UnitRead = {
   /** The type of entity. */
   EntityType?: string;
   /** IDs of Links originating from this Unit. */
-  FromLinkID?: Uuid[] | null;
+  FromLinkID?: Uuid[];
   /** Sequence number the head Mutation. */
   HeadMutationNum?: number;
   /** Sequence number the head Revision. */
@@ -13607,177 +13925,65 @@ export type ExtendedReleaseRead = {
   Space?: SpaceRead;
   Tag?: TagRead;
 };
-export type Revision = {
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
-  ApplyGates?: {
-    [key: string]: boolean;
-  };
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
-  ApplyWarnings?: {
-    [key: string]: boolean;
-  };
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
-  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
-  ChangeSetID?: string;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
-  DataHash?: string;
-  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
-  Description?: string;
-  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
-  LiveAt?: string;
-  MutationSources?: ResourceMutationList;
+export type Resource = {
+  /** Configuration data of the resource, represented as JSON. */
+  Data?: object;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
-  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
-  Releases?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Revision. */
-  RevisionID?: string;
-  /** Sequence number for a Revision. */
-  RevisionNum?: number;
-  /** ConfigHub operation that created this revision. */
-  Source?: string;
+  /** Unique identifier for a Resource. */
+  ResourceID?: string;
+  /** Distinguishes resources within a Unit that share a ResourceType and ResourceName, as AppConfig documents that declare no configHub.configName do. 0 when the name is unique within the Unit. */
+  ResourceIndex?: number;
+  /** Name of the resource; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>. */
+  ResourceName?: string;
+  /** Type of the resource; Kubernetes resources are represented in the form <apiVersion>/<kind>. */
+  ResourceType?: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
-  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
-  Tags?: {
-    [key: string]: string;
-  };
+  /** Identifier of the Target the Unit containing this resource is associated with, which defines where the configuration will be applied. Mirrors the Unit's TargetID. (optional) */
+  TargetID?: string;
+  /** ToolchainType of the Unit the resource was extracted from. */
+  ToolchainType?: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
-  /** User-Agent string if created by an API call. Optional. */
-  UserAgent?: string;
-  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
-  UserID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
-export type RevisionRead = {
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
-  ApplyGates?: {
-    [key: string]: boolean;
-  };
-  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
-  ApplyWarnings?: {
-    [key: string]: boolean;
-  };
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
-  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
-  ChangeSetID?: string;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
+export type ResourceRead = {
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
   CursorID?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
-  DataHash?: string;
-  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
-  Description?: string;
+  /** Configuration data of the resource, represented as JSON. */
+  Data?: object;
   /** The type of entity. */
   EntityType?: string;
-  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
-  LiveAt?: string;
-  MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
-  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
-  Releases?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for a Revision. */
-  RevisionID?: string;
-  /** Sequence number for a Revision. */
-  RevisionNum?: number;
-  /** ConfigHub operation that created this revision. */
-  Source?: string;
+  /** Unique identifier for a Resource. */
+  ResourceID?: string;
+  /** Distinguishes resources within a Unit that share a ResourceType and ResourceName, as AppConfig documents that declare no configHub.configName do. 0 when the name is unique within the Unit. */
+  ResourceIndex?: number;
+  /** Name of the resource; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>. */
+  ResourceName?: string;
+  /** Type of the resource; Kubernetes resources are represented in the form <apiVersion>/<kind>. */
+  ResourceType?: string;
   /** Unique identifier for a space. */
   SpaceID?: string;
   /** Slug of the Space this entity belongs to. (readonly) */
   SpaceSlug?: string;
-  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
-  Tags?: {
-    [key: string]: string;
-  };
+  /** Identifier of the Target the Unit containing this resource is associated with, which defines where the configuration will be applied. Mirrors the Unit's TargetID. (optional) */
+  TargetID?: string;
+  /** ToolchainType of the Unit the resource was extracted from. */
+  ToolchainType?: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
+  /** Slug of the Unit this entity belongs to. (readonly) */
+  UnitSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
-  /** User-Agent string if created by an API call. Optional. */
-  UserAgent?: string;
-  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
-  UserID?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
-};
-export type User = {
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Unique identifier for the External Identity Provider record matching this User. */
-  ExternalID?: string;
-  /** The URL to get the profile avatar picture of the User. */
-  ProfilePictureURL?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a User. */
-  UserID?: string;
-  /** Unique username for a User. Must be unique for all of Confighub. */
-  Username?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type UserRead = {
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Unique identifier for the External Identity Provider record matching this User. */
-  ExternalID?: string;
-  /** The URL to get the profile avatar picture of the User. */
-  ProfilePictureURL?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** Unique identifier for a User. */
-  UserID?: string;
-  /** Unique username for a User. Must be unique for all of Confighub. */
-  Username?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type ExtendedRevision = {
-  ChangeSet?: ChangeSet;
-  Error?: ResponseError;
-  Organization?: Organization;
-  Revision?: Revision;
-  Space?: Space;
-  Tags?: Tag[];
-  Unit?: Unit;
-  User?: User;
-};
-export type ExtendedRevisionRead = {
-  ChangeSet?: ChangeSetRead;
-  Error?: ResponseError;
-  Organization?: OrganizationRead;
-  Revision?: RevisionRead;
-  Space?: SpaceRead;
-  Tags?: TagRead[];
-  Unit?: UnitRead;
-  User?: UserRead;
 };
 export type TargetConfigType = {
   /** Configuration toolchain and format of the LiveState for this bridge; required in order to invoke functions on LiveState */
@@ -13984,6 +14190,312 @@ export type TargetRead = {
     
     The whole string must be query-encoded. */
   WhereTrigger?: string;
+};
+export type AttributeSelector = {
+  Path?: string;
+  WhereResource?: string;
+};
+export type ColumnSource = {
+  DataExpression?: string;
+  DataPath?: AttributeSelector;
+  MetadataAttribute?: string;
+  MetadataExpression?: string;
+};
+export type Column = {
+  ColumnSource?: ColumnSource;
+  ColumnType?: string;
+  DataType?: string;
+  GroupBy?: boolean;
+  Name: string;
+  OrderByDirection?: string;
+};
+export type View = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Columns to display, in order. (optional) */
+  Columns?: Column[];
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
+  FilterID?: string;
+  /** Column to group by (optional). */
+  GroupBy?: string;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional) */
+  Of?: string;
+  /** Column to sort by. (optional) */
+  OrderBy?: string;
+  /** Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional) */
+  OrderByDirection?: string;
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+  /** ViewID uniquely identifies a view within the system. */
+  ViewID?: string;
+};
+export type ViewRead = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** Columns to display, in order. (optional) */
+  Columns?: Column[];
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
+  FilterID?: string;
+  /** Column to group by (optional). */
+  GroupBy?: string;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional) */
+  Of?: string;
+  /** Column to sort by. (optional) */
+  OrderBy?: string;
+  /** Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional) */
+  OrderByDirection?: string;
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+  /** ViewID uniquely identifies a view within the system. */
+  ViewID?: string;
+};
+export type ViewColumn = {
+  Name?: string;
+  Value?: string;
+};
+export type ExtendedResource = {
+  Error?: ResponseError;
+  Organization?: Organization;
+  /** The resource's configuration in its original toolchain-native form, present only when requested with the raw_data query parameter. */
+  RawData?: string;
+  Resource?: Resource;
+  Space?: Space;
+  Target?: Target;
+  Unit?: Unit;
+  View?: View;
+  ViewColumns?: ViewColumn[];
+};
+export type ExtendedResourceRead = {
+  Error?: ResponseError;
+  Organization?: OrganizationRead;
+  /** The resource's configuration in its original toolchain-native form, present only when requested with the raw_data query parameter. */
+  RawData?: string;
+  Resource?: ResourceRead;
+  Space?: SpaceRead;
+  Target?: TargetRead;
+  Unit?: UnitRead;
+  View?: ViewRead;
+  ViewColumns?: ViewColumn[];
+};
+export type Revision = {
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
+  ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
+    [key: string]: boolean;
+  };
+  /** the users that have approved the latest version of the config data for the Unit. */
+  ApprovedBy?: Uuid[];
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
+  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
+  ContentHash?: number;
+  /** The full configuration data for this unit at this revision. */
+  Data?: string;
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  DataHash?: string;
+  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
+  Description?: string;
+  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
+  LiveAt?: string;
+  MutationSources?: ResourceMutationList;
+  /** Unique identifier for an Organization. */
+  OrganizationID?: string;
+  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
+  Releases?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Revision. */
+  RevisionID?: string;
+  /** Sequence number for a Revision. */
+  RevisionNum?: number;
+  /** ConfigHub operation that created this revision. */
+  Source?: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
+  Tags?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Unit. */
+  UnitID?: string;
+  /** User-Agent string if created by an API call. Optional. */
+  UserAgent?: string;
+  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type RevisionRead = {
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Apply operations. */
+  ApplyGates?: {
+    [key: string]: boolean;
+  };
+  /** A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers with Warn=true invoking validating functions that did not pass on the configuration data at this Revision. These do not block Apply operations. */
+  ApplyWarnings?: {
+    [key: string]: boolean;
+  };
+  /** the users that have approved the latest version of the config data for the Unit. */
+  ApprovedBy?: Uuid[];
+  /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
+  ChangeSetID?: string;
+  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
+  ContentHash?: number;
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** The full configuration data for this unit at this revision. */
+  Data?: string;
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  DataHash?: string;
+  /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
+  Description?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
+  LiveAt?: string;
+  MutationSources?: ResourceMutationList;
+  /** Unique identifier for an Organization. */
+  OrganizationID?: string;
+  /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
+  Releases?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Revision. */
+  RevisionID?: string;
+  /** Sequence number for a Revision. */
+  RevisionNum?: number;
+  /** ConfigHub operation that created this revision. */
+  Source?: string;
+  /** Unique identifier for a space. */
+  SpaceID?: string;
+  /** Slug of the Space this entity belongs to. (readonly) */
+  SpaceSlug?: string;
+  /** A set (map) of TagIDs of any Tags applied to this Revision. The string values have no particular meaning for now. */
+  Tags?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for a Unit. */
+  UnitID?: string;
+  /** Slug of the Unit this entity belongs to. (readonly) */
+  UnitSlug?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** User-Agent string if created by an API call. Optional. */
+  UserAgent?: string;
+  /** UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000". */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type User = {
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Unique identifier for the External Identity Provider record matching this User. */
+  ExternalID?: string;
+  /** The URL to get the profile avatar picture of the User. */
+  ProfilePictureURL?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** Unique identifier for a User. */
+  UserID?: string;
+  /** Unique username for a User. Must be unique for all of Confighub. */
+  Username?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type UserRead = {
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An auto-incrementing sequence number used for pagination. */
+  CursorID?: number;
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Unique identifier for the External Identity Provider record matching this User. */
+  ExternalID?: string;
+  /** The URL to get the profile avatar picture of the User. */
+  ProfilePictureURL?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** Unique identifier for a User. */
+  UserID?: string;
+  /** Unique username for a User. Must be unique for all of Confighub. */
+  Username?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type ExtendedRevision = {
+  ChangeSet?: ChangeSet;
+  Error?: ResponseError;
+  Organization?: Organization;
+  Revision?: Revision;
+  Space?: Space;
+  Tags?: Tag[];
+  Unit?: Unit;
+  User?: User;
+};
+export type ExtendedRevisionRead = {
+  ChangeSet?: ChangeSetRead;
+  Error?: ResponseError;
+  Organization?: OrganizationRead;
+  Revision?: RevisionRead;
+  Space?: SpaceRead;
+  Tags?: TagRead[];
+  Unit?: UnitRead;
+  User?: UserRead;
 };
 export type Trigger = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -14355,6 +14867,8 @@ export type MutationRead = {
   TriggerID?: string;
   /** Unique identifier for a Unit. */
   UnitID?: string;
+  /** Slug of the Unit this entity belongs to. (readonly) */
+  UnitSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** Sequence number of the upstream revision the unit was upgraded from, if the change was due to an upgrade operation. */
@@ -14417,6 +14931,8 @@ export type UnitEventRead = {
   UnitEventNum?: number;
   /** Unique identifier for a Unit. */
   UnitID?: string;
+  /** Slug of the Unit this entity belongs to. (readonly) */
+  UnitSlug?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -14447,114 +14963,6 @@ export type UnitStatus = {
   ResourceStatusSummary?: ResourceStatusSummary;
   Status?: string;
   SyncStatus?: string;
-};
-export type AttributeSelector = {
-  Path?: string;
-  WhereResource?: string;
-};
-export type ColumnSource = {
-  DataExpression?: string;
-  DataPath?: AttributeSelector;
-  MetadataAttribute?: string;
-  MetadataExpression?: string;
-};
-export type Column = {
-  ColumnSource?: ColumnSource;
-  ColumnType?: string;
-  DataType?: string;
-  GroupBy?: boolean;
-  Name: string;
-  OrderByDirection?: string;
-};
-export type View = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Columns to display, in order. (optional) */
-  Columns?: Column[];
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
-  FilterID?: string;
-  /** Column to group by (optional). */
-  GroupBy?: string;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional) */
-  Of?: string;
-  /** Column to sort by. (optional) */
-  OrderBy?: string;
-  /** Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional) */
-  OrderByDirection?: string;
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-  /** ViewID uniquely identifies a view within the system. */
-  ViewID?: string;
-};
-export type ViewRead = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** Columns to display, in order. (optional) */
-  Columns?: Column[];
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** FilterID identifies a filter. At least one of FilterID or Of must be specified. (optional) */
-  FilterID?: string;
-  /** Column to group by (optional). */
-  GroupBy?: string;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional) */
-  Of?: string;
-  /** Column to sort by. (optional) */
-  OrderBy?: string;
-  /** Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional) */
-  OrderByDirection?: string;
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** Unique identifier for a space. */
-  SpaceID?: string;
-  /** Slug of the Space this entity belongs to. (readonly) */
-  SpaceSlug?: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-  /** ViewID uniquely identifies a view within the system. */
-  ViewID?: string;
-};
-export type ViewColumn = {
-  Name?: string;
-  Value?: string;
 };
 export type ExtendedUnit = {
   /** the users that have approved the latest revision of the config data. */
@@ -14911,6 +15319,8 @@ export const {
   useLazyGetOrganizationMemberQuery,
   useListAllReleasesQuery,
   useLazyListAllReleasesQuery,
+  useListAllResourcesQuery,
+  useLazyListAllResourcesQuery,
   useListAllRevisionsQuery,
   useLazyListAllRevisionsQuery,
   useListSpacesQuery,
@@ -15035,6 +15445,10 @@ export const {
   useLazyGetExtendedMutationQuery,
   useSetUnitPredicatesMutation,
   useRefreshUnitMutation,
+  useListExtendedResourcesQuery,
+  useLazyListExtendedResourcesQuery,
+  useGetExtendedResourceQuery,
+  useLazyGetExtendedResourceQuery,
   useListExtendedRevisionsQuery,
   useLazyListExtendedRevisionsQuery,
   useGetExtendedRevisionQuery,

@@ -328,6 +328,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedRevision |
 		goclientnew.Mutation |
 		goclientnew.ExtendedMutation |
+		goclientnew.Resource |
+		goclientnew.ExtendedResource |
 		goclientnew.Space |
 		goclientnew.ExtendedSpace |
 		goclientnew.Target |

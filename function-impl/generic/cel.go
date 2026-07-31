@@ -281,7 +281,7 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 // parseCELValidationResult converts a CEL result value to a ValidationResult.
 // Accepts bool or map with "passed", "details", "failed_attributes" keys.
 func parseCELValidationResult(val ref.Val, resourceInfo *api.ResourceInfo) api.ValidationResult {
-	goVal := celToGo(val)
+	goVal := CelToGo(val)
 
 	// If bool, simple pass/fail
 	if b, ok := goVal.(bool); ok {
@@ -452,8 +452,10 @@ func GenericFnGetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 	return parsedData, output.(api.AttributeValueList), nil
 }
 
-// celToGo deeply converts a CEL ref.Val to plain Go types.
-func celToGo(val ref.Val) any {
+// CelToGo deeply converts a CEL ref.Val to plain Go types, so that a result can be marshaled or
+// type-switched without dealing in ref.Val. Exported for callers evaluating CEL outside the
+// function executor, such as a server-side View column read from stored JSON.
+func CelToGo(val ref.Val) any {
 	if val == nil {
 		return nil
 	}
@@ -495,7 +497,7 @@ func celNativeToGo(v any) any {
 
 // parseCELAttributeValueList converts a CEL list of maps to an AttributeValueList.
 func parseCELAttributeValueList(val ref.Val) (api.AttributeValueList, error) {
-	goVal := celToGo(val)
+	goVal := CelToGo(val)
 	list, ok := goVal.([]any)
 	if !ok {
 		return nil, fmt.Errorf("CEL expression must return a list, got %T", goVal)
@@ -596,7 +598,7 @@ func GenericFnSetCEL(resourceProvider yamlkit.ResourceProvider, functionContext 
 				return output, []error{fmt.Errorf("CEL evaluation error on resource %d: %v", index, err)}
 			}
 
-			goVal := celToGo(val)
+			goVal := CelToGo(val)
 			if goVal == nil {
 				return output, []error{fmt.Errorf("CEL expression returned nil for resource %d", index)}
 			}

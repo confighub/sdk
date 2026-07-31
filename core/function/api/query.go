@@ -317,8 +317,10 @@ func ValidateInClauseValues(literal string, dataType DataType) error {
 	var want *regexp.Regexp
 	var kind string
 	switch dataType {
-	case DataTypeString, DataTypeUUID, DataTypeTime, DataTypeStringMap, DataTypeUUIDStringMap:
+	case DataTypeString, DataTypeUUID, DataTypeTime, DataTypeStringMap, DataTypeUUIDStringMap, DataTypeJSON:
 		// Quoted token whose interior has no quote/backslash, so it cannot escape the '...'.
+		// A JSON value at a path is compared in its text form, so its IN list is quoted too:
+		// `Data.spec.replicas IN ('1', '2')`.
 		want, kind = inClauseStringTokenRegexp, "string"
 	case DataTypeInt:
 		want, kind = inClauseIntValueRegexp, "integer"

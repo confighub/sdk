@@ -7737,6 +7737,216 @@ paths:
       summary: List of Releases across spaces
       tags:
       - Release
+  /resource:
+    get:
+      description: Retrieves a list of Resources of Units across spaces in the Organization
+      operationId: ListAllResources
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Resources returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+
+          Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Resource list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Resource).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Resource entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Resource entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
+      - description: UUID of a View whose columns to extract for each resource, returned
+          as ViewColumns. DataPath columns are read from the stored JSON rather than
+          by invoking a function.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      - description: 'Return each resource''s configuration in its original toolchain-native
+          form, as RawData on the response envelope. Off by default: the bodies are
+          bulk, and a table view needs only the queryable Data projection.'
+        in: query
+        name: raw_data
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedResource'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Resource request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Resource not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Resource.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of Resources across spaces
+      tags:
+      - Resource
   /revision:
     get:
       description: Retrieves a list of Revisions across spaces in the Organization,
@@ -17710,6 +17920,379 @@ paths:
       summary: Refresh a unit configuration
       tags:
       - Unit
+  /space/{space_id}/unit/{unit_id}/resource:
+    get:
+      description: List ExtendedResources
+      operationId: ListExtendedResources
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Resources returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+
+          Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Resource list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Resource).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Resource include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Resource entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Resource entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
+      - description: UUID of a View whose columns to extract for each resource, returned
+          as ViewColumns. DataPath columns are read from the stored JSON rather than
+          by invoking a function.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      - description: 'Return each resource''s configuration in its original toolchain-native
+          form, as RawData on the response envelope. Off by default: the bodies are
+          bulk, and a table view needs only the queryable Data projection.'
+        in: query
+        name: raw_data
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedResource'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedResource request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedResource not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedResource.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ExtendedResources
+      tags:
+      - Resource
+  /space/{space_id}/unit/{unit_id}/resource/{resource_id}:
+    get:
+      description: Get ExtendedResource
+      operationId: GetExtendedResource
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Resource.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Resource entities to return. If not specified,
+          all matching entities are returned.
+        in: query
+        name: limit
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: Number of Resource entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+
+          Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+
+          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: orderby
+        required: false
+        schema:
+          type: string
+      - description: UUID of a View whose columns to extract for each resource, returned
+          as ViewColumns. DataPath columns are read from the stored JSON rather than
+          by invoking a function.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      - description: 'Return each resource''s configuration in its original toolchain-native
+          form, as RawData on the response envelope. Off by default: the bodies are
+          bulk, and a table view needs only the queryable Data projection.'
+        in: query
+        name: raw_data
+        required: false
+        schema:
+          type: boolean
+      - description: Unique identifier for a resource_id
+        in: path
+        name: resource_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedResource'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedResource request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedResource not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedResource.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ExtendedResource
+      tags:
+      - Resource
   /space/{space_id}/unit/{unit_id}/revision:
     get:
       description: List ExtendedRevisions
@@ -26439,6 +27022,34 @@ components:
         Tag:
           $ref: '#/components/schemas/Tag'
       type: object
+    ExtendedResource:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        RawData:
+          description: The resource's configuration in its original toolchain-native
+            form, present only when requested with the raw_data query parameter.
+          format: base64
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/Resource'
+        Space:
+          $ref: '#/components/schemas/Space'
+        Target:
+          $ref: '#/components/schemas/Target'
+        Unit:
+          $ref: '#/components/schemas/Unit'
+        View:
+          $ref: '#/components/schemas/View'
+        ViewColumns:
+          items:
+            $ref: '#/components/schemas/ViewColumn'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
     ExtendedRevision:
       properties:
         ChangeSet:
@@ -27777,6 +28388,11 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: Slug of the Unit this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         UpdatedAt:
           description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
             format.
@@ -28450,6 +29066,111 @@ components:
           format: uuid
           type: string
       type: object
+    Resource:
+      description: Resource is a configuration element extracted from a Unit's configuration
+        data. Resources are maintained automatically as Units change and are read-only.
+      properties:
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CursorID:
+          description: An auto-incrementing sequence number used for pagination.
+          format: int64
+          readOnly: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Data:
+          description: Configuration data of the resource, represented as JSON.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an Organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceID:
+          description: Unique identifier for a Resource.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceIndex:
+          description: Distinguishes resources within a Unit that share a ResourceType
+            and ResourceName, as AppConfig documents that declare no configHub.configName
+            do. 0 when the name is unique within the Unit.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: Name of the resource; Kubernetes resources are represented
+            in the form <metadata.namespace>/<metadata.name>.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: Type of the resource; Kubernetes resources are represented
+            in the form <apiVersion>/<kind>.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier for a space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TargetID:
+          description: Identifier of the Target the Unit containing this resource
+            is associated with, which defines where the configuration will be applied.
+            Mirrors the Unit's TargetID. (optional)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        ToolchainType:
+          description: ToolchainType of the Unit the resource was extracted from.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier for a Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: Slug of the Unit this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
     ResourceInfo:
       properties:
         ResourceCategory:
@@ -28549,7 +29270,6 @@ components:
     ResourceMutationList:
       items:
         $ref: '#/components/schemas/ResourceMutation'
-      nullable: true
       type: array
     ResourcePredicates:
       properties:
@@ -28835,6 +29555,11 @@ components:
           description: Unique identifier for a Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: Slug of the Unit this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -29812,7 +30537,6 @@ components:
             data for the Unit.
           items:
             $ref: '#/components/schemas/UUID'
-          nullable: true
           readOnly: true
           type: array
           x-go-type-skip-optional-pointer: true
@@ -29907,7 +30631,6 @@ components:
           description: IDs of Links originating from this Unit.
           items:
             $ref: '#/components/schemas/UUID'
-          nullable: true
           readOnly: true
           type: array
           x-go-type-skip-optional-pointer: true
@@ -30412,6 +31135,11 @@ components:
           description: Unique identifier for a Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: Slug of the Unit this entity belongs to. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
