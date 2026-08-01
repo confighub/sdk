@@ -31307,7 +31307,7 @@
           },
           "TransformInvocationID": {
             "type": "string",
-            "description": "Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is upserted into the downstream Unit. Only valid when UpdateType is Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must match the downstream Unit's toolchain (currently only Kubernetes/YAML / YAML output).",
+            "description": "Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is inserted into or upserted into the downstream Unit. Only valid when UpdateType is Insert or Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must be YAML. For Upsert the output must also match the downstream Unit's toolchain, which currently limits it to Kubernetes/YAML.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },

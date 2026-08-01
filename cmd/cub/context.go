@@ -7,12 +7,15 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
 
 	"github.com/confighub/sdk/core/cubapi"
 	cubbyname "github.com/confighub/sdk/core/cubbyname"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
 
@@ -200,6 +203,40 @@ func (cm *ContextManager) SaveTokenData(ctx *Context, token *TokenData) error {
 // DeleteTokenData deletes the token data for a context.
 func (cm *ContextManager) DeleteTokenData(ctx *Context) error {
 	return cm.store.DeleteTokenData(ctx)
+}
+
+// --- endpoints the server advertises for a context's server URL ---
+
+// ociServerURLFromApiInfo builds the OCI registry URL for a server from what it
+// advertises at /api/info. The scheme is taken from the API's own URL: the
+// response carries a host and a port but nothing that says whether the registry
+// speaks TLS, and an http API fronts a plaintext registry. The port is omitted
+// when it is the scheme's default, so the result matches what a puller would
+// write by hand.
+//
+// The result is empty when the server advertises no OCI host — an older server,
+// or one running with the registry disabled — so callers get nothing rather than
+// an endpoint that never answers.
+func ociServerURLFromApiInfo(serverURL string, apiInfo *goclientnew.ApiInfo) string {
+	if apiInfo == nil || apiInfo.OCIHost == "" {
+		return ""
+	}
+	scheme := "https"
+	// Anything else (including a bare "host:port", which parses as an opaque URL
+	// with the host as its scheme) is not something to propagate.
+	if u, err := url.Parse(serverURL); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+		scheme = u.Scheme
+	}
+	host := apiInfo.OCIHost
+	if port := apiInfo.OCIPort; port != "" && !isDefaultPort(scheme, port) {
+		host = net.JoinHostPort(host, port)
+	}
+	return scheme + "://" + host
+}
+
+// isDefaultPort reports whether port is the one a client assumes for scheme.
+func isDefaultPort(scheme, port string) bool {
+	return (scheme == "https" && port == "443") || (scheme == "http" && port == "80")
 }
 
 // --- friendly context-name generation (cub UX, not part of the on-disk format) ---

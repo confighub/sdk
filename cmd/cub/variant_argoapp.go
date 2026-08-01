@@ -88,10 +88,14 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 		}
 	}
 
-	// OCI endpoint as Argo (in-cluster) reaches it: loopback rewritten to
-	// host.docker.internal for a local kind cluster, the public oci.<host>:443
-	// otherwise. The bundle is served at /space/<variant-space-slug>.
-	ociURLForArgo, err := clusterOCIEndpointFromContainer(clusterServerURL())
+	// OCI endpoint as Argo (in-cluster) reaches it: the registry the server
+	// advertises, with loopback rewritten to host.docker.internal for a local
+	// kind cluster. The bundle is served at /space/<variant-space-slug>.
+	ociServerURL, err := clusterOCIServerURL()
+	if err != nil {
+		return false, err
+	}
+	ociURLForArgo, err := clusterOCIEndpointFromContainer(ociServerURL, clusterServerURL())
 	if err != nil {
 		return false, err
 	}

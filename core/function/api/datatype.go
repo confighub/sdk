@@ -94,6 +94,21 @@ func DataTypeIsSerializedAsString(dataType DataType) bool {
 	return true
 }
 
+// DataTypeIsConfigFormat reports whether dataType names a configuration
+// serialization format rather than a scalar or a structured API type. A value of
+// one of these types is a whole document (a sub-tree of configuration data), not
+// a scalar. Configuration data is converted to YAML before functions see it, so
+// a value of any of these types is carried as YAML text regardless of the native
+// format it came from.
+func DataTypeIsConfigFormat(dataType DataType) bool {
+	switch dataType {
+	case DataTypeJSON, DataTypeYAML, DataTypeProperties, DataTypeTOML,
+		DataTypeINI, DataTypeEnv, DataTypeText, DataTypeHCL:
+		return true
+	}
+	return false
+}
+
 // ParseStringArrayCSV parses a DataTypeStringArray argument value serialized as
 // a comma-separated string into a []string. Whitespace around each element is
 // trimmed and empty elements are dropped. A nil value or empty string returns

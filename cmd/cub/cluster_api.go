@@ -40,6 +40,21 @@ func clusterServerURL() string {
 	return strings.TrimRight(contextManager.ActiveContext().Coordinate.ServerURL, "/")
 }
 
+// clusterOCIServerURL asks the server where its OCI registry is, returning ""
+// when it advertises none (an older server, or one running without a registry).
+// This is a live request rather than something read from the context: only the
+// server knows, and the answer can change under a deployment without the local
+// context having any reason to notice. See clusterOCIEndpoint for how it is used
+// and what happens when the answer is empty.
+func clusterOCIServerURL() (string, error) {
+	coordinate := contextManager.ActiveContext().Coordinate
+	apiInfo, err := getApiInfo(coordinate)
+	if err != nil {
+		return "", fmt.Errorf("failed to get API info: %w", err)
+	}
+	return strings.TrimRight(ociServerURLFromApiInfo(coordinate.ServerURL, apiInfo), "/"), nil
+}
+
 // clusterNewPrefix mirrors `cub space new-prefix`: generate a random name that
 // is not a prefix of any existing space slug. Returns after up to 1000 tries.
 func clusterNewPrefix() (string, error) {

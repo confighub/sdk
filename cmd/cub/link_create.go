@@ -90,7 +90,7 @@ func init() {
 	linkCmd.AddCommand(linkCreateCmd)
 }
 
-func checkLinkCreateConflictingArgs(args []string) (bool, error) {
+func checkLinkCreateConflictingArgs(cmd *cobra.Command, args []string) (bool, error) {
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
 	hasBulkFlags := where != "" || filter != "" || len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != ""
 	isBulkCreateMode := len(args) == 0 && hasBulkFlags
@@ -118,7 +118,7 @@ func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 		return false, errors.New("provide positional arguments for single create, or --where/--filter with --reverse/--from-downstream-where for bulk create")
 	}
 
-	if err := validateLinkFieldFlags(); err != nil {
+	if err := validateLinkFieldFlags(cmd); err != nil {
 		return isBulkCreateMode, err
 	}
 
@@ -143,7 +143,7 @@ func checkLinkCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func linkCreateCmdRun(cmd *cobra.Command, args []string) error {
-	isBulkCreateMode, err := checkLinkCreateConflictingArgs(args)
+	isBulkCreateMode, err := checkLinkCreateConflictingArgs(cmd, args)
 	if err != nil {
 		return err
 	}
@@ -152,10 +152,10 @@ func linkCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return runBulkLinkCreate(cmd)
 	}
 
-	return runSingleLinkCreate(args)
+	return runSingleLinkCreate(cmd, args)
 }
 
-func runSingleLinkCreate(args []string) error {
+func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	newLink := &goclientnew.Link{}
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		if err := populateModelFromFlags(newLink); err != nil {
@@ -207,7 +207,7 @@ func runSingleLinkCreate(args []string) error {
 	newLink.FromUnitID = fromUnitID
 	newLink.ToUnitID = toUnitID
 	newLink.ToSpaceID = uuid.MustParse(toSpaceID)
-	if err := setLinkFieldsOnCreate(newLink); err != nil {
+	if err := setLinkFieldsOnCreate(newLink, cmd); err != nil {
 		return err
 	}
 

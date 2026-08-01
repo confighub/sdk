@@ -313,9 +313,15 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
-	// OCI URL for Argo (running inside kind) — rewritten to
-	// host.docker.internal for loopback cub servers.
-	ociURLForArgo, err := clusterOCIEndpointFromContainer(clusterServerURL())
+	// Where the server says its registry is. Asked once and used for both the
+	// endpoint and its transport below, so the two cannot disagree.
+	ociServerURL, err := clusterOCIServerURL()
+	if err != nil {
+		return err
+	}
+	// OCI URL for Argo (running inside kind) — the advertised registry,
+	// rewritten to host.docker.internal for loopback cub servers.
+	ociURLForArgo, err := clusterOCIEndpointFromContainer(ociServerURL, clusterServerURL())
 	if err != nil {
 		return err
 	}
@@ -325,9 +331,10 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	// /space/<apps-slug>, tag "latest".
 	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + appsSlug
 
-	// Auto-detect plain-HTTP OCI from the cub server URL scheme. http:// API
-	// → http:// OCI (the local-dev case). https:// API → TLS OCI.
-	ociInsecure, err := clusterOCIInsecure(clusterServerURL())
+	// Plain-HTTP OCI from the advertised registry's scheme, or failing that from
+	// the cub server URL's: http:// API → http:// OCI (the local-dev case),
+	// https:// API → TLS OCI.
+	ociInsecure, err := clusterOCIInsecure(ociServerURL, clusterServerURL())
 	if err != nil {
 		return err
 	}

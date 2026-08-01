@@ -24,17 +24,19 @@ A guide for how to use links is at https://docs.confighub.com/guide/dependencies
 }
 
 var (
-	linkUpdateType          string
-	linkAutoUpdate          bool
-	linkNoAutoUpdate        bool
-	linkUseLiveState        bool
-	linkNoUseLiveState      bool
-	linkWhereMutation             string
-	linkWhereResource             string
-	linkMergeDisableSubtraction   bool
-	linkNoMergeDisableSubtraction bool
-	linkMakeCurrent               bool
-	linkTransformInvocation       string
+	linkUpdateType                   string
+	linkAutoUpdate                   bool
+	linkNoAutoUpdate                 bool
+	linkUseLiveState                 bool
+	linkNoUseLiveState               bool
+	linkWhereMutation                string
+	linkWhereResource                string
+	linkMergeDisableSubtraction      bool
+	linkNoMergeDisableSubtraction    bool
+	linkMakeCurrent                  bool
+	linkUpstreamLastMergedRevision   int64
+	linkDownstreamLastMergedRevision int64
+	linkTransformInvocation          string
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
@@ -48,10 +50,12 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkMergeDisableSubtraction, "merge-disable-subtraction", false, "disable the subtraction (override-preservation) step when resolving this link; overrides are then preserved only via stored mutation predicates")
 	cmd.Flags().BoolVar(&linkNoMergeDisableSubtraction, "no-merge-disable-subtraction", false, "re-enable the subtraction step when resolving this link")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
-	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before upsert; only valid with --update-type Upsert")
+	cmd.Flags().Int64Var(&linkUpstreamLastMergedRevision, "upstream-last-merged-revision", 0, "set UpstreamLastMergedRevisionNum explicitly: the upstream revision the link is treated as merged through (an Apply action number when UseLiveState is true)")
+	cmd.Flags().Int64Var(&linkDownstreamLastMergedRevision, "downstream-last-merged-revision", 0, "set DownstreamLastMergedRevisionNum explicitly: the downstream revision the last merge produced")
+	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before it is inserted or upserted; only valid with --update-type Insert or Upsert")
 }
 
-func validateLinkFieldFlags() error {
+func validateLinkFieldFlags(cmd *cobra.Command) error {
 	if linkAutoUpdate && linkNoAutoUpdate {
 		return fmt.Errorf("--auto-update and --no-auto-update are mutually exclusive")
 	}
@@ -60,6 +64,17 @@ func validateLinkFieldFlags() error {
 	}
 	if linkMergeDisableSubtraction && linkNoMergeDisableSubtraction {
 		return fmt.Errorf("--merge-disable-subtraction and --no-merge-disable-subtraction are mutually exclusive")
+	}
+	// --make-current writes the same two fields, computed from the Units. Letting both
+	// through would make the winner depend on ordering rather than on what was asked for.
+	if linkMakeCurrent && (cmd.Flags().Changed("upstream-last-merged-revision") || cmd.Flags().Changed("downstream-last-merged-revision")) {
+		return fmt.Errorf("--make-current and --upstream-last-merged-revision/--downstream-last-merged-revision are mutually exclusive")
+	}
+	if linkUpstreamLastMergedRevision < 0 {
+		return fmt.Errorf("--upstream-last-merged-revision must be >= 0, got %d", linkUpstreamLastMergedRevision)
+	}
+	if linkDownstreamLastMergedRevision < 0 {
+		return fmt.Errorf("--downstream-last-merged-revision must be >= 0, got %d", linkDownstreamLastMergedRevision)
 	}
 	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" && linkUpdateType != "TransformPaths" {
 		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths, got %q", linkUpdateType)
@@ -114,7 +129,7 @@ func withMakeCurrentPointers(base PatchEnhancer, upstream, downstream int64) Pat
 }
 
 // setLinkFieldsOnCreate sets link-specific fields on a new Link for create operations.
-func setLinkFieldsOnCreate(link *goclientnew.Link) error {
+func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 	link.UpdateType = linkUpdateType
 	if linkAutoUpdate {
 		link.AutoUpdate = true
@@ -126,6 +141,12 @@ func setLinkFieldsOnCreate(link *goclientnew.Link) error {
 	link.WhereResource = linkWhereResource
 	if linkMergeDisableSubtraction {
 		link.MergeDisableSubtraction = true
+	}
+	if cmd.Flags().Changed("upstream-last-merged-revision") {
+		link.UpstreamLastMergedRevisionNum = linkUpstreamLastMergedRevision
+	}
+	if cmd.Flags().Changed("downstream-last-merged-revision") {
+		link.DownstreamLastMergedRevisionNum = linkDownstreamLastMergedRevision
 	}
 	if linkTransformInvocation != "" {
 		id, err := parseInvocationSlug(linkTransformInvocation)
@@ -164,6 +185,12 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		link.MergeDisableSubtraction = true
 	} else if linkNoMergeDisableSubtraction {
 		link.MergeDisableSubtraction = false
+	}
+	if cmd.Flags().Changed("upstream-last-merged-revision") {
+		link.UpstreamLastMergedRevisionNum = linkUpstreamLastMergedRevision
+	}
+	if cmd.Flags().Changed("downstream-last-merged-revision") {
+		link.DownstreamLastMergedRevisionNum = linkDownstreamLastMergedRevision
 	}
 	if cmd.Flags().Changed("transform-invocation") {
 		if linkTransformInvocation == "" {
@@ -210,6 +237,12 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		} else if linkNoMergeDisableSubtraction {
 			patchMap["MergeDisableSubtraction"] = false
 		}
+		if cmd.Flags().Changed("upstream-last-merged-revision") {
+			patchMap["UpstreamLastMergedRevisionNum"] = linkUpstreamLastMergedRevision
+		}
+		if cmd.Flags().Changed("downstream-last-merged-revision") {
+			patchMap["DownstreamLastMergedRevisionNum"] = linkDownstreamLastMergedRevision
+		}
 		if cmd.Flags().Changed("transform-invocation") {
 			if linkTransformInvocation == "" {
 				patchMap["TransformInvocationID"] = nil
@@ -230,6 +263,8 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
 		linkMergeDisableSubtraction || linkNoMergeDisableSubtraction ||
 		linkMakeCurrent ||
+		cmd.Flags().Changed("upstream-last-merged-revision") ||
+		cmd.Flags().Changed("downstream-last-merged-revision") ||
 		cmd.Flags().Changed("transform-invocation")
 }
 

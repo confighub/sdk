@@ -73,6 +73,31 @@ Examples:
   # Repair every UpgradeUnit link in a space
   cub link update --patch --space my-space --where "UpdateType = 'UpgradeUnit'" --make-current
 `+"```"+`
+
+Setting merged-revision pointers explicitly:
+
+--upstream-last-merged-revision and --downstream-last-merged-revision set the two
+pointers to values you choose, rather than to the units' heads. Use them to move a
+pointer BACKWARD, which --make-current cannot do: an UpgradeUnit link whose
+UpstreamLastMergedRevisionNum has run ahead of the data actually merged into the
+downstream unit treats the skipped upstream changes as local overrides and silently
+drops them from every later upgrade. Rewinding the pointer to the last upstream
+revision that was really merged restores the merge base.
+
+On an UpgradeUnit link the server rewrites a pointer of 0 to the corresponding
+unit's head, so 0 cannot be used to mean "never merged" there. Both flags work with
+and without --patch, and on cub link create. They are mutually exclusive with
+--make-current and --reverse, which write the same two fields.
+
+Examples:
+`+"```"+`
+  # Rewind the merge base to upstream revision 36
+  cub link update upgrade-deployment --space my-space --patch --upstream-last-merged-revision 36
+
+  # Set both pointers at once
+  cub link update upgrade-deployment --space my-space --patch \
+    --upstream-last-merged-revision 36 --downstream-last-merged-revision 63
+`+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        linkUpdateCmdRun,
@@ -151,7 +176,7 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 	)
 }
 
-func checkLinkConflictingArgs(args []string) bool {
+func checkLinkConflictingArgs(cmd *cobra.Command, args []string) bool {
 	// Check for bulk patch mode: no positional args
 	isBulkPatchMode := len(args) == 0
 
@@ -192,7 +217,13 @@ func checkLinkConflictingArgs(args []string) bool {
 		failOnError(errors.New("--reverse and --make-current are mutually exclusive"))
 	}
 
-	if err := validateLinkFieldFlags(); err != nil {
+	// Reversal also swaps the two pointers, so an explicit value would be ambiguous:
+	// it could mean the pointer before or after the swap.
+	if linkReverse && (cmd.Flags().Changed("upstream-last-merged-revision") || cmd.Flags().Changed("downstream-last-merged-revision")) {
+		failOnError(errors.New("--reverse and --upstream-last-merged-revision/--downstream-last-merged-revision are mutually exclusive"))
+	}
+
+	if err := validateLinkFieldFlags(cmd); err != nil {
 		failOnError(err)
 	}
 
@@ -563,7 +594,7 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 }
 
 func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
-	isBulkPatchMode := checkLinkConflictingArgs(args)
+	isBulkPatchMode := checkLinkConflictingArgs(cmd, args)
 
 	if isBulkPatchMode {
 		return runBulkLinkUpdate(cmd)
