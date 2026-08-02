@@ -41,6 +41,12 @@ const (
 	clusterTargetSlug   = "target"
 	clusterRootUnitSlug = "root"
 
+	// clusterGateTriggerSlug is the default gate Trigger `cub cluster up`
+	// creates in the cluster Space: vet-placeholders on every Mutation, so a
+	// Release carrying an unfilled confighubplaceholder cannot be published to
+	// the cluster. Skipped with --no-placeholder-gate.
+	clusterGateTriggerSlug = "no-placeholders"
+
 	// clusterArgoAppsSuffix is appended to the cluster (target-prefix) Space
 	// slug to form the slug of the dedicated Space holding the Argo Application
 	// Units. Keeping the worker/target out of that Space means the apps Space's

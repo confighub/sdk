@@ -181,13 +181,62 @@ func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.U
 	return worker.BridgeWorkerID, secret, nil
 }
 
+// clusterWhereTriggerForSpace is the Target's WhereTrigger expression: every
+// Trigger in the cluster Space gates every Unit bound to the cluster's Target,
+// wherever that Unit lives. It is the same expression a Space defaults its own
+// WhereTrigger to, which makes one rule cover both — Triggers in the cluster
+// Space apply to everything released to the cluster.
+//
+// Triggers are resolved into the Target's read-only TriggerIDs when the Target
+// is created or updated, not when they fire, so a Trigger added to the cluster
+// Space later is picked up with `cub target update --refresh-triggers`.
+func clusterWhereTriggerForSpace(spaceID uuid.UUID) string {
+	return fmt.Sprintf("SpaceID = '%s'", spaceID)
+}
+
+// clusterCreateGateTrigger creates the default placeholder gate in the cluster
+// Space: vet-placeholders on every Mutation of a Kubernetes/YAML Unit. A failure
+// raises an ApplyGate, which blocks `cub release publish` — so config that still
+// carries the confighubplaceholder sentinel cannot reach the cluster.
+//
+// Kubernetes/YAML is the only toolchain worth gating here. A Trigger matches one
+// ToolchainType, AppConfig Units are forced to ProviderNone and can never carry a
+// Target, and ConfigHub/YAML is the ConfigHub bridge's own format — so nothing
+// else can be bound to the cluster's OCI target in the first place.
+//
+// The Description is what the UI shows when hovering the gate, so it says how to
+// clear it rather than just what failed.
+func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error) {
+	body := goclientnew.Trigger{
+		SpaceID:       spaceID,
+		Slug:          slug,
+		DisplayName:   slug,
+		Event:         "Mutation",
+		ToolchainType: string(workerapi.ToolchainKubernetesYAML),
+		FunctionName:  "vet-placeholders",
+		Description: "This config still contains the confighubplaceholder sentinel, which means a value " +
+			"is known to be missing; releasing it to the cluster would deploy config that is " +
+			"definitionally incomplete. Run \"cub function do --space <space> get-placeholders\" to " +
+			"see which attributes are unfilled, then fill them — via a Link from an upstream Unit, " +
+			"\"cub variant create --namespace\", or a set- function. Created by \"cub cluster up\"; " +
+			"skip it with --no-placeholder-gate.",
+	}
+	res, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, &goclientnew.CreateTriggerParams{}, body)
+	if cubapi.IsAPIError(err, res) {
+		return uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	return res.JSON200.TriggerID, nil
+}
+
 // clusterCreateOCITarget creates an OCI target bound to the given worker. The
 // worker OWNS the target — that ownership is what authorizes OCI bundle pull,
 // no separate permission grant needed. ToolchainType is the ToolchainAny
 // wildcard so Units of any toolchain can bind; the OCI provider takes no
 // parameters. annotations (may be nil) are attached to the Target, e.g. the
-// URL-TargetUI deep link.
-func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName string, annotations map[string]string) (uuid.UUID, error) {
+// URL-TargetUI deep link. whereTrigger selects the Triggers that gate Units
+// bound to this Target; the server resolves it into TriggerIDs here, so any
+// Trigger it selects must already exist.
+func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
 	body := goclientnew.Target{
 		SpaceID:        spaceID,
 		Slug:           slug,
@@ -197,6 +246,7 @@ func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName strin
 		ProviderType:   string(api.ProviderOCI),
 		Parameters:     "{}",
 		Annotations:    annotations,
+		WhereTrigger:   whereTrigger,
 	}
 	res, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, &goclientnew.CreateTargetParams{}, body)
 	if cubapi.IsAPIError(err, res) {
@@ -269,10 +319,11 @@ func clusterClearReleaseTarget(spaceID uuid.UUID) error {
 
 // clusterWaitUnitTriggers waits for org-wide Triggers, which run asynchronously
 // on every Mutation, to finish evaluating the unit: while evaluation is pending
-// the unit carries an `awaiting/triggers` ApplyGate. Publishing a Release
-// bundles the unit's head Revision without consulting gates, so wait for the
-// gate to clear (up to 30s) to avoid bundling a pre-trigger revision. Any other
-// gate is left to the server to enforce.
+// the unit carries an `awaiting/triggers` ApplyGate. Publishing a Release does
+// check gates and refuses to bundle a Unit that has any, so without this wait a
+// publish issued right after a mutation fails on the transient gate rather than
+// on anything real. Wait for it to clear (up to 30s); a gate that is still there
+// afterwards is a real verdict and is left to the server to enforce.
 func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 	deadline := time.Now().Add(30 * time.Second)
 	backoff := 1 * time.Second

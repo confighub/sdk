@@ -15,12 +15,13 @@ import (
 )
 
 var clusterUpArgs struct {
-	name       string
-	spaceSlug  string
-	mounts     []string
-	noPorts    bool
-	noArgobot  bool
-	argobotOCI string
+	name              string
+	spaceSlug         string
+	mounts            []string
+	noPorts           bool
+	noArgobot         bool
+	noPlaceholderGate bool
+	argobotOCI        string
 }
 
 var clusterUpCmd = &cobra.Command{
@@ -53,6 +54,15 @@ from its OCI config bundle, plus a per-cluster "argobot-<name>" variant), reuses
 the cluster's worker as its identity, and runs in the default kubernetes sync
 mode (no Argo CD token needed).
 
+The cluster's OCI target is gated: a "no-placeholders" Trigger is created in the
+cluster Space and the target selects every Trigger in that Space, so publishing a
+Release that still contains an unfilled "confighubplaceholder" value is blocked
+for every Space that releases to this cluster — including deployment variants
+that do not exist yet. Add your own gates by creating Triggers in the cluster
+Space and running "cub target update --space <name> target --refresh-triggers".
+Pass --no-placeholder-gate to skip the placeholder Trigger; the target is wired
+either way.
+
 Argo CD is reachable at http://localhost:<argo-port> (server.insecure=true);
 admin credentials are written to <config-dir>/clusters/<name>.env for
 ` + "`source`" + `-ing into your shell along with KUBECONFIG.
@@ -68,17 +78,19 @@ func init() {
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the Argo NodePort; skip the user-app NodePort window")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync bot)")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle")
 	clusterCmd.AddCommand(clusterUpCmd)
 }
 
 type clusterUpOptions struct {
-	name          string
-	spaceSlug     string
-	mounts        []clusterMount
-	noPorts       bool
-	noArgobot     bool
-	argobotOCIRef string
+	name              string
+	spaceSlug         string
+	mounts            []clusterMount
+	noPorts           bool
+	noArgobot         bool
+	noPlaceholderGate bool
+	argobotOCIRef     string
 }
 
 func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
@@ -87,12 +99,13 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return clusterUpRun(cmd.OutOrStdout(), clusterUpOptions{
-		name:          clusterUpArgs.name,
-		spaceSlug:     clusterUpArgs.spaceSlug,
-		mounts:        mounts,
-		noPorts:       clusterUpArgs.noPorts,
-		noArgobot:     clusterUpArgs.noArgobot,
-		argobotOCIRef: clusterUpArgs.argobotOCI,
+		name:              clusterUpArgs.name,
+		spaceSlug:         clusterUpArgs.spaceSlug,
+		mounts:            mounts,
+		noPorts:           clusterUpArgs.noPorts,
+		noArgobot:         clusterUpArgs.noArgobot,
+		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
+		argobotOCIRef:     clusterUpArgs.argobotOCI,
 	})
 }
 
@@ -275,6 +288,18 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
+	// The default gate, created BEFORE the target: the server resolves a
+	// Target's WhereTrigger into its read-only TriggerIDs at create time, so a
+	// Trigger that does not exist yet would not be selected. --no-placeholder-gate
+	// skips the Trigger but not the wiring below — the cluster Space stays the
+	// place to put gates, it just starts out empty.
+	if !opts.noPlaceholderGate {
+		fmt.Fprintf(out, "Creating placeholder gate trigger %q (vet-placeholders on every Mutation)...\n", clusterGateTriggerSlug)
+		if _, err := clusterCreateGateTrigger(spaceID, clusterGateTriggerSlug); err != nil {
+			return fmt.Errorf("create placeholder gate trigger: %w", err)
+		}
+	}
+
 	fmt.Fprintf(out, "Creating OCI target %q owned by worker %q...\n", clusterTargetSlug, clusterWorkerSlug)
 	// URL-TargetUI deep link: the ConfigHub UI substitutes "{slug}" with the
 	// Space slug at render time, linking a Unit straight to its Argo CD
@@ -285,7 +310,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		clusterAnnotationTargetUI:      fmt.Sprintf("http://localhost:%d/applications/argocd/{slug}", argoPort),
 		clusterAnnotationArgoAppsSpace: appsSlug,
 	}
-	targetID, err := clusterCreateOCITarget(spaceID, workerID, clusterTargetSlug, clusterTargetSlug, targetAnnotations)
+	// Selecting the cluster Space's Triggers makes them gate every Unit bound to
+	// this target, wherever that Unit lives — the apps Space, the argobot
+	// variant, and every deployment variant, including ones created later.
+	targetID, err := clusterCreateOCITarget(spaceID, workerID, clusterTargetSlug, clusterTargetSlug,
+		targetAnnotations, clusterWhereTriggerForSpace(spaceID))
 	if err != nil {
 		return err
 	}
@@ -400,6 +429,13 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		appsSlug, clusterRootUnitSlug)
 	if !opts.noArgobot {
 		fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode)\n", clusterArgobotComponent, opts.name)
+	}
+	if opts.noPlaceholderGate {
+		fmt.Fprintf(out, "  gates:      none (--no-placeholder-gate); Triggers added to space %q gate the\n              target once you run 'cub target update --space %s target --refresh-triggers'\n",
+			opts.spaceSlug, opts.spaceSlug)
+	} else {
+		fmt.Fprintf(out, "  gates:      %s/%s (vet-placeholders) — blocks publishing a Release with\n              unfilled confighubplaceholder values to this cluster\n",
+			opts.spaceSlug, clusterGateTriggerSlug)
 	}
 	fmt.Fprintf(out, "\nArgo CD: http://localhost:%d  (admin / %s)\n", argoPort, adminPassword)
 	fmt.Fprintf(out, "Reopen it later with the password on your clipboard:\n  cub cluster open %s\n", opts.name)
